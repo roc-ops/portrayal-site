@@ -25,6 +25,13 @@ type are renamed with the prefix, in the YAML's identity lines and in the CSV
 cells that name them. Each step records how many cells it changed. Every other
 name (rack, devices, cable labels, site, role) is the fixture's own, which
 already starts with the prefix; a kit with a name that does not is refused.
+So is a kit whose CSV files do not have exactly the columns the Rack Builder
+writes: NetBox's import UPDATES an existing object when a file has an `id`
+column, and a kit is only ever meant to create.
+
+Nautobot gets a SECOND location, <location>-other, holding a rack with the
+kit's rack's own name: the devices file must then find its rack by name AND
+location (rack__location__name), and the devices are checked to be in it.
 """
 import csv
 import datetime
@@ -56,8 +63,24 @@ TYPE_CELLS = {'2-devices.csv': ['manufacturer', 'device_type'], '3-modules.csv':
 # The cells that must already carry the prefix: the names the fixture gives.
 OWN_CELLS = {'1-rack.csv': ['site', 'name'], '2-devices.csv': ['name', 'role', 'site', 'rack'], '3-modules.csv': ['device'],
              '4-cables.csv': ['side_a_device', 'side_b_device', 'label'],
-             '1-devices.csv': ['name', 'role__name', 'location__name', 'rack__name'],
+             '1-devices.csv': ['name', 'role__name', 'location__name', 'rack__name', 'rack__location__name'],
              '2-modules.csv': ['parent_module_bay__parent_device__name'], '3-cables.csv': ['a_device', 'b_device', 'label']}
+# The exact header row of each CSV, per target (site/rack/export-data.js and dcim-rules.js write them). A file
+# with any other column is not the Rack Builder's, and is not sent.
+HEADERS = {
+    'netbox': {
+        '1-rack.csv': ['site', 'name', 'status', 'width', 'u_height', 'desc_units'],
+        '2-devices.csv': ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack', 'position', 'face', 'comments'],
+        '3-modules.csv': ['device', 'module_bay', 'module_type', 'status'],
+        '4-cables.csv': ['side_a_device', 'side_a_type', 'side_a_name', 'side_b_device', 'side_b_type', 'side_b_name', 'type',
+                         'status', 'label', 'color', 'length', 'length_unit', 'description']},
+    'nautobot': {
+        '1-devices.csv': ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model', 'status__name',
+                          'location__name', 'rack__name', 'rack__location__name', 'position', 'face', 'comments'],
+        '2-modules.csv': ['module_type__manufacturer__name', 'module_type__model', 'parent_module_bay__parent_device__name',
+                          'parent_module_bay__name', 'status__name'],
+        '3-cables.csv': ['a_device', 'a_type', 'a_name', 'b_device', 'b_type', 'b_name', 'type', 'status', 'label', 'color',
+                         'length', 'length_unit']}}
 ENDPOINTS = {'dcim.interface': 'interfaces', 'dcim.frontport': 'front-ports', 'dcim.rearport': 'rear-ports',
              'dcim.consoleport': 'console-ports', 'dcim.consoleserverport': 'console-server-ports',
              'dcim.powerport': 'power-ports', 'dcim.poweroutlet': 'power-outlets'}
@@ -100,9 +123,24 @@ class Kit:
         return [l for l in self.readme_list('Not in this kit:') if not l.startswith('Nothing: every device, card and cable')]
 
     def problems(self):
-        """Why this kit must not be imported into someone's instance: a name
-        it would create that the cleanup could not find again."""
+        """Why this kit must not be imported into someone's instance: a file
+        that does not have exactly the Rack Builder's columns (an `id` column
+        would make NetBox's import update an object that is already there), or a
+        name it would create that the cleanup could not find again."""
         bad = []
+        for name, want in HEADERS[self.target].items():
+            if name not in self.files:
+                bad.append('%s is not in the kit' % name)
+                continue
+            got = next(csv.reader(io.StringIO(self.files[name], newline='')), [])
+            if got != want:
+                odd = [c for c in got if c not in want]
+                bad.append('%s does not have the Rack Builder\'s columns: %s' % (name, (
+                    'it has %s, which the kit never writes' % ', '.join(repr(c) for c in odd) if odd
+                    else 'it lacks %s' % ', '.join(c for c in want if c not in got) if set(got) != set(want)
+                    else 'they are in another order, or repeated')))
+        if bad:
+            return bad
         for name, cols in OWN_CELLS.items():
             for n, row in enumerate(self.rows(name), 1):
                 for c in cols:
@@ -190,23 +228,33 @@ def rack_cables(kit, cable_file, found):
     return out, ok
 
 
-def devices_compared(run, kit, device_file, c, query):
+def devices_compared(run, kit, device_file, c, query, rack=None):
     """Every device of the kit's devices file exists on the instance under its
     exact final name, and nothing else under the prefix does. That includes the
     names at the 64-character limit, and two devices whose labels differ only by
     case ("Twin" and "twin"): the kit renamed both, and NetBox, which treats
-    names as one ignoring case, must have taken both."""
-    s = run.step('devices_compared', "the instance's devices against the kit's devices file", 'accept')
+    names as one ignoring case, must have taken both.
+    `rack` (Nautobot) is the id of the rack in the devices' own location: every
+    device must be in THAT rack, not in the rack of the same name elsewhere."""
+    s = run.step('devices_compared', "the instance's devices against the kit's devices file"
+                 + (', each in the rack of its own location' if rack else ''), 'accept')
     names = [r['name'] for r in kit.rows(device_file)]
     have, err = c.api_list('/api/dcim/devices/?' + urllib.parse.urlencode(dict(query, name__isw=P, limit=200)))
     got = [str(o.get('name')) for o in have if str(o.get('name') or '').startswith(P)]
+    in_rack = {str(o.get('name')): (o['rack'].get('id') if isinstance(o.get('rack'), dict) else o.get('rack')) for o in have}
     problems = [err] if err else []
     table = []
     for n in names:
         ok = n in got
-        table.append({'device': n, 'characters': len(n), 'instance': 'as written' if ok else 'NOT FOUND', 'ok': ok})
+        row = {'device': n, 'characters': len(n), 'instance': 'as written' if ok else 'NOT FOUND', 'ok': ok}
         if not ok:
             problems.append('%s is in the kit and not on the instance under that name' % n)
+        elif rack:
+            row['rack'] = 'the rack in its own location' if in_rack.get(n) == rack else 'ANOTHER RACK, OR NONE'
+            if in_rack.get(n) != rack:
+                row['ok'] = False
+                problems.append('%s is not in the rack of its own location: the devices file found another rack of that name, or none' % n)
+        table.append(row)
     for n in got:
         if n not in names:
             problems.append('%s is on the instance and not in the kit' % n)
@@ -341,7 +389,9 @@ def run_script(run, kit, sid, title, flags, expect=None):
         for n in ('import_cables.py', '3-cables.csv'):
             with open(os.path.join(d, n), 'w', encoding='utf-8', newline='') as f:
                 f.write(kit.files[n])
-        env = {k: os.environ[k] for k in ('NAUTOBOT_URL', 'NAUTOBOT_TOKEN', 'PATH') if k in os.environ}
+        # The script reads the environment itself, as a user's would: the token goes to it as this kit holds it.
+        env = {k: os.environ[k] for k in ('NAUTOBOT_URL', 'PATH') if k in os.environ}
+        env['NAUTOBOT_TOKEN'] = V.cred('NAUTOBOT_TOKEN')
         r = subprocess.run([sys.executable, 'import_cables.py', '3-cables.csv', *flags], cwd=d, env=env,
                            capture_output=True, text=True, timeout=600)
     s['http_status'] = r.returncode
@@ -357,7 +407,7 @@ def run_script(run, kit, sid, title, flags, expect=None):
 
 def run_nautobot(run, kit):
     c = V.Client('nautobot')
-    if not os.environ.get('NAUTOBOT_TOKEN'):
+    if not c.token:
         skipped(run, 'token', 'NAUTOBOT_TOKEN is set', 'NAUTOBOT_TOKEN is not set.')['accepted'] = False
         return
     st = c.api('GET', '/api/status/')
@@ -375,7 +425,7 @@ def run_nautobot(run, kit):
     ui, why = c.login()
     s = run.step('login', 'sign in to the web UI (only for the type YAML import, README step 1)', 'accept',
                  request={'method': 'POST', 'path': '/login/'})
-    s['accepted'], s['messages'] = (ui if os.environ.get('NAUTOBOT_USER') else None), [why]
+    s['accepted'], s['messages'] = (ui if c.user else None), [why]
     run.done(s)
     with open(FIXTURE, encoding='utf-8') as f:
         frame = json.load(f)['racks'][0]['frame']
@@ -391,9 +441,18 @@ def run_nautobot(run, kit):
                    '/api/dcim/location-types/', {'name': P + 'loctype', 'nestable': False, 'content_types': ['dcim.device', 'dcim.rack']})
     V.nt_post_json(c, run, 'prereq_location', 'README prerequisite: the location', '/api/dcim/locations/',
                    {'name': dev['location__name'], 'location_type': {'name': P + 'loctype'}, 'status': {'name': 'Active'}})
-    V.nt_post_json(c, run, 'prereq_rack', 'README prerequisite: the rack', '/api/dcim/racks/',
-                   {'name': dev['rack__name'], 'location': {'name': dev['location__name']}, 'status': {'name': 'Active'},
-                    'u_height': frame['heightRU'], 'desc_units': frame.get('numbering') == 'top-down'})
+    # An instance that is not empty: a second location holds a rack with the SAME name, created first. The devices
+    # file must find its rack by name and location together (rack__location__name); by name alone Nautobot
+    # refuses it ("Multiple objects match"), or a lesser lookup would put the devices in the wrong rack.
+    other = dev['location__name'] + '-other'
+    V.nt_post_json(c, run, 'prereq_other_location', 'not empty: a second location, %s' % other, '/api/dcim/locations/',
+                   {'name': other, 'location_type': {'name': P + 'loctype'}, 'status': {'name': 'Active'}})
+    V.nt_post_json(c, run, 'prereq_other_rack', 'not empty: a rack with the same name, %s, in the second location' % dev['rack__name'],
+                   '/api/dcim/racks/', {'name': dev['rack__name'], 'location': {'name': other}, 'status': {'name': 'Active'},
+                                        'u_height': frame['heightRU'], 'desc_units': frame.get('numbering') == 'top-down'})
+    rack = V.nt_post_json(c, run, 'prereq_rack', 'README prerequisite: the rack', '/api/dcim/racks/',
+                          {'name': dev['rack__name'], 'location': {'name': dev['location__name']}, 'status': {'name': 'Active'},
+                           'u_height': frame['heightRU'], 'desc_units': frame.get('numbering') == 'top-down'})
     for kind, entry, d, text in types:
         sid = 'types_' + re.sub(r'\W+', '_', entry[6:-5])
         if ui:
@@ -445,7 +504,7 @@ def run_nautobot(run, kit):
         if label not in found:
             found[label] = 'IN NAUTOBOT BUT NOT IN THE KIT'
             problems.append('%s is in Nautobot and not in the kit' % label)
-    devices_compared(run, kit, '1-devices.csv', c, {'depth': 0})
+    devices_compared(run, kit, '1-devices.csv', c, {'depth': 0}, rack=rack.get('object_id') or 'no id: the rack was not created')
     compared(run, kit, '3-cables.csv', found, problems)
 
 
@@ -456,20 +515,22 @@ def plan(target):
     V.say('\n== %s, at %s: %s ==' % (target, host, kit.path))
     V.say('   credentials: ' + ', '.join('%s %s' % (n, 'set' if os.environ.get(n) else 'not set') for n in V.ENV[target][1:]))
     bad = kit.problems()
-    V.say('   every name the kit creates starts with %s: %s' % (P, 'yes' if not bad else 'NO - a run is refused'))
+    V.say('   every file has exactly the Rack Builder\'s columns, and every name the kit creates starts with %s: %s'
+          % (P, 'yes' if not bad else 'NO - a run is refused'))
     for b in bad[:10]:
         V.say('     ' + b)
     V.say('   prerequisites created first (the README says they must exist): site or location, role, manufacturers'
-          + (', the rack' if target == 'nautobot' else ''))
+          + (', the rack; and a second location holding a rack of the same name' if target == 'nautobot' else ''))
     for kind, entry, text in kit.types():
         V.say('   import  %-58s as a %s YAML, identity lines prefixed' % (entry, kind[:-1]))
     for name, kind in FILES[target]:
-        text, n = prefixed_cells(name, kit.files[name])
+        text, n = prefixed_cells(name, kit.files.get(name, ''))
         V.say('   import  %-16s %d row(s), %d cell(s) prefixed, columns: %s' % (name, len(kit.rows(name)), n, ','.join(V.header_row(text))))
     if target == 'nautobot':
         V.say('   run     import_cables.py 3-cables.csv (dry run), then --apply, then --apply again (every row already connected): %d row(s)'
               % len(kit.rows('3-cables.csv')))
-    V.say('   compare the devices the instance has with the kit\'s devices file, by exact name')
+    V.say('   compare the devices the instance has with the kit\'s devices file, by exact name'
+          + (', and each device\'s rack with the rack of its own location' if target == 'nautobot' else ''))
     V.say('   compare the cables the instance has with the kit\'s rows and the rack file\'s cables')
     for l in kit.left_out():
         V.say('   left out by the kit: ' + l)
@@ -519,7 +580,8 @@ def main(argv):
             kit = Kit(t)
             bad = kit.problems()
             if bad:
-                raise V.Refused('the kit has names without the %s prefix, which cleanup could not remove: %s' % (P, '; '.join(bad[:5])))
+                raise V.Refused('the kit is not one to import (a file without the Rack Builder\'s columns, or a name without '
+                                'the %s prefix, which cleanup could not remove): %s' % (P, '; '.join(bad[:5])))
             (run_netbox if t == 'netbox' else run_nautobot)(run, kit)
         except V.Refused as e:
             s = run.step('refused', 'the run was refused', 'accept')
@@ -527,7 +589,7 @@ def main(argv):
             run.done(s)
         except Exception as e:                              # noqa: BLE001 - every run reports
             s = run.step('crashed', 'the run stopped', 'accept')
-            s['accepted'], s['messages'] = False, ['%s: %s' % (type(e).__name__, V.redact(e))]
+            s['accepted'], s['messages'] = False, [V.problem(e)]
             run.done(s)
         write_result(runs, started)
     V.say('\nWrote %s' % RESULT)
@@ -540,4 +602,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(V.guarded(main, sys.argv))

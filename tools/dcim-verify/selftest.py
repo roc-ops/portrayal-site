@@ -8,11 +8,18 @@ small ones built here (with the repository's real import_cables.py), and the
 mock is a local HTTP server that answers as the real instances did in the
 verification run of 2026-10-04. It shows that kits.py sends each file in the
 README's order, prefixes only the cells it says it does, runs the kit's own
-script, compares the cables, refuses a kit with a name it could not clean up,
-and keeps every credential out of its output. It does NOT show that a real
-NetBox or Nautobot accepts the files: only "kits.py run" does.
+script, compares the cables, refuses a kit with a name it could not clean up
+or a file that does not have the Rack Builder's columns, finds the Nautobot
+rack by its name and location together, and keeps every credential out of
+its output. It does NOT show that a real NetBox or Nautobot accepts the
+files: only "kits.py run" does.
+
+Nothing is written into the repository: the result file, the kits and any
+saved page (verify.py's out/) go to a temporary directory.
 """
+import contextlib
 import csv
+import http.client
 import http.server
 import io
 import json
@@ -23,6 +30,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import unittest.mock
 import urllib.parse
 import zipfile
 
@@ -57,12 +65,12 @@ NETBOX = {
     'README.txt': README}
 NAUTOBOT = {
     'types/device-types/Acme/SW-1.yaml': DEVICE_YAML, 'types/module-types/Acme/CARD-1.yaml': MODULE_YAML,
-    '1-devices.csv': 'name,role__name,device_type__manufacturer__name,device_type__model,status__name,location__name,rack__name,position,face,comments\r\n'
-                     'pt-verify-a,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,2,front,\r\n'
-                     'pt-verify-b,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,4,front,\r\n'
-                     'pt-verify-Twin-i6,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,6,front,\r\n'
-                     'pt-verify-twin-i7,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,8,front,\r\n'
-                     + NAME64 + ',pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,10,front,\r\n',
+    '1-devices.csv': 'name,role__name,device_type__manufacturer__name,device_type__model,status__name,location__name,rack__name,rack__location__name,position,face,comments\r\n'
+                     'pt-verify-a,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,pt-verify-site,2,front,\r\n'
+                     'pt-verify-b,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,pt-verify-site,4,front,\r\n'
+                     'pt-verify-Twin-i6,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,pt-verify-site,6,front,\r\n'
+                     'pt-verify-twin-i7,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,pt-verify-site,8,front,\r\n'
+                     + NAME64 + ',pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,pt-verify-site,10,front,\r\n',
     '2-modules.csv': 'module_type__manufacturer__name,module_type__model,parent_module_bay__parent_device__name,parent_module_bay__name,status__name\r\n'
                      'Acme,CARD-1,pt-verify-a,Slot 1,Planned\r\n',
     '3-cables.csv': 'a_device,a_type,a_name,b_device,b_type,b_name,type,status,label,color,length,length_unit\r\n'
@@ -85,6 +93,9 @@ class State:
         self.netbox_devices, self.nautobot_devices = [], []     # names of the devices each mock instance took
         self.hide_cables = False  # Nautobot lists its ports with no cable on them: a second --apply would make duplicates
         self.lose_device = None   # a device name the instance does not list, as if it had refused it
+        self.racks = []           # Nautobot's racks: {id, name, location}, as the prerequisites created them
+        self.device_rack = {}     # Nautobot device name -> the id of the rack its row found
+        self.first_rack_wins = False   # a lesser lookup: the rack by its name alone, the first one made
 
 
 def handler(st):
@@ -119,7 +130,8 @@ def handler(st):
                 return self.send(200, {'id': lst, 'parent_module_bay': {'id': 'bay', 'parent_device': {'id': 'dev:' + dev}, 'parent_module': None}})
             if lst == 'devices' and 'name__isw' in q:                 # the preflight and devices_compared; Nautobot's asks with depth
                 names = st.nautobot_devices if 'depth' in q else st.netbox_devices
-                return self.send(200, {'results': [{'id': 'dev:' + n, 'name': n} for n in names if n != st.lose_device], 'next': None})
+                return self.send(200, {'results': [{'id': 'dev:' + n, 'name': n, 'rack': {'id': st.device_rack.get(n)} if 'depth' in q else None}
+                                                   for n in names if n != st.lose_device], 'next': None})
             if lst == 'devices' and 'name' in q:
                 rows = [{'id': 'dev:' + q['name'], 'name': q['name']}] if q['name'] in st.ports else []
             elif lst == 'interfaces':
@@ -173,9 +185,18 @@ def handler(st):
                     st.cables += made
                     return self.send(201, made)
                 if self.path == '/api/dcim/devices/':
+                    # As Nautobot reads a related object's columns: every lookup given must match exactly one rack.
+                    for r in rows:
+                        found = [k for k in st.racks if k['name'] == r['rack__name'] and
+                                 (st.first_rack_wins or 'rack__location__name' not in r or k['location'] == r['rack__location__name'])]
+                        if len(found) != 1 and not st.first_rack_wins:
+                            return self.send(400, [{'rack': ['%s objects match the provided attributes' % ('Multiple' if found else 'No')]}])
+                        st.device_rack[r['name']] = found[0]['id']
                     st.nautobot_devices += [r['name'] for r in rows]
                 return self.send(201, [{'id': 'o', 'name': r.get('name', ''), 'display': r.get('name', '')} for r in rows])
             d = json.loads(body)
+            if self.path == '/api/dcim/racks/':
+                st.racks.append({'id': 'obj-%d' % len(st.posts), 'name': d['name'], 'location': d['location']['name']})
             return self.send(201, {'id': 'obj-%d' % len(st.posts), 'name': d.get('name') or d.get('model')} if isinstance(d, dict) else [{}])
     return H
 
@@ -208,6 +229,7 @@ class Kits(unittest.TestCase):
         env = {'PATH': os.environ.get('PATH', ''), 'PT_VERIFY_KITS': self.dir.name,
                'PT_VERIFY_RESULT': os.path.join(self.dir.name, 'kits-result.json'),
                'PT_VERIFY_FIXTURE': os.path.join(self.dir.name, 'rack.json'),
+               'PT_VERIFY_OUT': os.path.join(self.dir.name, 'out'),         # never the repository's out/: a real run's pages are there
                'NETBOX_URL': self.url, 'NETBOX_USER': 'someone', 'NETBOX_PASSWORD': PASSWORD,
                'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': TOKEN}
         r = subprocess.run([sys.executable, str(HERE / 'kits.py'), *args], env=env, capture_output=True, text=True, timeout=120)
@@ -249,6 +271,11 @@ class Kits(unittest.TestCase):
         csvs = [(p, b) for p, ct, b in self.st.posts if ct == 'text/csv']
         # One cable per request. The second --apply sent none: every row was a cable it had already made.
         self.assertEqual([p for p, _ in csvs], ['/api/dcim/devices/', '/api/dcim/modules/', '/api/dcim/cables/', '/api/dcim/cables/'])
+        # An instance that is not empty: a second location holds a rack of the same name, made before the kit's own.
+        self.assertEqual([(k['name'], k['location']) for k in self.st.racks],
+                         [('pt-verify-rack', 'pt-verify-site-other'), ('pt-verify-rack', 'pt-verify-site')])
+        locations = [json.loads(b)['name'] for p, _, b in self.st.posts if p == '/api/dcim/locations/']
+        self.assertEqual(locations, ['pt-verify-site', 'pt-verify-site-other'])
         self.assertEqual(csvs[0][1], NAUTOBOT['1-devices.csv'].replace(',Acme,SW-1,', ',pt-verify-Acme,pt-verify-SW-1,'))
         self.assertEqual(csvs[1][1], NAUTOBOT['2-modules.csv'].replace('Acme,CARD-1,', 'pt-verify-Acme,pt-verify-CARD-1,'))
         # The cable was created by the kit's script, by id: no file with the ends' names went to Nautobot's importer.
@@ -270,6 +297,13 @@ class Kits(unittest.TestCase):
         # The device at the 64-character limit and both Twin/twin devices exist under their final names.
         self.assertEqual([(d['device'], d['characters'], d['ok']) for d in steps['devices_compared']['created']],
                          [('pt-verify-a', 11, True), ('pt-verify-b', 11, True), ('pt-verify-Twin-i6', 17, True), ('pt-verify-twin-i7', 17, True), (NAME64, 64, True)])
+        # Every device is in the rack of its own location, not in the rack of the same name in the other one.
+        self.assertTrue(all(d['rack'] == 'the rack in its own location' for d in steps['devices_compared']['created']))
+        self.assertEqual(set(self.st.device_rack.values()), {self.st.racks[1]['id']})
+        self.assertEqual(steps['devices_compared']['title'], "the instance's devices against the kit's devices file, each in the rack of its own location")
+        ids = [x['id'] for x in result['targets']['nautobot']['steps']]
+        at = ids.index('prereq_location')
+        self.assertEqual(ids[at:at + 4], ['prereq_location', 'prereq_other_location', 'prereq_other_rack', 'prereq_rack'])
         self.assertEqual([(c['cable'], c['ok']) for c in steps['cables_compared']['created']],
                          [('pt-verify-c1', True), ('pt-verify-loose', True), (LABEL100, True)])
 
@@ -289,6 +323,90 @@ class Kits(unittest.TestCase):
             step = self.steps(result, target)['devices_compared']
             self.assertFalse(step['accepted'], target)
             self.assertIn('pt-verify-twin-i7 is in the kit and not on the instance under that name', step['messages'])
+
+    def test_devices_that_land_in_the_rack_of_the_same_name_elsewhere_fail_the_run(self):
+        self.st.first_rack_wins = True              # an instance that finds a rack by its name alone: the other location's
+        r, result, raw = self.kits('run', 'nautobot')
+        self.assertEqual(r.returncode, 1)
+        step = self.steps(result, 'nautobot')['devices_compared']
+        self.assertFalse(step['accepted'])
+        self.assertIn('pt-verify-a is not in the rack of its own location: the devices file found another rack of that name, or none', step['messages'])
+        self.assertTrue(all(d['rack'] == 'ANOTHER RACK, OR NONE' and not d['ok'] for d in step['created']))
+
+    def test_a_kit_whose_file_has_other_columns_is_refused_before_anything_is_sent(self):
+        # NetBox's import UPDATES an existing object when a row has an id: a kit is only ever meant to create.
+        with_id = NETBOX['2-devices.csv'].replace('name,role,', 'id,name,role,', 1).replace('\r\npt-verify-', '\r\n1,pt-verify-')
+        old = NAUTOBOT['1-devices.csv'].replace(',rack__location__name', '', 1).replace(',pt-verify-rack,pt-verify-site,', ',pt-verify-rack,')
+        cases = [
+            ('netbox', dict(NETBOX, **{'2-devices.csv': with_id}), NAUTOBOT, "2-devices.csv does not have the Rack Builder's columns: it has 'id', which the kit never writes"),
+            ('netbox', dict(NETBOX, **{'4-cables.csv': NETBOX['4-cables.csv'].replace(',description', ',description,ID', 1)}), NAUTOBOT,
+             "4-cables.csv does not have the Rack Builder's columns: it has 'ID', which the kit never writes"),
+            ('netbox', dict(NETBOX, **{'1-rack.csv': NETBOX['1-rack.csv'].replace('site,name', 'name,site', 1)}), NAUTOBOT,
+             "1-rack.csv does not have the Rack Builder's columns: they are in another order, or repeated"),
+            ('netbox', {k: v for k, v in NETBOX.items() if k != '3-modules.csv'}, NAUTOBOT, '3-modules.csv is not in the kit'),
+            # A Nautobot kit from before the rack was pinned to its location: with two racks of one name it must not be sent.
+            ('nautobot', NETBOX, dict(NAUTOBOT, **{'1-devices.csv': old}), "1-devices.csv does not have the Rack Builder's columns: it lacks rack__location__name"),
+            ('nautobot', NETBOX, dict(NAUTOBOT, **{'3-cables.csv': NAUTOBOT['3-cables.csv'].replace('a_device', 'id,a_device', 1)}),
+             "3-cables.csv does not have the Rack Builder's columns: it has 'id', which the kit never writes")]
+        for target, netbox, nautobot, said in cases:
+            self.st.posts.clear()
+            self.zips(netbox, nautobot)
+            r, result, raw = self.kits('run', target)
+            self.assertEqual((r.returncode, self.st.posts), (1, []), said)
+            self.assertIn(said, raw)
+            self.assertEqual([s['id'] for s in result['targets'][target]['steps']], ['refused'])
+            r, _, _ = self.kits('plan', target)
+            self.assertIn('NO - a run is refused', r.stdout)
+            self.assertIn(said, r.stdout)
+            self.assertEqual(self.st.posts, [])
+
+    def test_nothing_is_written_into_the_repository(self):
+        before = {p: p.stat().st_mtime_ns for p in (HERE / 'out').glob('*')} if (HERE / 'out').is_dir() else None
+        self.st.refuse = 'cables'                   # a refused import's page is saved
+        r, result, raw = self.kits('run', 'netbox')
+        page = self.steps(result, 'netbox')['kit_cables']['page']
+        saved = (HERE / page).resolve()
+        self.assertTrue(str(saved).startswith(str(pathlib.Path(self.dir.name).resolve())), saved)
+        self.assertTrue(saved.is_file())
+        self.assertNotIn(CSRF, saved.read_text(encoding='utf-8'))
+        after = {p: p.stat().st_mtime_ns for p in (HERE / 'out').glob('*')} if (HERE / 'out').is_dir() else None
+        self.assertEqual(before, after, "the repository's out/ was written to")
+
+    def test_an_error_deep_in_a_request_leaves_no_credential_on_the_console_or_in_kits_result(self):
+        # kits.py in this process, so that http.client can be made to fail as it does on a header it refuses.
+        sys.path.insert(0, str(HERE))
+        import kits as K
+        import verify as V
+        saved, was = dict(os.environ), (K.KITS, K.RESULT, K.FIXTURE, V.OUT)
+        K.KITS, K.RESULT, K.FIXTURE, V.OUT = self.dir.name, os.path.join(self.dir.name, 'kits-result.json'), os.path.join(self.dir.name, 'rack.json'), os.path.join(self.dir.name, 'out')
+        try:
+            for k in list(os.environ):
+                if k.startswith(('NETBOX_', 'NAUTOBOT_')):
+                    del os.environ[k]
+            os.environ.update({'NETBOX_URL': self.url, 'NETBOX_USER': 'someone', 'NETBOX_PASSWORD': PASSWORD + '\n',
+                               'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': TOKEN + '\r\n'})
+            for exc in (ValueError('Invalid header value %r' % ('Token ' + TOKEN + '\r').encode()), RuntimeError(repr(PASSWORD)), KeyError(TOKEN)):
+                out = io.StringIO()
+                with unittest.mock.patch.object(http.client.HTTPConnection, 'putheader', side_effect=exc), \
+                        contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                    code = V.guarded(K.main, ['kits.py', 'run'])
+                text = out.getvalue() + pathlib.Path(K.RESULT).read_text(encoding='utf-8')
+                self.assertEqual(code, 1)
+                self.assertIn(type(exc).__name__, text)
+                self.assertNotIn('Traceback', text)
+                for secret in (TOKEN, PASSWORD):
+                    for k in range(len(secret) - 5):
+                        self.assertNotIn(secret[k:k + 6], text, type(exc).__name__)
+            # With nothing failing, the credentials read with a line break after them work, and the kit's script gets the token alone.
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                code = V.guarded(K.main, ['kits.py', 'run'])
+            self.assertEqual(code, 0, out.getvalue())
+            self.assertEqual(self.st.posts[0][2]['password'], [PASSWORD])
+        finally:
+            K.KITS, K.RESULT, K.FIXTURE, V.OUT = was
+            os.environ.clear()
+            os.environ.update(saved)
 
     def test_a_refused_file_and_a_cable_that_did_not_arrive_fail_the_run(self):
         self.st.refuse = 'cables'
@@ -315,13 +433,16 @@ class Kits(unittest.TestCase):
         self.st.posts.clear()
         r, _, _ = self.kits('plan')
         self.assertEqual((r.returncode, self.st.posts), (0, []))
-        self.assertIn('every name the kit creates starts with pt-verify-: yes', r.stdout)
+        self.assertIn("every file has exactly the Rack Builder's columns, and every name the kit creates starts with pt-verify-: yes", r.stdout)
+        self.assertIn('a second location holding a rack of the same name', r.stdout)
         # a README item wraps over two lines: the plan reads it whole
         self.assertIn('left out by the kit: Cable pt-verify-loose is not in the cables file: end A is not connected.', r.stdout)
 
 
-# The client's own test (a token request never carries the web session) runs with these.
-from test_client import TokenRequestsNeverCarryTheSession  # noqa: E402,F401
+# The client's own tests (a token request never carries the web session; no credential comes out; no proxy; paging
+# under a base path) and cleanup's (only this kit's own objects are deleted, whatever the instance answers) run with these.
+from test_client import TokenRequestsNeverCarryTheSession, NoCredentialComesOut  # noqa: E402,F401
+from test_cleanup import Cleanup  # noqa: E402,F401
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

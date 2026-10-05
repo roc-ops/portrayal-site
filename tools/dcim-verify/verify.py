@@ -10,7 +10,9 @@ Rack Builder's Phase 2c (cable import).
 Connection details come ONLY from environment variables:
     NETBOX_URL  NETBOX_USER  NETBOX_PASSWORD  [NETBOX_TOKEN]
     NAUTOBOT_URL  NAUTOBOT_TOKEN  [NAUTOBOT_USER  NAUTOBOT_PASSWORD]
-Nothing here prints, logs or stores a credential. Standard library only.
+Nothing here prints, logs or stores a credential: each is read once, the space
+around it dropped, and one holding a control character or a character that is
+not ASCII is refused without being shown. Standard library only; no proxy.
 
 Every object this creates has a name (a cable: a label; a type: a model)
 that starts with PREFIX, and cleanup deletes only objects whose own name
@@ -33,7 +35,7 @@ import urllib.request
 PREFIX = 'pt-verify-'
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIX = os.path.join(HERE, 'fixture')
-OUT = os.path.join(HERE, 'out')
+OUT = os.environ.get('PT_VERIFY_OUT') or os.path.join(HERE, 'out')       # a refused import's page; the self-tests use a temporary one
 RESULT = os.path.join(HERE, 'result.json')
 TIMEOUT = 90
 ENV = {
@@ -50,26 +52,70 @@ TYPE_FILES = [  # (kind, fixture file, manufacturer, model)
 
 
 # ── secrets ────────────────────────────────────────────────────────────────
+class Refused(Exception):
+    pass
+
+
+CRED_OK = re.compile(r'[\x20-\x7e]+')        # printable ASCII: what a header or a form field carries as it is
+# What a sign-in handed this process: each client's CSRF values and every cookie
+# value in its jar. They are credentials for as long as the session lives, so
+# the redactor hides them wherever they turn up (a saved page, a result file).
+SESSION = set()
+
+
+def cred(name):
+    """A credential (or a user name) from the environment, as it is used
+    everywhere here: read, and the space around it dropped (one read from a file
+    often ends in a line break, which http.client refuses in a header with an
+    error that quotes the header). One that holds a control character or a
+    character that is not ASCII is refused, in words that do not repeat it."""
+    v = os.environ.get(name, '').strip()
+    if v and not CRED_OK.fullmatch(v):
+        raise Refused('%s holds a control character or a character that is not ASCII, so it is not used. '
+                      'Set it again; it is not shown here.' % name)
+    return v
+
+
+def spellings(secret):
+    """Every way a text may spell `secret`: as it is, with the space around it
+    dropped, and as Python (a str or a bytes repr: how an exception quotes a
+    header), JSON or a URL would escape it."""
+    out = set()
+    for s in {secret, secret.strip()}:
+        if s.strip():
+            out.update((s, repr(s)[1:-1], ascii(s)[1:-1], repr(s.encode('utf-8', 'replace'))[2:-1],
+                        repr(s.encode('latin-1', 'replace'))[2:-1], json.dumps(s)[1:-1], json.dumps(s, ensure_ascii=False)[1:-1],
+                        urllib.parse.quote(s, safe=''), urllib.parse.quote_plus(s)))
+    return out
+
+
 def secrets():
-    out = []
+    """Every spelling of every credential, longest first. The environment's raw
+    values are read here too, so that one that was refused is hidden as well."""
+    out = set()
     for names in ENV.values():
         for n in names[1:]:
             v = os.environ.get(n, '')
-            if v:
-                out.append(v)
-    return sorted(set(out), key=len, reverse=True)
+            if len(v.strip()) >= 3:
+                out |= spellings(v)
+    for v in SESSION:
+        out |= spellings(v)
+    return sorted(out, key=len, reverse=True)
 
 
 def redact(text):
     s = str(text)
     for v in secrets():
-        if len(v) >= 3:
-            s = s.replace(v, '***')
-            s = s.replace(urllib.parse.quote(v, safe=''), '***')
-            s = s.replace(urllib.parse.quote_plus(v), '***')
+        s = s.replace(v, '***')
     s = re.sub(r'(csrfmiddlewaretoken["\'\s=:]+(?:value=)?["\']?)[A-Za-z0-9]{20,}', r'\1***', s)
     s = re.sub(r'(?i)(authorization:\s*)\S+(\s+\S+)?', r'\1***', s)
     return s
+
+
+def problem(e):
+    """An exception in words fit to print or to store: its kind, and its text
+    through the redactor. Never the text as it is: it may quote what was sent."""
+    return '%s: %s' % (type(e).__name__, redact(e))
 
 
 def say(*a):
@@ -114,10 +160,6 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-class Refused(Exception):
-    pass
-
-
 class Resp:
     def __init__(self, status, headers, body):
         self.status, self.headers, self.body = status, headers, body
@@ -151,26 +193,47 @@ class Client:
             raise Refused('%s must be an http(s) URL.' % url_var)
         if u.username or u.password or '@' in u.netloc:
             raise Refused('%s must not carry credentials.' % url_var)
+        if '?' in base or '#' in base:
+            raise Refused('%s must not carry a query or a fragment.' % url_var)
+        # `base` keeps a path (https://host/netbox); `origin` is the scheme and host alone.
         self.target, self.base, self.netloc, self.scheme = target, base, u.netloc, u.scheme
+        self.origin = '%s://%s' % (u.scheme, u.netloc)
+        # The credentials, checked at the door: the token, the user name, the password.
+        self.token, self.user, self.password = (cred(n) for n in ENV[target][1:])
         self.jar = http.cookiejar.CookieJar()
-        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar), NoRedirect())
+        # No proxy, whatever HTTP_PROXY says: admin credentials go to this host itself or nowhere.
+        direct = urllib.request.ProxyHandler({})
+        self.opener = urllib.request.build_opener(direct, urllib.request.HTTPCookieProcessor(self.jar), NoRedirect())
         # A request that carries the API token goes through this opener, which has no cookie
         # jar: if the session rode along, the instance would treat the request as
         # session-authenticated and refuse it for a missing CSRF token (found in the
         # 2026-10-04 run against Nautobot). Only the UI pages use the jar.
-        self.token_opener = urllib.request.build_opener(NoRedirect())
+        self.token_opener = urllib.request.build_opener(direct, NoRedirect())
         self.csrf = ''
 
-    def url(self, path):
-        full = path if re.match(r'^https?://', path) else self.base + path
+    def url(self, path, from_root=False):
+        """`path` is under the base URL. A link the server gave (`from_root`: a
+        list's `next`) already holds the base's own path, so it is joined to the
+        host alone."""
+        full = path if re.match(r'^https?://', path) else (self.origin if from_root else self.base) + path
         u = urllib.parse.urlsplit(full)
         if u.netloc != self.netloc or u.scheme != self.scheme:
             raise Refused('refused: %s://%s is not the host in %s' % (u.scheme, u.netloc, ENV[self.target][0]))
         return full
 
-    def request(self, method, path, body=None, headers=None, follow=False, opener=None):
+    def remember(self):
+        """The session's own secrets, for the redactor: the CSRF value and every cookie value."""
+        SESSION.update(v for v in [self.csrf] + [c.value for c in self.jar] if v and len(v) >= 8)
+
+    def request(self, method, path, body=None, headers=None, follow=False, opener=None, from_root=False):
+        try:
+            return self.send(method, path, body, headers, follow, opener, from_root)
+        finally:
+            self.remember()
+
+    def send(self, method, path, body, headers, follow, opener, from_root):
         opener = opener or self.opener
-        full = self.url(path)
+        full = self.url(path, from_root)
         h = {'User-Agent': 'portrayal-dcim-verify/1', 'Referer': self.base + '/'}
         h.update(headers or {})
         req = urllib.request.Request(full, data=body, method=method, headers=h)
@@ -199,6 +262,7 @@ class Client:
             re.search(r'value=["\']([^"\']+)["\'][^>]*name=["\']csrfmiddlewaretoken', r.text)
         if m:
             self.csrf = m.group(1)
+            self.remember()
         return r
 
     def form(self, path, fields):
@@ -209,8 +273,7 @@ class Client:
                                                  'X-CSRFToken': self.csrf, 'Referer': self.base + path})
 
     def login(self):
-        user = os.environ.get(ENV[self.target][2], '')
-        pw = os.environ.get(ENV[self.target][3], '')
+        user, pw = self.user, self.password
         if not user or not pw:
             return False, '%s / %s are not set' % (ENV[self.target][2], ENV[self.target][3])
         p = self.page('/login/')
@@ -229,7 +292,7 @@ class Client:
 
     def api_headers(self, method='GET', csv_body=False):
         h = {'Accept': 'application/json'}
-        tok = os.environ.get(ENV[self.target][1], '')
+        tok = self.token
         if tok:
             # NetBox 4.7: "Bearer nbt_<key>.<token>" for a v2 token, "Token <token>" for v1.
             word = 'Bearer' if (self.target == 'netbox' and tok.startswith('nbt_')) else 'Token'
@@ -240,30 +303,32 @@ class Client:
         h['Content-Type'] = 'text/csv' if csv_body else 'application/json'
         return h
 
-    def api(self, method, path, data=None, csv_text=None):
+    def api(self, method, path, data=None, csv_text=None, from_root=False):
         body = None
         if csv_text is not None:
             body = csv_text.encode('utf-8')
         elif data is not None:
             body = json.dumps(data).encode('utf-8')
-        token = bool(os.environ.get(ENV[self.target][1], ''))
         return self.request(method, path, body, self.api_headers(method, csv_text is not None),
-                            opener=self.token_opener if token else None)
+                            opener=self.token_opener if self.token else None, from_root=from_root)
 
     def api_list(self, path, max_pages=50):
-        """Every result of a paginated list (same host only)."""
-        out, nxt, pages = [], path, 0
+        """Every result of a paginated list (same host only). A `next` link is
+        followed by its path alone, on this host: one that names another scheme
+        or host (a proxy in front may report its own) never takes a request, or
+        a credential, anywhere else. Its path already holds the base URL's own."""
+        out, nxt, pages, root = [], path, 0, False
         while nxt and pages < max_pages:
             pages += 1
-            r = self.api('GET', nxt)
+            r = self.api('GET', nxt, from_root=root)
             j = r.json()
             if r.status != 200 or not isinstance(j, dict):
                 return out, 'HTTP %s: %s' % (r.status, clip(r.text))
-            out.extend(j.get('results') or [])
+            out.extend(o for o in j.get('results') or [] if isinstance(o, dict))
             nxt = j.get('next')
             if nxt:
-                u = urllib.parse.urlsplit(nxt)
-                nxt = u.path + ('?' + u.query if u.query else '')   # some proxies report another scheme
+                u = urllib.parse.urlsplit(str(nxt))
+                nxt, root = u.path + ('?' + u.query if u.query else ''), True
         return out, None
 
 
@@ -347,7 +412,9 @@ def page_errors(text):
 
 
 def save_page(name, text):
-    """A rejected import's page, kept for a second look. The CSRF token is cut."""
+    """A rejected import's page, kept for a second look. Every credential is cut:
+    the environment's, the page's CSRF field, and the session's own CSRF value
+    and cookie values wherever the page repeats them (redact)."""
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, re.sub(r'[^A-Za-z0-9._-]+', '-', name) + '.html')
     with open(path, 'w', encoding='utf-8') as f:
@@ -513,7 +580,7 @@ def nb_import(c, run, sid, title, kind, text, fmt, expected, notes=None):
         raise
     except Exception as e:                              # noqa: BLE001 - every step reports
         s['accepted'] = False
-        s['messages'] = ['%s: %s' % (type(e).__name__, redact(e))]
+        s['messages'] = [problem(e)]
     run.done(s)
     return s
 
@@ -588,7 +655,7 @@ def run_netbox(run):
         return
     st = c.api('GET', '/api/status/')
     run.info['version'] = (st.json() or {}).get('netbox-version') if st.status == 200 else None
-    run.info['api_auth'] = 'token' if os.environ.get('NETBOX_TOKEN') else 'session cookie'
+    run.info['api_auth'] = 'token' if c.token else 'session cookie'
     have, _ = c.api_list('/api/dcim/devices/?' + urllib.parse.urlencode({'name__isw': PREFIX, 'limit': 50}))
     have = [o for o in have if str(o.get('name') or '').startswith(PREFIX)]
     if have and '--continue' not in sys.argv:
@@ -666,7 +733,7 @@ def nt_post_json(c, run, sid, title, path, data, expected='accept'):
         raise
     except Exception as e:                              # noqa: BLE001
         s['accepted'] = False
-        s['messages'] = ['%s: %s' % (type(e).__name__, redact(e))]
+        s['messages'] = [problem(e)]
     run.done(s)
     return s
 
@@ -712,7 +779,7 @@ def nt_csv(c, run, sid, title, path, text, expected, notes=None, missing=None):
         raise
     except Exception as e:                              # noqa: BLE001
         s['accepted'] = False
-        s['messages'] = ['%s: %s' % (type(e).__name__, redact(e))]
+        s['messages'] = [problem(e)]
     run.done(s)
     return s
 
@@ -740,7 +807,7 @@ def nt_ui_type(c, run, sid, title, kind, text):
         raise
     except Exception as e:                              # noqa: BLE001
         s['accepted'] = False
-        s['messages'] = ['%s: %s' % (type(e).__name__, redact(e))]
+        s['messages'] = [problem(e)]
     run.done(s)
     return s
 
@@ -919,13 +986,13 @@ def nt_job_probe(c, run, inv):
     except Refused:
         raise
     except Exception as e:                              # noqa: BLE001
-        s['messages'] = ['%s: %s' % (type(e).__name__, redact(e))]
+        s['messages'] = [problem(e)]
     run.done(s)
 
 
 def run_nautobot(run):
     c = Client('nautobot')
-    if not os.environ.get('NAUTOBOT_TOKEN'):
+    if not c.token:
         s = run.step('token', 'NAUTOBOT_TOKEN is set', 'accept')
         s['accepted'], s['messages'] = False, ['NAUTOBOT_TOKEN is not set.']
         run.done(s)
@@ -951,7 +1018,7 @@ def run_nautobot(run):
     ui, why = c.login()
     s = run.step('login', 'sign in to the web UI (needed only for the type YAML import)', 'accept',
                  request={'method': 'POST', 'path': '/login/'})
-    s['accepted'], s['messages'] = (ui if (os.environ.get('NAUTOBOT_USER')) else None), [why]
+    s['accepted'], s['messages'] = (ui if c.user else None), [why]
     run.done(s)
     for man in ('Cisco', 'Edgecore', 'Telco Systems'):
         nt_post_json(c, run, 'prereq_manufacturer_%s' % re.sub(r'\W+', '_', man), 'prerequisite: manufacturer %s' % man,
@@ -1037,13 +1104,13 @@ CLEAN = {
 
 def cleanup(target, dry):
     c = Client(target)
-    if target == 'netbox' and not os.environ.get('NETBOX_TOKEN'):
+    if target == 'netbox' and not c.token:
         ok, why = c.login()
         if not ok:
             say('  [netbox] cannot sign in:', why)
             return 1
         c.page('/dcim/sites/import/')              # a page with a CSRF token for the session's DELETEs
-    if target == 'nautobot' and not os.environ.get('NAUTOBOT_TOKEN'):
+    if target == 'nautobot' and not c.token:
         say('  [nautobot] NAUTOBOT_TOKEN is not set.')
         return 1
     failed = 0
@@ -1059,12 +1126,16 @@ def cleanup(target, dry):
             say('  [%s] %s: could not list (%s)' % (target, ep, err))
             failed += 1
             continue
-        mine = [o for o in items if str(o.get(field) or '').startswith(PREFIX)]   # checked here, whatever the filter did
+        # Checked here, whatever the filter did: the object's OWN name (a cable: its label; a type: its model),
+        # as text, from its first character. Nothing else about it counts, and an object with no id is not one.
+        mine = [o for o in items if isinstance(o.get(field), str) and o[field].startswith(PREFIX)
+                and isinstance(o.get('id'), (str, int)) and not isinstance(o.get('id'), bool) and str(o['id'])]
         for o in mine:
             if dry:
                 say('  [%s] would delete %s %s' % (target, ep, o.get(field)))
                 continue
-            r = c.api('DELETE', '%s%s/' % (ep, o['id']))
+            # The id is one path segment, whatever it holds: "../../users/1" cannot name another list.
+            r = c.api('DELETE', '%s%s/' % (ep, urllib.parse.quote(str(o['id']), safe='')))
             okd = r.status in (200, 204)
             failed += 0 if okd else 1
             say('  [%s] %s %s %s' % (target, 'deleted' if okd else 'COULD NOT DELETE (HTTP %s: %s)' % (r.status, clip(r.text, 300)),
@@ -1177,7 +1248,7 @@ def main(argv):
                 say('  [%s] %s' % (t, e))
                 rc = 1
             except Exception as e:                      # noqa: BLE001
-                say('  [%s] %s: %s' % (t, type(e).__name__, e))
+                say('  [%s] %s' % (t, problem(e)))
                 rc = 1
         return rc
     if cmd == 'run':
@@ -1195,7 +1266,7 @@ def main(argv):
                 run.done(s)
             except Exception as e:                      # noqa: BLE001
                 s = run.step('crashed', 'the run stopped', 'accept')
-                s['accepted'], s['messages'] = False, ['%s: %s' % (type(e).__name__, redact(e))]
+                s['accepted'], s['messages'] = False, [problem(e)]
                 run.done(s)
             write_result(runs, started)
         say('\nWrote %s' % RESULT)
@@ -1211,5 +1282,18 @@ def main(argv):
     return 2
 
 
+def guarded(main, argv):
+    """`main`, with no traceback whatever happens: an error nobody caught is one
+    redacted line and exit 2, an interrupt one line and exit 130."""
+    try:
+        return main(argv)
+    except KeyboardInterrupt:
+        say('Stopped: interrupted. What was created stays; "verify.py cleanup" removes it.')
+        return 130
+    except Exception as e:                              # noqa: BLE001 - never a traceback: it may quote a header
+        say('Stopped: %s' % problem(e))
+        return 2
+
+
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(guarded(main, sys.argv))
