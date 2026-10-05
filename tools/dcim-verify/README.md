@@ -24,13 +24,18 @@ into this directory: their result file, kits and saved pages go to a temporary o
 ## What has been run against real instances
 
 On 2026-10-04 the kits the Rack Builder exported for `acceptance.rack.json` (at commit
-`92efc4b8`) were imported into a real NetBox 4.7 (through the UI's import pages, in the
-README's order: 17 steps, none failed) and a real Nautobot 3.2.6 (the type files
+`2bbe359e`) were imported into a real NetBox 4.7.2 (through the UI's import pages, in
+the README's order: 17 steps, none failed) and a real Nautobot 3.2.6 (the type files
 through its own UI import, the CSVs as `text/csv`, then the kit's own
-`import_cables.py`: a dry run, `--apply`, and `--apply` a second time: 23 steps, none
+`import_cables.py`: a dry run, `--apply`, and `--apply` a second time: 25 steps, none
 failed). The devices and the cables each instance held were compared with the kit's
 rows. That run showed:
 
+- with a second location on the Nautobot holding a rack of the same name as the kit's,
+  the devices file was accepted and every device was in the rack of its own location:
+  `rack__name` and `rack__location__name` together find exactly one rack;
+- `import_cables.py` ties each port to its device by id on a real Nautobot, a card's
+  port (`slot-2/p0`) through its module's bay included;
 - the second `import_cables.py --apply` of the same file reported every row as already
   connected and exited 0;
 - the kits' boundary values were accepted at their exact limits: a 64-character device
@@ -43,19 +48,20 @@ rows. That run showed:
   checked only when `NAUTOBOT_USER` and `NAUTOBOT_PASSWORD` are set: without them the
   `types_…` steps carry `_rest` in their id and test nothing about the YAML import.
 
-An earlier run the same day (16 and 21 steps) found a bug in this kit's client, since
-fixed: the session cookie rode along with the API token, and Nautobot refused every
-such request ("CSRF Failed: CSRF token missing"). A token request now goes through a
-client with no cookie jar (`test_client.py` holds that); only the UI pages use the jar.
+Earlier runs the same day (16 and 21 steps, then 17 and 23) found a bug in this kit's
+client, since fixed: the session cookie rode along with the API token, and Nautobot
+refused every such request ("CSRF Failed: CSRF token missing"). A token request now
+goes through a client with no cookie jar (`test_client.py` holds that); only the UI
+pages use the jar.
 
-**NOT YET RUN against a real instance** (added after the run above; whoever runs the
-next acceptance updates this paragraph): the Nautobot devices file's
-`rack__location__name` column, and the two prerequisite steps that prove it, a second
-location (`<location>-other`) holding a rack with the kit's rack's own name. With them
-`devices_compared` also checks that every device is in the rack of its own location.
-The next run should show NetBox 17 steps and Nautobot 25 steps, none failed. If
-Nautobot refuses the column, the devices step fails with Nautobot's own message, and
-the column goes: the README sentence about racks of the same name then stands alone.
+**Still proven only against a mock**, never against a real instance:
+
+- every refusal path of `import_cables.py`: an ambiguous device, a port already in
+  another cable, a redirect, a refused token (401 or 403), a cable that does not show
+  both of its ends after it is created;
+- an instance with real data in it, beyond the one same-named rack the acceptance
+  makes: every run so far was against instances holding nothing else under these names;
+- any version other than NetBox 4.7.2 and Nautobot 3.2.6.
 
 ## Run the acceptance
 
@@ -152,13 +158,14 @@ boundary rack has 6 device rows and 5 cable rows for NetBox, 7 and 6 for Nautobo
   else wrong.
 - Each target talks to the host in its own `…_URL` and no other: a request or a redirect
   to another host is refused, a list's `next` link is followed by its path on this
-  host only, and no proxy is used. A URL that carries credentials is refused.
+  host only, and no proxy is used. A URL that carries credentials is refused, by `plan`
+  too, and is never shown.
 - No credential is printed, logged or written. Console output, the result files and the
   saved pages pass through a redactor that replaces each credential with `***`: as it
   is, and as Python, JSON or a URL would escape it (an exception that quotes a refused
   header spells it that way). The session's own CSRF value and cookie values are
   redacted the same way. Nothing prints a traceback: an error nobody caught is one
-  redacted line.
+  redacted line that says the kind of error and where it arose (a function and a line).
 
 ## The column probes
 
