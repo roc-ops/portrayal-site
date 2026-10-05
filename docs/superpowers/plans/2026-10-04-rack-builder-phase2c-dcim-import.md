@@ -5054,9 +5054,9 @@ The implementer stops here and reports. **The user** runs this, in their own she
 cd <the repository>
 python3 tools/dcim-verify/export_kits.py           # the two kits, exported from the page
 
-export NETBOX_URL=http://10.33.100.50:8880
+export NETBOX_URL=http://netbox.example.test:8880
 export NETBOX_USER=...        NETBOX_PASSWORD=...
-export NAUTOBOT_URL=http://10.33.100.50:8881
+export NAUTOBOT_URL=http://nautobot.example.test:8881
 export NAUTOBOT_TOKEN=...
 export NAUTOBOT_USER=...      NAUTOBOT_PASSWORD=...  # optional: also imports the type YAML through Nautobot's UI (ruling 11)
 
