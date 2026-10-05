@@ -245,7 +245,14 @@ function commit(nextRack, undoable = null) {
   S.save.saveSoon(S.doc);
   render();
   if (!kept) scheduleRebuild3d();
-  else if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = nextRack;
+  else keepScene(prev, nextRack);
+}
+// A change the scene reads nothing of swaps the rack object under it. The scene
+// is kept and re-pointed at the new rack, but only if it was current for the
+// old one: a scene an earlier edit already made stale stays stale. The ONE
+// place this is decided, for commit() and for the import settings (putDcim).
+function keepScene(prev, next) {
+  if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = next;
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
@@ -518,18 +525,18 @@ function openDcimSettings() {
   select({kind: 'dcim'});
 }
 // Closing the settings form: the keyboard goes back to the Export menu that opened it.
+// Cancel closes without saving what is typed NOW. It does not take back what an
+// export already stored: an export saves the draft (runExport), and the form's
+// help text says so.
 function closeDcimForm(saved) {
   S.dcimDraft = null;
   S.focusNext = 'exportSummary';
-  if (saved) {
-    const now = rack(), next = withDcim(now, saved), d = dcimOf(next);
-    // An export or another rack may have stored the draft already: then the
-    // rack holds it and there is nothing to say. Nothing changed, nothing said.
-    if (JSON.stringify(next.dcim) !== JSON.stringify(now.dcim)) {
-      S.notice = {kind: 'note', text: `DCIM import settings saved: ${d.site ? `site or location "${d.site}"` : 'no site or location'}, ` +
-                                      `${d.role ? `device role "${d.role}"` : 'no device role'}.`};
-      S.sel = null; commit(next); return;
-    }
+  // An export or another rack may have stored the draft already: then the
+  // rack holds it and there is nothing to say. Nothing changed, nothing said.
+  if (saved && putDcim(saved)) {
+    const d = dcimOf(rack());
+    S.notice = {kind: 'note', text: `DCIM import settings saved: ${d.site ? `site or location "${d.site}"` : 'no site or location'}, ` +
+                                    `${d.role ? `device role "${d.role}"` : 'no device role'}.`};
   }
   select(null);
 }
@@ -595,14 +602,29 @@ function renderExports() {
 // saves it rather than losing it, and so does everything that reads or replaces
 // the rack while the form is still open: an export, another rack being opened or
 // created, the page being left. storeDcimDraft() puts the draft into the rack it
-// was typed for, quietly (the scene reads nothing of it), and says whether the
-// rack changed. It keeps the draft, which the open form still shows.
-function storeDcimDraft() {
-  if (!S.dcimDraft) return false;
-  const now = rack(), next = withDcim(now, S.dcimDraft);
+// was typed for, quietly, and says whether the rack changed. It keeps the
+// draft, which the open form still shows.
+function storeDcimDraft() { return !!S.dcimDraft && putDcim(S.dcimDraft); }
+// THE ONE WAY THE IMPORT SETTINGS REACH THE RACK, from Done and from a stored
+// draft alike. Settings are not an edit of what the rack holds, so this is not
+// commit():
+//   - A pending Undo is about something else (a shrink, a cable deleted, a
+//     device removed), so it is neither retired nor allowed to take the
+//     settings back: the rack it would restore gets the same settings. Undo
+//     then brings the devices back and the settings stay.
+//   - The 3D scene reads nothing of them, so a current scene stays current
+//     (keepScene, as commit()'s kept path): the next GLB is not a rebuild.
+// Returns whether the rack changed.
+function putDcim(patch) {
+  const now = rack(), next = withDcim(now, patch);
   if (JSON.stringify(next.dcim) === JSON.stringify(now.dcim)) return false;
+  if (S.undo) {
+    const {dcim: _was, ...bare} = S.undo;
+    S.undo = 'dcim' in next ? {...bare, dcim: next.dcim} : bare;
+  }
   S.doc = {...S.doc, racks: [next]};
   S.save.saveSoon(S.doc);
+  keepScene(now, next);
   return true;
 }
 // If the form is gone and a draft is left, the user went elsewhere: save it.

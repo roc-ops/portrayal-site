@@ -9559,7 +9559,7 @@ def check_rack_dcim_settings_kept(page, base):
     return bad
 
 
-@extra("rack.html: DCIM import settings typed but not saved (Done not pressed) reach an export that follows, and the rack they were typed for when another rack is opened or the page is left")
+@extra("rack.html: DCIM import settings typed but not saved (Done not pressed) reach an export that follows, and the rack they were typed for when another rack is opened or the page is left; a pending Undo keeps them")
 def check_rack_dcim_settings_draft(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9647,6 +9647,110 @@ def check_rack_dcim_settings_draft(page, base):
     got = page.evaluate(stored, rid)
     if got != typed:
         bad.append(f"reload: the saved rack holds {got!r}")
+
+    # 2. A pending Undo is about something else (here a frame shrink). Settings stored while it is pending - from a
+    #    draft, by leaving the form, or with Done - neither retire it nor are lost by it: Undo brings the devices
+    #    back AND the settings are still there.
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.id, i.ru])")
+    dcim = lambda: page.evaluate("() => window.__rack.doc().racks[0].dcim ?? null")
+    for how in ("leaving the form", "Done"):
+        label = f"Undo after {how}"
+        open_fixture(page, base)
+        rid = page.evaluate("() => window.__rack.doc().id")
+        before = items()
+        page.click("#frameBtn")
+        page.fill("#fHeight", "12")
+        page.dispatch_event("#fHeight", "change")
+        wait_fn(page, f"{label}: the frame shrinks", "() => window.__rack.doc().racks[0].frame.heightRU === 12")
+        wait_sel(page, f"{label}: Undo is offered", "#undoShrink")
+        if items() == before:
+            return bad + [f"{label}: the shrink moved nothing; the check proves nothing"]
+        type_draft(label)
+        if how == "Done":
+            page.click("#dDone")
+        else:
+            page.click("#frameBtn")              # another panel: the form is left, and what was typed is stored
+        wait_fn(page, f"{label}: the form closes", "() => !document.getElementById('dcimForm')")
+        wait_fn(page, f"{label}: the settings are stored", "() => window.__rack.doc().racks[0].dcim?.site === 'Typed Lab'")
+        if not page.query_selector("#undoShrink"):
+            bad.append(f"{label}: storing the settings retired the Undo of the shrink")
+            continue
+        if how == "Done" and not page.query_selector("#side [role=status]:has-text('settings saved')"):
+            bad.append(f"{label}: Done did not say the settings were saved")
+        page.click("#undoShrink")
+        wait_fn(page, f"{label}: Undo restores the frame", "() => window.__rack.doc().racks[0].frame.heightRU === 24")
+        if items() != before:
+            bad.append(f"{label}: Undo left the devices at {items()}, not {before}")
+        if dcim() != typed:
+            bad.append(f"{label}: Undo erased the settings: the rack holds {dcim()!r}")
+        page.evaluate("() => window.__rack.flush()")
+        got = page.evaluate(stored, rid)
+        if got != typed:
+            bad.append(f"{label}: the saved rack holds {got!r}")
+        # The export that follows carries them.
+        dl, kit = export_kit(page, "netbox")
+        if any((r["site"], r["role"]) != (typed["site"], typed["role"]) for r in kit_rows(kit, "2-devices.csv")) or \
+                len(kit_rows(kit, "2-devices.csv")) < 2:
+            bad.append(f"{label}: the kit exported after Undo holds {[(r['name'], r['site'], r['role']) for r in kit_rows(kit, '2-devices.csv')]}")
+    return bad
+
+
+@extra("rack.html: in 3D, DCIM import settings stored from a draft or with Done leave the scene current - the GLB exported next is made from the same scene, not a rebuilt one")
+def check_rack_dcim_settings_scene(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    if webgl_trouble(page):
+        print("[check_rack_dcim_settings_scene] WebGL unavailable - not exercised")
+        return bad
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+
+    def draft(label, site):
+        page.evaluate("() => { window.__scene = window.__rack.scene(); }")
+        page.click("#exportMenu > summary")
+        page.click('#exportItems [data-export="dcim-settings"]')
+        wait_sel(page, f"{label}: the form", "#dcimForm")
+        wait_fn(page, f"{label}: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
+        page.keyboard.press("ControlOrMeta+a")
+        page.keyboard.type(site)
+
+    def exported(label, site):
+        """The GLB comes, from the scene that was on screen before the settings were typed."""
+        dl = export_file(page, "glb", timeout=READY_3D_MS)
+        status = export_status(page)
+        if dl.suggested_filename != "Export-test.glb" or not status.startswith("Downloaded"):
+            bad.append(f"{label}: the export gave {dl.suggested_filename!r}, {status!r}")
+        if page.evaluate("() => window.__rack.doc().racks[0].dcim?.site ?? null") != site:
+            bad.append(f"{label}: the rack does not hold the typed site")
+        if not page.evaluate("() => window.__rack.scene() === window.__scene"):
+            bad.append(f"{label}: the scene was rebuilt for settings it reads nothing of")
+
+    # Typed, and the form left for another panel: the draft is stored quietly.
+    draft("left", "Lab A")
+    page.click("#frameBtn")
+    wait_fn(page, "left: the draft is stored", "() => window.__rack.doc().racks[0].dcim?.site === 'Lab A'")
+    exported("a draft stored by leaving the form", "Lab A")
+    # Typed, and exported with the form still open: the export stores the draft first.
+    draft("open", "Lab B")
+    exported("a draft stored by the export itself", "Lab B")
+    page.click("#dCancel")
+    wait_fn(page, "open: Cancel closes the form", "() => !document.getElementById('dcimForm')")
+    # Cancel after an export discards nothing: the export saved what was typed.
+    if page.evaluate("() => window.__rack.doc().racks[0].dcim?.site ?? null") != "Lab B":
+        bad.append("Cancel after an export: the stored settings changed")
+    # Saved with Done.
+    draft("done", "Lab C")
+    page.click("#dDone")
+    wait_fn(page, "done: the form closes", "() => !document.getElementById('dcimForm')")
+    exported("settings saved with Done", "Lab C")
+    # And the scene is not kept when it should not be: a device edit still rebuilds it.
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.map((i, k) => (k ? i : {...i, label: 'renamed'}))}); }""")
+    export_file(page, "glb", timeout=READY_3D_MS)
+    if page.evaluate("() => window.__rack.scene() === window.__scene"):
+        bad.append("a device edit left the old scene in place: the check's own comparison proves nothing")
+    page.click('#rkMode [data-mode="2d"]')
     return bad
 
 

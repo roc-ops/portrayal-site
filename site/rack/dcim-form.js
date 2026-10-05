@@ -12,6 +12,9 @@
 // Done was lost. The page keeps the draft, so leaving the form any other way
 // (a click on the rack, another panel), an export, another rack being opened
 // or created, or the page being left, saves what was typed (rack-page.js storeDcimDraft).
+// So Cancel after an export does not take back what the export saved: the kit
+// that was downloaded holds those names, and the rack agrees with it. The help
+// text says so in one sentence.
 
 import {el} from './dom.js';
 import {dcimOf} from './model.js';
@@ -32,7 +35,7 @@ export function dcimForm({rack, draft = null, onEdit, onDone, onCancel}) {
     field('Site (NetBox) or location (Nautobot)', site),
     field('Device role', role),
     el('p', {id: 'dHelp', class: 'rk-muted',
-             text: 'The names as your NetBox or Nautobot has them. They go into the import kits as typed; both must exist there before you import. Left empty, the kit still exports and its README says which columns to fill in.'}),
+             text: 'The names as your NetBox or Nautobot has them. They go into the import kits as typed; both must exist there before you import. Left empty, the kit still exports and its README says which columns to fill in. Exporting saves what you have typed.'}),
     el('p', {id: 'dStatus', class: 'rk-muted', text: 'Status: planned, for every device, module and cable.'}),
     el('div', {class: 'rk-actions'}, [done, cancel]),
   ]);
