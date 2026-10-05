@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="135.0mm" height="135.0mm" viewBox="0 0 135.0 135.0" data-device="xs-010x-r" data-view="bottom" data-mounting="desktop, or wall by two keyholes 85 mm apart or bracket kit 3FE48249AB/AC/AD (vertical only)" data-pon-line-rate="10 Gb/s downstream and upstream (ITU-T G.9807.1 XGS-PON)" data-max-frame-bytes="9216" data-vlans="4094" data-multicast-groups="1024" data-power-max-w="7.7" data-power-min-w="4.3" data-power-input="12 V DC 1 A wall adapter" data-operating-temp="-5 to 45 C" data-storage-temp="-40 to 65 C" data-humidity="5% to 95% non-condensing" data-memory="256 MB RAM" data-flash="128 MB" data-wan="xgs-pon" data-standards="ITU-T G.9807.1, G.988; BBF.247 Issue 4; IEEE 802.3az" data-pon-wavelengths="1260-1280 nm upstream, 1575-1580 nm downstream" data-pon-launch-power="+4.5 dBm minimum, +9 dBm maximum" data-pon-receive-power="-28.5 to -9 dBm" data-remote="OMCI (ITU-T G.988), Nokia 5520 AMS" data-regulatory="CE, UKCA" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Nokia XS-010X-R","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/keyhole-mount@1":"1.0.0","common/screw-head@1":"1.1.0"},"source-sha256":"ae0bac3dfb79ddbd1633d8a69f3964893fc652e40e88cd4849424b01611e41e9","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XS-010X-R" x="0" y="0" width="135" height="135" rx="1.2" fill="#f7f7f7" stroke="#c9ccd0" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-slots-h" width="14" height="8" patternUnits="userSpaceOnUse">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o0-0-s0_542857-0_2875" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.542857 0.2875)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="outline" data-kind="outline" x="0.4" y="0.4" width="134.2" height="134.2" rx="16" fill="none" stroke="#c9ccd0" stroke-width="0.5" />
+    <rect id="plate" data-kind="outline" x="20.5" y="20" width="94" height="97" rx="2" fill="none" stroke="#c9ccd0" stroke-width="0.3" />
+    <rect id="vent-rear" data-kind="slots-h-field" x="32.5" y="21" width="70" height="25" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="vent-front" data-kind="slots-h-field" x="32.5" y="89.5" width="70" height="26" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="vent-left-a" data-kind="slots-h-field" x="21.5" y="33" width="14" height="29" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="vent-left-b" data-kind="slots-h-field" x="21.5" y="78.5" width="14" height="24" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="vent-right-a" data-kind="slots-h-field" x="99.5" y="33" width="14" height="29" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="vent-right-b" data-kind="slots-h-field" x="99.5" y="78.5" width="14" height="24" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_542857-0_2875)" />
+    <rect id="label-recess" data-kind="outline" x="37.5" y="47.6" width="59.9" height="39.9" rx="0.6" fill="none" stroke="#c9ccd0" stroke-width="0.3" />
+    <rect id="foot-1" data-kind="plate" x="19.6" y="19.9" width="11.4" height="11.4" rx="5.7" fill="#e3e5e8" />
+    <rect id="foot-2" data-kind="plate" x="104" y="19.9" width="11.4" height="11.4" rx="5.7" fill="#e3e5e8" />
+    <rect id="foot-3" data-kind="plate" x="19.6" y="104" width="11.4" height="11.4" rx="5.7" fill="#e3e5e8" />
+    <rect id="foot-4" data-kind="plate" x="104" y="104" width="11.4" height="11.4" rx="5.7" fill="#e3e5e8" />
+  </g>
+  <g id="keyhole-1" data-path="keyhole-1" data-class="mount" data-ref="common/keyhole-mount@1:1.0.0" data-rel-pos="2" transform="translate(21.2,64.3)" data-group="furniture" data-group-role="furniture">
+    <title>keyhole-1</title>
+    <path id="keyhole-1--keyhole" d="M 4 1.2 a 2.8 2.8 0 0 1 2.8 2.8 a 2.8 2.8 0 0 1 -1.5 2.48 l 0 3.5 a 1.3 1.3 0 0 1 -2.6 0 l 0 -3.5 a 2.8 2.8 0 0 1 -1.5 -2.48 a 2.8 2.8 0 0 1 2.8 -2.8 z" fill="#17191c" data-path="keyhole-1/keyhole" data-class="mount" />
+  </g>
+  <g id="keyhole-2" data-path="keyhole-2" data-class="mount" data-ref="common/keyhole-mount@1:1.0.0" data-rel-pos="3" transform="translate(105.7,64.3)" data-group="furniture" data-group-role="furniture">
+    <title>keyhole-2</title>
+    <path id="keyhole-2--keyhole" d="M 4 1.2 a 2.8 2.8 0 0 1 2.8 2.8 a 2.8 2.8 0 0 1 -1.5 2.48 l 0 3.5 a 1.3 1.3 0 0 1 -2.6 0 l 0 -3.5 a 2.8 2.8 0 0 1 -1.5 -2.48 a 2.8 2.8 0 0 1 2.8 -2.8 z" fill="#17191c" data-path="keyhole-2/keyhole" data-class="mount" />
+  </g>
+  <g id="case-screw" data-path="case-screw" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(48.9,68.3)" data-group="furniture" data-group-role="furniture">
+    <title>case-screw</title>
+    <circle id="case-screw--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="case-screw--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="case-screw--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

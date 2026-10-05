@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="18.35mm" height="13.13mm" viewBox="0 -3.13 18.35 13.13">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="qsfp-dd-mpo16" data-path="qsfp-dd-mpo16" data-class="transceiver" data-behaviour="occupies" data-ref="generic/qsfp-dd-mpo16@1:1.0.0" data-depth="58.26" data-face="mpo16" data-form-factor="qsfp-dd" data-media="fiber" data-power-absent="not-applicable" transform="translate(0,0)">
+    <title>qsfp-dd-mpo16</title>
+    <rect id="qsfp-dd-mpo16--body" x="0.1" y="-3.03" width="18.15" height="12.93" rx="0.8" fill="#8d949c" stroke="#61686f" stroke-width="0.18" data-z-out="31.9" data-z-color="#8d949c" />
+    <rect id="qsfp-dd-mpo16--insert" x="2.625" y="-0.45" width="13.1" height="9.4" rx="0.5" fill="#1b1e22" />
+    <g font-family="sans-serif" font-size="0.6" fill="#61686f" text-anchor="middle">
+      <g id="qsfp-dd-mpo16--silkscreen">
+        <text id="qsfp-dd-mpo16--label" x="9.175" y="9.65" data-from="label" />
+      </g>
+    </g>
+    <g id="qsfp-dd-mpo16--mpo16" data-path="qsfp-dd-mpo16/mpo16" data-class="port" data-ref="std/mpo16-module-receptacle@1:1.0.0" data-depth="9.0" data-wall="#15181b" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(2.725,0.25)" data-z-lift="31.9">
+      <title>qsfp-dd-mpo16--mpo16</title>
+      <rect id="qsfp-dd-mpo16--mpo16--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#0c0e10" stroke="#1b1e22" stroke-width="0.25" data-path="qsfp-dd-mpo16/mpo16/opening" data-class="cutout" />
+      <rect id="qsfp-dd-mpo16--mpo16--keyway" x="5.545" y="0.4" width="4.05" height="1.08" rx="0.15" fill="#23282d" />
+      <rect id="qsfp-dd-mpo16--mpo16--ferrule" x="3.27" y="2.77" width="6.36" height="2.46" rx="0.2" fill="#30363d" stroke="#4a4f55" stroke-width="0.1" data-z-top="5.0" />
+      <circle id="qsfp-dd-mpo16--mpo16--pin-l" cx="3.8" cy="4" r="0.3" fill="#b9bfc6" data-z-top="6.8" data-z-color="#b9bfc6" />
+      <circle id="qsfp-dd-mpo16--mpo16--pin-r" cx="9.1" cy="4" r="0.3" fill="#b9bfc6" data-z-top="6.8" data-z-color="#b9bfc6" />
+      <circle id="qsfp-dd-mpo16--mpo16--1" cx="8.325" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/1" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--2" cx="8.075" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/2" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--3" cx="7.825" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/3" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--4" cx="7.575" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/4" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--5" cx="7.325" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/5" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--6" cx="7.075" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/6" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--7" cx="6.825" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/7" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--8" cx="6.575" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/8" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--9" cx="6.325" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/9" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--10" cx="6.075" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/10" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--11" cx="5.825" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/11" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--12" cx="5.575" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/12" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--13" cx="5.325" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/13" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--14" cx="5.075" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/14" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--15" cx="4.825" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/15" data-class="fibre" />
+      <circle id="qsfp-dd-mpo16--mpo16--16" cx="4.575" cy="4" r="0.0625" fill="#e8ecef" data-path="qsfp-dd-mpo16/mpo16/16" data-class="fibre" />
+      <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+    </g>
+    <g id="qsfp-dd-mpo16--tab" data-path="qsfp-dd-mpo16/tab" data-class="latch" data-ref="common/qsfp-dd-pull-tab-type2@1:1.0.0" data-latch-color="#d9cba3" data-role="pull-latch" transform="translate(0.0,-3.13)" data-z-lift="31.9">
+      <title>qsfp-dd-mpo16--tab</title>
+      <rect id="qsfp-dd-mpo16--tab--riser-l" x="0" y="0" width="2.25" height="10" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/riser-l" data-class="latch" data-z-out="38.7" />
+      <rect id="qsfp-dd-mpo16--tab--riser-r" x="16.1" y="0" width="2.25" height="10" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/riser-r" data-class="latch" data-z-out="38.7" />
+      <rect id="qsfp-dd-mpo16--tab--arm-l-2" x="0" y="0" width="2.25" height="8.3" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-l-2" data-class="latch" data-z-out="41.55" data-z-lift="6.8" />
+      <rect id="qsfp-dd-mpo16--tab--arm-r-2" x="16.1" y="0" width="2.25" height="8.3" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-r-2" data-class="latch" data-z-out="41.55" data-z-lift="6.8" />
+      <rect id="qsfp-dd-mpo16--tab--arm-l-3" x="0" y="0" width="2.25" height="4.9" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-l-3" data-class="latch" data-z-out="44.4" data-z-lift="9.65" />
+      <rect id="qsfp-dd-mpo16--tab--arm-r-3" x="16.1" y="0" width="2.25" height="4.9" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-r-3" data-class="latch" data-z-out="44.4" data-z-lift="9.65" />
+      <rect id="qsfp-dd-mpo16--tab--arm-l" x="0" y="0" width="2.25" height="3.2" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-l" data-class="latch" data-z-out="60.3" data-z-lift="12.5" />
+      <rect id="qsfp-dd-mpo16--tab--arm-r" x="16.1" y="0" width="2.25" height="3.2" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/arm-r" data-class="latch" data-z-out="60.3" data-z-lift="12.5" />
+      <rect id="qsfp-dd-mpo16--tab--grip" x="0" y="0" width="18.35" height="3.2" rx="0.3" fill="#d9cba3" stroke="#847c63" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-dd-mpo16/tab/grip" data-class="latch" data-z-out="69.0" data-z-lift="28.4" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.175 4.25" data-cp-dir="front" />
+    <g data-cp="optical" data-cp-at="9.175 4.25" data-cp-dir="front" />
+  </g>
+</svg>

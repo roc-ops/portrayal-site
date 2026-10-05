@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="437.0mm" height="43.0mm" viewBox="0 0 437.0 43.0" data-device="sys-111e-wr" data-view="front" data-ru="1" data-weight-kg="9.53" data-weight-gross-kg="15.2" data-power-input="100-240 VAC, 50-60 Hz, per supply (860 W at 200-240 VAC and 240 VDC, 800 W at 100-127 VAC)" data-psu-redundancy="1+1" data-fans="five 40 x 40 x 56 mm counter-rotating PWM fans, with space for a sixth" data-operating-temp-c="10 to 35" data-storage-temp-c="-30 to 60" data-operating-humidity="8 to 80% non-condensing" data-storage-humidity="8 to 90% non-condensing" data-cpu="one 4th or 5th generation Intel Xeon Scalable processor, socket E (LGA-4677), up to 300 W TDP" data-memory="8 DDR5 DIMM slots, up to 2 TB of 5600 MT/s ECC RDIMM" data-chipset="Intel C741" data-motherboard="X13SEW-F" data-storage-controller="onboard SATA, 6 Gbps; NVMe and SAS need the optional cables or controller card" data-network="two 1GbE RJ45 (Intel i210)" data-bmc="dedicated 1GbE BMC LAN port" data-regulatory="FCC, ICES, CE, UKCA, VCCI, RCM, NRTL, CB" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-activity { --led-color: #f59e0b; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-activity { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-bmc-reset { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-bmc-reset { animation: portrayal-blink 0.5s linear infinite; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-checking { --led-color: #22c55e; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-checking { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-fan-fail { --led-color: #ef4444; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-fan-fail { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-identify { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-on { --led-color: #22c55e; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-overheat { --led-color: #ef4444; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-power-fail { --led-color: #ef4444; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-power-fail { animation: portrayal-blink 4s linear infinite; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-uid-local { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-uid-remote { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/control-panel-sc116b@'] .state-uid-remote { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-activity { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-activity { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-do-not-remove { --led-color: #f59e0b; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-do-not-remove { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-identify { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-identify { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-idle-sas { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-rebuild { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-rebuild { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-safe-to-remove { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Supermicro SuperServer SYS-111E-WR","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"std/usb-a@1":"1.3.0","supermicro/control-panel-sc116b@1":"1.0.0","supermicro/drive-tray-25@1":"1.0.0","supermicro/pull-out-tag-sc116b@1":"1.0.0"},"source-sha256":"98f3b90dce48612709f88ef10a8cb730bc7a683ccebd52666fdd9b0c3a2c7e3d","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="SuperServer SYS-111E-WR" x="0" y="0" width="437" height="43" rx="1.2" fill="#c8ccd0" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="437" height="43" rx="0.6" fill="#1b1d1f" />
+    <rect id="plate-1" data-kind="plate" x="401.3" y="0.6" width="35.4" height="41.8" rx="0.6" fill="#202326" />
+    <rect id="plate-2" data-kind="plate" x="57" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-3" data-kind="plate" x="67.9" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-4" data-kind="plate" x="83.15" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-5" data-kind="plate" x="94.05" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-6" data-kind="plate" x="104.95" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-7" data-kind="plate" x="115.85" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-8" data-kind="plate" x="126.75" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-9" data-kind="plate" x="137.65" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-10" data-kind="plate" x="148.55" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-11" data-kind="plate" x="163.8" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-12" data-kind="plate" x="174.7" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-13" data-kind="plate" x="185.6" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-14" data-kind="plate" x="196.5" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-15" data-kind="plate" x="207.4" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-16" data-kind="plate" x="218.3" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-17" data-kind="plate" x="229.2" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-18" data-kind="plate" x="244.45" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-19" data-kind="plate" x="255.35" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-20" data-kind="plate" x="266.25" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-21" data-kind="plate" x="277.15" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-22" data-kind="plate" x="288.05" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-23" data-kind="plate" x="298.95" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-24" data-kind="plate" x="309.85" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-25" data-kind="plate" x="325.1" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-26" data-kind="plate" x="336" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-27" data-kind="plate" x="346.9" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-28" data-kind="plate" x="357.8" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-29" data-kind="plate" x="368.7" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-30" data-kind="plate" x="379.6" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+    <rect id="plate-31" data-kind="plate" x="390.5" y="1.4" width="9.2" height="4.4" rx="0.6" fill="#08090a" />
+  </g>
+  <g id="pull-out-tag" data-path="pull-out-tag" data-class="tab" data-behaviour="fills" data-ref="supermicro/pull-out-tag-sc116b@1:1.0.0" data-rel-pos="1" transform="translate(1.5,1.2)" data-group="tags" data-group-role="furniture">
+    <title>pull-out-tag</title>
+    <rect id="pull-out-tag--tag" x="0.15" y="0.15" width="51.7" height="4.7" rx="0.5" fill="#26292c" stroke="#0e0f10" stroke-width="0.3" data-path="pull-out-tag/tag" data-class="label" />
+    <rect x="3" y="1.6" width="12" height="1.8" rx="0.9" fill="#0e0f10" />
+  </g>
+  <g id="control-panel" data-path="control-panel" data-class="control-panel" data-ref="supermicro/control-panel-sc116b@1:1.0.0" data-rel-pos="1" transform="translate(407.5,5.0)" data-group="controls" data-group-role="management" data-for="chassis">
+    <title>control-panel</title>
+    <rect id="control-panel--plate" x="0.15" y="0.15" width="21.7" height="19.7" rx="0.5" fill="#202326" stroke="#0e0f10" stroke-width="0.3" />
+    <circle id="control-panel--lamp-info" cx="4.4" cy="3.1" r="0.9" fill="var(--led-color, #2b2e31)" stroke="#0c0d0e" stroke-width="0.2" data-path="control-panel/lamp-info" data-class="led" data-states="off overheat fan-fail power-fail uid-local uid-remote bmc-reset" data-description="Information LED. Solid red - overheat; red 1 Hz - fan failure; red 0.25 Hz - power failure; solid blue - UID activated locally; blue 1 Hz - UID activated from the BMC; blue 2 Hz - BMC resetting. Also: red solid with the power LED blinking green - fault; blue and red at 10 Hz - recovery mode; blue 4 Hz - BMC setting factory defaults; blue 10 Hz with the power LED blinking green - BMC or BIOS firmware updating." />
+    <circle id="control-panel--lamp-nic2" cx="7.8" cy="3.1" r="0.9" fill="var(--led-color, #2b2e31)" stroke="#0c0d0e" stroke-width="0.2" data-path="control-panel/lamp-nic2" data-class="led" data-states="off activity" data-description="NIC2 LED. Flashing - network activity on LAN2. Colour and rate are not stated; drawn green at 4 Hz." />
+    <circle id="control-panel--lamp-nic1" cx="11.1" cy="3.1" r="0.9" fill="var(--led-color, #2b2e31)" stroke="#0c0d0e" stroke-width="0.2" data-path="control-panel/lamp-nic1" data-class="led" data-states="off activity" data-description="NIC1 LED. Flashing - network activity on LAN1. Colour and rate are not stated; drawn green at 4 Hz." />
+    <circle id="control-panel--lamp-hdd" cx="14.5" cy="3.1" r="0.9" fill="var(--led-color, #2b2e31)" stroke="#0c0d0e" stroke-width="0.2" data-path="control-panel/lamp-hdd" data-class="led" data-states="off activity" data-description="HDD LED. Flashing - activity on the storage drives. Colour and rate are not stated; drawn amber at 4 Hz." />
+    <circle id="control-panel--lamp-power" cx="18.1" cy="3.1" r="0.9" fill="var(--led-color, #2b2e31)" stroke="#0c0d0e" stroke-width="0.2" data-path="control-panel/lamp-power" data-class="led" data-states="off on checking" data-description="Power LED. Steady on - power on; blinking at 4 Hz - checking BIOS/BMC integrity. Also 4 Hz with the information LED blue - BIOS firmware updating; two blinks and a pause - BMC firmware updating; 1 Hz with the information LED red - fault detected. The colour is not stated in the table; drawn green." />
+    <g id="control-panel--btn-uid" data-path="control-panel/btn-uid" data-class="button" data-description="UID button. Turns the blue UID indicators on at the front and the rear; also resets the BMC (manual section 7.8).">
+      <circle cx="5.7" cy="13.4" r="2.6" fill="#d5d8db" stroke="#7d848b" stroke-width="0.3" />
+      <circle cx="5.7" cy="13.4" r="1.5" fill="#2b2e31" stroke="#7d848b" stroke-width="0.3" />
+      <circle id="control-panel--lamp-uid" cx="5.7" cy="13.4" r="0.7" fill="var(--led-color, #c9ced3)" data-path="control-panel/lamp-uid" data-class="led" data-states="off identify" data-description="the UID lamp in the button. Blue when the unit identifier is activated." />
+    </g>
+    <circle id="control-panel--btn-power" cx="17.0" cy="13.4" r="2.7" fill="#8f3a3f" stroke="#5c2327" stroke-width="0.3" data-path="control-panel/btn-power" data-class="button" data-description="Power button. Applies or removes primary power, standby power stays; hold four seconds to force a shutdown." data-z-out="1.0" data-z-color="#8f3a3f" />
+    <g id="control-panel--silkscreen" fill="none" stroke="#c9ced3" stroke-width="0.22" font-family="sans-serif">
+      <text x="4.4" y="7.4" font-size="2.2" font-style="italic" font-weight="bold" text-anchor="middle" fill="#c9ced3" stroke="none">i</text>
+      <path d="M6.6 7.3 H9.0 L7.8 5.3 Z M7.5 5.6 H8.1" />
+      <text x="7.8" y="9.3" font-size="1.3" text-anchor="middle" fill="#c9ced3" stroke="none">2</text>
+      <path d="M9.9 7.3 H12.3 L11.1 5.3 Z M10.8 5.6 H11.4" />
+      <text x="11.1" y="9.3" font-size="1.3" text-anchor="middle" fill="#c9ced3" stroke="none">1</text>
+      <path d="M13.6 5.5 H15.4 V7.3 H13.6 Z M13.6 5.5 A0.9 0.35 0 0 1 15.4 5.5" />
+      <path d="M18.1 5.3 A0.75 0.75 0 0 1 18.5 6.7 V7.3 H17.7 V6.7 A0.75 0.75 0 0 1 18.1 5.3 Z" />
+      <text x="3.0" y="18.9" font-size="1.5" text-anchor="middle" fill="#c9ced3" stroke="none">UID</text>
+      <path d="M17.9 17.6 A0.85 0.85 0 1 0 19.1 17.6 M18.5 17.0 V18.0" />
+      <path d="M9.2 18.0 H13.4 M12.6 17.5 L13.4 18.0 L12.6 18.5 M10.3 18.0 L11.2 17.1 H11.9 M10.9 18.0 L11.8 18.9 H12.4" />
+    </g>
+  </g>
+  <g id="usb-front-1" data-path="usb-front-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.2 Gen1" data-rel-pos="1" transform="translate(412.6,26.25)" data-group="usb" data-group-role="management" data-description="the six USB Type-A ports: two USB 3.2 Gen1 at the front, two USB 2.0 and two USB 3.2 Gen1 at the rear">
+    <title>usb-front-1</title>
+    <rect id="usb-front-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-front-1/opening" data-class="cutout" />
+    <rect id="usb-front-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-front-2" data-path="usb-front-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.2 Gen1" data-rel-pos="2" transform="translate(412.6,34.35)" data-group="usb" data-group-role="management" data-description="the six USB Type-A ports: two USB 3.2 Gen1 at the front, two USB 2.0 and two USB 3.2 Gen1 at the rear">
+    <title>usb-front-2</title>
+    <rect id="usb-front-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-front-2/opening" data-class="cutout" />
+    <rect id="usb-front-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="drive-0" data-path="drive-0" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="0">
+    <title>drive-0</title>
+    <rect id="drive-0--opening" x="1.3" y="27.3" width="76" height="14" fill="#101214" />
+    <g id="drive-0--module" data-path="drive-0/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(39.3,34.3) translate(-38,-7)">
+      <title>drive-0--module</title>
+      <rect id="drive-0--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-0--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-0--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-0--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-0/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-0--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-0/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-0--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-0/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-1" data-path="drive-1" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="1">
+    <title>drive-1</title>
+    <rect id="drive-1--opening" x="1.3" y="10.3" width="76" height="14" fill="#101214" />
+    <g id="drive-1--module" data-path="drive-1/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(39.3,17.3) translate(-38,-7)">
+      <title>drive-1--module</title>
+      <rect id="drive-1--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-1--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-1--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-1--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-1/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-1--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-1/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-1--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-1/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-2" data-path="drive-2" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="2">
+    <title>drive-2</title>
+    <rect id="drive-2--opening" x="81.95" y="27.3" width="76" height="14" fill="#101214" />
+    <g id="drive-2--module" data-path="drive-2/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(119.95,34.3) translate(-38,-7)">
+      <title>drive-2--module</title>
+      <rect id="drive-2--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-2--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-2--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-2--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-2/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-2--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-2/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-2--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-2/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-3" data-path="drive-3" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="3">
+    <title>drive-3</title>
+    <rect id="drive-3--opening" x="81.95" y="10.3" width="76" height="14" fill="#101214" />
+    <g id="drive-3--module" data-path="drive-3/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(119.95,17.3) translate(-38,-7)">
+      <title>drive-3--module</title>
+      <rect id="drive-3--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-3--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-3--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-3--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-3/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-3--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-3/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-3--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-3/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-4" data-path="drive-4" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="4">
+    <title>drive-4</title>
+    <rect id="drive-4--opening" x="162.6" y="27.3" width="76" height="14" fill="#101214" />
+    <g id="drive-4--module" data-path="drive-4/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(200.6,34.3) translate(-38,-7)">
+      <title>drive-4--module</title>
+      <rect id="drive-4--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-4--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-4--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-4--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-4/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-4--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-4/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-4--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-4/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-5" data-path="drive-5" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="5">
+    <title>drive-5</title>
+    <rect id="drive-5--opening" x="162.6" y="10.3" width="76" height="14" fill="#101214" />
+    <g id="drive-5--module" data-path="drive-5/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(200.6,17.3) translate(-38,-7)">
+      <title>drive-5--module</title>
+      <rect id="drive-5--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-5--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-5--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-5--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-5/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-5--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-5/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-5--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-5/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-6" data-path="drive-6" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="6">
+    <title>drive-6</title>
+    <rect id="drive-6--opening" x="243.25" y="27.3" width="76" height="14" fill="#101214" />
+    <g id="drive-6--module" data-path="drive-6/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(281.25,34.3) translate(-38,-7)">
+      <title>drive-6--module</title>
+      <rect id="drive-6--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-6--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-6--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-6--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-6/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-6--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-6/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-6--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-6/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-7" data-path="drive-7" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="7">
+    <title>drive-7</title>
+    <rect id="drive-7--opening" x="243.25" y="10.3" width="76" height="14" fill="#101214" />
+    <g id="drive-7--module" data-path="drive-7/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(281.25,17.3) translate(-38,-7)">
+      <title>drive-7--module</title>
+      <rect id="drive-7--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-7--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-7--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-7--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-7/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-7--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-7/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-7--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-7/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-8" data-path="drive-8" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="8">
+    <title>drive-8</title>
+    <rect id="drive-8--opening" x="323.9" y="27.3" width="76" height="14" fill="#101214" />
+    <g id="drive-8--module" data-path="drive-8/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(361.9,34.3) translate(-38,-7)">
+      <title>drive-8--module</title>
+      <rect id="drive-8--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-8--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-8--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-8--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-8/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-8--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-8/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-8--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-8/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+  <g id="drive-9" data-path="drive-9" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="9">
+    <title>drive-9</title>
+    <rect id="drive-9--opening" x="323.9" y="10.3" width="76" height="14" fill="#101214" />
+    <g id="drive-9--module" data-path="drive-9/module" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(361.9,17.3) translate(-38,-7)">
+      <title>drive-9--module</title>
+      <rect id="drive-9--module--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="drive-9--module--windows">
+        <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+        <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      </g>
+      <g id="drive-9--module--vents">
+        <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+        <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      </g>
+      <rect id="drive-9--module--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-9/module/release" data-class="latch" data-z-out="1.5" />
+      <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+      <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+      <circle id="drive-9--module--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-9/module/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+      <circle id="drive-9--module--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-9/module/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="135.0mm" height="30.0mm" viewBox="0 0 135.0 30.0" data-device="xs-010x-r" data-view="rear" data-mounting="desktop, or wall by two keyholes 85 mm apart or bracket kit 3FE48249AB/AC/AD (vertical only)" data-pon-line-rate="10 Gb/s downstream and upstream (ITU-T G.9807.1 XGS-PON)" data-max-frame-bytes="9216" data-vlans="4094" data-multicast-groups="1024" data-power-max-w="7.7" data-power-min-w="4.3" data-power-input="12 V DC 1 A wall adapter" data-operating-temp="-5 to 45 C" data-storage-temp="-40 to 65 C" data-humidity="5% to 95% non-condensing" data-memory="256 MB RAM" data-flash="128 MB" data-wan="xgs-pon" data-standards="ITU-T G.9807.1, G.988; BBF.247 Issue 4; IEEE 802.3az" data-pon-wavelengths="1260-1280 nm upstream, 1575-1580 nm downstream" data-pon-launch-power="+4.5 dBm minimum, +9 dBm maximum" data-pon-receive-power="-28.5 to -9 dBm" data-remote="OMCI (ITU-T G.988), Nokia 5520 AMS" data-regulatory="CE, UKCA" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Nokia XS-010X-R","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/dc-barrel@1":"1.0.0","common/laser-warning@1":"1.0.0","common/power-button@1":"1.0.1","common/reset-button@1":"1.1.0","std/rj45@2":"2.1.0","std/sc-bore@1":"1.0.0"},"source-sha256":"ae0bac3dfb79ddbd1633d8a69f3964893fc652e40e88cd4849424b01611e41e9","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XS-010X-R" x="0" y="0" width="135" height="30" rx="1.2" fill="#f7f7f7" stroke="#c9ccd0" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="slot-l1" data-kind="plate" x="0" y="3.5" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-l2" data-kind="plate" x="0" y="5.87" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-l3" data-kind="plate" x="0" y="8.25" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-l4" data-kind="plate" x="0" y="10.62" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-l5" data-kind="plate" x="0" y="13" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-r1" data-kind="plate" x="129.5" y="3.5" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-r2" data-kind="plate" x="129.5" y="5.87" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-r3" data-kind="plate" x="129.5" y="8.25" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-r4" data-kind="plate" x="129.5" y="10.62" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="slot-r5" data-kind="plate" x="129.5" y="13" width="5.5" height="1.26" rx="0.6" fill="#d3d6d9" />
+    <rect id="shoulder" data-kind="plate" x="0" y="20" width="135" height="0.2" rx="0.6" fill="#d3d6d9" />
+    <rect id="pon-adapter" data-kind="bezel" x="28.8" y="8.3" width="13.6" height="9.9" rx="0.5" fill="#75ba2b" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="35.6" y="4.55" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#9a9da1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pon">PON</text>
+    <text x="59.2" y="4.55" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#9a9da1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan">LAN-10GE</text>
+    <text x="76.3" y="4.55" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#9a9da1" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <text x="87.8" y="4.55" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#9a9da1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-in">POWER</text>
+    <text x="100.3" y="4.55" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#9a9da1" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-btn">ON/OFF</text>
+  </g>
+  <g id="pon" data-path="pon" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" data-pon="xgs-pon" data-speed="10g" data-rel-pos="1" transform="translate(31.405,8.75) rotate(90 4.195 4.5)" data-group="pon" data-group-role="traffic" data-description="the XGS-PON uplink, an SC/APC receptacle in a green adapter">
+    <title>pon</title>
+    <path id="pon--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="pon/bore" data-class="cutout" />
+    <rect id="pon--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+    <rect id="pon--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+    <circle id="pon--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+    <circle id="pon--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+    <circle id="pon--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+    <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+  </g>
+  <g id="lan" data-path="lan" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-speed="10g" data-rel-pos="1" transform="translate(51.3,5.1)" data-group="rj45-10g" data-group-role="traffic" data-description="the one subscriber port, 100M/1G/2.5G/5G/10GBASE-T">
+    <title>lan</title>
+    <path id="lan--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="lan--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="lan--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan/opening" data-class="cutout" />
+    <g id="lan--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="2" transform="translate(74.3,12.0)" data-group="controls" data-group-role="management" data-description="the on/off button and the reset pinhole; this box has no management port, so the group is what you press" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="dc-in" data-path="dc-in" data-class="inlet" data-ref="common/dc-barrel@1:1.0.0" data-input="dc" data-rel-pos="1" transform="translate(81.8,6.0)" data-group="inlets" data-group-role="service" data-description="the 12 V DC jack">
+    <title>dc-in</title>
+    <rect id="dc-in--body" x="0" y="0" width="12" height="13" rx="0.8" fill="#c9cdd1" />
+    <rect id="dc-in--inlet" x="1.5" y="2" width="9" height="9" rx="1" fill="#17191c" stroke="#5c6167" stroke-width="0.3" data-path="dc-in/inlet" data-class="inlet" />
+    <circle id="dc-in--inlet-bore" cx="6" cy="6.5" r="3.1" fill="#000000" />
+    <circle id="dc-in--inlet-pin" cx="6" cy="6.5" r="0.9" fill="#8a9099" />
+    <g data-cp="power" data-cp-at="6 6.5" data-cp-dir="front" />
+  </g>
+  <g id="power-btn" data-path="power-btn" data-class="button" data-ref="common/power-button@1:1.0.1" data-rel-pos="1" transform="translate(94.3,6.2)" data-group="controls" data-group-role="management" data-description="the on/off button and the reset pinhole; this box has no management port, so the group is what you press" data-for="chassis">
+    <title>power-btn</title>
+    <circle id="power-btn--bezel" cx="6" cy="6" r="5" fill="#b6bcc2" />
+    <circle id="power-btn--button" cx="6" cy="6" r="4.1" fill="var(--led-color, #f2f4f6)" stroke="#9aa1a8" stroke-width="0.35" data-path="power-btn/button" data-class="button" data-states="off on" />
+  </g>
+  <g id="laser-mark" data-path="laser-mark" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" data-rel-pos="1" transform="translate(21.3,10.85)" data-group="furniture" data-group-role="furniture" data-for="pon">
+    <title>laser-mark</title>
+    <path id="laser-mark--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+    <g id="laser-mark--burst" fill="#1a1a1a">
+      <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+      <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+      <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+      <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+    </g>
+  </g>
+</svg>

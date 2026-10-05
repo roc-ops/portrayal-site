@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="135.0mm" height="135.0mm" viewBox="0 0 135.0 135.0" data-device="xs-010x-r" data-view="top" data-mounting="desktop, or wall by two keyholes 85 mm apart or bracket kit 3FE48249AB/AC/AD (vertical only)" data-pon-line-rate="10 Gb/s downstream and upstream (ITU-T G.9807.1 XGS-PON)" data-max-frame-bytes="9216" data-vlans="4094" data-multicast-groups="1024" data-power-max-w="7.7" data-power-min-w="4.3" data-power-input="12 V DC 1 A wall adapter" data-operating-temp="-5 to 45 C" data-storage-temp="-40 to 65 C" data-humidity="5% to 95% non-condensing" data-memory="256 MB RAM" data-flash="128 MB" data-wan="xgs-pon" data-standards="ITU-T G.9807.1, G.988; BBF.247 Issue 4; IEEE 802.3az" data-pon-wavelengths="1260-1280 nm upstream, 1575-1580 nm downstream" data-pon-launch-power="+4.5 dBm minimum, +9 dBm maximum" data-pon-receive-power="-28.5 to -9 dBm" data-remote="OMCI (ITU-T G.988), Nokia 5520 AMS" data-regulatory="CE, UKCA" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-data.state-activity-10g, #led-data .state-activity-10g { --led-color: #2f6fd6; }
+    #led-data.state-activity-10g [data-class='led'], #led-data .state-activity-10g { animation: portrayal-blink 1s linear infinite; }
+    #led-data.state-activity-1g, #led-data .state-activity-1g { --led-color: #22c55e; }
+    #led-data.state-activity-1g [data-class='led'], #led-data .state-activity-1g { animation: portrayal-blink 1s linear infinite; }
+    #led-data.state-activity-2g5, #led-data .state-activity-2g5 { --led-color: #f59e0b; }
+    #led-data.state-activity-2g5 [data-class='led'], #led-data .state-activity-2g5 { animation: portrayal-blink 1s linear infinite; }
+    #led-data.state-activity-5g, #led-data .state-activity-5g { --led-color: #f5f7fa; }
+    #led-data.state-activity-5g [data-class='led'], #led-data .state-activity-5g { animation: portrayal-blink 1s linear infinite; }
+    #led-power.state-fault, #led-power .state-fault { --led-color: #e02020; }
+    #led-power.state-firmware-download, #led-power .state-firmware-download { --led-color: #22c55e; }
+    #led-power.state-firmware-download [data-class='led'], #led-power .state-firmware-download { animation: portrayal-blink 1s linear infinite; }
+    #led-data.state-link-10g, #led-data .state-link-10g { --led-color: #2f6fd6; }
+    #led-data.state-link-1g, #led-data .state-link-1g { --led-color: #22c55e; }
+    #led-data.state-link-2g5, #led-data .state-link-2g5 { --led-color: #f59e0b; }
+    #led-data.state-link-5g, #led-data .state-link-5g { --led-color: #f5f7fa; }
+    #led-power.state-on, #led-power .state-on { --led-color: #22c55e; }
+    #led-alarm.state-optical-power-out-of-range, #led-alarm .state-optical-power-out-of-range { --led-color: #e02020; }
+    #led-pon.state-ranged, #led-pon .state-ranged { --led-color: #22c55e; }
+    #led-pon.state-synchronising, #led-pon .state-synchronising { --led-color: #22c55e; }
+    #led-pon.state-synchronising [data-class='led'], #led-pon .state-synchronising { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Nokia XS-010X-R","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0"},"source-sha256":"ae0bac3dfb79ddbd1633d8a69f3964893fc652e40e88cd4849424b01611e41e9","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XS-010X-R" data-sku="XS-010X-R" data-part-number="" x="0" y="0" width="135" height="135" rx="1.2" fill="#f7f7f7" stroke="#c9ccd0" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="outline" data-kind="outline" x="0.4" y="0.4" width="134.2" height="134.2" rx="16" fill="none" stroke="#c9ccd0" stroke-width="0.5" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="54.5" y="11" width="26" height="6" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="117.3" y="84.69" font-family="sans-serif" font-size="2.6" text-anchor="start" fill="#9a9da1" transform="rotate(180 117.3 84.69)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-power">POWER</text>
+    <text x="117.3" y="72.69" font-family="sans-serif" font-size="2.6" text-anchor="start" fill="#9a9da1" transform="rotate(180 117.3 72.69)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pon">PON</text>
+    <text x="117.3" y="60.69" font-family="sans-serif" font-size="2.6" text-anchor="start" fill="#9a9da1" transform="rotate(180 117.3 60.69)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alarm">ALARM</text>
+    <text x="117.3" y="48.69" font-family="sans-serif" font-size="2.6" text-anchor="start" fill="#9a9da1" transform="rotate(180 117.3 48.69)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-data">DATA</text>
+  </g>
+  <g id="led-power" data-path="led-power" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(118.6,84.5)" data-group="leds" data-group-role="indicator" data-description="the four lamps on the top face" data-states="off on firmware-download fault" data-for="chassis">
+    <title>led-power</title>
+    <circle id="led-power--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-power--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-power/lamp" data-class="led" data-states="off on firmware-download fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-pon" data-path="led-pon" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(118.6,72.5)" data-group="leds" data-group-role="indicator" data-description="the four lamps on the top face" data-states="off ranged synchronising" data-for="/rear/pon">
+    <title>led-pon</title>
+    <circle id="led-pon--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pon--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pon/lamp" data-class="led" data-states="off ranged synchronising" data-z-dome="0.3" />
+  </g>
+  <g id="led-alarm" data-path="led-alarm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(118.6,60.5)" data-group="leds" data-group-role="indicator" data-description="the four lamps on the top face" data-states="off optical-power-out-of-range" data-for="/rear/pon">
+    <title>led-alarm</title>
+    <circle id="led-alarm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alarm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alarm/lamp" data-class="led" data-states="off optical-power-out-of-range" data-z-dome="0.3" />
+  </g>
+  <g id="led-data" data-path="led-data" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(118.6,48.5)" data-group="leds" data-group-role="indicator" data-description="the four lamps on the top face" data-states="off link-1g activity-1g link-2g5 activity-2g5 link-5g activity-5g link-10g activity-10g" data-for="/rear/lan">
+    <title>led-data</title>
+    <circle id="led-data--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-data--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-data/lamp" data-class="led" data-states="off link-1g activity-1g link-2g5 activity-2g5 link-5g activity-5g link-10g activity-10g" data-z-dome="0.3" />
+  </g>
+</svg>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="76.0mm" height="14.0mm" viewBox="0 0 76.0 14.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='supermicro/drive-tray-25@'] .state-activity { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-activity { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-do-not-remove { --led-color: #f59e0b; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-do-not-remove { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-identify { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-identify { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-idle-sas { --led-color: #3b82f6; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-rebuild { --led-color: #ef4444; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-rebuild { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='supermicro/drive-tray-25@'] .state-safe-to-remove { --led-color: #22c55e; }</style>
+  <g id="drive-tray-25" data-path="drive-tray-25" data-class="drive" data-behaviour="fills" data-ref="supermicro/drive-tray-25@1:1.0.0" data-body-depth="125.0" data-wall="#141618" data-form-factor="2.5in" transform="translate(0,0)">
+    <title>drive-tray-25</title>
+    <rect id="drive-tray-25--body" x="0.15" y="0.15" width="75.7" height="13.7" rx="0.8" fill="#222528" stroke="#0e0f10" stroke-width="0.3" />
+    <g id="drive-tray-25--windows">
+      <rect x="2.4" y="1.3" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+      <rect x="2.4" y="7.4" width="13.4" height="4.9" rx="2.2" fill="#2c3340" />
+    </g>
+    <g id="drive-tray-25--vents">
+      <rect x="18.6" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      <rect x="18.6" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      <rect x="31.2" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      <rect x="31.2" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      <rect x="43.8" y="1.6" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+      <rect x="43.8" y="7.7" width="10.2" height="4.3" rx="2" fill="#0b0c0d" />
+    </g>
+    <rect id="drive-tray-25--release" x="57.2" y="1.5" width="12.4" height="10.1" rx="0.7" fill="#8e3b3d" data-fill-from="release-color" stroke="#572425" data-stroke-derive="release-color" stroke-width="0.3" data-path="drive-tray-25/release" data-class="latch" data-z-out="1.5" />
+    <path d="M60.3 2.2 V10.9 M63.4 2.2 V10.9 M66.5 2.2 V10.9" stroke="#6e2d2f" stroke-width="0.5" />
+    <rect x="70.6" y="0.8" width="4.6" height="12.4" rx="0.5" fill="#17191b" />
+    <circle id="drive-tray-25--lamp-activity" cx="72.9" cy="2.6" r="0.75" fill="var(--led-color, #232a36)" data-path="drive-tray-25/lamp-activity" data-class="led" data-states="off idle-sas activity" data-description="Activity. Solid blue - idle SAS drive installed; blinking blue - I/O activity; off - idle SATA drive or no drive. The blink rate is not stated and is drawn at 4 Hz." />
+    <circle id="drive-tray-25--lamp-status" cx="72.9" cy="5.4" r="0.75" fill="var(--led-color, #33262a)" data-path="drive-tray-25/lamp-status" data-class="led" data-states="off fault rebuild identify safe-to-remove do-not-remove" data-description="Status. Solid red - drive failure; red 1 Hz - rebuild; red 4 Hz - identify (each with VROC support); solid green - safe to remove an NVMe device; amber 1 Hz - do not remove an NVMe device. The hot-spare and power-on patterns are not drawn." />
+  </g>
+</svg>

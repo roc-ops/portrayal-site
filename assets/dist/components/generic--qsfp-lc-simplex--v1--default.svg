@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="19mm" height="12.2mm" viewBox="-0.325 -2.2 19 12.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="qsfp-lc-simplex" data-path="qsfp-lc-simplex" data-class="transceiver" data-behaviour="occupies" data-ref="generic/qsfp-lc-simplex@1:1.0.0" data-depth="52.4" data-face="lc-simplex" data-form-factor="qsfp" data-media="fiber" data-power-absent="not-applicable" transform="translate(0,0)">
+    <title>qsfp-lc-simplex</title>
+    <rect id="qsfp-lc-simplex--body" x="0.1" y="-2.1" width="18.15" height="12.0" rx="0.8" fill="#8d949c" stroke="#61686f" stroke-width="0.18" data-z-out="19.2" data-z-color="#8d949c" />
+    <rect id="qsfp-lc-simplex--opening" x="3.40" y="0.65" width="11.55" height="6.90" rx="0.4" fill="#2a2f34" />
+    <path id="qsfp-lc-simplex--empty-bay" fill="#15181b" d="     M 10.98 0.95 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7       h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" />
+    <g font-family="sans-serif" font-size="0.9" fill="#61686f" text-anchor="middle">
+      <g id="qsfp-lc-simplex--silkscreen">
+        <text x="6.05" y="8.30">T/R</text>
+        <text id="qsfp-lc-simplex--label" x="12.30" y="8.30" data-from="label" />
+      </g>
+    </g>
+    <g id="qsfp-lc-simplex--bore" data-path="qsfp-lc-simplex/bore" data-class="port" data-ref="std/lc-bore@3:3.0.2" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(3.7,0.95) rotate(180 2.35 3.15)" data-z-lift="19.2">
+      <title>qsfp-lc-simplex--bore</title>
+      <path id="qsfp-lc-simplex--bore--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="qsfp-lc-simplex/bore/bore" data-class="cutout" />
+      <rect id="qsfp-lc-simplex--bore--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+      <rect id="qsfp-lc-simplex--bore--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+      <rect id="qsfp-lc-simplex--bore--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+      <circle id="qsfp-lc-simplex--bore--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="qsfp-lc-simplex--bore--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+    </g>
+    <g id="qsfp-lc-simplex--tab" data-path="qsfp-lc-simplex/tab" data-class="latch" data-ref="common/qsfp-pull-tab@2:2.2.0" data-role="pull-latch" transform="translate(-0.325,-1.23)" data-z-lift="19.2">
+      <title>qsfp-lc-simplex--tab</title>
+      <rect id="qsfp-lc-simplex--tab--arm-l-2" x="0" y="1.16" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l-2" data-class="latch" data-z-out="44.5" data-z-lift="22.0" />
+      <rect id="qsfp-lc-simplex--tab--arm-l-3" x="0" y="1.92" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l-3" data-class="latch" data-z-out="47.8" data-z-lift="25.3" />
+      <rect id="qsfp-lc-simplex--tab--arm-l-4" x="0" y="2.26" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l-4" data-class="latch" data-z-out="51.2" data-z-lift="28.6" />
+      <rect id="qsfp-lc-simplex--tab--arm-l-5" x="0" y="2.17" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l-5" data-class="latch" data-z-out="54.5" data-z-lift="32.0" />
+      <rect id="qsfp-lc-simplex--tab--arm-l-6" x="0" y="1.62" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l-6" data-class="latch" data-z-out="57.8" data-z-lift="35.3" />
+      <rect id="qsfp-lc-simplex--tab--arm-r-2" x="17.05" y="1.16" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r-2" data-class="latch" data-z-out="44.5" data-z-lift="22.0" />
+      <rect id="qsfp-lc-simplex--tab--arm-r-3" x="17.05" y="1.92" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r-3" data-class="latch" data-z-out="47.8" data-z-lift="25.3" />
+      <rect id="qsfp-lc-simplex--tab--arm-r-4" x="17.05" y="2.26" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r-4" data-class="latch" data-z-out="51.2" data-z-lift="28.6" />
+      <rect id="qsfp-lc-simplex--tab--arm-r-5" x="17.05" y="2.17" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r-5" data-class="latch" data-z-out="54.5" data-z-lift="32.0" />
+      <rect id="qsfp-lc-simplex--tab--arm-r-6" x="17.05" y="1.62" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r-6" data-class="latch" data-z-out="57.8" data-z-lift="35.3" />
+      <rect id="qsfp-lc-simplex--tab--riser-l" x="0" y="3.66" width="1.95" height="4.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/riser-l" data-class="latch" data-z-out="26.7" />
+      <rect id="qsfp-lc-simplex--tab--riser-r" x="17.05" y="3.66" width="1.95" height="4.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/riser-r" data-class="latch" data-z-out="26.7" />
+      <rect id="qsfp-lc-simplex--tab--grip" x="0" y="0" width="19.0" height="2.9" rx="0.3" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/grip" data-class="latch" data-z-out="69.0" data-z-lift="38.6" />
+      <rect id="qsfp-lc-simplex--tab--arm-l" x="0" y="0.76" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-l" data-class="latch" data-z-out="41.2" />
+      <rect id="qsfp-lc-simplex--tab--arm-r" x="17.05" y="0.76" width="1.95" height="2.9" fill="#6f6f6f" stroke="#444444" stroke-width="0.12" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="qsfp-lc-simplex/tab/arm-r" data-class="latch" data-z-out="41.2" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.175 4.25" data-cp-dir="front" />
+    <g data-cp="optical" data-cp-at="6.05 4.9" data-cp-dir="front" />
+  </g>
+</svg>

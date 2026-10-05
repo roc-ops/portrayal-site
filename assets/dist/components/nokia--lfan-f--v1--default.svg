@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="38.1mm" height="348.5mm" viewBox="0 0 38.1 348.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/lfan-f@'] .state-fail { --led-color: #d0021b; }
+    g[data-ref^='nokia/lfan-f@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/lfan-f@'] .state-reset { --led-color: #f5a623; }
+    g[data-ref^='nokia/lfan-f@'] .state-starting { --led-color: #39b54a; }
+    g[data-ref^='nokia/lfan-f@'] .state-starting { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="lfan-f" data-path="lfan-f" data-class="fan" data-behaviour="fills" data-ref="nokia/lfan-f@1:1.0.0" data-body-depth="233.3" data-wall="#565f6a" data-fans="6" data-hot-swap="yes" data-model="LFAN-F" data-part-number="3FE 79719 AA" data-power-draw-max-w="275" data-power-draw-typical-w="18" data-weight-kg="2.08" transform="translate(0,0)">
+    <title>lfan-f</title>
+    <rect id="lfan-f--face" x="0" y="0" width="38.1" height="348.5" rx="0.6" fill="#565f6a" stroke="#3b424b" stroke-width="0.3" />
+    <rect id="lfan-f--location-led" x="16.6" y="271.6" width="6.0" height="19.5" rx="3.0" fill="var(--led-color, #7c838b)" stroke="#474d55" stroke-width="0.25" data-path="lfan-f/location-led" data-class="led" data-states="off on" />
+    <g id="lfan-f--caution-label" data-path="lfan-f/caution-label" data-class="label">
+      <rect x="27.0" y="300.5" width="5.0" height="46.0" fill="none" />
+      <circle cx="29.5" cy="343.6" r="1.9" fill="none" stroke="#e6e8ea" stroke-width="0.3" />
+      <path d="M 29.5 342.4 L 30.6 344.4 L 28.4 344.4 Z" fill="#e6e8ea" />
+      <path d="M 29.5 336.2 L 31.5 339.8 L 27.5 339.8 Z" fill="#f2c200" stroke="#1b1d20" stroke-width="0.25" />
+    </g>
+    <g id="lfan-f--silkscreen">
+      <text x="20.7" y="50.05" font-family="Arial" font-size="6.4" fill="#f2f3f4" text-anchor="middle" textLength="71.1" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 20.7 50.05)">Nokia Lightspan MF-8</text>
+      <text x="19.7" y="311.6" font-family="Arial" font-size="2.0" fill="#f2f3f4" text-anchor="middle" transform="rotate(-90 19.7 311.6)">PWR</text>
+      <text x="30.1" y="319.0" font-family="Arial" font-size="1.7" fill="#f2f3f4" text-anchor="middle" transform="rotate(-90 30.1 319.0)">CAUTION ROTATING FAN</text>
+    </g>
+    <g id="lfan-f--handle" data-path="lfan-f/handle" data-class="handle" data-z-out="18.0">
+      <rect x="16.2" y="122.6" width="5.6" height="102.0" rx="2.8" fill="#8c9197" stroke="#474d55" stroke-width="0.25" />
+      <rect x="17.3" y="124.0" width="2.4" height="99.2" rx="1.2" fill="#d5d7da" />
+    </g>
+    <g id="lfan-f--unlock-button" data-path="lfan-f/unlock-button" data-class="button" data-z-out="2.0">
+      <rect x="11.8" y="325.0" width="14.9" height="14.9" rx="1.6" fill="#1b1d20" stroke="#0e0f11" stroke-width="0.3" />
+      <rect x="17.6" y="330.1" width="3.4" height="2.6" rx="0.3" fill="#f2f3f4" />
+      <path d="M 18.3 330.1 V 329.3 A 1.0 1.0 0 0 1 20.3 329.3 V 330.1" fill="none" stroke="#f2f3f4" stroke-width="0.45" />
+    </g>
+    <g id="lfan-f--led-pwr" data-path="lfan-f/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(18.1,305.4)" data-group="status-leds" data-group-role="indicator" data-description="the PWR fan status lamp; the location lamp is the window above it">
+      <title>lfan-f--led-pwr</title>
+      <circle id="lfan-f--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lfan-f--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lfan-f/led-pwr/lamp" data-class="led" data-states="off on starting fail reset" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="19.05 174.25" data-cp-dir="rear" />
+  </g>
+</svg>

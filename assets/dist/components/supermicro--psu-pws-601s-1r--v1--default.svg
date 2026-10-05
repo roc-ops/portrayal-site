@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.5mm" height="40.0mm" viewBox="0 0 54.5 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='supermicro/psu-pws-601s-1r@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='supermicro/psu-pws-601s-1r@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="psu-pws-601s-1r" data-path="psu-pws-601s-1r" data-class="psu" data-behaviour="fills" data-ref="supermicro/psu-pws-601s-1r@1:1.0.0" data-body-depth="220.0" data-wall="#3a4045" data-inlet="dc-terminal" data-input="-44 to -65 VDC" data-model="PWS-601S-1R" data-power-output-w="600" transform="translate(0,0)">
+    <title>psu-pws-601s-1r</title>
+    <rect id="psu-pws-601s-1r--body" x="0.2" y="0.2" width="54.1" height="39.6" rx="0.4" fill="#c8ccd0" stroke="#8f969d" stroke-width="0.3" />
+    <g id="psu-pws-601s-1r--vents" data-path="psu-pws-601s-1r/vents" data-class="vent">
+      <rect x="17.4" y="2.7" width="4" height="4.4" rx="0.4" fill="#16181a" />
+      <rect x="22" y="2.7" width="4" height="4.4" rx="0.4" fill="#16181a" />
+      <rect x="36" y="21" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="36" y="27.2" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="36" y="33.4" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="41.6" y="21" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="41.6" y="27.2" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="41.6" y="33.4" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="47.2" y="21" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="47.2" y="27.2" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+      <rect x="47.2" y="33.4" width="4.6" height="5.2" rx="0.4" fill="#16181a" />
+    </g>
+    <circle id="psu-pws-601s-1r--lamp" cx="12.4" cy="6.0" r="1.6" fill="var(--led-color, #4a3b34)" stroke="#5f666d" stroke-width="0.3" data-path="psu-pws-601s-1r/lamp" data-class="led" data-states="off ok fault" data-description="Power supply status. Off - no power input; amber - power supply is off or failed; green - on and operating." />
+    <circle cx="32.9" cy="7.3" r="1.5" fill="#8c98a6" stroke="#5f666d" stroke-width="0.3" />
+    <circle cx="39.2" cy="7.3" r="1.5" fill="#8c98a6" stroke="#5f666d" stroke-width="0.3" />
+    <g id="psu-pws-601s-1r--terminals">
+      <rect x="15.8" y="14.7" width="18.4" height="23.3" rx="0.6" fill="#d9dbdd" stroke="#8f969d" stroke-width="0.3" />
+      <path d="M25.0 14.7 V38.0" stroke="#8f969d" stroke-width="0.3" />
+      <rect id="psu-pws-601s-1r--terminal-rtn" x="17.6" y="31.0" width="5.6" height="4.6" rx="0.4" fill="#6b7178" data-path="psu-pws-601s-1r/terminal-rtn" data-class="inlet" data-description="+Return, the positive terminal (battery return)" />
+      <rect id="psu-pws-601s-1r--terminal-48v" x="26.8" y="31.0" width="5.6" height="4.6" rx="0.4" fill="#6b7178" data-path="psu-pws-601s-1r/terminal-48v" data-class="inlet" data-description="-48 Vdc, the negative terminal (battery)" />
+      <circle cx="20.4" cy="17.4" r="1.2" fill="#8f969d" />
+      <circle cx="29.6" cy="17.4" r="1.2" fill="#8f969d" />
+    </g>
+    <g id="psu-pws-601s-1r--silkscreen" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#22262a">
+      <text x="22.8" y="24.6" font-size="3.4" transform="rotate(-90 22.8 24.6)">RTN</text>
+      <text x="32.0" y="24.6" font-size="3.4" transform="rotate(-90 32.0 24.6)">-48V</text>
+    </g>
+    <rect id="psu-pws-601s-1r--release" x="39.8" y="36.4" width="11.2" height="3.6" rx="0.8" fill="#7d2f33" stroke="#531c1f" stroke-width="0.3" data-path="psu-pws-601s-1r/release" data-class="latch" data-z-out="4.0" data-z-color="#7d2f33" />
+    <path id="psu-pws-601s-1r--handle" d="M1.9 4.2 a3.1 3.1 0 0 1 6.2 0 V38.6 a1.2 1.2 0 0 1 -1.2 1.2 h-3.8 a1.2 1.2 0 0 1 -1.2 -1.2 Z" fill="#e4e6e8" stroke="#9aa1a8" stroke-width="0.3" data-path="psu-pws-601s-1r/handle" data-class="handle" data-z-uhandle="14.0" data-z-color="#e4e6e8" />
+    <g id="psu-pws-601s-1r--ground" data-path="psu-pws-601s-1r/ground" data-class="ground" data-ref="common/ground-screw-washer@1:1.0.0" transform="translate(38.9,9.0)">
+      <title>psu-pws-601s-1r--ground</title>
+      <circle id="psu-pws-601s-1r--ground--washer" cx="5.5" cy="5.5" r="5.4" fill="#b9c0c6" stroke="#7d858c" stroke-width="0.25" data-path="psu-pws-601s-1r/ground/washer" data-class="ground" data-z-cyl="0.8" data-z-color="#b9c0c6" />
+      <g id="psu-pws-601s-1r--ground--screw" data-path="psu-pws-601s-1r/ground/screw" data-class="ground" data-z-cyl="2.6" data-z-lift="0.8" data-z-color="#d7dde2">
+        <circle cx="5.5" cy="5.5" r="4.0" fill="#d7dde2" stroke="#8a9299" stroke-width="0.25" />
+        <path d="M 4.0 5.5 H 7.0 M 5.5 4.0 V 7.0" stroke="#5f676e" stroke-width="0.7" stroke-linecap="round" />
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="196.15mm" height="42.8mm" viewBox="0 0 196.15 42.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/lpwr-f@'] .state-fault { --led-color: #d0021b; }
+    g[data-ref^='nokia/lpwr-f@'] .state-on { --led-color: #39b54a; }</style>
+  <g id="lpwr-f" data-path="lpwr-f" data-class="power" data-behaviour="fills" data-ref="nokia/lpwr-f@1:1.0.0" data-body-depth="202.6" data-breaker="2 x 40 A DPST" data-current-max-a="80" data-current-max-a-variants="AA 80 A (2 x 40 A); AB 100 A (2 x 50 A)" data-feeds="1" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-40.5 to -72 VDC" data-model="LPWR-F" data-nominal-voltage="-48 / -60 VDC" data-part-number="3FE 79723 AA" data-part-number-variants="3FE 79723 AA, 3FE 79723 AB" data-power-output-scope="pass-through-ceiling" data-power-output-w="3840" data-role="dc-power-entry" data-weight-kg="1.2" transform="translate(0,0)">
+    <title>lpwr-f</title>
+    <rect id="lpwr-f--face" x="0" y="0" width="196.15" height="42.8" rx="0.4" fill="#444c54" stroke="#2b3138" stroke-width="0.25" />
+    <g id="lpwr-f--esd-mark" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-linejoin="round" data-path="lpwr-f/esd-mark" data-class="marking">
+      <path d="M 189.4 37.8 L 194.4 35.4 L 194.4 40.2 Z" />
+      <path d="M 191.6 37.1 L 193.5 38.8" />
+    </g>
+    <g id="lpwr-f--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#e8eaec">
+      <text x="146.4" y="24.7" font-size="2.2" text-anchor="middle" data-from="rating">2 X 40A</text>
+      <text x="22.4" y="31.1" font-size="1.9" fill="#9a9da1">PWR</text>
+      <text x="46.6" y="12.3" font-size="1.9" fill="#77797d">BAT</text>
+    </g>
+    <g id="lpwr-f--connector-block" data-path="lpwr-f/connector-block" data-class="terminal" data-z-out="27.95" data-z-color="#232527">
+      <rect x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+      <g id="lpwr-f--bat-terminal" opacity="0.55">
+        <path d="M 22.2 8.2 L 47.7 17.8 L 44.3 29.6 L 16.6 21.6 Z" fill="#5a5d61" stroke="#3a3c3f" stroke-width="0.25" />
+        <circle cx="25.6" cy="15.5" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+        <path d="M 23.1 15.5 H 28.1 M 25.6 13.0 V 18.0" stroke="#3a3c3f" stroke-width="0.5" />
+        <circle cx="39.6" cy="21.4" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+        <path d="M 37.1 21.4 H 42.1 M 39.6 18.9 V 23.9" stroke="#3a3c3f" stroke-width="0.5" />
+      </g>
+      <rect id="lpwr-f--door" x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#232527" fill-opacity="0.5" stroke="#0e0f10" stroke-width="0.3" />
+      <path d="M 9.6 5.9 H 110.6" stroke="#0e0f10" stroke-width="0.3" />
+      <circle id="lpwr-f--door-lock" cx="13.6" cy="30.4" r="1.8" fill="#2f3134" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="13.6" cy="30.4" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+      <g id="lpwr-f--hazard-label">
+        <rect x="70.6" y="7.3" width="36.3" height="23.6" rx="0.5" fill="#8a8c8f" stroke="#55585c" stroke-width="0.25" />
+        <path d="M 75.8 19.1 L 84.6 14.3 L 84.6 23.9 Z" fill="#f2c200" stroke="#1b1c1e" stroke-width="0.5" stroke-linejoin="round" />
+        <path d="M 83.0 19.1 H 80.0" stroke="#1b1c1e" stroke-width="0.7" stroke-linecap="round" />
+        <circle cx="78.6" cy="19.1" r="0.4" fill="#1b1c1e" />
+        <g id="lpwr-f--hazard-silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#1b1c1e">
+          <text x="91.4" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 91.4 19.1)">ENERGY</text>
+          <text x="94.3" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 94.3 19.1)">HAZARD</text>
+          <text x="98.6" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 98.6 19.1)">Disconnect</text>
+          <text x="100.7" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 100.7 19.1)">before service</text>
+        </g>
+      </g>
+    </g>
+    <g id="lpwr-f--screw-left" data-path="lpwr-f/screw-left" data-class="screw" data-z-cyl="2.0">
+      <circle cx="4.7" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="4.7" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+    </g>
+    <g id="lpwr-f--screw-right" data-path="lpwr-f/screw-right" data-class="screw" data-z-cyl="2.0">
+      <circle cx="191.3" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="191.3" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+    </g>
+    <g id="lpwr-f--breaker" data-path="lpwr-f/breaker" data-class="switch" data-z-out="8.0" data-z-color="#1b1c1e">
+      <rect x="121.0" y="2.6" width="44.2" height="18.0" rx="1.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="125.3" cy="11.6" r="2.0" fill="#2a2c2f" stroke="#55585c" stroke-width="0.3" />
+      <circle cx="125.3" cy="11.6" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+      <rect id="lpwr-f--breaker-rocker" x="132.1" y="3.9" width="29.0" height="15.4" rx="0.6" fill="#0c0d0e" stroke="#2f3134" stroke-width="0.3" />
+      <rect x="132.1" y="3.9" width="17.6" height="15.4" rx="0.6" fill="#141517" />
+      <path d="M 149.7 3.9 V 19.3" stroke="#2f3134" stroke-width="0.3" />
+    </g>
+    <g id="lpwr-f--handle" data-path="lpwr-f/handle" data-class="handle" data-z-uhandle="20.0" data-z-dia="3.2">
+      <rect x="178.9" y="2.8" width="5.4" height="26.2" rx="2.7" fill="#3a4047" stroke="#2b3138" stroke-width="0.2" />
+      <rect x="180.0" y="3.7" width="3.2" height="24.4" rx="1.6" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+    </g>
+    <g id="lpwr-f--led-pwr" data-path="lpwr-f/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(19.6,29.3)" data-group="status-leds" data-group-role="indicator" data-description="the one PWR lamp, under the connector block door">
+      <title>lpwr-f--led-pwr</title>
+      <circle id="lpwr-f--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lpwr-f--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lpwr-f/led-pwr/lamp" data-class="led" data-states="off on fault" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="98.075 21.4" data-cp-dir="rear" />
+    <g data-cp="power" data-cp-at="60.1 35.2" data-cp-dir="down" />
+  </g>
+</svg>

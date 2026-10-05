@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400.5mm" height="35.0mm" viewBox="0 0 400.5 35.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/lbnt-a@'] .state-active { --led-color: #f5a623; }
+    g[data-ref^='nokia/lbnt-a@'] .state-activity { --led-color: #f5a623; }
+    g[data-ref^='nokia/lbnt-a@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/lbnt-a@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/lbnt-a@'] .state-gb-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/lbnt-a@'] .state-initialising { --led-color: #39b54a; }
+    g[data-ref^='nokia/lbnt-a@'] .state-initialising { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/lbnt-a@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/lbnt-a@'] .state-operational { --led-color: #39b54a; }
+    g[data-ref^='nokia/lbnt-a@'] .state-operational { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="lbnt-a" data-path="lbnt-a" data-class="supervisor" data-behaviour="fills" data-ref="nokia/lbnt-a@1:1.0.0" data-body-depth="217.0" data-wall="#8d9298" data-breakout="PORT 1 and PORT 2: 1x 100GE, 1x 40GE, 4x 25GE or 4x 10GE; 1x 25GE or 1x 10GE through a QSFP28 to SFP28/SFP+ adapter" data-model="LBNT-A" data-part-number="3FE 79417 AA" data-part-number-variants="3FE 79417 AA, 3FE 79417 AB" data-power-draw-max-w="140" data-power-draw-typical-w="130" data-power-scope="full load, including two 100GE QSFP28 modules" data-qsfp28="2" data-sfp-plus="1" data-switch-capacity="2 Tbps" data-variants="LBNT-A AA (3FE 79417 AA); LBNT-A AB (3FE 79417 AB): secure boot, PTP port at 1 or 10 Gb/s" data-weight-kg="2.5" transform="translate(0,0)">
+    <title>lbnt-a</title>
+    <rect id="lbnt-a--face" x="5.13" y="0" width="390.33" height="34.4" rx="0.5" fill="#4c545e" stroke="#39404a" stroke-width="0.3" />
+    <rect id="lbnt-a--rail" x="8.11" y="34.4" width="384.37" height="0.6" fill="#c9ccce" />
+    <rect x="77.48" y="8.35" width="27.47" height="22.05" rx="0.4" fill="#c4c6c8" stroke="#8d9298" stroke-width="0.2" />
+    <rect id="lbnt-a--well-ptp" x="78.46" y="9.54" width="25.94" height="19.87" fill="#6f7479" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/well-ptp" data-class="mechanical" data-depth="16.11" data-wall="#8d9298" />
+    <rect x="110.95" y="8.5" width="58.11" height="22.05" rx="0.4" fill="#c4c6c8" stroke="#8d9298" stroke-width="0.2" />
+    <rect id="lbnt-a--well-uplink" x="111.92" y="9.54" width="56.43" height="20.02" fill="#6f7479" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/well-uplink" data-class="mechanical" data-depth="18.76" data-wall="#8d9298" />
+    <rect x="137.43" y="8.5" width="1.08" height="22.05" fill="#c4c6c8" stroke="#8d9298" stroke-width="0.15" />
+    <rect x="202.51" y="21.4" width="14.04" height="7.71" rx="3.85" fill="#c8cacc" stroke="#8d9298" stroke-width="0.2" />
+    <rect x="204.21" y="23.19" width="10.64" height="4.13" rx="2.06" fill="#e6e7e8" stroke="#9a9da0" stroke-width="0.15" />
+    <rect x="219.39" y="21.4" width="14.04" height="7.71" rx="3.85" fill="#c8cacc" stroke="#8d9298" stroke-width="0.2" />
+    <rect x="221.09" y="23.19" width="10.64" height="4.13" rx="2.06" fill="#e6e7e8" stroke="#9a9da0" stroke-width="0.15" />
+    <rect x="239.19" y="12.57" width="17.29" height="14.9" rx="0.3" fill="#a9abae" stroke="#7d8187" stroke-width="0.2" />
+    <rect x="263.04" y="12.57" width="17.29" height="14.9" rx="0.3" fill="#a9abae" stroke="#7d8187" stroke-width="0.2" />
+    <rect x="286.84" y="13.27" width="17.34" height="14.3" rx="0.3" fill="#a9abae" stroke="#7d8187" stroke-width="0.2" />
+    <g id="lbnt-a--marks" fill="none" stroke="#f2f3f4" stroke-width="0.3" stroke-linejoin="round">
+      <path d="M 48.61 6.73 L 43.83 9.39 L 48.61 12.04 Z" />
+      <path d="M 44.9 7.6 L 48.2 11.0 M 46.5 9.0 q 0.5 -0.6 1.1 -0.1 q 0.5 0.6 0.1 1.3" stroke-width="0.2" />
+      <path d="M 48.61 14.59 L 43.83 17.29 L 48.61 19.99 Z" />
+      <path d="M 47.6 16.3 q -0.5 0.5 0 1 q 0.5 0.5 0 1 M 46.8 16.3 q -0.5 0.5 0 1 q 0.5 0.5 0 1 M 46.0 16.6 q -0.4 0.35 0 0.7 q 0.4 0.35 0 0.7" stroke-width="0.2" />
+      <path d="M 48.61 22.54 L 43.83 25.24 L 48.61 27.94 Z" />
+      <path d="M 47.0 24.3 v 1.9 M 46.05 25.25 h 1.9 M 46.33 24.58 l 1.34 1.34 M 46.33 25.92 l 1.34 -1.34" stroke-width="0.2" />
+    </g>
+    <g id="lbnt-a--arrow-label" fill="none" stroke="#f2f3f4" stroke-width="0.2" stroke-linejoin="round" data-path="lbnt-a/arrow-label" data-class="label">
+      <rect x="365.16" y="1.89" width="14.91" height="10.93" />
+      <path d="M 372.34 10.23 V 6.21 H 370.6 L 373.05 3.9 L 375.5 6.21 H 373.75 V 10.23 Z" />
+    </g>
+    <g id="lbnt-a--silkscreen">
+      <text x="27.72" y="17.29" font-family="Arial" font-size="3.4" fill="#f2f3f4" text-anchor="middle" dominant-baseline="central" textLength="11.74" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 27.72 17.29)">LBNT-A</text>
+      <text x="32.44" y="14.82" font-family="Arial" font-size="2.4" font-weight="bold" fill="#f2f3f4" text-anchor="middle" dominant-baseline="central" textLength="4.6" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 32.44 14.82)">PWR</text>
+      <text x="37.49" y="14.97" font-family="Arial" font-size="2.4" font-weight="bold" fill="#f2f3f4" text-anchor="middle" dominant-baseline="central" textLength="4.3" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 37.49 14.97)">A/S</text>
+      <text x="32.44" y="29.4" font-family="Arial" font-size="2.4" font-weight="bold" fill="#f2f3f4" text-anchor="middle" dominant-baseline="central" textLength="4.6" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 32.44 29.4)">ALM</text>
+      <text x="37.49" y="29.4" font-family="Arial" font-size="2.4" font-weight="bold" fill="#f2f3f4" text-anchor="middle" dominant-baseline="central" textLength="4.6" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 37.49 29.4)">PTP</text>
+      <text x="91.2" y="32.3" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="5.0" lengthAdjust="spacingAndGlyphs">PTP</text>
+      <text x="117.05" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="7.12" lengthAdjust="spacingAndGlyphs">PORT 1</text>
+      <text x="126.03" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">1</text>
+      <text x="128.83" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">2</text>
+      <text x="131.81" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">3</text>
+      <text x="134.72" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">4</text>
+      <text x="144.05" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="7.5" lengthAdjust="spacingAndGlyphs">PORT 2</text>
+      <text x="152.84" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">1</text>
+      <text x="155.64" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">2</text>
+      <text x="158.62" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">3</text>
+      <text x="161.54" y="33.1" font-family="Arial" font-size="2.55" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="1.1" lengthAdjust="spacingAndGlyphs">4</text>
+      <text x="209.53" y="32.13" font-family="Arial" font-size="2.1" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="7.42" lengthAdjust="spacingAndGlyphs">DEBUG</text>
+      <text x="226.41" y="32.13" font-family="Arial" font-size="2.1" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="4.2" lengthAdjust="spacingAndGlyphs">USB</text>
+      <text x="247.84" y="32.13" font-family="Arial" font-size="2.1" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="4.84" lengthAdjust="spacingAndGlyphs">OOB</text>
+      <text x="271.67" y="32.13" font-family="Arial" font-size="2.1" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="4.68" lengthAdjust="spacingAndGlyphs">LEMI</text>
+      <text x="294.73" y="32.13" font-family="Arial" font-size="2.1" font-weight="bold" fill="#f2f3f4" text-anchor="middle" textLength="5.27" lengthAdjust="spacingAndGlyphs">CRAFT</text>
+    </g>
+    <rect x="19.6" y="23.6" width="6.46" height="4.37" rx="0.4" fill="#9fa3a7" stroke="#7d8187" stroke-width="0.15" />
+    <rect x="374.5" y="23.55" width="5.3" height="4.37" rx="0.4" fill="#9fa3a7" stroke="#7d8187" stroke-width="0.15" />
+    <g id="lbnt-a--lever-left-grip" data-path="lbnt-a/lever-left-grip" data-class="latch" data-z-out="39">
+      <path d="M 0.6 20.0 Q 0.6 19.5 1.1 19.5 H 19.1 Q 19.6 19.5 19.6 20.0 V 32.9 H 1.1 Q 0.6 32.9 0.6 32.4 Z" fill="#d4d5d6" stroke="#9a9da0" stroke-width="0.2" />
+      <path d="M 12.58 20.02 V 32.44 M 13.57 20.02 V 32.44" fill="none" stroke="#9a9da0" stroke-width="0.15" />
+    </g>
+    <g id="lbnt-a--lever-left-arm" data-path="lbnt-a/lever-left-arm" data-class="latch" data-z-out="39">
+      <path d="M 19.6 28.46 H 96.22 Q 96.62 28.46 96.62 28.86 V 32.04 Q 96.62 32.44 96.22 32.44 H 19.6 Z" fill="#d4d5d6" stroke="#9a9da0" stroke-width="0.2" />
+    </g>
+    <g id="lbnt-a--lever-right-arm" data-path="lbnt-a/lever-right-arm" data-class="latch" data-z-out="39">
+      <path d="M 380.79 28.41 H 304.09 Q 303.69 28.41 303.69 28.81 V 31.99 Q 303.69 32.39 304.09 32.39 H 380.79 Z" fill="#d4d5d6" stroke="#9a9da0" stroke-width="0.2" />
+    </g>
+    <g id="lbnt-a--lever-right-grip" data-path="lbnt-a/lever-right-grip" data-class="latch" data-z-out="39">
+      <path d="M 380.79 19.97 Q 380.79 19.47 381.29 19.47 H 399.51 Q 400.01 19.47 400.01 19.97 V 32.38 Q 400.01 32.88 399.51 32.88 H 380.79 Z" fill="#d4d5d6" stroke="#9a9da0" stroke-width="0.2" />
+      <path d="M 386.88 19.97 V 32.39 M 387.87 19.97 V 32.39" fill="none" stroke="#9a9da0" stroke-width="0.15" />
+    </g>
+    <rect id="lbnt-a--face-ptp" x="78.46" y="9.54" width="16.11" height="19.87" fill="#b4b6b8" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/face-ptp" data-class="mechanical" data-z-out="-0.0" data-z-lift="-16.11" data-z-profile="0:-0,16.11:-16.11" data-facet-deg="45" data-facet-facing="right" />
+    <rect id="lbnt-a--return-ptp" x="94.57" y="9.54" width="9.83" height="19.87" fill="#8f9398" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/return-ptp" data-class="mechanical" data-z-out="0.2499" data-z-lift="-16.11" data-z-profile="0:-16.11,9.83:0.2499" data-facet-deg="59" data-facet-facing="left" />
+    <rect id="lbnt-a--face-port-1" x="111.92" y="9.54" width="18.54" height="20.02" fill="#b4b6b8" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/face-port-1" data-class="mechanical" data-z-out="-0.0" data-z-lift="-18.54" data-z-profile="0:-0,18.54:-18.54" data-facet-deg="45" data-facet-facing="right" />
+    <rect id="lbnt-a--return-port-1" x="130.46" y="9.54" width="6.97" height="20.02" fill="#8f9398" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/return-port-1" data-class="mechanical" data-z-out="-0.3825" data-z-lift="-18.54" data-z-profile="0:-18.54,6.97:-0.3825" data-facet-deg="69" data-facet-facing="left" />
+    <rect id="lbnt-a--face-port-2" x="138.51" y="9.54" width="18.76" height="20.02" fill="#b4b6b8" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/face-port-2" data-class="mechanical" data-z-out="-0.0" data-z-lift="-18.76" data-z-profile="0:-0,18.76:-18.76" data-facet-deg="45" data-facet-facing="right" />
+    <rect id="lbnt-a--return-port-2" x="157.27" y="9.54" width="11.08" height="20.02" fill="#8f9398" stroke="#8d9298" stroke-width="0.15" data-path="lbnt-a/return-port-2" data-class="mechanical" data-z-out="-0.3198" data-z-lift="-18.76" data-z-profile="0:-18.76,11.08:-0.3198" data-facet-deg="59" data-facet-facing="left" />
+    <g id="lbnt-a--led-pwr" data-path="lbnt-a/led-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(30.44,17.6)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, ALM and A/S and the PTP port lamp">
+      <title>lbnt-a--led-pwr</title>
+      <circle id="lbnt-a--led-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="lbnt-a--led-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-pwr/lamp" data-class="led" data-states="off initialising operational" data-z-dome="0.45" />
+    </g>
+    <g id="lbnt-a--led-alm" data-path="lbnt-a/led-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(30.44,22.65)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, ALM and A/S and the PTP port lamp">
+      <title>lbnt-a--led-alm</title>
+      <circle id="lbnt-a--led-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="lbnt-a--led-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.45" />
+    </g>
+    <g id="lbnt-a--led-as" data-path="lbnt-a/led-as" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(35.49,17.6)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, ALM and A/S and the PTP port lamp">
+      <title>lbnt-a--led-as</title>
+      <circle id="lbnt-a--led-as--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="lbnt-a--led-as--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-as/lamp" data-class="led" data-states="off active" data-z-dome="0.45" />
+    </g>
+    <g id="lbnt-a--led-ptp" data-path="lbnt-a/led-ptp" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(35.49,22.65)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, ALM and A/S and the PTP port lamp">
+      <title>lbnt-a--led-ptp</title>
+      <circle id="lbnt-a--led-ptp--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="lbnt-a--led-ptp--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-ptp/lamp" data-class="led" data-states="off link activity" data-z-dome="0.45" />
+    </g>
+    <g id="lbnt-a--ptp" data-path="lbnt-a/ptp" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="PTP interface (1 Gb/s on the AA, 1 or 10 Gb/s on the AB)" data-legend="PTP" data-media="sfp-plus" data-speed="10g" transform="translate(80.6,17.24) scale(0.707107,1)" data-tilt-on="lbnt-a--face-ptp" data-tilt="45" data-tilt-facing="right" data-group="sfp-plus" data-group-role="traffic" data-description="the PTP interface, an SFP+ cage toward the PTP master: 1 Gb/s on the LBNT-A AA, 1 or 10 Gb/s on the LBNT-A AB">
+      <title>lbnt-a--ptp</title>
+      <rect id="lbnt-a--ptp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="lbnt-a/ptp/opening" data-class="cutout" />
+      <rect id="lbnt-a--ptp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="lbnt-a--ptp--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="lbnt-a--ptp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="lbnt-a--ptp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--port-1" data-path="lbnt-a/port-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="Uplink 1" data-legend="PORT 1" data-media="qsfp28" data-speed="100g" transform="translate(115.0,17.26) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-1" data-tilt="45" data-tilt-facing="right" data-group="qsfp28" data-group-role="traffic" data-description="the two uplinks PORT 1 and PORT 2, QSFP28/QSFP+ cages: 1x 100GE, 1x 40GE, 4x 25GE or 4x 10GE each, data or management uplink">
+      <title>lbnt-a--port-1</title>
+      <rect id="lbnt-a--port-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="lbnt-a/port-1/opening" data-class="cutout" />
+      <rect id="lbnt-a--port-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="lbnt-a--port-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="lbnt-a--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--port-2" data-path="lbnt-a/port-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="Uplink 2" data-legend="PORT 2" data-media="qsfp28" data-speed="100g" transform="translate(141.8,17.26) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-2" data-tilt="45" data-tilt-facing="right" data-group="qsfp28" data-group-role="traffic" data-description="the two uplinks PORT 1 and PORT 2, QSFP28/QSFP+ cages: 1x 100GE, 1x 40GE, 4x 25GE or 4x 10GE each, data or management uplink">
+      <title>lbnt-a--port-2</title>
+      <rect id="lbnt-a--port-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="lbnt-a/port-2/opening" data-class="cutout" />
+      <rect id="lbnt-a--port-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="lbnt-a--port-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="lbnt-a--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--led-port-1-1" data-path="lbnt-a/led-port-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(116.0,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-1" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-1-1</title>
+      <circle id="lbnt-a--led-port-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-1-1/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-1-2" data-path="lbnt-a/led-port-1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(119.44,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-1" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-1-2</title>
+      <circle id="lbnt-a--led-port-1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-1-2/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-1-3" data-path="lbnt-a/led-port-1-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(122.88,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-1" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-1-3</title>
+      <circle id="lbnt-a--led-port-1-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-1-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-1-3/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-1-4" data-path="lbnt-a/led-port-1-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(126.32,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-1" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-1-4</title>
+      <circle id="lbnt-a--led-port-1-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-1-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-1-4/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-2-1" data-path="lbnt-a/led-port-2-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(142.82,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-2" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-2-1</title>
+      <circle id="lbnt-a--led-port-2-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-2-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-2-1/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-2-2" data-path="lbnt-a/led-port-2-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(146.26,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-2" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-2-2</title>
+      <circle id="lbnt-a--led-port-2-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-2-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-2-2/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-2-3" data-path="lbnt-a/led-port-2-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(149.7,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-2" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-2-3</title>
+      <circle id="lbnt-a--led-port-2-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-2-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-2-3/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--led-port-2-4" data-path="lbnt-a/led-port-2-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(153.14,13.47) scale(0.707107,1)" data-tilt-on="lbnt-a--face-port-2" data-tilt="45" data-tilt-facing="right" data-group="lane-leds" data-group-role="indicator" data-description="four lamps above each uplink cage, legends 1 2 3 4: one per lane with channelised optics (led-port-N-L serves lane L of port-N)">
+      <title>lbnt-a--led-port-2-4</title>
+      <circle id="lbnt-a--led-port-2-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lbnt-a--led-port-2-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/led-port-2-4/lamp" data-class="led" data-states="off link activity" data-z-dome="0.3" />
+    </g>
+    <g id="lbnt-a--debug" data-path="lbnt-a/debug" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-function="troubleshooting interface (debug USB-C), restricted to Nokia personnel" data-legend="DEBUG" data-media="usb-c" transform="translate(205.36,23.98)" data-group="mgmt" data-group-role="management">
+      <title>lbnt-a--debug</title>
+      <rect id="lbnt-a--debug--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="lbnt-a/debug/opening" data-class="cutout" />
+      <rect id="lbnt-a--debug--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+      <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--usb" data-path="lbnt-a/usb" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-function="USB 2.0 interface (native USB-C): mass storage or boot image" data-legend="USB" data-media="usb-c" transform="translate(222.24,23.98)" data-group="mgmt" data-group-role="management">
+      <title>lbnt-a--usb</title>
+      <rect id="lbnt-a--usb--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="lbnt-a/usb/opening" data-class="cutout" />
+      <rect id="lbnt-a--usb--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+      <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--oob" data-path="lbnt-a/oob" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out of band management interface, 10/100/1000" data-legend="OOB" data-media="rj45" data-speed="1g" transform="translate(239.94,13.42) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>lbnt-a--oob</title>
+      <g id="lbnt-a--oob--jack" data-path="lbnt-a/oob/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>lbnt-a--oob--jack</title>
+        <path id="lbnt-a--oob--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="lbnt-a--oob--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="lbnt-a--oob--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lbnt-a/oob/jack/opening" data-class="cutout" />
+        <g id="lbnt-a--oob--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="lbnt-a--oob--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="lbnt-a--oob--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/oob/led-a" data-class="led" data-states="off active activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="lbnt-a--oob--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/oob/led-b" data-class="led" data-states="off gb-link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--lemi" data-path="lbnt-a/lemi" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="local Ethernet management interface, 10/100/1000" data-legend="LEMI" data-media="rj45" data-speed="1g" transform="translate(263.78,13.42) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>lbnt-a--lemi</title>
+      <g id="lbnt-a--lemi--jack" data-path="lbnt-a/lemi/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>lbnt-a--lemi--jack</title>
+        <path id="lbnt-a--lemi--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="lbnt-a--lemi--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="lbnt-a--lemi--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lbnt-a/lemi/jack/opening" data-class="cutout" />
+        <g id="lbnt-a--lemi--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="lbnt-a--lemi--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="lbnt-a--lemi--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/lemi/led-a" data-class="led" data-states="off active activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="lbnt-a--lemi--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lbnt-a/lemi/led-b" data-class="led" data-states="off gb-link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="lbnt-a--craft" data-path="lbnt-a/craft" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="local craft management interface" data-legend="CRAFT" data-media="rj45-serial" transform="translate(287.61,13.82) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>lbnt-a--craft</title>
+      <path id="lbnt-a--craft--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lbnt-a--craft--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lbnt-a--craft--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lbnt-a/craft/opening" data-class="cutout" />
+      <g id="lbnt-a--craft--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="200.25 17.5" data-cp-dir="rear" />
+  </g>
+</svg>

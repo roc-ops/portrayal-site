@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16.0mm" height="16.0mm" viewBox="0 0 16.0 16.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='supermicro/power-button-sc515b@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='supermicro/power-button-sc515b@'] .state-activity { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='supermicro/power-button-sc515b@'] .state-on { --led-color: #22c55e; }</style>
+  <g id="power-button-sc515b" data-path="power-button-sc515b" data-class="button" data-ref="supermicro/power-button-sc515b@1:1.0.0" transform="translate(0,0)">
+    <title>power-button-sc515b</title>
+    <circle id="power-button-sc515b--housing" cx="8" cy="8" r="7.8" fill="#2a2d30" stroke="#0e0f10" stroke-width="0.3" />
+    <circle id="power-button-sc515b--button" cx="8" cy="8" r="5.4" fill="#17191b" stroke="#3c4146" stroke-width="0.4" data-path="power-button-sc515b/button" data-class="button" data-description="Power button. Applies or removes primary power from the power supply to the server; standby power is maintained." />
+    <path id="power-button-sc515b--lamp" d="M6.2 6.0 A2.7 2.7 0 1 0 9.8 6.0 M8 4.6 V8.0" fill="none" stroke="var(--led-color, #5a6067)" stroke-width="0.6" stroke-linecap="round" data-path="power-button-sc515b/lamp" data-class="led" data-states="off on activity" data-description="Status LED. Illuminated - the system is operating normally; flashing - hard disk drive activity. Colour and rate are not stated; drawn green at 4 Hz." />
+  </g>
+</svg>

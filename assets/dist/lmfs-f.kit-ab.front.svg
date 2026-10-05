@@ -1,0 +1,821 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="481.0mm" height="355.0mm" viewBox="0 0 481.0 355.0" data-device="lmfs-f" data-view="front" data-part-number="3FE 79748 AA" data-weight-kg="11.5" data-weight-kit-kg="16.75" data-width-over-flanges-mm="481" data-mounting-centre-mm="465" data-depth-with-ground-stud-mm="262" data-depth-with-power-module-mm="274" data-depth-with-front-cover-mm="290" data-depth-overall-datasheet-mm="287.3" data-mounting="19 in., 21 in. and 23 in. racks with extra mounting equipment, vertical or horizontal" data-power-input-dc="48/60 V DC nominal; fully redundant power feeding (branch A and B)" data-power-feed-limit="80 A with two LPWR-F AA, 100 A with two LPWR-F AB" data-power-wiring="three-wire as delivered; two-wire by bridging the six BATRET/FG fast-on pairs on the backpanel" data-operating-temp="-40 C to +65 C at the air inlet of the shelf" data-operating-temp-central-office="-5 C to 55 C (ETSI EN 300 019 Class 3.1E, GR-63-CORE)" data-humidity="5% to 93% (non-condensing)" data-family="Lightspan MF" data-chipset="Nokia Quillion" data-safety="IEC 62 368-1 / EN 62 368-1; AS/NZS 62368-1; UL62368-1; CAN/CSA-C22.2 No. 62368-1-14" data-emc="ETS EN 300 386; ETS ES 201 468; GR-1089-CORE; ICES-003 issue 7 (2020); VCCI-CISPR32: 2016" data-environmental-class="ETS EN 300 019-1-3 Class 3.1E and Class 3.3; GR-3108-CORE Class 1 and Class 2; GR-63-CORE for Temperature and Humidity" data-rohs="EU Directive 2011/65/EU as amended including by Directive 2015/863/EU" data-eol="none-announced" data-airflow="side" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/lalm-f@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/lalm-f@'] .state-critical { --led-color: #d0021b; }
+    g[data-ref^='nokia/lalm-f@'] .state-cut-off { --led-color: #39b54a; }
+    g[data-ref^='nokia/lalm-f@'] .state-major { --led-color: #d0021b; }
+    g[data-ref^='nokia/lalm-f@'] .state-minor { --led-color: #f5a623; }
+    g[data-ref^='nokia/lalm-f@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/lfan-f@'] .state-fail { --led-color: #d0021b; }
+    g[data-ref^='nokia/lfan-f@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/lfan-f@'] .state-reset { --led-color: #f5a623; }
+    g[data-ref^='nokia/lfan-f@'] .state-starting { --led-color: #39b54a; }
+    g[data-ref^='nokia/lfan-f@'] .state-starting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/lpwr-f@'] .state-fault { --led-color: #d0021b; }
+    g[data-ref^='nokia/lpwr-f@'] .state-on { --led-color: #39b54a; }
+    #alm--module--led-alm--lamp.state-alarm { --led-color: #d0021b; }
+    #alm--module--led-cri--lamp.state-critical { --led-color: #d0021b; }
+    #alm--module--led-aco--lamp.state-cut-off { --led-color: #39b54a; }
+    #fan--module--led-pwr--lamp.state-fail { --led-color: #d0021b; }
+    #pwr-1--module--led-pwr--lamp.state-fault, #pwr-2--module--led-pwr--lamp.state-fault { --led-color: #d0021b; }
+    #alm--module--led-maj--lamp.state-major { --led-color: #d0021b; }
+    #alm--module--led-min--lamp.state-minor { --led-color: #f5a623; }
+    #alm--module--led-pwr--lamp.state-on, #pwr-1--module--led-pwr--lamp.state-on, #pwr-2--module--led-pwr--lamp.state-on, #fan--module--led-pwr--lamp.state-on { --led-color: #39b54a; }
+    #fan--module--led-pwr--lamp.state-reset { --led-color: #f5a623; }
+    #fan--module--led-pwr--lamp.state-starting { --led-color: #39b54a; }
+    #fan--module--led-pwr--lamp.state-starting { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Nokia Lightspan MF-8","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/db9-receptacle@1":"1.1.0","common/esd-jack@1":"1.0.0","common/ground-stud@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/led-dot@1":"1.1.0","common/sma-jack@1":"1.0.1","nokia/lalm-f@1":"1.0.0","nokia/lfan-f@1":"1.0.0","nokia/lmdb-b-ea@1":"1.0.0","nokia/lmdb-e-ba@1":"1.0.0","nokia/lpwr-f@1":"1.0.0","std/da15@1":"1.0.0","std/db9@1":"1.1.0","std/rj45@2":"2.1.0","std/sma@1":"1.1.0"},"source-sha256":"3f979ab00a71d3c7ccccf4bcb00804ff3ecb8bc0f7a70dbf6a6ab56a5329004d","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="Lightspan MF-8" data-sku="LMFS-F AB kit" data-part-number="3FE 79747 AB" x="0" y="0" width="481" height="355" rx="1.2" fill="#565f6a" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="flange-left" data-kind="plate" x="0" y="0" width="16.5" height="355" rx="0.6" fill="#5f666f" />
+    <rect id="flange-right" data-kind="plate" x="464.5" y="0" width="16.5" height="355" rx="0.6" fill="#5f666f" />
+    <rect id="fan-shadow-left" data-kind="plate" x="16.5" y="0" width="1.2" height="355" rx="0.6" fill="#2f343a" />
+    <rect id="frame-line-left" data-kind="plate" x="55.2" y="3.3" width="0.5" height="348.6" rx="0.6" fill="#b9bdc2" />
+    <rect id="strip-right" data-kind="plate" x="459.5" y="2.2" width="3" height="350.3" rx="0.6" fill="#434a52" />
+    <rect id="pwr-rail" data-kind="plate" x="59" y="294" width="400.5" height="4.4" rx="0.6" fill="#2a2e33" />
+    <rect id="bottom-rail" data-kind="plate" x="59" y="341.2" width="400.5" height="13.8" rx="0.6" fill="#4a525c" />
+    <rect id="hole-left-top" data-kind="plate" x="4.95" y="11.55" width="6.1" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-left-1" data-kind="plate" x="3.3" y="34.75" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-left-2" data-kind="plate" x="3.3" y="136.25" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-left-3" data-kind="plate" x="3.3" y="212.65" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-left-4" data-kind="plate" x="3.3" y="314.35" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="hole-left-bottom" data-kind="plate" x="4.95" y="337.05" width="6.1" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-right-1" data-kind="plate" x="468.3" y="34.75" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-right-2" data-kind="plate" x="468.3" y="136.25" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-right-3" data-kind="plate" x="468.3" y="212.65" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="slot-right-4" data-kind="plate" x="468.3" y="314.35" width="9.4" height="6.1" rx="3.05" fill="#0b0c0d" />
+    <rect id="cover-hook" data-kind="bracket" x="2.5" y="149" width="11" height="59" rx="1" fill="#4a525c" data-z-out="4" />
+    <rect id="cover-hook-receptacle" data-kind="plate" x="4" y="162.4" width="8" height="33.6" rx="1" fill="#1b1d20" />
+    <rect id="cover-hook-screw-top" data-kind="plate" x="5.7" y="151.9" width="4.6" height="4.6" rx="2.3" fill="#c9ccd0" />
+    <rect id="cover-hook-screw-bottom" data-kind="plate" x="5.7" y="200.2" width="4.6" height="4.6" rx="2.3" fill="#c9ccd0" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 6 a 6 6 0 1 0 12 0 a 6 6 0 1 0 -12 0 Z M 2.5 6 a 3.5 3.5 0 1 0 7 0 a 3.5 3.5 0 1 0 -7 0 Z M 4.5 6 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0 Z" fill="none" stroke="#e6e8ea" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(1.9 86.9)" id="bonding-label" data-path="silk:bonding-label" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="esd-point" />
+    <text x="57.95" y="6.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 6.9)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-8">LT 8</text>
+    <text x="57.95" y="31.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 31.4)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-7">LT 7</text>
+    <text x="57.95" y="55.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 55.9)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-6">LT 6</text>
+    <text x="57.95" y="80.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 80.4)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-5">LT 5</text>
+    <text x="57.95" y="104.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 104.9)" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-4">LT 4</text>
+    <text x="57.95" y="129.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 129.4)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-3">LT 3</text>
+    <text x="57.95" y="162.25" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 162.25)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-2">NTIO 2 / LT 2</text>
+    <text x="57.95" y="186.75" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 186.75)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-1">NTIO 1 / LT 1</text>
+    <text x="57.95" y="208.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 208.4)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nt-b">NT B</text>
+    <text x="57.95" y="243.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 243.4)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nt-a">NT A</text>
+    <text x="57.95" y="273.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 273.4)" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="alm">ALM</text>
+    <text x="57.95" y="319.8" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 57.95 319.8)" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pwr-1">PWR 1</text>
+    <text x="461.75" y="6.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 6.9)" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-8">LT 8</text>
+    <text x="461.75" y="31.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 31.4)" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-7">LT 7</text>
+    <text x="461.75" y="55.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 55.9)" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-6">LT 6</text>
+    <text x="461.75" y="80.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 80.4)" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-5">LT 5</text>
+    <text x="461.75" y="104.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 104.9)" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-4">LT 4</text>
+    <text x="461.75" y="129.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 129.4)" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-3">LT 3</text>
+    <text x="461.75" y="162.25" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 162.25)" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-2">NTIO 2 / LT 2</text>
+    <text x="461.75" y="186.75" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 186.75)" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lt-1">NTIO 1 / LT 1</text>
+    <text x="461.75" y="208.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 208.4)" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nt-b">NT B</text>
+    <text x="461.75" y="243.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 243.4)" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nt-a">NT A</text>
+    <text x="461.75" y="273.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 273.4)" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="alm">ALM</text>
+    <text x="461.75" y="319.8" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" transform="rotate(-90 461.75 319.8)" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pwr-2">PWR 2</text>
+  </g>
+  <g id="ground-symbol" data-path="ground-symbol" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="4" transform="translate(4.7,282.6)" data-group="grounding" data-group-role="furniture" data-description="the dual-stud chassis grounding point and the ESD point on the left flange" data-for="ground-stud-1 ground-stud-2">
+    <title>ground-symbol</title>
+    <g id="ground-symbol--symbol" stroke="#c7ccd1" fill="none" data-path="ground-symbol/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="lt-8" data-path="lt-8" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="8">
+    <title>lt-8</title>
+    <rect id="lt-8--opening" x="59" y="3" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-8--module" data-path="lt-8/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,15.25) translate(-200.25,-12.25)">
+      <title>lt-8--module</title>
+      <rect id="lt-8--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-8--module--handle-left" data-path="lt-8/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-8--module--handle-right" data-path="lt-8/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-7" data-path="lt-7" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="7">
+    <title>lt-7</title>
+    <rect id="lt-7--opening" x="59" y="27.5" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-7--module" data-path="lt-7/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,39.75) translate(-200.25,-12.25)">
+      <title>lt-7--module</title>
+      <rect id="lt-7--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-7--module--handle-left" data-path="lt-7/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-7--module--handle-right" data-path="lt-7/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-6" data-path="lt-6" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="6">
+    <title>lt-6</title>
+    <rect id="lt-6--opening" x="59" y="52" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-6--module" data-path="lt-6/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,64.25) translate(-200.25,-12.25)">
+      <title>lt-6--module</title>
+      <rect id="lt-6--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-6--module--handle-left" data-path="lt-6/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-6--module--handle-right" data-path="lt-6/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-5" data-path="lt-5" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="5">
+    <title>lt-5</title>
+    <rect id="lt-5--opening" x="59" y="76.5" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-5--module" data-path="lt-5/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,88.75) translate(-200.25,-12.25)">
+      <title>lt-5--module</title>
+      <rect id="lt-5--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-5--module--handle-left" data-path="lt-5/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-5--module--handle-right" data-path="lt-5/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-4" data-path="lt-4" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="4">
+    <title>lt-4</title>
+    <rect id="lt-4--opening" x="59" y="101" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-4--module" data-path="lt-4/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,113.25) translate(-200.25,-12.25)">
+      <title>lt-4--module</title>
+      <rect id="lt-4--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-4--module--handle-left" data-path="lt-4/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-4--module--handle-right" data-path="lt-4/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-3" data-path="lt-3" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="3">
+    <title>lt-3</title>
+    <rect id="lt-3--opening" x="59" y="125.5" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-3--module" data-path="lt-3/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,137.75) translate(-200.25,-12.25)">
+      <title>lt-3--module</title>
+      <rect id="lt-3--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-3--module--handle-left" data-path="lt-3/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-3--module--handle-right" data-path="lt-3/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-2" data-path="lt-2" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="2">
+    <title>lt-2</title>
+    <rect id="lt-2--opening" x="59" y="150" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-2--module" data-path="lt-2/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,162.25) translate(-200.25,-12.25)">
+      <title>lt-2--module</title>
+      <rect id="lt-2--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-2--module--handle-left" data-path="lt-2/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-2--module--handle-right" data-path="lt-2/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-1" data-path="lt-1" data-class="bay" data-group="lt-slots" data-group-role="traffic" data-rel-pos="1">
+    <title>lt-1</title>
+    <rect id="lt-1--opening" x="59" y="174.5" width="400.5" height="24.5" fill="#101214" />
+    <g id="lt-1--module" data-path="lt-1/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-b-ea@1:1.0.0" data-body-depth="253.8" data-wall="#616a71" data-model="LMDB-B EA" data-part-number="3FE 77035 EA" data-role="slot-blank" data-weight-kg="0.39" transform="translate(259.25,186.75) translate(-200.25,-12.25)">
+      <title>lt-1--module</title>
+      <rect id="lt-1--module--face" x="0.25" y="0.5" width="400" height="23.5" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="lt-1--module--handle-left" data-path="lt-1/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 11.2 V 22.1 M 6.5 11.2 V 22.1 M 9 11.2 V 22.1 M 11.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="lt-1--module--handle-right" data-path="lt-1/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="10.5" width="27.0" height="12.3" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 11.2 V 22.1 M 391.5 11.2 V 22.1 M 394 11.2 V 22.1 M 396.5 11.2 V 22.1" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="nt-b" data-path="nt-b" data-class="bay" data-group="nt-slots" data-group-role="service" data-rel-pos="2">
+    <title>nt-b</title>
+    <rect id="nt-b--opening" x="59" y="199" width="400.5" height="35" fill="#101214" />
+    <g id="nt-b--module" data-path="nt-b/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-e-ba@1:1.0.0" data-body-depth="241.8" data-wall="#616a71" data-model="LMDB-E BA" data-part-number="3FE 77556 BA" data-role="slot-blank" data-weight-kg="0.5" transform="translate(259.25,216.5) translate(-200.25,-17.5)">
+      <title>nt-b--module</title>
+      <rect id="nt-b--module--face" x="0.25" y="0.5" width="400" height="34" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="nt-b--module--handle-left" data-path="nt-b/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="20.8" width="27.0" height="11.9" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 21.5 V 32.0 M 6.5 21.5 V 32.0 M 9 21.5 V 32.0 M 11.5 21.5 V 32.0" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="nt-b--module--handle-right" data-path="nt-b/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="20.8" width="27.0" height="11.9" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 21.5 V 32.0 M 391.5 21.5 V 32.0 M 394 21.5 V 32.0 M 396.5 21.5 V 32.0" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 17.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="nt-a" data-path="nt-a" data-class="bay" data-group="nt-slots" data-group-role="service" data-rel-pos="1">
+    <title>nt-a</title>
+    <rect id="nt-a--opening" x="59" y="234" width="400.5" height="35" fill="#101214" />
+    <g id="nt-a--module" data-path="nt-a/module" data-class="blank" data-behaviour="fills" data-ref="nokia/lmdb-e-ba@1:1.0.0" data-body-depth="241.8" data-wall="#616a71" data-model="LMDB-E BA" data-part-number="3FE 77556 BA" data-role="slot-blank" data-weight-kg="0.5" transform="translate(259.25,251.5) translate(-200.25,-17.5)">
+      <title>nt-a--module</title>
+      <rect id="nt-a--module--face" x="0.25" y="0.5" width="400" height="34" rx="0.5" fill="#616a71" stroke="#3b424b" stroke-width="0.3" />
+      <g id="nt-a--module--handle-left" data-path="nt-a/module/handle-left" data-class="handle" data-z-out="8.0">
+        <rect x="0.25" y="20.8" width="27.0" height="11.9" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 4 21.5 V 32.0 M 6.5 21.5 V 32.0 M 9 21.5 V 32.0 M 11.5 21.5 V 32.0" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g id="nt-a--module--handle-right" data-path="nt-a/module/handle-right" data-class="handle" data-z-out="8.0">
+        <rect x="373.25" y="20.8" width="27.0" height="11.9" rx="0.8" fill="#e4e6e8" stroke="#8c9197" stroke-width="0.25" />
+        <path d="M 389 21.5 V 32.0 M 391.5 21.5 V 32.0 M 394 21.5 V 32.0 M 396.5 21.5 V 32.0" stroke="#a9aeb4" stroke-width="0.5" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 17.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="alm" data-path="alm" data-class="bay" data-group="alarm-slot" data-group-role="service" data-rel-pos="1">
+    <title>alm</title>
+    <rect id="alm--opening" x="59" y="269.5" width="400.5" height="24.5" fill="#101214" />
+    <g id="alm--module" data-path="alm/module" data-class="supervisor" data-behaviour="fills" data-ref="nokia/lalm-f@1:1.0.0" data-body-depth="217" data-model="LALM-F" data-part-number="3FE 79628 AA" data-power-draw-max-w="5" data-power-draw-typical-w="4" data-weight-kg="0.77" transform="translate(259.25,281.75) translate(-200.25,-12.25)">
+      <title>alm--module</title>
+      <rect id="alm--module--opening" x="0" y="0" width="400.5" height="24.5" fill="#16181b" />
+      <rect id="alm--module--face" x="3.75" y="0" width="393" height="24.5" rx="0.3" fill="#444c54" stroke="#2b3138" stroke-width="0.25" />
+      <rect id="alm--module--lip" x="3.75" y="23.0" width="393" height="1.5" fill="#8f979f" />
+      <circle cx="64.2" cy="10.6" r="5.5" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="78.2" cy="10.6" r="5.5" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      <g id="alm--module--alm-up-bores">
+        <circle cx="129.14" cy="10.6" r="1.15" fill="#4a4f55" />
+        <circle cx="162.46" cy="10.6" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="alm--module--alm-up-screwlocks" fill-rule="evenodd" d="M131.44 10.60 L130.29 12.59 L127.99 12.59 L126.84 10.60 L127.99 8.61 L130.29 8.61 Z M127.99 10.60 A1.15 1.15 0 1 0 130.29 10.60 A1.15 1.15 0 1 0 127.99 10.60 Z M164.76 10.60 L163.61 12.59 L161.31 12.59 L160.16 10.60 L161.31 8.61 L163.61 8.61 Z M161.31 10.60 A1.15 1.15 0 1 0 163.61 10.60 A1.15 1.15 0 1 0 161.31 10.60 Z" fill="#c9ccd0" stroke="#6d7379" stroke-width="0.25" />
+      <g id="alm--module--alm-down-bores">
+        <circle cx="173.24" cy="10.6" r="1.15" fill="#4a4f55" />
+        <circle cx="206.56" cy="10.6" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="alm--module--alm-down-screwlocks" fill-rule="evenodd" d="M175.54 10.60 L174.39 12.59 L172.09 12.59 L170.94 10.60 L172.09 8.61 L174.39 8.61 Z M172.09 10.60 A1.15 1.15 0 1 0 174.39 10.60 A1.15 1.15 0 1 0 172.09 10.60 Z M208.86 10.60 L207.71 12.59 L205.41 12.59 L204.26 10.60 L205.41 8.61 L207.71 8.61 Z M205.41 10.60 A1.15 1.15 0 1 0 207.71 10.60 A1.15 1.15 0 1 0 205.41 10.60 Z" fill="#c9ccd0" stroke="#6d7379" stroke-width="0.25" />
+      <rect id="alm--module--clock-block" x="213.4" y="3.0" width="65.4" height="14.6" rx="0.4" fill="#1d1f22" stroke="#101113" stroke-width="0.2" data-path="alm/module/clock-block" data-class="label" />
+      <rect id="alm--module--alarm-block" x="283.8" y="3.0" width="65.4" height="14.6" rx="0.4" fill="#1d1f22" stroke="#101113" stroke-width="0.2" data-path="alm/module/alarm-block" data-class="label" />
+      <circle id="alm--module--aco" cx="51.9" cy="13.6" r="1.25" fill="#e4e6e8" stroke="#8d9298" stroke-width="0.2" data-path="alm/module/aco" data-class="button" />
+      <g id="alm--module--esd-mark" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-linejoin="round" data-path="alm/module/esd-mark" data-class="marking">
+        <path d="M 359.4 4.9 L 364.4 2.5 L 364.4 7.3 Z" />
+        <path d="M 361.6 4.2 L 363.5 5.9" />
+      </g>
+      <g id="alm--module--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#e8eaec">
+        <text x="27.3" y="17.8" font-size="3.3" font-weight="bold" transform="rotate(-90 27.3 17.8)">LALM-F</text>
+        <text x="31.25" y="6.6" font-size="2.1" transform="rotate(-90 31.25 6.6)">PWR</text>
+        <text x="36.75" y="6.6" font-size="2.1" transform="rotate(-90 36.75 6.6)">ACO</text>
+        <text x="41.95" y="6.6" font-size="2.1" transform="rotate(-90 41.95 6.6)">ALM</text>
+        <text x="78.2" y="20.7" font-size="2.1" text-anchor="middle">10MHz</text>
+        <text x="106.7" y="20.7" font-size="2.1" text-anchor="middle">CRAFT</text>
+        <text x="145.8" y="20.7" font-size="2.1" text-anchor="middle">ALM UP</text>
+        <text x="189.9" y="20.7" font-size="2.1" text-anchor="middle">ALM DOWN</text>
+        <text x="222.1" y="20.7" font-size="1.9" text-anchor="middle">1PPS/ToD IN</text>
+        <text x="238.1" y="20.7" font-size="1.9" text-anchor="middle">1PPS/ToD OUT</text>
+        <text x="254.1" y="20.7" font-size="1.9" text-anchor="middle">BITS 1</text>
+        <text x="270.1" y="20.7" font-size="1.9" text-anchor="middle">BITS 2</text>
+        <text x="292.5" y="20.7" font-size="1.9" text-anchor="middle">LAMP</text>
+        <text x="308.5" y="20.7" font-size="1.9" text-anchor="middle">DOOR</text>
+        <text x="324.5" y="20.7" font-size="1.9" text-anchor="middle">SYS UP</text>
+        <rect x="213.0" y="2.6" width="66.2" height="15.4" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-dasharray="8 2.6 3.4 2.6" />
+        <rect x="283.4" y="2.6" width="66.2" height="15.4" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-dasharray="8 2.6 3.4 2.6" />
+      </g>
+      <g id="alm--module--ejector-left-grip" data-path="alm/module/ejector-left-grip" data-class="latch" data-z-out="39" data-z-color="#dcdddd">
+        <rect x="0" y="9.9" width="18.1" height="13.4" fill="#e1e1e1" stroke="#b8bbbe" stroke-width="0.2" />
+        <rect x="18.1" y="14.2" width="6.7" height="5.2" fill="#8d9298" stroke="#6f757b" stroke-width="0.2" />
+      </g>
+      <g id="alm--module--ejector-left-arm" data-path="alm/module/ejector-left-arm" data-class="latch" data-z-out="39" data-z-color="#dcdddd">
+        <rect x="18.1" y="19.4" width="52.65" height="3.9" fill="#e1e1e1" stroke="#b8bbbe" stroke-width="0.2" />
+      </g>
+      <g id="alm--module--ejector-right-arm" data-path="alm/module/ejector-right-arm" data-class="latch" data-z-out="39" data-z-color="#dcdddd">
+        <rect x="329" y="19.4" width="53.4" height="3.9" fill="#e1e1e1" stroke="#b8bbbe" stroke-width="0.2" />
+      </g>
+      <g id="alm--module--ejector-right-grip" data-path="alm/module/ejector-right-grip" data-class="latch" data-z-out="39" data-z-color="#dcdddd">
+        <rect x="382.4" y="9.9" width="18.1" height="13.4" fill="#adadad" stroke="#8d9298" stroke-width="0.2" />
+        <rect x="382.4" y="9.9" width="6.6" height="13.4" fill="#e1e1e1" />
+        <rect x="375.7" y="14.2" width="6.7" height="5.2" fill="#8d9298" stroke="#6f757b" stroke-width="0.2" />
+      </g>
+      <g id="alm--module--led-pwr" data-path="alm/module/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.5,7.8)" data-group="status-leds" data-group-role="indicator" data-description="PWR and ACO">
+        <title>alm--module--led-pwr</title>
+        <circle id="alm--module--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--led-aco" data-path="alm/module/led-aco" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35,7.8)" data-group="status-leds" data-group-role="indicator" data-description="PWR and ACO">
+        <title>alm--module--led-aco</title>
+        <circle id="alm--module--led-aco--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-aco--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-aco/lamp" data-class="led" data-states="off cut-off" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--led-alm" data-path="alm/module/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(40.2,7.8)" data-group="alarm-leds" data-group-role="indicator" data-description="ALM, MIN, MAJ and CRI">
+        <title>alm--module--led-alm</title>
+        <circle id="alm--module--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--led-min" data-path="alm/module/led-min" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.5,13.3)" data-group="alarm-leds" data-group-role="indicator" data-description="ALM, MIN, MAJ and CRI">
+        <title>alm--module--led-min</title>
+        <circle id="alm--module--led-min--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-min--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-min/lamp" data-class="led" data-states="off minor" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--led-maj" data-path="alm/module/led-maj" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35,13.3)" data-group="alarm-leds" data-group-role="indicator" data-description="ALM, MIN, MAJ and CRI">
+        <title>alm--module--led-maj</title>
+        <circle id="alm--module--led-maj--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-maj--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-maj/lamp" data-class="led" data-states="off major" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--led-cri" data-path="alm/module/led-cri" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(40.2,13.3)" data-group="alarm-leds" data-group-role="indicator" data-description="ALM, MIN, MAJ and CRI">
+        <title>alm--module--led-cri</title>
+        <circle id="alm--module--led-cri--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="alm--module--led-cri--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="alm/module/led-cri/lamp" data-class="led" data-states="off critical" data-z-dome="0.3" />
+      </g>
+      <g id="alm--module--pps" data-path="alm/module/pps" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="1PPS input or output (configurable)" data-media="coax-sma" transform="translate(59.45,5.85)" data-group="timing" data-group-role="management">
+        <title>alm--module--pps</title>
+        <path id="alm--module--pps--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+        <g id="alm--module--pps--jack" data-path="alm/module/pps/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+          <title>alm--module--pps--jack</title>
+          <circle id="alm--module--pps--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="alm/module/pps/jack/opening" data-class="cutout" />
+          <g id="alm--module--pps--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+            <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+            <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+            <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--ref-10mhz" data-path="alm/module/ref-10mhz" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="10 MHz input" data-media="coax-sma" transform="translate(73.45,5.85)" data-group="timing" data-group-role="management">
+        <title>alm--module--ref-10mhz</title>
+        <path id="alm--module--ref-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+        <g id="alm--module--ref-10mhz--jack" data-path="alm/module/ref-10mhz/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+          <title>alm--module--ref-10mhz--jack</title>
+          <circle id="alm--module--ref-10mhz--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="alm/module/ref-10mhz/jack/opening" data-class="cutout" />
+          <g id="alm--module--ref-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+            <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+            <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+            <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--craft" data-path="alm/module/craft" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-function="RS-232 serial management (CRAFT)" data-media="db9" data-role="console" transform="translate(91.3,4.35)" data-group="mgmt" data-group-role="management" data-description="the CRAFT port, an RS-232 serial management terminal on a female DE-9">
+        <title>alm--module--craft</title>
+        <g id="alm--module--craft--bore-floor">
+          <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+          <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+        </g>
+        <path id="alm--module--craft--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+        <g id="alm--module--craft--shell" data-path="alm/module/craft/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+          <title>alm--module--craft--shell</title>
+          <path id="alm--module--craft--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="alm/module/craft/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+          <path id="alm--module--craft--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+          <circle id="alm--module--craft--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="alm--module--craft--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--alm-up" data-path="alm/module/alm-up" data-class="port" data-ref="std/da15@1:1.0.0" data-depth="6.73" data-wall="#3a3e43" data-function="external alarm I/O, cascade up" data-media="da15" transform="translate(131.4,4.9)" data-group="alarms" data-group-role="management">
+        <title>alm--module--alm-up</title>
+        <path id="alm--module--alm-up--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L24.683 0.450 A3.350 3.350 0 0 1 27.982 4.382 L27.312 8.182 A3.350 3.350 0 0 1 24.013 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="alm/module/alm-up/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <g id="alm--module--alm-up--socket-floor">
+          <circle cx="4.81" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="7.55" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="10.29" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="13.03" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="15.77" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="18.51" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="21.25" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="23.99" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="6.18" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="8.92" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="11.66" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="14.4" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="17.14" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="19.88" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="22.62" cy="7.12" r="0.5" fill="#050607" />
+        </g>
+        <path id="alm--module--alm-up--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M4.310 4.280 A0.500 0.500 0 1 0 5.310 4.280 A0.500 0.500 0 1 0 4.310 4.280 Z M7.050 4.280 A0.500 0.500 0 1 0 8.050 4.280 A0.500 0.500 0 1 0 7.050 4.280 Z M9.790 4.280 A0.500 0.500 0 1 0 10.790 4.280 A0.500 0.500 0 1 0 9.790 4.280 Z M12.530 4.280 A0.500 0.500 0 1 0 13.530 4.280 A0.500 0.500 0 1 0 12.530 4.280 Z M15.270 4.280 A0.500 0.500 0 1 0 16.270 4.280 A0.500 0.500 0 1 0 15.270 4.280 Z M18.010 4.280 A0.500 0.500 0 1 0 19.010 4.280 A0.500 0.500 0 1 0 18.010 4.280 Z M20.750 4.280 A0.500 0.500 0 1 0 21.750 4.280 A0.500 0.500 0 1 0 20.750 4.280 Z M23.490 4.280 A0.500 0.500 0 1 0 24.490 4.280 A0.500 0.500 0 1 0 23.490 4.280 Z M5.680 7.120 A0.500 0.500 0 1 0 6.680 7.120 A0.500 0.500 0 1 0 5.680 7.120 Z M8.420 7.120 A0.500 0.500 0 1 0 9.420 7.120 A0.500 0.500 0 1 0 8.420 7.120 Z M11.160 7.120 A0.500 0.500 0 1 0 12.160 7.120 A0.500 0.500 0 1 0 11.160 7.120 Z M13.900 7.120 A0.500 0.500 0 1 0 14.900 7.120 A0.500 0.500 0 1 0 13.900 7.120 Z M16.640 7.120 A0.500 0.500 0 1 0 17.640 7.120 A0.500 0.500 0 1 0 16.640 7.120 Z M19.380 7.120 A0.500 0.500 0 1 0 20.380 7.120 A0.500 0.500 0 1 0 19.380 7.120 Z M22.120 7.120 A0.500 0.500 0 1 0 23.120 7.120 A0.500 0.500 0 1 0 22.120 7.120 Z" fill="#2b2e33" stroke="#3a3e43" stroke-width="0.2" data-z-out="6.73" data-z-color="#2b2e33" data-z-shape="1" />
+        <g data-cp="mate" data-cp-at="14.4 5.7" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--alm-down" data-path="alm/module/alm-down" data-class="port" data-ref="std/da15@1:1.0.0" data-depth="6.73" data-wall="#3a3e43" data-function="external alarm I/O, cascade down" data-media="da15" transform="translate(175.5,4.9)" data-group="alarms" data-group-role="management">
+        <title>alm--module--alm-down</title>
+        <path id="alm--module--alm-down--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L24.683 0.450 A3.350 3.350 0 0 1 27.982 4.382 L27.312 8.182 A3.350 3.350 0 0 1 24.013 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="alm/module/alm-down/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <g id="alm--module--alm-down--socket-floor">
+          <circle cx="4.81" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="7.55" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="10.29" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="13.03" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="15.77" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="18.51" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="21.25" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="23.99" cy="4.28" r="0.5" fill="#050607" />
+          <circle cx="6.18" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="8.92" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="11.66" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="14.4" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="17.14" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="19.88" cy="7.12" r="0.5" fill="#050607" />
+          <circle cx="22.62" cy="7.12" r="0.5" fill="#050607" />
+        </g>
+        <path id="alm--module--alm-down--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M4.310 4.280 A0.500 0.500 0 1 0 5.310 4.280 A0.500 0.500 0 1 0 4.310 4.280 Z M7.050 4.280 A0.500 0.500 0 1 0 8.050 4.280 A0.500 0.500 0 1 0 7.050 4.280 Z M9.790 4.280 A0.500 0.500 0 1 0 10.790 4.280 A0.500 0.500 0 1 0 9.790 4.280 Z M12.530 4.280 A0.500 0.500 0 1 0 13.530 4.280 A0.500 0.500 0 1 0 12.530 4.280 Z M15.270 4.280 A0.500 0.500 0 1 0 16.270 4.280 A0.500 0.500 0 1 0 15.270 4.280 Z M18.010 4.280 A0.500 0.500 0 1 0 19.010 4.280 A0.500 0.500 0 1 0 18.010 4.280 Z M20.750 4.280 A0.500 0.500 0 1 0 21.750 4.280 A0.500 0.500 0 1 0 20.750 4.280 Z M23.490 4.280 A0.500 0.500 0 1 0 24.490 4.280 A0.500 0.500 0 1 0 23.490 4.280 Z M5.680 7.120 A0.500 0.500 0 1 0 6.680 7.120 A0.500 0.500 0 1 0 5.680 7.120 Z M8.420 7.120 A0.500 0.500 0 1 0 9.420 7.120 A0.500 0.500 0 1 0 8.420 7.120 Z M11.160 7.120 A0.500 0.500 0 1 0 12.160 7.120 A0.500 0.500 0 1 0 11.160 7.120 Z M13.900 7.120 A0.500 0.500 0 1 0 14.900 7.120 A0.500 0.500 0 1 0 13.900 7.120 Z M16.640 7.120 A0.500 0.500 0 1 0 17.640 7.120 A0.500 0.500 0 1 0 16.640 7.120 Z M19.380 7.120 A0.500 0.500 0 1 0 20.380 7.120 A0.500 0.500 0 1 0 19.380 7.120 Z M22.120 7.120 A0.500 0.500 0 1 0 23.120 7.120 A0.500 0.500 0 1 0 22.120 7.120 Z" fill="#2b2e33" stroke="#3a3e43" stroke-width="0.2" data-z-out="6.73" data-z-color="#2b2e33" data-z-shape="1" />
+        <g data-cp="mate" data-cp-at="14.4 5.7" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--pps-tod-in" data-path="alm/module/pps-tod-in" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="1PPS + ToD input" data-media="rj45" transform="translate(214.2,3.7) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>alm--module--pps-tod-in</title>
+        <path id="alm--module--pps-tod-in--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--pps-tod-in--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--pps-tod-in--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/pps-tod-in/opening" data-class="cutout" />
+        <g id="alm--module--pps-tod-in--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--pps-tod-out" data-path="alm/module/pps-tod-out" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="1PPS + ToD output" data-media="rj45" transform="translate(230.2,3.7) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>alm--module--pps-tod-out</title>
+        <path id="alm--module--pps-tod-out--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--pps-tod-out--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--pps-tod-out--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/pps-tod-out/opening" data-class="cutout" />
+        <g id="alm--module--pps-tod-out--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--bits-1" data-path="alm/module/bits-1" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="BITS in and out" data-media="rj45" transform="translate(246.2,3.7) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>alm--module--bits-1</title>
+        <path id="alm--module--bits-1--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--bits-1--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--bits-1--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/bits-1/opening" data-class="cutout" />
+        <g id="alm--module--bits-1--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--bits-2" data-path="alm/module/bits-2" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="BITS in and out" data-media="rj45" transform="translate(262.2,3.7) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>alm--module--bits-2</title>
+        <path id="alm--module--bits-2--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--bits-2--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--bits-2--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/bits-2/opening" data-class="cutout" />
+        <g id="alm--module--bits-2--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--lamp" data-path="alm/module/lamp" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="rack alarm lamp I/O" data-media="rj45-telemetry" transform="translate(284.6,3.7) rotate(180 7.9 6.6)" data-group="alarms" data-group-role="management">
+        <title>alm--module--lamp</title>
+        <path id="alm--module--lamp--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--lamp--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--lamp--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/lamp/opening" data-class="cutout" />
+        <g id="alm--module--lamp--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--door" data-path="alm/module/door" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="rack door detection alarm input" data-media="rj45-telemetry" transform="translate(300.6,3.7) rotate(180 7.9 6.6)" data-group="alarms" data-group-role="management">
+        <title>alm--module--door</title>
+        <path id="alm--module--door--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--door--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--door--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/door/opening" data-class="cutout" />
+        <g id="alm--module--door--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--sys-up" data-path="alm/module/sys-up" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="system alarm I/O (RS-485 cascade) up; not in use in release 26.9" data-media="rj45-telemetry" transform="translate(316.6,3.7) rotate(180 7.9 6.6)" data-group="alarms" data-group-role="management">
+        <title>alm--module--sys-up</title>
+        <path id="alm--module--sys-up--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--sys-up--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--sys-up--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/sys-up/opening" data-class="cutout" />
+        <g id="alm--module--sys-up--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="alm--module--sys-down" data-path="alm/module/sys-down" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#2a2d31" data-function="system alarm I/O (RS-485 cascade) down; not in use in release 26.9" data-media="rj45-telemetry" transform="translate(332.6,3.7) rotate(180 7.9 6.6)" data-group="alarms" data-group-role="management">
+        <title>alm--module--sys-down</title>
+        <path id="alm--module--sys-down--housing" fill-rule="evenodd" fill="#2a2d31" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--sys-down--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="alm--module--sys-down--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="alm/module/sys-down/opening" data-class="cutout" />
+        <g id="alm--module--sys-down--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="200.25 12.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="pwr-1" data-path="pwr-1" data-class="bay" data-group="power-slots" data-group-role="service" data-rel-pos="1">
+    <title>pwr-1</title>
+    <rect id="pwr-1--opening" x="63.1" y="298.4" width="196.15" height="42.8" fill="#101214" />
+    <g id="pwr-1--module" data-path="pwr-1/module" data-class="power" data-behaviour="fills" data-ref="nokia/lpwr-f@1:1.0.0" data-body-depth="202.6" data-breaker="2 x 40 A DPST" data-current-max-a="80" data-current-max-a-variants="AA 80 A (2 x 40 A); AB 100 A (2 x 50 A)" data-feeds="1" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-40.5 to -72 VDC" data-model="LPWR-F" data-nominal-voltage="-48 / -60 VDC" data-part-number="3FE 79723 AA" data-part-number-variants="3FE 79723 AA, 3FE 79723 AB" data-power-output-scope="pass-through-ceiling" data-power-output-w="3840" data-rating="2X 50A" data-role="dc-power-entry" data-weight-kg="1.2" transform="translate(161.175,319.8) translate(-98.075,-21.4)">
+      <title>pwr-1--module</title>
+      <rect id="pwr-1--module--face" x="0" y="0" width="196.15" height="42.8" rx="0.4" fill="#444c54" stroke="#2b3138" stroke-width="0.25" />
+      <g id="pwr-1--module--esd-mark" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-linejoin="round" data-path="pwr-1/module/esd-mark" data-class="marking">
+        <path d="M 189.4 37.8 L 194.4 35.4 L 194.4 40.2 Z" />
+        <path d="M 191.6 37.1 L 193.5 38.8" />
+      </g>
+      <g id="pwr-1--module--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#e8eaec">
+        <text x="146.4" y="24.7" font-size="2.2" text-anchor="middle" data-from="rating">2X 50A</text>
+        <text x="22.4" y="31.1" font-size="1.9" fill="#9a9da1">PWR</text>
+        <text x="46.6" y="12.3" font-size="1.9" fill="#77797d">BAT</text>
+      </g>
+      <g id="pwr-1--module--connector-block" data-path="pwr-1/module/connector-block" data-class="terminal" data-z-out="27.95" data-z-color="#232527">
+        <rect x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+        <g id="pwr-1--module--bat-terminal" opacity="0.55">
+          <path d="M 22.2 8.2 L 47.7 17.8 L 44.3 29.6 L 16.6 21.6 Z" fill="#5a5d61" stroke="#3a3c3f" stroke-width="0.25" />
+          <circle cx="25.6" cy="15.5" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+          <path d="M 23.1 15.5 H 28.1 M 25.6 13.0 V 18.0" stroke="#3a3c3f" stroke-width="0.5" />
+          <circle cx="39.6" cy="21.4" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+          <path d="M 37.1 21.4 H 42.1 M 39.6 18.9 V 23.9" stroke="#3a3c3f" stroke-width="0.5" />
+        </g>
+        <rect id="pwr-1--module--door" x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#232527" fill-opacity="0.5" stroke="#0e0f10" stroke-width="0.3" />
+        <path d="M 9.6 5.9 H 110.6" stroke="#0e0f10" stroke-width="0.3" />
+        <circle id="pwr-1--module--door-lock" cx="13.6" cy="30.4" r="1.8" fill="#2f3134" stroke="#0e0f10" stroke-width="0.3" />
+        <circle cx="13.6" cy="30.4" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+        <g id="pwr-1--module--hazard-label">
+          <rect x="70.6" y="7.3" width="36.3" height="23.6" rx="0.5" fill="#8a8c8f" stroke="#55585c" stroke-width="0.25" />
+          <path d="M 75.8 19.1 L 84.6 14.3 L 84.6 23.9 Z" fill="#f2c200" stroke="#1b1c1e" stroke-width="0.5" stroke-linejoin="round" />
+          <path d="M 83.0 19.1 H 80.0" stroke="#1b1c1e" stroke-width="0.7" stroke-linecap="round" />
+          <circle cx="78.6" cy="19.1" r="0.4" fill="#1b1c1e" />
+          <g id="pwr-1--module--hazard-silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#1b1c1e">
+            <text x="91.4" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 91.4 19.1)">ENERGY</text>
+            <text x="94.3" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 94.3 19.1)">HAZARD</text>
+            <text x="98.6" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 98.6 19.1)">Disconnect</text>
+            <text x="100.7" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 100.7 19.1)">before service</text>
+          </g>
+        </g>
+      </g>
+      <g id="pwr-1--module--screw-left" data-path="pwr-1/module/screw-left" data-class="screw" data-z-cyl="2.0">
+        <circle cx="4.7" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="4.7" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+      </g>
+      <g id="pwr-1--module--screw-right" data-path="pwr-1/module/screw-right" data-class="screw" data-z-cyl="2.0">
+        <circle cx="191.3" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="191.3" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+      </g>
+      <g id="pwr-1--module--breaker" data-path="pwr-1/module/breaker" data-class="switch" data-z-out="8.0" data-z-color="#1b1c1e">
+        <rect x="121.0" y="2.6" width="44.2" height="18.0" rx="1.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+        <circle cx="125.3" cy="11.6" r="2.0" fill="#2a2c2f" stroke="#55585c" stroke-width="0.3" />
+        <circle cx="125.3" cy="11.6" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+        <rect id="pwr-1--module--breaker-rocker" x="132.1" y="3.9" width="29.0" height="15.4" rx="0.6" fill="#0c0d0e" stroke="#2f3134" stroke-width="0.3" />
+        <rect x="132.1" y="3.9" width="17.6" height="15.4" rx="0.6" fill="#141517" />
+        <path d="M 149.7 3.9 V 19.3" stroke="#2f3134" stroke-width="0.3" />
+      </g>
+      <g id="pwr-1--module--handle" data-path="pwr-1/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-dia="3.2">
+        <rect x="178.9" y="2.8" width="5.4" height="26.2" rx="2.7" fill="#3a4047" stroke="#2b3138" stroke-width="0.2" />
+        <rect x="180.0" y="3.7" width="3.2" height="24.4" rx="1.6" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      </g>
+      <g id="pwr-1--module--led-pwr" data-path="pwr-1/module/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(19.6,29.3)" data-group="status-leds" data-group-role="indicator" data-description="the one PWR lamp, under the connector block door">
+        <title>pwr-1--module--led-pwr</title>
+        <circle id="pwr-1--module--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="pwr-1--module--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="pwr-1/module/led-pwr/lamp" data-class="led" data-states="off on fault" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="98.075 21.4" data-cp-dir="rear" />
+      <g data-cp="power" data-cp-at="60.1 35.2" data-cp-dir="down" />
+    </g>
+  </g>
+  <g id="pwr-2" data-path="pwr-2" data-class="bay" data-group="power-slots" data-group-role="service" data-rel-pos="2">
+    <title>pwr-2</title>
+    <rect id="pwr-2--opening" x="259.25" y="298.4" width="196.15" height="42.8" fill="#101214" />
+    <g id="pwr-2--module" data-path="pwr-2/module" data-class="power" data-behaviour="fills" data-ref="nokia/lpwr-f@1:1.0.0" data-body-depth="202.6" data-breaker="2 x 40 A DPST" data-current-max-a="80" data-current-max-a-variants="AA 80 A (2 x 40 A); AB 100 A (2 x 50 A)" data-feeds="1" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-40.5 to -72 VDC" data-model="LPWR-F" data-nominal-voltage="-48 / -60 VDC" data-part-number="3FE 79723 AA" data-part-number-variants="3FE 79723 AA, 3FE 79723 AB" data-power-output-scope="pass-through-ceiling" data-power-output-w="3840" data-rating="2X 50A" data-role="dc-power-entry" data-weight-kg="1.2" transform="translate(357.325,319.8) translate(-98.075,-21.4)">
+      <title>pwr-2--module</title>
+      <rect id="pwr-2--module--face" x="0" y="0" width="196.15" height="42.8" rx="0.4" fill="#444c54" stroke="#2b3138" stroke-width="0.25" />
+      <g id="pwr-2--module--esd-mark" fill="none" stroke="#e8eaec" stroke-width="0.35" stroke-linejoin="round" data-path="pwr-2/module/esd-mark" data-class="marking">
+        <path d="M 189.4 37.8 L 194.4 35.4 L 194.4 40.2 Z" />
+        <path d="M 191.6 37.1 L 193.5 38.8" />
+      </g>
+      <g id="pwr-2--module--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#e8eaec">
+        <text x="146.4" y="24.7" font-size="2.2" text-anchor="middle" data-from="rating">2X 50A</text>
+        <text x="22.4" y="31.1" font-size="1.9" fill="#9a9da1">PWR</text>
+        <text x="46.6" y="12.3" font-size="1.9" fill="#77797d">BAT</text>
+      </g>
+      <g id="pwr-2--module--connector-block" data-path="pwr-2/module/connector-block" data-class="terminal" data-z-out="27.95" data-z-color="#232527">
+        <rect x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+        <g id="pwr-2--module--bat-terminal" opacity="0.55">
+          <path d="M 22.2 8.2 L 47.7 17.8 L 44.3 29.6 L 16.6 21.6 Z" fill="#5a5d61" stroke="#3a3c3f" stroke-width="0.25" />
+          <circle cx="25.6" cy="15.5" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+          <path d="M 23.1 15.5 H 28.1 M 25.6 13.0 V 18.0" stroke="#3a3c3f" stroke-width="0.5" />
+          <circle cx="39.6" cy="21.4" r="4.3" fill="#8b8e92" stroke="#3a3c3f" stroke-width="0.3" />
+          <path d="M 37.1 21.4 H 42.1 M 39.6 18.9 V 23.9" stroke="#3a3c3f" stroke-width="0.5" />
+        </g>
+        <rect id="pwr-2--module--door" x="9.6" y="3.2" width="101.0" height="32.0" rx="2.6" fill="#232527" fill-opacity="0.5" stroke="#0e0f10" stroke-width="0.3" />
+        <path d="M 9.6 5.9 H 110.6" stroke="#0e0f10" stroke-width="0.3" />
+        <circle id="pwr-2--module--door-lock" cx="13.6" cy="30.4" r="1.8" fill="#2f3134" stroke="#0e0f10" stroke-width="0.3" />
+        <circle cx="13.6" cy="30.4" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+        <g id="pwr-2--module--hazard-label">
+          <rect x="70.6" y="7.3" width="36.3" height="23.6" rx="0.5" fill="#8a8c8f" stroke="#55585c" stroke-width="0.25" />
+          <path d="M 75.8 19.1 L 84.6 14.3 L 84.6 23.9 Z" fill="#f2c200" stroke="#1b1c1e" stroke-width="0.5" stroke-linejoin="round" />
+          <path d="M 83.0 19.1 H 80.0" stroke="#1b1c1e" stroke-width="0.7" stroke-linecap="round" />
+          <circle cx="78.6" cy="19.1" r="0.4" fill="#1b1c1e" />
+          <g id="pwr-2--module--hazard-silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#1b1c1e">
+            <text x="91.4" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 91.4 19.1)">ENERGY</text>
+            <text x="94.3" y="19.1" font-size="2.3" font-weight="bold" text-anchor="middle" transform="rotate(-90 94.3 19.1)">HAZARD</text>
+            <text x="98.6" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 98.6 19.1)">Disconnect</text>
+            <text x="100.7" y="19.1" font-size="1.5" text-anchor="middle" transform="rotate(-90 100.7 19.1)">before service</text>
+          </g>
+        </g>
+      </g>
+      <g id="pwr-2--module--screw-left" data-path="pwr-2/module/screw-left" data-class="screw" data-z-cyl="2.0">
+        <circle cx="4.7" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="4.7" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+      </g>
+      <g id="pwr-2--module--screw-right" data-path="pwr-2/module/screw-right" data-class="screw" data-z-cyl="2.0">
+        <circle cx="191.3" cy="26.2" r="3.0" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="191.3" cy="26.2" r="1.3" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" />
+      </g>
+      <g id="pwr-2--module--breaker" data-path="pwr-2/module/breaker" data-class="switch" data-z-out="8.0" data-z-color="#1b1c1e">
+        <rect x="121.0" y="2.6" width="44.2" height="18.0" rx="1.6" fill="#1b1c1e" stroke="#0e0f10" stroke-width="0.3" />
+        <circle cx="125.3" cy="11.6" r="2.0" fill="#2a2c2f" stroke="#55585c" stroke-width="0.3" />
+        <circle cx="125.3" cy="11.6" r="0.8" fill="none" stroke="#55585c" stroke-width="0.25" />
+        <rect id="pwr-2--module--breaker-rocker" x="132.1" y="3.9" width="29.0" height="15.4" rx="0.6" fill="#0c0d0e" stroke="#2f3134" stroke-width="0.3" />
+        <rect x="132.1" y="3.9" width="17.6" height="15.4" rx="0.6" fill="#141517" />
+        <path d="M 149.7 3.9 V 19.3" stroke="#2f3134" stroke-width="0.3" />
+      </g>
+      <g id="pwr-2--module--handle" data-path="pwr-2/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-dia="3.2">
+        <rect x="178.9" y="2.8" width="5.4" height="26.2" rx="2.7" fill="#3a4047" stroke="#2b3138" stroke-width="0.2" />
+        <rect x="180.0" y="3.7" width="3.2" height="24.4" rx="1.6" fill="#d5d7d9" stroke="#8d9298" stroke-width="0.25" />
+      </g>
+      <g id="pwr-2--module--led-pwr" data-path="pwr-2/module/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(19.6,29.3)" data-group="status-leds" data-group-role="indicator" data-description="the one PWR lamp, under the connector block door">
+        <title>pwr-2--module--led-pwr</title>
+        <circle id="pwr-2--module--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="pwr-2--module--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="pwr-2/module/led-pwr/lamp" data-class="led" data-states="off on fault" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="98.075 21.4" data-cp-dir="rear" />
+      <g data-cp="power" data-cp-at="60.1 35.2" data-cp-dir="down" />
+    </g>
+  </g>
+  <g id="fan" data-path="fan" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan</title>
+    <rect id="fan--opening" x="17.4" y="3.2" width="38.1" height="348.5" fill="#101214" />
+    <g id="fan--module" data-path="fan/module" data-class="fan" data-behaviour="fills" data-ref="nokia/lfan-f@1:1.0.0" data-body-depth="233.3" data-wall="#565f6a" data-fans="6" data-hot-swap="yes" data-model="LFAN-F" data-part-number="3FE 79719 AA" data-power-draw-max-w="275" data-power-draw-typical-w="18" data-weight-kg="2.08" transform="translate(36.45,177.45) translate(-19.05,-174.25)">
+      <title>fan--module</title>
+      <rect id="fan--module--face" x="0" y="0" width="38.1" height="348.5" rx="0.6" fill="#565f6a" stroke="#3b424b" stroke-width="0.3" />
+      <rect id="fan--module--location-led" x="16.6" y="271.6" width="6.0" height="19.5" rx="3.0" fill="var(--led-color, #7c838b)" stroke="#474d55" stroke-width="0.25" data-path="fan/module/location-led" data-class="led" data-states="off on" />
+      <g id="fan--module--caution-label" data-path="fan/module/caution-label" data-class="label">
+        <rect x="27.0" y="300.5" width="5.0" height="46.0" fill="none" />
+        <circle cx="29.5" cy="343.6" r="1.9" fill="none" stroke="#e6e8ea" stroke-width="0.3" />
+        <path d="M 29.5 342.4 L 30.6 344.4 L 28.4 344.4 Z" fill="#e6e8ea" />
+        <path d="M 29.5 336.2 L 31.5 339.8 L 27.5 339.8 Z" fill="#f2c200" stroke="#1b1d20" stroke-width="0.25" />
+      </g>
+      <g id="fan--module--silkscreen">
+        <text x="20.7" y="50.05" font-family="Arial" font-size="6.4" fill="#f2f3f4" text-anchor="middle" textLength="71.1" lengthAdjust="spacingAndGlyphs" transform="rotate(-90 20.7 50.05)">Nokia Lightspan MF-8</text>
+        <text x="19.7" y="311.6" font-family="Arial" font-size="2.0" fill="#f2f3f4" text-anchor="middle" transform="rotate(-90 19.7 311.6)">PWR</text>
+        <text x="30.1" y="319.0" font-family="Arial" font-size="1.7" fill="#f2f3f4" text-anchor="middle" transform="rotate(-90 30.1 319.0)">CAUTION ROTATING FAN</text>
+      </g>
+      <g id="fan--module--handle" data-path="fan/module/handle" data-class="handle" data-z-out="18.0">
+        <rect x="16.2" y="122.6" width="5.6" height="102.0" rx="2.8" fill="#8c9197" stroke="#474d55" stroke-width="0.25" />
+        <rect x="17.3" y="124.0" width="2.4" height="99.2" rx="1.2" fill="#d5d7da" />
+      </g>
+      <g id="fan--module--unlock-button" data-path="fan/module/unlock-button" data-class="button" data-z-out="2.0">
+        <rect x="11.8" y="325.0" width="14.9" height="14.9" rx="1.6" fill="#1b1d20" stroke="#0e0f11" stroke-width="0.3" />
+        <rect x="17.6" y="330.1" width="3.4" height="2.6" rx="0.3" fill="#f2f3f4" />
+        <path d="M 18.3 330.1 V 329.3 A 1.0 1.0 0 0 1 20.3 329.3 V 330.1" fill="none" stroke="#f2f3f4" stroke-width="0.45" />
+      </g>
+      <g id="fan--module--led-pwr" data-path="fan/module/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(18.1,305.4)" data-group="status-leds" data-group-role="indicator" data-description="the PWR fan status lamp; the location lamp is the window above it">
+        <title>fan--module--led-pwr</title>
+        <circle id="fan--module--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="fan--module--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fan/module/led-pwr/lamp" data-class="led" data-states="off on starting fail reset" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="19.05 174.25" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="esd-point" data-path="esd-point" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="1" transform="translate(4.7,112.3)" data-group="grounding" data-group-role="furniture" data-description="the dual-stud chassis grounding point and the ESD point on the left flange">
+    <title>esd-point</title>
+    <circle id="esd-point--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-point--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-point--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="ground-stud-1" data-path="ground-stud-1" data-class="ground" data-behaviour="mounts" data-ref="common/ground-stud@1:1.0.0" data-rel-pos="2" transform="translate(3.65,235.35)" data-group="grounding" data-group-role="furniture" data-description="the dual-stud chassis grounding point and the ESD point on the left flange">
+    <title>ground-stud-1</title>
+    <g id="ground-stud-1--nut" data-path="ground-stud-1/nut" data-class="stud" data-z-out="3.2" data-z-color="#b3b8bd">
+      <path d="M 0.02 4.05 L 2.04 0.55 L 6.06 0.55 L 8.08 4.05 L 6.06 7.55 L 2.04 7.55 Z" fill="#b3b8bd" stroke="#6b7076" stroke-width="0.25" />
+      <circle cx="4.05" cy="4.05" r="3.2" fill="none" stroke="#8d9298" stroke-width="0.2" />
+    </g>
+    <circle id="ground-stud-1--stud" cx="4.05" cy="4.05" r="2.0" fill="#9aa0a6" stroke="#5d6268" stroke-width="0.2" data-z-cyl="6.0" data-z-color="#9aa0a6" />
+  </g>
+  <g id="ground-stud-2" data-path="ground-stud-2" data-class="ground" data-behaviour="mounts" data-ref="common/ground-stud@1:1.0.0" data-rel-pos="3" transform="translate(3.65,251.65)" data-group="grounding" data-group-role="furniture" data-description="the dual-stud chassis grounding point and the ESD point on the left flange">
+    <title>ground-stud-2</title>
+    <g id="ground-stud-2--nut" data-path="ground-stud-2/nut" data-class="stud" data-z-out="3.2" data-z-color="#b3b8bd">
+      <path d="M 0.02 4.05 L 2.04 0.55 L 6.06 0.55 L 8.08 4.05 L 6.06 7.55 L 2.04 7.55 Z" fill="#b3b8bd" stroke="#6b7076" stroke-width="0.25" />
+      <circle cx="4.05" cy="4.05" r="3.2" fill="none" stroke="#8d9298" stroke-width="0.2" />
+    </g>
+    <circle id="ground-stud-2--stud" cx="4.05" cy="4.05" r="2.0" fill="#9aa0a6" stroke="#5d6268" stroke-width="0.2" data-z-cyl="6.0" data-z-color="#9aa0a6" />
+  </g>
+</svg>
