@@ -533,7 +533,7 @@ test('blank settings: the first lines say the devices file will be refused, and 
     'DCIM import settings, and export again; or fill that column in by hand.');
 });
 
-test("the Nautobot kit's README: the rack and the Planned status must exist, the types step is unverified, the cables go through the script", () => {
+test("the Nautobot kit's README: the rack and the Planned status must exist, the types step is plain, the cables go through the script", () => {
   const down = {...README_RACK, frame: {...FRAME, numbering: 'top-down'}};
   const got = D.kitReadme({target: 'nautobot', rack: down, date: DAY, dcim: {site: 'Lab 1', role: 'R'}, typeFiles: 2,
     manufacturers: ['Cisco'], rows: {devices: 4, modules: 1, cables: 2}, ...WHOLE});
@@ -544,7 +544,7 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
     '- a status named Planned, for devices, modules and cables',
     '- these manufacturers: Cisco',
     '- the rack "Cable test" in that location: 24U, numbered from the top (descending units). This kit has no rack file for Nautobot.',
-    "Step 1: types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import. This step is written from Nautobot's source and was not verified against Nautobot 3.2.",
+    "Step 1: types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import.",
     'Step 2: 1-devices.csv (4 rows): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.',
     "Step 3: 2-modules.csv (1 row): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. This creates each card's ports, so it comes before the cables.",
     "Step 4: 3-cables.csv (2 rows), with import_cables.py. Warning: do not give 3-cables.csv to Nautobot's own importer. Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
@@ -554,6 +554,7 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
     "        A cable's purpose is not carried into Nautobot by this kit."])
     assert.ok(got.text.split('\n').includes(line), line);
   assert.ok(!got.text.includes('has no description'), 'the facts file does not say a Nautobot cable has no description');
+  assert.ok(!/verified/i.test(got.text), 'the types step was imported through Nautobot 3.2.6 on 2026-10-04: the README no longer calls it unverified');
   assert.deepEqual(got.notes, []);
   assert.ok(!got.text.includes('1-rack.csv'));
   // The script could not be fetched: the kit comes without it, and says where it is.

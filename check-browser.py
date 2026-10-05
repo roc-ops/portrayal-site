@@ -9875,10 +9875,11 @@ def check_rack_dcim_kit_nautobot(page, base):
                  "Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
                  "        python3 import_cables.py 3-cables.csv --apply     (creates the cables)",
                  '- the rack "Cable test" in that location: 24U, numbered from the bottom. This kit has no rack file for Nautobot.',
-                 "This step is written from Nautobot's source and was not verified against Nautobot 3.2.",
                  "A cable's purpose is not carried into Nautobot by this kit."):
         if line not in flat:
             bad.append(f"Nautobot kit: the README lacks {line[:70]!r}")
+    if "verified" in readme.lower():
+        bad.append("Nautobot kit: the README still calls a step unverified")
     if "will be refused" in readme or "has no description" in readme or len(kit["notes"]) != readme_count(readme) or kit["status"] != notes_status(readme_count(readme)):
         bad.append(f"Nautobot kit: {readme_count(readme)} README notes; the builder reports {len(kit['notes'])}, status {kit['status']!r}")
 
@@ -10006,23 +10007,37 @@ def check_rack_dcim_acceptance_kits(page, base):
             bad.append(f"acceptance rack: a Nautobot row has a name without the prefix: {r}")
     if "will be refused" in nb["zip"]["README.txt"] + nt["zip"]["README.txt"]:
         bad.append("acceptance rack: a kit says its devices file will be refused; the rack's settings are not in it")
-    # NetBox: three of the four devices, and three cables - one of them with no type and a decimal length in feet.
-    if [r["name"] for r in kit_rows(nb, "2-devices.csv")] != ["pt-verify-demarc-i4", "pt-verify-leaf-1", "pt-verify-core-1"]:
-        bad.append(f"acceptance rack: NetBox devices {[r['name'] for r in kit_rows(nb, '2-devices.csv')]}")
+    # The boundary values the kit screens at (DCIM_LIMITS) are IN the files: at the limit is kept.
+    name64 = "pt-verify-boundary-name-64-" + "n" * 37
+    label100 = "pt-verify-boundary-label-100-" + "l" * 71
+    # NetBox: five of the seven devices (the pair of Twin/twin renamed, the one at 64 characters kept), and five
+    # cables - one with no type and a decimal length in feet, one at 100/200/999999.99, one at 32766.5 m.
+    got = [r["name"] for r in kit_rows(nb, "2-devices.csv")]
+    if got != [name64, "pt-verify-demarc-i4", "pt-verify-Twin-i6", "pt-verify-twin-i7", "pt-verify-leaf-1", "pt-verify-core-1"] or len(got[0]) != 64:
+        bad.append(f"acceptance rack: NetBox devices {got}")
     got = [(r["label"], r["side_a_name"], r["side_b_name"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nb, "4-cables.csv")]
     if got != [("pt-verify-A1", "port-1", "slot-2/p0", "smf-os2", "2", "m"), ("pt-verify-mgmt", "mgmt-eth", "port-2-1", "cat6a", "", ""),
-               ("pt-verify-blank", "port-3", "slot-2/p1", "", "1.5", "ft")]:
+               ("pt-verify-blank", "port-3", "slot-2/p1", "", "1.5", "ft"), (label100, "port-2-1", "port-2-1", "cat6", "999999.99", "m"),
+               ("pt-verify-limit", "port-2-2", "port-2-2", "cat6", "32766.5", "m")]:
         bad.append(f"acceptance rack: NetBox cables {got}")
+    long_row = next((r for r in kit_rows(nb, "4-cables.csv") if r["label"] == label100), None)
+    if not long_row or len(long_row["label"]) != 100 or len(long_row["description"]) != 200:
+        bad.append(f"acceptance rack: the boundary cable's label or description is not at the limit: {long_row and (len(long_row['label']), len(long_row['description']))}")
+    if kit_rows(nb, "2-devices.csv")[2]["comments"] != "Named pt-verify-Twin-i6 because another device here is also pt-verify-Twin." or \
+            kit_rows(nb, "2-devices.csv")[3]["comments"] != "Named pt-verify-twin-i7 because another device here is also pt-verify-twin.":
+        bad.append("acceptance rack: the Twin and twin devices are not both renamed")
     left = readme_lists(nb["zip"]["README.txt"])[0]
     if [l.split(":")[0] for l in left] != ["pt-verify-demarc-i3 is not in the devices file", "Cable pt-verify-loose is not in the cables file",
                                            "Cable pt-verify-pair is not in the cables file", "Cable pt-verify-console is not in the cables file"]:
         bad.append(f"acceptance rack: NetBox leaves out {left}")
-    # Nautobot: all four devices, four cables with whole lengths, and a console port to an interface refused by name.
-    if len(kit_rows(nt, "1-devices.csv")) != 4:
-        bad.append(f"acceptance rack: Nautobot devices {[r['name'] for r in kit_rows(nt, '1-devices.csv')]}")
+    # Nautobot: all seven devices, six cables with whole lengths (32766.5 m rounds to 32767; 999999.99 m is too long for
+    # Nautobot, so that row has no length but keeps its 100-character label), and a console port to an interface refused by name.
+    got = [r["name"] for r in kit_rows(nt, "1-devices.csv")]
+    if got != [name64, "pt-verify-demarc-i4", "pt-verify-Twin-i6", "pt-verify-twin-i7", "pt-verify-leaf-1", "pt-verify-demarc-i3", "pt-verify-core-1"]:
+        bad.append(f"acceptance rack: Nautobot devices {got}")
     got = [(r["label"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nt, "3-cables.csv")]
     if got != [("pt-verify-A1", "smf-os2", "2", "m"), ("pt-verify-mgmt", "cat6a", "", ""), ("pt-verify-pair", "cat6", "2", "ft"),
-               ("pt-verify-blank", "", "2", "ft")]:
+               ("pt-verify-blank", "", "2", "ft"), (label100, "cat6", "", ""), ("pt-verify-limit", "cat6", "32767", "m")]:
         bad.append(f"acceptance rack: Nautobot cables {got}")
     left, notes = readme_lists(nt["zip"]["README.txt"])
     if left != ["Cable pt-verify-loose is not in the cables file: end A, pt-verify-leaf-1 (U14) port-2, is not connected (port-2 holds no optic).",
@@ -10030,6 +10045,8 @@ def check_rack_dcim_acceptance_kits(page, base):
         bad.append(f"acceptance rack: Nautobot leaves out {left}")
     if "Cable pt-verify-pair: 1.5 ft is written as 2 ft: Nautobot takes whole numbers, and a length is rounded up." not in notes:
         bad.append(f"acceptance rack: the README does not say a length was rounded up: {notes}")
+    if not any("32766.5 m is written as 32767 m" in n for n in notes):
+        bad.append(f"acceptance rack: the README does not say 32766.5 m became 32767 m: {notes}")
     return bad
 
 

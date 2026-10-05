@@ -30,6 +30,10 @@ HERE = pathlib.Path(__file__).resolve().parent
 SCRIPT = HERE.parent.parent / 'site' / 'rack' / 'nautobot' / 'import_cables.py'
 PASSWORD, TOKEN = 'made-up-pass-phrase-77', 'made-up-token-0123456789abcdef'
 CSRF = 'CSRFCSRFCSRFCSRFCSRFCSRF12345678'
+NAME64 = 'pt-verify-name-of-exactly-64-characters-' + 'n' * 24              # the final name of a device at the limit
+LABEL100 = 'pt-verify-label-of-exactly-100-' + 'l' * 69                  # a cable label at the limit
+DESC200 = 'd' * 200                                                       # a purpose that yields a description at the limit
+assert (len(NAME64), len(LABEL100), len(DESC200)) == (64, 100, 200)
 PAGE = '<html><form><input type="hidden" name="csrfmiddlewaretoken" value="%s"></form>%%s</html>' % CSRF
 
 DEVICE_YAML = '---\nmanufacturer: Acme\nmodel: SW-1\nslug: acme-sw-1\nu_height: 1.0\nis_full_depth: true\ninterfaces:\n  - name: port-1\n    type: 1000base-t\nmodule-bays:\n  - name: Slot 1\n    position: slot-1\n'
@@ -42,24 +46,33 @@ NETBOX = {
     '1-rack.csv': 'site,name,status,width,u_height,desc_units\r\npt-verify-site,pt-verify-rack,planned,19,24,false\r\n',
     '2-devices.csv': 'name,role,manufacturer,device_type,status,site,rack,position,face,comments\r\n'
                      'pt-verify-a,pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,2,front,\r\n'
-                     'pt-verify-b,pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,4,front,\r\n',
+                     'pt-verify-b,pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,4,front,\r\n'
+                     'pt-verify-Twin-i6,pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,6,front,\r\n'
+                     'pt-verify-twin-i7,pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,8,front,\r\n'
+                     + NAME64 + ',pt-verify-role,Acme,SW-1,planned,pt-verify-site,pt-verify-rack,10,front,\r\n',
     '3-modules.csv': 'device,module_bay,module_type,status\r\npt-verify-a,Slot 1,CARD-1,planned\r\n',
     '4-cables.csv': 'side_a_device,side_a_type,side_a_name,side_b_device,side_b_type,side_b_name,type,status,label,color,length,length_unit,description\r\n'
-                    'pt-verify-b,dcim.interface,port-1,pt-verify-a,dcim.interface,slot-1/p0,cat6,planned,pt-verify-c1,,1.5,ft,uplink\r\n',
+                    'pt-verify-b,dcim.interface,port-1,pt-verify-a,dcim.interface,slot-1/p0,cat6,planned,pt-verify-c1,,1.5,ft,uplink\r\n'
+                    'pt-verify-Twin-i6,dcim.interface,port-1,pt-verify-twin-i7,dcim.interface,port-1,cat6,planned,' + LABEL100 + ',,999999.99,m,' + DESC200 + '\r\n',
     'README.txt': README}
 NAUTOBOT = {
     'types/device-types/Acme/SW-1.yaml': DEVICE_YAML, 'types/module-types/Acme/CARD-1.yaml': MODULE_YAML,
     '1-devices.csv': 'name,role__name,device_type__manufacturer__name,device_type__model,status__name,location__name,rack__name,position,face,comments\r\n'
                      'pt-verify-a,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,2,front,\r\n'
-                     'pt-verify-b,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,4,front,\r\n',
+                     'pt-verify-b,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,4,front,\r\n'
+                     'pt-verify-Twin-i6,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,6,front,\r\n'
+                     'pt-verify-twin-i7,pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,8,front,\r\n'
+                     + NAME64 + ',pt-verify-role,Acme,SW-1,Planned,pt-verify-site,pt-verify-rack,10,front,\r\n',
     '2-modules.csv': 'module_type__manufacturer__name,module_type__model,parent_module_bay__parent_device__name,parent_module_bay__name,status__name\r\n'
                      'Acme,CARD-1,pt-verify-a,Slot 1,Planned\r\n',
     '3-cables.csv': 'a_device,a_type,a_name,b_device,b_type,b_name,type,status,label,color,length,length_unit\r\n'
-                    'pt-verify-b,dcim.interface,port-1,pt-verify-a,dcim.interface,slot-1/p0,cat6,Planned,pt-verify-c1,,2,ft\r\n',
+                    'pt-verify-b,dcim.interface,port-1,pt-verify-a,dcim.interface,slot-1/p0,cat6,Planned,pt-verify-c1,,2,ft\r\n'
+                    'pt-verify-Twin-i6,dcim.interface,port-1,pt-verify-twin-i7,dcim.interface,port-1,cat6,Planned,' + LABEL100 + ',,32767,m\r\n',
     'README.txt': README.replace('NetBox', 'Nautobot')}
 # The rack the two kits stand for: one cable in the files, one the README says is left out.
 RACK = {'racks': [{'name': 'pt-verify-rack', 'frame': {'heightRU': 24, 'numbering': 'bottom-up'},
-                   'cables': [{'id': 'c1', 'label': 'pt-verify-c1'}, {'id': 'c2', 'label': 'pt-verify-loose'}]}]}
+                   'cables': [{'id': 'c1', 'label': 'pt-verify-c1'}, {'id': 'c2', 'label': 'pt-verify-loose'},
+                              {'id': 'c3', 'label': LABEL100}]}]}
 
 
 class State:
@@ -67,7 +80,11 @@ class State:
         self.posts = []           # (path, content type, body or form data)
         self.cables = []          # rows of the cable CSVs that were accepted
         self.refuse = None        # an import kind the mock NetBox refuses
-        self.ports = {'pt-verify-a': ['port-1', 'slot-1/p0'], 'pt-verify-b': ['port-1']}
+        self.ports = {'pt-verify-a': ['port-1', 'slot-1/p0'], 'pt-verify-b': ['port-1'],
+                      'pt-verify-Twin-i6': ['port-1'], 'pt-verify-twin-i7': ['port-1']}
+        self.netbox_devices, self.nautobot_devices = [], []     # names of the devices each mock instance took
+        self.hide_cables = False  # Nautobot lists its ports with no cable on them: a second --apply would make duplicates
+        self.lose_device = None   # a device name the instance does not list, as if it had refused it
 
 
 def handler(st):
@@ -97,12 +114,19 @@ def handler(st):
             if u.path.startswith('/api/dcim/cables/') and lst != 'cables':      # one cable by id: the script re-fetches what it made
                 one = next((r for r in st.cables if r.get('id') == lst), None)
                 return self.send(200, one) if one else self.send(404, {'detail': 'Not found.'})
+            if lst == 'devices' and 'name__isw' in q:                 # the preflight and devices_compared; Nautobot's asks with depth
+                names = st.nautobot_devices if 'depth' in q else st.netbox_devices
+                return self.send(200, {'results': [{'id': 'dev:' + n, 'name': n} for n in names if n != st.lose_device], 'next': None})
             if lst == 'devices' and 'name' in q:
                 rows = [{'id': 'dev:' + q['name'], 'name': q['name']}] if q['name'] in st.ports else []
             elif lst == 'interfaces':
                 if q.get('device') not in st.ports:
                     return self.send(400, {'device': ['Select a valid choice.']})
-                rows = [{'id': '%s:%s' % (q['device'], n), 'name': n, 'cable': None} for n in st.ports[q['device']]]
+                def on(port):                                          # the cable a created cable's end puts on this port
+                    return next((r['id'] for r in st.cables if port in (r.get('termination_a_id'), r.get('termination_b_id'))), None)
+                rows = [{'id': '%s:%s' % (q['device'], n), 'name': n,
+                         'cable': None if st.hide_cables or not on('%s:%s' % (q['device'], n)) else {'id': on('%s:%s' % (q['device'], n))}}
+                        for n in st.ports[q['device']]]
             elif lst == 'cables':
                 for r in st.cables:
                     if 'side_a_device' in r:
@@ -130,6 +154,8 @@ def handler(st):
                     return self.send(200, PAGE % '<div class="alert alert-danger">Record 1 position: U14 is already occupied</div>', 'text/html')
                 if kind == 'cables':
                     st.cables += list(csv.DictReader(io.StringIO(form['data'], newline='')))
+                if kind == 'devices':
+                    st.netbox_devices += [r['name'] for r in csv.DictReader(io.StringIO(form['data'], newline=''))]
                 return self.send(302, '', 'text/html', self.path.replace('import/', '') + '?modified_by_request=1')
             if self.headers.get('Authorization') != 'Token ' + TOKEN:
                 return self.send(403, {'detail': 'Invalid token.'})
@@ -140,6 +166,8 @@ def handler(st):
                     made = [dict(r, id='cable-%d' % (len(st.cables) + i + 1)) for i, r in enumerate(rows)]
                     st.cables += made
                     return self.send(201, made)
+                if self.path == '/api/dcim/devices/':
+                    st.nautobot_devices += [r['name'] for r in rows]
                 return self.send(201, [{'id': 'o', 'name': r.get('name', ''), 'display': r.get('name', '')} for r in rows])
             d = json.loads(body)
             return self.send(201, {'id': 'obj-%d' % len(st.posts), 'name': d.get('name') or d.get('model')} if isinstance(d, dict) else [{}])
@@ -200,8 +228,12 @@ class Kits(unittest.TestCase):
         self.assertEqual(data['/dcim/cables/import/'], NETBOX['4-cables.csv'])
         steps = self.steps(result, 'netbox')
         self.assertTrue(all(s['accepted'] for s in steps.values()), [(k, s['accepted']) for k, s in steps.items()])
-        self.assertEqual(steps['kit_devices']['notes'], ["4 manufacturer and type cell(s) prefixed; every other cell is the kit's"])
-        self.assertEqual([(c['cable'], c['ok']) for c in steps['cables_compared']['created']], [('pt-verify-c1', True), ('pt-verify-loose', True)])
+        self.assertEqual(steps['kit_devices']['notes'], ["10 manufacturer and type cell(s) prefixed; every other cell is the kit's"])
+        self.assertEqual([(c['cable'], c['ok']) for c in steps['cables_compared']['created']], [('pt-verify-c1', True), ('pt-verify-loose', True), (LABEL100, True)])
+        # The cable at the limits (a 100-character label, a 200-character description, 999999.99 m) is compared as written, and so are the devices.
+        self.assertEqual(steps['cables_compared']['created'][2]['instance'], 'as written')
+        self.assertEqual([(d['device'], d['ok']) for d in steps['devices_compared']['created']],
+                         [('pt-verify-a', True), ('pt-verify-b', True), ('pt-verify-Twin-i6', True), ('pt-verify-twin-i7', True), (NAME64, True)])
         self.assertEqual(steps['cables_compared']['created'][1]['kit'], 'Cable pt-verify-loose is not in the cables file: end A is not connected.')
         self.assertEqual(steps['cables_compared']['created'][0]['instance'], 'as written')
 
@@ -209,19 +241,48 @@ class Kits(unittest.TestCase):
         r, result, raw = self.kits('run', 'nautobot')
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         csvs = [(p, b) for p, ct, b in self.st.posts if ct == 'text/csv']
-        self.assertEqual([p for p, _ in csvs], ['/api/dcim/devices/', '/api/dcim/modules/', '/api/dcim/cables/'])
+        # One cable per request. The second --apply sent none: every row was a cable it had already made.
+        self.assertEqual([p for p, _ in csvs], ['/api/dcim/devices/', '/api/dcim/modules/', '/api/dcim/cables/', '/api/dcim/cables/'])
         self.assertEqual(csvs[0][1], NAUTOBOT['1-devices.csv'].replace(',Acme,SW-1,', ',pt-verify-Acme,pt-verify-SW-1,'))
         self.assertEqual(csvs[1][1], NAUTOBOT['2-modules.csv'].replace('Acme,CARD-1,', 'pt-verify-Acme,pt-verify-CARD-1,'))
         # The cable was created by the kit's script, by id: no file with the ends' names went to Nautobot's importer.
         self.assertEqual(csvs[2][1], 'termination_a_type,termination_a_id,termination_b_type,termination_b_id,status__name,type,label,length,length_unit\n'
                                      'dcim.interface,pt-verify-b:port-1,dcim.interface,pt-verify-a:slot-1/p0,Planned,cat6,pt-verify-c1,2,ft\n')
+        self.assertEqual(csvs[3][1], 'termination_a_type,termination_a_id,termination_b_type,termination_b_id,status__name,type,label,length,length_unit\n'
+                                     'dcim.interface,pt-verify-Twin-i6:port-1,dcim.interface,pt-verify-twin-i7:port-1,Planned,cat6,%s,32767,m\n' % LABEL100)
         steps = self.steps(result, 'nautobot')
         self.assertIsNone(steps['login']['accepted'])               # no NAUTOBOT_USER: the types went in over REST
         self.assertTrue(all(s['accepted'] for k, s in steps.items() if k != 'login'), [(k, s['accepted']) for k, s in steps.items()])
         self.assertIn('line 2 pt-verify-c1: would connect pt-verify-b port-1 to pt-verify-a slot-1/p0 (cat6, 2 ft, Planned).',
                       steps['script_dry_run']['messages'])
-        self.assertIn('1 row: 1 created, 0 already connected, 0 failed.', steps['script_apply']['messages'])
+        self.assertIn('2 rows: 2 would be created, 0 already connected, 0 failed. Nothing was created.', steps['script_dry_run']['messages'])
+        self.assertIn('2 rows: 2 created, 0 already connected, 0 failed.', steps['script_apply']['messages'])
+        # A second --apply on the same file: every row already connected, exit 0, nothing sent.
+        self.assertIn('2 rows: 0 created, 2 already connected, 0 failed.', steps['script_apply_again']['messages'])
+        self.assertEqual((steps['script_apply_again']['http_status'], steps['script_apply_again']['accepted']), (0, True))
         self.assertEqual(steps['cables_compared']['created'][0]['instance'], 'as written')
+        # The device at the 64-character limit and both Twin/twin devices exist under their final names.
+        self.assertEqual([(d['device'], d['characters'], d['ok']) for d in steps['devices_compared']['created']],
+                         [('pt-verify-a', 11, True), ('pt-verify-b', 11, True), ('pt-verify-Twin-i6', 17, True), ('pt-verify-twin-i7', 17, True), (NAME64, 64, True)])
+        self.assertEqual([(c['cable'], c['ok']) for c in steps['cables_compared']['created']],
+                         [('pt-verify-c1', True), ('pt-verify-loose', True), (LABEL100, True)])
+
+    def test_a_second_apply_that_makes_duplicates_fails_the_run(self):
+        self.st.hide_cables = True                  # ports listed with no cable: the script cannot know it already made them
+        r, result, raw = self.kits('run', 'nautobot')
+        self.assertEqual(r.returncode, 1)
+        again = self.steps(result, 'nautobot')['script_apply_again']
+        self.assertFalse(again['accepted'])
+        self.assertIn('expected the summary "2 rows: 0 created, 2 already connected, 0 failed."', again['messages'])
+
+    def test_a_device_the_instance_did_not_take_under_its_final_name_fails_the_run(self):
+        self.st.lose_device = 'pt-verify-twin-i7'
+        for target, name in (('netbox', 'kit_devices'), ('nautobot', 'kit_devices')):
+            r, result, raw = self.kits('run', target)
+            self.assertEqual(r.returncode, 1, target)
+            step = self.steps(result, target)['devices_compared']
+            self.assertFalse(step['accepted'], target)
+            self.assertIn('pt-verify-twin-i7 is in the kit and not on the instance under that name', step['messages'])
 
     def test_a_refused_file_and_a_cable_that_did_not_arrive_fail_the_run(self):
         self.st.refuse = 'cables'

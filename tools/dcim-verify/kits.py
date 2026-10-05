@@ -190,6 +190,36 @@ def rack_cables(kit, cable_file, found):
     return out, ok
 
 
+def devices_compared(run, kit, device_file, c, query):
+    """Every device of the kit's devices file exists on the instance under its
+    exact final name, and nothing else under the prefix does. That includes the
+    names at the 64-character limit, and two devices whose labels differ only by
+    case ("Twin" and "twin"): the kit renamed both, and NetBox, which treats
+    names as one ignoring case, must have taken both."""
+    s = run.step('devices_compared', "the instance's devices against the kit's devices file", 'accept')
+    names = [r['name'] for r in kit.rows(device_file)]
+    have, err = c.api_list('/api/dcim/devices/?' + urllib.parse.urlencode(dict(query, name__isw=P, limit=200)))
+    got = [str(o.get('name')) for o in have if str(o.get('name') or '').startswith(P)]
+    problems = [err] if err else []
+    table = []
+    for n in names:
+        ok = n in got
+        table.append({'device': n, 'characters': len(n), 'instance': 'as written' if ok else 'NOT FOUND', 'ok': ok})
+        if not ok:
+            problems.append('%s is in the kit and not on the instance under that name' % n)
+    for n in got:
+        if n not in names:
+            problems.append('%s is on the instance and not in the kit' % n)
+    folded = {}
+    for n in names:
+        folded.setdefault(n.lower(), []).append(n)
+    twins = [v for v in folded.values() if len(v) > 1]
+    s['created'] = table
+    s['messages'] = problems + ['names that differ only by case, all present: %s' % json.dumps(twins)] * bool(twins and not problems)
+    s['accepted'] = not problems
+    run.done(s)
+
+
 def compared(run, kit, cable_file, found, problems):
     s = run.step('cables_compared', "the instance's cables against the kit's rows and the rack's cables", 'accept')
     table, ok = rack_cables(kit, cable_file, found)
@@ -265,6 +295,7 @@ def run_netbox(run, kit):
         if label not in found:
             found[label] = 'IN NETBOX BUT NOT IN THE KIT'
             problems.append('%s is in NetBox and not in the kit' % label)
+    devices_compared(run, kit, '2-devices.csv', c, {})
     compared(run, kit, '4-cables.csv', found, problems)
 
 
@@ -296,7 +327,7 @@ def rest_type(c, run, sid, title, kind, d):
     return s
 
 
-def run_script(run, kit, sid, title, flags):
+def run_script(run, kit, sid, title, flags, expect=None):
     """The kit's own import_cables.py, as shipped, against the kit's own
     3-cables.csv. It gets the URL and the token from the environment, as a
     user's would; its output is recorded, redacted."""
@@ -316,6 +347,10 @@ def run_script(run, kit, sid, title, flags):
     s['http_status'] = r.returncode
     s['accepted'] = r.returncode == 0
     s['messages'] = [V.redact(l) for l in (r.stdout + r.stderr).split('\n') if l.strip()]
+    # An exit code of 0 says no row failed; `expect` is the summary line the run must also print.
+    if expect and s['accepted'] and not any(m.startswith(expect) for m in s['messages']):
+        s['accepted'] = False
+        s['messages'].append('expected the summary "%s"' % expect)
     run.done(s)
     return s
 
@@ -375,8 +410,15 @@ def run_nautobot(run, kit):
             continue
         V.nt_csv(c, run, 'kit_' + kind, title, '/api/dcim/%s/' % kind, text, 'accept',
                  notes=['%d manufacturer and type cell(s) prefixed; every other cell is the kit\'s' % n])
-    run_script(run, kit, 'script_dry_run', 'README step 4: import_cables.py, a dry run', [])
-    run_script(run, kit, 'script_apply', 'README step 4: import_cables.py --apply', ['--apply'])
+    n = len(kit.rows('3-cables.csv'))
+    total = '%d row%s' % (n, '' if n == 1 else 's')
+    run_script(run, kit, 'script_dry_run', 'README step 4: import_cables.py, a dry run', [],
+               '%s: %d would be created, 0 already connected, 0 failed. Nothing was created.' % (total, n))
+    run_script(run, kit, 'script_apply', 'README step 4: import_cables.py --apply', ['--apply'],
+               '%s: %d created, 0 already connected, 0 failed.' % (total, n))
+    # The README says to run it again after a failure: on the same file every row is a cable it already made.
+    run_script(run, kit, 'script_apply_again', 'README step 4: import_cables.py --apply, a second time on the same file', ['--apply'],
+               '%s: 0 created, %d already connected, 0 failed.' % (total, n))
     # What Nautobot now holds, against the kit's rows: each cable's two ends by id.
     cables, err = c.api_list('/api/dcim/cables/?' + urllib.parse.urlencode({'label__isw': P, 'limit': 200, 'depth': 0}))
     have = {o.get('label'): o for o in cables}
@@ -403,6 +445,7 @@ def run_nautobot(run, kit):
         if label not in found:
             found[label] = 'IN NAUTOBOT BUT NOT IN THE KIT'
             problems.append('%s is in Nautobot and not in the kit' % label)
+    devices_compared(run, kit, '1-devices.csv', c, {'depth': 0})
     compared(run, kit, '3-cables.csv', found, problems)
 
 
@@ -424,7 +467,9 @@ def plan(target):
         text, n = prefixed_cells(name, kit.files[name])
         V.say('   import  %-16s %d row(s), %d cell(s) prefixed, columns: %s' % (name, len(kit.rows(name)), n, ','.join(V.header_row(text))))
     if target == 'nautobot':
-        V.say('   run     import_cables.py 3-cables.csv (dry run), then --apply: %d row(s)' % len(kit.rows('3-cables.csv')))
+        V.say('   run     import_cables.py 3-cables.csv (dry run), then --apply, then --apply again (every row already connected): %d row(s)'
+              % len(kit.rows('3-cables.csv')))
+    V.say('   compare the devices the instance has with the kit\'s devices file, by exact name')
     V.say('   compare the cables the instance has with the kit\'s rows and the rack file\'s cables')
     for l in kit.left_out():
         V.say('   left out by the kit: ' + l)

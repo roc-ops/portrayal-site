@@ -353,8 +353,7 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
   const sub = text => para(text, '        ', '        ');
   if (nautobot) {
     para('Import in this order. Nautobot takes each CSV file whole or not at all.');
-    step(1, typeFiles ? `${types}: Device Types > Import and Module Types > Import, one YAML file per import. This step is written ` +
-                        "from Nautobot's source and was not verified against Nautobot 3.2."
+    step(1, typeFiles ? `${types}: Device Types > Import and Module Types > Import, one YAML file per import.`
                       : 'types/: no files, so there is nothing to import.');
     step(2, `${F.devices} (${rowsText(rows.devices)}): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.`);
     step(3, `${F.modules} (${rowsText(rows.modules)}): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. ` +
