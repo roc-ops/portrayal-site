@@ -8923,7 +8923,7 @@ def check_rack_export_drawio_cables(page, base):
         bad.append(f"draw.io cables: duplicate cell ids {dup[:5]}")
     colors = page.evaluate("async () => (await import('/site/rack/cables.js')).COLORS")
     style = "edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;startArrow=none;strokeWidth=2;fontSize=8;" \
-            "labelBackgroundColor=#FFFFFF;strokeColor={};"
+            "labelBackgroundColor=#FFFFFF;fontColor=#15171a;strokeColor={};"
     got = {o.get("id"): {"label": o.get("label"), "cable": o.get("portrayal-cable"), "media": o.get("portrayal-media"),
                          "purpose": o.get("portrayal-purpose"), "length": o.get("portrayal-length"),
                          "source": o.find("mxCell").get("source"), "target": o.find("mxCell").get("target"),

@@ -493,3 +493,18 @@ test('BOM: a length kept as written is noted once per cable, in the schedule\'s 
   assert.deepEqual(X.cableBomNotes(rack, ENDS), [`Cable x (a): ${sched[0]}`, `Cable x (b): ${sched[1]}`]);
   assert.deepEqual(X.cableBomRows(rack, ENDS).map(r => [r.qty, r.description]), [[1, '3 m; copper at both ends'], [2, 'length not set; copper at both ends']]);
 });
+
+// draw.io's dark editor draws unstyled text light and leaves a stated color
+// alone: a label on a white background with no font color is an empty white box.
+test('drawioCableStyle: a cable label states its text color with its background, and the edge is the vendor\'s otherwise', () => {
+  const s = X.drawioCableStyle('#e8c547');
+  assert.match(s, /(^|;)labelBackgroundColor=#FFFFFF;/);
+  assert.match(s, /(^|;)fontColor=#15171a;/);
+  assert.match(s, /(^|;)strokeColor=#e8c547;$/);
+  const dev = (id, u) => ({id, name: id, u, ru: 1, faces: {front: {svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"/>',
+    vb: [0, 0, 10, 10], ports: [{id: 'p', path: 'p', cls: 'port', x: 1, y: 1, w: 2, h: 2}]}}});
+  const xml = rackDiagram([{label: 'R', faces: ['front'], racks: [{label: 'R', units: 2, mounted: [dev('a', 1), dev('b', 2)]}]}],
+    {cables: [{id: 'c1', a: {item: 'a', path: 'p'}, b: {item: 'b', path: 'p'}, media: 'os2'}], cableStyle: {os2: '#e8c547'}});
+  const vendor = /id="cable-c1"><mxCell style="([^"]*)"/.exec(xml)?.[1];
+  assert.equal(s.replace('fontColor=#15171a;', ''), vendor);
+});

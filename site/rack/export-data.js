@@ -412,6 +412,15 @@ export function drawioMediaKey(l) {
   return /^[a-z0-9][a-z0-9-]*$/.test(k) && !(k in {}) && k !== 'default' ? k : '';
 }
 
+// A cable edge's whole style, for the vendor's cableStyle hook: its own edge
+// (vendor/drawio.js CABLE_EDGE, which a test holds this to) with the label's
+// text color stated. The vendor gives a label a white background and leaves
+// its text to draw.io, whose dark editor draws unstyled text light: white on
+// white, an empty box on the device. A stated pair reads in either theme.
+export const drawioCableStyle = color =>
+  'edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;startArrow=none;strokeWidth=2;fontSize=8;' +
+  `labelBackgroundColor=#FFFFFF;fontColor=#15171a;strokeColor=${color};`;
+
 export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   // Ends that could not be checked: an edge may run to an empty cage, which

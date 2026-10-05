@@ -26,7 +26,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
+        drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, endKey, endName, portPathOf} from './cable-rules.js';
 import {dcimOf} from './model.js';
@@ -226,7 +226,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
 //
 // A cable is handed to the vendor only when both its ends land and both have
 // a port cell (export-data.js drawioCables); the rest are notes, written here
-// in the page's words. Edge colors are cables.js's, by media, as on the page.
+// in the page's words. Edge colors are cables.js's, by media, as on the page;
+// the rest of an edge's style is export-data.js drawioCableStyle.
 export async function drawioFile(rack, chassisOf) {
   const base = itemsWithU(rack, chassisOf);
   const {cabled, facts, items} = await cabledItems(rack, base);
@@ -258,10 +259,11 @@ export async function drawioFile(rack, chassisOf) {
                                     hiddenBy: (id, pane) => lists.hidden.find(h => h.item.id === id && h.pane === pane)?.by.label ?? null,
                                     unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
   notes.push(...wires.notes);
-  // The vendor looks a cable's color up by its media, lower-cased; the table is the page's own colors.
-  const cableStyle = {default: COLORS.unset};
+  // A cable's color is the page's own, by its media key; the style around it is export-data.js's.
+  const colors = new Map();
   for (const c of rack.cables || [])
-    cableStyle[drawioMediaKey(c)] = drawioMediaKey(c) ? colorOf({media: c.media || 'unset', purpose: c.purpose}) : COLORS.unset;
+    if (drawioMediaKey(c)) colors.set(drawioMediaKey(c), colorOf({media: c.media || 'unset', purpose: c.purpose}));
+  const cableStyle = c => drawioCableStyle(colors.get(c.media) ?? COLORS.unset);
   const all = uniq(notes);
   // rackDiagram writes the notes as a comment INSIDE <mxfile>: draw.io reads
   // its <diagram> children and skips a comment there. Names and labels are
