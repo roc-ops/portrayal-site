@@ -9557,6 +9557,118 @@ def check_rack_dcim_settings_kept(page, base):
     return bad
 
 
+@extra("rack.html: DCIM import settings typed but not saved (Done not pressed) reach an export that follows, and the rack they were typed for when another rack is opened or the page is left")
+def check_rack_dcim_settings_draft(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    typed = {"site": "Typed Lab", "role": "Typed Role"}
+    stored = """async (id) => { const {openLibrary} = await import('/site/rack/library.js');
+      const d = await (await openLibrary()).get(id); return d ? (d.racks[0].dcim ?? null) : 'no such rack'; }"""
+
+    def type_draft(label):
+        page.click("#exportMenu > summary")
+        page.click('#exportItems [data-export="dcim-settings"]')
+        wait_sel(page, f"{label}: the form", "#dcimForm")
+        wait_fn(page, f"{label}: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
+        page.keyboard.type(typed["site"])
+        page.keyboard.press("Tab")
+        page.keyboard.type(typed["role"])
+
+    # 1a. An export builds from what is typed, with the form still open.
+    open_fixture(page, base)
+    type_draft("export")
+    if page.evaluate("() => window.__rack.doc().racks[0].dcim ?? null") is not None:
+        bad.append("export: typing alone changed the rack")
+    for target in ("netbox", "nautobot"):
+        dl, kit = export_kit(page, target)
+        rows = kit_rows(kit, DEVICES_FILE[target])
+        key = {"netbox": ("site", "role"), "nautobot": ("location__name", "role__name")}[target]
+        if not rows or any((r[key[0]], r[key[1]]) != (typed["site"], typed["role"]) for r in rows):
+            bad.append(f"export, {target}: the devices carry {[(r[key[0]], r[key[1]]) for r in rows]}")
+        if "will be refused" in kit["zip"]["README.txt"] or "No site" in kit["zip"]["README.txt"]:
+            bad.append(f"export, {target}: the README warns about blank settings")
+    if page.input_value("#dSite") != typed["site"] or page.input_value("#dRole") != typed["role"] or not page.query_selector("#dcimForm"):
+        bad.append("export: the form is not open and consistent after the export")
+    saved = json.loads(pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8"))["racks"][0]
+    if saved.get("dcim") != typed:
+        bad.append(f"export: the rack file holds {saved.get('dcim')!r}")
+    # Done after that saves nothing new, and says nothing.
+    page.click("#dDone")
+    wait_fn(page, "export: Done closes the form", "() => !document.getElementById('dcimForm')")
+    if page.query_selector("#side [role=status]:has-text('settings saved')"):
+        bad.append("export: Done announced a save that had already happened")
+
+    # 1b. Another rack opened, or the page left, with a draft: the rack it was typed for holds it.
+    def fresh(label):
+        open_fixture(page, base)
+        rid = page.evaluate("() => window.__rack.doc().id")
+        page.evaluate("() => window.__rack.flush()")
+        type_draft(label)
+        return rid
+
+    def switched(label, rid, act):
+        act()
+        page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=rid, timeout=READY_MS)
+        now = page.evaluate("() => window.__rack.doc().racks[0].dcim ?? null")
+        if now == typed:
+            bad.append(f"{label}: the other rack got the draft")
+        page.evaluate("() => window.__rack.flush()")
+        got = page.evaluate(stored, rid)
+        if got != typed:
+            bad.append(f"{label}: the original holds {got!r}")
+
+    rid = fresh("New rack")
+    switched("New rack", rid, lambda: (page.click("#libMenu > summary"), page.click("#libItems button:has-text('New rack')")))
+    rid = fresh("Duplicate")
+    switched("Duplicate", rid, lambda: (page.click("#libMenu > summary"), page.click("#libItems button:has-text('Duplicate')")))
+    rid = fresh("Open .json")
+    other = json.dumps(EXPORT_FIXTURE).encode()
+    switched("Open .json", rid, lambda: page.set_input_files("#openFile", files=[{"name": "o.rack.json", "mimeType": "application/json", "buffer": other}]))
+    rid = fresh("library pick")
+    page.evaluate("""async () => { const {openLibrary} = await import('/site/rack/library.js');
+      const d = structuredClone(window.__rack.doc()); d.id = 'other-rack-x'; d.racks[0].name = 'Other rack pick'; delete d.racks[0].dcim;
+      await (await openLibrary()).put(d); }""")
+    def pick():
+        page.click("#libMenu > summary")
+        page.click("#libItems button:has-text('Other rack pick')")
+    switched("library pick", rid, pick)
+
+    rid = fresh("reload")
+    # The page's pagehide handler is what stores the draft. A real unload does not reliably
+    # let IndexedDB finish a write that starts inside it (an ordinary edit committed just
+    # before a reload is lost the same way, and always was), so the handler is driven by the
+    # event, and the reload is only to read the library from a fresh page.
+    page.evaluate("async () => { window.dispatchEvent(new Event('pagehide')); await window.__rack.flush(); }")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    got = page.evaluate(stored, rid)
+    if got != typed:
+        bad.append(f"reload: the saved rack holds {got!r}")
+    return bad
+
+
+@extra("rack.html: Enter in a DCIM settings field is not Done while an IME is composing, and an unchanged Done says nothing")
+def check_rack_dcim_settings_ime(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    page.click("#exportMenu > summary")
+    page.click('#exportItems [data-export="dcim-settings"]')
+    wait_sel(page, "ime: the form", "#dcimForm")
+    wait_fn(page, "ime: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
+    got = page.evaluate("""() => { const f = document.getElementById('dSite');
+      const ev = new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true, isComposing: true});
+      f.dispatchEvent(ev); return [ev.defaultPrevented, !!document.getElementById('dcimForm')]; }""")
+    if got != [False, True]:
+        bad.append(f"ime: Enter during composition was handled: {got}")
+    page.click("#dDone")
+    wait_fn(page, "ime: Done closes the form", "() => !document.getElementById('dcimForm')")
+    if page.query_selector("#side [role=status]:has-text('settings saved')"):
+        bad.append("ime: Done with nothing changed announced a save")
+    return bad
+
+
 # One import kit, built by exports.js dcimKit from the rack on the page (with
 # `patch` applied: {numbering, dcim, cables: 'none'}), while `fail` is what the
 # probe makes fail. Returns its name, its README notes, the status line the

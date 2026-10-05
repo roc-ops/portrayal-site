@@ -10,7 +10,8 @@
 // and Esc close without saving. Saving on each field's `change` rebuilt the
 // side panel between a click's mousedown and mouseup, and the first click on
 // Done was lost. The page keeps the draft, so leaving the form any other way
-// (a click on the rack, another panel) saves what was typed.
+// (a click on the rack, another panel), an export, another rack being opened
+// or created, or the page being left, saves what was typed (rack-page.js storeDcimDraft).
 
 import {el} from './dom.js';
 import {dcimOf} from './model.js';
@@ -36,10 +37,10 @@ export function dcimForm({rack, draft = null, onEdit, onDone, onCancel}) {
     el('div', {class: 'rk-actions'}, [done, cancel]),
   ]);
   // Esc in a field closes the form without saving, as Esc does in the cable form;
-  // Enter in a field is Done. Other forms are not touched: this listener is the form's own.
+  // Enter in a field is Done (not while an IME is composing: there Enter picks a candidate). Other forms are not touched: this listener is the form's own.
   form.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') { ev.preventDefault(); onCancel(); }
-    else if (ev.key === 'Enter' && ev.target instanceof HTMLInputElement) { ev.preventDefault(); done.click(); }
+    else if (ev.key === 'Enter' && !ev.isComposing && ev.target instanceof HTMLInputElement) { ev.preventDefault(); done.click(); }
   });
   return form;
 }

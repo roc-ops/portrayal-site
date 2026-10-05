@@ -523,14 +523,21 @@ function closeDcimForm(saved) {
   S.focusNext = 'exportSummary';
   if (saved) {
     const now = rack(), next = withDcim(now, saved), d = dcimOf(next);
-    S.notice = {kind: 'note', text: `DCIM import settings saved: ${d.site ? `site or location "${d.site}"` : 'no site or location'}, ` +
-                                    `${d.role ? `device role "${d.role}"` : 'no device role'}.`};
-    if (JSON.stringify(next.dcim) !== JSON.stringify(now.dcim)) { S.sel = null; commit(next); return; }
+    // An export or another rack may have stored the draft already: then the
+    // rack holds it and there is nothing to say. Nothing changed, nothing said.
+    if (JSON.stringify(next.dcim) !== JSON.stringify(now.dcim)) {
+      S.notice = {kind: 'note', text: `DCIM import settings saved: ${d.site ? `site or location "${d.site}"` : 'no site or location'}, ` +
+                                      `${d.role ? `device role "${d.role}"` : 'no device role'}.`};
+      S.sel = null; commit(next); return;
+    }
   }
   select(null);
 }
 let exporting = false;
 async function runExport(kind) {
+  // What is typed in the settings form, Done not pressed, is part of the rack
+  // the export builds from: store it before any builder reads rack().
+  storeDcimDraft();
   if (kind === 'json') { downloadDoc(S.doc); return; }
   if (kind === 'to-3d') { setMode('3d'); return; }
   if (kind === 'dcim-settings') { openDcimSettings(); return; }
@@ -584,17 +591,25 @@ function renderExports() {
 }
 
 // The DCIM settings form keeps what was typed as a draft; Done and Cancel clear
-// it. If the form is gone and a draft is left, the user went elsewhere (a click
-// on the rack, another panel): what they typed is saved, not lost. It is put
-// into the document here, quietly - the scene reads nothing of it.
-function flushDcimDraft() {
-  if (!S.dcimDraft || S.sel?.kind === 'dcim') return;
-  const draft = S.dcimDraft;
-  S.dcimDraft = null;
-  const now = rack(), next = withDcim(now, draft);
-  if (JSON.stringify(next.dcim) === JSON.stringify(now.dcim)) return;
+// it. Anything else that leaves the form (a click on the rack, another panel)
+// saves it rather than losing it, and so does everything that reads or replaces
+// the rack while the form is still open: an export, another rack being opened or
+// created, the page being left. storeDcimDraft() puts the draft into the rack it
+// was typed for, quietly (the scene reads nothing of it), and says whether the
+// rack changed. It keeps the draft, which the open form still shows.
+function storeDcimDraft() {
+  if (!S.dcimDraft) return false;
+  const now = rack(), next = withDcim(now, S.dcimDraft);
+  if (JSON.stringify(next.dcim) === JSON.stringify(now.dcim)) return false;
   S.doc = {...S.doc, racks: [next]};
   S.save.saveSoon(S.doc);
+  return true;
+}
+// If the form is gone and a draft is left, the user went elsewhere: save it.
+function flushDcimDraft() {
+  if (!S.dcimDraft || S.sel?.kind === 'dcim') return;
+  storeDcimDraft();
+  S.dcimDraft = null;
 }
 async function render() {
   flushDcimDraft();
@@ -884,6 +899,7 @@ async function renderLibrary() {
   const act = (text, fn) => { const b = el('button', {type: 'button', text}); b.addEventListener('click', () => { $('libMenu').open = false; fn(); }); return b; };
   const kids = [
     act('New rack', async () => {
+      storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
       await offerDownloadIfNoLibrary();
       // A document switch drops whatever the previous rack's last edit had
       // queued (saveSoon fires 500ms later); flushing first means it lands
@@ -893,8 +909,12 @@ async function renderLibrary() {
       await S.lib.put(d); setDoc(d);
     }),
     act('Duplicate', async () => {
+      // The copy is of the rack as stored: what is typed in an open settings
+      // form is a draft for the original, and goes into the original only.
+      const copy = structuredClone(S.doc);
+      storeDcimDraft();
       await S.save.flush();
-      const d = {...structuredClone(S.doc), id: newDoc().id};
+      const d = {...copy, id: newDoc().id};
       d.racks[0].name = `${rack().name} copy`; await S.lib.put(d); setDoc(d);
     }),
     act('Rename…', () => { const n = prompt('Rack name', rack().name); if (n && n.trim()) commit(renamed(rack(), n.trim())); }),
@@ -926,6 +946,7 @@ async function renderLibrary() {
   items.append(el('hr'), ...list.map(d => {
     // The open rack by its live name: the stored one trails an edit by the autosave delay.
     const b = act(d.id === S.doc.id ? rack().name : d.name, async () => {
+      storeDcimDraft();
       await S.save.flush();
       const doc = await getDoc(d.id);
       if (!doc) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_OPEN})); return; }
@@ -1033,6 +1054,7 @@ async function bootInner() {
     if (!file) return;
     try {
       let d = await readDocFile(file);
+      storeDcimDraft();
       await S.save.flush();
       // A file's own id can match one already in the library (it was saved
       // from here, or from another browser sharing the same rack) - importing
@@ -1042,7 +1064,7 @@ async function bootInner() {
     }
     catch (err) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: err.message})); }
   });
-  window.addEventListener('pagehide', () => S.save.flush());
+  window.addEventListener('pagehide', () => { storeDcimDraft(); S.save.flush(); });
   document.addEventListener('keydown', ev => {
     // The lens holds its own keyboard (Escape closes it, not the rack's
     // selection), and a click that lands on the backdrop can leave focus on
