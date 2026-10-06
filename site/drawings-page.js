@@ -13,11 +13,18 @@ let DEVICES = [], COMPONENTS = [], DEV = null, SCOPE = null;
 
 const NORM = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 const nsOf = man => NORM(String(man).split(/\s+/)[0]);
+// THE DEVICE'S OWN NAMESPACE, which devices.json carries, as drawio-page.js
+// reads it. The manufacturer's first word is not it for four vendors: FS.com
+// is `fs`, BATM/Telco Systems `telco-systems`, and Amphenol Network Solutions
+// `amphenol-ns` - where the first word, `amphenol`, is a namespace that exists
+// and belongs to a different Amphenol business, so the panel's download
+// offered that business's two parts and none of its own.
+const nsOfDevice = d => d.ns || nsOf(d.manufacturer);
 const allVendors = () => !!$('allven')?.checked;
 
 /** The vendor's modules, for whichever vendors the scope covers. */
 function modulesFor(key) {
-  const want = new Set(SCOPE.devicesFor(key).map(d => nsOf(d.manufacturer)));
+  const want = new Set(SCOPE.devicesFor(key).map(nsOfDevice));
   return COMPONENTS.filter(c => c.kind === 'module' && want.has(c.ns) && c.files?.default);
 }
 
