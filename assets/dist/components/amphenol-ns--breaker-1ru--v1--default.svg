@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="17.8mm" height="39.1mm" viewBox="0 0 17.8 39.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="breaker-1ru" data-path="breaker-1ru" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(0,0)">
+    <title>breaker-1ru</title>
+    <rect id="breaker-1ru--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-1ru/body" data-class="mechanical" />
+    <rect id="breaker-1ru--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+    <g id="breaker-1ru--flag" data-path="breaker-1ru/flag" data-class="marking">
+      <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+      <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+    </g>
+    <g id="breaker-1ru--handle" data-path="breaker-1ru/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+      <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+      <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+      <g id="breaker-1ru--silkscreen">
+        <text id="breaker-1ru--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">60</text>
+      </g>
+    </g>
+    <g id="breaker-1ru--guard" data-path="breaker-1ru/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+      <title>breaker-1ru--guard</title>
+      <g id="breaker-1ru--guard--insert-top" data-path="breaker-1ru/guard/insert-top" data-class="mechanical">
+        <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+        <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+      </g>
+      <g id="breaker-1ru--guard--insert-bottom" data-path="breaker-1ru/guard/insert-bottom" data-class="mechanical">
+        <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+        <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+      </g>
+      <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+    </g>
+    <g id="breaker-1ru--guard-occupant" data-path="breaker-1ru/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-1ru/guard">
+      <title>breaker-1ru--guard-occupant</title>
+      <defs>
+        <linearGradient id="breaker-1ru--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#26292c" />
+          <stop offset="0.5" stop-color="#17191b" />
+          <stop offset="1" stop-color="#0f1112" />
+        </linearGradient>
+      </defs>
+      <rect id="breaker-1ru--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-1ru--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-1ru/guard-occupant/guard" data-class="mechanical" />
+      <rect id="breaker-1ru--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-1ru/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+      <g id="breaker-1ru--guard-occupant--screw-top" data-path="breaker-1ru/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+        <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+        <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+      </g>
+      <g id="breaker-1ru--guard-occupant--screw-bottom" data-path="breaker-1ru/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+        <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+        <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+      </g>
+      <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

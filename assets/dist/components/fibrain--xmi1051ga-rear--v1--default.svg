@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100.0mm" height="21.0mm" viewBox="0 0 100.0 21.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="xmi1051ga-rear" data-path="xmi1051ga-rear" data-class="adapter-panel" data-ref="fibrain/xmi1051ga-rear@1:1.0.0" data-media="fiber" transform="translate(0,0)">
+    <title>xmi1051ga-rear</title>
+    <rect id="xmi1051ga-rear--bezel" x="0" y="0" width="100.0" height="21.0" rx="0.6" fill="#17191b" stroke="#0c0d0e" stroke-width="0.25" />
+    <rect x="0.125" y="0.125" width="2.925" height="20.75" fill="#222528" />
+    <rect x="96.950" y="0.125" width="2.925" height="20.75" fill="#222528" />
+    <rect x="17.160" y="0" width="2.2" height="21.0" fill="#2a2d30" />
+    <rect x="33.030" y="0" width="2.2" height="21.0" fill="#2a2d30" />
+    <rect x="48.900" y="0" width="2.2" height="21.0" fill="#2a2d30" />
+    <rect x="64.770" y="0" width="2.2" height="21.0" fill="#2a2d30" />
+    <rect x="80.640" y="0" width="2.2" height="21.0" fill="#2a2d30" />
+    <g id="xmi1051ga-rear--b01" data-path="xmi1051ga-rear/b01" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(84.975,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b01</title>
+      <path id="xmi1051ga-rear--b01--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b01--1" data-path="xmi1051ga-rear/b01/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b01--1</title>
+        <path id="xmi1051ga-rear--b01--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b01/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b01--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b01--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b01--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b01--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b01--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+    <g id="xmi1051ga-rear--b02" data-path="xmi1051ga-rear/b02" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(69.105,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b02</title>
+      <path id="xmi1051ga-rear--b02--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b02--1" data-path="xmi1051ga-rear/b02/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b02--1</title>
+        <path id="xmi1051ga-rear--b02--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b02/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b02--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b02--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b02--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b02--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b02--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+    <g id="xmi1051ga-rear--b03" data-path="xmi1051ga-rear/b03" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(53.235,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b03</title>
+      <path id="xmi1051ga-rear--b03--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b03--1" data-path="xmi1051ga-rear/b03/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b03--1</title>
+        <path id="xmi1051ga-rear--b03--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b03/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b03--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b03--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b03--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b03--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b03--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+    <g id="xmi1051ga-rear--b04" data-path="xmi1051ga-rear/b04" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(37.365,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b04</title>
+      <path id="xmi1051ga-rear--b04--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b04--1" data-path="xmi1051ga-rear/b04/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b04--1</title>
+        <path id="xmi1051ga-rear--b04--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b04/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b04--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b04--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b04--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b04--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b04--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+    <g id="xmi1051ga-rear--b05" data-path="xmi1051ga-rear/b05" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(21.495,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b05</title>
+      <path id="xmi1051ga-rear--b05--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b05--1" data-path="xmi1051ga-rear/b05/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b05--1</title>
+        <path id="xmi1051ga-rear--b05--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b05/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b05--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b05--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b05--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b05--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b05--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+    <g id="xmi1051ga-rear--b06" data-path="xmi1051ga-rear/b06" data-class="port" data-ref="common/sc-simplex-adapter@1:1.0.0" data-connector="sc" data-housing-finish="#44a72a" data-media="fiber" transform="translate(5.625,8.8) rotate(90 4.7 6.4)">
+      <title>xmi1051ga-rear--b06</title>
+      <path id="xmi1051ga-rear--b06--bezel" fill-rule="evenodd" fill="#44a72a" stroke="#29661a" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 12.5 Q 9.4 12.8 9.1 12.8 H 0.3 Q 0 12.8 0 12.5 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.9 H 8.45 V 10.9 H 0.95 V 7.45 H 0.06 V 5.35 H 0.95 Z" data-z-out="1.0" />
+      <g id="xmi1051ga-rear--b06--1" data-path="xmi1051ga-rear/b06/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.9)" data-z-lift="1.0">
+        <title>xmi1051ga-rear--b06--1</title>
+        <path id="xmi1051ga-rear--b06--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="xmi1051ga-rear/b06/1/bore" data-class="cutout" />
+        <rect id="xmi1051ga-rear--b06--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="xmi1051ga-rear--b06--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="xmi1051ga-rear--b06--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="xmi1051ga-rear--b06--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="xmi1051ga-rear--b06--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 6.4" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

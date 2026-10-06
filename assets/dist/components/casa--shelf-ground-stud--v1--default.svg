@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="10.8mm" height="10.8mm" viewBox="0 0 10.8 10.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="shelf-ground-stud" data-path="shelf-ground-stud" data-class="ground" data-ref="casa/shelf-ground-stud@1:1.0.0" data-wall="#4a4f55" transform="translate(0,0)">
+    <title>shelf-ground-stud</title>
+    <polygon id="shelf-ground-stud--washer" points="5.4,0 6.41,1.63 8.1,0.72 8.16,2.64 10.08,2.7 9.17,4.39 10.8,5.4 9.17,6.41 10.08,8.1 8.16,8.16 8.1,10.08 6.41,9.17 5.4,10.8 4.39,9.17 2.7,10.08 2.64,8.16 0.72,8.1 1.63,6.41 0,5.4 1.63,4.39 0.72,2.7 2.64,2.64 2.7,0.72 4.39,1.63" fill="#ffffff" stroke="#231f20" stroke-width="0.3" data-z-cyl="0.7" />
+    <polygon id="shelf-ground-stud--nut" points="9.3,5.4 7.35,8.78 3.45,8.78 1.5,5.4 3.45,2.02 7.35,2.02" fill="#ffffff" stroke="#231f20" stroke-width="0.45" data-z-cyl="2.2" data-z-lift="0.7" />
+    <circle id="shelf-ground-stud--stud-top" cx="5.4" cy="5.4" r="1.55" fill="#c9cbcd" stroke="#231f20" stroke-width="0.3" data-z-cyl="3.5" data-z-thread="1.0" />
+    <g data-cp="mate" data-cp-at="5.4 5.4" data-cp-dir="front" data-cp-on="shelf-ground-stud--stud-top" />
+  </g>
+</svg>

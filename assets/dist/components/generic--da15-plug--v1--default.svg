@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="39.9mm" height="15.3mm" viewBox="0 0 39.9 15.3">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="da15-plug" data-path="da15-plug" data-class="port" data-ref="generic/da15-plug@1:1.0.0" data-connector="da15" data-gender="male" data-media="da15" transform="translate(0,0)">
+    <title>da15-plug</title>
+    <path id="da15-plug--shell" fill="#c9cdd1" d="M7.739 5.817 A2.000 2.000 0 0 1 9.709 3.470 L30.191 3.470 A2.000 2.000 0 0 1 32.161 5.817 L31.392 10.177 A2.000 2.000 0 0 1 29.423 11.830 L10.477 11.830 A2.000 2.000 0 0 1 8.508 10.177 Z" data-z-out="6.73" data-z-lift="0.79" data-z-color="#c9cdd1" data-z-shape="1" />
+    <rect id="da15-plug--hood-front" x="0" y="0" width="39.9" height="15.3" rx="1" fill="#b4b8bd" stroke="#6d7379" stroke-width="0.2" data-z-out="14.73" data-z-lift="6.73" data-z-color="#b4b8bd" data-z-shape="1" />
+    <rect id="da15-plug--hood" x="6.25" y="0" width="27.4" height="15.3" rx="1" fill="#b9bdc2" stroke="#6d7379" stroke-width="0.2" data-z-out="33.93" data-z-lift="14.73" data-z-color="#b9bdc2" data-z-shape="1" />
+    <rect id="da15-plug--hood-rear" x="9.6" y="0.52" width="20.7" height="14.26" rx="1" fill="#aeb2b7" stroke="#6d7379" stroke-width="0.2" data-z-out="52.63" data-z-lift="33.93" data-z-color="#aeb2b7" data-z-shape="1" />
+    <circle id="da15-plug--screw-l" cx="3.29" cy="7.65" r="2.005" fill="#cfd3d7" stroke="#6d7379" stroke-width="0.2" data-z-cyl="31.24" data-z-lift="14.73" data-z-color="#cfd3d7" />
+    <circle id="da15-plug--screw-r" cx="36.61" cy="7.65" r="2.005" fill="#cfd3d7" stroke="#6d7379" stroke-width="0.2" data-z-cyl="31.24" data-z-lift="14.73" data-z-color="#cfd3d7" />
+    <circle id="da15-plug--stub" cx="19.95" cy="7.65" r="3.605" fill="#1c1c1c" stroke="#4a4d52" stroke-width="0.12" data-r-from="cable-od" data-fill-from="jacket-color" data-z-cyl="30" data-z-lift="52.63" />
+    <g data-cp="cable" data-cp-at="19.95 7.65" data-cp-dir="front" data-cp-on="da15-plug--stub" />
+    <g data-cp="mate" data-cp-at="19.95 7.65" data-cp-dir="front" />
+  </g>
+</svg>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="82mm" height="14mm" viewBox="-2.4 -0.2 82 14">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cfp-mpo" data-path="cfp-mpo" data-class="transceiver" data-behaviour="occupies" data-ref="generic/cfp-mpo@1:1.0.0" data-depth="130.25" data-face="mpo24" data-form-factor="cfp" data-media="fiber" data-power-absent="not-applicable" transform="translate(0,0)">
+    <title>cfp-mpo</title>
+    <rect id="cfp-mpo--body" x="-2.3" y="-0.1" width="81.8" height="13.8" rx="0.6" fill="#9aa0a8" stroke="#6e747c" stroke-width="0.2" data-z-out="14.5" data-z-color="#9aa0a8" />
+    <rect id="cfp-mpo--insert" x="32.05" y="2.1" width="13.1" height="9.4" rx="0.5" fill="#1b1e22" />
+    <g font-family="sans-serif" font-size="0.7" fill="#2a2f34" text-anchor="middle">
+      <g id="cfp-mpo--silkscreen">
+        <text id="cfp-mpo--label" x="38.6" y="13.0" data-from="label" />
+      </g>
+    </g>
+    <g id="cfp-mpo--mpo" data-path="cfp-mpo/mpo" data-class="port" data-ref="std/mpo24-module-receptacle@1:1.0.0" data-depth="9.0" data-wall="#15181b" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(32.15,2.8)" data-z-lift="14.5">
+      <title>cfp-mpo--mpo</title>
+      <rect id="cfp-mpo--mpo--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#0c0e10" stroke="#1b1e22" stroke-width="0.25" data-path="cfp-mpo/mpo/opening" data-class="cutout" />
+      <rect id="cfp-mpo--mpo--keyway" x="4.055" y="0.4" width="4.79" height="1.3" rx="0.15" fill="#23282d" />
+      <rect id="cfp-mpo--mpo--ferrule" x="3.4" y="2.75" width="6.1" height="2.5" rx="0.2" fill="#30363d" stroke="#4a4f55" stroke-width="0.1" data-z-top="5.0" />
+      <circle id="cfp-mpo--mpo--pin-l" cx="4.15" cy="4" r="0.35" fill="#b9bfc6" data-z-top="6.9" data-z-color="#b9bfc6" />
+      <circle id="cfp-mpo--mpo--pin-r" cx="8.75" cy="4" r="0.35" fill="#b9bfc6" data-z-top="6.9" data-z-color="#b9bfc6" />
+      <circle id="cfp-mpo--mpo--1" cx="7.825" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/1" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--2" cx="7.575" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/2" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--3" cx="7.325" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/3" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--4" cx="7.075" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/4" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--5" cx="6.825" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/5" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--6" cx="6.575" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/6" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--7" cx="6.325" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/7" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--8" cx="6.075" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/8" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--9" cx="5.825" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/9" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--10" cx="5.575" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/10" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--11" cx="5.325" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/11" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--12" cx="5.075" cy="3.75" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/12" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--13" cx="7.825" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/13" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--14" cx="7.575" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/14" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--15" cx="7.325" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/15" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--16" cx="7.075" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/16" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--17" cx="6.825" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/17" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--18" cx="6.575" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/18" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--19" cx="6.325" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/19" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--20" cx="6.075" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/20" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--21" cx="5.825" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/21" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--22" cx="5.575" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/22" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--23" cx="5.325" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/23" data-class="fibre" />
+      <circle id="cfp-mpo--mpo--24" cx="5.075" cy="4.25" r="0.0625" fill="#e8ecef" data-path="cfp-mpo/mpo/24" data-class="fibre" />
+      <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+    </g>
+    <g id="cfp-mpo--screw-l" data-path="cfp-mpo/screw-l" data-class="screw" data-ref="common/cfp-thumbscrew@1:1.0.0" data-role="fastener" transform="translate(-2.0,2.2)" data-z-lift="14.5">
+      <title>cfp-mpo--screw-l</title>
+      <circle id="cfp-mpo--screw-l--knob" cx="4.6" cy="4.6" r="4.6" fill="#6f6f6f" stroke="#444444" stroke-width="0.18" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="cfp-mpo/screw-l/knob" data-class="screw" data-z-cyl="9.5" data-z-knurl="1" />
+      <path id="cfp-mpo--screw-l--cross" d="M 2.3 4.6 H 6.9 M 4.6 2.3 V 6.9" fill="none" stroke="#2a2f34" stroke-width="0.5" stroke-linecap="round" />
+    </g>
+    <g id="cfp-mpo--screw-r" data-path="cfp-mpo/screw-r" data-class="screw" data-ref="common/cfp-thumbscrew@1:1.0.0" data-role="fastener" transform="translate(70.0,2.2)" data-z-lift="14.5">
+      <title>cfp-mpo--screw-r</title>
+      <circle id="cfp-mpo--screw-r--knob" cx="4.6" cy="4.6" r="4.6" fill="#6f6f6f" stroke="#444444" stroke-width="0.18" data-fill-from="latch-color" data-stroke-derive="latch-color" data-path="cfp-mpo/screw-r/knob" data-class="screw" data-z-cyl="9.5" data-z-knurl="1" />
+      <path id="cfp-mpo--screw-r--cross" d="M 2.3 4.6 H 6.9 M 4.6 2.3 V 6.9" fill="none" stroke="#2a2f34" stroke-width="0.5" stroke-linecap="round" />
+    </g>
+    <g data-cp="mate" data-cp-at="38.6 6.8" data-cp-dir="front" />
+    <g data-cp="optical" data-cp-at="38.6 6.8" data-cp-dir="front" />
+  </g>
+</svg>

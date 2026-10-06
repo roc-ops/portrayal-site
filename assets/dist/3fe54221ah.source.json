@@ -43,11 +43,8 @@
    }
   },
   "door-open": {
-   "description": "Door open, showing the frame interior and the place the ONT occupies, as the Product Guide Figures 5-11 and 5-13 draw it",
-   "kind": "example",
-   "views": {
-    "front": "front-open"
-   }
+   "description": "Door open, showing the frame interior and the place the ONT occupies, as the Product Guide Figures 5-11 and 5-13 draw it. The door itself is not drawn swung out.",
+   "kind": "example"
   }
  },
  "description": "Wall-mounted outdoor housing for one single-family-unit ONT - a grey moulded frame with a gasketed door hinged on the left and a security latch on the right. Inside, two turn retainers hold the ONT against the frame's ribs beside fibre slack spools, an SC connector holder and a four-line telephone protector block; two grommeted cable entries open through the bottom. It carries no electronics of its own. The XS-010XR-P Product Guide lists it as that ONT's outdoor accessory.",
@@ -87,6 +84,15 @@
    "what": "cable-entry-size"
   },
   {
+   "note": "The interior is set 60 mm back from the frame's front edge and the door stands 6 mm off it. Both are estimates: no side view or section exists, and the housing's own depth is from one table that does not name it.",
+   "reason": "needs-drawing",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a side view or section of the housing, or a rule down the inside of a unit",
+   "what": "cavity-depth"
+  },
+  {
    "note": "Called a universal outdoor ONT enclosure; only the XS-010XR-P guide was read for it and no compatibility list is held.",
    "reason": "vendor-silent",
    "wanted": "the list of ONTs Nokia qualifies in 3FE54221AH",
@@ -94,6 +100,18 @@
   }
  ],
  "groups": {
+  "covers": {
+   "description": "the door, which swings away to reach the inside",
+   "index-origin": 1,
+   "role": "service",
+   "term": "Cover"
+  },
+  "interior": {
+   "description": "what the door hides - the back wall with its spools, retainers and protector block",
+   "index-origin": 1,
+   "role": "furniture",
+   "term": "Item"
+  },
   "security": {
    "description": "the latch tab's pin-in-hex security screw and second fastener",
    "index-origin": 1,
@@ -126,11 +144,11 @@
   },
   "interior": {
    "confidence": "drawing",
-   "note": "Product Guide Figures 5-11 p55 and 5-13 p57, door open, at 8.17 px/mm. The ONT stands upright, 142 across by 208 tall, its top face outwards and its lamps down its left side, 29 to 172 mm across and 50 to 257 mm down, between a retainer above and one below; its ports face right towards the fibre spools. Two slack spools about 60 mm across, an SC connector holder under the top mounting tab, a four-position line protector block (Figure 5-11: cable assembly multipair) at the right, grommets over the two cable entries at the bottom, and a mounting tab top and bottom on the centre line. The figure and the text disagree about the side: step 4 says to place the ONT on the right side of the enclosure and both figures draw it on the left; the figures are followed. The door, which swings out to the left, is not drawn."
+   "note": "Product Guide Figures 5-11 p55 and 5-13 p57, door open, at 8.17 px/mm. The ONT stands upright, 142 across by 208 tall, its top face outwards and its lamps down its left side, 29 to 172 mm across and 50 to 257 mm down, between a retainer above and one below; its ports face right towards the fibre spools. Two slack spools about 60 mm across, an SC connector holder under the top mounting tab, a four-position line protector block (Figure 5-11: cable assembly multipair) at the right, grommets over the two cable entries at the bottom, and a mounting tab top and bottom on the centre line. The figure and the text disagree about the side: step 4 says to place the ONT on the right side of the enclosure and both figures draw it on the left; the figures are followed. The interior is a part of its own (nokia/3fe54221-interior@1) set back in the frame, and the door (nokia/3fe54221-door@1) lies over it; with the door open the door itself, which swings out to the left, is not drawn."
   },
   "ont-seat": {
    "confidence": "drawing",
-   "note": "The ONT is a device of its own (nokia/xs-010xr-p) and a bay accepts components, not devices, so it is not seated here: the place it occupies is drawn as an outline and declared as a region. The guide calls the housing a universal outdoor ONT enclosure; which other ONTs it takes is not stated in anything held."
+   "note": "The ONT is a device of its own (nokia/xs-010xr-p) and a bay accepts components, not devices, so it is not seated here: the place it occupies is a dashed outline on the interior's back wall, and no ONT is drawn. The guide calls the housing a universal outdoor ONT enclosure; which other ONTs it takes is not stated in anything held."
   },
   "rating": {
    "confidence": "drawing",
@@ -147,7 +165,7 @@
    "title": "Nokia ONT XS-010XR-P Product Guide, 3TN-00113-AAAA-TCZZA Issue 4 (BBD Release 25.01)"
   }
  ],
- "version": "0.1.0",
+ "version": "1.0.0",
  "views": {
   "bottom": {
    "panel": {
@@ -194,6 +212,29 @@
     "placements": [
      {
       "at": [
+       18.9,
+       6.0
+      ],
+      "group": "interior",
+      "id": "interior",
+      "ref": "nokia/3fe54221-interior@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       16.9,
+       4.0
+      ],
+      "group": "covers",
+      "id": "door",
+      "only-in": [
+       "closed"
+      ],
+      "ref": "nokia/3fe54221-door@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
        291.5,
        150.9
       ],
@@ -225,51 +266,36 @@
       "rx": 12.0,
       "size": [
        274.1,
-       333.0
+       322.0
       ],
       "stroke": "#6c6e70",
       "stroke-width": 0.8
      },
      {
       "at": [
-       16.9,
-       4.0
+       125.5,
+       308.5
       ],
-      "id": "door",
-      "rx": 10.0,
+      "fill": "#858787",
+      "id": "mount-tab-bottom",
+      "rx": 1.5,
       "size": [
-       264.1,
-       330.0
-      ],
-      "stroke": "#7b7d7f",
-      "stroke-width": 0.4
-     },
-     {
-      "at": [
-       66.2,
-       97.5
-      ],
-      "fill": "#7b7d7f",
-      "id": "crease",
-      "size": [
-       212.7,
-       0.3
+       44.7,
+       26.2
       ]
      },
      {
       "at": [
-       158.0,
-       198.8
+       140.5,
+       318.0
       ],
-      "id": "label-panel",
-      "kind": "recess",
-      "rx": 8.0,
+      "fill": "#2a2c2e",
+      "id": "mount-slot",
+      "rx": 3.0,
       "size": [
-       107.0,
-       125.6
-      ],
-      "stroke": "#7b7d7f",
-      "stroke-width": 0.4
+       14.0,
+       6.0
+      ]
      },
      {
       "at": [
@@ -296,34 +322,6 @@
        10.9,
        49.0
       ]
-     },
-     {
-      "at": [
-       282.5,
-       67.7
-      ],
-      "id": "catch-upper",
-      "rx": 1.5,
-      "size": [
-       9.7,
-       29.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.5
-     },
-     {
-      "at": [
-       282.5,
-       244.0
-      ],
-      "id": "catch-lower",
-      "rx": 1.5,
-      "size": [
-       9.7,
-       31.5
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.5
      },
      {
       "at": [
@@ -390,398 +388,6 @@
      ],
      "font-size": 3.0,
      "for": "security-screw",
-     "text": "TELCO"
-    }
-   ],
-   "size": {
-    "h": 336.0,
-    "w": 304.0
-   }
-  },
-  "front-open": {
-   "components": {
-    "placements": [
-     {
-      "at": [
-       291.5,
-       150.9
-      ],
-      "group": "security",
-      "id": "security-screw-open",
-      "ref": "common/screw-head@1",
-      "rel-pos": 3
-     },
-     {
-      "at": [
-       291.5,
-       181.9
-      ],
-      "group": "security",
-      "id": "latch-screw-open",
-      "ref": "common/screw-head@1",
-      "rel-pos": 4
-     }
-    ]
-   },
-   "face": "front",
-   "panel": {
-    "decor": [
-     {
-      "at": [
-       10.9,
-       1.0
-      ],
-      "id": "frame",
-      "rx": 12.0,
-      "size": [
-       274.1,
-       322.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.8
-     },
-     {
-      "at": [
-       14.0,
-       4.0
-      ],
-      "id": "gasket",
-      "rx": 10.0,
-      "size": [
-       267.9,
-       316.0
-      ],
-      "stroke": "#4a4c4e",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       125.5,
-       5.0
-      ],
-      "id": "mount-tab-top",
-      "rx": 1.5,
-      "size": [
-       44.7,
-       23.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.5
-     },
-     {
-      "at": [
-       125.5,
-       308.5
-      ],
-      "fill": "#858787",
-      "id": "mount-tab-bottom",
-      "rx": 1.5,
-      "size": [
-       44.7,
-       26.2
-      ]
-     },
-     {
-      "at": [
-       140.5,
-       318.0
-      ],
-      "fill": "#2a2c2e",
-      "id": "mount-slot",
-      "rx": 3.0,
-      "size": [
-       14.0,
-       6.0
-      ]
-     },
-     {
-      "at": [
-       52.6,
-       78.9
-      ],
-      "id": "spool-1",
-      "rx": 29.8,
-      "size": [
-       59.6,
-       59.6
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       133.6,
-       78.9
-      ],
-      "id": "spool-2",
-      "rx": 29.8,
-      "size": [
-       59.6,
-       59.6
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       28.9,
-       50.4
-      ],
-      "fill": "#f7f7f7",
-      "id": "ont-body",
-      "rx": 19.0,
-      "size": [
-       142.8,
-       206.6
-      ]
-     },
-     {
-      "at": [
-       28.9,
-       50.4
-      ],
-      "id": "ont-outline",
-      "rx": 19.0,
-      "size": [
-       142.8,
-       206.6
-      ],
-      "stroke": "#c9ccd0",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       81.0,
-       32.0
-      ],
-      "fill": "#a9abad",
-      "id": "retainer-top",
-      "rx": 4.0,
-      "size": [
-       20.5,
-       48.0
-      ]
-     },
-     {
-      "at": [
-       81.0,
-       32.0
-      ],
-      "id": "retainer-top-edge",
-      "rx": 4.0,
-      "size": [
-       20.5,
-       48.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.4
-     },
-     {
-      "at": [
-       92.5,
-       229.0
-      ],
-      "fill": "#a9abad",
-      "id": "retainer-bottom",
-      "rx": 4.0,
-      "size": [
-       20.5,
-       60.0
-      ]
-     },
-     {
-      "at": [
-       92.5,
-       229.0
-      ],
-      "id": "retainer-bottom-edge",
-      "rx": 4.0,
-      "size": [
-       20.5,
-       60.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.4
-     },
-     {
-      "at": [
-       219.0,
-       155.6
-      ],
-      "id": "line-protector",
-      "rx": 2.0,
-      "size": [
-       33.0,
-       72.0
-      ],
-      "stroke": "#6c6e70",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       30.0,
-       296.3
-      ],
-      "fill": "#2a2c2e",
-      "id": "grommet-left",
-      "rx": 1.0,
-      "size": [
-       65.0,
-       10.0
-      ]
-     },
-     {
-      "at": [
-       214.2,
-       296.3
-      ],
-      "fill": "#2a2c2e",
-      "id": "grommet-right",
-      "rx": 1.0,
-      "size": [
-       65.5,
-       10.0
-      ]
-     },
-     {
-      "at": [
-       0.0,
-       55.0
-      ],
-      "fill": "#858787",
-      "id": "hinge-upper",
-      "rx": 1.0,
-      "size": [
-       10.9,
-       52.0
-      ]
-     },
-     {
-      "at": [
-       0.0,
-       245.7
-      ],
-      "fill": "#858787",
-      "id": "hinge-lower",
-      "rx": 1.0,
-      "size": [
-       10.9,
-       49.0
-      ]
-     },
-     {
-      "at": [
-       285.0,
-       123.0
-      ],
-      "fill": "#858787",
-      "id": "latch-tab",
-      "rx": 3.0,
-      "size": [
-       19.0,
-       94.5
-      ]
-     },
-     {
-      "at": [
-       285.1,
-       144.5
-      ],
-      "id": "security-boss",
-      "rx": 8.2,
-      "size": [
-       16.4,
-       16.4
-      ],
-      "stroke": "#5a5c5e",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       288.2,
-       178.6
-      ],
-      "id": "latch-boss",
-      "rx": 5.1,
-      "size": [
-       10.2,
-       10.2
-      ],
-      "stroke": "#5a5c5e",
-      "stroke-width": 0.6
-     },
-     {
-      "at": [
-       287.4,
-       195.0
-      ],
-      "fill": "#2a2c2e",
-      "id": "padlock-hole",
-      "rx": 6.5,
-      "size": [
-       13.0,
-       13.0
-      ]
-     }
-    ]
-   },
-   "regions": [
-    {
-     "at": [
-      28.9,
-      50.4
-     ],
-     "id": "ont-seat",
-     "label": "ONT position (XS-010XR-P, upright, lamps at left)",
-     "size": {
-      "h": 206.6,
-      "w": 142.8
-     }
-    },
-    {
-     "at": [
-      52.6,
-      78.9
-     ],
-     "id": "fibre-slack",
-     "label": "Fibre slack spools",
-     "size": {
-      "h": 59.6,
-      "w": 140.6
-     }
-    },
-    {
-     "at": [
-      219.0,
-      155.6
-     ],
-     "id": "line-protectors",
-     "label": "Four-line protector block",
-     "size": {
-      "h": 72.0,
-      "w": 33.0
-     }
-    }
-   ],
-   "silkscreen": [
-    {
-     "anchor": "middle",
-     "at": [
-      165.2,
-      38.2
-     ],
-     "font-size": 2.2,
-     "for": "chassis",
-     "text": "SC CONNECTOR HOLDER"
-    },
-    {
-     "anchor": "middle",
-     "at": [
-      293.3,
-      136.0
-     ],
-     "font-size": 3.0,
-     "for": "security-screw-open",
      "text": "TELCO"
     }
    ],

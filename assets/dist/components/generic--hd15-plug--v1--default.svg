@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="34mm" height="15.5mm" viewBox="0 0 34 15.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="hd15-plug" data-path="hd15-plug" data-class="port" data-ref="generic/hd15-plug@1:1.0.0" data-connector="hd15" data-gender="male" data-media="vga" transform="translate(0,0)">
+    <title>hd15-plug</title>
+    <path id="hd15-plug--shell" fill="#c9cdd1" d="M8.954 5.917 A2.000 2.000 0 0 1 10.924 3.570 L23.076 3.570 A2.000 2.000 0 0 1 25.046 5.917 L24.277 10.277 A2.000 2.000 0 0 1 22.308 11.930 L11.692 11.930 A2.000 2.000 0 0 1 9.723 10.277 Z" data-z-out="6.73" data-z-lift="0.79" data-z-color="#c9cdd1" data-z-shape="1" />
+    <rect id="hd15-plug--hood" x="0" y="0" width="34" height="15.5" rx="2" fill="#1f4f9e" stroke="#133060" stroke-width="0.12" data-fill-from="hood-color" data-stroke-derive="hood-color" data-z-out="39.23" data-z-lift="6.73" data-z-shape="1" />
+    <rect id="hd15-plug--relief-boot" x="9.75" y="2.25" width="14.5" height="11" rx="2" fill="#1f4f9e" stroke="#133060" stroke-width="0.12" data-fill-from="hood-color" data-stroke-derive="hood-color" data-z-out="48.29" data-z-lift="39.23" data-z-shape="1" />
+    <circle id="hd15-plug--screw-l" cx="4.505" cy="7.75" r="3.85" fill="#1f4f9e" stroke="#133060" stroke-width="0.12" data-fill-from="hood-color" data-stroke-derive="hood-color" data-z-cyl="10.7" data-z-lift="39.23" />
+    <circle id="hd15-plug--screw-r" cx="29.495" cy="7.75" r="3.85" fill="#1f4f9e" stroke="#133060" stroke-width="0.12" data-fill-from="hood-color" data-stroke-derive="hood-color" data-z-cyl="10.7" data-z-lift="39.23" />
+    <circle id="hd15-plug--stub" cx="17" cy="7.75" r="4.5" fill="#1c1c1c" stroke="#4a4d52" stroke-width="0.12" data-r-from="cable-od" data-fill-from="jacket-color" data-z-cyl="30" data-z-lift="48.29" />
+    <g data-cp="cable" data-cp-at="17 7.75" data-cp-dir="front" data-cp-on="hd15-plug--stub" />
+    <g data-cp="mate" data-cp-at="17 7.75" data-cp-dir="front" />
+  </g>
+</svg>

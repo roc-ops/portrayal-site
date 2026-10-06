@@ -307,6 +307,10 @@
   "fru-components": {
    "note": "reuses ufispace/psu-132-ac, ufispace/psu-132-dc and ufispace/fan-803816-hi. The fan match is nominal AND dimensional: this datasheet's ordering line is FAN-803816-HI and that component carries exactly that part number, which is a better fit than the sibling's choice of fan-808012 with a per-configuration model override. The two contracts' own part numbers for the supplies differ from this datasheet's - PSU-132-AISB1/DISB1 against PSU-132-AESR/DESR - which is a suffix naming the airflow and the chassis family rather than a different face, so the per-device numbers are carried in the configurations' component-attrs where a FRU model belongs. THE TWO VENDOR TABLES ROUND THE FAN DIFFERENTLY: this HIG's Component Physical Information gives 'Fan (W x D x H) 3.2 x 4.8 x 3.19 in (81 x 113 x 81.5mm)' while fan-803816-hi's own source, the S9600-28DX HIG, gives 80 x 113 x 81.5 for the same part number. That is a millimetre of rounding, not a disagreement worth a gap entry; the bays are drawn at the component's 80.0 so the module fills its opening exactly rather than leaving a dark sliver, and the 81 is recorded here."
   },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+  },
   "led-semantics": {
    "note": "HIG section 10, pages 22-23 of the converted text, transcribed rather than only cited. Six system lamps - SYNC, SYS, FAN, PS0, PS1, ID - with the two supplies getting a lamp each rather than sharing one PWR lamp, SYS carrying only three rows and no blinking green, and an ID beacon whose only documented state is Blinking Blue. The PSU FRU and Fan FRU tables belong to the modules and are transcribed in ufispace/psu-132-ac, psu-132-dc and fan-803816-hi."
   },
@@ -403,7 +407,7 @@
    "note": "drawing-measured by counting near-black perforations. A hex band along the top of the faceplate spanning x 68.9-392.8 with two visible hole rows (hole fields y 3.37-7.44 and 7.79-11.05, so the band is drawn 2.9-11.6), and a single row along the bottom from x 26.6 to 390.3 (holes 77.82-79.91, band 77.3-80.4). THE BOTTOM BAND IS ONE ROW WHERE THE TOP IS TWO, and that asymmetry is what the figure draws: the field continues up behind the port blocks and only its outermost row clears them. Two more hex fields fill the left service area, x 5.58-23.26 y 11.75-20.24 and x 4.42-11.90 y 50.83-77.47."
   }
  },
- "version": "3.0.6",
+ "version": "3.0.7",
  "views": {
   "bottom": {
    "components": {
@@ -5216,6 +5220,9 @@
        349.8,
        7.5
       ],
+      "attrs": {
+       "stud-size": "M4"
+      },
       "description": "HIG section 8 - the designated grounding location, at the rear of the case and shipped covered with a protective label; two M4 screws and two washers, upper hole",
       "group": "grounding",
       "id": "ground-1",
@@ -5227,6 +5234,9 @@
        349.8,
        24.0
       ],
+      "attrs": {
+       "stud-size": "M4"
+      },
       "description": "the lower of the two tapped holes of the same rear grounding location",
       "group": "grounding",
       "id": "ground-2",

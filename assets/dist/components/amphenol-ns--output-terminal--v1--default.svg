@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="14.75mm" height="34.0mm" viewBox="0 0 14.75 34.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="output-terminal" data-path="output-terminal" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" transform="translate(0,0)">
+    <title>output-terminal</title>
+    <rect id="output-terminal--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-terminal--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-terminal--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-terminal--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-terminal--batt" data-path="output-terminal/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-terminal--rtn" data-path="output-terminal/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+</svg>

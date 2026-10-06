@@ -292,6 +292,10 @@
   "fru-components": {
    "note": "reuses ufispace/psu-132-ac, ufispace/psu-132-dc and ufispace/fan-808012, and the match is dimensional rather than nominal. The HIG's Component Physical Information table gives this chassis a 50.5 x 321 x 39.9 mm PSU and an 81 x 113 x 81.5 mm fan; psu-132-* are 50.5 x 40.0 and fan-808012 is 81.0 x 81.5. The PSU bays are drawn 40.0 tall, following the component, rather than the 39.9 this HIG tables: two vendor tables round the same supply's face differently in the first decimal, which is a rounding difference rather than a disagreement worth recording as one - and a bay a tenth shorter than its own occupant is a fit error L33 is right to catch. The part numbers differ from the ones those contracts carry - PSU-132-DESR / -AESR here against the S9300-32D's PSU-132-DISB1 / -AISB1, and FAN-803816-HI against the S9321-64E's FAN-808012-HCE - which is a suffix naming the airflow and the chassis family, not a different face. The per-device part numbers are carried in the configurations' component-attrs, which is where a FRU model belongs."
   },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+  },
   "led-semantics": {
    "note": "HIG section 10, pages 22-23, transcribed rather than only cited. THIS FAMILY'S TABLE IS NOT THE S9510'S: there is no GNSS lamp, SYS replaces STAT with only three rows and no blinking green, the two PSUs get a lamp each (PS0, PS1) instead of sharing one PWR lamp, and an ID beacon is added whose only documented state is Blinking Blue. The PSU FRU and Fan FRU tables belong to the modules and are transcribed in ufispace/psu-132-ac, psu-132-dc and fan-808012."
   },
@@ -386,7 +390,7 @@
    "title": "UfiSpace S9600-102XC Hardware Installation Guide"
   }
  ],
- "version": "3.0.6",
+ "version": "3.0.7",
  "views": {
   "bottom": {
    "components": {
@@ -5234,6 +5238,9 @@
        349.4,
        7.4
       ],
+      "attrs": {
+       "stud-size": "M4"
+      },
       "description": "HIG section 8 - the designated grounding location, at the rear of the case and shipped covered with a protective label; two M4 screws and two washers, upper hole",
       "group": "grounding",
       "id": "ground-1",
@@ -5245,6 +5252,9 @@
        349.4,
        22.1
       ],
+      "attrs": {
+       "stud-size": "M4"
+      },
       "description": "the lower of the two tapped holes of the same rear grounding location",
       "group": "grounding",
       "id": "ground-2",

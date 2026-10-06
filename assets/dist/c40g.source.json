@@ -280,6 +280,10 @@
    "confidence": "drawing",
    "note": "drawing-measured - Figure 1-1, \"Casa C40G CMTS front view\", PASSES the orthographic gate. Its chassis renders 1364 x 760 px for an aspect of 1.795 against a true rack face of 482 / 265.9 = 1.813, agreeing to 1 percent, so unlike the isolated card figures it carries geometry - at 2.858 px/mm scaled by the exactly known 265.9 height. Measured off it in body coordinates: the two vertical fan strips at x 1.5-37.5 and 386.7-422.7, both running y 17-222; the card band x 37.5-386.4, which independently confirms the existing card bays at x 42.0 width 345.5; the brand band y 196.3-222.9; and the snap-on PSU cover y 226.7-264.9. The right fan bay is trimmed to start at x 388.0 so it does not overlap the card bays, which end at 387.5"
   },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the C40G Hardware Installation Guide, Connecting the chassis to ground, says the shelf ground terminal provides two M6 screws for a double-lug ground terminal cable on AWG 6 wire: the `stud-size` of the terminal. The guide counts two screws and its figures draw three studs (the `ground-stud-count` gap); the size is stated once and is carried for the terminal as a whole."
+  },
   "non-redundant-variant": {
    "confidence": "drawing",
    "note": "drawing plus prose - ADDED, because the guide draws four rear views and the model only had three configurations for them. Figures 1-2 and 1-4 are the AC and DC NON-REDUNDANT rears and 1-3 and 1-5 the redundant pair, so the four figures are two axes crossed - AC/DC and redundant/not - not four layouts. The AC/DC axis was already modelled as ac-power; this entry adds the other value of the second axis. The layout is stated in words as well as drawn: \"Rear slots (non-redundant system) - Upstream and downstream line card I/O slots: 0, 1, 4 5; Blank filler plates: 2, 3\", against the redundant list right below it which reads \"I/O slots: 0, 5; LC Switch slots: 1, 4; SMM Switch slots: 2, 3\". Figure 1-4 is legible at 4x and agrees: slots 5 and 4 read QAM IO, 3 and 2 are plain plates with one screw at each end, and 1 and 0 read US IO. The chassis overview also says outright that \"The Casa C40G chassis is available in both redundant and non-redundant versions\". THE FRONT IS NOT MODELLED FROM A NON-REDUNDANT FIGURE - there is no separate front view for it - so front 0/1/4/5 take the DS and US cards Figure 1-1 draws (DS 8X96 above, US 16X8 below) on the pairing the rear figure shows, QAM IO behind a DS card and US IO behind a US one, and front 2/3 keep the SMM pair, which the front-slot bullet lists without qualifying it by redundancy. That pairing is an inference from two figures and is the softest part of this entry"
@@ -340,7 +344,7 @@
    "title": "Casa Systems C40G Hardware Installation Guide (2022-07-07)"
   }
  ],
- "version": "0.5.14",
+ "version": "0.5.15",
  "views": {
   "bottom": {
    "panel": {
@@ -963,6 +967,9 @@
        9.0,
        219.8
       ],
+      "attrs": {
+       "stud-size": "M6"
+      },
       "group": "grounding",
       "id": "ground-studs-rear",
       "ref": "casa/c40g-ground-studs@1",

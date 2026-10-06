@@ -367,6 +367,36 @@
    },
    {
     "accepts": [
+     "generic/micro-usb-b-plug@1"
+    ],
+    "at": [
+     166.1,
+     8.25
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "console-usb",
+    "interface": "micro-usb-b",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     169.855,
+     9.63
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 4,
+    "rotate": null
+   },
+   {
+    "accepts": [
      "generic/rj45-plug@1"
     ],
     "at": [
@@ -394,6 +424,36 @@
     },
     "rel-pos": 1,
     "rotate": 180
+   },
+   {
+    "accepts": [
+     "generic/usb-a-plug@1"
+    ],
+    "at": [
+     186.06,
+     19.44
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "usb",
+    "interface": "usb-a",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     192.06,
+     21.69
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 2,
+    "rotate": null
    },
    {
     "accepts": [
@@ -1262,7 +1322,68 @@
   ],
   "left": [],
   "rear": [],
-  "right": [],
+  "right": [
+   {
+    "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     40,
+     15
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-1",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 4.7,
+    "mate": [
+     43.5,
+     24.8
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 1,
+    "rotate": null
+   },
+   {
+    "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     51,
+     15
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-2",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 4.7,
+    "mate": [
+     54.5,
+     24.8
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 2,
+    "rotate": null
+   }
+  ],
   "top": []
  },
  "capability": {
@@ -1464,6 +1585,10 @@
   },
   "front-vertical": {
    "note": "THE FIGURE AND THE PHOTOGRAPH DISAGREE HERE AND THE PHOTOGRAPH WINS. All four port blocks share one vertical band. Figure 9 draws the ganged shells spanning y 9.4-34.9 (25.5 mm), which leaves room for two 10.4 mm SFP openings only on a 12.7 mm belly-to-belly pitch - a 2.3 mm web, which no stacked SFP cage has. The front photograph, whose apertures are real holes rather than drawn module faces, shows the silver web between the rows spanning 5.1 mm and the openings centred 14.6 mm apart; 5.1 mm of web with 10.4 mm openings IS the standard 15.0 mm pitch that std/sfp-ganged's own contract records as measured from a TE 2007562-6 cage. So the rows are modelled at a 15.0 mm pitch and the shells are 27.6 mm tall - 2.1 mm taller than Figure 9 draws them, which is the same 2 percent the aspect gate already caught, in the same direction. The other three blocks are centred on the same two row centres because the photograph shows one continuous silver band across all four. THE WHOLE BAND WAS THEN MOVED DOWN 0.8 mm by the matched-scale comparison: rendered at the photograph's own 8 px/mm, the first draft's apertures sat 0.5, 0.95 and 1.0 mm high on the RJ45, SFP+ and QSFP28 blocks respectively - three independent blocks, all the same direction - so 0.8 mm was taken off the whole band rather than any one block. Final openings: SFP rows at y 10.35 and 25.25, the 1G jacks at 10.05 and 24.95, the QSFP28 pair at 10.48 and 25.38, shells 9.2-36.8. The residual is about 0.85 mm, which is one pixel of the photograph and the honest limit of this face's vertical placement."
+  },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
   },
   "jack-orientation": {
    "note": "THE FIRST DRAFT HAD THIS BACKWARDS ON THE 1G BLOCK AND THE MATCHED-SCALE RENDER CAUGHT IT, so both readings are recorded. std/rj45-ganged draws the latch keyway DOWN and its gold contacts at the TOP, and on a real jack the integrated lamps sit at the contact end, opposite the latch. The four 100M/1G jacks show their lamps at the TOP corners on the upper row and the BOTTOM corners on the lower, so the UPPER row is unrotated and the LOWER carries rotate: 180 - the reverse of what this file first said, which had reasoned from common/rj45-port@4 (a different part, which composes std/rj45 already turned 180) and got the sense inverted. What settled it was measuring the rendered contact band against the photograph's at 8 px/mm: the vendor's upper jacks have their contacts high and the lower jacks low, and the first draft rendered the opposite. The two stacked TIMING jacks were read directly from the silhouette at 7x and are genuinely mirrored the other way - BITS above with its latch notch UP (rotate: 180), ToD below with it down - as is the management stack, whose top out-of-band RJ45 is keyway-up with its green lamp at the top right and whose bottom console RJ45 is keyway-down."

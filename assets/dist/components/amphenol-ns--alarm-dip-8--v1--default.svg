@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="21.9mm" height="4.6mm" viewBox="0 0 21.9 4.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="alarm-dip-8" data-path="alarm-dip-8" data-class="button" data-ref="amphenol-ns/alarm-dip-8@1:1.0.0" data-wall="#0c0d0e" transform="translate(0,0)">
+    <title>alarm-dip-8</title>
+    <rect id="alarm-dip-8--slot" x="0" y="0" width="21.9" height="4.6" rx="0.3" fill="#0c0d0e" />
+    <rect id="alarm-dip-8--sw-1" x="0.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-1" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-2" x="3.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-2" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-3" x="6.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-3" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-4" x="8.75" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-4" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-5" x="11.35" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-5" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-6" x="13.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-6" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-7" x="16.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-7" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--sw-8" x="19.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="alarm-dip-8/sw-8" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="alarm-dip-8--slider-1" x="1.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-1" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-2" x="3.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-2" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-3" x="6.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-3" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-4" x="8.90" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-4" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-5" x="11.50" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-5" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-6" x="14.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-6" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-7" x="16.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-7" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="alarm-dip-8--slider-8" x="19.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="alarm-dip-8/slider-8" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+  </g>
+</svg>

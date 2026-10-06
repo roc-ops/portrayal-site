@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="17.8mm" height="39.1mm" viewBox="0 0 17.8 39.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="touch-guard-1ru" data-path="touch-guard-1ru" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0,0)">
+    <title>touch-guard-1ru</title>
+    <defs>
+      <linearGradient id="touch-guard-1ru--g" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#26292c" />
+        <stop offset="0.5" stop-color="#17191b" />
+        <stop offset="1" stop-color="#0f1112" />
+      </linearGradient>
+    </defs>
+    <rect id="touch-guard-1ru--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#touch-guard-1ru--g)" stroke="#060707" stroke-width="0.25" data-path="touch-guard-1ru/guard" data-class="mechanical" />
+    <rect id="touch-guard-1ru--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="touch-guard-1ru/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+    <g id="touch-guard-1ru--screw-top" data-path="touch-guard-1ru/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+      <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+      <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+    </g>
+    <g id="touch-guard-1ru--screw-bottom" data-path="touch-guard-1ru/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+      <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+      <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+    </g>
+    <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+  </g>
+</svg>
