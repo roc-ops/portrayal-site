@@ -40,6 +40,32 @@ test('falling back past the manufacturer filter is always a guess', () => {
     {path: arrcus, guess: true, candidates: 1});
 });
 
+// A MANUFACTURER WHOSE NAME HOLDS A SLASH is filed under the name with the
+// slash written as a hyphen (dcim_export.py manufacturer_dir, Portrayal #826),
+// so `BATM/Telco Systems` exports under `BATM-Telco Systems/` while the YAML
+// inside keeps the real name. Its own types must read as its own: compared with
+// the name as written, the filter found nothing and every one of its devices
+// came out as another vendor's file, a best guess.
+test('a manufacturer whose name holds a slash owns the files under its directory', () => {
+  assert.equal(X.dirOf('BATM/Telco Systems'), 'BATM-Telco Systems');
+  const batm = ['TM-8104', 'TM-8106'].map(m => nb('BATM-Telco Systems', m));
+  assert.deepEqual(X.matchDeviceType({cfg: 'base', manufacturer: 'BATM/Telco Systems', paths: [batm[0]]}),
+    {path: batm[0], guess: false, candidates: 1});
+  // Two of its own, one naming the configuration: certain, as for any vendor.
+  assert.deepEqual(X.matchDeviceType({cfg: '8104', manufacturer: 'BATM/Telco Systems', paths: batm}),
+    {path: batm[0], guess: false, candidates: 2});
+  // Another vendor's directory is still another vendor's: the filter finds none
+  // of its own, so whatever wins is a guess.
+  const asr = nb('Cisco', 'ASR-9006-AC-V2');
+  assert.deepEqual(X.matchDeviceType({cfg: 'base', manufacturer: 'BATM/Telco Systems', paths: [asr]}),
+    {path: asr, guess: true, candidates: 1});
+  // The note names the file's folder, not the name in its YAML: with the stem it
+  // says where in the kit a reader checking the guess finds the file.
+  assert.equal(X.otherVendorNote({label: 'demarc', ref: 'tm-280', T: 'NetBox',
+                                  manufacturer: 'BATM/Telco Systems', path: asr}),
+    "demarc (tm-280): no NetBox device type from BATM/Telco Systems, so ASR-9006-AC-V2 is another vendor's (Cisco) file, a best guess.");
+});
+
 test('yamlHead reads the top-level identity, quoted or not', () => {
   const h = X.yamlHead('---\nmanufacturer: Cisco\nmodel: ASR 9901 Router, AC supplies\nslug: cisco-asr-9901\n' +
                        'u_height: 2.0\nis_full_depth: true\ninterfaces:\n  - name: x\n    model: nested\n');

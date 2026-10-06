@@ -23,7 +23,7 @@ import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
-        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
+        stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
@@ -474,8 +474,9 @@ export async function dcimContext(rack, chassisOf, target) {
     }
     const head = yamlHead(text);
     // matchDeviceType falls back past the manufacturer filter when no file is in
-    // the chassis's own folder; that shows as a file from another vendor's.
-    const otherVendor = vendorOf(m.path) !== manufacturer;
+    // the chassis's own folder; that shows as a file from another vendor's. The
+    // folder, not the name: dirOf is the same rule matchDeviceType filtered by.
+    const otherVendor = vendorOf(m.path) !== dirOf(manufacturer);
     // chassisManufacturer is the chassis catalog's value; `manufacturer` below is the YAML's.
     types.set(it.id, {...m, otherVendor, chassisManufacturer: manufacturer, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
                       isFullDepth: head.isFullDepth, lists: typeLists(text)});

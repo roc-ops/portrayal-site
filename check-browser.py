@@ -3495,7 +3495,7 @@ def check_rack_export_dcim_types(page, base):
                 ["nautobot-import", "Nautobot import (.zip)"]]:
         bad.append(f"menu: the DCIM entries are {dcim}")
     want = {"types/device-types/Cisco/ASR-9006-AC-V2.yaml", "types/device-types/Edgecore/7726-32X-O-AC-F.yaml",
-            "types/device-types/Telco Systems/TM-280.yaml", "types/module-types/Cisco/A9K-16X100GE-TR.yaml",
+            "types/device-types/BATM-Telco Systems/TM-280.yaml", "types/module-types/Cisco/A9K-16X100GE-TR.yaml",
             "types/module-types/Cisco/A9K-3KW-AC.yaml", "types/module-types/Cisco/ASR-9006-FAN.yaml",
             "types/module-types/Cisco/A9K Slot Cover.yaml"}
     for target, T in (("netbox", "NetBox"), ("nautobot", "Nautobot")):
@@ -3547,7 +3547,7 @@ def check_rack_export_device_csv(page, base):
         bad.append(f"NetBox devices: columns {list(rows[0].keys())}")
     by = {r["name"]: r for r in rows}
     want = {"core-1": ("Cisco", "ASR-9006-AC-V2", "2", "front"), "leaf-1": ("Edgecore", "7726-32X-O-AC-F", "14", "front"),
-            "demarc-i4": ("Telco Systems", "TM-280", "20", "rear")}
+            "demarc-i4": ("BATM/Telco Systems", "TM-280", "20", "rear")}
     for name, (man, dt, pos, face) in want.items():
         r = by.get(name)
         if not r or (r["manufacturer"], r["device_type"], r["position"], r["face"]) != (man, dt, pos, face):
@@ -9829,8 +9829,8 @@ def readme_count(text):
     return (1 if "\nRead this first: " in "\n" + flat_readme(text) else 0) + len(left) + len(notes)
 
 
-KIT_TYPES = ["types/device-types/Cisco/ASR-9006-AC-V2.yaml", "types/device-types/Edgecore/7726-32X-O-AC-F.yaml",
-             "types/device-types/Telco Systems/TM-280.yaml", "types/module-types/Cisco/A9K Slot Cover.yaml",
+KIT_TYPES = ["types/device-types/BATM-Telco Systems/TM-280.yaml", "types/device-types/Cisco/ASR-9006-AC-V2.yaml",
+             "types/device-types/Edgecore/7726-32X-O-AC-F.yaml", "types/module-types/Cisco/A9K Slot Cover.yaml",
              "types/module-types/Cisco/A9K-16X100GE-TR.yaml", "types/module-types/Cisco/A9K-3KW-AC.yaml",
              "types/module-types/Cisco/ASR-9006-FAN.yaml"]
 
@@ -9851,7 +9851,7 @@ def check_rack_dcim_kit_netbox(page, base):
         bad.append(f"NetBox kit: entries {kit['names']}")
     if any(kit["zip"].get(n) != t for n, t in kit["files"].items()):
         bad.append("NetBox kit: a file in the zip is not the text the builder reports")
-    if "model: 7726-32X-O-AC-F" not in kit["zip"].get(KIT_TYPES[1], ""):
+    if "model: 7726-32X-O-AC-F" not in kit["zip"].get("types/device-types/Edgecore/7726-32X-O-AC-F.yaml", ""):
         bad.append("NetBox kit: the Edgecore YAML is not the exported file")
 
     # The fixture has never been given a site or a role: the files leave them blank, and the README's first lines say so.
@@ -9867,7 +9867,7 @@ def check_rack_dcim_kit_netbox(page, base):
     # Devices: demarc-i3 shares U14 with leaf-1, both full depth. NetBox refused that file whole; the row is left out and said.
     devices = kit_rows(kit, "2-devices.csv")
     got = [(r["name"], r["manufacturer"], r["device_type"], r["status"], r["rack"], r["position"], r["face"]) for r in devices]
-    if got != [("demarc-i4", "Telco Systems", "TM-280", "planned", "Cable test", "20", "rear"),
+    if got != [("demarc-i4", "BATM/Telco Systems", "TM-280", "planned", "Cable test", "20", "rear"),
                ("leaf-1", "Edgecore", "7726-32X-O-AC-F", "planned", "Cable test", "14", "front"),
                ("core-1", "Cisco", "ASR-9006-AC-V2", "planned", "Cable test", "2", "front")]:
         bad.append(f"NetBox kit: the devices file holds {got}")
@@ -9957,12 +9957,12 @@ def check_rack_dcim_kit_netbox(page, base):
     kit = built_kit(page, "netbox", fail={"type": "TM-280"})
     left, notes = readme_lists(kit["zip"]["README.txt"])
     if [r["name"] for r in kit_rows(kit, "2-devices.csv")] != ["leaf-1", "core-1"] or \
-            "types/device-types/Telco Systems/TM-280.yaml" in kit["names"]:
+            "types/device-types/BATM-Telco Systems/TM-280.yaml" in kit["names"]:
         bad.append(f"NetBox kit, a type file failing: devices {[r['name'] for r in kit_rows(kit, '2-devices.csv')]}, entries {kit['names']}")
-    for want_note in ("demarc (tm-280): its NetBox device type, netbox/device-types/Telco Systems/TM-280.yaml, couldn't be read, so it has none here.",):
+    for want_note in ("demarc (tm-280): its NetBox device type, netbox/device-types/BATM-Telco Systems/TM-280.yaml, couldn't be read, so it has none here.",):
         if want_note not in notes:
             bad.append(f"NetBox kit, a type file failing: the notes do not say so: {notes}")
-    if not any(l.startswith("demarc-i4 is not in the devices file: its NetBox device type file, netbox/device-types/Telco Systems/TM-280.yaml, could not be read.") for l in left):
+    if not any(l.startswith("demarc-i4 is not in the devices file: its NetBox device type file, netbox/device-types/BATM-Telco Systems/TM-280.yaml, could not be read.") for l in left):
         bad.append(f"NetBox kit, a type file failing: the device is not listed as left out: {left}")
     return bad
 

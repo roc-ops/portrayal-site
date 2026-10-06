@@ -454,6 +454,15 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = ()
 // ── DCIM (spec §8) ─────────────────────────────────────────────────────
 export const stemOf = path => String(path).split('/').pop().replace(/\.ya?ml$/i, '');
 export const vendorOf = path => String(path).split('/').at(-2) ?? '';
+// THE DIRECTORY A MANUFACTURER'S FILES ARE UNDER is not always its name: the
+// exporter writes a slash as a hyphen (dcim_export.py manufacturer_dir,
+// Portrayal #826), so `BATM/Telco Systems` exports under `BATM-Telco Systems/`
+// while the YAML inside keeps the real name. Every comparison of a path's
+// vendor segment with a device's manufacturer goes through this, or that
+// vendor's own device types read as another vendor's and every one of its
+// devices is exported as a best guess. A part number is written the same way
+// in a module type's file name (moduleTypePath below).
+export const dirOf = man => String(man ?? '').replace(/\//g, '-');
 export const tokens = s => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
 // How a configuration's words are also spelled in vendor part numbers:
@@ -471,7 +480,7 @@ const runIn = (hay, needle) => needle.length > 0 && hay.some((_, i) =>
 // match on words and aliases is a GUESS, and the caller lists it in notes.
 export function matchDeviceType({cfg, manufacturer, paths}) {
   if (!paths?.length) return null;
-  const own = paths.filter(p => vendorOf(p) === manufacturer);
+  const own = paths.filter(p => vendorOf(p) === dirOf(manufacturer));
   // No file of the chassis's own manufacturer: the match falls back to every
   // file, so whatever wins is still someone else's part - a guess even when
   // it is the only file, or the only one naming the configuration.
@@ -589,6 +598,11 @@ export const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 
 // The one wording for "this type is another vendor's file", shared by a
 // kit's README and its devices file's comments column.
+//
+// The other vendor is named by its DIRECTORY, not by the name in its YAML: with
+// the file's stem it says exactly where the file is in the kit, which is what a
+// reader checking the guess needs. The two differ for a name holding a slash
+// (dirOf above), and only there.
 export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
   `${label} (${ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
   `${stemOf(path)} is another vendor's (${vendorOf(path)}) file, a best guess.`;
@@ -693,6 +707,19 @@ const sectionOrder = label => SECTIONS.findIndex(([, l]) => l === label);
 
 export const firstSentence = text => String(text ?? '').split(/(?<=\.)\s/)[0];
 const titled = ns => ns.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+// A seated part's maker: the directory its module type is filed under, or, with
+// no module type, the component's own namespace titled.
+//
+// THE DIRECTORY IS NOT TURNED BACK INTO A NAME. dirOf is not invertible - from
+// `BATM-Telco Systems` there is no telling whether the name held a slash or a
+// real hyphen - and the real name is only in the YAML, which the BOM never
+// fetches: it reads files.json, a list of paths, and nothing else (bomCsv says
+// so). Reading every seated module's file to recover one vendor's punctuation
+// would make the BOM as many requests as the rack has distinct modules, and
+// give it a per-part failure mode it does not have today. So the one vendor
+// whose name holds a slash reads `BATM-Telco Systems` in this column while its
+// chassis line, which comes from the device catalog, reads `BATM/Telco
+// Systems`; both name the same maker, and the directory is where its files are.
 export function partManufacturer(comp, path) {
   if (path) return vendorOf(path);
   if (!comp || ['generic', 'std', 'common'].includes(comp.ns)) return '';

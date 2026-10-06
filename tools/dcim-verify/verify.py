@@ -46,7 +46,7 @@ DEVICES = [PREFIX + n for n in ('core-1', 'leaf-1', 'demarc-i3', 'demarc-i4')]
 TYPE_FILES = [  # (kind, fixture file, manufacturer, model)
     ('device-types', 'Cisco--ASR-9006-AC-V2.yaml', 'Cisco', 'ASR-9006-AC-V2'),
     ('device-types', 'Edgecore--7726-32X-O-AC-F.yaml', 'Edgecore', '7726-32X-O-AC-F'),
-    ('device-types', 'Telco Systems--TM-280.yaml', 'Telco Systems', 'TM-280'),
+    ('device-types', 'BATM-Telco Systems--TM-280.yaml', 'BATM/Telco Systems', 'TM-280'),
     ('module-types', 'Cisco--A9K-16X100GE-TR.yaml', 'Cisco', 'A9K-16X100GE-TR'),
 ]
 
@@ -1056,7 +1056,7 @@ def run_nautobot(run):
                  request={'method': 'POST', 'path': '/login/'})
     s['accepted'], s['messages'] = (ui if c.user else None), [why]
     run.done(s)
-    for man in ('Cisco', 'Edgecore', 'Telco Systems'):
+    for man in ('Cisco', 'Edgecore', 'BATM/Telco Systems'):
         nt_post_json(c, run, 'prereq_manufacturer_%s' % re.sub(r'\W+', '_', man), 'prerequisite: manufacturer %s' % man,
                      '/api/dcim/manufacturers/', {'name': PREFIX + man})
     nt_post_json(c, run, 'prereq_role', 'prerequisite: a role for devices', '/api/extras/roles/',
@@ -1235,7 +1235,7 @@ def plan(target):
              read('nautobot', 'csv', 'cables-job-probe.csv'), 'csv', 'unknown')
         show('GET', '/api/dcim/cables/?label__isw=' + PREFIX, 'list the cables made')
     say('   objects: site/location %ssite|loc, rack %srack (+ %srack-topdown), role %srole,' % ((PREFIX,) * 4))
-    say('            manufacturers %sCisco, %sEdgecore, %sTelco Systems, their four types,' % ((PREFIX,) * 3))
+    say('            manufacturers %sCisco, %sEdgecore, %sBATM/Telco Systems, their four types,' % ((PREFIX,) * 3))
     say('            devices %s; modules in core-1; cables labelled %s…' % (', '.join(DEVICES), PREFIX))
     say('   @card(slot-2/p0) in a cable file is the card port\'s real name, read from the instance;')
     say('   @id(…) is an object id read from the instance (Nautobot).')

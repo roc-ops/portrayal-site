@@ -19,6 +19,12 @@ test('parts are grouped by class', () => {
 
 test('manufacturer and description come from the DCIM file and the component', () => {
   assert.equal(X.partManufacturer({ns: 'cisco'}, 'netbox/module-types/Cisco/A9K-3KW-AC.yaml'), 'Cisco');
+  // The DIRECTORY the module type is filed under, and it is not turned back into
+  // the name: a name holding a slash is filed with a hyphen (Portrayal #826) and
+  // the hyphen form is all the BOM has, which export-data.js partManufacturer
+  // explains. A real hyphen in a name reads the same way here, as it always did.
+  assert.equal(X.partManufacturer({ns: 'telco-systems'}, 'netbox/module-types/BATM-Telco Systems/TM810x AC PSU.yaml'),
+    'BATM-Telco Systems');
   assert.equal(X.partManufacturer({ns: 'telco-systems'}, null), 'Telco Systems');
   assert.equal(X.partManufacturer({ns: 'generic'}, null), '');
   assert.equal(X.partManufacturer(null, null), '');

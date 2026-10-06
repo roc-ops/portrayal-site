@@ -10,11 +10,11 @@ const EXPORTS = new URL('../../assets/exports/', import.meta.url);
 const yaml = path => fs.readFileSync(new URL(path, EXPORTS), 'utf8');
 const lists = path => D.typeLists(yaml(path));
 const ASR = 'netbox/device-types/Cisco/ASR-9006-AC-V2.yaml', LEAF = 'netbox/device-types/Edgecore/7726-32X-O-AC-F.yaml',
-  TM = 'netbox/device-types/Telco Systems/TM-280.yaml', CARD = 'netbox/module-types/Cisco/A9K-16X100GE-TR.yaml';
+  TM = 'netbox/device-types/BATM-Telco Systems/TM-280.yaml', CARD = 'netbox/module-types/Cisco/A9K-16X100GE-TR.yaml';
 
 test('a type file gives its own name lists, by section, and its bays by name and position', () => {
   const tm = lists(TM);
-  assert.equal(tm.manufacturer, 'Telco Systems');
+  assert.equal(tm.manufacturer, 'BATM/Telco Systems');
   assert.equal(tm.model, 'TM-280');
   assert.deepEqual(tm.sections.interfaces, ['port-1-1', 'port-2-1', 'port-3-1', 'copper-3-1', 'port-2-2']);
   assert.deepEqual(tm.sections['console-ports'], ['Console']);
@@ -462,7 +462,7 @@ const WHOLE = {width: 1e9};          // a paragraph on one line, for reading its
 
 test("the NetBox kit's README: what must exist, each file in import order with its row count, then what is not carried", () => {
   const got = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {site: 'Lab 1', role: 'Router'}, typeFiles: 7,
-    manufacturers: ['Cisco', 'Edgecore', 'Telco Systems'], rows: {rack: 1, devices: 3, modules: 1, cables: 1},
+    manufacturers: ['BATM/Telco Systems', 'Cisco', 'Edgecore'], rows: {rack: 1, devices: 3, modules: 1, cables: 1},
     left: ['demarc-i3 is not in the devices file: because.', 'Cable c2 is not in the cables file: why.'], notes: ['A best guess.'], ...WHOLE});
   assert.equal(got.text, [
     'NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04.',
@@ -470,7 +470,7 @@ test("the NetBox kit's README: what must exist, each file in import order with i
     'Before you import, NetBox must already have:',
     '- the site "Lab 1"',
     '- the device role "Router"',
-    '- these manufacturers: Cisco, Edgecore, Telco Systems',
+    '- these manufacturers: BATM/Telco Systems, Cisco, Edgecore',
     '',
     'Import in this order. NetBox takes each CSV file whole or not at all: one refused row refuses the file.',
     'Step 1: types/device-types/, then types/module-types/ (7 files): Device Types > Import and Module Types > Import, format YAML, one file at a time. The module types must be in before step 4.',
@@ -637,7 +637,7 @@ test('a device name is clean whatever its label and its id hold, in every file a
   // Through the kit's own cleaning (kitNames leaves ids alone) and into the cells: name, comments, modules, cables.
   const rack = D.kitNames({name: 'R', frame: FRAME, items, cables: [
     {id: 'c1', a: end('i\n1', 'port-1-1'), b: end('i\r\n\t2', 'port-2-1'), media: 'cat6', purpose: '', label: 'L', route: []}]}).rack;
-  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
+  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'BATM/Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
   const csv = (columns, rows) => X.toCsv(columns, rows);
   const oneLineEach = (text, n) => assert.equal(text.trimEnd().split(/\r\n|[\n\u000b\u000c\r\u0085\u2028\u2029]/).length, n + 1, text);
   for (const target of ['netbox', 'nautobot']) {
@@ -687,7 +687,7 @@ test('a cleaned name reaches every CSV cell as one line, and the zip is named fr
             {id: 'i2', ref: 'tm-280', cfg: 'base', label: 'dev 1', ru: 4, u: 1, face: 'front', turned: false}],
     cables: [{id: 'c\n9', a: end('i1', 'port-1-1'), b: end('i2', 'port-2-1'), media: 'cat6', purpose: '', label: '', route: []},
              {id: 'c2', a: end('i1', 'port-2-1'), b: end('i2', 'port-1-1'), media: 'cat6', purpose: '', label: 'L\r\n2', route: []}]}).rack;
-  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
+  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'BATM/Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
   const oneLine = (columns, rows) => assert.equal(X.toCsv(columns, rows).trimEnd().split(/\r\n|[\n\u000b\u000c\r\u0085\u2028\u2029]/).length, rows.length + 1);
   for (const target of ['netbox', 'nautobot']) {
     const dev = X.deviceImportRows({rack, items: rack.items, types, target, dcim: M.dcimOf(rack)});
