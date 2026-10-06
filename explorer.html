@@ -588,10 +588,20 @@ function writeLocation() {
   const search = searchWith(location.search, {
     device: e(state.device), config: e(state.cfg || ''), view: e(state.view || ''),
     swap: encodeSwaps(swapOverrides()),
-    // AND WHAT IS WRITTEN ON WHAT WAS SWAPPED IN. A link that seats an optic
-    // and drops its latch colour shows the reader a different part from the one
-    // the writer was looking at. The kit reads `swap=` itself and knows nothing
-    // of this one, so the page writes it and the page applies it, below.
+    // AND WHAT IS WRITTEN ON A PART. A link that seats an optic and drops its
+    // latch colour shows the reader a different part from the one the writer
+    // was looking at; and since Portrayal #817 the inspector edits any part's
+    // declared fields (a breaker's rating), which land in the same map.
+    //
+    // THIS PAGE'S OWN SHAPE, `path:key~value` (site/optics.js), NOT THE KIT'S.
+    // Upstream's page writes `path~key~value` with fields.js encodeFields, and
+    // since #817 the shell reads that shape off `fields=` itself. This page
+    // had the parameter first, and the Rack Builder's lens
+    // (site/rack/explorer-lens.js) and links already shared write this one, so
+    // it is kept. The two cannot be confused: the shell's decodeFields wants
+    // three `~` pieces and drops an entry of two, so one of ours is applied
+    // once, by applyPendingFields below; one of the kit's is dropped by our
+    // decodeFields, applied by the shell, and rewritten here in our shape.
     // Held until a link's own are applied, or the load that announces itself
     // before they land would rewrite them to nothing - the trap shell.js warns
     // about for `swap=` in the same breath.
@@ -653,10 +663,14 @@ for (const a of document.querySelectorAll('a[data-export]')) {
  *  cfgFields spans the views the way cfgBays does, so the optic on the front
  *  is still seated while the rear is showing. reseat()'s own rule - "keys this
  *  face does not have are skipped and kept, because the face that has them may
- *  be the next one shown". Whether the drawing still SHOWS one when that face
- *  comes back is a separate matter, and a separate fix: nothing replays
- *  cfgFields into a reloaded face yet (upstream-work/fields-not-replayed.md).
- *  The link is right either way; the drawing catches up when that lands. */
+ *  be the next one shown". The drawing shows it when that face comes back:
+ *  since Portrayal #817 the shell paints cfgFields onto every face it fetches
+ *  (shell.js repaintFields), which upstream-work/fields-not-replayed.md asked
+ *  for.
+ *
+ *  NOT shell.applyFields, which #817 added for the kit's own `fields=`: it
+ *  takes only a part that is drawn on a face it holds, and would drop the
+ *  entry for the optic on the face not showing. */
 function applyPendingFields() {
   const map = pendingFields;
   pendingFields = null;
