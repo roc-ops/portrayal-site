@@ -133,6 +133,12 @@ export function installOpticFields(shell) {
     const pick = box?.querySelector('#optic');
     if (!pick || box.querySelector('.optic-fields')) return;
     const occ = `${pick.dataset.cage}-occupant`;
+    // THE KIT DRAWS A PART'S OWN FIELDS SINCE PORTRAYAL #817: select the optic
+    // itself and the shell's inspector already holds a control per field, for
+    // this same path. The rows below would be the same fields a second time.
+    // The CAGE's row is still this function's: a cage declares no fields, the
+    // kit draws none there, and that is where a reader picks the optic.
+    if (state.sel === occ && box.querySelector('[data-field]')) return;
     // A DIFFERENT OPTIC STARTS FROM ITS OWN DEFAULTS, so a colour picked for
     // one part does not ride onto the next.
     pick.addEventListener('change', () => shell.setFields(occ, null));
