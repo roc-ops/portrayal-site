@@ -135,6 +135,14 @@ let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
 // actually produced, so this reads that instead of predicting it.
 const filesFor = () => (INDEX[DEV] || {})[$('target').value] || [];
 
+// THE DIRECTORY A MANUFACTURER'S FILES ARE UNDER is not always its name: the
+// exporter writes a slash as a hyphen (dcim_export.py manufacturer_dir,
+// Portrayal #826), so `BATM/Telco Systems` exports under `BATM-Telco Systems/`
+// while the YAML inside keeps the real name. Every comparison of a path segment
+// with a device's manufacturer goes through this, or that vendor's own types
+// read as another vendor's listings and its bundle comes out empty.
+const dirOf = man => String(man ?? '').replace(/\//g, '-');
+
 // netbox/device-types/Arrcus/S9510-28DC-BN0B.yaml -> Arrcus · S9510-28DC-BN0B · NOS listing
 //
 // Named by manufacturer AND model (Portrayal #677): a NOS vendor that lists a
@@ -145,7 +153,7 @@ function label(rel) {
   const parts = rel.split('/');
   const base = parts.at(-1).replace(/\.yaml$/, '');
   const maker = (DEVICES.find(d => d.name === DEV) || {}).manufacturer;
-  return `${parts[2]} · ${base}` + (maker && parts[2] !== maker ? ' · NOS listing' : '');
+  return `${parts[2]} · ${base}` + (maker && parts[2] !== dirOf(maker) ? ' · NOS listing' : '');
 }
 
 // WHICH FILES ARE LISTINGS: a device type exported under a manufacturer other
@@ -157,7 +165,7 @@ function listingsOf(target) {
   for (const d of DEVICES)
     for (const rel of (INDEX[d.name] || {})[target] || []) {
       const parts = rel.split('/');
-      if (parts[1] === 'device-types' && parts[2] !== d.manufacturer) out.set(rel, d.manufacturer);
+      if (parts[1] === 'device-types' && parts[2] !== dirOf(d.manufacturer)) out.set(rel, d.manufacturer);
     }
   return out;
 }
@@ -174,7 +182,7 @@ function planBundle(target, scope, listings, man) {
     if (parts[1].endsWith('-images')) return false;
     if (listed.has(rel))
       return listings && !(scope === 'vendor' && man && listed.get(rel) !== man);
-    return !(scope === 'vendor' && man && parts[2] !== man);
+    return !(scope === 'vendor' && man && parts[2] !== dirOf(man));
   });
 }
 window.__exporter = {planBundle};
@@ -253,7 +261,7 @@ async function buildBundle(btn) {
   // MTP-12 and cannot say which fibre reaches which - which is the entire
   // content of a cassette.
   const maps = (FILES['fibre-maps'] || []).filter(
-    rel => !(scope === 'vendor' && man && rel.split('/')[1] !== man));
+    rel => !(scope === 'vendor' && man && rel.split('/')[1] !== dirOf(man)));
 
   btn.disabled = true;
   $('bnote').textContent = `fetching ${wanted.length + maps.length} files…`;

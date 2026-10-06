@@ -122,7 +122,10 @@ def image_for(root, kind, doc, face):
     stem = doc.get("slug") if kind == "device-types" else doc["model"].replace("/", "-")
     if not stem:
         return None
-    p = root / IMAGE_DIR[kind] / doc["manufacturer"] / f"{stem}.{face}.png"
+    # The manufacturer's DIRECTORY, which is its name with a slash written as a
+    # hyphen (`BATM/Telco Systems` is under `BATM-Telco Systems/`), the way the
+    # exporter and the bundle name it.
+    p = root / IMAGE_DIR[kind] / doc["manufacturer"].replace("/", "-") / f"{stem}.{face}.png"
     return p if p.is_file() else None
 
 
