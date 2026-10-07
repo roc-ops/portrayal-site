@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as M from '../../site/rack/model.js';
 import * as R from '../../site/rack/route.js';
+import {RU, OPENING, RAIL_W} from '../../site/rack/rails.js';
 
 const SIZES = {'sw': {ru: 1, d: 515}, 'pp': {ru: 1, d: 100},
   'fhd-cmp5dr': {ru: 1, d: 110, mount: 'rack-face', shell: 'sheet'},
@@ -142,4 +143,67 @@ test('endPane: face, turned, and the end view', () => {
     const r = {items: [{id: 'i1', face, turned}]};
     assert.equal(R.endPane(r, {item: 'i1', view}), want, `${face} turned=${turned} view=${view}`);
   }
+});
+
+test('stock lengths round up, then by 5 m past 30', () => {
+  assert.deepEqual([0.2, 0.5, 0.51, 1.62, 2.01, 9.9, 29.1, 30.2, 41].map(R.stockLength),
+    [0.5, 0.5, 1, 2, 3, 10, 30, 35, 45]);
+});
+
+test('a lane point sits in its gutter at the U middle, on its face\'s rail plane', () => {
+  const r = M.newRack();
+  const p = R.pointOf(r, {lane: 'left-rear', ru: 10}, ctxFor(r, {}));
+  assert.deepEqual(p, {x: -(OPENING / 2 + RAIL_W + R.LANE_GAP / 2), y: 9.5 * RU, z: -r.frame.railDepth});
+});
+
+test('a routed length measures the path, adds 0.15 m an end, and rounds to stock', () => {
+  let r = add(M.newRack(), 'sw', 1);
+  r = add(r, 'pp', 21);
+  const ctx = {...ctxFor(r, {'i1|p': -100, 'i2|q': -100}), portY: () => null};
+  const got = R.routedLength(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctx);
+  // port -> left lane (|dx| = lane x - 100) at U1, up 20U, back to the port at U21.
+  const dx = OPENING / 2 + RAIL_W + R.LANE_GAP / 2 - 100;
+  const mm = 2 * dx + 20 * RU;
+  assert.ok(Math.abs(got.measured - (mm / 1000 + 0.3)) < 1e-9, `measured ${got.measured}`);
+  assert.equal(got.value, R.stockLength(got.measured));
+});
+
+test('fill: Cat6 through one ring, against 40% of its opening', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'fhd-cmp5dr', 20, {on: 'i1', unit: 1});
+  r = add(r, 'pp', 30);
+  const ctx = ctxFor(r, {'i1|p': -205, 'i3|q': -205});
+  const g0 = ctx.guidesOf;
+  ctx.guidesOf = id => g0(id).map(g => ({...g, aperture: {w: 32, h: 29.5}}));
+  r = {...r, cables: Array.from({length: 14}, (_, k) => ({id: `c${k}`, media: 'cat6', route: [],
+    a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i3', path: 'q', view: 'front'}}))};
+  const f = R.fill(r, ctx).find(x => x.via === 'guide-1');
+  const pct = Math.round(14 * Math.PI * 9 / (0.4 * 32 * 29.5) * 100);
+  assert.deepEqual([f.count, f.percent, f.over], [14, pct, true]);
+});
+
+test('capacity: a manager over its stated count', () => {
+  SIZES['fhd-cmp5dr'].capacity = {count: 2, basis: 'test'};
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'fhd-cmp5dr', 20, {on: 'i1', unit: 1});
+  r = add(r, 'pp', 30);
+  r = {...r, cables: [0, 1, 2].map(k => ({id: `c${k}`, media: 'cat6', route: [],
+    a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i3', path: 'q', view: 'front'}}))};
+  try {
+    assert.deepEqual(R.capacityOver(r, ctxFor(r, {'i1|p': -100})), [{item: 'i2', count: 3, capacity: 2}]);
+  } finally { delete SIZES['fhd-cmp5dr'].capacity; }
+});
+
+test('withRoutedLengths fills unset lengths, updates routed ones, and never touches an entered one', () => {
+  let r = add(M.newRack(), 'sw', 1);
+  r = add(r, 'pp', 21);
+  const base = {a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i2', path: 'q', view: 'front'}, route: []};
+  r = {...r, cables: [{id: 'c1', ...base}, {id: 'c2', ...base, length: {value: 7, unit: 'ft', source: 'entered'}},
+                      {id: 'c3', ...base, length: {value: 9, unit: 'm', source: 'routed', measured: 8.7}}]};
+  const ctx = {...ctxFor(r, {'i1|p': -100, 'i2|q': -100}), portY: () => null};
+  const out = R.withRoutedLengths(r, ctx);
+  assert.equal(out.cables[0].length.source, 'routed');
+  assert.deepEqual(out.cables[1].length, {value: 7, unit: 'ft', source: 'entered'});
+  assert.equal(out.cables[2].length.value, out.cables[0].length.value);
+  assert.equal(R.withRoutedLengths(out, ctx), out);
 });

@@ -7,6 +7,7 @@
 // the site's pages, so the rack kit can take it as it is.
 
 import {uLabel} from './model.js';
+import {RU, OPENING, RAIL_W} from './rails.js';
 
 export const LANE_GAP = 40;          // mm: a lane runs in the middle of a 40 mm gutter outside each rail
 const SHORT = 2;                     // U: a jumper this close, with no manager, just hangs
@@ -120,4 +121,117 @@ export function routeText(route, nameOf = id => id, frame = null) {
     out.push(w.lane ? {lane: w.lane, from: w.ru, to: w.ru} : {text: `${nameOf(w.item)} ${viaText(w.via)}`});
   }
   return out.map(p => (p.lane ? `${p.lane} U${u(p.from)}${p.to !== p.from ? `-U${u(p.to)}` : ''}` : p.text)).join(' > ');
+}
+
+// ── geometry, in rack coordinates (mm) ────────────────────────────────────
+// x from the center line, right as seen from the front; y up from the floor of
+// U1; z 0 on the front rail plane, negative toward the rear. The page's 2D and
+// 3D draw from their own drawings; this is the rack's own measure, so the
+// length is the same whatever is on screen.
+const railDepthOf = f => (f.kind === 'two-post' ? 0 : f.railDepth);
+const laneX = side => (side === 'left' ? -1 : 1) * (OPENING / 2 + RAIL_W + LANE_GAP / 2);
+const planeZ = (f, pane) => (pane === 'rear' ? -railDepthOf(f) : 0);
+
+export function pointOf(rack, w, ctx) {
+  const f = rack.frame;
+  if (w.lane) {
+    const [side, pane = 'front'] = w.lane.split('-');
+    return {x: laneX(side), y: (w.ru - 0.5) * RU, z: planeZ(f, pane)};
+  }
+  const it = itemOf(rack, w.item), g = it && ctx.guidesOf(it.id).find(x => x.via === w.via);
+  if (!g) return null;
+  // A rack-face part stands out from its rail plane by half its depth; a rack
+  // device's guide is on its face, at the rail plane.
+  const c = ctx.chassisOf(it.ref) || {};
+  const out = c.mount === 'rack-face' ? (c.d ?? 0) / 2 : 0;
+  const z = g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
+  return {x: g.x, y: (it.ru - 0.5) * RU, z};
+}
+
+export function portPoint(rack, end, ctx) {
+  const it = itemOf(rack, end.item), pane = it && endPane(rack, end);
+  if (!pane) return null;
+  const f = rack.frame, d = ctx.chassisOf(it.ref)?.d ?? 0;
+  // On its own face a panel is at that rail; the far panel is the chassis depth away.
+  const z = pane === it.face ? planeZ(f, pane) : (it.face === 'front' ? -d : -railDepthOf(f) + d);
+  return {x: ctx.portX(end) ?? 0, y: ctx.portY?.(end) ?? (it.ru - 0.5) * RU, z};
+}
+
+const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
+
+export const STOCK_M = [0.5, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30];
+export const END_ALLOWANCE_M = 0.15;
+export const stockLength = m => STOCK_M.find(s => s >= m - 1e-9) ?? Math.ceil(m / 5) * 5;
+
+export function routedLength(rack, cable, ctx) {
+  const a = portPoint(rack, cable.a, ctx), b = portPoint(rack, cable.b, ctx);
+  if (!a || !b) return null;
+  const mids = resolveRoute(rack, cable, ctx).waypoints.map(w => pointOf(rack, w, ctx)).filter(Boolean);
+  const pts = [a, ...mids, b];
+  let mm = 0;
+  for (let k = 1; k < pts.length; k++) mm += dist(pts[k - 1], pts[k]);
+  const measured = mm / 1000 + 2 * END_ALLOWANCE_M;
+  return {measured, value: stockLength(measured)};
+}
+
+// ── fill ──────────────────────────────────────────────────────────────────
+// Typical outside diameters (mm): a sketch of fill, not a measurement.
+export const DIAMETERS = {cat6: 6.0, cat6a: 7.5, os2: 3.0, om3: 3.0, om4: 3.0, om5: 3.0, dac: 5.0, aoc: 3.0};
+const UNSET_D = 6.0;
+export const FILL_LIMIT = 0.4;
+const areaOf = media => Math.PI * ((DIAMETERS[media] ?? UNSET_D) / 2) ** 2;
+
+// Every pathway with an aperture that a cable passes through, filled against
+// FILL_LIMIT of its opening. Lanes have no limit and are not listed.
+export function fill(rack, ctx) {
+  const at = new Map();
+  for (const c of rack.cables || []) {
+    for (const w of resolveRoute(rack, c, ctx).waypoints) {
+      if (w.lane) continue;
+      const g = ctx.guidesOf(w.item).find(x => x.via === w.via);
+      if (!g?.aperture) continue;
+      const key = `${w.item}|${w.via}`;
+      const e = at.get(key) || {item: w.item, via: w.via, aperture: g.aperture, area: 0, cables: []};
+      if (e.cables.includes(c.id)) continue;
+      e.area += areaOf(c.media);
+      e.cables.push(c.id);
+      at.set(key, e);
+    }
+  }
+  return [...at.values()].map(e => {
+    const percent = Math.round(e.area / (FILL_LIMIT * e.aperture.w * e.aperture.h) * 100);
+    return {item: e.item, via: e.via, count: e.cables.length, percent, over: percent > 100, cables: e.cables};
+  });
+}
+
+// Managers whose stated capacity the cables through them exceed.
+export function capacityOver(rack, ctx) {
+  const by = new Map();
+  for (const c of rack.cables || [])
+    for (const w of resolveRoute(rack, c, ctx).waypoints)
+      if (w.item) (by.get(w.item) || by.set(w.item, new Set()).get(w.item)).add(c.id);
+  const out = [];
+  for (const [item, set] of by) {
+    const cap = ctx.chassisOf(itemOf(rack, item)?.ref)?.capacity?.count;
+    if (cap && set.size > cap) out.push({item, count: set.size, capacity: cap});
+  }
+  return out;
+}
+
+// ── keeping routed lengths current ────────────────────────────────────────
+// A cable with no length, or a routed one, gets the length its route measures;
+// an entered length is the user's and is never touched. Returns the same rack
+// when nothing changed, so the page can tell whether to save.
+export function withRoutedLengths(rack, ctx) {
+  let changed = false;
+  const cables = (rack.cables || []).map(c => {
+    if (c.length && c.length.source !== 'routed') return c;
+    const got = routedLength(rack, c, ctx);
+    if (!got) return c;
+    const measured = Math.round(got.measured * 100) / 100;
+    if (c.length?.value === got.value && c.length?.measured === measured) return c;
+    changed = true;
+    return {...c, length: {value: got.value, unit: 'm', source: 'routed', measured}};
+  });
+  return changed ? {...rack, cables} : rack;
 }
