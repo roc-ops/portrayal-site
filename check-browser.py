@@ -3645,9 +3645,25 @@ def open_fixture(page, base, fixture=EXPORT_FIXTURE):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     rack = fixture["racks"][0]
+    # The reload reopens the library's last rack - in a check that opens a
+    # fixture twice, the SAME fixture under the same name, drawn with the same
+    # devices. Its first draw can land before the file is read and stored
+    # (under load, the file's way into the library is the slow part), and then
+    # every wait below is met by the rack that was there before. So the panes
+    # are watched from here on, and the wait is for a draw made while the
+    # opened document - a fresh id, as an opened file always gets - is the
+    # page's: once it is, no draw of the old one can land (it is superseded).
+    page.evaluate("""() => {
+      const was = window.__rack.doc().id;
+      window.__openedDrawn = false;
+      new MutationObserver((_, o) => {
+        if (window.__rack.doc().id !== was) { window.__openedDrawn = true; o.disconnect(); }
+      }).observe(document.getElementById('paneFront'), {childList: true});
+    }""")
     page.set_input_files("#openFile", files=[{"name": "fixture.rack.json", "mimeType": "application/json",
                                               "buffer": json.dumps(fixture).encode()}])
     page.wait_for_function("(n) => window.__rack.doc().racks[0].name === n", arg=rack["name"], timeout=READY_MS)
+    page.wait_for_function("() => window.__openedDrawn", timeout=READY_MS)
     page.wait_for_function(
         """(n) => document.querySelectorAll('svg[data-pane="front"] [data-item-id][data-panel]').length >= n""",
         arg=len(rack["items"]), timeout=READY_MS)
