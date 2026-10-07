@@ -18,6 +18,7 @@ const itemOf = (rack, id) => rack.items.find(i => i.id === id) || null;
 
 // Which face an end's port is seen from: its item's face, or the other one
 // for the panel that faces away (a turned item swaps the two).
+// Mirrors cable-rules.js paneOf, duplicated so this file stays kit-ready.
 export function endPane(rack, end) {
   const it = itemOf(rack, end.item);
   if (!it) return null;
@@ -28,17 +29,24 @@ export function endPane(rack, end) {
 const unitsOf = (ctx, it) => Math.max(1, ctx.chassisOf(it.ref)?.ru ?? 1);
 const spans = (ctx, it, u) => u >= it.ru && u <= it.ru + unitsOf(ctx, it) - 1;
 
-// The manager an end leaves through: one hosted on its item on that face, else
-// a 1U device just above or below it on that face that declares a guide or a
-// pass. null when there is neither.
+// The manager an end leaves through, in order: one hosted on its item on that
+// face; else, of the 1U devices adjacent on that face (ABOVE first, then
+// BELOW), the first with a manager hosted on it on that face, else itself if it
+// declares guides on that face. A manager must declare guides on that face.
+// null when there is none.
 function managerOf(rack, it, pane, ctx) {
-  const hosted = rack.items.find(m => m.on === it.id && m.face === pane
-                                     && ctx.guidesOf(m.id).some(g => g.face === pane));
+  const guided = m => ctx.guidesOf(m.id).some(g => g.face === pane);
+  const hosted = rack.items.find(m => m.on === it.id && m.face === pane && guided(m));
   if (hosted) return hosted;
-  const above = it.ru + unitsOf(ctx, it), below = it.ru - 1;
-  return rack.items.find(o => o.id !== it.id && o.face === pane && !o.on && unitsOf(ctx, o) === 1
-    && (spans(ctx, o, above) || spans(ctx, o, below))
-    && ctx.guidesOf(o.id).some(g => g.face === pane)) || null;
+  for (const u of [it.ru + unitsOf(ctx, it), it.ru - 1]) {
+    for (const o of rack.items.filter(o => o.id !== it.id && o.face === pane && !o.on
+                                           && unitsOf(ctx, o) === 1 && spans(ctx, o, u))) {
+      const carried = rack.items.find(m => m.on === o.id && m.face === pane && guided(m));
+      if (carried) return carried;
+      if (guided(o)) return o;
+    }
+  }
+  return null;
 }
 
 // The waypoints through one end's manager, from the port out to `side`.

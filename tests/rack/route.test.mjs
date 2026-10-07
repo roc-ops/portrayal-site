@@ -114,3 +114,32 @@ test('routeText reads as the schedule prints it', () => {
     {lane: 'left-front', ru: 24}, {item: 'i5', via: 'duct'}], id => ({i2: 'mgr-1', i5: 'pp-duct'}[id] ?? id)),
     'mgr-1 ring 3 > mgr-1 ring 1 > left-front U12-U24 > pp-duct duct');
 });
+
+test('a manager hosted on the adjacent device above is the manager', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'pp', 21);
+  r = add(r, 'fhd-cmp5dr', 21, {on: 'i2', unit: 1});
+  r = add(r, 'pp', 30);
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i4', path: 'q'}), ctxFor(r, {'i1|p': -100, 'i4|q': -100}));
+  assert.deepEqual(route.slice(0, 2), [{item: 'i3', via: 'guide-2'}, {item: 'i3', via: 'guide-1'}]);
+});
+
+test('managers both above and below: the one above is used', () => {
+  let r = add(M.newRack(), 'cmh-sfd1u', 19);
+  r = add(r, 'sw', 20);
+  r = add(r, 'cmh-sfd1u', 21);
+  r = add(r, 'pp', 30);
+  const route = R.autoRoute(r, cable({item: 'i2', path: 'p'}, {item: 'i4', path: 'q'}), ctxFor(r, {}));
+  assert.deepEqual(route[0], {item: 'i3', via: 'duct'});
+});
+
+test('endPane: face, turned, and the end view', () => {
+  const rows = [['front', false, 'front', 'front'], ['front', false, 'rear', 'rear'],
+    ['front', true, 'front', 'rear'], ['front', true, 'rear', 'front'],
+    ['rear', false, 'front', 'rear'], ['rear', false, 'rear', 'front'],
+    ['rear', true, 'front', 'front'], ['rear', true, 'rear', 'rear']];
+  for (const [face, turned, view, want] of rows) {
+    const r = {items: [{id: 'i1', face, turned}]};
+    assert.equal(R.endPane(r, {item: 'i1', view}), want, `${face} turned=${turned} view=${view}`);
+  }
+});

@@ -60,13 +60,13 @@ There is no version bump. `route` exists; `routeEdited` and the `routed` source 
 
 ## 5. The automatic route (`site/rack/route.js`, pure)
 
-`autoRoute(rack, cable, ctx) -> waypoint[]`. `ctx` supplies `chassisOf`, and `guidesOf(item) -> [{id, kind, x, aperture, run}]` and `portX(end) -> mm` read from the drawings (the page fills both from the configured faces it already holds).
+`autoRoute(rack, cable, ctx) -> waypoint[]`. `ctx` supplies `chassisOf`, and `guidesOf(item) -> [{via, kind, face, x, aperture}]` and `portX(end) -> mm` read from the drawings (the page fills both from the configured faces it already holds).
 
 For each end:
 
 1. **Its manager:**
    - the rack-face manager hosted on the end's item, on the same face;
-   - else the 1U rack device directly above or below it on that face, if it declares a guide or pass;
+   - else the 1U rack devices adjacent on that face, ABOVE first and then BELOW; for each, a rack-face manager hosted on it on that face, else the device itself if it declares a guide or pass;
    - else none.
 2. **Its exit side:** left or right by `portX` against the panel's center. A port exactly at the center goes left.
 3. **Through the manager:**
