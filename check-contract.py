@@ -1242,6 +1242,9 @@ check(set(_g("fhd-cmp5dr", "top")) >= {f"guide-{i}" for i in range(1, 6)}
 check(bool(_g("cmh-sfd1u", "front")) and bool((_cat.get("cmh-4drb1u", {}).get("passes") or {})),
       "the duct of cmh-sfd1u and the brush pass of cmh-4drb1u are indexed",
       "run ./chassis-index.py")
+check(set(_g("cmh-4drb1u", "front")) >= {f"guide-{i}" for i in range(1, 5)},
+      "cmh-4drb1u's four D-rings are indexed on its front view",
+      "run ./chassis-index.py")
 check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
       "fhd-cmp5dr carries its stated capacity, 30",
       "run ./chassis-index.py")

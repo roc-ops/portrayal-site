@@ -101,6 +101,13 @@ test('the list a name is in gives the end its type: a cassette has front and rea
     'the module type FHD-1MTP6LCDOS2A lists no port named {module}/lc1');
 });
 
+// A module port carries {module}/ once. Nautobot alone (upstream f4b799300, #765/#834) names a module seated only
+// in a nested bay by its bay chain, outermost first: {module.parent}/{module}/x at depth 2,
+// {module.parent.parent}/{module.parent}/{module}/x at depth 3. NetBox keeps the single {module}/.
+const modulePortName = target => target === 'nautobot'
+  ? /^(\{module(\.parent)+\}\/)*\{module\}\/(?!.*\{module)/
+  : /^\{module\}\/(?!.*\{module)/;
+
 test('every vendored type file is read whole: each "- name:" line is a name, a module port carries {module}/ once', () => {
   const files = JSON.parse(yaml('files.json'));
   let n = 0;
@@ -112,7 +119,7 @@ test('every vendored type file is read whole: each "- name:" line is a name, a m
     assert.equal(new Set(l.bays.map(b => b.position)).size, l.bays.length, `${path}: two bays share a position`);
     if (path.includes('/module-types/'))
       for (const name of Object.values(l.sections).flat())
-        assert.ok(name.startsWith('{module}/') && name.indexOf('{module}', 1) < 0, `${path}: ${name}`);
+        assert.ok(modulePortName(target).test(name), `${path}: ${name}`);
     n++;
   }
   assert.ok(n > 2000, `${n} files`);
@@ -136,7 +143,8 @@ test('identity spot checks: thirteen vendored files across vendors read to exact
     ['netbox/device-types/Edgecore/5912-54X-O-48V-B.yaml', 'Edgecore', '5912-54X-O-48V-B',
       {interfaces: [55, 'mgmt-eth', 'port-54'], 'console-ports': [1, 'Console', 'Console']}, [8, 'fan-1', 'psu-2']],
     ['nautobot/device-types/Cisco/ASR 9001 Router.yaml', 'Cisco', 'ASR 9001 Router',
-      {interfaces: [12, 'svc-lan', 'tod'], 'console-ports': [1, 'Console', 'Console']}, [5, 'fan-0', 'mpa-1']],
+      // two console ports since upstream c8aa39081 (#384: an AUX line reaches the export)
+      {interfaces: [12, 'svc-lan', 'tod'], 'console-ports': [2, 'Console', 'AUX']}, [5, 'fan-0', 'mpa-1']],
     ['nautobot/device-types/Juniper/MX10004.yaml', 'Juniper', 'MX10004', {}, [11, 'fan0', 're1']],
     ['netbox/module-types/Cisco/A99-10X400GE-X-SE.yaml', 'Cisco', 'A99-10X400GE-X-SE', {interfaces: [10, '{module}/p0', '{module}/p9']}, null],
     ['netbox/module-types/HPE/expansion-slot-blank-fh.yaml', 'HPE', 'expansion-slot-blank-fh', {}, null]];
@@ -154,6 +162,15 @@ test('identity spot checks: thirteen vendored files across vendors read to exact
   // A bay's name and position together, as the file writes them.
   assert.deepEqual(lists('netbox/device-types/Celestica/R3059-F9021-A1.yaml').bays, [{name: 'PSU 1', position: 'psu-1'}, {name: 'PSU 2', position: 'psu-2'}]);
   assert.deepEqual(lists('netbox/device-types/Dell/PowerEdge R660 e3s14-rc0-none.yaml').bays[0], {name: 'Fan 1', position: 'fan-1'});
+});
+
+test('a Nautobot module port may carry its bay chain, once and outermost first (upstream f4b799300)', () => {
+  const nb = modulePortName('nautobot'), nx = modulePortName('netbox');
+  for (const ok of ['{module}/p0', '{module.parent}/{module}/p0', '{module.parent.parent}/{module.parent}/{module}/p0'])
+    assert.ok(nb.test(ok), ok);
+  for (const bad of ['p0', '{module.parent}/p0', '{module}/{module}/p0', '{module.parent}/{module}/{module}/p0', '{module}/{module.parent}/p0'])
+    assert.ok(!nb.test(bad), bad);
+  assert.ok(nx.test('{module}/p0') && !nx.test('{module.parent}/{module}/p0'));
 });
 
 test('a YAML-only escape in a quoted value costs that value, not the type read', () => {

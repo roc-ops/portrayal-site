@@ -22,7 +22,8 @@ RU = 44.45
 def marked(path):
     """The ids a route can pass through on one compiled face, as the route
     names them (docs/superpowers/specs/2026-10-07-cable-routing-pathways-design.md §4):
-    a ring component carrying `data-guide` is its own id (`guide-1`); a ring's
+    a ring component carrying `data-guide`, or a component instance in the
+    `guides` group, is its own id (`guide-1`); a ring's
     end on a front or rear view, `<id>-end` with `data-kind="ring"`, stands for
     the same ring; a duct rect `guide--<id>` is `<id>`; a pass-through
     `pass--<id>` is `<id>`."""
@@ -40,7 +41,9 @@ def marked(path):
             guides.add(i[len("guide--"):])
         elif e.get("data-kind") == "ring" and i.endswith("-end"):
             guides.add(i[:-len("-end")])
-        elif e.get("data-guide"):
+        elif e.get("data-guide") or (e.get("data-group") == "guides" and e.get("data-ref")):
+            # a ring is a component instance in the `guides` group; the FS
+            # ring marks itself `data-guide`, the CMH D-ring only the group
             guides.add(i)
     return sorted(guides), sorted(passes)
 
