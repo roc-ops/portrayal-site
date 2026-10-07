@@ -741,7 +741,8 @@ async function render() {
   // With cables, both panes widen by the same side column, before the zoom
   // below reads their viewBox; with none they are exactly as they were.
   const cabled = r.cables.length > 0;
-  if (cabled) for (const svg of S.svgs) widenForCables(svg);
+  const routed = !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
+  if (cabled) for (const svg of S.svgs) widenForCables(svg, routed);
   // #panes is hidden while in 3D (showMode()) - applyZoom measures its own
   // column width to fit into, and a hidden element measures 0, which is what
   // left every SVG at height:0 once the panes came back. Skipped here, this

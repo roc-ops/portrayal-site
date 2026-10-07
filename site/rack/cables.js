@@ -22,6 +22,8 @@
 
 import {cablePoints} from '../../vendor/relief.js';
 import {svgEl} from './dom.js';
+import {OPENING} from './rails.js';
+import {routed2d} from './route-path.js';
 
 // OS2 jackets are yellow; copper is colored by what it is for.
 export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '#9aa3ad'},
@@ -94,21 +96,6 @@ function gather(pts) {
   const [mx] = mean(pts);
   const m = [mx, Math.max(...pts.map(p => p[1])) + MERGE];
   return [m, pts.map(p => `M${p[0]} ${p[1]} C${p[0]} ${p[1] + MERGE * 0.6} ${m[0]} ${m[1] - MERGE * 0.6} ${m[0]} ${m[1]}`)];
-}
-
-// A ROUTED CABLE (routing spec §7): straight runs between its waypoints, each
-// corner rounded by r, so it reads as dressed cable rather than a hang.
-export function routed2d(pts, r = 4) {
-  let d = `M${pts[0][0]} ${pts[0][1]}`;
-  for (let k = 1; k < pts.length - 1; k++) {
-    const [p, q, s] = [pts[k - 1], pts[k], pts[k + 1]];
-    const cut = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, t = Math.min(r, L / 2) / L;
-      return [b[0] + (a[0] - b[0]) * t, b[1] + (a[1] - b[1]) * t]; };
-    const i = cut(p, q), o = cut(s, q);
-    d += ` L${i[0]} ${i[1]} Q${q[0]} ${q[1]} ${o[0]} ${o[1]}`;
-  }
-  const z = pts[pts.length - 1];
-  return `${d} L${z[0]} ${z[1]}`;
 }
 
 const hang = (a, b, s) => `M${a[0]} ${a[1]} C${a[0]} ${Math.max(a[1], b[1]) + s} ${b[0]} ${Math.max(a[1], b[1]) + s} ${b[0]} ${b[1]}`;
@@ -228,10 +215,21 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const a = starts[0];
       rec.tagged = true;
+      // via2d runs from the plan's `from` end; a is the end that landed here.
       const via = link.via2d?.[view];
-      column.push({rec, want: via?.length ? via[via.length - 1][1] : a[1] + 30, place: y => {
+      if (via?.length) {
+        // A ROUTED cross-face cable stops at its last waypoint (spec §7): it
+        // does not cross the face to the side column. Its tag sits just
+        // outboard of that gutter point.
+        const v = landedSide === 'from' ? via : [...via].reverse();
+        const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
+        column.push({rec, want: last[1], lane: dir, place: y => {
+          stroke(g, routed2d([a, ...v]), color, WIDTH);
+          return tag([last[0] + dir * 6, y], other, link);
+        }});
+      } else column.push({rec, want: a[1] + 30, place: y => {
         const b = [edgeX, y];
-        stroke(g, via?.length ? routed2d([a, ...via, b]) : hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
+        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
         return tag(b, other, link);
       }});
     }
@@ -245,9 +243,12 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
   // the one above it, whichever is lower.
   column.sort((a, b) => a.want - b.want);
   let y = -Infinity;
+  const gutterY = new Map();          // routed tags stack per gutter, apart from the column
   for (const c of column) {
-    y = Math.max(c.want, y + TAG_H);
-    const t = c.place(y);
+    let at;
+    if (c.lane) { at = Math.max(c.want, (gutterY.get(c.lane) ?? -Infinity) + TAG_H); gutterY.set(c.lane, at); }
+    else at = y = Math.max(c.want, y + TAG_H);
+    const t = c.place(at);
     t.setAttribute('data-link-index', String(c.rec.i));
     t.setAttribute('data-cable-tag', 'true');
     tagLayer.append(t);

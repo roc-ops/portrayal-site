@@ -30,11 +30,13 @@ const DROP = 40;
 // and one zoom: the front pane to its right, the rear pane to its left - the
 // two columns meet between the panes. Call it on both, before the zoom is
 // applied (zoom.js reads the viewBox), and only when the rack has cables.
-export function widenForCables(svg) {
+// `both`: routed cables tag their gutter on either side of the rack, so
+// each pane also widens on its outer side.
+export function widenForCables(svg, both = false) {
   const b = svg.getAttribute('viewBox').split(/\s+/).map(Number);
   svg.dataset.baseBox = b.join(' ');
   const rear = svg.dataset.pane === 'rear';
-  svg.setAttribute('viewBox', [rear ? b[0] - ROOM : b[0], b[1], b[2] + ROOM, b[3] + DROP].join(' '));
+  svg.setAttribute('viewBox', [rear || both ? b[0] - ROOM : b[0], b[1], b[2] + ROOM * (both ? 2 : 1), b[3] + DROP].join(' '));
 }
 
 // ROOM BELOW, AS MUCH AS THE CABLES TOOK. A cable's sag grows with its length
@@ -77,7 +79,7 @@ function inPane(svg, el) {
 // A pathway's element in a pane: a ring (#via or #via-end), a duct
 // (#guide--via) or a pass (#pass--via) inside the item's group.
 function wayEl(svg, w) {
-  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel]`);
+  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"]`);
   return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
     || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
 }
@@ -160,12 +162,12 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
       if (!ws?.length) continue;
+      // One offset per cable and lane, so its own run up the lane is vertical.
+      const mine = new Map();
       const pts = ws.map(w => {
         const key = w.lane ? `${w.lane}` : null;
-        const k = key ? (used.get(key) || 0) : 0;
-        const p = wayPoint(svg, w, pane, rack.frame, k);
-        if (p && key) used.set(key, k + 1);
-        return p;
+        if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
+        return wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0);
       }).filter(Boolean);
       if (pts.length) link.via2d = {[pane]: pts};
     }
@@ -184,7 +186,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const pill = (t, at, text) => {
     const label = pillText(text);
     const w = 7 * Array.from(label).length + 12;
-    const x = rear ? at[0] - 4 - w : at[0] + 4;
+    const x = at[0] < OPENING / 2 ? at[0] - 4 - w : at[0] + 4;
     t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
     return t;
