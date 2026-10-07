@@ -81,6 +81,14 @@ export const COMMANDS = {
 
 The argument schemas use only the keywords `schema.js`'s `KNOWN` set renders, so piece 3 can show them on a page if wanted. A command's `op` is its key.
 
+The table is what an agent reads, so it is written for one (asked for by the agent research, 2026-10-07):
+
+- every argument property has a `description`, under about 150 characters; every command's `description` is under about 500;
+- enum values are words, not codes (`front`/`rear`, `keep`/`remove`, the media names);
+- a node test enforces both: every property described, the lengths within bounds.
+
+Every command also takes an optional `rack`, the id of the rack it edits. Today only `racks[0]` is editable, so a `rack` naming any other rack is an error ("Only rack r1 can be edited here."); the argument exists now so the command shapes need not change when rows of racks come.
+
 ### 2.2 `apply` (in `commands.js`)
 
 ```js
@@ -94,6 +102,7 @@ apply(rack, cmd | cmd[], ctx) ->
 - `as` / `@name` (D3): a command's `as` binds the id it creates (`place` an item id, `cable.add` a cable id). Before each later command runs, any string argument equal to `"@name"`, and any `item` of a cable end equal to `"@name"`, is replaced with the bound id. An unbound `@name`, or a name bound twice, is an error.
 - `summary` of a batch is its commands' summaries joined; `findings` are all of them in order; `created` maps every `as` name to its id, plus `ids`, the ids created in order.
 - `noop` is true when every command returned its rack unchanged.
+- `apply` never mutates its input, so calling it is also a dry run: the editor's `preview` (§2.4) is `apply` without the commit.
 
 The argument check is a small validator over the subset of JSON Schema the argument schemas use (`type`, `required`, `properties`, `additionalProperties`, `enum`, `minimum`, `items`); no dependency is added.
 
@@ -118,13 +127,14 @@ The oldest step is dropped past the cap.
 const ed = createRackEditor({doc, chassisOf});
 ed.getDoc(); ed.rack();
 ed.loadDoc(doc)            -> {findings}            // settleManagers; clears history
-ed.apply(cmds)             -> apply's result         // records history unless noop or dcim-only
+ed.apply(cmds, {origin})   -> apply's result         // records history unless noop or dcim-only
+ed.preview(cmds)           -> apply's result         // a dry run: nothing committed, recorded or emitted
 ed.undo(); ed.redo()       -> {summary} | null
 ed.canUndo / canRedo / undoSummary / redoSummary
 ed.on('change', fn)        -> unsubscribe
 ```
 
-A change event is `{cause: 'apply' | 'undo' | 'redo' | 'load', commands, summary, findings, before, after}`, where `before` and `after` are racks. Selection is not here: it is UI state and joins the component in piece 3.
+A change event is `{cause: 'apply' | 'undo' | 'redo' | 'load', origin, commands, summary, findings, before, after}`, where `before` and `after` are racks. `origin` is whatever the caller of `apply` passed (`'ui'` by default; the agent adapters will pass `'agent'`), and an undo or redo carries the origin of the step it undoes, so the page can later say "Your assistant placed X at U12." without guessing. Selection is not here: it is UI state and joins the component in piece 3.
 
 The document holds an array of racks and the page edits `racks[0]`, as today; the editor does the same, and `getDoc()` returns a new document whenever the rack changes.
 
@@ -134,10 +144,13 @@ The document holds an array of racks and the page edits `racks[0]`, as today; th
 |---|---|---|
 | `fitsAt(rack, {ref, face, ru}, ctx)` | `{ok}` or `{ok: false, reason}`, with the manager placement applied as `place` would | `placement`, `fits` |
 | `freeUs(rack, {ref, face}, ctx)` | every U the device fits at, bottom-up | `fitsAt` |
-| `freePorts(rack, itemId)` | the item's ports with no cable, async | `cableFacts`' face reading, `portFree` |
-| `looseEnds(rack)` | each cable end that does not land, with its reason, async | `cableFacts` |
+| `catalog(devices, {text?, ru?, family?, mount?})` | the devices that can be placed: `{ref, manufacturer, model, ru, mount, configs, default}`, filtered by a case-insensitive match on manufacturer, model or ref, a height and a family | `catalogEntries` over `chassis.json` |
+| `freePorts(rack, itemId, ctx)` | per port with no cable, on either panel: `{path, view, label, class, speed, media}`, async | the face's ports (`portsOf`: `data-path`, `data-media`, `data-speed`), `portFree` |
+| `suggestMedia(rack, a, b, ctx)` | the media `cable.add` would propose for two ends, and any mismatch sentence, async | `cableFacts`, `proposeMedia`, `mismatch` |
+| `looseEnds(rack, ctx)` | each cable end that does not land, with its reason, async | `cableFacts` |
+| `describe(rack, ctx)` | a short reading of the rack for an agent: the frame in one line; per item its id, name (label, or model), U range, face, and the manager it carries or the device it is on; per cable `c3: i1/port-1 <-> i4/port-7, om4`. Plain lines, kept under about 1.5K characters for a full 42U rack by abbreviating the item lines once the rack is long, with a closing line saying how many were abbreviated. | `itemsWithU`, `positionOf`, `managersOf` |
 
-`cableFacts` reads faces, so the two port queries are async. `cable-plugs.js` reaches `face.js`, which imports `../faces.js`; that tangle is piece 2's to undo, so `queries.js` takes the facts reader in `ctx` (`ctx.cableFacts`) rather than importing it.
+`cableFacts` and the faces are read through the network and `DOMParser`, so the port queries are async. `cable-plugs.js` reaches `face.js`, which imports `../faces.js`; that tangle is piece 2's to undo, so `queries.js` takes its readers in `ctx` (`ctx.cableFacts`, `ctx.portsOf(item, view)`) rather than importing them. `catalog` and `describe` are synchronous and need nothing but the data. A port's `label` is its `data-path` made readable (`port-1` -> `port 1`, a group's name when the face gives one); the agent addresses the port by `path` and `view`, which is what `cable.add`'s ends take.
 
 ## 3. How an edit flows
 
@@ -206,7 +219,9 @@ It is published with the others: a `rack` entry in `SOURCES` in `site/schema.js`
 - `commands.test.mjs`: each command's success and each of its errors, with the sentences asserted equal to today's; `patch`'s cleared-changes note; `remove` with `keep` and `remove`; `frame`'s shrink finding and its loose-end count; `holes` merging; no-ops returning the same object.
 - `apply.test.mjs`: a batch whose third command fails returns the original rack by reference and `index: 2`; `as`/`@name` across `place` and `cable.add`; an unbound or doubly bound name; unknown `op`; argument-schema refusals.
 - `history.test.mjs`: undo/redo order, the cap, redo cleared by a new step.
-- `editor.test.mjs`: change events and their causes; `noop` emits nothing; `dcim` is not a step and survives undo and redo; `loadDoc` clears history and returns settle findings.
+- `queries.test.mjs`: `catalog`'s filters; `describe` for an empty rack, a rack with a hosted manager and cables, and a full 42U rack under the length bound; `freePorts` and `suggestMedia` with stub readers in `ctx`.
+- `commands-table.test.mjs`: every argument property in `COMMANDS` has a description within bounds; every command description within bounds.
+- `editor.test.mjs`: change events, their causes and their `origin`, including on undo and redo; `preview` changes nothing and emits nothing; `noop` emits nothing; `dcim` is not a step and survives undo and redo; `loadDoc` clears history and returns settle findings.
 - `schema.test.mjs`: every rack fixture `parseDoc` accepts, and `serialize(parseDoc(x))`, validates against `rack.schema.json`, with a small validator in the test (no dependency); a document with `on` but no `unit` does not.
 - `one-way-in.test.mjs`: a static check that `rack-page.js`, `drag.js` and the other UI modules in `site/rack/` import none of `withItem`, `updateItem`, `withoutItem`, `withFrame`, `renamed`, `withDcim`, `withCable`, `updateCable`, `withoutCable`, `withoutCablesOf`, `moveItem` or `shrinkRack`. `drag.js` may keep `moveItem` for its preview only if it sends the drop as a `move` command; the test names the exception.
 
