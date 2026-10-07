@@ -174,3 +174,25 @@ test('a rack-face part is placeable on the rail face, never "needs a shelf"', ()
   assert.deepEqual(X.mountPick('rack-face'),
     {tag: '0U, mounts on the rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'});
 });
+
+const MFRAME = {heightRU: 42, numbering: 'bottom-up'};
+const mhost = {id: 'i1', ref: 'as7726-32x', label: 'leaf-1', ru: 12, u: 1, face: 'front'};
+const mmgr = {id: 'i2', ref: 'fhd-cmp5dr', label: 'mgr-1', ru: 12, u: 1, face: 'front', mount: 'rack-face', on: 'i1', unit: 1};
+
+test('perFaceItems: a manager is drawn last on its face, and hidden behind a device on the other', () => {
+  const p = X.perFaceItems([mmgr, mhost]);
+  assert.deepEqual(p.front.map(i => i.id), ['i1', 'i2']);
+  assert.deepEqual(p.rear.map(i => i.id), ['i1']);
+  assert.deepEqual(p.hidden.map(h => [h.item.id, h.pane, h.by.id]), [['i2', 'rear', 'i1']]);
+});
+
+test('perFaceItems: a manager never hides a device', () => {
+  const rear = {id: 'i3', ref: 'tm-280', label: 'demarc', ru: 12, u: 1, face: 'rear'};
+  const p = X.perFaceItems([mmgr, rear]);
+  assert.equal(p.hidden.some(h => h.by.id === 'i2'), false);
+});
+
+test('managerNotes says what each manager is and where', () => {
+  const of = ref => ({'fhd-cmp5dr': {manufacturer: 'FS.com', model: 'FHD-CMP5DR', mount: 'rack-face'}}[ref] ?? {});
+  assert.deepEqual(X.managerNotes([mhost, mmgr], of, MFRAME), ['mgr-1: FS.com FHD-CMP5DR, 0U, on leaf-1 at U12, front.']);
+});

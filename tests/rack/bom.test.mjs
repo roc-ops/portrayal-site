@@ -82,3 +82,10 @@ test('a seated part with no part number is listed by its reference', () => {
   const row = rows.find(r => r.ref === 'no/such-part@1');
   assert.equal(row.model, 'no/such-part@1');
 });
+
+test('a hosted manager adds no rail hardware; an unhosted one counts its own U', () => {
+  const frame = {holes: {style: 'square'}};
+  const qty = railUs => X.bomRows({frame, railUs}).find(r => r.model === 'Cage nut, M6')?.qty ?? 0;
+  assert.equal(qty([1]), 4);          // the host alone
+  assert.equal(qty([1, 1]), 8);       // plus one unhosted manager
+});

@@ -271,6 +271,16 @@ export function mountNotes(items, chassisOf, frame) {
   return out;
 }
 
+// WHERE EACH MANAGER IS (spec §9), for the sheets, draw.io and the BOM.
+export function managerNotes(items, chassisOf, frame) {
+  const byId = new Map(items.map(i => [i.id, i]));
+  return items.filter(i => chassisOf(i.ref)?.mount === 'rack-face').map(i => {
+    const c = chassisOf(i.ref), host = i.on ? byId.get(i.on) : null;
+    const what = [c.manufacturer, c.model].filter(Boolean).join(' ') || i.ref;
+    return `${i.label}: ${what}, 0U, ${host ? `on ${host.label} ` : ''}at U${positionOf(frame, i.ru, 1)}, ${i.face}.`;
+  });
+}
+
 // createRackScene has no fields input yet (site/rack/scene3d.js).
 export function threeDNotes(rack) {
   const withFields = rack.items.filter(i => Object.keys(i.fields || {}).length).map(i => i.label);
@@ -294,14 +304,18 @@ const overlaps = (a, b) => a.ru <= b.ru + b.u - 1 && b.ru <= a.ru + a.u - 1;
 // in one U of a draw.io cabinet overlap, and the 2D pane already draws the
 // mounted one on top.
 export function perFaceItems(items) {
+  // A rack-face manager (spec §6) is drawn last on its own face, never hides
+  // anything, and on the other face is hidden by any device spanning its U.
+  const isFace = it => it.mount === 'rack-face';
   const out = {front: [], rear: [], hidden: []};
   for (const pane of ['front', 'rear']) {
     for (const it of items) {
       if (it.face === pane) { out[pane].push(it); continue; }
-      const by = items.find(o => o.face === pane && overlaps(o, it));
+      const by = items.find(o => !isFace(o) && (isFace(it) || o.face === pane) && overlaps(o, it));
       if (by) out.hidden.push({item: it, pane, by});
       else out[pane].push(it);
     }
+    out[pane].sort((a, b) => isFace(a) - isFace(b));      // stable: managers last
   }
   return out;
 }
@@ -645,8 +659,8 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
         'Shorten its label and export again.'});
       continue;
     }
-    const clash = target === 'nautobot' ? null
-      : kept.find(o => o.face !== it.face && overlaps(o, it) && (t.isFullDepth || types.get(o.id).isFullDepth));
+    const clash = target === 'nautobot' || it.mount === 'rack-face' ? null
+      : kept.find(o => o.mount !== 'rack-face' && o.face !== it.face && overlaps(o, it) && (t.isFullDepth || types.get(o.id).isFullDepth));
     if (clash) {
       left.push({id: it.id, name, reason: `${name} is not in the devices file: it shares U${positionOf(rack.frame, it.ru, it.u)} ` +
         `with ${names.get(clash.id).name} on the ${clash.face}, and ${T} refuses two devices in one U, front and rear, while ` +
@@ -671,14 +685,20 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     const mt = mountText(it.mount);
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
+    const zeroU = it.mount === 'rack-face';
+    if (zeroU) {
+      const host = it.on ? items.find(o => o.id === it.on) : null;
+      notes.push(`0U cable manager on the ${it.face} rail face at U${positionOf(rack.frame, it.ru, 1)}` +
+                 `${host ? `, over ${names.get(host.id)?.name ?? host.label}` : ''}; ${T} has no field for that.`);
+    }
     const position = positionOf(rack.frame, it.ru, it.u);
     const comments = notes.join(' ');
     return target === 'nautobot'
       ? {name: n.name, role__name: role, device_type__manufacturer__name: t.manufacturer ?? '',
          device_type__model: t.model ?? '', status__name: 'Planned', location__name: site,
-         rack__name: rack.name, rack__location__name: site, position, face: it.face, comments}
+         rack__name: rack.name, rack__location__name: site, position: zeroU ? '' : position, face: zeroU ? '' : it.face, comments}
       : {name: n.name, role, manufacturer: t.manufacturer ?? '', device_type: t.model ?? '',
-         status: 'planned', site, rack: rack.name, position, face: it.face, comments};
+         status: 'planned', site, rack: rack.name, position: zeroU ? '' : position, face: zeroU ? '' : it.face, comments};
   });
   return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows, left};
 }

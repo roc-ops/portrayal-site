@@ -265,3 +265,20 @@ test('a device that is not rack-mount says so in its own comments', () => {
   const {rows} = X.deviceImportRows({rack, items, types, target: 'netbox'});
   assert.match(rows[0].comments, /A desktop device, so it needs a shelf\./);
 });
+
+test('a manager is a device row with no position and no face, and never knocks out its host', () => {
+  const host = {id: 'i1', ref: 'as7726-32x', cfg: 'x', label: 'leaf-1', ru: 12, u: 1, face: 'front'};
+  const mgr = {id: 'i2', ref: 'fhd-cmp5dr', cfg: 'x', label: 'mgr-1', ru: 12, u: 1, face: 'front', mount: 'rack-face', on: 'i1', unit: 1};
+  const rack = {name: 'R', frame: {heightRU: 42, numbering: 'bottom-up'}};
+  const rearDeep = {id: 'i3', ref: 'tm-280', cfg: 'x', label: 'demarc', ru: 12, u: 1, face: 'rear'};
+  const types = new Map([['i1', {model: 'AS7726', manufacturer: 'Edgecore', isFullDepth: true}],
+                         ['i2', {model: 'FHD-CMP5DR', manufacturer: 'FS.com', isFullDepth: false}],
+                         ['i3', {model: 'TM-280', manufacturer: 'Telco', isFullDepth: true}]]);
+  const {rows, left} = X.deviceImportRows({rack, items: [host, mgr], types, dcim: {site: 's', role: 'r'}});
+  const m = rows.find(r => r.name === 'mgr-1');
+  assert.deepEqual([m.position, m.face], ['', '']);
+  assert.match(m.comments, /0U cable manager on the front rail face at U12, over leaf-1; NetBox has no field for that\./);
+  assert.equal(left.length, 0);
+  const two = X.deviceImportRows({rack, items: [rearDeep, mgr], types, dcim: {site: 's', role: 'r'}});
+  assert.equal(two.left.length, 0);
+});

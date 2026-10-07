@@ -21,7 +21,7 @@ import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
-import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, isRackMount,
+import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, managerNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
@@ -47,7 +47,8 @@ export const faceOf = (it, view) => configuredFace({ref: it.ref, cfg: it.cfg, vi
 // What the panes named could not show, item by item. `cables: false` is for
 // a file that carries the cables, and so does not say they are left out.
 export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {cables = true} = {}) {
-  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame)];
+  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame),
+                 ...managerNotes(items, chassisOf, rack.frame)];
   for (const it of items) {
     for (const pane of panes) {
       const panel = panelFor(it, pane);
@@ -660,13 +661,22 @@ export async function bomCsv(rack, chassisOf) {
       return null;
     }), components()]);
   const railItems = items.filter(i => isRackMount(chassisOf(i.ref)));
+  // A manager on a host shares the host's screws (spec D4); one on its own
+  // bolts in with its own, like a 1U device.
+  const managers = items.filter(i => i.mount === 'rack-face');
+  const railUs = [...railItems.map(i => i.u), ...managers.filter(i => !i.on).map(() => 1)];
   const {parts, notes} = await seatedPartsOf(rack, items);
   // The BOM carries the cables, so it no longer says they are left out. Their
   // connectors come from the faces as the items' OWN swaps configure them:
   // a derived plug is never a part, and never a line here.
   const cabled = (rack.cables || []).length > 0;
   const facts = cabled ? await cableEnds(rack) : UNCHECKED;
-  notes.unshift(...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame));
+  notes.unshift(...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
+                ...managerNotes(items, chassisOf, rack.frame));
+  for (const m of managers.filter(i => i.on)) {
+    const h = items.find(i => i.id === m.on);
+    if (h) notes.push(`${m.label} shares ${h.label}'s rail screws; with two ears stacked, longer screws may be needed.`);
+  }
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
   if (cabled) notes.push(...cableBomNotes(rack, facts.ends));
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
@@ -682,9 +692,9 @@ export async function bomCsv(rack, chassisOf) {
   });
   for (const it of items)
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
-  if (railItems.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
+  if (railUs.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
   const all = uniq(notes);
-  const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs: railItems.map(i => i.u)}),
+  const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs}),
                 ...cableBomRows(rack, facts.ends)];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
