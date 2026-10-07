@@ -109,7 +109,7 @@ apply(rack, cmd | cmd[], ctx) ->
 
 - A command is `{op, ...args}`. An unknown `op`, or arguments that fail its schema, is an error before anything runs: "place needs ru, a whole number.", "There is no command called 'plce'.".
 - A batch runs in order against a working copy. The first error stops it; the rack given in is returned untouched (by reference, no partial result), with `index` saying which command failed.
-- `as` / `@name` (D3): a command's `as` binds the id it creates (`place` an item id, `cable.add` a cable id). Before each later command runs, any string argument equal to `"@name"`, and any `item` of a cable end equal to `"@name"`, is replaced with the bound id. An unbound `@name`, or a name bound twice, is an error.
+- `as` / `@name` (D3): a command's `as` binds the id it creates (`place` an item id, `cable.add` a cable id). Before each later command runs, an id position equal to `"@name"` (an `id` argument, or the `item` of a cable end) is replaced with the bound id. Other strings, such as a label of `"@srv"`, are kept as written. An unbound `@name`, or a name bound twice, is an error.
 - `summary` of a batch is its commands' summaries joined; `findings` are all of them in order; `created` maps every `as` name to its id, plus `ids`, the ids created in order.
 - `noop` is true when every command returned its rack unchanged.
 - `apply` never mutates its input, so calling it is also a dry run: the editor's `preview` (§2.4) is `apply` without the commit.
