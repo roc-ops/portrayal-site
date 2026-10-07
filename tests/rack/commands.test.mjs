@@ -1,0 +1,124 @@
+// tests/rack/commands.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as M from '../../site/rack/model.js';
+import {COMMANDS, GONE, CABLE_GONE, NOT_ADDED, CLEARED} from '../../site/rack/commands.js';
+
+const SIZES = {'as7726-32x': {ru: 1, h: 43.5, d: 515, model: 'AS7726-32X', default: 'ac-f2b'},
+               'r740xd': {ru: 2, h: 86.8, d: 737.5, model: 'R740xd', default: 'sff24'},
+               'fhd-cmp5dr': {ru: 1, h: 44, d: 110, mount: 'rack-face', model: 'FHD-CMP5DR', default: 'base'},
+               'tm-280': {ru: 1, h: 43.6, d: 140.5, model: 'TM-280', default: 'base'}};
+const ctx = {chassisOf: ref => SIZES[ref] || null};
+const run = (op, rack, args) => COMMANDS[op].run(rack, args, ctx);
+const add = (rack, ref, ru, extra = {}) => M.withItem(rack, {ref, cfg: 'x', ru, label: extra.label ?? ref, ...extra}).rack;
+const end = (item, path = 'port-1', view = 'front') => ({item, path, view});
+
+test('place: a device goes in, named by its model, and says where', () => {
+  const r = run('place', M.newRack(), {ref: 'r740xd', face: 'front', ru: 10});
+  assert.equal(r.rack.items[0].label, 'R740xd');
+  assert.equal(r.rack.items[0].cfg, 'sff24');
+  assert.deepEqual(r.created, {id: 'i1'});
+  assert.equal(r.summary, 'Placed R740xd at U10 on the front.');
+});
+
+test('place: a refusal is fits() sentence; an unknown device says so', () => {
+  const r = add(M.newRack(), 'r740xd', 10, {label: 'srv'});
+  assert.deepEqual(run('place', r, {ref: 'as7726-32x', face: 'front', ru: 11}), {error: 'Taken by srv on the front.'});
+  assert.deepEqual(run('place', r, {ref: 'nope', face: 'front', ru: 1}), {error: 'No size is known for nope.'});
+});
+
+test('place: a cable manager on a device attaches to it', () => {
+  const r = add(M.newRack(), 'r740xd', 10, {label: 'srv'});
+  const m = run('place', r, {ref: 'fhd-cmp5dr', face: 'front', ru: 11});
+  assert.deepEqual([m.rack.items[1].on, m.rack.items[1].unit], ['i1', 2]);
+});
+
+test('move: GONE, a refusal, a no-op, and a move', () => {
+  let r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'});
+  r = add(r, 'as7726-32x', 20, {label: 'spine'});
+  assert.deepEqual(run('move', r, {id: 'i9', ru: 1}), {error: GONE});
+  assert.deepEqual(run('move', r, {id: 'i1', ru: 20}), {error: 'Taken by spine on the front.'});
+  assert.equal(run('move', r, {id: 'i1', ru: 10}).rack, r);
+  const m = run('move', r, {id: 'i1', ru: 12, face: 'rear'});
+  assert.equal(m.summary, 'Moved leaf to U12 on the rear.');
+});
+
+test('patch: changes what it names; clears-changes note; same value is a no-op', () => {
+  const r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf', swaps: {'port-1': 'x'}});
+  assert.equal(run('patch', r, {id: 'i1', label: 'leaf'}).rack, r);
+  const p = run('patch', r, {id: 'i1', cfg: 'other', swaps: {}, fields: {}});
+  assert.deepEqual(p.findings, [{kind: 'note', text: CLEARED}]);
+  assert.equal(p.rack.items[0].cfg, 'other');
+  assert.deepEqual(run('patch', r, {id: 'i7', label: 'x'}), {error: GONE});
+});
+
+test('remove: keep or remove its cables, with today\'s sentences', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'}), 'as7726-32x', 20, {label: 'spine'});
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: []},
+                      {id: 'c2', a: end('i1', 'port-2'), b: end('i2', 'port-2'), media: '', purpose: '', label: '', route: []}]};
+  const keep = run('remove', r, {id: 'i1', cables: 'keep'});
+  assert.equal(keep.summary, 'Removed leaf. Its 2 cables are loose ends.');
+  assert.equal(keep.rack.cables.length, 2);
+  const gone = run('remove', r, {id: 'i1', cables: 'remove'});
+  assert.equal(gone.summary, 'Removed leaf and its 2 cables.');
+  assert.equal(gone.rack.cables.length, 0);
+  assert.equal(run('remove', add(M.newRack(), 'tm-280', 1, {label: 'pp'}), {id: 'i1'}).summary, 'Removed pp.');
+});
+
+test('remove: a host\'s managers stay, and the sentence says so', () => {
+  let r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'});
+  r = add(r, 'fhd-cmp5dr', 10, {label: 'mgr', on: 'i1', unit: 1});
+  assert.equal(run('remove', r, {id: 'i1'}).summary, 'Removed leaf. Its cable manager mgr stays on the rack.');
+});
+
+test('attach and detach', () => {
+  let r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'});
+  r = add(r, 'fhd-cmp5dr', 10, {label: 'mgr'});
+  r = add(r, 'fhd-cmp5dr', 30, {label: 'alone'});
+  const a = run('attach', r, {id: 'i2'});
+  assert.equal(a.summary, 'Attached mgr to leaf.');
+  assert.deepEqual(run('attach', r, {id: 'i3'}), {error: 'alone is not over a device.'});
+  assert.deepEqual(run('attach', r, {id: 'i1'}), {error: 'leaf is not a cable manager.'});
+  const d = run('detach', a.rack, {id: 'i2'});
+  assert.equal(d.summary, 'Detached mgr.');
+  assert.equal('on' in d.rack.items[1], false);
+  assert.equal(run('detach', d.rack, {id: 'i2'}).rack, d.rack);
+});
+
+test('frame: a shrink packs down, trims, and says so; holes merge; an echo is a no-op', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 40, {label: 'a'}), 'as7726-32x', 1, {label: 'b'});
+  r = {...r, cables: [{id: 'c1', a: end('i2'), b: end('i1'), media: '', purpose: '', label: '', route: []}]};
+  const s = run('frame', r, {heightRU: 1});
+  // b (U1) is the bottom cluster and goes; a (U40) packs down to U1.
+  const text = 'Moved 1 device down and removed 1 from the bottom to fit 1U: b. 1 cable is kept as a loose end.';
+  assert.equal(s.summary, text);
+  assert.deepEqual(s.findings, [{kind: 'note', text}]);
+  const t = run('frame', r, {holes: {style: 'tapped'}});
+  assert.equal(t.rack.frame.holes.style, 'tapped');
+  assert.equal(run('frame', r, {kind: 'four-post'}).rack, r);
+});
+
+test('rename and dcim', () => {
+  const r = M.newRack();
+  assert.equal(run('rename', r, {name: 'Core A'}).summary, 'Renamed the rack to Core A.');
+  assert.deepEqual(run('rename', r, {name: '  '}), {error: 'A rack needs a name.'});
+  assert.equal(run('rename', r, {name: r.name}).rack, r);
+  assert.deepEqual(run('dcim', r, {site: 'dc1'}).rack.dcim, {site: 'dc1'});
+  assert.equal(run('dcim', r, {site: ''}).rack, r);
+});
+
+test('cable.add, cable.update, cable.remove', () => {
+  const r = add(add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'}), 'as7726-32x', 20, {label: 'spine'});
+  const a = run('cable.add', r, {a: end('i1'), b: end('i2'), media: 'om4'});
+  assert.deepEqual([a.created, a.summary], [{id: 'c1'}, 'Added cable c1.']);
+  assert.deepEqual(run('cable.add', a.rack, {a: end('i1'), b: end('i2', 'port-5')}),
+                   {error: 'leaf (U10) port-1 already has a cable (c1).'});
+  assert.deepEqual(run('cable.add', r, {a: end('i1'), b: end('i9')}), {error: NOT_ADDED});
+  assert.deepEqual(run('cable.add', r, {a: end('i1'), b: end('i1')}), {error: 'A cable needs two different ports.'});
+  const u = run('cable.update', a.rack, {id: 'c1', label: 'A1', length: {value: 3}});
+  assert.deepEqual(u.rack.cables[0].length, {value: 3, unit: 'm', source: 'entered'});
+  assert.equal(u.summary, 'Edited cable A1.');
+  assert.equal(run('cable.update', a.rack, {id: 'c1', media: 'om4'}).rack, a.rack);
+  assert.deepEqual(run('cable.update', a.rack, {id: 'c9', label: 'x'}), {error: CABLE_GONE});
+  assert.equal(run('cable.remove', u.rack, {id: 'c1'}).summary, 'Deleted cable A1.');
+});
