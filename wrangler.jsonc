@@ -1,11 +1,20 @@
-// portrayal.dev on Cloudflare: static files only, no Worker script.
+// portrayal.dev on Cloudflare: static files, and one small Worker on the pages.
 //
 // assets.directory is WHAT GOES LIVE: public/, which tools/build-public.py
 // assembles from tracked files (the deploy workflow runs it; it is never
 // committed). The repo root must never be published as-is - it carries
 // prototypes, harness pages and check scripts beside the site.
 //
-// ROLLBACK: "./coming-soon", the self-contained teaser, kept whole in the repo.
+// ROLLBACK: "./coming-soon", the self-contained teaser, kept whole in the repo,
+// and drop "main" and run_worker_first: the teaser has no Markdown copies.
+//
+// THE WORKER (worker/index.mjs) runs only on the paths in run_worker_first -
+// the public pages, one per entry in build-public.py's PAGES but kit-frame
+// (check-contract.py holds the two lists together). It answers a request that
+// asks for text/markdown with the page's Markdown copy, and adds a Link header
+// naming that copy to the HTML. Everything else - scripts, drawings, schemas -
+// is a static asset the Worker never sees, so it costs no Worker requests.
+// Free plan: 100,000 Worker requests a day, counted on page views only.
 //
 // An unknown path is a 404 (404.html), never the teaser with a 200: validators
 // dereference the schemas' $ids here, and HTML served as a schema is worse than
@@ -13,9 +22,13 @@
 {
   "name": "portrayal",
   "compatibility_date": "2026-09-25",
+  "main": "./worker/index.mjs",
   "assets": {
     "directory": "./public",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/", "/explorer", "/rack", "/components", "/annotate", "/exporter",
+                         "/drawio", "/drawings", "/schema", "/kit", "/contribute"]
   },
   "routes": [
     { "pattern": "portrayal.dev", "custom_domain": true },

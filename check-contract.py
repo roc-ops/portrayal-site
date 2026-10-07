@@ -1256,8 +1256,9 @@ check(_wr["assets"].get("directory") == "./public" and re.search(r"^/public/$", 
 # check scripts, tools and design docs beside the pages.
 _PRIVATE = re.compile(r"^(prototypes|tests|tools|docs|hooks|upstream-work|coming-soon|publish|\.github|\.superpowers)/"
                       r"|^[^/]+\.(py|sh|md|jsonc)$|^(marks-harness|viewer3d-harness|compare|schematic)\.html$")
-check(not [d for d in _srv if _PRIVATE.search(d)], "the build serves no prototype, harness, check script, tool or doc",
-      f"{[d for d in _srv if _PRIVATE.search(d)][:8]}")
+# A page's Markdown copy (index.md beside index.html) is the page, not a doc.
+_private = [d for d in _srv if _PRIVATE.search(d) and not (d.endswith(".md") and d[:-3] + ".html" in _srv)]
+check(not _private, "the build serves no prototype, harness, check script, tool or doc", f"{_private[:8]}")
 # EVERY PAGE A SERVED PAGE LINKS IS SERVED: a page added later and linked from
 # a nav, but not added to build-public.py's PAGES, would be a live 404.
 _linked = sorted({h for d, f in _srv.items() if d.endswith(".html") and "/" not in d
@@ -1316,7 +1317,7 @@ check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.de
 # extensionless one Cloudflare serves with a 200, not /x.html, which 307s -
 # and kit-frame.html, which only hosts a recipe in kit.html's iframe, is not.
 import xml.etree.ElementTree as _ET
-_smr = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--sitemap"], capture_output=True, text=True)
+_smr = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--print", "sitemap.xml"], capture_output=True, text=True)
 try:
     _sm = _ET.fromstring(_smr.stdout)
     _locs = [u.findtext("{http://www.sitemaps.org/schemas/sitemap/0.9}loc") for u in _sm]
@@ -1342,6 +1343,29 @@ check("sitemap.xml" in _srv and _sm is not None and _sm.tag == "{http://www.site
       and sorted(_locs) == _want,
       "/sitemap.xml lists every public page once, at its canonical extensionless URL",
       f"want {_want}, got {_locs}")
+# MARKDOWN FOR AGENTS: worker/index.mjs answers Accept: text/markdown on a
+# page with its Markdown copy, which build-public.py generates beside it. The
+# Worker runs only on run_worker_first's paths, so that list, the copies and
+# the sitemap's pages must be the same pages: a page missing from the list
+# never answers in Markdown, and a path in it with no copy gets a Link header
+# naming a 404.
+_pages_md = sorted(d[:-3] for d in _srv if d.endswith(".md") and d[:-3] + ".html" in _srv)
+_rwf = _wr["assets"].get("run_worker_first")
+check(isinstance(_rwf, list) and sorted("index" if p == "/" else p.lstrip("/") for p in _rwf) == _pages_md
+      and sorted(_pages_md) == sorted(("" if u == "https://portrayal.dev/" else u.rsplit("/", 1)[1]) or "index" for u in _locs),
+      "the Worker runs on exactly the pages that have a Markdown copy, which are the sitemap's pages",
+      f"run_worker_first={_rwf}, copies={_pages_md}")
+check(_wr.get("main") == "./worker/index.mjs" and (HERE / "worker" / "index.mjs").exists()
+      and _wr["assets"].get("binding") == "ASSETS"
+      and list((HERE / "tests" / "worker").glob("*.test.mjs")),
+      "wrangler.jsonc runs worker/index.mjs with the assets bound as ASSETS, and tests/worker/ tests it (checks.yml runs tests/*/*.test.mjs)",
+      f"main={_wr.get('main')!r}, binding={_wr['assets'].get('binding')!r}")
+for _m in _pages_md:
+    _t = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--print", f"{_m}.md"], capture_output=True, text=True).stdout
+    check(re.match(r'---\ntitle: "[^"\n]+"\n(?:description: "[^\n]+"\n)?url: https://portrayal\.dev/\S*\n---\n\S', _t) is not None
+          and "\u2014 devices" not in _t and not re.search(r"\]\((?:https://portrayal\.dev/)?[^)\s]*\.html", _t),
+          f"{_m}.md: frontmatter, a body, no runtime placeholder, every site link canonical",
+          _t[:200].replace("\n", " | "))
 # tools/publish-schemas.sh copies in only schemas whose $id matches, and refuses the rest.
 _pub = HERE / "tools" / "publish-schemas.sh"
 def _pubrun(ids):
