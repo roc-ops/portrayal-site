@@ -7999,7 +7999,9 @@ def check_rack_cable_undo(page, base):
     page.evaluate("w => window.__rack.replaceRack(w)", whole)
     wait_fn(page, "undo: the rack is whole for the Undo test", "() => window.__rack.doc().racks[0].cables.length === 3")
 
-    # Only one Undo is pending: a later change retires it.
+    # Every edit is a step now: a later change does not retire Undo, it is what
+    # Undo now describes. (Before every edit had an Undo, this checked that the
+    # one pending Undo was retired by the next change.)
     page.evaluate("() => document.activeElement?.blur()")
     page.keyboard.press("Escape")               # the device is still selected: back to the list
     wait_sel(page, "undo: the cable list", '#cableList [data-cable-row="c2"]')
@@ -8010,7 +8012,95 @@ def check_rack_cable_undo(page, base):
     select_item(page, "front", "i2")
     page.keyboard.press("ArrowUp")
     wait_fn(page, "undo: leaf-1 moved", "() => window.__rack.doc().racks[0].items[1].ru === 15")
-    undo_gone("an Undo outlived the next change")
+    try:
+        wait_fn(page, "undo: Undo describes the later change",
+                "() => (document.getElementById('undoWhat')?.textContent || '').startsWith('Moved leaf-1 ')")
+    except RuntimeError:
+        bad.append(f"undo: after a later change, Undo describes {page.text_content('#undoWhat') if page.query_selector('#undoWhat') else None!r}")
+    return bad
+
+
+@extra("rack.html: Undo and Redo walk back and forth through several edits, by button and by keyboard; a new edit clears Redo; DCIM settings survive Undo")
+def check_rack_history(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # New rack is async (it saves the old one first): wait for the new document, not just any empty rack.
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "history: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0 && !window.__rack.history().canUndo")
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.ref, i.ru, i.face])")
+    pick(page, "front", 10, "R740", "r740xd")
+    wait_fn(page, "history: placed", "() => window.__rack.doc().racks[0].items.length === 1")
+    page.evaluate("() => window.__rack.apply({op: 'move', id: 'i1', ru: 20})")
+    page.evaluate("() => window.__rack.apply({op: 'dcim', site: 'dc1'})")
+    wait_sel(page, "history: Undo offered", "#undoShrink")
+    what = page.text_content("#undoWhat") or ""
+    if not what.startswith("Moved "):
+        bad.append(f"history: Undo describes {what!r}, expected the move")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the move undone", "() => window.__rack.doc().racks[0].items[0].ru === 10")
+    if page.evaluate("() => window.__rack.doc().racks[0].dcim") != {"site": "dc1"}:
+        bad.append("history: Undo took the DCIM settings back")
+    wait_sel(page, "history: Redo offered", "#redoStep")
+    page.keyboard.press("Meta+Shift+z" if sys.platform == "darwin" else "Control+Shift+z")
+    wait_fn(page, "history: redone by keyboard", "() => window.__rack.doc().racks[0].items[0].ru === 20")
+    page.keyboard.press("Meta+z" if sys.platform == "darwin" else "Control+z")
+    page.keyboard.press("Meta+z" if sys.platform == "darwin" else "Control+z")
+    wait_fn(page, "history: back to empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    try:
+        wait_fn(page, "history: Undo gone with nothing left to undo", "() => !document.getElementById('undoShrink')")
+    except RuntimeError:
+        bad.append("history: Undo is still offered with nothing left to undo")
+    page.evaluate("() => window.__rack.apply({op: 'rename', name: 'Fresh'})")
+    wait_fn(page, "history: a new edit", "() => window.__rack.doc().racks[0].name === 'Fresh'")
+    if page.evaluate("() => window.__rack.history().canRedo"):
+        bad.append("history: a new edit left Redo offered")
+    # A shrink, undone: every position comes back.
+    page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 40},
+                                              {op: 'place', ref: 'as7726-32x', face: 'front', ru: 1}])""")
+    before = items()
+    page.evaluate("() => window.__rack.apply({op: 'frame', heightRU: 2})")
+    wait_fn(page, "history: shrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 2")
+    wait_sel(page, "history: Undo after the shrink", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "history: unshrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 42")
+    if items() != before:
+        bad.append(f"history: Undo after a shrink left {items()}, expected {before}")
+    return bad
+
+
+@extra("rack.html: __rack.apply refuses a bad batch whole, shows why, and the queries answer")
+def check_rack_commands(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # New rack is async (it saves the old one first): wait for the new document, not just any empty rack.
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "commands: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0")
+    res = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10},
+                                                    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}])""")
+    if res.get("index") != 1 or "Taken by" not in (res.get("error") or ""):
+        bad.append(f"commands: the batch answered {res}")
+    if page.evaluate("() => window.__rack.doc().racks[0].items.length") != 0:
+        bad.append("commands: a refused batch left items in the rack")
+    try:
+        wait_fn(page, "commands: the refusal is shown",
+                "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('Taken by')")
+    except RuntimeError:
+        bad.append("commands: the page did not show why the batch was refused")
+    page.evaluate("() => window.__rack.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10, as: 'leaf'})")
+    text = page.evaluate("() => window.__rack.query.describe()")
+    if "i1 AS7726-32X U10 front" not in text:
+        bad.append(f"commands: describe() reads {text!r}")
+    ports = page.evaluate("() => window.__rack.query.freePorts('i1')")
+    if not isinstance(ports, list) or not ports or not all(p.get("path") and p.get("view") for p in ports):
+        bad.append(f"commands: freePorts('i1') answered {str(ports)[:200]}")
     return bad
 
 
@@ -8686,8 +8776,14 @@ def check_rack_cable_polish(page, base):
         bad.append(f"polish: after selecting something else, Undo is {said()} - it no longer says what it undoes")
     page.click("#undoShrink")
     wait_fn(page, "polish: c1 is back", "() => window.__rack.doc().racks[0].cables.length === 3")
+    # The rack was put back with replaceRack above, which is a step of its own
+    # (every change is one now): Undo stays, and its sentence goes with it,
+    # describing that earlier step instead of the delete just undone.
     wait_fn(page, "polish: Undo and its sentence go together",
-            "() => !document.getElementById('undoShrink') && !document.getElementById('undoWhat')")
+            """() => { const b = document.getElementById('undoShrink');
+                       const d = b && document.getElementById(b.getAttribute('aria-describedby') || '');
+                       return !!d && d.id === 'undoWhat' && d.textContent === 'Changed the rack.'
+                              && document.querySelectorAll('#undoWhat').length === 1; }""")
 
     # M3. The remove panel takes the keyboard at its first button; Cancel and Esc hand it back to Remove.
     select_item(page, "rear", "i3")
