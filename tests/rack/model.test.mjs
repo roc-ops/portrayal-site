@@ -5,7 +5,7 @@ import * as M from '../../site/rack/model.js';
 test('a new document is one 42U four-post rack with the spec defaults', () => {
   const d = M.newDoc();
   assert.equal(d.format, 'portrayal-rack');
-  assert.equal(d.version, 1);
+  assert.equal(d.version, M.VERSION);
   assert.match(d.id, /^doc-/);
   assert.equal(d.racks.length, 1);
   assert.deepEqual(d.racks[0].frame, {kind: 'four-post', heightRU: 42, numbering: 'bottom-up',
@@ -62,8 +62,8 @@ test('a document survives serialize and parse unchanged', () => {
 test('parseDoc refuses what it cannot read, with a sentence', () => {
   assert.throws(() => M.parseDoc('{'), SyntaxError);
   assert.throws(() => M.parseDoc({format: 'other'}), /not a Portrayal rack file/);
-  assert.throws(() => M.parseDoc({format: 'portrayal-rack', version: 2, racks: []}),
-    /version 2; this page reads up to version 1/);
+  assert.throws(() => M.parseDoc({format: 'portrayal-rack', version: 3, racks: []}),
+    /version 3; this page reads up to version 2/);
   assert.throws(() => M.parseDoc({format: 'portrayal-rack', version: 1, racks: []}), /holds no rack/);
   assert.throws(() => M.parseDoc({format: 'portrayal-rack', version: 1,
     racks: [{frame: {}, items: [{ref: 'x'}]}]}), /Item 1 has no device or no U/);
@@ -116,7 +116,7 @@ test('the DCIM import settings are optional: an old file opens unchanged, a new 
   // Not an object: not settings.
   for (const bad of ['Lab 1', ['Lab 1'], null, 3]) assert.equal('dcim' in M.parseDoc(doc({dcim: bad})).racks[0], false);
   // The format's version did not change for it.
-  assert.equal(M.VERSION, 1);
+  assert.equal(M.VERSION, 2);
 });
 
 test('withDcim sets one name and keeps the other, and returns a new rack', () => {
@@ -143,4 +143,40 @@ test('nextRackName follows the highest "Rack N" in use', () => {
   assert.equal(M.nextRackName([]), 'Rack 1');
   assert.equal(M.nextRackName(['Rack 1']), 'Rack 2');
   assert.equal(M.nextRackName(['Lab', 'Rack 3', 'Rack 1']), 'Rack 4');
+});
+
+test('version 2: a version-1 file opens unchanged, and a manager keeps its host', () => {
+  const v1 = {format: 'portrayal-rack', version: 1, racks: [{id: 'r1', name: 'A', frame: {kind: 'four-post'},
+    items: [{id: 'i1', ref: 'as7726-32x', cfg: 'x', ru: 20, face: 'front'}], zeroU: [], cables: []}]};
+  const d = M.parseDoc(v1);
+  assert.equal(d.version, 2);
+  assert.equal(d.racks[0].items[0].on, undefined);
+  const v2 = {...v1, version: 2, racks: [{...v1.racks[0], items: [...v1.racks[0].items,
+    {id: 'i2', ref: 'fhd-cmp5dr', cfg: 'x', ru: 20, face: 'front', on: 'i1', unit: 1}]}]};
+  const m = M.parseDoc(v2).racks[0].items[1];
+  assert.deepEqual([m.on, m.unit, m.ru], ['i1', 1, 20]);
+});
+
+test('a newer file than this page knows is refused with a sentence', () => {
+  assert.throws(() => M.parseDoc({format: 'portrayal-rack', version: 3, racks: [{}]}),
+    /version 3; this page reads up to version 2/);
+});
+
+test('a malformed host or unit is dropped on load, not guessed at', () => {
+  const d = M.parseDoc({format: 'portrayal-rack', version: 2, racks: [{frame: {}, items: [
+    {id: 'i1', ref: 'fhd-cmp5dr', cfg: 'x', ru: 3, face: 'front', on: '', unit: 0}], cables: []}]});
+  const it = d.racks[0].items[0];
+  assert.equal('on' in it, false);
+  assert.equal('unit' in it, false);
+});
+
+test('removing a host leaves its managers in place, unhosted', () => {
+  let r = M.newRack();
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: 'x', ru: 20}));
+  ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: 'x', ru: 20, on: 'i1', unit: 1}));
+  const after = M.withoutItem(r, 'i1');
+  assert.equal(after.items.length, 1);
+  assert.deepEqual(after.items[0].ru, 20);
+  assert.equal('on' in after.items[0], false);
+  assert.equal('unit' in after.items[0], false);
 });

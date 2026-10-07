@@ -7,11 +7,13 @@
 // committed, and a shared, mutated rack is how a save would catch half an edit.
 
 export const FORMAT = 'portrayal-rack';
-export const VERSION = 1;
+export const VERSION = 2;
 export const THREADS = ['12-24', '10-32', 'M6'];
-// MIGRATIONS[n - 1] takes a version-n document to version n + 1. Empty until
-// the format first changes; parseDoc runs whatever is here, in order.
-export const MIGRATIONS = [];
+// MIGRATIONS[n - 1] takes a version-n document to version n + 1.
+//   1 -> 2: rack-face managers (`on`, `unit` on an item). Nothing in a
+//   version-1 file changes; the bump is so an older page refuses a file
+//   holding a manager instead of drawing it as a 1U device over its host.
+export const MIGRATIONS = [d => ({...d, version: 2})];
 
 const RAIL_DEPTH = 740;        // mm between front and rear rails: a common 4-post
 const USABLE_BEYOND = 260;     // mm a four-post allows past its rear rail by default
@@ -69,17 +71,27 @@ const endItems = cables => (Array.isArray(cables) ? cables : [])
   .flatMap(c => [c?.a?.item, c?.b?.item]).filter(id => id != null && id !== '').map(id => ({id: String(id)}));
 export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables)];
 
+// A RACK-FACE MANAGER'S HOST (spec §4): `on` names the item it bolts over and
+// `unit` which of that item's units, from 1 at its bottom. Both or neither;
+// settleManagers (managers.js) is what checks them against the catalog.
+const hostOf = ({on, unit}) => (typeof on === 'string' && on && Number.isInteger(unit) && unit >= 1
+  ? {on, unit} : {});
+export const detached = ({on, unit, ...rest}) => rest;
+
 export function withItem(rack, {ref, cfg, ru, face = 'front', turned = false, label = ref,
-                                swaps = {}, fields = {}}) {
+                                swaps = {}, fields = {}, on, unit}) {
   const item = {id: nextId(itemIdsInUse(rack), 'i'), ref, cfg, label, ru,
                 face: face === 'rear' ? 'rear' : 'front', turned: !!turned,
-                swaps: {...swaps}, fields: structuredClone(fields)};
+                swaps: {...swaps}, fields: structuredClone(fields), ...hostOf({on, unit})};
   return {rack: {...rack, items: [...rack.items, item]}, item};
 }
 
 export const updateItem = (rack, id, patch) =>
   ({...rack, items: rack.items.map(i => (i.id === id ? {...i, ...patch} : i))});
-export const withoutItem = (rack, id) => ({...rack, items: rack.items.filter(i => i.id !== id)});
+// A manager on the removed item stays where it is, unhosted (spec D3): it
+// bolts to the rack, not to the device.
+export const withoutItem = (rack, id) => ({...rack, items: rack.items.filter(i => i.id !== id)
+  .map(i => (i.on === id ? detached(i) : i))});
 export const withFrame = (rack, patch) => ({...rack, frame: normalizeFrame({...rack.frame, ...patch})});
 export const renamed = (rack, name) => ({...rack, name: String(name)});
 
@@ -118,7 +130,8 @@ function readItem(i, n) {
     throw new Error(`Item ${n} has no device or no U.`);
   return {id: String(i.id ?? ''), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
           ru: i.ru, face: i.face === 'rear' ? 'rear' : 'front', turned: !!i.turned,
-          swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {})};
+          swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {}),
+          ...hostOf({on: i.on == null ? undefined : String(i.on), unit: i.unit})};
 }
 
 // Every item needs an id unique within its rack: a missing one (an older
