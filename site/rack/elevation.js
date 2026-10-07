@@ -170,7 +170,15 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
   // Precedence (round 3 §2): draw every item's `through` panel before any
   // `mounted` one, so a four-post pair sharing a U shows the item actually
   // mounted on this face on top - by data-panel, not by item order.
-  const order = [...items].sort((a, b) => (a.face === view) - (b.face === view));
+  // MANAGERS LAST (spec section 6): a rack-face part bolts over its host, so it
+  // is drawn after every device. On the other face it shows only where no
+  // device spans its U - behind a device it is out of sight.
+  const isFace = it => it.mount === 'rack-face';
+  const spans = (o, u) => u >= o.ru && u <= o.ru + (o.u ?? 1) - 1;
+  const shown = items.filter(it => !(isFace(it) && it.face !== view
+                                     && items.some(o => !isFace(o) && spans(o, it.ru))));
+  const rank = it => (it.face === view ? 1 : 0) + (isFace(it) ? 2 : 0);
+  const order = [...shown].sort((a, b) => rank(a) - rank(b));
   for (const it of order) {
     const common = {'data-item-id': it.id, 'data-device-name': it.label, 'data-device-ref': it.ref,
                     ...(it.id === selectedId ? {class: 'rk-selected'} : {})};
@@ -209,12 +217,29 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       g.append(document.importNode(kid, true));
     }
     out.append(g);
+    // A manager is mostly air: a click on its tray or ears is meant for the
+    // host behind it. Its rings (data-kind="ring"; any data-ref component
+    // too, for future parts) still take clicks (spec section 7).
+    if (isFace(it) && !through) {
+      g.setAttribute('pointer-events', 'none');
+      for (const part of g.querySelectorAll('[data-kind="ring"], [data-ref]')) {
+        part.setAttribute('pointer-events', 'visiblePainted');
+      }
+    }
     // Ears only on the face the item is actually mounted on, and only after
     // its own group, so they overlap its edges like a real ear.
     // (a desktop, wall or DIN-rail device has none: the Rack Builder marks it
     // with `mount`, which the showcase's items never carry)
     if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C);
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
+  }
+  // A U carrying a manager says so in the gutter: the manager itself is mostly
+  // see-through. The marker is also how a click reaches it.
+  for (const it of shown.filter(i => isFace(i) && i.face === view)) {
+    const y0 = totalH - (it.ru - baseRU + 1) * RU;
+    out.append(svgEl('path', {d: `M ${-RAIL_W - 5} ${y0 + 4} l 4 ${RU / 2 - 4} l -4 ${RU / 2 - 4} z`,
+      fill: 'var(--pt-brass)', 'data-manager-mark': it.id, 'data-item-id': it.id,
+      'data-device-name': it.label, style: 'cursor: pointer'}));
   }
   for (const [top, ruH] of rings) out.append(ring(top, ruH));
   return out;
