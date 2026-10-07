@@ -940,6 +940,41 @@ def check_hero_3d(browser, base):
             skipped.append(HERO_3D_UNEXERCISED)
         else:
             ready = [False]
+
+            # WHAT THE PANEL HAS DONE, WAITED FOR RATHER THAN SLEPT THROUGH.
+            # Everything the steps below look for - the caption under the
+            # pointer, the hint, the page's own scroll, the camera's distance -
+            # is written by a handler the gesture has to reach, and the distance
+            # by OrbitControls' dolly, which lands in controls.update() inside
+            # the render loop (rack3d.js). So what a sleep before one of those
+            # assertions really waits for is a frame of this scene, and on a
+            # runner drawing the whole switch through software WebGL on two CPUs
+            # that is the better part of a second (see HERO_3D_SEEN_MS).
+            def until(ok, fixed):
+                """Wait `fixed` ms - the wait the step had - and then poll for
+                `ok`, up to HERO_3D_SEEN_MS. The sleep becomes the FLOOR rather
+                than the whole wait, and the poll the ceiling.
+
+                THE FLOOR IS NOT A FORMALITY. Half of these waits also carry an
+                assertion that something did NOT happen - the camera stayed put,
+                the page did not scroll - and that one has to give the break its
+                chance to appear. The rest carry one implicitly: a value that
+                appears and then reverts inside the old sleep was caught by it,
+                and a poll that returns on its first look would not be. So every
+                site keeps what it waited, and the poll only adds time when the
+                thing that SHOULD happen is slow.
+
+                Returns nothing - the assertions read the page themselves, so a
+                genuine failure says exactly what it always said."""
+                floor = time.monotonic() + fixed / 1000
+                end = max(floor, time.monotonic() + HERO_3D_SEEN_MS / 1000)
+                while True:
+                    if time.monotonic() >= floor and ok():
+                        return
+                    if time.monotonic() >= end:
+                        return
+                    page.wait_for_timeout(50)
+
             def built():
                 page.wait_for_function("() => window.__hero3d && window.__hero3d.tubes.length >= 21",
                                        timeout=READY_3D_MS)
@@ -1030,12 +1065,12 @@ def check_hero_3d(browser, base):
                 at = page.evaluate("() => window.__hero3d.pointAt('port-44')")
                 if not at: bad.append("hero 3D: nowhere on port-44's tube can the pointer reach it"); return
                 page.mouse.move(at[0], at[1])
-                page.wait_for_timeout(100)
+                until(lambda: "port-44" in page.inner_text(HERO_3D_CAPTION), 100)
                 cap = page.inner_text(HERO_3D_CAPTION)
                 if "port-44" not in cap: bad.append(f"hero 3D: the pointer on port-44's tube gave {cap!r}")
                 box = page.locator('#hero-3d canvas').bounding_box()
                 page.mouse.move(box["x"] + 4, box["y"] + 4)
-                page.wait_for_timeout(100)
+                until(lambda: "port-67" in page.inner_text(HERO_3D_CAPTION), 100)
                 cap = page.inner_text(HERO_3D_CAPTION)
                 if "port-67" not in cap: bad.append(f"hero 3D: a miss did not restore port-67 ({cap!r})")
             step("pointer", pointer)
@@ -1070,25 +1105,31 @@ def check_hero_3d(browser, base):
                 d0 = page.evaluate("() => window.__hero3d.distance()")
                 y0 = page.evaluate("() => scrollY")
                 page.mouse.wheel(0, 240)
-                page.wait_for_timeout(500)
+                # The page's scroll is waited for; "the wheel zoomed" is the
+                # other kind of assertion, and the 500 ms is what gave a zoom its
+                # chance to show itself in, so that is the floor.
+                until(lambda: page.evaluate("() => scrollY") != y0, 500)
                 d1 = page.evaluate("() => window.__hero3d.distance()")
                 y1 = page.evaluate("() => scrollY")
                 if y1 == y0: bad.append("hero 3D: before activation, the wheel over the panel did not scroll the page")
                 if abs(d1 - d0) > 0.5: bad.append(f"hero 3D: before activation, the wheel zoomed ({d0:.0f} -> {d1:.0f})")
                 x, y = center()
                 page.mouse.click(x, y)
-                page.wait_for_timeout(200)
+                until(lambda: not page.is_visible('#hero-3d [data-hero-hint]'), 200)
                 if page.is_visible('#hero-3d [data-hero-hint]'):
                     bad.append("hero 3D: the hint is still showing after a click activated the panel")
                 d2 = page.evaluate("() => window.__hero3d.distance()")
                 y2 = page.evaluate("() => scrollY")
                 page.mouse.wheel(0, -240)
-                page.wait_for_timeout(800)
+                # The poll reads the same 1 the assertion does, so it ends the
+                # moment the step would pass; and "the wheel scrolled the page
+                # too" keeps the 800 ms, as the floor.
+                until(lambda: abs(page.evaluate("() => window.__hero3d.distance()") - d2) >= 1, 800)
                 d3 = page.evaluate("() => window.__hero3d.distance()")
                 if abs(d3 - d2) < 1: bad.append(f"hero 3D: after a click, the wheel did not zoom ({d2:.0f} -> {d3:.0f})")
                 if page.evaluate("() => scrollY") != y2: bad.append("hero 3D: after a click, the wheel scrolled the page too")
                 page.keyboard.press("Escape")
-                page.wait_for_timeout(200)
+                until(lambda: page.is_visible('#hero-3d [data-hero-hint]'), 200)
                 if not page.is_visible('#hero-3d [data-hero-hint]'):
                     bad.append("hero 3D: Escape did not let the panel go (no hint back)")
             step("scroll capture", scroll_capture)
@@ -7992,7 +8033,15 @@ def check_rack_cable_length_units(page, base):
     open_form()
     page.fill("#cLength", "5")
     page.click("#cSave")
-    page.wait_for_timeout(200)
+    # WRITTEN, NOT JUST ASKED FOR: the refusal is the save handler's, so wait
+    # for it rather than for 200 ms - on a loaded runner the sentence below
+    # would read None and end the check, which is not what went wrong. Any
+    # text will do; which text it is, is exactly what is asserted next, and if
+    # none ever comes the assertion below says so.
+    try:
+        page.wait_for_function("() => !!document.querySelector('#cError')?.textContent", timeout=5000)
+    except Exception:
+        pass
     err = lambda: page.text_content("#cError") if page.query_selector("#cError") else None
     if err() != "Choose m or ft for the new length.":
         return bad + [f"length units: a new value in yd gave {err()!r}, and c2's length is {cable('c2').get('length')}"]
