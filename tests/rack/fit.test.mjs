@@ -8,6 +8,7 @@ const SIZES = {
   'r740xd': {ru: 2, h: 86.8, d: 737.5}, 'as7726-32x': {ru: 1, h: 43.5, d: 515.0},
   'fhd-1ufce': {ru: 1, h: 44.0, d: 432.8}, 'tm-280': {ru: 1, h: 43.6, d: 140.5},
   'mx10004': {ru: 7, h: 311, d: 932.0}, 'pdu-v': {ru: 0, h: 1200, d: 60},
+  'fhd-cmp5dr': {ru: 1, h: 44, d: 110, mount: 'rack-face', shell: 'sheet'}, 'deep-1u': {ru: 1, h: 44, d: 800},
 };
 const chassisOf = ref => SIZES[ref] || null;
 const place = (rack, ref, ru, face = 'front', label = ref.toUpperCase()) =>
@@ -180,4 +181,63 @@ test('shrinkRack: rack.items keeps its original order - only positions (and memb
   const {rack: next} = F.shrinkRack(r, 12, chassisOf);
   assert.deepEqual(next.items.map(i => i.id), before, 'shrinkRack must not reorder rack.items');
   assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['X', 3], ['Y', 1], ['Z', 2]]);
+});
+
+const mgr = (rack, ru, face = 'front', extra = {}) =>
+  M.withItem(rack, {ref: 'fhd-cmp5dr', cfg: 'x', ru, face, label: `MGR${ru}${face[0]}`, ...extra}).rack;
+
+test('rack-face: one manager per U per face; the other face is free', () => {
+  const r = mgr(M.newRack(), 20);
+  assert.equal(F.fits(r, {ref: 'fhd-cmp5dr', ru: 20, face: 'front'}, chassisOf).reason, 'Taken by MGR20f on the front.');
+  assert.deepEqual(F.fits(r, {ref: 'fhd-cmp5dr', ru: 20, face: 'rear'}, chassisOf), {ok: true});
+});
+
+test('rack-face: a manager and a rack device share a U, either way round', () => {
+  const r = place(M.newRack(), 'as7726-32x', 20);
+  assert.deepEqual(F.fits(r, {ref: 'fhd-cmp5dr', ru: 20, face: 'front', on: 'i1', unit: 1}, chassisOf), {ok: true});
+  assert.deepEqual(F.fits(mgr(M.newRack(), 20), {ref: 'as7726-32x', ru: 20, face: 'front'}, chassisOf), {ok: true});
+});
+
+test('rack-face: past the top is refused', () => {
+  assert.equal(F.fits(M.newRack(), {ref: 'fhd-cmp5dr', ru: 43, face: 'front'}, chassisOf).reason,
+    'U43 is past the top of this 42U rack.');
+});
+
+test('rack-face: a rear manager is refused where a front device reaches past the rear rail', () => {
+  const r = place(M.newRack(), 'deep-1u', 10);     // 800 mm > 740 rail depth
+  assert.equal(F.fits(r, {ref: 'fhd-cmp5dr', ru: 10, face: 'rear'}, chassisOf).reason,
+    'DEEP-1U is 800 mm deep and reaches past the rear rail; a rear manager here would hit it.');
+  assert.equal(F.fits(mgr(M.newRack(), 10, 'rear'), {ref: 'deep-1u', ru: 10, face: 'front'}, chassisOf).reason,
+    '800 mm deep; it would reach past the rear rail into MGR10r.');
+});
+
+test('rack-face: two-post rails pass every body, so a rear manager needs an empty U', () => {
+  const r = place(M.newRack({kind: 'two-post'}), 'tm-280', 5);
+  assert.match(F.fits(r, {ref: 'fhd-cmp5dr', ru: 5, face: 'rear'}, chassisOf).reason, /reaches past the rear rail/);
+  assert.deepEqual(F.fits(r, {ref: 'fhd-cmp5dr', ru: 6, face: 'rear'}, chassisOf), {ok: true});
+});
+
+test('rack-face: a host is a rack device on the same face, and the unit is within its height', () => {
+  const r = place(M.newRack(), 'r740xd', 10);      // 2U, front
+  assert.equal(F.fits(r, {ref: 'fhd-cmp5dr', ru: 12, face: 'front', on: 'i1', unit: 3}, chassisOf).reason,
+    'R740XD is 2U; there is no unit 3 on it.');
+  assert.equal(F.fits(r, {ref: 'fhd-cmp5dr', ru: 10, face: 'rear', on: 'i1', unit: 1}, chassisOf).reason,
+    'R740XD is on the front; a manager on it goes on the front too.');
+});
+
+test('availableDepth ignores managers: they stand outside the rails', () => {
+  const r = mgr(place(M.newRack(), 'as7726-32x', 20), 20, 'rear');
+  assert.equal(F.availableDepth(r, r.items[0], chassisOf), r.frame.usableDepth);
+});
+
+test('shrinkRack moves a hosted manager with its host, and drops it with its host', () => {
+  let r = place(M.newRack(), 'as7726-32x', 30);
+  r = mgr(r, 30, 'front', {on: 'i1', unit: 1});
+  const {rack: s} = F.shrinkRack(r, 10, chassisOf);
+  assert.deepEqual(s.items.map(i => i.ru), [1, 1]);
+  r = place(place(M.newRack(), 'tm-280', 1), 'as7726-32x', 2);
+  r = mgr(r, 1, 'front', {on: 'i1', unit: 1});
+  const {rack: t, removed} = F.shrinkRack(r, 1, chassisOf);
+  assert.deepEqual(removed.map(i => i.id).sort(), ['i1', 'i3']);
+  assert.deepEqual(t.items.map(i => i.id), ['i2']);
 });

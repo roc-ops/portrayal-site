@@ -14,6 +14,45 @@ import {isRackMount} from './export-data.js';
 
 export const REACH_MM = 50;   // within this of the far rail, a device's far panel is visible there
 
+// A RACK-FACE PART (spec §5): bolted to the rail face at a U, projecting
+// outward - forward of the front rails, or behind the rear ones. It takes no
+// U, so rack devices never collide with it, except a device deep enough to
+// come out through the far rail into a manager there.
+export const isRackFace = c => c?.mount === 'rack-face';
+// The depth between the rails a body must exceed to come out of the far one:
+// two-post rails are one plane, so any body does.
+const between = f => (f.kind === 'two-post' ? 0 : f.railDepth);
+
+function fitsRackFace(rack, cand, c, chassisOf, {ignoreId = null} = {}) {
+  const f = rack.frame, rd = between(f);
+  if (cand.ru < 1) return {ok: false, reason: 'Below U1.'};
+  if (cand.ru > f.heightRU) return {ok: false, reason: `U${cand.ru} is past the top of this ${f.heightRU}U rack.`};
+  if (cand.face === 'rear' && rd + c.d > f.usableDepth)
+    return {ok: false, reason: `${mm(c.d)} mm out from the rear rail; this rack allows ${mm(f.usableDepth - rd)} mm there.`};
+  if (cand.on != null) {
+    const host = rack.items.find(i => i.id === cand.on), hc = host && chassisOf(host.ref);
+    if (!host || isRackFace(hc)) return {ok: false, reason: 'A cable manager goes on a rack device.'};
+    const hu = Math.max(1, hc?.ru ?? 1);
+    if (!(Number.isInteger(cand.unit) && cand.unit >= 1 && cand.unit <= hu))
+      return {ok: false, reason: `${host.label} is ${hu}U; there is no unit ${cand.unit} on it.`};
+    if (host.face !== cand.face)
+      return {ok: false, reason: `${host.label} is on the ${host.face}; a manager on it goes on the ${host.face} too.`};
+  }
+  for (const o of rack.items) {
+    if (o.id === ignoreId) continue;
+    const oc = chassisOf(o.ref);
+    if (!oc || !overlaps([cand.ru, cand.ru], span(o, chassisOf))) continue;
+    if (isRackFace(oc)) {
+      if (o.face === cand.face) return {ok: false, reason: `Taken by ${o.label} on the ${o.face}.`};
+      continue;
+    }
+    if (o.face !== cand.face && oc.d > rd)
+      return {ok: false, reason: `${o.label} is ${mm(oc.d)} mm deep and reaches past the ${cand.face} rail; ` +
+                                 `a ${cand.face} manager here would hit it.`};
+  }
+  return {ok: true};
+}
+
 const mm = x => Math.round(x);
 export function span(item, chassisOf) {
   const u = chassisOf(item.ref)?.ru ?? 1;
@@ -24,6 +63,7 @@ const overlaps = (a, b) => a[0] <= b[1] && b[0] <= a[1];
 export function fits(rack, cand, chassisOf, {ignoreId = null} = {}) {
   const f = rack.frame, c = chassisOf(cand.ref);
   if (!c) return {ok: false, reason: `No size is known for ${cand.ref}.`};
+  if (isRackFace(c)) return fitsRackFace(rack, cand, c, chassisOf, {ignoreId});
   const lo = cand.ru, hi = cand.ru + Math.max(1, c.ru) - 1;
   if (lo < 1) return {ok: false, reason: 'Below U1.'};
   if (hi > f.heightRU)
@@ -33,6 +73,11 @@ export function fits(rack, cand, chassisOf, {ignoreId = null} = {}) {
     if (o.id === ignoreId) continue;
     const oc = chassisOf(o.ref);
     if (!oc || !overlaps([lo, hi], span(o, chassisOf))) continue;
+    if (isRackFace(oc)) {
+      if (o.face !== cand.face && c.d > between(f))
+        return {ok: false, reason: `${mm(c.d)} mm deep; it would reach past the ${o.face} rail into ${o.label}.`};
+      continue;
+    }
     if (o.face === cand.face) return {ok: false, reason: `Taken by ${o.label} on the ${o.face}.`};
     if (f.kind === 'two-post')
       return {ok: false, reason: `Taken by ${o.label}; two-post rails are shared by front and rear.`};
@@ -56,6 +101,7 @@ export function availableDepth(rack, item, chassisOf) {
   if (f.kind === 'two-post') return f.usableDepth;
   const mine = span(item, chassisOf);
   const other = rack.items.filter(o => o.id !== item.id && o.face !== item.face
+                                       && !isRackFace(chassisOf(o.ref))
                                        && overlaps(mine, span(o, chassisOf)));
   if (!other.length) return f.usableDepth;
   return Math.min(f.usableDepth, f.railDepth - Math.max(...other.map(o => chassisOf(o.ref)?.d ?? 0)));
