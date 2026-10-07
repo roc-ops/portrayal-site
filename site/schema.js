@@ -26,6 +26,8 @@ const SOURCES = {
   // before that a NOS was an overlay on the hardware (overlay.schema.json). The
   // page offers whichever of the two the vendored schemas carry - see `present`.
   listing:   {url: 'assets/schemas/listing.schema.json',   label: 'a NOS vendor listing the hardware it supports'},
+  // A LAB: placements in a rack, rack-face parts on a host (Portrayal #852, lab.schema.json).
+  lab:       {url: 'assets/schemas/lab.schema.json',       label: 'a lab of devices placed in a rack'},
   overlay:   {url: 'assets/schemas/overlay.schema.json',   label: "an operating system's naming"},
 };
 

@@ -1228,6 +1228,24 @@ check("sheetShell" in (HERE / "vendor" / "relief.js").read_text(),
       "the vendored relief.js builds sheet bodies",
       "run ./refresh-assets.sh against an upstream main that has #827")
 
+# PATHWAYS (docs/superpowers/specs/2026-10-07-cable-routing-pathways-design.md §3):
+# the three FS managers, each with the ids a route can pass through. A ring's
+# component is on the top view and its end on the front, so both are indexed.
+_g = lambda n, v: (_cat.get(n, {}).get("guides") or {}).get(v, [])
+check(all(n in _cat for n in ("fhd-cmp5dr", "cmh-4drb1u", "cmh-sfd1u")),
+      "the FHD-CMP5DR, CMH-4DRB1U and CMH-SFD1U are in the catalog",
+      "rebuild /Volumes/External/portrayal-upstream from main (#852) and run ./refresh-assets.sh")
+check(set(_g("fhd-cmp5dr", "top")) >= {f"guide-{i}" for i in range(1, 6)}
+      and set(_g("fhd-cmp5dr", "front")) >= {f"guide-{i}" for i in range(1, 6)},
+      "fhd-cmp5dr's five rings are indexed on its top and front views",
+      "run ./chassis-index.py")
+check(bool(_g("cmh-sfd1u", "front")) and bool((_cat.get("cmh-4drb1u", {}).get("passes") or {})),
+      "the duct of cmh-sfd1u and the brush pass of cmh-4drb1u are indexed",
+      "run ./chassis-index.py")
+check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
+      "fhd-cmp5dr carries its stated capacity, 30",
+      "run ./chassis-index.py")
+
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",
                   "annotate.html", "drawio.html", "exporter.html", "index.html", "rack.html", "kit.html"):

@@ -1,0 +1,207 @@
+{
+ "aliases": [
+  "68690"
+ ],
+ "attrs": {
+  "compliance": {
+   "environment": "Indoor"
+  },
+  "environmental": {
+   "operating-humidity": "95% Relative Humidity (max.), Non-condensing",
+   "operating-temp": "-10 to 60\u00b0C (14 to 140\u00b0F)"
+  },
+  "performance": {
+   "cable-capacity": 87,
+   "cable-capacity-basis": "Cat6 24AWG (6.1 mm) cables at 100 % fill, theoretical - FS Horizontal Cable Managers with D-rings datasheet, Cable Capacity Reference Guide"
+  },
+  "physical": {
+   "material": "Steel, Powder-coated Black",
+   "mounting-hardware": "M6*15mm Screw x4 and M6 Nut x4"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 88.0,
+  "h": 44.0,
+  "mount": "rack",
+  "power": null,
+  "ru": 1,
+  "shell": "sheet",
+  "thickness": 1.2,
+  "w": 440.0
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The cable manager as FS ships #68690, four rings fitted.",
+   "files": {
+    "bottom": "cmh-4drb1u.base.bottom.svg",
+    "front": "cmh-4drb1u.base.front.svg",
+    "left": "cmh-4drb1u.base.left.svg",
+    "rear": "cmh-4drb1u.base.rear.svg",
+    "right": "cmh-4drb1u.base.right.svg",
+    "top": "cmh-4drb1u.base.top.svg"
+   },
+   "kind": "base",
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "cmh-4drb1u",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "neither FS datasheet that covers the part, nor the cable managers portfolio, states a weight.",
+   "scope": [
+    "base"
+   ],
+   "wanted": "the product page's weight, or the part on a scale",
+   "what": "weight"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "kind": "declared",
+   "note": "87 cables in both FS documents; the CMH-4DRB1U datasheet labels it 28AWG and the D-rings datasheet's reference guide gives it as Cat6 24AWG at 100 % fill, with 221 for 28AWG. The guide is taken.",
+   "scope": [
+    "cable-capacity-basis"
+   ],
+   "wanted": "FS to correct one of the two tables",
+   "what": "cable-capacity-basis"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "no document says how far the panel sits behind the rack rails, so the end walls' depth and where the ears would be are read off a render taken from above.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a dimensioned plan, or a ruler on the part",
+   "what": "recess"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CMH-4DRB1U",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - material, mounting hardware, \"Indoor\", the operating temperature and the humidity are the CMH-4DRB1U datasheet's specification table."
+  },
+  "cable-capacity": {
+   "confidence": "datasheet",
+   "note": "datasheet - 87, and the two documents that state it disagree on its basis. The CMH-4DRB1U datasheet's table reads \"Cable Capacity (Theoretical Value) 87pcs (28AWG)\". The Cable Capacity Reference Guide in the D-rings datasheet gives the same manager 87 Cat6 24AWG 6.1 mm cables at 100 % fill, and 221 for Cat6 slim 28AWG 3.8 mm, so the 87 is the Cat6 figure and the first table's \"28AWG\" is its label for the wrong row. Recorded as the reference guide states it, which also gives 26 at the recommended 30 % fill."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - 440 x 44 x 88. The 440 is the drawing's 17.32 in [440 mm] between the ear folds, which is what this library models: the ears are not drawn. The part is 482.6 overall with them (19 in; the CMH-4DRB1U datasheet's table says 483), so each ear stands 21.3 mm outside the body. The 88 is the datasheet's 3.46 in depth, and the drawing's side view shows that it is the D-ring: the lower arm is dimensioned 3.4 in [88 mm] from the back of the panel, and nothing stands behind the panel but the brush. The 44 is 1.73 in on both."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Steel, Powder-coated Black\" and \"Color: Black\". Every image FS publishes of the part is a render."
+  },
+  "front": {
+   "confidence": "drawing",
+   "note": "drawing - the front view: the panel between the folds with its five obround windows and the four rings. Rings centred 50 and 150 mm either side of the middle: the drawing dimensions 3.9 in [100 mm] between the first two, and the first 1.1 in [27.9 mm] plus 2.5 in [63.6 mm] from the part's end, which is 70.2 from the fold. Each ring is 12.5 wide. The window figures are the panel's, in its contract. The brush is seen through the windows; it is one strip, behind the panel, as the rear shows."
+  },
+  "left": {
+   "confidence": "estimated",
+   "note": "estimated - an elevation, from the drawing's side view of the ring (its arms, its hooked end and its curled lip, as the ring's contract reads them) with the end wall in front of it. The end wall's depth and its hole are estimated from the renders, and its contract says how. The right is the same, turned round."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FIRST, FROM THE VENDOR'S OWN DIMENSIONED DRAWING - which is not in the part's own datasheet. That one (CMH-4DRB1U Horizontal Cable Manager Datasheet, updated 2025-12-09) carries only a dimensioned render (3.00 / 3.40 / 17.32 / 19.00 in). FS's Horizontal Cable Managers with D-rings datasheet draws the CMH-4DRB1U in a side view and a front view, dimensioned. Its front view is 2.199 px/mm across from the 482.6 line (1061 px) and 2.227 px/mm down from the 44 (98 px), a 1.3 % difference between the axes; the 440, 100, 79 and 40 lines agree with the across scale to under a millimetre. Positions are read on the across axis and heights on the down one."
+  },
+  "mount": {
+   "confidence": "estimated",
+   "note": "estimated - \"Recessed\": the panel sits behind the rack rails and the rings reach forward through them. No document says how far. FS's front render (gallery image 2) is taken from above, so a point further back stands higher in the frame; the panel's top and bottom edges stand 49 and 62 px above the ears', at 1.33 px per mm of depth, which the rings' own 76 and 88 mm arms set in the same frame. So the panel is about 42 mm behind the rail plane, and the rings' tips 46 mm in front of it. The envelope's front is the rings' tips."
+  },
+  "passes": {
+   "confidence": "drawing",
+   "note": "drawing - the datasheet's table says \"Pass-through Holes: 7\". Declared here as the five windows in the panel, brush-covered, and the hole in each end wall, open: seven. The brush strip on the rear is declared too, because it is where those five come out; it is the same strip, not an eighth hole."
+  },
+  "rear": {
+   "confidence": "photo-measured",
+   "note": "photo-measured - THE BRUSH HAS NO DIMENSIONS in any document. FS's rear render (gallery image 5, near straight-on) gives the body 1380 px across, 3.136 px/mm against the drawing's 440; the strip spans 1305 px, 416 mm, read as centred because the render sees a little of each end wall at different angles (8.6 and 15.3 mm in). Down, the body is 125 px for 44 mm: a 6.3 mm lip above the bristles, 33.4 of bristles and 4.3 below. Four rivets along the top lip at 32, 157, 283 and 408 mm, symmetric about the middle. FS's close-up of the rear (gallery image 7) shows the bristles running up and down, and the strip held by screws along the lower edge, which are not drawn."
+  },
+  "thickness": {
+   "confidence": "drawing",
+   "note": "drawing - the side view dimensions the ring's strip 0.05 in [1.2 mm]; the panel is taken as the same sheet."
+  },
+  "top": {
+   "confidence": "estimated",
+   "note": "estimated - an elevation: the panel's folded top flange, the end walls on edge and the four rings' upper arms from above, with the lower arms reaching 12 mm further. The bottom is the same from underneath. The flange's 8 mm is estimated in its contract."
+  }
+ },
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

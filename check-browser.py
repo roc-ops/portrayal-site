@@ -2621,7 +2621,9 @@ def check_schema_nos_tab(page, base):
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
-    if got != ["device", "component", have]:
+    # the lab schema (Portrayal #852) is a tab of its own when the snapshot carries it
+    lab = ["lab"] if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "lab.schema.json").exists() else []
+    if got != ["device", "component", have] + lab:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")
     # the other side of #677: this snapshot's NOS schema gone, the other one served

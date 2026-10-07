@@ -20,15 +20,29 @@ RU = 44.45
 
 
 def marked(path):
-    """The ids a route can pass through on one compiled face: elements carrying
-    `data-guide` (a ring on a component, a duct rect) and pass-throughs
-    (`data-class="pass"`). Empty until upstream's guides and passes land."""
+    """The ids a route can pass through on one compiled face, as the route
+    names them (docs/superpowers/specs/2026-10-07-cable-routing-pathways-design.md §4):
+    a ring component carrying `data-guide` is its own id (`guide-1`); a ring's
+    end on a front or rear view, `<id>-end` with `data-kind="ring"`, stands for
+    the same ring; a duct rect `guide--<id>` is `<id>`; a pass-through
+    `pass--<id>` is `<id>`."""
     if not path.is_file():
         return [], []
     root = ET.parse(path).getroot()
-    guides = sorted({e.get("id") for e in root.iter() if e.get("data-guide") and e.get("id")})
-    passes = sorted({e.get("id") for e in root.iter() if e.get("data-class") == "pass" and e.get("id")})
-    return guides, passes
+    guides, passes = set(), set()
+    for e in root.iter():
+        i = e.get("id") or ""
+        if not i:
+            continue
+        if e.get("data-class") == "pass" and i.startswith("pass--"):
+            passes.add(i[len("pass--"):])
+        elif e.get("data-class") == "guide" and i.startswith("guide--"):
+            guides.add(i[len("guide--"):])
+        elif e.get("data-kind") == "ring" and i.endswith("-end"):
+            guides.add(i[:-len("-end")])
+        elif e.get("data-guide"):
+            guides.add(i)
+    return sorted(guides), sorted(passes)
 
 
 def build():
@@ -65,7 +79,7 @@ def build():
         perf = (idx.get("attrs") or {}).get("performance") or {}
         if perf.get("cable-capacity") is not None:
             entry["capacity"] = {"count": perf["cable-capacity"], "basis": perf.get("cable-capacity-basis", "")}
-        for view in ("front", "rear"):
+        for view in ("top", "front", "rear"):
             g, p = marked(DIST / f"{d['name']}.{idx.get('default')}.{view}.svg")
             if g:
                 entry.setdefault("guides", {})[view] = g
