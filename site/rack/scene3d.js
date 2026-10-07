@@ -10,6 +10,8 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from './cable-rules.js';
 import {drawCables3d} from './cables.js';
+import {LANE_GAP} from './route.js';
+import {RU} from './rails.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -20,11 +22,45 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 //     device) does not land, so 2D and 3D agree on which cables hang free;
 //   - an end with a plug or a DAC end seated lands on its cable points;
 //   - any other end lands on the center of its port, as it does in 2D.
+// Where a route's waypoints are in the room. A ring, duct or pass by its
+// drawing (guideAnchor, which tries the ring's own components and the guide
+// and pass rects); a lane LANE_GAP/2 outside the posts at the U's middle.
+// Cables that share a waypoint are spread on a small grid so their tubes do
+// not overlap.
+function waypointsFor(scene, routes, THREE) {
+  const used = new Map();
+  const m = scene.metrics();
+  return async link => {
+    const r = routes?.get(link.id);
+    if (!r) return [];
+    const out = [];
+    for (const w of r.waypoints) {
+      let p = null;
+      if (w.lane) {
+        const [side, face = 'front'] = w.lane.split('-');
+        const x = (side === 'left' ? -1 : 1) * (m.rackWidth / 2 + LANE_GAP / 2);
+        p = new THREE.Vector3(x, (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
+      } else {
+        for (const id of [w.via, `${w.via}-end`, `guide--${w.via}`, `pass--${w.via}`]) {
+          const a = await scene.guideAnchor({id: w.item}, id);
+          if (a) { p = a.position.clone(); break; }
+        }
+      }
+      if (!p) continue;
+      const key = w.lane ? `${w.lane}|${w.ru}` : `${w.item}|${w.via}`;
+      const k = used.get(key) || 0; used.set(key, k + 1);
+      p.x += ((k % 3) - 1) * 6; p.y += ((Math.floor(k / 3) % 3) - 1) * 6;
+      out.push(p);
+    }
+    return out;
+  };
+}
+
 // Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-async function hangCables(scene, rack, facts) {
+async function hangCables(scene, rack, facts, routes) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   try {
     const drawn = await drawCables3d(scene, cablePlan3d(rack), {anchor: async (item, path, view) => {
@@ -33,7 +69,7 @@ async function hangCables(scene, rack, facts) {
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }});
+    }, waypoints: waypointsFor(scene, routes, scene.three.THREE)});
     return {...drawn, checked: !facts.unchecked, facts};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
@@ -45,7 +81,7 @@ async function hangCables(scene, rack, facts) {
 // by the page just before it disposes the old scene, so a rebuild (a commit,
 // or a frame change) restores the orbit instead of snapping back to the
 // opening view.
-export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false}) {
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -89,7 +125,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     await built.build();
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

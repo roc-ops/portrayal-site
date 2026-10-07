@@ -79,13 +79,19 @@ function disposeScene3d() {
   S.scene3d = null;
   S.scene3dRack = null;
 }
+// The waypoints the 3D scene hangs its routed cables by, as one string: the
+// scene is rebuilt when this changes (routes are resolved by render(), later
+// than the commit that changed them, so sameCables3d alone cannot see them).
+const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints])) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
   const camera = S.camera3d;
   const forRack = rack();
+  const sig = routesSig(S.routes);
   disposeScene3d();
-  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail});
+  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
+    routes: S.routes?.routes ?? null});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -93,6 +99,10 @@ async function rebuild3d() {
   const now = rack();
   S.scene3d = built;
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
+  S.scene3dRoutes = sig;
+  // Routes are resolved by render(), after a commit: if they settled while
+  // this was building, the scene was hung by the old ones.
+  if (routesSig(S.routes) !== sig) scheduleRebuild3d();
   // A scene built without its cables' faces has no plugs and marks no loose
   // end: 2D says so (render), and so does 3D, once until a build is checked.
   if (built.rackCables && built.rackCables.checked === false) {
@@ -721,9 +731,10 @@ async function render() {
     const at = S.doc;
     const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
     if (mine !== S.draws) return;
-    if (!rf) S.routes = null;
+    if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
     else if (S.doc === at) {
       S.routes = rf;
+      if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
       const next = withRoutedLengths(r, rf.ctx);
       if (next !== r) {
         S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
@@ -732,7 +743,10 @@ async function render() {
         r = next;               // the drawing below shows the length just kept
       }
     }
-  } else S.routes = null;
+  } else {
+    S.routes = null;
+    if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
+  }
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
   // The SVGs are new nodes every render, so the zoom (a style on the old

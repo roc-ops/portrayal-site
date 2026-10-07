@@ -135,7 +135,8 @@ export function cablePlan3d(rack) {
 export function sameCables3d(a, b) {
   const ca = a.cables || [], cb = b.cables || [];
   if (ca === cb) return true;
-  const key = c => JSON.stringify([c.id, endKey(c.a), endKey(c.b), c.media || '', c.media === 'copper' ? c.purpose || '' : '']);
+  const key = c => JSON.stringify([c.id, endKey(c.a), endKey(c.b), c.media || '', c.media === 'copper' ? c.purpose || '' : '',
+    JSON.stringify(c.routeEdited ? c.route : null)]);
   return ca.length === cb.length && ca.every((c, i) => key(c) === key(cb[i]));
 }
 

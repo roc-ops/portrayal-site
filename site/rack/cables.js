@@ -313,6 +313,25 @@ const mergeOf = (THREE, e) => e.points.reduce((s, p) => s.add(p), new THREE.Vect
 // outside the posts (spec §6).
 // `reach` on an end, when set, replaces LEAD (see reaches).
 const startOf = (THREE, e) => e.points.length > 1 ? mergeOf(THREE, e) : e.points[0].clone();
+// A ROUTED RUN (routing spec 7): straight out of each connector as a hang
+// does, then taut through every waypoint, each corner rounded by easing r mm
+// either side of it - the CatmullRom tube does the rest. THREE is passed in
+// so this stays free of a three.js import.
+export function routePoints3d(THREE, A, B, wps, r = 30) {
+  const a = startOf(THREE, A), b = startOf(THREE, B);
+  const outA = a.clone().addScaledVector(A.normal, A.reach ?? LEAD);
+  const outB = b.clone().addScaledVector(B.normal, B.reach ?? LEAD);
+  const path = [outA, ...wps, outB];
+  const pts = [a, outA];
+  for (let k = 1; k < path.length - 1; k++) {
+    const [p, q, s] = [path[k - 1], path[k], path[k + 1]];
+    const ease = (from, to) => { const d = to.distanceTo(from); return to.clone().lerp(from, Math.min(r, d / 2) / (d || 1)); };
+    pts.push(ease(p, q), q.clone(), ease(s, q));
+  }
+  pts.push(outB, b);
+  return pts;
+}
+
 export function hangPoints3d(THREE, A, B, rackW) {
   const a = startOf(THREE, A), b = startOf(THREE, B);
   const outA = a.clone().addScaledVector(A.normal, A.reach ?? LEAD);
@@ -400,7 +419,7 @@ function tubeEnds(THREE, mesh) {
 // what the showcase needs. The Rack Builder passes its own (scene3d.js),
 // which finds a mount by item id. A link that carries an `id` names its group
 // `cable-<id>`; one without (the showcase's) keeps `cable-<index>`.
-export async function drawCables3d(scene, plan, {live = () => true, anchor = null} = {}) {
+export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null} = {}) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
   const boxes = scene.deviceBoxes();
@@ -429,8 +448,10 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     if (loose.length === 2) { tubes.push({link, i, mesh: null, loose, points: [], starts: []}); continue; }
     const landed = ends.filter(Boolean);
     const dangling = landed.length === 1;
+    const wps = !dangling && waypoints ? await waypoints(link) : [];
+    if (!live()) return null;
     const pts = clearOf(dangling ? danglePoints3d(THREE, landed[0])
-                                 : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
+      : wps.length ? routePoints3d(THREE, ends[0], ends[1], wps) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
     const main = new THREE.Mesh(new THREE.TubeGeometry(

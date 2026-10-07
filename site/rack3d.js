@@ -880,7 +880,8 @@ export function createRackScene(container, opts = {}) {
   // Each mounted chassis as a world-space box, for a host that must keep
   // something (a cable) out of the metal.
   function deviceBoxes() {
-    return mounted.map(({entry, group}) => {
+    // A sheet manager is open (a route passes through it), so it is no box.
+    return mounted.filter(({entry}) => entry.chassis?.shell !== 'sheet').map(({entry, group}) => {
       const {w, h, d} = entry.chassis;
       group.updateMatrixWorld(true);
       const box = new THREE.Box3(new THREE.Vector3(-w / 2, -h / 2, -d / 2), new THREE.Vector3(w / 2, h / 2, d / 2));
@@ -1064,7 +1065,7 @@ export function createRackScene(container, opts = {}) {
     // rather than one point in it. `faceZ` is only ever meaningful with
     // `recess`, which is why they are handed over together rather than as a
     // constant somebody has to pair up correctly on their own.
-    metrics: () => ({RU, rackWidth: RACK_W, faceZ: RACK_FACE_Z, recess: RECESS,
+    metrics: () => ({RU, rackWidth: RACK_W, faceZ: RACK_FACE_Z, railDepth: FRAME ? RAIL_DEPTH : 34, recess: RECESS,
                      heightRU: UNITS, pxmm: PXMM}),
     resize,
     reframe: frameCamera,
