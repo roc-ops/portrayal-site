@@ -122,3 +122,40 @@ test('cable.add, cable.update, cable.remove', () => {
   assert.deepEqual(run('cable.update', a.rack, {id: 'c9', label: 'x'}), {error: CABLE_GONE});
   assert.equal(run('cable.remove', u.rack, {id: 'c1'}).summary, 'Deleted cable A1.');
 });
+
+test('cable.route and cable.route.reset', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: 'A1', route: []}]};
+  const route = [{lane: 'left-front', ru: 15}];
+  const s = run('cable.route', r, {id: 'c1', route});
+  assert.deepEqual([s.rack.cables[0].route, s.rack.cables[0].routeEdited, s.summary], [route, true, 'Routed cable A1 by hand.']);
+  assert.equal(run('cable.route', s.rack, {id: 'c1', route}).rack, s.rack);
+  const t = run('cable.route.reset', s.rack, {id: 'c1'});
+  assert.deepEqual([t.rack.cables[0].route, 'routeEdited' in t.rack.cables[0], t.summary],
+                   [[], false, 'Put cable A1 back on its own route.']);
+  assert.equal(run('cable.route.reset', t.rack, {id: 'c1'}).rack, t.rack);
+  assert.deepEqual(run('cable.route', r, {id: 'c9', route}), {error: CABLE_GONE});
+  assert.deepEqual(run('cable.route.reset', r, {id: 'c9'}), {error: CABLE_GONE});
+});
+
+test('cable.route and cable.route.reset take the summary the page gives them', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: 'A1', route: []}]};
+  const s = run('cable.route', r, {id: 'c1', route: [{lane: 'left-front', ru: 15}], summary: 'Waypoint added.'});
+  assert.equal(s.summary, 'Waypoint added.');
+  assert.equal(run('cable.route.reset', s.rack, {id: 'c1', summary: 'Route reset to automatic.'}).summary, 'Route reset to automatic.');
+});
+
+test('a route written by hand drops the route the loader kept as written', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: [], routeAsWritten: 'junk'}]};
+  assert.equal('routeAsWritten' in run('cable.route', r, {id: 'c1', route: []}).rack.cables[0], false);
+});
+
+test('lengths.routed is a system command that is not a step', () => {
+  assert.equal(COMMANDS['lengths.routed'].step, false);
+  assert.equal(COMMANDS['lengths.routed'].system, true);
+  // Nothing to measure: the very rack comes back.
+  const r = add(M.newRack(), 'as7726-32x', 10);
+  assert.equal(run('lengths.routed', r, {routeCtx: {}}).rack, r);
+});

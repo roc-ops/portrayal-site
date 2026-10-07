@@ -10,6 +10,7 @@ import {fits, isRackFace, heightOf, shrinkRack} from './fit.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, withoutCable, cablesOf, withoutCablesOf, cableName, MEDIA} from './cable-rules.js';
 import {validate} from './validate.js';
+import {withRoutedLengths} from './route.js';
 
 export const GONE = 'That device is no longer in the rack.';
 export const CABLE_GONE = 'That cable is no longer in the rack.';
@@ -160,6 +161,31 @@ function cableRemove(rack, {id}) {
   return c ? done(withoutCable(rack, id), `Deleted cable ${cableName(c)}.`) : {error: CABLE_GONE};
 }
 
+// A route by hand is the whole list of waypoints, in order, as route.js stores
+// them. The page names each edit its own way ("Waypoint added."), so it may
+// give the summary; an agent gets the plain one.
+function cableRoute(rack, {id, route, summary}) {
+  const c = cableOf(rack, id);
+  if (!c) return {error: CABLE_GONE};
+  if (c.routeEdited === true && same(c.route ?? [], route) && !('routeAsWritten' in c)) return unchanged(rack);
+  return done(updateCable(rack, id, {route, routeEdited: true}), summary ?? `Routed cable ${cableName(c)} by hand.`);
+}
+function cableRouteReset(rack, {id, summary}) {
+  const c = cableOf(rack, id);
+  if (!c) return {error: CABLE_GONE};
+  if (!('routeEdited' in c) && !(c.route || []).length && !('routeAsWritten' in c)) return unchanged(rack);
+  // updateCable drops a key patched to undefined.
+  return done(updateCable(rack, id, {route: [], routeEdited: undefined}), summary ?? `Put cable ${cableName(c)} back on its own route.`);
+}
+// ROUTED LENGTHS ARE MEASURED, NOT EDITED: the page measures them after a
+// render and stores them here, so this is not an undo step and is not offered
+// to agents. `routeCtx` is that render's routing context (route-context.js
+// routeFacts().ctx), whose readers are functions.
+function lengthsRouted(rack, {routeCtx}) {
+  const next = withRoutedLengths(rack, routeCtx);
+  return next === rack ? unchanged(rack) : done(next, 'Measured the routed lengths.');
+}
+
 // ── the table an agent reads (spec §2.1, D4) ────────────────────────────
 const RACK = {type: 'string', description: 'The id of the rack to edit. Only the first rack can be edited today.'};
 const AS = {type: 'string', minLength: 1, description: 'A name for what this creates; later commands in the same batch can use "@name" as its id.'};
@@ -180,6 +206,7 @@ const CABLE_FIELDS = {
   purpose: {type: 'string', description: 'What the cable is for, in a word or two (e.g. uplink, management).'},
   label: {type: 'string', description: 'The text on its tags. Its id is used when there is none.'},
   length: LENGTH};
+const SUMMARY = {type: 'string', description: 'How the step is described in Undo and the notice; the page sets it.'};
 const args = (required, properties) => ({type: 'object', required, additionalProperties: false,
                                          properties: {...properties, rack: RACK}});
 
@@ -219,6 +246,15 @@ export const COMMANDS = {
   'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label or length.",
     args: args(['id'], {id: ID('cable'), ...CABLE_FIELDS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},
+  'cable.route': {run: cableRoute, description: 'Route a cable by hand through the waypoints given, in order. Its routed length follows.',
+    args: args(['id', 'route'], {id: ID('cable'),
+      route: {type: 'array', description: 'The waypoints, in order: {item, via} for a pathway on a device, {lane, ru} for a gutter at a U.'},
+      summary: SUMMARY})},
+  'cable.route.reset': {run: cableRouteReset, description: 'Drop a hand-made route; the cable takes its own route again.',
+    args: args(['id'], {id: ID('cable'), summary: SUMMARY})},
+  'lengths.routed': {run: lengthsRouted, step: false, system: true,
+    description: 'Store the routed lengths the page measured. Not an undo step; the page sends it.',
+    args: args(['routeCtx'], {routeCtx: {type: 'object', description: 'The routing context the last render measured with (route-context.js routeFacts().ctx).'}})},
 };
 
 // ── apply (spec §2.2) ───────────────────────────────────────────────────
