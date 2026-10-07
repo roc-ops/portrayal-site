@@ -33,6 +33,7 @@ CI runs the same checks split across parallel jobs, `--shard 1/4` to `--shard
 import argparse
 import contextlib
 import csv
+import difflib
 import html
 import io
 import json
@@ -10229,8 +10230,10 @@ def check_rack_dcim_acceptance_kits(page, base):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
-    ap.add_argument("--only", help="run only these registered extra checks, by function "
-                                   "name, comma-separated - skips the page sweep and the stages")
+    ap.add_argument("--only", help="run only these checks, by function name, comma-separated - "
+                                   "the ones registered with @extra, which is NOT every check in "
+                                   "this file; an unmatched name is an error, never an empty pass. "
+                                   "Skips the page sweep and the stages")
     ap.add_argument("--shard", metavar="i/n", help="run only the i-th of n balanced parts of "
                                                    "the whole pass - how CI runs it, n jobs at once")
     ap.add_argument("--plan", metavar="n", type=int, help="print what each of n shards would run, "
@@ -10246,6 +10249,45 @@ def main():
         return 0
     if args.shard and args.only:
         raise SystemExit("check-browser: --shard and --only both choose what runs; give one")
+
+    # AN UNMATCHED --only NAME IS A REFUSAL, CHECKED BEFORE ANYTHING STARTS. `--only`
+    # filters EXTRA_CHECKS and nothing else, so a name registered nowhere used to match
+    # nothing, run nothing, print nothing and exit 0 - a green run that checked not one
+    # thing. A silent false pass is worse than a failure, because a failure gets read:
+    # `--only check_hero_3d` was handed out as the way to verify a change to the hero's
+    # 3D check, and it exited 0 without opening a browser, because check_hero_3d is
+    # wired into main() by hand rather than registered. Worse still, ONE bad name among
+    # good ones ran the rest and printed their `ok` lines, so the run looked healthy
+    # while silently doing less than it was asked - which is why every name is checked
+    # here and not just the case where none of them match.
+    # STRIPPED, because `--only "a, b"` is how a person types a list. Unstripped, the
+    # space made ' b' match nothing: on the way in that was a silent partial pass of
+    # exactly the kind this refusal exists to stop, and once refused it read absurdly,
+    # difflib suggesting the identical name because the space does not show in it.
+    asked = [n.strip() for n in (args.only or "").split(",") if n.strip()]
+    # AND `--only` WITH NOTHING IN IT IS NOT A WAY TO ASK FOR EVERYTHING. An unset
+    # variable in `--only "$CHECK"` used to fall through to the whole pass, which is
+    # the opposite of what the flag says and nine minutes nobody asked for.
+    if args.only is not None and not asked:
+        raise SystemExit("check-browser: --only was given no check name - an unset variable, perhaps. "
+                         "Leave the flag off to run the whole pass; it is not a way to ask for it.")
+    registered = {fn.__name__ for _, fn in EXTRA_CHECKS}
+    if unmatched := [n for n in asked if n not in registered]:
+        say = [f"check-browser: --only cannot run {', '.join(repr(n) for n in unmatched)}, "
+               f"so nothing ran. {len(asked) - len(unmatched)} of {len(asked)} name(s) would have."]
+        for n in unmatched:
+            # `check_*` is this file's own name for a check, so a function that is one
+            # and is not registered is hand-wired; anything else was never a check.
+            if n.startswith("check_") and callable(globals().get(n)):
+                say.append(f"  {n} is in this file, but it is called from main() by hand rather than "
+                           f"registered with @extra, and --only has never been able to reach it. The "
+                           f"whole pass runs it, as does whichever --shard carries it.")
+            else:
+                near = difflib.get_close_matches(n, sorted(registered), n=3)
+                say.append(f"  {n} is not a check in this file."
+                           + (f" Did you mean {', '.join(near)}?" if near else ""))
+        say.append("  `--plan 1` lists every unit; the ones --only takes are the function names there.")
+        raise SystemExit("\n".join(say))
 
     # WHAT THIS RUN DOES: everything, unless it is one shard of several.
     mine = None
@@ -10280,7 +10322,7 @@ def main():
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
             CLOCK[0] = time.time()
-            only = set(filter(None, (args.only or "").split(",")))
+            only = set(asked)
             if only:
                 failed_things += run_extra(browser, base, only, problems, notes)
                 browser.close()
