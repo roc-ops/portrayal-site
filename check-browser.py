@@ -59,7 +59,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
          "schema.html", "kit.html", "schematic.html", "marks-harness.html",
-         "viewer3d-harness.html", "rack.html", "contribute.html"]
+         "viewer3d-harness.html", "rack.html", "contribute.html",
+         "components/catalog.html"]
 
 # REQUESTS THAT ARE MEANT TO MISS. compare.html overlays a photograph on a
 # drawing and asks for one per view; this repository has never shipped any, and
@@ -2275,6 +2276,88 @@ def run_extra(browser, base, only, problems, notes):
             notes.append(f"ok    {label}")
         took(label)
     return failed
+
+
+@extra("the component catalog lists every major in its namespace section, and search and the namespace filter narrow it")
+def check_components_catalog(page, base):
+    # THE PAGE UPSTREAM'S README LINKS TO. Portrayal #843 stops committing
+    # library/components/CATALOGUE.md, so this page is the only browsable copy
+    # of the catalogue; a reader arriving from that link and finding a short
+    # table has no way to know rows are missing. So this counts the rows
+    # against components.json rather than trusting the page to say it is full.
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/components/catalog.html", wait_until="load")
+    page.wait_for_selector("tbody tr", timeout=READY_MS)
+    want = page.evaluate("async () => (await (await fetch('/assets/dist/components.json')).json()).components")
+    rows = page.eval_on_selector_all("tbody tr", "rs => rs.length")
+    if rows != len(want):
+        bad.append(f"catalog: {rows} rows for {len(want)} component majors")
+    sections = page.eval_on_selector_all("[data-ns]", "ns => ns.map(n => n.dataset.ns)")
+    if sections[:3] != ["std", "common", "generic"]:
+        bad.append(f"catalog: the shared namespaces do not lead the sections: {sections[:3]}")
+    if len(sections) != len({c["ns"] for c in want}):
+        bad.append(f"catalog: {len(sections)} sections for {len({c['ns'] for c in want})} namespaces")
+
+    # One row read end to end, as the generator printed it.
+    cells = page.eval_on_selector_all(
+        "tr:has(td[data-ref='std/bnc@1']) td", "ts => ts.map(t => t.textContent.trim())")
+    if cells[:7] != ["std/bnc@1", "component", "port", "9.7 \u00d7 8.85", "bnc", "0", "3"]:
+        bad.append(f"catalog: std/bnc@1 reads {cells[:7]}")
+
+    # SEARCH AND THE FILTER NARROW THE SAME TABLE. A page that renders every
+    # row and leaves the reader to ctrl-F is the Markdown with extra steps.
+    page.fill("#q", "c14-inlet")
+    page.wait_for_function("() => document.querySelectorAll('tbody tr:not([hidden])').length < 50", timeout=READY_MS)
+    # THE QUERY IS MATCHED AGAINST EVERY PRINTED COLUMN, so a row can be shown
+    # for its description alone - common/psu-ac-1300 says it wraps a
+    # std/c14-inlet core and belongs in these results. Asserting the ref
+    # carries the term would be asserting a narrower search than this page has.
+    shown = page.eval_on_selector_all(
+        "tbody tr:not([hidden])",
+        "rs => rs.map(r => [...r.cells].map(c => c.textContent).join(' '))")
+    stray = [s[:60] for s in shown if "c14-inlet" not in s.lower()]
+    if not shown or stray:
+        bad.append(f"catalog: searching c14-inlet showed {len(stray)} rows that do not carry it: {stray[:3]}")
+    # A SECTION'S COUNT HAS TO MEAN WHAT IS UNDER IT. Unfiltered it is the size
+    # of the namespace, as the generator printed it; filtered to one row, a
+    # heading still reading (46) describes a table the reader cannot see.
+    head = page.inner_text("section[data-ns='std']:not([hidden]) h2")
+    if "46" in head and " of " not in head:
+        bad.append(f"catalog: a filtered section still counts the whole namespace: {head!r}")
+
+    page.fill("#q", "")
+    page.select_option("#ns", "cisco")
+    page.wait_for_function("() => document.querySelectorAll('tbody tr:not([hidden])').length > 0", timeout=READY_MS)
+    other = page.eval_on_selector_all(
+        "tbody tr:not([hidden]) td[data-ref]", "ts => ts.filter(t => !t.textContent.startsWith('cisco/')).length")
+    if other:
+        bad.append(f"catalog: the cisco filter left {other} rows from other namespaces")
+
+    # The counts in the intro are derived, never typed: a hardcoded number is
+    # wrong the next time the library grows.
+    intro = page.inner_text("[data-counts]")
+    if f"{len(want)} component majors" not in intro:
+        bad.append(f"catalog: the intro does not count {len(want)} majors: {intro!r}")
+
+    # EIGHT COLUMNS DO NOT FIT A PHONE, and the ones that fall off the right
+    # are the counts this page exists to show. The table scrolls sideways
+    # inside its own box; the PAGE must not, or the masthead and the prose go
+    # with it and the reader is dragging the whole document around.
+    for w in (360, 375):
+        page.set_viewport_size({"width": w, "height": 800})
+        page.wait_for_timeout(200)
+        sw = page.evaluate("document.documentElement.scrollWidth")
+        if sw > w:
+            bad.append(f"catalog at {w}px scrolls the page sideways to {sw}px")
+        reach = page.evaluate("""() => {
+            const t = document.querySelector('section[data-ns]:not([hidden]) table');
+            const box = t.closest('[data-scroll]');
+            return box ? box.scrollWidth > box.clientWidth : false; }""")
+        if not reach:
+            bad.append(f"catalog at {w}px: the table is not in a box the reader can scroll")
+    page.set_viewport_size({"width": 1280, "height": 900})
+    return bad
 
 
 @extra("the Explorer lens opens a device with its swaps and fields, and hands them back")

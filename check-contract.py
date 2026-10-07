@@ -1492,6 +1492,42 @@ check(_fx and all(z == [] for _, z in _fx),
       "; ".join(f"{n}: {z!r}" for n, z in _fx if z != []))
 
 # ── report ───────────────────────────────────────────────────────────────
+# ── THE COMPONENT CATALOG (components/catalog.html) ─────────────────────
+# The page that stands in for Portrayal's CATALOGUE.md once #843 stops
+# committing it. Upstream's README links it, so the ways it can quietly stop
+# being reachable or stop being complete are worth failing the build over.
+_cat = HERE / "components" / "catalog.html"
+check(_cat.exists(), "components/catalog.html is in the tree")
+_cat_html = _cat.read_text() if _cat.exists() else ""
+
+# A PAGE NOT IN build-public.py's PAGES IS NOT PUBLISHED, and nothing else
+# says so: the site builds, deploys, and serves a 404 at a URL upstream links.
+_bp = (HERE / "tools" / "build-public.py").read_text()
+check('"components/catalog.html"' in _bp,
+      "components/catalog.html is in build-public.py PAGES",
+      "the page would not be published, and /components/catalog would 404")
+
+# A PAGE NOT IN check-browser.py's PAGES IS NEVER SWEPT, so it can 404 on its
+# own assets or throw on load and every check still passes.
+_cb_html = (HERE / "check-browser.py").read_text()
+check('"components/catalog.html"' in _cb_html,
+      "components/catalog.html is in check-browser.py PAGES",
+      "the page sweep would skip it, so a broken page would pass CI")
+
+# IT IS THE ONLY PAGE IN A SUBDIRECTORY, and the masthead it shares with the
+# others is written with relative hrefs. Unprefixed, `href="explorer.html"`
+# resolves to /components/explorer.html and every nav link 404s, which no
+# check of the page's own content would notice.
+_flat = re.findall(r'(?:href|src)="(?!\.\./|https?:|#|/)([a-z0-9-]+(?:\.html|/[^"]*))"', _cat_html)
+check(not _flat,
+      "components/catalog.html reaches its siblings and assets through ../",
+      f"these would resolve under /components/: {sorted(set(_flat))[:6]}")
+
+# The rows come from the shared module, not from a copy of its rules inlined
+# into the page, so tests/catalog pins what the page renders.
+check("site/catalog-page.js" in _cat_html,
+      "components/catalog.html renders through site/catalog-page.js")
+
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:

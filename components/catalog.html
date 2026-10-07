@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — component catalog</title>
+<meta name="description" content="Every component major in the library: what it is, how big it is, what it conforms to, how many devices seat it.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="portrayal.dev">
+<meta property="og:url" content="https://portrayal.dev/components/catalog">
+<meta property="og:title" content="Portrayal — component catalog">
+<meta property="og:description" content="Every component major in the library: what it is, how big it is, what it conforms to, how many devices seat it.">
+<meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An AS7726-32X faceplate compiled from its manifest, with a brass callout on port-12 reading qsfp28 · 100g · 4 lanes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@portrayaldev">
+<meta name="twitter:title" content="Portrayal — component catalog">
+<meta name="twitter:description" content="Every component major in the library: what it is, how big it is, what it conforms to, how many devices seat it.">
+<meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
+<link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../brand/tokens.css">
+<link rel="stylesheet" href="../site/toolbar.css">
+<style>
+  body { font-family: system-ui, sans-serif; background: var(--pt-surface); color: var(--pt-ink); margin: 0.8rem 1.2rem; }
+  h1 { font-family: Archivo, system-ui, sans-serif; font-size: 1.4rem; margin: 1rem 0 0.3rem; }
+  .intro { max-width: 60rem; color: var(--pt-ink-dim, #565d64); font-size: 0.9rem; line-height: 1.5; }
+  .controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+  .controls input, .controls select { font: inherit; padding: 0.3rem 0.45rem; }
+  .controls input { min-width: 16rem; }
+  .tally { color: var(--pt-ink-dim, #565d64); font-size: 0.85rem; }
+  section[data-ns] { margin: 1.6rem 0 0; }
+  section[data-ns] > h2 { font-family: Archivo, system-ui, sans-serif; font-size: 1rem; margin: 0 0 0.3rem; }
+  section[data-ns] > h2 .n { color: var(--pt-ink-dim, #565d64); font-weight: 400; }
+  /* EIGHT COLUMNS ON A PHONE SCROLL SIDEWAYS INSIDE THIS BOX, not by taking
+     the page with them: the columns that fall off the right are devices and
+     in parts, the two counts the catalog exists to show, so they have to stay
+     reachable. min-width keeps the table its natural width inside the box
+     rather than letting it squeeze into unreadable columns. */
+  [data-scroll] { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 46rem; font-size: 0.84rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.22rem 0.5rem 0.22rem 0; border-bottom: 1px solid var(--pt-rule, #e3e6e8); }
+  th { font-weight: 500; color: var(--pt-ink-dim, #565d64); white-space: nowrap; }
+  td[data-ref] { font-family: ui-monospace, monospace; white-space: nowrap; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; padding-right: 1.2rem; }
+  td.size { white-space: nowrap; }
+  .what { color: var(--pt-ink); }
+  [hidden] { display: none; }
+</style>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="../index.html">
+    <img src="../brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="../index.html#showcase">Showcase</a>
+    <a href="../explorer.html">Explorer</a>
+    <a href="../rack.html">Rack Builder</a>
+    <a href="../components.html">Components</a>
+    <a href="../annotate.html">Annotate</a>
+    <details class="navmenu">
+      <summary>Export</summary>
+      <div class="navmenu-items">
+        <a href="../exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+        <a href="../drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+        <a href="../drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
+        <a href="../drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+      </div>
+    </details>
+    <details class="navmenu" data-docs>
+      <summary>Docs</summary>
+      <div class="navmenu-items">
+        <a href="../schema.html">Schema<span class="hint">the manifest, component and listing contracts</span></a>
+        <a href="../kit.html">Using the kit<span class="hint">2D, 3D and export in your own pages</span></a>
+        <a href="../contribute.html">Contributing<span class="hint">add a device, request one, fix the tools</span></a>
+      </div>
+    </details>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<h1>Component catalog</h1>
+<p class="intro" data-counts></p>
+<p class="intro">One row per component major: what it is, how big it is in millimeters
+(w &#215; h &#215; d), the standard it conforms to or the interface it presents or mates,
+how many devices seat it and how many other components compose it. A device seats a
+part when a placement or bay places it, a bay accepts it or a configuration puts it in
+one; naming it in prose does not count.</p>
+
+<div class="controls">
+  <label for="q">Search</label>
+  <input id="q" type="search" placeholder="ref, class, interface or description" autocomplete="off">
+  <label for="ns">Namespace</label>
+  <select id="ns"><option value="">all</option></select>
+  <span class="tally" id="tally"></span>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { catalogGroups, catalogMatches } from '../site/catalog-page.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[ch]));
+
+const COMPONENTS = (await (await fetch('../assets/dist/components.json')).json()).components;
+const GROUPS = catalogGroups(COMPONENTS);
+
+// THE WHOLE TABLE IS WRITTEN ONCE. 1300-odd rows appended one at a time is
+// 1300 reflows; built as one string and parsed once it is a single pass, and
+// the search below only toggles `hidden` rather than rebuilding anything.
+$('sections').innerHTML = GROUPS.map(g => `<section data-ns="${esc(g.ns)}">
+  <h2>${esc(g.ns)}/ <span class="n" data-total="${g.rows.length}">(${g.rows.length})</span></h2>
+  <div data-scroll><table><thead><tr>
+    <th>ref</th><th>kind</th><th>class</th><th>size (mm)</th>
+    <th>conforms / interface</th><th>devices</th><th>in parts</th><th>what it is</th>
+  </tr></thead><tbody>${g.rows.map(r => `<tr>
+    <td data-ref="${esc(r.ref)}">${esc(r.ref)}</td>
+    <td>${esc(r.kind)}</td><td>${esc(r.cls)}</td><td class="size">${esc(r.size)}</td>
+    <td>${esc(r.iface)}</td><td class="num">${esc(r.devices)}</td><td class="num">${esc(r.inParts)}</td>
+    <td class="what">${esc(r.what)}</td></tr>`).join('')}</tbody></table></div>
+</section>`).join('');
+
+$('ns').innerHTML = '<option value="">all</option>' +
+  GROUPS.map(g => `<option value="${esc(g.ns)}">${esc(g.ns)}/</option>`).join('');
+
+// COUNTS ARE DERIVED, NEVER TYPED. The library grows every sync; a number
+// written into the page is wrong the first time it does.
+document.querySelector('[data-counts]').textContent =
+  `${COMPONENTS.length} component majors in ${GROUPS.length} namespaces.`;
+
+// A ROW IS HIDDEN, NOT REMOVED, so the table is built once and a cleared
+// search costs nothing. A section whose every row is hidden goes too: an
+// empty namespace heading reads as a namespace with nothing in it.
+const byTr = new Map();
+{
+  let i = 0;
+  const flat = GROUPS.flatMap(g => g.rows.map(r => [g.ns, r]));
+  for (const tr of document.querySelectorAll('tbody tr')) byTr.set(tr, flat[i++]);
+}
+
+function render() {
+  const q = $('q').value, ns = $('ns').value;
+  let shown = 0;
+  for (const [tr, [rowNs, r]] of byTr) {
+    // catalogMatches reads a component; the row is what is printed, so the
+    // fields it needs are reconstructed from the row rather than kept twice.
+    const on = (!ns || rowNs === ns) && (!q ||
+      `${r.ref} ${r.kind} ${r.cls} ${r.iface} ${r.what}`.toLowerCase().includes(q.toLowerCase()));
+    tr.hidden = !on;
+    if (on) shown++;
+  }
+  // A SECTION'S COUNT SAYS WHAT IS UNDER IT. Unfiltered that is the size of
+  // the namespace, which is what the generator printed and what a reader
+  // comparing the two would look for; narrowed, it says how much of the
+  // namespace survived, because a heading reading (46) over one row describes
+  // a table that is not on the screen.
+  for (const s of document.querySelectorAll('section[data-ns]')) {
+    const here = s.querySelectorAll('tbody tr:not([hidden])').length;
+    s.hidden = !here;
+    const n = s.querySelector('h2 .n'), total = +n.dataset.total;
+    n.textContent = here === total ? `(${total})` : `(${here} of ${total})`;
+  }
+  $('tally').textContent = shown === COMPONENTS.length ? '' : `${shown} shown`;
+}
+$('q').addEventListener('input', render);
+$('ns').addEventListener('change', render);
+render();
+</script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviours a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
+</body>
+</html>

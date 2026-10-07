@@ -39,7 +39,7 @@ HERE = Path(__file__).resolve().parent.parent
 
 PAGES = ["index.html", "explorer.html", "rack.html", "components.html", "annotate.html",
          "exporter.html", "drawio.html", "drawings.html", "schema.html", "kit.html",
-         "kit-frame.html", "contribute.html"]
+         "kit-frame.html", "contribute.html", "components/catalog.html"]
 DIRS = ["site", "brand", "assets", "vendor"]
 SHARED = ["404.html", "_redirects", "favicon.svg", "portrayal-mark.svg", "media"]   # from coming-soon/
 ONLY_FULL = ["_headers", "robots.txt", "schemas"]                                    # from publish/
