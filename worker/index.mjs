@@ -18,6 +18,10 @@
 // the worst this can do is behave like no Worker at all.
 
 const MD = "text/markdown";
+// The site's Content Signals, as publish/robots.txt declares them; sent on the
+// Markdown copy as Cloudflare's own Markdown for Agents does (whose default,
+// with none set, is ai-train=yes). check-contract.py holds the two together.
+export const CONTENT_SIGNAL = "ai-train=no, search=yes, ai-input=yes";
 
 /**
  * The Markdown copy's path for a page path, or null: "/" -> "/index.md",
@@ -76,6 +80,7 @@ async function negotiate(request, env) {
       headers.set("Content-Type", `${MD}; charset=utf-8`);
       // An estimate, as Cloudflare's own is: about four characters a token.
       headers.set("x-markdown-tokens", String(Math.ceil(body.length / 4)));
+      headers.set("Content-Signal", CONTENT_SIGNAL);
       headers.delete("Content-Length");
       headers.delete("ETag");
       withVary(headers);

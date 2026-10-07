@@ -1331,6 +1331,14 @@ check(re.search(r"^User-agent:\s*\S", _rb, re.M | re.I) is not None
       and re.search(r"^Disallow:\s*/\s*$", _rb, re.M | re.I) is None,
       "/robots.txt is served with a User-agent group that allows the site",
       "publish/robots.txt missing, not built, has no User-agent/Allow line, or disallows /")
+# CONTENT SIGNALS (contentsignals.org) in the User-agent: * group, all three
+# declared; the Worker sends the same on each Markdown copy.
+_cs = re.search(r"^User-agent:\s*\*\s*\n(?:(?!User-agent:).*\n)*?Content-Signal:\s*(.+?)\s*$", _rb, re.M | re.I)
+_cw = re.search(r'CONTENT_SIGNAL = "([^"]+)"', (HERE / "worker" / "index.mjs").read_text())
+check(bool(_cs) and {k.split("=")[0].strip() for k in _cs.group(1).split(",")} == {"ai-train", "search", "ai-input"}
+      and bool(_cw) and _cw.group(1) == _cs.group(1),
+      "robots.txt declares Content Signals for ai-train, search and ai-input, and the Worker sends the same",
+      f"robots.txt: {_cs.group(1) if _cs else None!r}, worker: {_cw.group(1) if _cw else None!r}")
 check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.dev/sitemap\.xml\s*$", _rb, re.M | re.I),
       "robots.txt names the sitemap the site serves", "add Sitemap: https://portrayal.dev/sitemap.xml to publish/robots.txt")
 # SITEMAP.XML (sitemaps.org): build-public.py generates it from PAGES, so it
