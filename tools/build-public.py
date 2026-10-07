@@ -9,6 +9,7 @@ assets/exports/ on one machine must not ship from that machine and not from CI.
     tools/build-public.py            build public/ (replacing it)
     tools/build-public.py --out DIR  build somewhere else
     tools/build-public.py --list     print "served-path<TAB>source-path", build nothing
+    tools/build-public.py --sitemap  print the sitemap.xml the build writes
 
 --list is what check-contract.py reads, so the contract checks what will be
 served without copying ~6,600 files to do it.
@@ -21,6 +22,9 @@ WHAT IS SERVED:
     roc-ops/portrayal-site#61). One copy, so a recapture updates both;
   - from publish/, what only the full site has: its _headers, its robots.txt,
     and the JSON schemas at the URLs their $ids name (tools/publish-schemas.sh).
+  - sitemap.xml, generated from PAGES, so a page added or removed there is
+    added to or removed from the sitemap with it. --list names this script as
+    its source.
 coming-soon/ itself stays in the repo, whole, as the rollback: point
 wrangler.jsonc back at it.
 """
@@ -29,6 +33,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 HERE = Path(__file__).resolve().parent.parent
 
@@ -38,6 +43,29 @@ PAGES = ["index.html", "explorer.html", "rack.html", "components.html", "annotat
 DIRS = ["site", "brand", "assets", "vendor"]
 SHARED = ["404.html", "_redirects", "favicon.svg", "portrayal-mark.svg", "media"]   # from coming-soon/
 ONLY_FULL = ["_headers", "robots.txt", "schemas"]                                    # from publish/
+
+SITE = "https://portrayal.dev"
+# Pages served but not listed in the sitemap: kit-frame.html only hosts a kit
+# recipe inside kit.html's iframe, and is not a page to land on.
+NOT_IN_SITEMAP = {"kit-frame.html"}
+
+
+def page_url(page):
+    """The canonical URL of a page: Cloudflare 307s /x.html to /x, which is the 200."""
+    return f"{SITE}/" if page == "index.html" else f"{SITE}/{page[:-len('.html')]}"
+
+
+def sitemap():
+    """sitemap.xml (sitemaps.org protocol). No <lastmod>: the deploy checks out
+    at depth 1, so git cannot say when each page last changed."""
+    urls = "".join(f"  <url><loc>{escape(page_url(p))}</loc></url>\n"
+                   for p in PAGES if p not in NOT_IN_SITEMAP)
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"{urls}</urlset>\n")
+
+
+GENERATED = {"sitemap.xml": sitemap}   # served path -> what writes it
 
 
 def tracked(*paths):
@@ -62,8 +90,12 @@ def manifest():
 
 def main(argv):
     m = manifest()
+    if "--sitemap" in argv:
+        print(sitemap(), end="")
+        return
     if "--list" in argv:
-        for dest, src in sorted(m.items()):
+        rows = {**m, **{dest: "tools/build-public.py" for dest in GENERATED}}
+        for dest, src in sorted(rows.items()):
             print(f"{dest}\t{src}")
         return
     out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else HERE / "public"
@@ -73,7 +105,9 @@ def main(argv):
         target = out / dest
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(HERE / src, target)
-    print(f"{out}: {len(m)} files")
+    for dest, make in GENERATED.items():
+        (out / dest).write_text(make())
+    print(f"{out}: {len(m) + len(GENERATED)} files")
 
 
 if __name__ == "__main__":

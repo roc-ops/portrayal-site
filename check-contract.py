@@ -1311,6 +1311,23 @@ check(re.search(r"^User-agent:\s*\S", _rb, re.M | re.I) is not None
       "publish/robots.txt missing, not built, has no User-agent/Allow line, or disallows /")
 check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.dev/sitemap\.xml\s*$", _rb, re.M | re.I),
       "robots.txt names the sitemap the site serves", "add Sitemap: https://portrayal.dev/sitemap.xml to publish/robots.txt")
+# SITEMAP.XML (sitemaps.org): build-public.py generates it from PAGES, so it
+# follows the pages. Every public page is listed at its canonical URL - the
+# extensionless one Cloudflare serves with a 200, not /x.html, which 307s -
+# and kit-frame.html, which only hosts a recipe in kit.html's iframe, is not.
+import xml.etree.ElementTree as _ET
+_smr = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--sitemap"], capture_output=True, text=True)
+try:
+    _sm = _ET.fromstring(_smr.stdout)
+    _locs = [u.findtext("{http://www.sitemaps.org/schemas/sitemap/0.9}loc") for u in _sm]
+except _ET.ParseError as _e:
+    _sm, _locs = None, [f"unparseable: {_e}"]
+_want = sorted("https://portrayal.dev/" + ("" if d == "index.html" else d[:-5])
+               for d in _srv if d.endswith(".html") and "/" not in d and d not in ("404.html", "kit-frame.html"))
+check("sitemap.xml" in _srv and _sm is not None and _sm.tag == "{http://www.sitemaps.org/schemas/sitemap/0.9}urlset"
+      and sorted(_locs) == _want,
+      "/sitemap.xml lists every public page once, at its canonical extensionless URL",
+      f"want {_want}, got {_locs}")
 # tools/publish-schemas.sh copies in only schemas whose $id matches, and refuses the rest.
 _pub = HERE / "tools" / "publish-schemas.sh"
 def _pubrun(ids):
