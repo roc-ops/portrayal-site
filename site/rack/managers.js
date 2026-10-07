@@ -61,10 +61,12 @@ export function moveItem(rack, id, patch, chassisOf) {
     const f = fits(rack, placed, chassisOf, {ignoreId: id});
     return f.ok ? {ok: true, rack: {...rack, items: rack.items.map(i => (i.id === id ? placed : i))}} : f;
   }
-  const f = fits(rack, next, chassisOf, {ignoreId: id});
-  if (!f.ok) return f;
   const moved = new Map(managersOf(rack, id).map(m => [m.id, {...m, face: next.face, ru: next.ru + m.unit - 1}]));
   const after = {...rack, items: rack.items.map(i => (i.id === id ? next : moved.get(i.id) ?? i))};
+  // The host is checked in the rack as it will be, so its own managers are
+  // already beside it and not at their old places.
+  const f = fits(after, next, chassisOf, {ignoreId: id});
+  if (!f.ok) return f;
   for (const m of moved.values()) {
     const g = fits(after, m, chassisOf, {ignoreId: m.id});
     if (!g.ok) return {ok: false, reason: `${m.label} moves with it: ${g.reason}`};

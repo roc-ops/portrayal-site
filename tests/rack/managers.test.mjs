@@ -4,7 +4,8 @@ import * as M from '../../site/rack/model.js';
 import * as G from '../../site/rack/managers.js';
 
 const SIZES = {'as7726-32x': {ru: 1, h: 43.5, d: 515}, 'r740xd': {ru: 2, h: 86.8, d: 737.5},
-               'fhd-cmp5dr': {ru: 1, h: 44, d: 110, mount: 'rack-face', shell: 'sheet'}};
+               'fhd-cmp5dr': {ru: 1, h: 44, d: 110, mount: 'rack-face', shell: 'sheet'},
+               'tm-280': {ru: 1, h: 43.6, d: 140.5}, 'deep-1u': {ru: 1, h: 44, d: 760}};
 const chassisOf = ref => SIZES[ref] || null;
 const add = (rack, ref, ru, extra = {}) => M.withItem(rack, {ref, cfg: 'x', ru, label: extra.label ?? ref, ...extra}).rack;
 
@@ -60,4 +61,28 @@ test('settleManagers: a missing host detaches; a stale ru follows the host; a no
     'mgr-1 was out of step with leaf, so it moved to U12 with it.',
     'mgr-2: the device it was on is not in this rack, so it stays at U30 on its own.',
     'srv is not a cable manager, so it is not on another device.']);
+});
+
+test('moveItem: a host flipped to the other face is not refused by its own managers (two-post)', () => {
+  let r = add(M.newRack({kind: 'two-post'}), 'tm-280', 5, {label: 'tm'});
+  r = add(r, 'fhd-cmp5dr', 5, {on: 'i1', unit: 1, label: 'mgr'});
+  const m = G.moveItem(r, 'i1', {face: 'rear'}, chassisOf);
+  assert.equal(m.ok, true);
+  assert.deepEqual(m.rack.items.map(i => i.face), ['rear', 'rear']);
+});
+
+test('moveItem: a 760 mm host flipped to the rear carries its manager (four-post)', () => {
+  let r = add(M.newRack(), 'deep-1u', 5, {label: 'deep'});
+  r = add(r, 'fhd-cmp5dr', 5, {on: 'i1', unit: 1, label: 'mgr'});
+  const m = G.moveItem(r, 'i1', {face: 'rear'}, chassisOf);
+  assert.equal(m.ok, true);
+  assert.deepEqual(m.rack.items.map(i => i.face), ['rear', 'rear']);
+});
+
+test('moveItem: a flip is still refused when a manager of its would collide', () => {
+  let r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'});
+  r = add(r, 'fhd-cmp5dr', 10, {on: 'i1', unit: 1, label: 'mgr-a'});
+  r = add(r, 'fhd-cmp5dr', 10, {face: 'rear', label: 'mgr-b'});
+  assert.deepEqual(G.moveItem(r, 'i1', {face: 'rear'}, chassisOf),
+    {ok: false, reason: 'mgr-a moves with it: Taken by mgr-b on the rear.'});
 });
