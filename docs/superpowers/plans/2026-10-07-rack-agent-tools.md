@@ -27,7 +27,7 @@
 - Agent edits go only through `ed.apply(cmds, {origin: 'agent'})` or `ed.preview(cmds)`. Agents can never send `lengths.routed`, any `system: true` command, or `dcim`.
 - Tools never return a document, an SVG, or a file body, and never touch the rack library or `localStorage`.
 - No third-party CDN at runtime. MCP-B files are served from `vendor/mcp-b/` and loaded only when the switch is on. The one exception is the jsDelivr-with-SRI fallback, and only if Task 1 shows self-hosting fails.
-- The origin-trial `<meta>` goes in only once Jason supplies a real token. Don't commit a dummy token.
+- The origin-trial token is Jason's, issued 2026-10-07 for WebMCP on `https://portrayal.dev` and its subdomains, expiring 2027-03-30. It goes in exactly as given in Task 8.
 - Copy (spec §4.3, §5):
   - Notice prefix `Your assistant: `
   - Privacy line `Your AI runs on your computer and talks to this page directly. portrayal.dev sees nothing of it.`
@@ -1389,18 +1389,18 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 8: End to end with a real desktop agent, then land
 
 **Files:**
-- Modify: `rack.html` (the origin-trial `<meta>`, only if Jason has supplied the token)
+- Modify: `rack.html` (the origin-trial `<meta>`)
 - No other code. The PR description holds the evidence.
 
-- [ ] **Step 1: The origin-trial token, if there is one**
+- [ ] **Step 1: The origin-trial token**
 
-If Jason has given a token for `https://portrayal.dev`, add it to `rack.html`'s `<head>`, after the charset meta:
+Add Jason's token (WebMCP, `https://portrayal.dev` plus subdomains, expires 2027-03-30) to `rack.html`'s `<head>`, after the charset meta:
 
 ```html
-<meta http-equiv="origin-trial" content="TOKEN_FROM_JASON">
+<meta http-equiv="origin-trial" content="Amdycj0Hm1F0BFOJdkxk/Iz+qBnChZzK4o+lOvdLiIo9OUbBRWYopD7bJRu/awgvyIlLhwb/cXXlJSzu9CKQOAwAAABgeyJvcmlnaW4iOiJodHRwczovL3BvcnRyYXlhbC5kZXY6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMCwiaXNTdWJkb21haW4iOnRydWV9">
 ```
 
-If there's no token yet, skip this step and say so in the PR. Don't add an empty or dummy tag.
+It doesn't apply on `localhost`, so the local run in Step 2 still goes through the relay. Before 2027-03-30, either renew it or, if WebMCP has shipped in stable, remove it.
 
 - [ ] **Step 2: Run the real thing locally**
 
@@ -1436,7 +1436,7 @@ Implements docs/superpowers/specs/2026-10-07-rack-agent-tools-design.md (plan: d
 - An agent's edits are named in the notice ("Your assistant: ...") and outlined for 3 seconds; Undo works as for any step
 - runExport returns {name, notes} | {error} (the menu ignores it)
 
-Origin-trial token: <added | not yet - Jason to register portrayal.dev>
+Origin-trial token: added (WebMCP, portrayal.dev + subdomains, expires 2027-03-30)
 
 End-to-end run (Claude Code through the relay): <transcript summary and the NetBox zip's file list>
 
