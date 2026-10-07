@@ -1299,6 +1299,18 @@ check({"schemas/v1/device.schema.json", "schemas/v1/component.schema.json"} <= s
 for _rel in _schemas:
     check(json.loads(_srv[_rel].read_text()).get("$id") == f"https://portrayal.dev/{_rel}",
           f"{_rel}: its $id is the URL it is served at", f"$id {json.loads(_srv[_rel].read_text()).get('$id')!r}")
+# ROBOTS.TXT (RFC 9309): a real group, not only comments. Cloudflare's managed
+# robots.txt is comments alone, so without this file agent-readiness scanners
+# (isitagentready.com) find no User-agent and fail it. A sitemap, once served,
+# is named in it.
+_rb = _srv["robots.txt"].read_text() if "robots.txt" in _srv else ""
+check(re.search(r"^User-agent:\s*\S", _rb, re.M | re.I) is not None
+      and re.search(r"^(Allow|Disallow):", _rb, re.M | re.I) is not None
+      and re.search(r"^Disallow:\s*/\s*$", _rb, re.M | re.I) is None,
+      "/robots.txt is served with a User-agent group that allows the site",
+      "publish/robots.txt missing, not built, has no User-agent/Allow line, or disallows /")
+check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.dev/sitemap\.xml\s*$", _rb, re.M | re.I),
+      "robots.txt names the sitemap the site serves", "add Sitemap: https://portrayal.dev/sitemap.xml to publish/robots.txt")
 # tools/publish-schemas.sh copies in only schemas whose $id matches, and refuses the rest.
 _pub = HERE / "tools" / "publish-schemas.sh"
 def _pubrun(ids):

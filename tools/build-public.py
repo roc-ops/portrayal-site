@@ -19,8 +19,8 @@ WHAT IS SERVED:
     page, the old-path redirects, the root favicon and mark the 404 page uses,
     and media/, whose URLs are permanent (the Portrayal README links the video,
     roc-ops/portrayal-site#61). One copy, so a recapture updates both;
-  - from publish/, what only the full site has: its _headers, and the JSON
-    schemas at the URLs their $ids name (tools/publish-schemas.sh).
+  - from publish/, what only the full site has: its _headers, its robots.txt,
+    and the JSON schemas at the URLs their $ids name (tools/publish-schemas.sh).
 coming-soon/ itself stays in the repo, whole, as the rollback: point
 wrangler.jsonc back at it.
 """
@@ -37,7 +37,7 @@ PAGES = ["index.html", "explorer.html", "rack.html", "components.html", "annotat
          "kit-frame.html", "contribute.html"]
 DIRS = ["site", "brand", "assets", "vendor"]
 SHARED = ["404.html", "_redirects", "favicon.svg", "portrayal-mark.svg", "media"]   # from coming-soon/
-ONLY_FULL = ["_headers", "schemas"]                                                  # from publish/
+ONLY_FULL = ["_headers", "robots.txt", "schemas"]                                    # from publish/
 
 
 def tracked(*paths):
