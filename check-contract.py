@@ -1347,6 +1347,33 @@ for _n in range(1, 13):
 check(not _split_bad,
       "check-browser: --shard i/n deals every unit to exactly one shard, the same way each time, for n = 1 to 12",
       "; ".join(_split_bad))
+# `--only <name>` is how one check is verified while it is being written, and a
+# name that matched no registered @extra used to run nothing and exit 0 - a
+# green run that had asserted nothing. The same false green as a unit in no
+# shard, reached by a typo instead, so it is held here too.
+_only_bad = []
+# The first case is only a case while that name is still a function here and
+# still not an @extra; a rename that left it meaningless would otherwise pass.
+if "check_hero_3d" in _registered or not callable(getattr(_cb, "check_hero_3d", None)):
+    _only_bad.append("check_hero_3d is no longer a non-@extra function in check-browser.py - "
+                     "name one that is")
+for _arg, _why in [("check_hero_3d", "a function in the file that is not an @extra"),
+                   ("totally_bogus_name_xyz", "a name that is nothing at all"),
+                   ("", "--only with no name")]:
+    try:
+        _cb.parse_only(_arg)
+        _only_bad.append(f"accepted {_why}")
+    except SystemExit:
+        pass
+_pair = _registered[:2]
+try:
+    if _cb.parse_only(",".join(_pair)) != set(_pair):
+        _only_bad.append("a pair of registered names did not come back as itself")
+except SystemExit as _e:
+    _only_bad.append(f"refused the registered {_pair}: {_e}")
+check(not _only_bad,
+      "check-browser: --only refuses a name that is no registered @extra, and still takes the ones that are",
+      "; ".join(_only_bad))
 # main() guards each block with want(<unit>): every hand-wired unit has its
 # guard, the page loop and the extras take theirs from the same set, and a
 # name that is not a unit raises rather than reading as "not mine".

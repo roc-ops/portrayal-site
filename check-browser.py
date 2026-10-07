@@ -33,6 +33,7 @@ CI runs the same checks split across parallel jobs, `--shard 1/4` to `--shard
 import argparse
 import contextlib
 import csv
+import difflib
 import html
 import io
 import json
@@ -9506,6 +9507,47 @@ def parse_shard(text):
     return i, n
 
 
+def parse_only(text):
+    """The set of @extra function names `--only` asks for, or SystemExit naming
+    the ones it could not find.
+
+    A NAME THAT MATCHES NO REGISTERED CHECK USED TO RUN NOTHING AND EXIT 0,
+    which reads exactly like the check passing. `--only` is how a single check
+    is verified while it is being written, so both ways of getting the name
+    wrong - a typo, and the name of a check that main() runs as part of the page
+    sweep rather than as a registered @extra - handed back a green run that had
+    asserted nothing. One unmatched name fails the run even when others match:
+    the caller asked for that check, and running its neighbors instead is the
+    same false green in a smaller way.
+    """
+    names = [n for n in (t.strip() for t in (text or "").split(",")) if n]
+    known = {fn.__name__ for _, fn in EXTRA_CHECKS}
+    if not names:
+        raise SystemExit("check-browser: --only names no check - give one or more "
+                         "@extra function names, comma-separated")
+    missing = []
+    for name in names:
+        if name in known:
+            continue
+        # A name this file does define beats any near match: a check main() runs
+        # itself, like the hero's 3D block, is the confusing case, and "did you
+        # mean" about it would send the reader hunting a typo they did not make.
+        if callable(globals().get(name)):
+            missing.append(f"  {name} - defined in this file but not registered with @extra, "
+                           "so --only cannot reach it; the whole pass runs it")
+        elif near := difflib.get_close_matches(name, sorted(known), n=3):
+            missing.append(f"  {name} - no such check; did you mean {', '.join(near)}?")
+        else:
+            missing.append(f"  {name} - no such check")
+    if missing:
+        raise SystemExit("\n".join(
+            [f"check-browser: --only asks for {len(missing)} check(s) that are not registered:"]
+            + missing
+            + ["  the names --only takes are this file's @extra functions; "
+               "`--plan 1` lists every unit of the whole pass"]))
+    return set(names)
+
+
 @extra("rack.html: DCIM import settings - a panel form from the Export menu stores the site and role in the rack file with one real click on Done; Esc and Cancel discard; an old file is unchanged")
 def check_rack_dcim_settings(page, base):
     bad = []
@@ -10330,6 +10372,9 @@ def main():
         return 0
     if args.shard and args.only:
         raise SystemExit("check-browser: --shard and --only both choose what runs; give one")
+    # Read here, next to --shard and before any server or browser starts, so a
+    # name that matches nothing costs a second rather than a browser launch.
+    only = parse_only(args.only) if args.only is not None else None
 
     # WHAT THIS RUN DOES: everything, unless it is one shard of several.
     mine = None
@@ -10364,8 +10409,7 @@ def main():
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
             CLOCK[0] = time.time()
-            only = set(filter(None, (args.only or "").split(",")))
-            if only:
+            if only is not None:
                 failed_things += run_extra(browser, base, only, problems, notes)
                 browser.close()
                 for line in notes + problems:
