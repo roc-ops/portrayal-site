@@ -65,6 +65,18 @@ test('withCable allocates c ids, copies the ends, and omits an unset length', ()
   assert.deepEqual(C.withoutCable(r2, 'c1').cables.map(c => c.id), ['c2']);
 });
 
+test('updateCable patching route drops routeAsWritten', () => {
+  let r = rack();
+  const cable = M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i2', path: 'q'},
+    route: [{item: 'i1', via: 'g1'}], routeAsWritten: [{item: 'i1', via: 'g1'}, {bad: 'x'}]}])[0];
+  r = {...r, cables: [cable]};
+  const updated = C.updateCable(r, 'c1', {route: [{item: 'i2', via: 'g2'}]}).cables[0];
+  assert.deepEqual(updated.route, [{item: 'i2', via: 'g2'}]);
+  assert.equal('routeAsWritten' in updated, false, 'patching route drops routeAsWritten');
+  const unpatched = C.updateCable(r, 'c1', {label: 'new'}).cables[0];
+  assert.deepEqual(unpatched.routeAsWritten, cable.routeAsWritten, 'not patching route leaves routeAsWritten alone');
+});
+
 test('one cable per port: a taken port is refused with a sentence that names the device, its U and the cable', () => {
   const {rack: r} = C.withCable(rack(), {a: end('i2', 'port-1'), b: end('i3', 'port-2-1'), label: 'A1'});
   assert.deepEqual(C.portFree(r, end('i2', 'port-2')), {ok: true});

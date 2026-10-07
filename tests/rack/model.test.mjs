@@ -199,3 +199,33 @@ test('a routed length keeps its measurement', () => {
   const [c] = M.readCables([{id: 'c1', a: {}, b: {}, length: {value: 2, unit: 'm', source: 'routed', measured: 1.62}}]);
   assert.deepEqual(c.length, {value: 2, unit: 'm', source: 'routed', measured: 1.62});
 });
+
+test('parse → JSON.stringify → parse keeps routeAsWritten', () => {
+  let d = M.newDoc();
+  const {rack} = M.withItem(d.racks[0], {ref: 'r740xd', cfg: 'sff24-rc5-1b2a3a', ru: 10});
+  const cable = M.readCables([{id: 'c1', a: {item: 'i1'}, b: {item: 'i2'},
+    route: [{item: 'i1', via: 'g1'}, {bad: 'entry'}, {lane: 'L', ru: 5}]}])[0];
+  d = {...d, racks: [{...rack, cables: [cable]}]};
+  const restored = M.parseDoc(M.serialize(d)).racks[0].cables[0];
+  assert.deepEqual(restored.route, cable.route);
+  assert.deepEqual(restored.routeAsWritten, cable.routeAsWritten);
+});
+
+test('a file whose route differs from routeAsWritten readable entries drops it', () => {
+  // The readable entries of routeAsWritten are {i2, g2} and {L, 6}, but route shows {i1, g1}.
+  // Since they differ, routeAsWritten is stale and should be dropped.
+  const [c] = M.readCables([{id: 'c1', a: {}, b: {},
+    route: [{item: 'i1', via: 'g1'}],
+    routeAsWritten: [{item: 'i2', via: 'g2'}, {bad: 'x'}, {lane: 'L', ru: 6}]}]);
+  assert.equal('routeAsWritten' in c, false, 'stale routeAsWritten is dropped');
+});
+
+test('a file whose routeAsWritten readable entries match the route keeps it', () => {
+  // The readable entries of routeAsWritten are {i1, g1} and {L, 5}, matching route.
+  // It is kept because nothing has been edited since it was written.
+  const [c] = M.readCables([{id: 'c1', a: {}, b: {},
+    route: [{item: 'i1', via: 'g1'}, {lane: 'L', ru: 5}],
+    routeAsWritten: [{item: 'i1', via: 'g1'}, {bad: 'x'}, {lane: 'L', ru: 5}]}]);
+  assert.deepEqual(c.route, [{item: 'i1', via: 'g1'}, {lane: 'L', ru: 5}]);
+  assert.deepEqual(c.routeAsWritten, [{item: 'i1', via: 'g1'}, {bad: 'x'}, {lane: 'L', ru: 5}]);
+});

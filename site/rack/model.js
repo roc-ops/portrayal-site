@@ -167,6 +167,16 @@ const readRoute = r => {
   const kept = list.filter(isWaypoint).map(w => ('lane' in w ? {lane: w.lane, ru: w.ru} : {item: w.item, via: w.via}));
   return kept.length === list.length ? {route: kept} : {route: kept, routeAsWritten: structuredClone(list)};
 };
+// Extract readable waypoints from routeAsWritten: if they match the cleaned route,
+// the routeAsWritten is still valid (nothing has been edited since it was written).
+const readableFromRouteAsWritten = raw => {
+  const list = Array.isArray(raw) ? raw : [];
+  return list.filter(isWaypoint).map(w => ('lane' in w ? {lane: w.lane, ru: w.ru} : {item: w.item, via: w.via}));
+};
+const routesEqual = (a, b) => a.length === b.length && a.every((w, i) =>
+  ('lane' in w ? 'lane' in b[i] && w.lane === b[i].lane && w.ru === b[i].ru
+               : 'item' in b[i] && w.item === b[i].item && w.via === b[i].via));
+
 
 // CABLES ARE NEVER DROPPED ON LOAD (spec §9.3: a cable is never silently
 // deleted). A cable that names a missing item, an unknown media or no port at
@@ -208,10 +218,25 @@ export function readCables(list) {
       ? {...len, value, unit: len.unit ?? 'm', source: String(len.source ?? 'entered')}
       : null;
     const routeEdited = c.routeEdited;
+    const incomingRouteAsWritten = c.routeAsWritten;
     delete c.routeEdited; delete c.routeAsWritten;
+
+    // readRoute normalizes the route, potentially producing its own routeAsWritten.
+    // If it does, use that. Otherwise, if the incoming routeAsWritten is an array
+    // and its readable waypoints equal the normalized route, keep it (it's still valid).
+    const {route, routeAsWritten: newRouteAsWritten} = readRoute(c.route);
+    let routeAsWritten = newRouteAsWritten;
+    if (!routeAsWritten && Array.isArray(incomingRouteAsWritten)) {
+      const readable = readableFromRouteAsWritten(incomingRouteAsWritten);
+      if (routesEqual(readable, route)) {
+        routeAsWritten = structuredClone(incomingRouteAsWritten);
+      }
+    }
+
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
-              ...readRoute(c.route), ...(routeEdited === true ? {routeEdited: true} : {}),
+              route, ...(routeAsWritten ? {routeAsWritten} : {}),
+              ...(routeEdited === true ? {routeEdited: true} : {}),
               ...(length ? {length} : len == null ? {} : {lengthAsWritten: len})});
   }
   return out;

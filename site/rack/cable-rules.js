@@ -69,11 +69,14 @@ export function withCable(rack, {a, b, media = '', purpose = '', label = '', len
 // setting or clearing it, and that replaces a length the loader kept as
 // written (model.js `lengthAsWritten`); a patch that does not name it leaves
 // both as they are.
+// Similarly, a patch that names the route replaces what was written (model.js
+// `routeAsWritten`); a patch that does not name it leaves both as they are.
 export function updateCable(rack, id, patch) {
   return {...rack, cables: (rack.cables || []).map(c => {
     if (c.id !== id) return c;
     const next = {...c, ...patch};
     if (Object.hasOwn(patch, 'length')) delete next.lengthAsWritten;
+    if (Object.hasOwn(patch, 'route')) delete next.routeAsWritten;
     if (next.length == null) delete next.length;
     return next;
   })};
