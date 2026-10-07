@@ -862,6 +862,18 @@ NO_WEBGL_JS = """(() => {
 
 HERO_3D_CAPTION = '#hero-caption-3d'
 
+# HOW LONG THE RENDER LOOP HAS TO NOTICE A SCROLL. The hero's loop is paused and
+# resumed by an IntersectionObserver callback (site/hero-3d.js), and a callback
+# like that is delivered with a rendering frame - so what the pause step waits
+# for is a frame of this scene, not the scroll. On a runner that draws a whole
+# switch through software WebGL on two CPUs, that frame can take the better part
+# of a second: a fixed 600 ms wait before the assertion is what failed `browser
+# (4 of 4)` with "the render loop did not resume on screen" in
+# roc-ops/portrayal-site#114, on a branch that touches nothing the hero renders,
+# and the same shard passed on a re-run with no change at all. This is the
+# ceiling for a poll, not an expected wait: locally the loop settles in a frame.
+HERO_3D_SEEN_MS = 10000
+
 # WHEN EACH HERO STARTED, on the page's own clock: `cables` when the 2D hero
 # first had a cable in it, `build` when the 3D panel first had a canvas or its
 # no-WebGL note - i.e. when the 3D build began. The 3D build waits for the 2D
@@ -1083,13 +1095,36 @@ def check_hero_3d(browser, base):
 
             def pause():
                 if not ready[0]: bad.append("hero 3D: pause - the scene never built"); return
+
+                def settles(want):
+                    """Poll until the render loop is running, or stopped, as
+                    `want` says; False if it never gets there. A poll rather
+                    than one wait of HERO_3D_SEEN_MS, so a healthy run costs the
+                    frame it actually takes and only a real break costs the
+                    whole ceiling."""
+                    end = time.monotonic() + HERO_3D_SEEN_MS / 1000
+                    while True:
+                        if page.evaluate("() => window.__hero3d.running()") == want:
+                            return True
+                        if time.monotonic() >= end:
+                            return False
+                        page.wait_for_timeout(50)
+
                 page.evaluate("() => window.scrollTo(0, document.documentElement.scrollHeight)")
-                page.wait_for_timeout(600)
-                if page.evaluate("() => window.__hero3d.running()"):
+                stopped = settles(False)
+                # STOPPED ONCE IS NOT STOPPED. Waiting for a condition is the
+                # right shape for the resume below, where the loop only ever
+                # starts, but a loop that paused and then set itself going again
+                # off screen would satisfy the wait above and still be exactly
+                # the break this assertion is here to catch. So give it the
+                # 600 ms this step used to wait and look a second time.
+                if stopped:
+                    page.wait_for_timeout(600)
+                    stopped = not page.evaluate("() => window.__hero3d.running()")
+                if not stopped:
                     bad.append("hero 3D: the render loop runs with the panel off screen")
                 page.locator('#hero-3d').scroll_into_view_if_needed()
-                page.wait_for_timeout(600)
-                if not page.evaluate("() => window.__hero3d.running()"):
+                if not settles(True):
                     bad.append("hero 3D: the render loop did not resume on screen")
             step("pause off screen", pause)
     except Exception as e:
