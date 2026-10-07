@@ -52,3 +52,25 @@ test('a batch of no-ops is a no-op; a dcim-only batch is not a step', () => {
   const d = apply(rack, {op: 'dcim', site: 'dc1'}, ctx);
   assert.deepEqual([d.noop, d.step], [false, false]);
 });
+
+test('the step summary names only what is a step', () => {
+  const r = apply(M.newRack(), [{op: 'dcim', site: 'dc1'}, {op: 'rename', name: 'Core'}], ctx);
+  assert.equal(r.summary, 'Renamed the rack to Core.');
+  assert.equal(r.step, true);
+});
+
+test('cable.route arguments: a waypoint is an object, both halves of one shape', () => {
+  const rack = {...M.newRack(), cables: [{id: 'c1', a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i2', path: 'p', view: 'front'},
+                                         media: '', purpose: '', label: '', route: []}]};
+  const R = route => apply(rack, {op: 'cable.route', id: 'c1', route}, ctx);
+  assert.deepEqual(R([null]), {error: 'cable.route needs route.0, an object.', index: 0});
+  assert.deepEqual(R([{item: 'i1'}]), {error: 'cable.route needs route.0.via, some text.', index: 0});
+  assert.deepEqual(R([{lane: 'left-front'}]), {error: 'cable.route needs route.0.ru, a whole number.', index: 0});
+  assert.deepEqual(R([{lane: 'left-front', ru: 2, x: 1}]), {error: 'cable.route does not take route.0.x.', index: 0});
+  assert.equal(R([{lane: 'left-front', ru: 2}]).rack.cables[0].route.length, 1);
+});
+
+test('frame height is at most 100U', () => {
+  assert.deepEqual(apply(M.newRack(), {op: 'frame', heightRU: 101}, ctx), {error: 'frame needs heightRU, a whole number from 1 to 100.', index: 0});
+  assert.equal(apply(M.newRack(), {op: 'frame', heightRU: 100}, ctx).rack.frame.heightRU, 100);
+});

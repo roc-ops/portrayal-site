@@ -5,11 +5,11 @@
 // and {chassisOf} in, a new rack out - and says no with a sentence. One that
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
-import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf} from './model.js';
+import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint} from './model.js';
 import {fits, isRackFace, heightOf, shrinkRack} from './fit.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, withoutCable, cablesOf, withoutCablesOf, cableName, MEDIA} from './cable-rules.js';
-import {validate} from './validate.js';
+import {validate, same} from './validate.js';
 import {withRoutedLengths} from './route.js';
 
 export const GONE = 'That device is no longer in the rack.';
@@ -17,7 +17,6 @@ export const CABLE_GONE = 'That cable is no longer in the rack.';
 export const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
 export const CLEARED = 'Your Explorer changes were for the old configuration, so they were cleared.';
 
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const itemOf = (rack, id) => rack.items.find(i => i.id === id) || null;
 const cableOf = (rack, id) => (rack.cables || []).find(c => c.id === id) || null;
 const at = (rack, item, chassisOf) => `U${positionOf(rack.frame, item.ru, heightOf(chassisOf)(item))}`;
@@ -25,9 +24,15 @@ const done = (rack, summary, extra = {}) => ({rack, summary, findings: [], ...ex
 const unchanged = rack => done(rack, '');
 const note = text => ({kind: 'note', text});
 const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+// fits() measures a device against the top by the Us it has left there, which
+// reads oddly for a U past the top altogether; an agent can ask for any U.
+const pastTop = (rack, ru) => (ru != null && ru > rack.frame.heightRU
+  ? {error: `U${ru} is past the top of this ${rack.frame.heightRU}U rack.`} : null);
 
 // ── items ───────────────────────────────────────────────────────────────
 function place(rack, {ref, cfg, face, ru, label}, {chassisOf}) {
+  const top = pastTop(rack, ru);
+  if (top) return top;
   const c = chassisOf(ref);
   const spot = isRackFace(c) ? placement(rack, {face, ru}, chassisOf) : {face, ru};
   const f = fits(rack, {ref, ...spot}, chassisOf);
@@ -40,6 +45,8 @@ function place(rack, {ref, cfg, face, ru, label}, {chassisOf}) {
 function move(rack, {id, ru, face}, {chassisOf}) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
+  const top = pastTop(rack, ru);
+  if (top) return top;
   const patch = {...(ru == null ? {} : {ru}), ...(face == null ? {} : {face})};
   if (Object.entries(patch).every(([k, v]) => it[k] === v)) return unchanged(rack);
   // Through managers.js: a manager is re-hosted by where it lands, and a host
@@ -52,9 +59,13 @@ function move(rack, {id, ru, face}, {chassisOf}) {
 
 // A configuration change is a delta against the OLD configuration: one that
 // leaves an item with no swaps or fields to carry forward says they went.
-function patch(rack, {id, ...p}) {
+function patch(rack, {id, ...given}) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
+  // The rack keeps its own copy, as withItem does: a caller that goes on to
+  // change the object it passed changes neither the rack nor its history.
+  const p = {...given, ...('swaps' in given ? {swaps: {...given.swaps}} : {}),
+             ...('fields' in given ? {fields: structuredClone(given.fields)} : {})};
   const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
     .filter(k => k in p && !same(p[k], it[k])).map(k => [k, p[k]]));
   if (!Object.keys(changes).length) return unchanged(rack);
@@ -167,8 +178,10 @@ function cableRemove(rack, {id}) {
 function cableRoute(rack, {id, route, summary}) {
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
+  const bad = route.findIndex(w => !isWaypoint(w));
+  if (bad >= 0) return {error: `Waypoint ${bad + 1} is neither a pathway nor a gutter.`};
   if (c.routeEdited === true && same(c.route ?? [], route) && !('routeAsWritten' in c)) return unchanged(rack);
-  return done(updateCable(rack, id, {route, routeEdited: true}), summary ?? `Routed cable ${cableName(c)} by hand.`);
+  return done(updateCable(rack, id, {route: structuredClone(route), routeEdited: true}), summary ?? `Routed cable ${cableName(c)} by hand.`);
 }
 function cableRouteReset(rack, {id, summary}) {
   const c = cableOf(rack, id);
@@ -181,8 +194,11 @@ function cableRouteReset(rack, {id, summary}) {
 // render and stores them here, so this is not an undo step and is not offered
 // to agents. `routeCtx` is that render's routing context (route-context.js
 // routeFacts().ctx), whose readers are functions.
+// A context that cannot measure (a reader missing or throwing) is refused, not
+// thrown: the editor is the page's and an agent's alike.
 function lengthsRouted(rack, {routeCtx}) {
-  const next = withRoutedLengths(rack, routeCtx);
+  let next;
+  try { next = withRoutedLengths(rack, routeCtx); } catch { return {error: 'The routed lengths could not be measured.'}; }
   return next === rack ? unchanged(rack) : done(next, 'Measured the routed lengths.');
 }
 
@@ -206,6 +222,13 @@ const CABLE_FIELDS = {
   purpose: {type: 'string', description: 'What the cable is for, in a word or two (e.g. uplink, management).'},
   label: {type: 'string', description: 'The text on its tags. Its id is used when there is none.'},
   length: LENGTH};
+const WAYPOINT = {type: 'object', additionalProperties: false,
+  description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
+  properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
+               via: {type: 'string', minLength: 1, description: "The pathway on that device's drawing, such as a ring or a duct, with item."},
+               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru.'},
+               ru: {type: 'integer', description: 'The U the gutter is crossed at, with lane.'}},
+  dependentRequired: {item: ['via'], via: ['item'], lane: ['ru'], ru: ['lane']}};
 const SUMMARY = {type: 'string', description: 'How the step is described in Undo and the notice; the page sets it.'};
 const args = (required, properties) => ({type: 'object', required, additionalProperties: false,
                                          properties: {...properties, rack: RACK}});
@@ -231,7 +254,7 @@ export const COMMANDS = {
     args: args(['id'], {id: ID('cable manager')})},
   frame: {run: frame, description: 'Change the rack frame. A lower height packs devices down and removes from the bottom what still does not fit; their cables are kept as loose ends.',
     args: args([], {kind: {enum: ['four-post', 'two-post'], description: 'four-post or two-post.'},
-      heightRU: {type: 'integer', minimum: 1, description: 'How many U tall.'},
+      heightRU: {type: 'integer', minimum: 1, maximum: 100, description: 'How many U tall, from 1 to 100.'},
       numbering: {enum: ['bottom-up', 'top-down'], description: 'Which way the U labels count.'},
       holes: {type: 'object', additionalProperties: false, description: 'The rail holes.',
         properties: {style: {enum: ['square', 'tapped'], description: 'square or tapped.'},
@@ -248,7 +271,8 @@ export const COMMANDS = {
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},
   'cable.route': {run: cableRoute, description: 'Route a cable by hand through the waypoints given, in order. Its routed length follows.',
     args: args(['id', 'route'], {id: ID('cable'),
-      route: {type: 'array', description: 'The waypoints, in order: {item, via} for a pathway on a device, {lane, ru} for a gutter at a U.'},
+      route: {type: 'array', description: 'The waypoints, in order: {item, via} for a pathway on a device, {lane, ru} for a gutter at a U.',
+        items: WAYPOINT},
       summary: SUMMARY})},
   'cable.route.reset': {run: cableRouteReset, description: 'Drop a hand-made route; the cable takes its own route again.',
     args: args(['id'], {id: ID('cable'), summary: SUMMARY})},
@@ -261,7 +285,7 @@ export const COMMANDS = {
 const typeWord = s => {
   if (s.enum) return `one of ${s.enum.filter(v => v !== null && v !== '').join(', ')}`;
   const t = [].concat(s.type ?? []).find(x => x !== 'null');
-  return {integer: `a whole number${s.minimum != null ? ` from ${s.minimum}` : ''}`,
+  return {integer: `a whole number${s.minimum != null ? ` from ${s.minimum}` : ''}${s.maximum != null ? ` to ${s.maximum}` : ''}`,
           number: `a number${s.exclusiveMinimum === 0 ? ' above 0' : ''}`, string: 'some text',
           boolean: 'true or false', object: 'an object', array: 'a list'}[t] || 'a value';
 };
@@ -315,8 +339,10 @@ export function apply(rack, cmds, ctx) {
     const {as, rack: _which, ...a} = r.cmd;
     const res = def.run(cur, a, ctx);
     if (res.error) return {error: res.error, index};
-    if (res.rack !== cur) {
-      if (def.step !== false) step = true;
+    // Undo describes the step, and Undo keeps what is not a step (the DCIM
+    // settings), so only a step's summary is part of it.
+    if (res.rack !== cur && def.step !== false) {
+      step = true;
       if (res.summary) summaries.push(res.summary);
     }
     findings.push(...res.findings);

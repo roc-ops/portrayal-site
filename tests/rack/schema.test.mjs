@@ -56,3 +56,11 @@ test('on without unit, a bad face and a bad version are refused', () => {
   assert.ok(errs(d).some(e => e.startsWith('enum')));
   assert.ok(errs({...M.newDoc(), version: 3}).some(e => e.startsWith('const')));
 });
+
+test('a waypoint is both halves of one shape', () => {
+  const W = {$ref: '#/$defs/waypoint', $defs: SCHEMA.$defs};
+  assert.deepEqual(validate(W, {item: 'i1', via: 'ring-1'}), []);
+  assert.deepEqual(validate(W, {lane: 'left-front', ru: 4}), []);
+  assert.deepEqual(validate(W, {item: 'i1'}).map(e => [e.keyword, e.missing]), [['dependentRequired', 'via']]);
+  assert.deepEqual(validate(W, {ru: 4}).map(e => [e.keyword, e.missing]), [['dependentRequired', 'lane']]);
+});

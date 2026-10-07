@@ -159,3 +159,53 @@ test('lengths.routed is a system command that is not a step', () => {
   const r = add(M.newRack(), 'as7726-32x', 10);
   assert.equal(run('lengths.routed', r, {routeCtx: {}}).rack, r);
 });
+
+test('the same swaps in another key order, or a length as the loader wrote it, change nothing', () => {
+  const r = add(M.newRack(), 'r740xd', 10, {label: 'Srv', swaps: {x: 'a', y: 'b'}});
+  assert.equal(run('patch', r, {id: 'i1', swaps: {y: 'b', x: 'a'}}).rack, r);
+  let c = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  c = {...c, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: [],
+                       length: {unit: 'm', value: 3, source: 'entered'}}]};
+  assert.equal(run('cable.update', c, {id: 'c1', length: {value: 3}}).rack, c);
+});
+
+test('cable.route refuses an entry that is neither a pathway nor a gutter', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: []}]};
+  assert.deepEqual(run('cable.route', r, {id: 'c1', route: [{lane: 'left-front', ru: 4}, {}]}),
+                   {error: 'Waypoint 2 is neither a pathway nor a gutter.'});
+  assert.deepEqual(run('cable.route', r, {id: 'c1', route: [null]}), {error: 'Waypoint 1 is neither a pathway nor a gutter.'});
+  assert.deepEqual(run('cable.route', r, {id: 'c1', route: [{lane: 'left-front', ru: 1.5}]}),
+                   {error: 'Waypoint 1 is neither a pathway nor a gutter.'});
+});
+
+test('a command keeps its own copy of what the caller passed', () => {
+  const r = add(M.newRack(), 'r740xd', 10, {label: 'Srv'});
+  const swaps = {'slot-1': 'a'}, fields = {f: {text: 'x'}};
+  const p = run('patch', r, {id: 'i1', swaps, fields});
+  const was = structuredClone(p.rack);
+  swaps['slot-1'] = 'b'; fields.f.text = 'y';
+  assert.deepEqual(p.rack, was);
+  let c = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  c = {...c, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: []}]};
+  const route = [{lane: 'left-front', ru: 15}];
+  const s = run('cable.route', c, {id: 'c1', route});
+  route[0].ru = 99; route.push({lane: 'left-front', ru: 1});
+  assert.deepEqual(s.rack.cables[0].route, [{lane: 'left-front', ru: 15}]);
+  const a = {item: 'i1', path: 'port-2', view: 'front'};
+  const added = run('cable.add', c, {a, b: end('i2', 'port-2')});
+  a.path = 'port-9';
+  assert.equal(added.rack.cables[1].a.path, 'port-2');
+});
+
+test('place and move above the top of the rack say so', () => {
+  const r = add(M.newRack(), 'as7726-32x', 10, {label: 'leaf'});
+  assert.deepEqual(run('place', r, {ref: 'as7726-32x', face: 'front', ru: 99}), {error: 'U99 is past the top of this 42U rack.'});
+  assert.deepEqual(run('move', r, {id: 'i1', ru: 43}), {error: 'U43 is past the top of this 42U rack.'});
+});
+
+test('lengths.routed refuses a routing context it cannot measure with', () => {
+  let r = add(add(M.newRack(), 'as7726-32x', 10), 'as7726-32x', 20);
+  r = {...r, cables: [{id: 'c1', a: end('i1'), b: end('i2'), media: '', purpose: '', label: '', route: []}]};
+  assert.deepEqual(run('lengths.routed', r, {routeCtx: {}}), {error: 'The routed lengths could not be measured.'});
+});

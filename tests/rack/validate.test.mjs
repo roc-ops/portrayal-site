@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validate} from '../../site/rack/validate.js';
+import {validate, same} from '../../site/rack/validate.js';
 
 const S = {type: 'object', required: ['ru', 'face'], additionalProperties: false,
   properties: {ru: {type: 'integer', minimum: 1}, face: {enum: ['front', 'rear']},
@@ -37,4 +37,22 @@ test('integer is not number-with-a-fraction, and null is only null', () => {
   assert.equal(validate({type: 'integer'}, '2').length, 1);
   assert.equal(validate({type: 'object'}, null).length, 1);
   assert.equal(validate({type: 'object'}, []).length, 1);
+});
+
+test('keys an object inherits are not its own', () => {
+  const closed = {type: 'object', additionalProperties: false, properties: {id: {type: 'string'}}};
+  assert.deepEqual(validate(closed, {constructor: 1}).map(e => [e.keyword, e.path.join('.')]), [['additionalProperties', 'constructor']]);
+  assert.deepEqual(validate(closed, {toString: 5}).map(e => e.keyword), ['additionalProperties']);
+  assert.deepEqual(validate({type: 'object', required: ['toString']}, {}).map(e => [e.keyword, e.missing]), [['required', 'toString']]);
+  assert.deepEqual(validate({type: 'object', dependentRequired: {id: ['valueOf']}}, {id: 'x'}).map(e => e.keyword), ['dependentRequired']);
+  assert.throws(() => validate({$defs: {}, $ref: '#/$defs/constructor'}, 1), /cannot follow/);
+});
+
+test('same() does not care about key order', () => {
+  assert.equal(same({x: 1, y: {a: 1, b: 2}}, {y: {b: 2, a: 1}, x: 1}), true);
+  assert.equal(same([{a: 1, b: 2}], [{b: 2, a: 1}]), true);
+  assert.equal(same([1, 2], [2, 1]), false);
+  assert.equal(same({x: 1}, {x: 1, y: 2}), false);
+  assert.equal(same(null, {}), false);
+  assert.deepEqual(validate({const: {a: 1, b: 2}}, {b: 2, a: 1}), []);
 });

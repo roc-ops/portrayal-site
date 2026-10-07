@@ -10,11 +10,15 @@ const IS = {
   number: v => typeof v === 'number' && Number.isFinite(v), integer: v => Number.isInteger(v),
   object: plain, array: Array.isArray,
 };
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// SAME VALUE, WHATEVER THE KEY ORDER: {x, y} and {y, x} are one object, so an
+// edit that only reorders keys changes nothing. Arrays keep their order.
+const canon = v => (Array.isArray(v) ? v.map(canon) : plain(v)
+  ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canon(v[k])])) : v);
+export const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 
 function deref(root, ref) {
   const m = /^#\/\$defs\/(.+)$/.exec(ref);
-  const target = m && root.$defs?.[m[1]];
+  const target = m && root.$defs && Object.hasOwn(root.$defs, m[1]) ? root.$defs[m[1]] : null;
   if (!target) throw new Error(`validate: cannot follow ${ref}`);
   return target;
 }
@@ -37,16 +41,18 @@ export function validate(schema, value, root = schema, path = []) {
     if (schema.minItems != null && value.length < schema.minItems) out.push(err('minItems'));
     if (schema.items) value.forEach((v, i) => out.push(...validate(schema.items, v, root, [...path, String(i)])));
   }
+  // OWN KEYS ONLY: `k in value` and props[k] would see Object.prototype, and let
+  // {constructor: 1} past additionalProperties: false.
   if (plain(value)) {
-    for (const k of schema.required || []) if (!(k in value)) out.push(err('required', path, {missing: k}));
+    for (const k of schema.required || []) if (!Object.hasOwn(value, k)) out.push(err('required', path, {missing: k}));
     const props = schema.properties || {};
     for (const [k, v] of Object.entries(value)) {
-      if (props[k]) out.push(...validate(props[k], v, root, [...path, k]));
+      if (Object.hasOwn(props, k)) out.push(...validate(props[k], v, root, [...path, k]));
       else if (schema.additionalProperties === false) out.push(err('additionalProperties', [...path, k]));
       else if (plain(schema.additionalProperties)) out.push(...validate(schema.additionalProperties, v, root, [...path, k]));
     }
     for (const [k, needs] of Object.entries(schema.dependentRequired || {}))
-      if (k in value) for (const n of needs) if (!(n in value)) out.push(err('dependentRequired', path, {missing: n}));
+      if (Object.hasOwn(value, k)) for (const n of needs) if (!Object.hasOwn(value, n)) out.push(err('dependentRequired', path, {missing: n}));
   }
   return out;
 }
