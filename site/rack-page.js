@@ -47,6 +47,8 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   routes: null,
+  routeSel: null,    // {cableId, i}: the route row new waypoints go after
+  cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
   // Cable mode: on or off, and the A end picked and waiting for its B.
   cable: {on: false, a: null},
@@ -401,7 +403,7 @@ function cableFormPanel(sel) {
       if (cable) {
         // The cable may be gone: then there is nothing to save, and nothing is committed.
         if (!now.cables.some(c => c.id === cable.id)) { S.sel = null; render(); return; }
-        S.sel = {kind: 'cable', id: cable.id};
+        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null;
         commit(updateCable(now, cable.id, fields));
         return;
       }
@@ -412,9 +414,24 @@ function cableFormPanel(sel) {
       S.sel = {kind: 'cable', id: made.cable.id};
       commit(made.rack);
     },
-    onCancel: () => select(cable ? {kind: 'cable', id: cable.id} : null)});
+    onCancel: () => { S.cableDraft = null; select(cable ? {kind: 'cable', id: cable.id} : null); }});
   if (!cable) return form;
-  return el('div', {}, [form, routePanel(cable)]);
+  const d = S.cableDraft?.id === cable.id ? S.cableDraft.values : null;
+  if (d) {
+    for (const [k, v] of Object.entries(d)) form.querySelector(`#${k}`).value = v;
+    if ('cMedia' in d) form.querySelector('#cMedia').dispatchEvent(new Event('change'));   // the mismatch warning follows
+  }
+  const wrap = el('div', {}, [form, routePanel(cable)]);
+  // Only what the viewer typed is kept: a field they never touched follows the
+  // cable (a routed length changes with the route, and an untouched one is never sent).
+  const keep = ev => {
+    const k = ev.target.id;
+    if (!['cMedia', 'cPurpose', 'cLabel', 'cLength', 'cUnit'].includes(k)) return;
+    S.cableDraft = {id: cable.id, values: {...(S.cableDraft?.id === cable.id ? S.cableDraft.values : {}), [k]: ev.target.value}};
+  };
+  form.addEventListener('input', keep);
+  form.addEventListener('change', keep);
+  return wrap;
 }
 
 // Every route edit stores the whole list and is one Undo (spec §6). Guarded
@@ -424,6 +441,7 @@ function editRoute(cableId, list, text, patch = {route: list, routeEdited: true}
   if (!now.cables.some(x => x.id === cableId) || S.sel?.kind !== 'cable-form' || S.sel.id !== cableId) {
     S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
   }
+  S.focusNext = 'routeAdd';
   commit(updateCable(now, cableId, patch), {text});
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
@@ -439,15 +457,21 @@ function shownRoute(cable) {
 function routePanel(cable) {
   const id = cable.id, {list, auto, rows} = shownRoute(cable);
   const picking = S.routePick?.cableId === id;
+  const sel = S.routeSel?.cableId === id && S.routeSel.i < list.length ? S.routeSel.i : null;
+  // A moved row keeps the selection; a removed one drops it.
   const swap = (i, j) => { if (j < 0 || j >= list.length) return;
-    const l = [...list]; [l[i], l[j]] = [l[j], l[i]]; editRoute(id, l, 'Waypoint moved.'); };
+    const l = [...list]; [l[i], l[j]] = [l[j], l[i]];
+    if (sel === i) S.routeSel = {cableId: id, i: j};
+    editRoute(id, l, 'Waypoint moved.'); };
   return el('div', {}, [
-    routeList({rows, auto, selected: picking ? S.routePick.at - 1 : null,
-      onSelect: i => { S.routePick = {cableId: id, at: i + 1}; render(); },
+    routeList({rows, auto, selected: sel,
+      onSelect: i => { S.routeSel = {cableId: id, i};
+                       if (picking) S.routePick = {cableId: id, at: i + 1};
+                       S.focusNext = `routeRow-${i}`; render(); },
       onUp: i => swap(i, i - 1), onDown: i => swap(i, i + 1),
-      onRemove: i => editRoute(id, list.filter((_, k) => k !== i), 'Waypoint removed.'),
-      onAdd: () => { S.routePick = {cableId: id, at: list.length}; render(); },
-      onReset: () => editRoute(id, [], 'Route reset to automatic.', {route: [], routeEdited: undefined})}),
+      onRemove: i => { S.routeSel = null; editRoute(id, list.filter((_, k) => k !== i), 'Waypoint removed.'); },
+      onAdd: () => { S.routePick = {cableId: id, at: sel === null ? list.length : sel + 1}; S.focusNext = 'routeAdd'; render(); },
+      onReset: () => { S.routeSel = null; editRoute(id, [], 'Route reset to automatic.', {route: [], routeEdited: undefined}); }}),
     ...(picking ? [el('p', {id: 'routePickHelp', class: 'rk-muted', role: 'status',
       text: 'Click a ring, duct, brush or the gutter beside a rail. Esc stops.'})] : [])]);
 }
@@ -746,6 +770,10 @@ async function render() {
   const mine = ++S.draws;
   pruneCable();
   pruneFilter();
+  // The route row and the typed fields belong to one open cable form too.
+  const formOf = S.sel?.kind === 'cable-form' ? S.sel.id : null;
+  if (S.routeSel && S.routeSel.cableId !== formOf) S.routeSel = null;
+  if (S.cableDraft && S.cableDraft.id !== formOf) S.cableDraft = null;
   // Picking belongs to one open cable form, outside Cable mode.
   if (S.routePick && (S.cable.on || S.sel?.kind !== 'cable-form' || S.sel.id !== S.routePick.cableId
       || !rack().cables.some(c => c.id === S.routePick.cableId))) S.routePick = null;
@@ -1038,6 +1066,7 @@ function onPaneClick(ev) {
     if (!c || S.sel?.id !== cableId) { S.routePick = null; render(); return; }
     const shown = shownRoute(c).list;
     S.routePick = {cableId, at: at + 1};
+    S.routeSel = {cableId, i: at};
     editRoute(cableId, [...shown.slice(0, at), w, ...shown.slice(at)], 'Waypoint added.');
     return;
   }
