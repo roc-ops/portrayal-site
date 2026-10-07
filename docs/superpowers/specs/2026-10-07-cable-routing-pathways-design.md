@@ -1,7 +1,7 @@
 # Cable routing through pathways in the Rack Builder
 
 **Date:** 2026-10-07
-**Status:** design approved in conversation; spec awaiting review
+**Status:** implemented (plan: docs/superpowers/plans/2026-10-07-cable-routing-pathways.md)
 **Builds on:** `2026-10-07-rack-face-managers-design.md` (piece 1, merged as #120), `2026-09-26-rack-builder-design.md` (§9.6 routing plumbing)
 **Upstream:** roc-ops/Portrayal `docs/cable-managers-design.md`; #852 merged guides (`ring`, `duct`), pass-throughs and the CMH-4DRB1U and CMH-SFD1U
 

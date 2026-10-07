@@ -1368,6 +1368,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     failSceneFacts: on => { S.probeSceneFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).
+    // The routes the page resolved, as plain data: [[cable id, waypoints], ...], or null.
+    routes: () => (S.routes ? [...S.routes.routes].map(([id, r]) => [id, r.waypoints]) : null),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

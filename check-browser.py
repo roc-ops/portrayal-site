@@ -3911,6 +3911,162 @@ def check_rack_face_managers(page, base):
     return bad
 
 
+@extra("rack.html: cables route through their manager's rings and up the lanes, in 2D and 3D, edited and reset, with a routed length")
+def check_rack_cable_routes(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#rkMode [data-mode="2d"]')
+    # The cables must land: optics at both ends' ports, a splice cassette in the
+    # panel, and fiber between them (cat6 into these ports leaves ends loose).
+    built = page.evaluate("""async () => {
+      const M = await import('/site/rack/model.js'), C = await import('/site/rack/chassis.js'), K = await import('/site/rack/cable-rules.js');
+      const cat = await C.loadChassis();
+      let r = M.newRack({name: 'Routes'});
+      const optic = {'port-1': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc2', view: 'front'}, media: 'os2'}));
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length === 2", timeout=READY_MS)
+    page.wait_for_function("() => window.__rack.doc().racks[0].cables.length === 2 && window.__rack.doc().racks[0].cables.every(c => c.length && c.length.source === 'routed')", timeout=READY_MS)
+    srcs = page.evaluate("() => window.__rack.doc().racks[0].cables.map(c => [c.id, c.length?.source])")
+    if any(x[1] != "routed" for x in srcs):
+        bad.append(f"length: not every cable has a routed length: {srcs}")
+    # The automatic routes: lanes exactly left-front and right-front; c1 through guide-1, c2 through guide-5.
+    routes = page.evaluate("() => window.__rack.routes?.() ?? null")
+    if routes is None:
+        return bad + ["probe: window.__rack.routes() is missing"]
+    rmap = dict(routes)
+    lanes = sorted({w["lane"] for _, ws in routes for w in ws if "lane" in w})
+    if lanes != ["left-front", "right-front"]:
+        bad.append(f"routes: lanes are {lanes}, not left-front and right-front: {routes}")
+    via = lambda cid: [w["via"] for w in rmap.get(cid, []) if w.get("item") == "i2"]
+    if "guide-1" not in via("c1") or "guide-5" not in via("c2"):
+        bad.append(f"routes: c1 goes through {via('c1')} and c2 through {via('c2')}, not guide-1 / guide-5: {routes}")
+    # 2D: each lane run is vertical, reaches into its gutter, and the path passes the ring end.
+    geo = page.evaluate("""() => {
+      const s = document.querySelector('#paneFront svg');
+      const out = {};
+      for (const id of ['c1', 'c2']) {
+        const g = s.querySelector(`[data-cables] [data-cable-id="${id}"]`);
+        const paths = [...g.querySelectorAll('path')].filter(p => !p.dataset.leader);
+        const pts = [];
+        for (const p of paths) { const L = p.getTotalLength(); for (let t = 0; t <= L; t += 0.5) { const q = p.getPointAtLength(t); pts.push([q.x, q.y]); } }
+        const xs = pts.map(q => q[0]);
+        const left = id === 'c1';
+        const ext = left ? Math.min(...xs) : Math.max(...xs);
+        const run = pts.filter(q => Math.abs(q[0] - ext) < 0.6).map(q => q[1]);
+        out[id] = {ext, span: Math.max(...run) - Math.min(...run)};
+      }
+      const g1 = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      const end = s.querySelector('[data-item-id="i2"] [id="guide-1-end"]') || s.querySelector('#guide-1-end');
+      const eb = end.getBoundingClientRect(), cx = eb.left + eb.width / 2, cy = eb.top + eb.height / 2;
+      let best = Infinity;
+      for (const p of g1.querySelectorAll('path')) {
+        if (p.dataset.leader) continue;
+        const m = p.getScreenCTM(), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 0.25) {
+          const q = p.getPointAtLength(t);
+          const X = m.a * q.x + m.c * q.y + m.e, Y = m.b * q.x + m.d * q.y + m.f;
+          best = Math.min(best, Math.hypot(X - cx, Y - cy) / m.a);
+        }
+      }
+      out.ringGap = best;
+      return out;
+    }""")
+    if not (geo["c1"]["ext"] < -26) or not (geo["c2"]["ext"] > 450.85 + 26):
+        bad.append(f"2D: the cables do not run out to their gutters (c1 {geo['c1']['ext']}, c2 {geo['c2']['ext']})")
+    for cid in ("c1", "c2"):
+        if geo[cid]["span"] < 20:
+            bad.append(f"2D: {cid}'s lane run is not vertical (the vertical span at its extreme x is {geo[cid]['span']})")
+    if not (geo["ringGap"] <= 1.5):
+        bad.append(f"2D: c1's path passes {geo['ringGap']} units from the center of guide-1-end, over 1.5")
+    # Editing. Select c1 from the list, open its form, type a label, add a waypoint after row 0.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableEdit")
+    page.fill("#cLabel", "uplink-A")
+    page.focus("#routeRow-0")
+    page.keyboard.press("Enter")
+    page.click("#routeAdd")
+    # While picking, the rear pane's left-gutter targets are named for the right (mirrored).
+    rear = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg');
+      const xOf = n => { const r = s.querySelector(`[data-pick-lane="${n}"]`); return r ? r.getBBox().x : null; };
+      return {right: xOf('right-rear'), left: xOf('left-rear')};
+    }""")
+    if rear["right"] is None or rear["left"] is None or not (rear["right"] < rear["left"]):
+        bad.append(f"rear pick: the left gutter's target is not named right-rear: {rear}")
+    page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="25"]')
+    page.keyboard.press("Escape")
+    got = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
+    stored = got["route"]
+    if len(stored) < 2 or stored[1] != {"lane": "right-front", "ru": 25} or not got["edited"]:
+        bad.append(f"edit: the waypoint is not at index 1 of the stored route (edited {got['edited']}): {stored}")
+    label = page.input_value("#cLabel")
+    if label != "uplink-A":
+        bad.append(f"edit: the typed label did not survive the pick: {label!r}")
+    page.click("#cSave")
+    saved = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').label")
+    if saved != "uplink-A":
+        bad.append(f"edit: the label saved as {saved!r}")
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    again = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').route")
+    if again != stored:
+        bad.append(f"reload: the edited route came back as {again}, not {stored}")
+    page.click('#cableList [data-cable-row="c1"]', timeout=READY_MS)
+    page.click("#cableEdit")
+    page.click("#routeReset")
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.some(c => 'routeEdited' in c)"):
+        bad.append("reset: a cable still has a routeEdited key")
+    # 3D: a lone cable's tube passes through its ring's opening and up its lane, outside the switch.
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    res = page.evaluate("""async () => {
+      const R = await import('/site/rack/route.js');
+      const s = window.__rack.scene(); await s.complete?.();
+      const deadline = Date.now() + 20000;
+      while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+      const top = await s.guideAnchor({id: 'i2'}, 'guide-1'), end = await s.guideAnchor({id: 'i2'}, 'guide-1-end');
+      const tubes = s.rackCables.tubes;
+      const pts = tubes.flatMap(t => t.points);
+      const target = {x: top.position.x, y: end.position.y, z: top.position.z};
+      const segDist = (p, a, b) => {
+        const ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / (ab.lengthSq() || 1)));
+        return a.clone().add(ab.multiplyScalar(t)).distanceTo(p);
+      };
+      const T = pts[0].clone().set(target.x, target.y, target.z);
+      let ring = Infinity, lane = Infinity;
+      for (let i = 0; i + 1 < pts.length; i++) ring = Math.min(ring, segDist(T, pts[i], pts[i + 1]));
+      const lx = R.laneX('left');
+      for (const p of pts) lane = Math.min(lane, Math.abs(p.x - lx));
+      const inside = [];
+      for (const {ref, box} of s.deviceBoxes()) for (const p of pts) if (box.containsPoint(p)) inside.push(ref);
+      return {ring, lane, laneX: lx, tubes: tubes.length, npts: pts.length, inside};
+    }""")
+    if res["npts"] == 0:
+        bad.append(f"3D: the lone cable has no tube points ({res})")
+    else:
+        if not (res["ring"] < 3):
+            bad.append(f"3D: the tube misses guide-1's opening center by {res['ring']} mm (limit 3)")
+        if not (res["lane"] < 3):
+            bad.append(f"3D: the tube never reaches the lane at x = {res['laneX']} (closest {res['lane']} mm)")
+        if res["inside"]:
+            bad.append(f"3D: tube points lie inside a device box: {res['inside']}")
+    return bad
+
+
 @extra("rack.html: Export - a slot emptied by a null swap yields no part, where its default would have seated one")
 def check_rack_export_emptied_slot(page, base):
     bad = []
