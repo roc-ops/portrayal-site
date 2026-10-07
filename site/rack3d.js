@@ -629,6 +629,12 @@ export function createRackScene(container, opts = {}) {
     // the hero pass none, so their scenes and exports are exactly as before.
     if (entry.id) group.name = `device-${entry.id}`;
     const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mats);
+    // A SHEET BODY HAS NO SIDES (upstream docs/cable-managers-design.md §4):
+    // its views are elevations, so painting them on a box stands a picture of
+    // the part on every side. The box stays, invisible, as the frame its relief
+    // is built in - as kit/viewer3d.js does.
+    const sheet = entry.chassis?.shell === 'sheet';
+    if (sheet) for (const m of mats) m.visible = false;
     group.add(body);
     meshes.forEach(m => group.add(m));
 
@@ -642,8 +648,14 @@ export function createRackScene(container, opts = {}) {
     const face = entry.face === 'rear' ? 'rear' : 'front';
     const turned = !!(entry.turned ?? entry.reversed);
     const mountZ = face === 'rear' ? REAR_MOUNT_Z : RACK_FACE_Z;
-    group.position.set(0, (entry.ru - 1) * RU + H / 2,
-      face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
+    // A RACK-FACE PART (spec §8) has its mounting face on the rail plane and
+    // its body outward: toward the viewer from the front rails, away from the
+    // rear ones. A rack device's body goes the other way, between the rails.
+    const rackFace = entry.mount === 'rack-face';
+    const z = rackFace
+      ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
+      : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
+    group.position.set(0, (entry.ru - 1) * RU + H / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is
     // mounted to, and what you see from the mounting face's own side is its
@@ -706,7 +718,7 @@ export function createRackScene(container, opts = {}) {
         if (mine !== epoch) return;
         per.forEach(m => { group.add(m); meshes.push(m); });
         const i = MAT_SLOT[F.view], cv = faceCv[F.view];
-        if (cv && body.material[i]) {
+        if (cv && body.material[i] && !sheet) {
           const prev = body.material[i];
           body.material[i] = mat(cv);
           prev.map && prev.map.dispose();
@@ -777,9 +789,9 @@ export function createRackScene(container, opts = {}) {
     return mounted.find(m => m.entry.ref === which)
         || mounted.find(m => m.entry.label === which) || null;
   }
-  async function portAnchor(which, path, o = {}) {
+  async function elementAnchor(which, find, o = {}) {
     const m = findMounted(which);
-    if (!m || !path) return null;
+    if (!m) return null;
     const {entry, group} = m;
     const {w: W, h: H, d: D} = entry.chassis;
     const frames = faceFrames(W, H, D);
@@ -791,8 +803,8 @@ export function createRackScene(container, opts = {}) {
       const doc = fr && await faceDoc(entry, view);
       if (!doc) continue;
       let el = null;
-      try { el = doc.svg.querySelector(`[data-path="${CSS.escape(path)}"]`); }
-      catch (e) { return null; }        // a path that cannot be a selector
+      try { el = find(doc); }
+      catch (e) { return null; }        // a name that cannot be a selector
       if (!el) continue;
       const r = doc.tools.mmRect(el);
       // face millimetres -> the face's own plane (x right, y up, z out of it),
@@ -809,13 +821,21 @@ export function createRackScene(container, opts = {}) {
         // instead of starting inside the metal.
         normal: new THREE.Vector3(0, 0, 1).applyEuler(rot)
           .applyQuaternion(group.getWorldQuaternion(new THREE.Quaternion())).normalize(),
-        view, path,
+        view, path: el.getAttribute?.('data-path') ?? null, id: el.id || null,
         mm: {x: r.x, y: r.y, w: r.w, h: r.h},
         ref: entry.ref, ru: entry.ru, label: entry.label,
       };
     }
     return null;
   }
+  const portAnchor = (which, path, o = {}) => (path
+    ? elementAnchor(which, doc => doc.svg.querySelector(`[data-path="${CSS.escape(path)}"]`), o)
+    : Promise.resolve(null));
+  // WHERE A NAMED PART OF A MANAGER IS (spec §8), for routing in piece 2: a
+  // ring is `guide-1` to `guide-5`, on the FHD-CMP5DR's top view (its front
+  // only has the end rects), so the search covers every view.
+  const guideAnchor = (which, elementId, o = {}) =>
+    elementAnchor(which, doc => doc.svg.getElementById?.(elementId) ?? doc.svg.querySelector(`#${CSS.escape(elementId)}`), o);
 
   // WHERE A CABLE LEAVES A SEATED CONNECTOR, in the room: relief.js's
   // cablePoints on the mount's own face (faceDoc is the seated face - see
@@ -1025,6 +1045,7 @@ export function createRackScene(container, opts = {}) {
     // label, or {ref, ru} when a rack holds the same model twice; pass
     // {view} to look at one face instead of searching them.
     portAnchor,
+    guideAnchor,
     // Where each cable leaves a seated connector under a path prefix:
     // [{position, normal, view, path}], one per relief.js cable point, or [].
     cableAnchor,
