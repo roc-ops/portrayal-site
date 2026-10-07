@@ -24,10 +24,12 @@ import {exportStatus, UNCHECKED_NOTE} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
-import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables} from './rack/cable-view.js';
+import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
+import {routeList} from './rack/route-panel.js';
+import {RU, RAIL_W, OPENING} from './rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {routeFacts} from './rack/route-context.js';
-import {withRoutedLengths, LANE_GAP} from './rack/route.js';
+import {withRoutedLengths, LANE_GAP, routeText} from './rack/route.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -45,6 +47,7 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   routes: null,
+  routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
   // Cable mode: on or off, and the A end picked and waiting for its B.
   cable: {on: false, a: null},
   // The cable list's filter: the viewer's, not the document's.
@@ -385,7 +388,7 @@ function cableFormPanel(sel) {
   if (sel.id && !cable) { S.sel = null; return homePanel(); }
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
-  return cableForm({
+  const form = cableForm({
     title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
@@ -410,6 +413,64 @@ function cableFormPanel(sel) {
       commit(made.rack);
     },
     onCancel: () => select(cable ? {kind: 'cable', id: cable.id} : null)});
+  if (!cable) return form;
+  return el('div', {}, [form, routePanel(cable)]);
+}
+
+// Every route edit stores the whole list and is one Undo (spec §6). Guarded
+// like the managers' actions: the panel may be stale (Undo, another edit).
+function editRoute(cableId, list, text, patch = {route: list, routeEdited: true}) {
+  const now = rack();
+  if (!now.cables.some(x => x.id === cableId) || S.sel?.kind !== 'cable-form' || S.sel.id !== cableId) {
+    S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
+  }
+  commit(updateCable(now, cableId, patch), {text});
+}
+// The waypoints a cable shows: the stored list once edited, else the page's own choice.
+function shownRoute(cable) {
+  const res = S.routes?.routes.get(cable.id);
+  const nameOf = id => itemById(id)?.label ?? id;
+  const frame = rack().frame;
+  const list = cable.routeEdited ? cable.route ?? [] : res?.waypoints ?? [];
+  const gone = new Set(cable.routeEdited ? (res?.gone ?? []) : []);
+  return {list, auto: !cable.routeEdited,
+    rows: list.map(w => ({text: routeText([w], nameOf, frame), gone: gone.has(w)}))};
+}
+function routePanel(cable) {
+  const id = cable.id, {list, auto, rows} = shownRoute(cable);
+  const picking = S.routePick?.cableId === id;
+  const swap = (i, j) => { if (j < 0 || j >= list.length) return;
+    const l = [...list]; [l[i], l[j]] = [l[j], l[i]]; editRoute(id, l, 'Waypoint moved.'); };
+  return el('div', {}, [
+    routeList({rows, auto, selected: picking ? S.routePick.at - 1 : null,
+      onSelect: i => { S.routePick = {cableId: id, at: i + 1}; render(); },
+      onUp: i => swap(i, i - 1), onDown: i => swap(i, i + 1),
+      onRemove: i => editRoute(id, list.filter((_, k) => k !== i), 'Waypoint removed.'),
+      onAdd: () => { S.routePick = {cableId: id, at: list.length}; render(); },
+      onReset: () => editRoute(id, [], 'Route reset to automatic.', {route: [], routeEdited: undefined})}),
+    ...(picking ? [el('p', {id: 'routePickHelp', class: 'rk-muted', role: 'status',
+      text: 'Click a ring, duct, brush or the gutter beside a rail. Esc stops.'})] : [])]);
+}
+
+// Pick targets for a route being edited: every pathway the pane draws, and a
+// lane target per U on each gutter (the rear pane mirrors the sides).
+function drawRoutePicking() {
+  const r = rack(), ctx = S.routes?.ctx;
+  for (const svg of S.svgs) {
+    const view = svg.dataset.pane, targets = [];
+    if (ctx) for (const it of r.items) for (const g of ctx.guidesOf(it.id)) {
+      const e = wayEl(svg, {item: it.id, via: g.via});
+      if (e) targets.push({item: it.id, via: g.via, box: inPane(svg, e)});
+    }
+    const sides = r.frame.kind === 'two-post' ? ['left', 'right'] : ['left', 'right'].map(sd => `${sd}-${view}`);
+    for (const lane of sides) {
+      const left = (view === 'front') === lane.startsWith('left');
+      const x = left ? -RAIL_W - LANE_GAP : OPENING + RAIL_W;
+      for (let ru = 1; ru <= r.frame.heightRU; ru++)
+        targets.push({lane, ru, x, y: (r.frame.heightRU - ru) * RU, w: LANE_GAP, h: RU});
+    }
+    drawPickTargets(svg, targets);
+  }
 }
 
 // ── The cable list (spec §9.4) ──────────────────────────────────────────
@@ -685,6 +746,9 @@ async function render() {
   const mine = ++S.draws;
   pruneCable();
   pruneFilter();
+  // Picking belongs to one open cable form, outside Cable mode.
+  if (S.routePick && (S.cable.on || S.sel?.kind !== 'cable-form' || S.sel.id !== S.routePick.cableId
+      || !rack().cables.some(c => c.id === S.routePick.cableId))) S.routePick = null;
   let r = rack();
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
@@ -775,6 +839,7 @@ async function render() {
       if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
       paintCables(S.svgs, r, {selectedId: selectedCable(), on: S.cableFilter});
     }
+    if (S.routePick) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
     for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
       const it = itemById(e.item);
@@ -961,6 +1026,21 @@ function renderSide() {
 
 function onPaneClick(ev) {
   if (drag?.consumeClick()) return; // this drag's own trailing click (some engines fire one), not a fresh click
+  // Picking a waypoint: only a pick target takes the click (one mode at a time;
+  // Cable mode and Move mode cannot be on while a form is picking).
+  if (S.routePick) {
+    const t = ev.target.closest('[data-pick-item], [data-pick-lane]');
+    if (!t) return;
+    const w = t.dataset.pickLane ? {lane: t.dataset.pickLane, ru: Number(t.dataset.pickRu)}
+                                 : {item: t.dataset.pickItem, via: t.dataset.pickVia};
+    const {cableId, at} = S.routePick;
+    const c = rack().cables.find(x => x.id === cableId);
+    if (!c || S.sel?.id !== cableId) { S.routePick = null; render(); return; }
+    const shown = shownRoute(c).list;
+    S.routePick = {cableId, at: at + 1};
+    editRoute(cableId, [...shown.slice(0, at), w, ...shown.slice(at)], 'Waypoint added.');
+    return;
+  }
   // A tag selects its cable (cable strokes are click-through, rack.css) - in
   // Cable mode too, where only the tags take clicks.
   const cab = ev.target.closest('[data-cable-tags] [data-cable-id]');
@@ -1143,7 +1223,7 @@ async function bootInner() {
     setStatus: text => { const s = $('dragStatus'); if (s) s.textContent = text; },
   });
   // The drag controller is off in Cable mode: a press on a port must stay a click.
-  const press = ev => { if (!S.cable.on) drag.onPointerDown(ev); };
+  const press = ev => { if (!S.cable.on && !S.routePick) drag.onPointerDown(ev); };
   $('paneFront').addEventListener('pointerdown', press);
   $('paneRear').addEventListener('pointerdown', press);
   $('cableBtn').addEventListener('click', () => setCableMode(!S.cable.on));
@@ -1213,6 +1293,7 @@ async function bootInner() {
     // Esc in the cable form's own fields cancels the form, as Cancel does;
     // the next Esc (below) drops the picked end, then leaves the mode. Other
     // forms' fields keep Esc to themselves.
+    if (ev.key === 'Escape' && S.routePick) { ev.preventDefault(); S.routePick = null; render(); return; }
     if (ev.key === 'Escape' && ev.target.closest?.('#cableForm')) { ev.preventDefault(); $('cCancel')?.click(); return; }
     if (ev.target.closest?.('input, select, textarea')) return;
     // In Cable mode Esc backs out one step: the open form, then the picked

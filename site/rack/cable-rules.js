@@ -75,6 +75,7 @@ export function updateCable(rack, id, patch) {
   return {...rack, cables: (rack.cables || []).map(c => {
     if (c.id !== id) return c;
     const next = {...c, ...patch};
+    for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k];   // undefined removes the key
     if (Object.hasOwn(patch, 'length')) delete next.lengthAsWritten;
     if (Object.hasOwn(patch, 'route')) delete next.routeAsWritten;
     if (next.length == null) delete next.length;

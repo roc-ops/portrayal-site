@@ -68,7 +68,7 @@ export function roomForCables(svgs) {
 }
 
 // A point or box of an element, in the pane's user space.
-function inPane(svg, el) {
+export function inPane(svg, el) {
   const b = el.getBBox(), m = svg.getScreenCTM().inverse().multiply(el.getScreenCTM());
   const c = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]
     .map(([x, y]) => new DOMPoint(x, y).matrixTransform(m));
@@ -78,7 +78,7 @@ function inPane(svg, el) {
 
 // A pathway's element in a pane: a ring (#via or #via-end), a duct
 // (#guide--via) or a pass (#pass--via) inside the item's group.
-function wayEl(svg, w) {
+export function wayEl(svg, w) {
   const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"]`);
   return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
     || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
@@ -282,4 +282,18 @@ export function paintCables(svgs, rack, {selectedId = null, on = {}} = {}) {
       n.classList.toggle('ghost', n.dataset.cableId !== selectedId && out.has(n.dataset.cableId));
     }
   }
+}
+
+// WHERE A ROUTE'S NEXT WAYPOINT CAN BE CLICKED. Each target is {item, via, box}
+// (a ring, duct, brush or pass) or {lane, ru, x, y, w, h}, in the pane's user
+// space. They are transparent rects in a layer above the cables.
+export function drawPickTargets(svg, targets) {
+  svg.querySelector('[data-pick]')?.remove();
+  const layer = svgEl('g', {'data-pick': '', 'data-pt-ui': '*'});
+  for (const t of targets) {
+    const b = t.box || t;
+    layer.append(svgEl('rect', {x: b.x, y: b.y, width: b.w, height: b.h, fill: 'transparent', style: 'cursor: crosshair',
+      ...(t.lane ? {'data-pick-lane': t.lane, 'data-pick-ru': t.ru} : {'data-pick-item': t.item, 'data-pick-via': t.via})}));
+  }
+  svg.append(layer);
 }

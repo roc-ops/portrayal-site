@@ -423,3 +423,10 @@ test('endName names a device by its position: the lowest-numbered U it covers, w
   assert.equal(C.portFree(taken, end('i1', 'p'), {uOf}).reason, 'core-1 (U14) p already has a cable (c1).');
   assert.equal(C.canCable(taken, end('i3', 'p'), end('i2', 'p'), {uOf}).reason, 'leaf-1 (U10) p already has a cable (c1).');
 });
+
+test('updateCable: a patch value of undefined removes the key', () => {
+  const r = {cables: [{id: 'c1', a: {}, b: {}, route: [{lane: 'left', ru: 3}], routeEdited: true}]};
+  const next = C.updateCable(r, 'c1', {route: [], routeEdited: undefined}).cables[0];
+  assert.equal(Object.hasOwn(next, 'routeEdited'), false);
+  assert.deepEqual(next.route, []);
+});
