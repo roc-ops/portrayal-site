@@ -11,7 +11,9 @@ Markdown - headings, paragraphs, lists, links, code. What a script fills in at
 runtime is not in the HTML and so not in the copy: a block holding a
 placeholder (data-stat, filled from the library's counts) is left out rather
 than shown as "— devices", and a page that is mostly an interactive tool says
-so, and links to itself.
+so, and links to itself. A page whose content a script draws from a data file
+names that file in its <head> (<link rel="alternate" type="application/json">),
+and the copy points there.
 
 Links are made absolute and canonical: explorer.html#x becomes
 https://portrayal.dev/explorer#x, the URL Cloudflare serves with a 200.
@@ -80,6 +82,7 @@ class _Md(HTMLParser):
         self.pre = 0
         self.prefix = ""         # what the block being built starts with
         self.stale = False       # the block holds a runtime placeholder
+        self.data = []           # (title, url) of each <link rel="alternate" type="application/json">
 
     # ── blocks ──────────────────────────────────────────────────────────
     def flush(self):
@@ -101,6 +104,9 @@ class _Md(HTMLParser):
             self.in_title = True
         if tag == "meta" and a.get("name") == "description":
             self.description = a.get("content", "")
+        if (tag == "link" and "alternate" in (a.get("rel") or "").split()
+                and a.get("type") == "application/json" and a.get("href")):
+            self.data.append((a.get("title") or "The data", absolute(a["href"], self.page)))
         if tag == "main":
             self.in_main = True
             return
@@ -224,6 +230,10 @@ def markdown(page, html):
     if p.description:
         front.append(f"description: {_yaml(p.description)}")
     front += [f"url: {url}", "---", ""]
+    if p.data:
+        blocks.append("## Data")
+        blocks.append("What this page draws, as JSON:")
+        blocks += [f"- [{t}]({u})" for t, u in p.data]
     body = "\n\n".join(blocks)
     if words < THIN:
         note = (f"This page is an interactive tool that runs in the browser, "

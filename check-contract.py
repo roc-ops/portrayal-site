@@ -1338,6 +1338,7 @@ check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.de
 # extensionless one Cloudflare serves with a 200, not /x.html, which 307s -
 # and kit-frame.html, which only hosts a recipe in kit.html's iframe, is not.
 import xml.etree.ElementTree as _ET
+import urllib.parse as _url
 _smr = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--print", "sitemap.xml"], capture_output=True, text=True)
 try:
     _sm = _ET.fromstring(_smr.stdout)
@@ -1387,6 +1388,31 @@ for _m in _pages_md:
           and "\u2014 devices" not in _t and not re.search(r"\]\((?:https://portrayal\.dev/)?[^)\s]*\.html", _t),
           f"{_m}.md: frontmatter, a body, no runtime placeholder, every site link canonical",
           _t[:200].replace("\n", " | "))
+# A PAGE'S DATA FILE: a page whose content a script draws names the file in its
+# <head> (rel="alternate" type="application/json"). Its Markdown copy lists it,
+# _headers sends it as a Link header at the page's URL, and it is served.
+for _m in _pages_md:
+    _h = _srv[_m + ".html"].read_text()
+    for _href in re.findall(r'<link\b(?=[^>]*\brel="alternate")(?=[^>]*\btype="application/json")[^>]*\bhref="([^"]+)"', _h):
+        _abs = _url.urljoin(f"https://portrayal.dev/{_m}.html", _href)
+        _path = _abs.removeprefix("https://portrayal.dev")
+        _at = "/" if _m == "index" else f"/{_m}"
+        _blk = re.search(rf"^{re.escape(_at)}[ \t]*\n((?:[ \t]+.*\n?)*)", _hd, re.M)
+        _md = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--print", f"{_m}.md"], capture_output=True, text=True).stdout
+        check(_path.lstrip("/") in _srv and f"]({_abs})" in _md
+              and bool(_blk) and f'<{_path}>; rel="alternate"; type="application/json"' in _blk.group(1),
+              f"{_m}: its data file {_path} is served, listed in its Markdown copy, and sent as a Link header",
+              f"served={_path.lstrip('/') in _srv}, in copy={f']({_abs})' in _md}, _headers block for {_at}={bool(_blk)}")
+# Links on a page in a folder resolve as the browser resolves them: ../kit.html
+# is /kit, and a sibling in the folder keeps the folder (/components/catalog).
+sys.path.insert(0, str(HERE / "tools"))
+from page_markdown import absolute as _absolute
+check(_absolute("../kit.html", "components/catalog.html") == "https://portrayal.dev/kit"
+      and _absolute("../index.html#showcase", "components/catalog.html") == "https://portrayal.dev/#showcase"
+      and _absolute("kit.html", "index.html") == "https://portrayal.dev/kit"
+      and _absolute("catalog.html#x", "components/catalog.html") == "https://portrayal.dev/components/catalog#x"
+      and _absolute("components/catalog.html", "index.html") == "https://portrayal.dev/components/catalog",
+      "a Markdown copy's links resolve against the page's own URL", "page_markdown.absolute")
 # tools/publish-schemas.sh copies in only schemas whose $id matches, and refuses the rest.
 _pub = HERE / "tools" / "publish-schemas.sh"
 def _pubrun(ids):
