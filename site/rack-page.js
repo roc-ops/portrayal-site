@@ -27,7 +27,7 @@ import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, upda
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables} from './rack/cable-view.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {routeFacts} from './rack/route-context.js';
-import {withRoutedLengths} from './rack/route.js';
+import {withRoutedLengths, LANE_GAP} from './rack/route.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -703,7 +703,8 @@ async function render() {
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
-      selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null})));
+      selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
+      laneGap: (r.cables || []).length ? LANE_GAP : 0})));
   } catch (err) {
     if (mine !== S.draws) return;
     console.warn('[portrayal] the rack elevation failed to draw', err);
@@ -752,7 +753,7 @@ async function render() {
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
-      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf);
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes);
       // A long cable's loop and a low lead's tag reach below the rack: both
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.

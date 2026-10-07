@@ -144,11 +144,14 @@ export function uAtY(frame, y, baseRU = 1) {
 
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true, ears = false, metal = false, paper = false}) {
+                                     placeholders = true, ears = false, metal = false, paper = false, laneGap = 0}) {
   const C = metal ? METAL : THEMED;
   const totalH = frame.heightRU * RU;
+  // Lanes (cable routing spec §7): with routed cables the gutter beside each
+  // rail widens to the lane gap, so a run up the side has room.
+  const g = Math.max(6, laneGap);
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
-    viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
+    viewBox: `${-RAIL_W - g} -18 ${OPENING + RAIL_W * 2 + g * 2} ${totalH + 30}`});
   drawRails(out, frame, baseRU, totalH, C);
   // Under the devices, so a click on a device is the device's; a click on an
   // empty U lands here.

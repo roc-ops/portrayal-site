@@ -17,6 +17,8 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
+import {LANE_GAP} from './route.js';
+import {RU, RAIL_W, OPENING} from './rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from './cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
@@ -61,6 +63,40 @@ export function roomForCables(svgs) {
     svg.setAttribute('viewBox', [b[0], b[1], b[2], b[3] + Math.ceil(over)].join(' '));
   }
   return true;
+}
+
+// A point or box of an element, in the pane's user space.
+function inPane(svg, el) {
+  const b = el.getBBox(), m = svg.getScreenCTM().inverse().multiply(el.getScreenCTM());
+  const c = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]
+    .map(([x, y]) => new DOMPoint(x, y).matrixTransform(m));
+  const xs = c.map(p => p.x), ys = c.map(p => p.y);
+  return {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)};
+}
+
+// A pathway's element in a pane: a ring (#via or #via-end), a duct
+// (#guide--via) or a pass (#pass--via) inside the item's group.
+function wayEl(svg, w) {
+  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel]`);
+  return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
+    || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
+}
+
+// A waypoint's point in a pane, or null when it is not on this pane.
+// Lanes: sides are the rack's as seen from the front, so the rear pane mirrors them.
+function wayPoint(svg, w, view, frame, k) {
+  if (w.lane) {
+    const [side, face] = w.lane.split('-');
+    if (face && face !== view) return null;
+    const paneLeft = view === 'front' ? side === 'left' : side === 'right';
+    const off = (k % 6) * 3;                       // cables sharing a lane, a little apart
+    const x = paneLeft ? -RAIL_W - LANE_GAP / 2 - off : OPENING + RAIL_W + LANE_GAP / 2 + off;
+    return [x, frame.heightRU * RU - (w.ru - 0.5) * RU];
+  }
+  const el = wayEl(svg, w);
+  if (!el) return null;
+  const b = inPane(svg, el);
+  return [b.x + b.w / 2, b.y + b.h / 2];
 }
 
 const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel]`);
@@ -110,12 +146,30 @@ export function pillText(text) {
 }
 
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
-export function drawRackCables(svg, rack, reasons, uOf) {
+// `routes` is S.routes: its routes (cable id -> waypoints) and fill.
+export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
   const cables = rack.cables;
   const plan = cablePlan(rack);
+  // Each link's waypoints in this pane, in order from its a end. Cables
+  // sharing a lane here are offset a little apart.
+  if (routes?.routes) {
+    const used = new Map();
+    for (const link of plan.links) {
+      const ws = routes.routes.get(link.id)?.waypoints;
+      if (!ws?.length) continue;
+      const pts = ws.map(w => {
+        const key = w.lane ? `${w.lane}` : null;
+        const k = key ? (used.get(key) || 0) : 0;
+        const p = wayPoint(svg, w, pane, rack.frame, k);
+        if (p && key) used.set(key, k + 1);
+        return p;
+      }).filter(Boolean);
+      if (pts.length) link.via2d = {[pane]: pts};
+    }
+  }
   const endAt = (i, side) => cables[i][side === 'from' ? 'a' : 'b'];
   const loose = (i, side) => reasons.get(endKey(endAt(i, side))) != null;
   // Which ends on this pane are loose, by the [item, path] drawCables2d asks with.
@@ -171,6 +225,15 @@ export function drawRackCables(svg, rack, reasons, uOf) {
     }
     const title = rec.g?.querySelector('title');
     if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
+  }
+  // A pathway over its capacity is outlined where this pane draws it.
+  for (const f of routes?.fill || []) {
+    if (!f.over) continue;
+    const e = wayEl(svg, f);
+    if (!e) continue;
+    const b = inPane(svg, e);
+    svg.append(svgEl('rect', {x: b.x, y: b.y, width: b.w, height: b.h, fill: 'none', stroke: 'var(--pt-warn)',
+      'stroke-width': 1.2, 'pointer-events': 'none', 'data-fill-over': `${f.item}|${f.via}`, 'data-pt-ui': '*'}));
   }
   return recs;
 }

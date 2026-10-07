@@ -96,6 +96,21 @@ function gather(pts) {
   return [m, pts.map(p => `M${p[0]} ${p[1]} C${p[0]} ${p[1] + MERGE * 0.6} ${m[0]} ${m[1] - MERGE * 0.6} ${m[0]} ${m[1]}`)];
 }
 
+// A ROUTED CABLE (routing spec §7): straight runs between its waypoints, each
+// corner rounded by r, so it reads as dressed cable rather than a hang.
+export function routed2d(pts, r = 4) {
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let k = 1; k < pts.length - 1; k++) {
+    const [p, q, s] = [pts[k - 1], pts[k], pts[k + 1]];
+    const cut = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, t = Math.min(r, L / 2) / L;
+      return [b[0] + (a[0] - b[0]) * t, b[1] + (a[1] - b[1]) * t]; };
+    const i = cut(p, q), o = cut(s, q);
+    d += ` L${i[0]} ${i[1]} Q${q[0]} ${q[1]} ${o[0]} ${o[1]}`;
+  }
+  const z = pts[pts.length - 1];
+  return `${d} L${z[0]} ${z[1]}`;
+}
+
 const hang = (a, b, s) => `M${a[0]} ${a[1]} C${a[0]} ${Math.max(a[1], b[1]) + s} ${b[0]} ${Math.max(a[1], b[1]) + s} ${b[0]} ${b[1]}`;
 
 function stroke(g, d, color, w) {
@@ -193,7 +208,9 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     if (starts.length === 2) {
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
-      stroke(g, hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
+      const via = link.via2d?.[view];
+      stroke(g, via?.length ? routed2d([a, ...via, b])
+        : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
       const k = leads.get(dev) || 0; leads.set(dev, k + 1);
@@ -211,9 +228,10 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const a = starts[0];
       rec.tagged = true;
-      column.push({rec, want: a[1] + 30, place: y => {
+      const via = link.via2d?.[view];
+      column.push({rec, want: via?.length ? via[via.length - 1][1] : a[1] + 30, place: y => {
         const b = [edgeX, y];
-        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
+        stroke(g, via?.length ? routed2d([a, ...via, b]) : hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
         return tag(b, other, link);
       }});
     }
