@@ -8620,18 +8620,18 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule: named {dl.suggested_filename!r}")
     cols, rows, text = read_csv(dl)
     if cols != ["id", "cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
-                "length", "length_unit", "status", "notes"]:
+                "length", "length_unit", "route", "length_source", "status", "notes"]:
         bad.append(f"cable schedule: columns {cols}")
     want = [
         {"id": "c1", "cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
-         "length_unit": "m", "status": "connected", "notes": ""},
+         "length_unit": "m", "route": "left-front U14-U2", "length_source": "entered", "status": "connected", "notes": ""},
         {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
-         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "", "length_unit": "",
-         "status": "connected", "notes": ""},
+         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "1.5", "length_unit": "m",
+         "route": "right-front U14 > right-rear U14", "length_source": "routed", "status": "connected", "notes": ""},
         {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
-         "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "", "length_unit": "",
-         "status": "loose end",
+         "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2", "length_unit": "m",
+         "route": "left-front U14-U20 > left-rear U20", "length_source": "routed", "status": "loose end",
          "notes": "End A is not connected: port-2 holds no optic. "
                   "OS2 single-mode fiber does not suit end B, which is copper."}]
     if rows != want:
@@ -8662,7 +8662,7 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule: the BOM does not say a length was kept as written: {odd['bom'].partition('Notes')[2]!r}")
     odd = odd["sched"]
     line = odd.split("\r\n")[1]
-    if not line.startswith("c1,'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,connected,"):
+    if not line.startswith("c1,'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,left-front U14-U2,,connected,"):
         bad.append(f"cable schedule: a formula-like label or a length as written is wrong: {line!r}")
     if 'Length as written in the file: {""value"":""about 3"",""unit"":""m""}.' not in line:
         bad.append(f"cable schedule: the length as written is not quoted in the notes: {line!r}")
@@ -8872,9 +8872,10 @@ def check_rack_export_bom_cables(page, base):
     cols, rows, text = read_csv(export_file(page, "bom"))
     status = export_status(page)
     cables = [(r["qty"], r["manufacturer"], r["model"], r["description"], r["ref"]) for r in rows if r["section"] == "Cables"]
-    want = [("1", "", "Cat 6A copper", "length not set; copper at both ends", ""),
-            ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", ""),
-            ("1", "", "OS2 single-mode fiber", "length not set; copper at one end", "")]
+    # c2 and c3 have no entered length, so the page measures one along their routes and the BOM marks it.
+    want = [("1", "", "Cat 6A copper", "1.5 m (routed); copper at both ends", ""),
+            ("1", "", "OS2 single-mode fiber", "2 m (routed); copper at one end", ""),
+            ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", "")]
     if cables != want:
         bad.append(f"BOM cables: the Cables section is {cables}")
     if [r["section"] for r in rows][-3:] != ["Cables"] * 3:
@@ -9039,7 +9040,11 @@ SHEET_PANES_JS = """(text) => {
         b.x < vb[0] - 0.01 || b.y < vb[1] - 0.01 || b.x + b.width > vb[0] + vb[2] + 0.01 || b.y + b.height > vb[1] + vb[3] + 0.01)
         .map(([n, b]) => `${n.closest('[data-cable-id]')?.dataset.cableId} ${n.tagName} to y ${Math.round(b.y + b.height)} of ${Math.round(vb[1] + vb[3])}`);
       return {pane: svg.dataset.pane, x: num(svg, 'x'), y: num(svg, 'y'), w: num(svg, 'width'), h: num(svg, 'height'),
-              vb, nodes: nodes.length, out};
+              vb, nodes: nodes.length, out,
+              // Routed cables: a path whose box ends in a gutter band (26-66 mm outside either rail).
+              gutter: [...svg.querySelectorAll('[data-cables] path')].map(n => [n, n.getBBox()])
+                .filter(([, b]) => (b.x <= -26 && b.x >= -66) || (b.x + b.width >= 476.85 && b.x + b.width <= 516.85))
+                .map(([n]) => n.closest('[data-cable-id]')?.dataset.cableId)};
     });
     const block = [...sheet.querySelectorAll(':scope > rect')].find(r => r.getAttribute('fill') === 'none');
     return {width: num(sheet, 'width'), height: num(sheet, 'height'), blockY: num(block, 'y'), panes};
@@ -9108,9 +9113,14 @@ def check_rack_export_sheet_cables(page, base):
     if status != notes_status(2):
         bad.append(f"sheet cables: two notes in the file, but the status reads {status!r}")
     m = page.evaluate(SHEET_PANES_JS, text)
-    # 24 + (514.85 + 260) + 48 + (514.85 + 260) + 24: both panes widened by the column, which meet in the middle.
-    if abs(m["width"] - 1645.70) > 0.01 or [p["w"] for p in m["panes"]] != [774.85, 774.85]:
+    # 24 + (514.85 + 68 + 520) + 48 + (514.85 + 68 + 520) + 24: the lane gutters (40 mm each side instead of 6) and,
+    # the cables being routed, a column on both sides of each pane.
+    if abs(m["width"] - 2301.70) > 0.01 or [p["w"] for p in m["panes"]] != [1102.85, 1102.85]:
         bad.append(f"sheet cables: the sheet is {m['width']} wide with panes {[p['w'] for p in m['panes']]}")
+    # The page routes these cables, so the sheet draws the routed paths: some path reaches a gutter on each face.
+    for p in m["panes"]:
+        if not p["gutter"]:
+            bad.append(f"sheet cables: the {p['pane']} pane has no routed path reaching its gutter")
     for p in m["panes"]:
         if p["out"] or not p["nodes"]:
             bad.append(f"sheet cables: the {p['pane']} pane clips {p['out']} (of {p['nodes']} nodes)")
@@ -9126,7 +9136,7 @@ def check_rack_export_sheet_cables(page, base):
         if list(g) != [pane] or g[pane]["cables"] != ids or g[pane]["tags"] != tags:
             bad.append(f"sheet cables, {name} only: draws {[(k, v['cables'], v['tags']) for k, v in g.items()]}")
         mm = page.evaluate(SHEET_PANES_JS, t)
-        if abs(mm["width"] - 822.85) > 0.01 or mm["panes"][0]["out"]:
+        if abs(mm["width"] - 1150.85) > 0.01 or mm["panes"][0]["out"]:
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
     # A cross-face cable's tag on a single face still names the far end.
@@ -9143,8 +9153,8 @@ def check_rack_export_sheet_cables(page, base):
     # The PNG is that sheet at 2x.
     png = pathlib.Path(export_file(page, "sheet-png").path()).read_bytes()
     w = int.from_bytes(png[16:20], "big") if png[:8] == b"\x89PNG\r\n\x1a\n" else 0
-    if w not in (3291, 3292):
-        bad.append(f"sheet cables: the PNG is {w} px wide, expected the 1645.70 mm sheet at 2x")
+    if w not in (4603, 4604):
+        bad.append(f"sheet cables: the PNG is {w} px wide, expected the 2301.70 mm sheet at 2x")
 
     # The same ink in light and dark, cables and tags included.
     seen = {}
@@ -9231,7 +9241,7 @@ def check_rack_export_drawio_cables(page, base):
                      "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
                      "style": style.format(colors["os2"])},
         # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
-        "cable-c2": {"label": "", "cable": "c2", "media": "cat6a", "purpose": "management", "length": None,
+        "cable-c2": {"label": "1.5 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "1.5 m",
                      "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
                      "style": style.format(colors["cat6a"])}}
     if got != want:
@@ -9248,8 +9258,10 @@ def check_rack_export_drawio_cables(page, base):
     for bit in ("not in this export yet", "@rear", "names no mounted device", "is not a port in"):
         if bit in notes:
             bad.append(f"draw.io cables: the notes a person reads carry {bit!r}")
+    if "Cable routes are not drawn in draw.io; the cables run straight between their ports there." not in notes:
+        bad.append("draw.io cables: the notes do not say routes are not drawn")
     n = len([l for l in notes.splitlines() if l.startswith("- ")])
-    if n != 4 or status != notes_status(n):
+    if n != 5 or status != notes_status(n):
         bad.append(f"draw.io cables: {n} notes in the file, and the status reads {status!r}")
 
     # An end whose device is hidden in the cabinet that would show it: leaf-1
@@ -9271,7 +9283,7 @@ def check_rack_export_drawio_cables(page, base):
         bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
     if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
         bad.append(f"draw.io cables: a cable with no media is styled {odd['style'][-30:]!r}, media {odd['media']!r}")
-    if odd["label"] != '<b>&"':
+    if odd["label"] != '<b>&" · 1.5 m':
         bad.append(f"draw.io cables: a cable's label is not its own text: {odd['label']!r}")
     return bad
 

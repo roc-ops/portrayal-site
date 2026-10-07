@@ -752,3 +752,12 @@ test('the files of a kit are numbered in import order', () => {
     nautobot: {devices: '1-devices.csv', modules: '2-modules.csv', cables: '3-cables.csv'}});
   assert.equal(D.KIT_SCRIPT, 'import_cables.py');
 });
+
+test('a routed length is said to be measured along its route', () => {
+  const c = {...CABLES[0], length: {value: 2, unit: 'm', source: 'routed', measured: 1.62}};
+  const nb = D.cableImportRows({rack: {...RACK, cables: [c]}, target: 'netbox', names: NAMES, kept: ALL, resolve, ends: ENDS});
+  assert.equal(nb.rows[0].description, 'uplink. Length measured along its route.');
+  const nt = D.cableImportRows({rack: {...RACK, cables: [c]}, target: 'nautobot', names: NAMES, kept: ALL, resolve, ends: ENDS});
+  assert.deepEqual(nt.notes, ['Cable A1: length measured along its route.']);
+  assert.equal(cableRows().rows[0].description, 'uplink');
+});

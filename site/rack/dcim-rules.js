@@ -297,7 +297,10 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     const len = importLength(c, target);
     if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
     // A label or a description over the field's length is cut to it, not the cable dropped.
+    const along = c.length?.source === 'routed' && len.value !== '';
     let label = flat(c.label || c.id), description = c.purpose || '';
+    if (along && !nautobot) description = description ? `${description}. Length measured along its route.` : 'Length measured along its route.';
+    else if (along) notes.push(`Cable ${f.name}: length measured along its route.`);
     if (charCount(label) > DCIM_LIMITS.cableLabel) {
       notes.push(`Cable ${f.name}: its label is ${charCount(label)} characters and ${T} takes ${DCIM_LIMITS.cableLabel}, so the label is shortened to that.`);
       label = cutTo(label, DCIM_LIMITS.cableLabel);

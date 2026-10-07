@@ -89,3 +89,10 @@ test('a hosted manager adds no rail hardware; an unhosted one counts its own U',
   assert.equal(qty([1]), 4);          // the host alone
   assert.equal(qty([1, 1]), 8);       // plus one unhosted manager
 });
+
+test('a routed cable length is marked as routed in the BOM', () => {
+  const rack = {cables: [{id: 'c1', media: 'cat6', a: {item: 'i1'}, b: {item: 'i2'},
+    length: {value: 2, unit: 'm', source: 'routed', measured: 1.62}}]};
+  const [line] = X.cableBomRows(rack);
+  assert.match(line.description, /^2 m \(routed\)/);
+});

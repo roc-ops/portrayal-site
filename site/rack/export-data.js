@@ -4,7 +4,8 @@
 // and (below, Tasks 4-5) DCIM matching and the bill of materials.
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
-import {positionOf} from './model.js';
+import {positionOf, uLabel} from './model.js';
+import {routeText} from './route.js';
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
 
@@ -211,11 +212,12 @@ const asWrittenNote = c => (c.lengthAsWritten != null ? `Length as written in th
 // `id` is the cable's own id, which the 3D model's nodes and draw.io's edges
 // carry; `cable` is its label, or its id when it has none.
 export const CABLE_COLUMNS = ['id', 'cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
-  'length', 'length_unit', 'status', 'notes'];
+  'length', 'length_unit', 'route', 'length_source', 'status', 'notes'];
 // `items` are the rack's items with their height `u` (fit.js itemsWithU), so a
 // device's U is the device import's position (positionOf). Without a height an
 // item counts as 1U.
-export function cableScheduleRows(rack, ends = new Map(), items = rack.items) {
+// `routes` is route-context.js's Map<cableId, {waypoints}>; without it no route is written.
+export function cableScheduleRows(rack, ends = new Map(), items = rack.items, routes = null) {
   const names = uniqueNames(rack.items);
   const byId = new Map(items.map(i => [i.id, i]));
   const named = new Set();
@@ -233,6 +235,8 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items) {
     return {id: c.id, cable: cableName(c), a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
             media: mediaLabel(c.media), purpose: c.purpose, length: len ? len.value : '',
             length_unit: len ? len.unit : '',
+            route: routes?.get(c.id) ? routeText(routes.get(c.id).waypoints, id => names.get(id)?.name ?? id, rack.frame) : '',
+            length_source: c.length ? (c.length.source || 'entered') : '',
             status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' ')};
   });
   const notes = [];
@@ -817,11 +821,27 @@ export function cableBomNotes(rack, ends = new Map()) {
   }
   return out;
 }
+// What the routes add to an export's notes: a pathway filled past its limit, a
+// manager with more cables through it than it states, and a stored waypoint
+// that no longer resolves. `facts` is route-context.js routeFacts (or null).
+export function fillNotes(rack, facts, nameOf = id => id) {
+  if (!facts) return [];
+  const out = [];
+  for (const f of facts.fill || [])
+    if (f.over) out.push(`${f.via} on ${nameOf(f.item)}: ${f.count} cables, ${f.percent}% of a 40% fill.`);
+  for (const o of facts.over || [])
+    out.push(`${nameOf(o.item)}: ${o.count} cables through it, more than its stated ${o.capacity}.`);
+  for (const c of rack.cables || [])
+    for (const w of facts.routes?.get(c.id)?.gone || [])
+      out.push(`Cable ${cableName(c)}: waypoint ${w.lane ? `${w.lane} U${uLabel(rack.frame, w.ru)}` : `${w.via} on ${nameOf(w.item)}`} is gone, so the route skips it.`);
+  return out;
+}
 export function cableBomRows(rack, ends = new Map()) {
   const lines = new Map();
   for (const c of rack.cables || []) {
     const info = s => ends.get(endKey(c[s]))?.info;
-    const length = lengthText(c.length) || 'length not set';
+    const length = lengthText(c.length)
+      ? `${lengthText(c.length)}${c.length.source === 'routed' ? ' (routed)' : ''}` : 'length not set';
     const connector = connectorText(info('a'), info('b'));
     const key = JSON.stringify([c.media ?? '', length, connector]);
     const l = lines.get(key);

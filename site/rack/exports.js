@@ -25,9 +25,11 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
+        cableScheduleRows, cableBomRows, fillNotes, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
+import {routeFacts} from './route-context.js';
+import {LANE_GAP} from './route.js';
 import {mergeSeats, endKey, endName, portPathOf} from './cable-rules.js';
 import {dcimOf} from './model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from './dcim-rules.js';
@@ -78,6 +80,15 @@ async function cabledItems(rack, base) {
           reasons: new Map([...facts.ends].map(([k, v]) => [k, v.reason]))};
 }
 
+// The routes and pathway fill of a rack's cables (route-context.js), read once
+// per export. Null with no cables or when the drawings cannot be read: the
+// export then comes without routes, as it did before them.
+const routesOf = (rack, chassisOf) => ((rack.cables || []).length
+  ? routeFacts(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
+  : Promise.resolve(null));
+const hasWaypoints = rf => !!rf && [...rf.routes.values()].some(x => x.waypoints?.length);
+const labelOf = rack => id => (rack.items || []).find(i => i.id === id)?.label ?? id;
+
 const boxOf = svg => svg.getAttribute('viewBox').split(/\s+/).map(Number);
 const MONO = 'IBM Plex Mono, ui-monospace, monospace';
 
@@ -124,6 +135,8 @@ function paperTags(pane) {
 export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date = new Date()} = {}) {
   const base = itemsWithU(rack, chassisOf);
   const {cabled, facts, items, reasons} = await cabledItems(rack, base);
+  const rf = cabled ? await routesOf(rack, chassisOf) : null;
+  const routed = hasWaypoints(rf);
   // What a pane could not show is judged on the items' own swaps: a plug
   // nobody chose is never "the part chosen".
   const notes = await faceNotesFor(rack, base, faces, chassisOf, {cables: false});
@@ -132,7 +145,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   // The cables' own notes wait for the drawing: they say which cables the sheet holds.
   const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
-    drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
+    drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true,
+                   laneGap: cabled ? LANE_GAP : 0})));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});
@@ -142,13 +156,14 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   document.body.append(host);
   try {
     host.append(sheet);
-    if (cabled) for (const pane of panes) widenForCables(pane);
+    if (cabled) for (const pane of panes) widenForCables(pane, routed);
     // Every pane has one width: drawElevation's own, plus the column when cabled.
-    const faceW = cabled ? FACE_W + ROOM : FACE_W;
+    // The gutters are wider with cables (the lane gap), and routed cables widen both sides.
+    const faceW = cabled ? FACE_W + 2 * (LANE_GAP - 6) + ROOM * (routed ? 2 : 1) : FACE_W;
     panes.forEach((pane, i) => {
       const x = M + i * (faceW + GAP);
       // The heading sits over the rack, not over the rear pane's column to its left.
-      sheet.append(text(x + (cabled && faces[i] === 'rear' ? ROOM : 0), M + 16,
+      sheet.append(text(x + (cabled && (routed || faces[i] === 'rear') ? ROOM : 0), M + 16,
                         faces[i] === 'front' ? 'Front' : 'Rear', {size: 14, weight: 600}));
       pane.setAttribute('x', x.toFixed(2));
       pane.setAttribute('y', String(M + HEAD));
@@ -160,7 +175,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       for (const pane of panes) {
         try {
           if (probeFail.pane === pane.dataset.pane) throw new Error('probe: this pane cannot draw its cables');
-          drawRackCables(pane, rack, reasons, uOf);
+          drawRackCables(pane, rack, reasons, uOf, rf);
         }
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
@@ -172,7 +187,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       }
       // A cable with no group on this sheet (a run, a lead or a tag) is said to be missing, and why.
       const drawn = new Set(panes.flatMap(pane => [...pane.querySelectorAll('[data-cable-id]')].map(n => n.getAttribute('data-cable-id'))));
-      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after);
+      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...fillNotes(rack, rf, labelOf(rack)));
       roomForCables(panes);
       for (const pane of panes) {
         pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
@@ -260,6 +275,8 @@ export async function drawioFile(rack, chassisOf) {
                                     hiddenBy: (id, pane) => lists.hidden.find(h => h.item.id === id && h.pane === pane)?.by.label ?? null,
                                     unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
   notes.push(...wires.notes);
+  if (hasWaypoints(cabled ? await routesOf(rack, chassisOf) : null))
+    notes.push('Cable routes are not drawn in draw.io; the cables run straight between their ports there.');
   // A cable's color is the page's own, by its media key; the style around it is export-data.js's.
   const colors = new Map();
   for (const c of rack.cables || [])
@@ -678,7 +695,7 @@ export async function bomCsv(rack, chassisOf) {
     if (h) notes.push(`${m.label} shares ${h.label}'s rail screws; with two ears stacked, longer screws may be needed.`);
   }
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
-  if (cabled) notes.push(...cableBomNotes(rack, facts.ends));
+  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...fillNotes(rack, await routesOf(rack, chassisOf), labelOf(rack)));
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
@@ -727,7 +744,9 @@ export const cableEnds = rack => (probeFail.facts ? Promise.reject(new Error('pr
 // carries are its notes section and each row's notes column.
 export async function cableScheduleCsv(rack, chassisOf) {
   const facts = await cableEnds(rack);
-  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf));
+  const rf = await routesOf(rack, chassisOf);
+  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes);
+  notes.push(...fillNotes(rack, rf, labelOf(rack)));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
 }
