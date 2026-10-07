@@ -1437,6 +1437,25 @@ check(_ksr is not None and _ksr.returncode == 0,
       "tools/dcim-verify/kits.py passes its self-test against a mock NetBox and Nautobot",
       (_ksr.stderr[-600:] if _ksr else "no tools/dcim-verify/selftest.py"))
 
+# ── zeroU stays empty in every shipped rack fixture ──────────────────────
+# Cable managers are items with `on`, never 0U records: `zeroU` is reserved for
+# a later phase, so no fixture we ship may put anything in it.
+_fx = []
+for _p in sorted((HERE / "tools").rglob("*.json")) + sorted((HERE / "site").rglob("*.json")) + sorted((HERE / "tests").rglob("*.json")):
+    try:
+        _d = json.loads(_p.read_text())
+    except Exception:
+        continue
+    for _r in (_d.get("racks") if isinstance(_d, dict) and isinstance(_d.get("racks"), list) else []):
+        if isinstance(_r, dict) and "zeroU" in _r:
+            _fx.append((str(_p.relative_to(HERE)), _r["zeroU"]))
+_cb = (HERE / "check-browser.py").read_text()
+for _m in re.finditer(r'"zeroU":\s*([^\n,]*)', _cb):
+    _fx.append((f"check-browser.py fixture #{len(_fx)}", [] if _m.group(1).strip() == "[]" else _m.group(1)))
+check(_fx and all(z == [] for _, z in _fx),
+      f"zeroU stays empty in every shipped rack fixture ({len(_fx)} found: tools/dcim-verify/acceptance.rack.json and the check-browser.py fixtures)",
+      "; ".join(f"{n}: {z!r}" for n, z in _fx if z != []))
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

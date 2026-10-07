@@ -7,15 +7,19 @@ import {positionOf} from './model.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
-export function managerRows({host, rack, chassisOf, onAdd, onSelect, onRemove}) {
+export function managerRows({host, rack, chassisOf, attachable = () => null, onAttach = () => {}, onAdd, onSelect, onRemove}) {
   const units = Math.max(1, chassisOf(host.ref)?.ru ?? 1);
   const rows = [];
   for (let unit = units; unit >= 1; unit--) {           // top first, as the rack reads
     const m = rack.items.find(i => i.on === host.id && i.unit === unit);
+    // An unhosted manager already at this U on the host's face: attach it
+    // rather than offering to add another one (it would be refused as taken).
+    const loose = m ? null : attachable(host.face, host.ru + unit - 1);
     const name = units > 1 ? `Unit ${unit}` : 'On this device';
     rows.push(el('li', {}, m
       ? [`${name}: ${m.label} `, button(`mgrSelect-${unit}`, 'Select', () => onSelect(m.id)),
          button(`mgrRemove-${unit}`, 'Remove', () => onRemove(m.id))]
+      : loose ? [`${name}: ${loose.label} (not attached) `, button(`mgrAttach-${unit}`, 'Attach', () => onAttach(loose.id))]
       : [`${name}: none `, button(`mgrAdd-${unit}`, 'Add...', () => onAdd(unit))]));
   }
   return el('section', {class: 'rk-managers', id: 'mgrRows'},

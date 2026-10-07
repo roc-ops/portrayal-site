@@ -86,3 +86,21 @@ test('moveItem: a flip is still refused when a manager of its would collide', ()
   assert.deepEqual(G.moveItem(r, 'i1', {face: 'rear'}, chassisOf),
     {ok: false, reason: 'mgr-a moves with it: Taken by mgr-b on the rear.'});
 });
+
+test('settleManagers: an item whose chassis is unknown is left untouched, with no notice', () => {
+  const rack = {...M.newRack(), items: [
+    {id: 'i1', ref: 'as7726-32x', cfg: 'x', label: 'leaf', ru: 12, face: 'front', turned: false, swaps: {}, fields: {}},
+    {id: 'i2', ref: 'gone-part', cfg: 'x', label: 'mystery', ru: 12, face: 'front', turned: false, swaps: {}, fields: {}, on: 'i1', unit: 1}]};
+  const {rack: s, notices} = G.settleManagers(rack, chassisOf);
+  assert.deepEqual(s.items[1], rack.items[1]);
+  assert.deepEqual(notices, []);
+});
+
+test('settleManagers: a host on the other face says so, not that it is missing', () => {
+  const rack = {...M.newRack(), items: [
+    {id: 'i1', ref: 'as7726-32x', cfg: 'x', label: 'leaf', ru: 12, face: 'rear', turned: false, swaps: {}, fields: {}},
+    {id: 'i2', ref: 'fhd-cmp5dr', cfg: 'x', label: 'mgr', ru: 12, face: 'front', turned: false, swaps: {}, fields: {}, on: 'i1', unit: 1}]};
+  const {rack: s, notices} = G.settleManagers(rack, chassisOf);
+  assert.equal('on' in s.items[1], false);
+  assert.deepEqual(notices, ['mgr: leaf is on the rear, so it stays at U12 on its own.']);
+});

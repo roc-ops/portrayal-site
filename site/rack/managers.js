@@ -31,12 +31,18 @@ export function settleManagers(rack, chassisOf) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   const items = rack.items.map(i => {
     if (!('on' in i)) return i;
-    if (!isRackFace(chassisOf(i.ref))) {
+    const chassis = chassisOf(i.ref);
+    if (!chassis) return i;                  // not in the catalog (yet): nothing to judge it by
+    if (!isRackFace(chassis)) {
       notices.push(`${i.label} is not a cable manager, so it is not on another device.`);
       return detached(i);
     }
     const host = byId.get(i.on);
-    if (!host || isRackFace(chassisOf(host.ref)) || host.face !== i.face) {
+    if (host && !isRackFace(chassisOf(host.ref)) && host.face !== i.face) {
+      notices.push(`${i.label}: ${host.label} is on the ${host.face}, so it stays at U${uLabel(rack.frame, i.ru)} on its own.`);
+      return detached(i);
+    }
+    if (!host || isRackFace(chassisOf(host.ref))) {
       notices.push(`${i.label}: the device it was on is not in this rack, so it stays at U${uLabel(rack.frame, i.ru)} on its own.`);
       return detached(i);
     }

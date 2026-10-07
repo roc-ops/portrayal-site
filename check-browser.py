@@ -3742,10 +3742,16 @@ def check_rack_face_managers(page, base):
       let r = M.newRack({name: 'Managers'});
       ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1'}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 30, face: 'rear', label: 'mgr-rear'}));
       return r;
     }""")
     page.evaluate("r => window.__rack.replaceRack(r)", built)
     page.wait_for_selector('#paneFront svg [data-item-id="i2"][data-panel="mounted"]', timeout=READY_MS)
+    page.wait_for_selector('#paneRear svg [data-item-id="i3"][data-panel="mounted"]', timeout=READY_MS)
+    if not page.query_selector('#paneRear svg [data-manager-mark="i3"]'):
+        bad.append("2D: no gutter mark for the rear manager in the rear pane")
+    if page.query_selector('#paneFront svg [data-item-id="i3"][data-panel="mounted"]'):
+        bad.append("2D: the rear manager is drawn mounted in the front pane")
     order = page.evaluate("""() => {
       const s = document.querySelector('#paneFront svg');
       const h = s.querySelector('[data-item-id="i1"][data-panel="mounted"]'), m = s.querySelector('[data-item-id="i2"][data-panel="mounted"]');
@@ -3787,7 +3793,7 @@ def check_rack_face_managers(page, base):
         bad.append("inspector: the host shows no Cable managers section")
     page.click("#iMove")
     page.click('#paneFront svg [data-u="24"][data-face="front"]')
-    items = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.id, i.ru, i.on ?? null])")
+    items = page.evaluate("() => window.__rack.doc().racks[0].items.filter(i => i.id !== 'i3').map(i => [i.id, i.ru, i.on ?? null])")
     if items != [["i1", 24, None], ["i2", 24, "i1"]]:
         bad.append(f"move: the manager did not follow its host: {items}")
     page.click('#rkMode [data-mode="3d"]')
@@ -3798,8 +3804,15 @@ def check_rack_face_managers(page, base):
       const face = s.metrics().faceZ;
       const box = g.children.find(c => c.isMesh && Array.isArray(c.material));
       const a = await s.guideAnchor({id: 'i2'}, 'guide-1');
-      return {mgrZ: g.position.z, hostZ: h.position.z, face, hidden: box.material.every(m => !m.visible), anchor: !!a};
+      const rr = s.three.scene.getObjectByName('device-i3');
+      const railDepth = window.__rack.doc().racks[0].frame.railDepth;
+      return {mgrZ: g.position.z, hostZ: h.position.z, face, hidden: box.material.every(m => !m.visible), anchor: !!a,
+              rearZ: rr?.position.z, rearRotY: rr?.rotation.y, rearPlane: face - railDepth};
     }""")
+    if got["rearZ"] is None or not (got["rearZ"] < got["rearPlane"]):
+        bad.append(f"3D: the rear manager is not behind the rear rails ({got})")
+    if got["rearRotY"] is None or abs(got["rearRotY"] - 3.141592653589793) > 1e-6:
+        bad.append(f"3D: the rear manager is not turned around ({got})")
     if not (got["mgrZ"] > got["face"] > got["hostZ"]):
         bad.append(f"3D: the manager is not in front of the rails ({got})")
     if not got["hidden"]:

@@ -3,7 +3,7 @@
 // shows follows S.sel.
 
 import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem, dcimOf, withDcim, detached} from './rack/model.js';
-import {placement, moveItem, settleManagers, hostAt} from './rack/managers.js';
+import {placement, moveItem, settleManagers, hostAt, managersOf} from './rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
@@ -160,6 +160,24 @@ function setMode(m) {
 }
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
+
+// What removing a host leaves behind (spec section 5): its managers stay on
+// the rack, on their own. '' when it had none.
+function managersStay(r, hostId) {
+  const ms = managersOf(r, hostId);
+  return ms.length ? ` Its cable manager${ms.length === 1 ? '' : 's'} ${ms.map(m => m.label).join(', ')} stay${ms.length === 1 ? 's' : ''} on the rack.` : '';
+}
+
+// Bolt an unhosted manager over the device now at its U, undoably. It acts on
+// the manager as it is now, or just redraws if it is gone.
+function attachManager(id) {
+  const cur = itemById(id);
+  if (!cur) { S.notice = {text: GONE, kind: 'error'}; render(); return; }
+  const m = moveItem(rack(), id, {ru: cur.ru, face: cur.face}, chassisOf);
+  if (!m.ok) { S.notice = {text: m.reason, kind: 'error'}; render(); return; }
+  const hostId = m.rack.items.find(i => i.id === id)?.on, host = m.rack.items.find(i => i.id === hostId);
+  commit(m.rack, {text: `Attached ${cur.label} to ${host?.label ?? 'the device'}.`});
+}
 
 // The readout is a percentage of Fit's own factor (recomputed every time,
 // since Fit's factor moves with the window and with what's drawn), not of
@@ -739,13 +757,15 @@ function noticeParagraph() {
 
 function summary() {
   const r = rack();
-  const used = r.items.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
+  const devices = r.items.filter(i => !isRackFace(chassisOf(i.ref)));
+  const managers = r.items.length - devices.length;
+  const used = devices.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
   const warnings = r.items
     .map(i => ({i, f: fits(r, {ref: i.ref, ru: i.ru, face: i.face}, chassisOf, {ignoreId: i.id})}))
     .filter(x => !x.f.ok);
   return el('div', {}, [
     el('h3', {text: r.name}),
-    el('p', {class: 'rk-muted', text: `${r.items.length} devices · ${used}U used on the rails.`}),
+    el('p', {class: 'rk-muted', text: `${devices.length} devices · ${used}U used on the rails${managers ? ` · ${managers} cable manager${managers === 1 ? '' : 's'}` : ''}.`}),
     ...warnings.map(({i, f}) => el('p', {class: 'rk-error', text: `${i.label} at U${positionOf(r.frame, i.ru, uOf(i))}: ${f.reason}`})),
     el('p', {class: 'rk-muted', text: 'Click an empty U on either face to place a device there.'}),
   ]);
@@ -795,11 +815,11 @@ function renderSide() {
       body = removePanel({item: it, count: n,
         onBoth: act((now, cur, k, cables) =>
           commit(withoutCablesOf(withoutItem(now, cur.id), cur.id),
-            {text: k ? `Removed ${cur.label} and its ${cables}.` : `Removed ${cur.label}.`})),
+            {text: (k ? `Removed ${cur.label} and its ${cables}.` : `Removed ${cur.label}.`) + managersStay(now, cur.id)})),
         // The count is the one at click time: with no cable left, neither sentence mentions any.
         onKeep: act((now, cur, k, cables) => commit(withoutItem(now, cur.id),
-          {text: k ? `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`
-                   : `Removed ${cur.label}.`})),
+          {text: (k ? `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`
+                    : `Removed ${cur.label}.`) + managersStay(now, cur.id)})),
         onCancel: () => { S.focusNext = 'iRemove'; select({kind: 'item', id: it.id}); }});
     }
   }
@@ -825,10 +845,10 @@ function renderSide() {
       body = managerInspector({item: it, rack: r, chassis: chassisOf(it.ref), host, hostHere,
         onPatch: patch => patchItem(it.id, patch),
         onSelectHost: () => select({kind: 'item', id: host.id}),
-        onDetach: () => live(cur => commit(detachedRack(rack(), cur.id))),
-        onAttach: () => live(cur => patchItem(cur.id, {ru: cur.ru, face: cur.face})),
+        onDetach: () => live(cur => commit(detachedRack(rack(), cur.id), {text: `Detached ${cur.label}.`})),
+        onAttach: () => live(cur => attachManager(cur.id)),
         onMove: () => select({kind: 'move', id: it.id}),
-        onRemove: () => live(cur => { if (confirm(`Remove ${cur.label} from the rack?`)) { S.sel = null; commit(withoutItem(rack(), cur.id)); } }),
+        onRemove: () => live(cur => { S.sel = null; commit(withoutItem(rack(), cur.id), {text: `Removed ${cur.label}.`}); }),
         onExplore: () => explore(it.id)});
     } else body = el('div', {}, [inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
@@ -847,10 +867,16 @@ function renderSide() {
           select({kind: 'remove', id: cur.id});
           return;
         }
-        if (confirm(`Remove ${cur.label} from the rack?`)) { S.sel = null; commit(withoutItem(now, cur.id)); }
+        if (confirm(`Remove ${cur.label} from the rack?`)) {
+          S.sel = null;
+          const stay = managersStay(now, cur.id);
+          commit(withoutItem(now, cur.id), stay ? {text: `Removed ${cur.label}.${stay}`} : null);
+        }
       },
       onExplore: () => explore(it.id)}),
       managerRows({host: it, rack: r, chassisOf,
+        attachable: (face, ru) => r.items.find(i => i.face === face && i.ru === ru && !i.on && isRackFace(chassisOf(i.ref))) ?? null,
+        onAttach: id => attachManager(id),
         onAdd: unit => select({kind: 'u', face: it.face, ru: it.ru + unit - 1, onlyMount: 'rack-face'}),
         onSelect: id => select({kind: 'item', id}),
         onRemove: id => {
@@ -916,7 +942,7 @@ function onPaneClick(ev) {
     // No U target (a device's own panel): take the U and face from the click,
     // so a cable manager can be moved onto a device by clicking it.
     const svg = ev.target.closest('svg[data-pane]');
-    if (svg) {
+    if (svg && isRackFace(chassisOf(itemById(S.sel.id)?.ref))) {
       const id = S.sel.id;
       const r = patchItem(id, {ru: uAtY(rack().frame, svgY(svg, ev.clientX, ev.clientY)), face: svg.dataset.pane});
       if (!r.ok) S.notice = {text: r.reason, kind: 'error'};
@@ -944,7 +970,7 @@ function onPaneClick(ev) {
     const u = uAtY(r.frame, svgY(svg, ev.clientX, ev.clientY));
     const item = itemById(through.dataset.itemId);
     const free = !itemsWithU(r, chassisOf)
-      .some(it => it.face === face && u >= it.ru && u <= it.ru + it.u - 1);
+      .some(it => !isRackFace(chassisOf(it.ref)) && it.face === face && u >= it.ru && u <= it.ru + it.u - 1);
     const opensPicker = r.frame.kind === 'four-post' && item && !reaches(item, r, chassisOf) && free;
     return opensPicker ? select({kind: 'u', face, ru: u}) : select({kind: 'item', id: through.dataset.itemId});
   }

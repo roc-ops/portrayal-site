@@ -194,7 +194,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     if (!face) {
       if (placeholders) {
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,
-                           {...common, 'data-panel': 'missing'}, paper ? OUTLINE_PAPER : OUTLINE));
+                           {...common, 'data-panel': 'missing', ...(isFace(it) ? {'pointer-events': 'none'} : {})}, paper ? OUTLINE_PAPER : OUTLINE));
         if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
       }
       continue;
