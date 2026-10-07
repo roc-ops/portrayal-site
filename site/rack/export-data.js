@@ -250,11 +250,15 @@ const MOUNTS = {
   'din-rail': {tag: 'DIN rail', what: 'a DIN-rail device', where: 'a shelf or DIN-rail bracket'},
   desktop: {tag: 'desktop', what: 'a desktop device', where: 'a shelf'},
   wall: {tag: 'wall mount', what: 'a wall-mount device', where: 'a shelf or bracket'}};
-const mountOf = mount => isRackMount({mount}) ? null
+// A rack-face part (a 0U cable manager) bolts to the rails like a rack device:
+// it needs no shelf, so it has no "needs" sentence - managerNotes says where it is.
+const mountOf = mount => isRackMount({mount}) || mount === 'rack-face' ? null
   : MOUNTS[mount] ?? {tag: mount, what: `not a rack-mount device (${mount})`, where: 'a shelf or bracket'};
 export const mountText = mount => { const m = mountOf(mount); return m && `${m.what}, so it needs ${m.where}`; };
 // The picker's words: the list row's tag and the fit line.
 export function mountPick(mount) {
+  if (mount === 'rack-face')
+    return {tag: '0U, rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'};
   const m = mountOf(mount);
   return m && {tag: m.tag, fit: `Fits here, on ${m.where}: this is ${m.what}.`};
 }

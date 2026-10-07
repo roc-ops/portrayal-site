@@ -12,6 +12,7 @@
 
 import {el} from './dom.js';
 import {fits} from './fit.js';
+import {placement} from './managers.js';
 import {uLabel} from './model.js';
 import {mountPick} from './export-data.js';
 
@@ -19,12 +20,13 @@ const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
 const ALL = 'all';
 
-export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState, onPlace}) {
+export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState, onPlace, onlyMount = null}) {
   // fit() only depends on the rack, this U and this face - all fixed for the
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
-  const live = entries.filter(e => e.ru !== 0);
-  const fitOf = new Map(live.map(e => [e.name, fits(rack, {ref: e.name, ru, face}, chassisOf)]));
+  const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount));
+  const fitOf = new Map(live.map(e => [e.name, fits(rack, {ref: e.name, ...(e.mount === 'rack-face'
+    ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf)]));
   const byRef = new Map(live.map(e => [e.name, e]));
 
   let state = {query: '', vendor: ALL, fitsOnly: true, device: null, cfgByRef: {}, ...pick};

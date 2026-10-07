@@ -2,10 +2,12 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem, dcimOf, withDcim} from './rack/model.js';
+import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem, dcimOf, withDcim, detached} from './rack/model.js';
+import {placement, moveItem, settleManagers, hostAt} from './rack/managers.js';
+import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, reaches, availableDepth, itemsWithU, heightOf, shrinkRack} from './rack/fit.js';
+import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
@@ -179,9 +181,10 @@ async function getDoc(id) {
 // button can outlive that rack (a redraw still on its way): the fit is judged
 // again here, against the rack as it is now.
 function place(entry, cfg, face, ru) {
-  const f = fits(rack(), {ref: entry.name, ru, face}, chassisOf);
+  const at = isRackFace(chassisOf(entry.name)) ? placement(rack(), {face, ru}, chassisOf) : {face, ru};
+  const f = fits(rack(), {ref: entry.name, ...at}, chassisOf);
   if (!f.ok) { S.notice = {text: f.reason, kind: 'error'}; render(); return; }
-  const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ru, face, label: entry.model || entry.name});
+  const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ...at, label: entry.model || entry.name});
   S.sel = {kind: 'item', id: item.id};
   commit(next);
 }
@@ -199,8 +202,12 @@ function patchItem(id, patch) {
   if (!it) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
   const next = {...it, ...patch};
   if (['ru', 'face'].some(k => k in patch)) {
-    const f = fits(r, {ref: next.ref, ru: next.ru, face: next.face}, chassisOf, {ignoreId: id});
-    if (!f.ok) return f;
+    // Through managers.js: a manager is re-hosted by where it lands, and a
+    // host takes its managers with it (spec §5).
+    const m = moveItem(r, id, patch, chassisOf);
+    if (!m.ok) return m;
+    commit(m.rack);
+    return {ok: true};
   }
   if ('cfg' in patch && patch.cfg !== it.cfg &&
       (Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length) &&
@@ -209,6 +216,9 @@ function patchItem(id, patch) {
   commit(updateItem(r, id, patch));
   return {ok: true};
 }
+
+// Detach: the manager keeps its U and loses its host (spec §7).
+const detachedRack = (r, id) => ({...r, items: r.items.map(i => (i.id === id ? detached(i) : i))});
 
 // The lens is awaited across a render gap: the rack it opened for can be
 // gone (another rack switched in) or the item removed by the time it
@@ -256,7 +266,10 @@ function keepScene(prev, next) {
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
+  const notes = [];
+  doc = {...doc, racks: doc.racks.map(r => { const s = settleManagers(r, chassisOf); notes.push(...s.notices); return s.rack; })};
   S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
+  for (const n of notes) addNotice(n);
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
@@ -759,7 +772,7 @@ function renderSide() {
     onCancel: () => closeDcimForm(null)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
-    onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
+    onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru), onlyMount: sel.onlyMount ?? null});
   else if (sel.kind === 'remove') {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
@@ -797,7 +810,18 @@ function renderSide() {
   } else {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
-    else body = inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
+    else if (isRackFace(chassisOf(it.ref))) {
+      const host = it.on ? itemById(it.on) : null;
+      const hostHere = host ? null : hostAt(r, it.face, it.ru, chassisOf);
+      body = managerInspector({item: it, rack: r, chassis: chassisOf(it.ref), host, hostHere,
+        onPatch: patch => patchItem(it.id, patch),
+        onSelectHost: () => select({kind: 'item', id: host.id}),
+        onDetach: () => commit(detachedRack(rack(), it.id)),
+        onAttach: () => patchItem(it.id, {ru: it.ru, face: it.face}),
+        onMove: () => select({kind: 'move', id: it.id}),
+        onRemove: () => { if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(rack(), it.id)); } },
+        onExplore: () => explore(it.id)});
+    } else body = el('div', {}, [inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
       onMove: () => select({kind: 'move', id: it.id}),
@@ -816,7 +840,11 @@ function renderSide() {
         }
         if (confirm(`Remove ${cur.label} from the rack?`)) { S.sel = null; commit(withoutItem(now, cur.id)); }
       },
-      onExplore: () => explore(it.id)});
+      onExplore: () => explore(it.id)}),
+      managerRows({host: it, rack: r, chassisOf,
+        onAdd: unit => select({kind: 'u', face: it.face, ru: it.ru + unit - 1, onlyMount: 'rack-face'}),
+        onSelect: id => select({kind: 'item', id}),
+        onRemove: id => commit(withoutItem(rack(), id), {text: `Removed ${itemById(id).label}.`})})]);
   }
   const kids = [body];
   const notice = noticeParagraph();
