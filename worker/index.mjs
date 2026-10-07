@@ -13,15 +13,19 @@
 //     the Markdown copy (RFC 8288 rel="alternate"), and on the front page the
 //     sitemap. Vary: Accept on both, so no cache hands one to the other.
 //
-// Anything unexpected - no copy for this path, a non-200 - falls through to
-// the static asset, so the worst this can do is behave like no Worker at all.
+// Anything unexpected - no copy for this path, a non-200, a throw anywhere
+// (the Accept header is a stranger's) - falls through to the static asset, so
+// the worst this can do is behave like no Worker at all.
 
 const MD = "text/markdown";
 
-/** The Markdown copy's path for a page path, or null: "/" -> "/index.md", "/kit" -> "/kit.md". */
+/**
+ * The Markdown copy's path for a page path, or null: "/" -> "/index.md",
+ * "/kit" -> "/kit.md", "/components/catalog" -> "/components/catalog.md".
+ */
 export function markdownPath(pathname) {
   if (pathname === "/" || pathname === "/index.html") return "/index.md";
-  const m = /^\/([a-z0-9-]+)(?:\.html)?$/.exec(pathname);
+  const m = /^\/([a-z0-9-]+(?:\/[a-z0-9-]+)*)(?:\.html)?$/.exec(pathname);
   return m ? `/${m[1]}.md` : null;
 }
 
@@ -51,31 +55,39 @@ function withVary(headers) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    const md = markdownPath(url.pathname);
-    const read = request.method === "GET" || request.method === "HEAD";
-
-    if (md && read && wantsMarkdown(request.headers.get("Accept"))) {
-      const copy = await env.ASSETS.fetch(new Request(new URL(md, url), { method: "GET" }));
-      if (copy.status === 200) {
-        const body = await copy.text();
-        const headers = new Headers(copy.headers);
-        headers.set("Content-Type", `${MD}; charset=utf-8`);
-        // An estimate, as Cloudflare's own is: about four characters a token.
-        headers.set("x-markdown-tokens", String(Math.ceil(body.length / 4)));
-        headers.delete("Content-Length");
-        headers.delete("ETag");
-        withVary(headers);
-        return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
-      }
+    try {
+      return await negotiate(request, env);
+    } catch {
+      return env.ASSETS.fetch(request);
     }
-
-    const page = await env.ASSETS.fetch(request);
-    if (!md || page.status !== 200) return page;
-    const headers = new Headers(page.headers);
-    headers.append("Link", `<${md}>; rel="alternate"; type="${MD}"`);
-    if (md === "/index.md") headers.append("Link", `</sitemap.xml>; rel="sitemap"; type="application/xml"`);
-    withVary(headers);
-    return new Response(page.body, { status: page.status, statusText: page.statusText, headers });
   },
 };
+
+async function negotiate(request, env) {
+  const url = new URL(request.url);
+  const md = markdownPath(url.pathname);
+  const read = request.method === "GET" || request.method === "HEAD";
+
+  if (md && read && wantsMarkdown(request.headers.get("Accept"))) {
+    const copy = await env.ASSETS.fetch(new Request(new URL(md, url), { method: "GET" }));
+    if (copy.status === 200) {
+      const body = await copy.text();
+      const headers = new Headers(copy.headers);
+      headers.set("Content-Type", `${MD}; charset=utf-8`);
+      // An estimate, as Cloudflare's own is: about four characters a token.
+      headers.set("x-markdown-tokens", String(Math.ceil(body.length / 4)));
+      headers.delete("Content-Length");
+      headers.delete("ETag");
+      withVary(headers);
+      return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
+    }
+  }
+
+  const page = await env.ASSETS.fetch(request);
+  if (!md || page.status !== 200) return page;
+  const headers = new Headers(page.headers);
+  headers.append("Link", `<${md}>; rel="alternate"; type="${MD}"`);
+  if (md === "/index.md") headers.append("Link", `</sitemap.xml>; rel="sitemap"; type="application/xml"`);
+  withVary(headers);
+  return new Response(page.body, { status: page.status, statusText: page.statusText, headers });
+}

@@ -1352,7 +1352,7 @@ check("sitemap.xml" in _srv and _sm is not None and _sm.tag == "{http://www.site
 _pages_md = sorted(d[:-3] for d in _srv if d.endswith(".md") and d[:-3] + ".html" in _srv)
 _rwf = _wr["assets"].get("run_worker_first")
 check(isinstance(_rwf, list) and sorted("index" if p == "/" else p.lstrip("/") for p in _rwf) == _pages_md
-      and sorted(_pages_md) == sorted(("" if u == "https://portrayal.dev/" else u.rsplit("/", 1)[1]) or "index" for u in _locs),
+      and sorted(_pages_md) == sorted(u.removeprefix("https://portrayal.dev/") or "index" for u in _locs),
       "the Worker runs on exactly the pages that have a Markdown copy, which are the sitemap's pages",
       f"run_worker_first={_rwf}, copies={_pages_md}")
 check(_wr.get("main") == "./worker/index.mjs" and (HERE / "worker" / "index.mjs").exists()

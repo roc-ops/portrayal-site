@@ -9,6 +9,8 @@ const FILES = {
   '/index.md': ['---\ntitle: "home"\n---\n# Home\n', 'text/markdown'],
   '/kit.md': ['---\ntitle: "kit"\n---\n# Kit\n', 'text/markdown'],
   '/rack': ['<!doctype html><title>rack</title>', 'text/html'],   // no rack.md
+  '/components/catalog': ['<!doctype html><title>catalog</title>', 'text/html'],
+  '/components/catalog.md': ['---\ntitle: "catalog"\n---\n# Catalog\n', 'text/markdown'],
 };
 const env = {
   ASSETS: {
@@ -26,7 +28,8 @@ test('a page path maps to its Markdown copy', () => {
   assert.equal(markdownPath('/'), '/index.md');
   assert.equal(markdownPath('/kit'), '/kit.md');
   assert.equal(markdownPath('/kit.html'), '/kit.md');
-  for (const p of ['/site/x.js', '/schemas/v1/device.schema.json', '/kit/', '/Kit'])
+  assert.equal(markdownPath('/components/catalog'), '/components/catalog.md', 'a page in a folder');
+  for (const p of ['/site/x.js', '/schemas/v1/device.schema.json', '/kit/', '/Kit', '//kit', '/a/../kit'])
     assert.equal(markdownPath(p), null, p);
 });
 
@@ -73,4 +76,32 @@ test('no copy, or not a page: the static asset, untouched', async () => {
   const miss = await get('/nope.js', 'text/markdown');
   assert.equal(miss.status, 404);
   assert.equal(miss.headers.get('Link'), null);
+});
+
+test('a page in a folder answers in Markdown too', async () => {
+  const r = await get('/components/catalog', 'text/markdown');
+  assert.equal(r.headers.get('Content-Type'), 'text/markdown; charset=utf-8');
+  assert.equal(await r.text(), FILES['/components/catalog.md'][0]);
+  const html = await get('/components/catalog');
+  assert.equal(html.headers.get('Link'), '</components/catalog.md>; rel="alternate"; type="text/markdown"');
+});
+
+test('a throw in the Worker serves the static page, never an error', async () => {
+  const flaky = {
+    ASSETS: {
+      async fetch(req) {
+        if (new URL(req.url).pathname.endsWith('.md')) throw new Error('binding failed');
+        return env.ASSETS.fetch(req);
+      },
+    },
+  };
+  const r = await worker.fetch(new Request('https://portrayal.dev/kit', { headers: { Accept: 'text/markdown' } }), flaky);
+  assert.equal(r.status, 200);
+  assert.equal(await r.text(), FILES['/kit'][0]);
+  // A header that breaks the parser: the page still comes back.
+  const odd = new Request('https://portrayal.dev/kit');
+  Object.defineProperty(odd, 'headers', { value: { get() { throw new Error('bad header'); } } });
+  const r2 = await worker.fetch(odd, env);
+  assert.equal(r2.status, 200);
+  assert.equal(await r2.text(), FILES['/kit'][0]);
 });

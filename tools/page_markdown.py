@@ -19,12 +19,13 @@ https://portrayal.dev/explorer#x, the URL Cloudflare serves with a 200.
 import re
 from html import unescape
 from html.parser import HTMLParser
+from urllib.parse import urljoin, urlsplit
 
 SITE = "https://portrayal.dev"
 
 # Subtrees that are not content: page chrome, controls, and what a script owns.
 SKIP = {"script", "style", "svg", "template", "noscript", "nav", "header", "footer",
-        "button", "select", "canvas", "iframe", "dialog", "form", "img", "video", "picture"}
+        "button", "select", "label", "canvas", "iframe", "dialog", "form", "img", "video", "picture"}
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
         "source", "track", "wbr"}
 BLOCK = {"p", "div", "section", "article", "aside", "blockquote", "figure", "figcaption",
@@ -38,23 +39,29 @@ THIN = 60
 
 
 def page_url(page):
-    """The canonical URL of a page: Cloudflare 307s /x.html to /x, which is the 200."""
-    return f"{SITE}/" if page == "index.html" else f"{SITE}/{page[:-len('.html')]}"
+    """The canonical URL of a page: Cloudflare 307s /x.html to /x, which is the 200,
+    and serves a folder's index.html at the folder."""
+    if page == "index.html" or page.endswith("/index.html"):
+        return f"{SITE}/{page[:-len('index.html')]}"
+    return f"{SITE}/{page[:-len('.html')]}"
 
 
 def absolute(href, page):
-    """A link as it should read outside the page: absolute, and canonical."""
-    if re.match(r"^[a-z][a-z0-9+.-]*:", href, re.I):          # https:, mailto:
-        return href
+    """A link as it should read outside the page: absolute, and canonical.
+
+    Resolved against the page's own URL, as the browser does, so a relative
+    link on a nested page (components/catalog.html) lands where it does there.
+    """
     if href.startswith("#"):
         return page_url(page) + href
-    path, _, frag = href.partition("#")
-    path = path.lstrip("./").lstrip("/")
-    if path.endswith(".html") and "/" not in path:
-        url = page_url(path)
-    else:
-        url = f"{SITE}/{path}"
-    return url + (f"#{frag}" if frag else "")
+    url = urljoin(f"{SITE}/{page}", href)
+    if not url.startswith(f"{SITE}/"):                       # another site, mailto:
+        return url
+    u = urlsplit(url)
+    path = u.path.lstrip("/")
+    if path.endswith(".html"):
+        url = page_url(path) + (f"?{u.query}" if u.query else "") + (f"#{u.fragment}" if u.fragment else "")
+    return url
 
 
 class _Md(HTMLParser):
