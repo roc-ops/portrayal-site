@@ -162,7 +162,14 @@ export function installOpticFields(shell) {
       inp.type = colour ? 'color' : 'text';
       inp.value = cur[k] ?? f.default ?? '';
       if (!colour) inp.placeholder = 'none';
-      inp.onchange = () => shell.setFields(occ, {[k]: inp.value});
+      // A PICKER PAINTS AS IT IS MOVED. It sends `change` only when it is
+      // dismissed - on macOS, when the colour panel is closed - so a colour
+      // waiting for `change` showed nothing while the reader chose it. The
+      // kit's own highlight picker listens the same way; the 3D scene's
+      // setFields coalesces, so a drag of updates costs one repaint. Words
+      // still land on `change`, once they are typed.
+      if (colour) inp.oninput = () => shell.setFields(occ, {[k]: inp.value});
+      else inp.onchange = () => shell.setFields(occ, {[k]: inp.value});
       row.append(name, inp);
       wrap.appendChild(row);
     }

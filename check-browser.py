@@ -3052,6 +3052,35 @@ def check_explorer_configured_download(page, base):
     return bad
 
 
+@extra("Explorer's latch colour paints while the picker is still open")
+def check_explorer_latch_colour_live(page, base):
+    # A colour picker sends `input` as the reader picks and `change` only when it
+    # is dismissed - on macOS, when the colour panel is closed - so a control
+    # that waits for `change` does nothing while the reader is choosing. Only
+    # `input` is dispatched here, which is all the drawing gets until then.
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front"
+              f"&swap=port-1~generic%2Fqsfp-lc%402", wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    # the PORT, from the tree: a click on the drawing lands on the optic, whose
+    # own fields the kit draws as text boxes
+    page.click('.nm:text-matches("^port-1 \u2014")')
+    pick = page.wait_for_selector('.optic-fields input[type=color]', timeout=READY_MS)
+    pick.evaluate("i => { i.value = '#c22f2f';"
+                  " i.dispatchEvent(new Event('input', {bubbles: true})); }")
+    fills = page.eval_on_selector_all(
+        '#shell svg [data-path="port-1-occupant"] [data-fill-from="latch-color"]',
+        "ns => ns.map(n => n.getAttribute('fill'))")
+    if not fills:
+        bad.append("explorer: the seated optic has no latch to paint")
+    elif any(f != "#c22f2f" for f in fills):
+        bad.append(f"explorer: latch still {sorted(set(fills))} after the picker's input")
+    if "latch-color~%23c22f2f" not in page.url:
+        bad.append(f"explorer: the link does not carry the latch colour: {page.url}")
+    return bad
+
+
 @extra("stage 6 hangs the cables in 3D, and the GLB carries them")
 def check_takeaway_cables_3d(page, base):
     bad = []
