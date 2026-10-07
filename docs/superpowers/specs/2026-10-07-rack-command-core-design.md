@@ -59,12 +59,22 @@ or `{error: 'plain-English reason'}`. A command that changes nothing returns the
 | `cable.add` | `a, b, media?, purpose?, label?, length?, as?` | `canCable`, `withCable` | NOT_ADDED when an end's item is gone; `canCable`'s reasons |
 | `cable.update` | `id, media?, purpose?, label?, length?` | `updateCable` | "That cable is no longer in the rack." |
 | `cable.remove` | `id` | `withoutCable` | as `cable.update` |
+| `cable.route` | `id, route` | `updateCable(rack, id, {route, routeEdited: true})` | as `cable.update` |
+| `cable.route.reset` | `id` | `updateCable(rack, id, {route: [], routeEdited: undefined})` | as `cable.update` |
+| `lengths.routed` | none | `withRoutedLengths(rack, ctx)` (`route.js`) | none. **System**: not a history step, not offered to agents |
 
 GONE is today's `'That device is no longer in the rack.'`. The sentences move from `rack-page.js` into `commands.js` unchanged, so the browser checks that assert them keep passing.
 
 `holes` in `frame` is merged with the frame's current `holes`, as `commitFrame` does today.
 
 `dcim` is a command so that agents and the API have one way in, but it is **not** recorded in history (§3.3).
+
+The `cable.route*` and `lengths.routed` rows come from cable-management piece 2 (pathways and routes, branch `claude/cable-routing-pathways`), which lands before this work starts (§6). Route editing and reset are ordinary undoable edits, as piece 2 makes them. `lengths.routed` is the page re-measuring the routed lengths after a render's route facts: a derived update the page saves without an Undo step today, and it stays that way. Two flags in `COMMANDS` say this:
+
+- `step: false` (`dcim`, `lengths.routed`): applied and saved, never recorded in history; an undo or redo restores its snapshot with the current values of what these commands own (`dcim`; the routed lengths are re-measured by the next render anyway);
+- `system: true` (`lengths.routed`): the agent adapters do not offer it, and the page sends it with `origin: 'system'`.
+
+If piece 2's final shape differs from this when it lands (its PR is not open at the time of writing), the plan follows what landed: the commands wrap whatever `route.js` and `rack-page.js` do then.
 
 Every command's `summary` is one line for the history and change events: "Placed Nexus 93180YC-EX at U12.", "Moved ... to U20 on the rear.", "Added cable c3.", "Renamed the rack to Core A.". Commands whose edit today raises an Undo notice (`remove`, `detach`, `cable.remove`, a shrinking `frame`) use today's undo text as their summary.
 
@@ -179,7 +189,7 @@ The change listener does what `commit()` does today: autosave, render, and keep 
 - Cmd/Ctrl+Z undoes, Shift+Cmd/Ctrl+Z redoes, outside inputs and with no lens open (the same guards as the arrow keys).
 - An undo or redo tells you what it did through the notice: "Undid: Removed X.".
 - Opening another rack, a new one, a duplicate or a file clears the history (`loadDoc`).
-- **DCIM settings are not steps** (D2). `dcim` applies without a history record, and an undo or redo restores its snapshot with the **current** `dcim`, or without the key if the current rack has none. That generalizes today's patching of `S.undo` in `putDcim`: Undo never takes the settings back.
+- **DCIM settings and routed lengths are not steps** (D2, §2.1). `dcim` and `lengths.routed` apply without a history record, and an undo or redo restores its snapshot with the **current** `dcim`, or without the key if the current rack has none. That generalizes today's patching of `S.undo` in `putDcim`: Undo never takes the settings back.
 - A drag that ends in a move is one step; the drag's previews are not edits.
 
 ### 3.4 No-ops
@@ -236,6 +246,8 @@ It is published with the others: a `rack` entry in `SOURCES` in `site/schema.js`
 
 ## 6. How it lands
 
+**After cable-management piece 2.** That branch rewrites much of `rack-page.js` (the routes block in `render()`, route picking and editing, the cable form's draft, `setDoc`). Implementation starts on `main` once its PR has landed, to avoid two branches rewriting the same file.
+
 One branch and one PR, in reviewable commits:
 
 1. `commands.js` (commands, `COMMANDS`, `apply`) and their node tests.
@@ -248,4 +260,4 @@ Then code review, push, the PR, and a message to the "Portrayal-site merge agent
 
 ## 7. Out of scope
 
-Selection in the API, `export(kind)` returning data, `mount()`, the kit move, Annotate, Explorer, a marks schema (pieces 2-4). WebMCP registration, the MCP-B relay and any chat box (site adapters, after the refactor). Persisting history across reloads. `zeroU` commands: `fitsZeroU` exists but the catalog has no zero-U device, so there is nothing to place yet.
+Selection in the API, `export(kind)` returning data, `mount()`, the kit move, Annotate, Explorer, a marks schema (pieces 2-4). WebMCP registration, the MCP-B relay and any chat box (site adapters, after the refactor). Persisting history across reloads. `zeroU` commands: `zeroU` is reserved for side-mounted gear (upstream's future `rack-side`), and none is being added. The 0RU work in progress adds rack-face managers, which are items and are covered by `place`, `move`, `attach` and `detach` (confirmed with the "0RU device support and cable management" session, 2026-10-07).
