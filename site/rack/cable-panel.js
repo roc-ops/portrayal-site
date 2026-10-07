@@ -27,7 +27,7 @@ const button = (id, text, fn, type = 'button') => {
 // length field or its unit was changed, `length`: the new one, or null when
 // the field was emptied. No `length` key means the length was left alone -
 // the cable keeps whatever it has, including one kept as written.
-export function cableForm({title, endA, endB, cable, infoA = null, infoB = null, purposes = [],
+export function cableForm({title, endA, endB, cable, infoA = null, infoB = null, purposes = [], routed = null,
                            onSave, onCancel}) {
   const media = el('select', {id: 'cMedia', 'aria-describedby': 'cWarn'}, [
     option('', 'Not set', cable.media),
@@ -47,6 +47,12 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   // length left alone is not sent at all, so it is kept exactly - even one
   // this form's rule would refuse, or one the loader could only keep as written.
   const loaded = {text: length.value, unit: unit.value};
+  // A routed length is the page's measurement: shown, not an entry. Typing
+  // one saves it as entered; clearing the field saves no length, and the
+  // routed upkeep resumes on the next render.
+  const routedNote = el('p', {id: 'cRouted', class: 'rk-muted',
+    text: routed && Number.isFinite(routed.measured)
+      ? `${routed.value} ${routed.unit || 'm'} (routed, ${routed.measured} m measured). Type a length to override it.` : ''});
   const warn = el('p', {id: 'cWarn', class: 'rk-warn', role: 'status'});
   const err = el('p', {id: 'cError', class: 'rk-error', role: 'alert'});
   const showWarn = () => { warn.textContent = mismatch(media.value, infoA, infoB).join(' '); };
@@ -66,6 +72,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
     el('datalist', {id: 'cPurposes'}, purposes.map(p => el('option', {value: p}))),
     field('Label', label),
     el('div', {class: 'rk-length'}, [field('Length', length), field('Unit', unit)]),
+    routedNote,
     err,
     el('div', {class: 'rk-actions'}, [
       button('cSave', cable.id ? 'Save' : 'Add cable', null, 'submit'),

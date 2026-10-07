@@ -26,6 +26,8 @@ import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, upda
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables} from './rack/cable-view.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
+import {routeFacts} from './rack/route-context.js';
+import {withRoutedLengths} from './rack/route.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -42,6 +44,7 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   dcimDraft: null, zoom: loadZoom(), svgs: [], undo: null, undoText: '', focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
+  routes: null,
   // Cable mode: on or off, and the A end picked and waiting for its B.
   cable: {on: false, a: null},
   // The cable list's filter: the viewer's, not the document's.
@@ -376,6 +379,7 @@ function cableFormPanel(sel) {
     title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
+    routed: cable?.length?.source === 'routed' ? cable.length : null,
     purposes: [...countsBy(r.cables, 'purpose').keys()].filter(Boolean),
     // A saved cable is left selected: lit on the drawing, its row open in the list.
     onSave: fields => {
@@ -708,6 +712,23 @@ async function render() {
   }
   if (mine !== S.draws) return;
   S.cableFacts = facts;
+  // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
+  // length is the document's, so when one changes it is saved, without an
+  // Undo - it is the page's measurement, not an edit. No render is triggered
+  // from here: the side panel and cable list below read S.routes.
+  if (r.cables.length) {
+    const at = S.doc;
+    const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
+    if (mine !== S.draws) return;
+    if (rf && S.doc === at) {
+      S.routes = rf;
+      const next = withRoutedLengths(r, rf.ctx);
+      if (next !== r) {
+        S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
+        S.save.saveSoon(S.doc);
+      }
+    }
+  } else S.routes = null;
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
   // The SVGs are new nodes every render, so the zoom (a style on the old
