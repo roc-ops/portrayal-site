@@ -72,13 +72,19 @@ A rack-face item:
 - An unhosted manager has `ru` and no `on` or `unit`.
 - `turned` is always `false` for a manager and is not offered. A rear manager faces rearward by virtue of `face: rear`.
 
-`parseDoc`:
+`parseDoc` has no chassis index, so it only reads shapes:
 
 - migrates version 1 to 2 with no change to content;
 - refuses a version newer than it knows, as today;
-- reads `on` and `unit` only on a rack-face item (by the chassis index's `mount`), and drops them from any other item with a notice;
-- a manager whose `on` names no item becomes unhosted at its stored `ru`, with a notice. It is never dropped;
-- re-derives `ru` from the host when both are present and they disagree, with a notice.
+- keeps `on` (a non-blank string) and `unit` (an integer of 1 or more) on any item, and drops malformed ones.
+
+`settleManagers(rack, chassisOf)` (`site/rack/managers.js`) runs on every rack the page opens, and returns the rack and a notice per repair:
+
+- drops `on` and `unit` from an item that is not rack-face;
+- a manager whose `on` names no rack device on its face becomes unhosted at its stored `ru`. It is never dropped;
+- clamps `unit` to the host's height and re-derives `ru` from the host.
+
+`withoutItem` detaches every manager whose `on` names the removed item (D3).
 
 `itemIdsInUse` is unchanged: a manager's id is an item id like any other.
 
@@ -106,14 +112,14 @@ Each refusal is a sentence, as today: *"Taken by mgr-2 on the front."*, *"core-1
 - **Drawn after every rack device**, over its host on its own face, from its own `front` view through `configuredFace`. Upstream draws that view as an open elevation (ears, the tray edge, the rings end-on), so the host's ports show through.
 - **The other face** shows a manager only when no item spans that U there. It is then drawn from its `rear` view, as the existing `through` state.
 - **No ears are added.** The device's own drawing has its ears and holes. `drawEars` is skipped for `rack-face`, as it is today for any mount that is not `rack`.
-- **A marker in the U gutter** shows that a U carries a manager, because the manager itself is mostly see-through.
+- **A marker in the U gutter**, which is also a click target for the manager, shows that a U carries a manager, because the manager itself is mostly see-through.
 - The manager's group carries `data-panel="mounted"` and its own `data-item`. It stacks above the host by order, which `elevation.js` already keys on for `mounted`.
 
 ## 7. Placing and selecting (`rack-page.js`, `picker.js`, `inspector.js`, `drag.js`)
 
 - **On a device (the main way).** The host's inspector gains a **Cable managers** section with one row per U of the host on its face. An empty row offers **Add...**, which opens the catalog filtered to `rack-face` devices. A filled row shows the manager, with **Select** and **Remove**.
 - **On an empty U.** The catalog panel's filter `e.ru !== 0` stays, and rack-face devices (`ru: 1`) appear in it with the tag "0U, mounts on the rail face". `mountPick` must not call them "needs a shelf". Placing one there makes it unhosted. On a U a device spans, the catalog offers to attach it to that device instead.
-- **Selecting.** A click on a manager's painted parts (ring, tray, ear) selects the manager. A click through its gaps selects the host, which falls out of the elevation's hit test when the manager's open areas carry `pointer-events: none`. Esc, or **Select host** in the manager's inspector, steps from manager to host.
+- **Selecting.** The manager's group takes no pointer events except on its components (the rings) and on its gutter marker, which select the manager. A click anywhere else on it, the ears and tray included, falls through to the host. **Select host** in the manager's inspector steps from manager to host.
 - **The manager's inspector:**
   - label, face, host and unit;
   - **Detach** (keeps `ru`, drops `on`/`unit`) or **Attach to the device here**;
@@ -131,7 +137,7 @@ Each refusal is a sentence, as today: *"Taken by mgr-2 on the front."*, *"core-1
   - rear: its mounting face on `REAR_FACE_Z`, turned 180 degrees, projecting rearward.
 - `noEars` already holds for any mount but `rack`. That is right here, because the model has its own ears.
 - Picking by item id is unchanged. A click on a ring selects the manager.
-- **For piece 2:** `scene.guideAnchor({id}, guideId)` returns a guide's or pass-through's world position and run direction, alongside `cableAnchor`. Piece 1 adds it and a test, and nothing draws through it.
+- **For piece 2:** `scene.guideAnchor({id}, elementId)` returns the world position and normal of a named element on the manager's front face (a ring is `guide-1` to `guide-5`), sharing `portAnchor`'s lookup. Run direction and aperture are read from `data-guide-*` in piece 2, once `cm-guides` has merged. Piece 1 adds it and a test, and nothing draws through it.
 - GLB and USDZ exports carry the managers, as exports of the same scene.
 
 ## 9. Exports
