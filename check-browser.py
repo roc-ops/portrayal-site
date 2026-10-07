@@ -2221,7 +2221,7 @@ def check_schema_coverage(page, base):
     """
     import schemawalk
     bad = []
-    for fname, doc in schemawalk.documents().items():
+    for fname, doc in schemawalk.all_documents().items():
         key = fname.split(".")[0]
         page.goto(f"{base}/schema.html?doc={key}", wait_until="load")
         try:

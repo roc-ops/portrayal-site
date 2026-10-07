@@ -837,6 +837,7 @@ import schemawalk
 SJS = (HERE / "site" / "schema.js").read_text()
 SHTML = (HERE / "schema.html").read_text()
 docs = schemawalk.documents()
+alldocs = schemawalk.all_documents()
 sources = set(re.findall(r"url:\s*'assets/schemas/([^']+)'", SJS))
 # One of the pair may be staged ahead of the sync that brings it: Portrayal #677
 # replaces overlay.schema.json with listing.schema.json, and the page hides the
@@ -853,12 +854,16 @@ check(keys == tabs, "schema.html has one tab per SOURCES entry",
       f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
 WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
 n_word = re.search(r"\b(Two|Three|Four|Five|Six) documents:", SHTML)
-check(bool(n_word) and n_word.group(1) == WORDS.get(len(docs)),
-      f"schema.html's intro counts {len(docs)} documents",
+check(bool(n_word) and n_word.group(1) == WORDS.get(len(alldocs)),
+      f"schema.html's intro counts {len(alldocs)} documents",
       f"it says {n_word.group(1) if n_word else 'nothing'}")
+site_urls = set(re.findall(r"url:\s*'(site/[^']+)'", SJS))
+check({f"site/rack/{n}" for n in schemawalk.site_documents()} <= site_urls,
+      "schema.js renders every site-owned schema",
+      f"site-owned {sorted(schemawalk.site_documents())}, SOURCES names {sorted(site_urls)}")
 kn = re.search(r"const KNOWN = new Set\(\[([\s\S]*?)\]\)", SJS)
 known = set(re.findall(r"'([^']+)'", kn.group(1))) if kn else set()
-for name, doc in docs.items():
+for name, doc in alldocs.items():
     unknown = {k: at for k, at in schemawalk.keywords(doc).items() if k not in known}
     check(bool(known) and not unknown,
           f"schema.js renders every keyword {name} uses",

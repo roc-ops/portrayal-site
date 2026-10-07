@@ -41,6 +41,19 @@ def documents():
     return {p.name: json.loads(p.read_text()) for p in sorted(SCHEMAS.glob("*.schema.json"))}
 
 
+SITE_SCHEMAS = [HERE / "site" / "rack" / "rack.schema.json"]
+
+
+def site_documents():
+    """{filename: parsed schema} for the schemas this site owns (not vendored)."""
+    return {p.name: json.loads(p.read_text()) for p in SITE_SCHEMAS}
+
+
+def all_documents():
+    """Vendored and site-owned together: what the schema page shows."""
+    return {**documents(), **site_documents()}
+
+
 def keywords(doc):
     """Every keyword used at a schema position, with the first pointer using it."""
     seen = {}
