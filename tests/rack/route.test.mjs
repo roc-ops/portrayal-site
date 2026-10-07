@@ -1,0 +1,116 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as M from '../../site/rack/model.js';
+import * as R from '../../site/rack/route.js';
+
+const SIZES = {'sw': {ru: 1, d: 515}, 'pp': {ru: 1, d: 100},
+  'fhd-cmp5dr': {ru: 1, d: 110, mount: 'rack-face', shell: 'sheet'},
+  'cmh-sfd1u': {ru: 1, d: 80}};
+const chassisOf = ref => SIZES[ref] || null;
+const add = (rack, ref, ru, extra = {}) => M.withItem(rack, {ref, cfg: 'x', ru, label: extra.label ?? ref, ...extra}).rack;
+// Rings of an FHD-CMP5DR, x in rack coordinates (as its front view places them).
+const RINGS = [-205, -110, 0, 110, 205].map((x, i) => ({via: `guide-${i + 1}`, kind: 'ring', face: 'front', x}));
+const ctxFor = (rack, ports, extra = {}) => ({chassisOf,
+  guidesOf: id => {
+    const it = rack.items.find(i => i.id === id);
+    if (it?.ref === 'fhd-cmp5dr') return RINGS.map(r => ({...r, face: it.face}));
+    if (it?.ref === 'cmh-sfd1u') return [{via: 'duct', kind: 'duct', face: it.face, x: 0}];
+    return extra[id] ?? [];
+  },
+  portX: end => ports[`${end.item}|${end.path}`] ?? 0});
+const cable = (a, b, extra = {}) => ({id: 'c1', a: {view: 'front', ...a}, b: {view: 'front', ...b}, route: [], ...extra});
+
+test('a port left of center leaves through the nearest ring, then every ring out to the left', () => {
+  let r = add(M.newRack(), 'sw', 20, {label: 'sw'});
+  r = add(r, 'fhd-cmp5dr', 20, {on: 'i1', unit: 1});
+  r = add(r, 'pp', 30);
+  const ctx = ctxFor(r, {'i1|p1': -100, 'i3|q1': -150});
+  assert.deepEqual(R.autoRoute(r, cable({item: 'i1', path: 'p1'}, {item: 'i3', path: 'q1'}), ctx), [
+    {item: 'i2', via: 'guide-2'}, {item: 'i2', via: 'guide-1'},
+    {lane: 'left-front', ru: 20}, {lane: 'left-front', ru: 30}]);
+});
+
+test('a port right of center goes right; a port at the center goes left', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'fhd-cmp5dr', 20, {on: 'i1', unit: 1});
+  r = add(r, 'pp', 30);
+  const right = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i3', path: 'q'}), ctxFor(r, {'i1|p': 120, 'i3|q': 120}));
+  assert.deepEqual(right.slice(0, 2), [{item: 'i2', via: 'guide-4'}, {item: 'i2', via: 'guide-5'}]);
+  assert.equal(right[2].lane, 'right-front');
+  const mid = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i3', path: 'q'}), ctxFor(r, {'i1|p': 0, 'i3|q': 0}));
+  assert.deepEqual(mid[0], {item: 'i2', via: 'guide-3'});
+  assert.equal(mid.find(w => w.lane).lane, 'left-front');
+});
+
+test('a 1U duct directly above is the manager when the device has none', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'cmh-sfd1u', 21);
+  r = add(r, 'pp', 30);
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i3', path: 'q'}), ctxFor(r, {'i1|p': -50, 'i3|q': -50}));
+  assert.deepEqual(route[0], {item: 'i2', via: 'duct'});
+});
+
+test('a short jumper with no manager has no route', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'pp', 22);
+  assert.deepEqual(R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctxFor(r, {})), []);
+});
+
+test('a rack with no managers: lanes only, and nothing throws', () => {
+  let r = add(M.newRack(), 'sw', 5);
+  r = add(r, 'pp', 30);
+  assert.deepEqual(R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctxFor(r, {'i1|p': 10, 'i2|q': -10})),
+    [{lane: 'right-front', ru: 5}, {lane: 'right-front', ru: 30}]);
+});
+
+test('the same face, different sides: the A side is taken, and B crosses its own rings to it', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'fhd-cmp5dr', 20, {on: 'i1', unit: 1});
+  r = add(r, 'pp', 30);
+  r = add(r, 'fhd-cmp5dr', 30, {on: 'i3', unit: 1});
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i3', path: 'q'}), ctxFor(r, {'i1|p': -100, 'i3|q': 150}));
+  assert.equal(route.filter(w => w.lane).every(w => w.lane === 'left-front'), true);
+  // B's rings, in the order the cable meets them from the lane: outermost left first, to the one nearest its port.
+  assert.deepEqual(route.slice(-4), [{item: 'i4', via: 'guide-1'}, {item: 'i4', via: 'guide-2'}, {item: 'i4', via: 'guide-3'}, {item: 'i4', via: 'guide-4'}]);
+});
+
+test('opposite faces: front lane to rear lane on the A side, joined at the higher U', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'pp', 30, {face: 'rear'});
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctxFor(r, {'i1|p': -100, 'i2|q': 100}));
+  assert.deepEqual(route, [{lane: 'left-front', ru: 20}, {lane: 'left-front', ru: 30}, {lane: 'left-rear', ru: 30}]);
+});
+
+test('a rear-face end measures its side as seen from the front', () => {
+  let r = add(M.newRack(), 'sw', 20, {face: 'rear'});
+  r = add(r, 'pp', 30, {face: 'rear'});
+  // x is already rack coordinates (front view): -100 is the rack's left.
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctxFor(r, {'i1|p': -100, 'i2|q': -100}));
+  assert.equal(route[0].lane, 'left-rear');
+});
+
+test('two-post: lanes are left and right, and opposite faces share one', () => {
+  let r = add(M.newRack({kind: 'two-post'}), 'sw', 20);
+  r = add(r, 'pp', 30, {face: 'rear'});
+  assert.deepEqual(R.lanesOf(r.frame), ['left', 'right']);
+  const route = R.autoRoute(r, cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'}), ctxFor(r, {'i1|p': -100}));
+  assert.deepEqual(route, [{lane: 'left', ru: 20}, {lane: 'left', ru: 30}]);
+});
+
+test('resolveRoute: edited routes are kept; a gone waypoint is reported, not dropped', () => {
+  let r = add(M.newRack(), 'sw', 20);
+  r = add(r, 'pp', 30);
+  const c = cable({item: 'i1', path: 'p'}, {item: 'i2', path: 'q'},
+    {routeEdited: true, route: [{item: 'i9', via: 'guide-1'}, {lane: 'left-front', ru: 25}, {lane: 'nowhere', ru: 3}]});
+  const got = R.resolveRoute(r, c, ctxFor(r, {}));
+  assert.deepEqual(got, {waypoints: [{lane: 'left-front', ru: 25}],
+    gone: [{item: 'i9', via: 'guide-1'}, {lane: 'nowhere', ru: 3}], auto: false});
+  const auto = R.resolveRoute(r, {...c, routeEdited: undefined}, ctxFor(r, {}));
+  assert.equal(auto.auto, true);
+});
+
+test('routeText reads as the schedule prints it', () => {
+  assert.equal(R.routeText([{item: 'i2', via: 'guide-3'}, {item: 'i2', via: 'guide-1'}, {lane: 'left-front', ru: 12},
+    {lane: 'left-front', ru: 24}, {item: 'i5', via: 'duct'}], id => ({i2: 'mgr-1', i5: 'pp-duct'}[id] ?? id)),
+    'mgr-1 ring 3 > mgr-1 ring 1 > left-front U12-U24 > pp-duct duct');
+});
