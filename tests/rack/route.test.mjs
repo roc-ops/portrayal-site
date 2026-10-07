@@ -207,3 +207,14 @@ test('withRoutedLengths fills unset lengths, updates routed ones, and never touc
   assert.equal(out.cables[2].length.value, out.cables[0].length.value);
   assert.equal(R.withRoutedLengths(out, ctx), out);
 });
+
+test('withRoutedLengths leaves a cable alone whose written length the page could not read', () => {
+  let r = add(M.newRack(), 'sw', 1);
+  r = add(r, 'pp', 21);
+  const base = {a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i2', path: 'q', view: 'front'}, route: []};
+  r = {...r, cables: [{id: 'c1', ...base, lengthAsWritten: {value: 'long', unit: 'm'}}]};
+  const ctx = {...ctxFor(r, {'i1|p': -100, 'i2|q': -100}), portY: () => null};
+  const out = R.withRoutedLengths(r, ctx);
+  assert.equal(out, r);
+  assert.equal(out.cables[0].length, undefined);
+});

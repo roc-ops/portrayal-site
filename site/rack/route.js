@@ -220,12 +220,13 @@ export function capacityOver(rack, ctx) {
 
 // ── keeping routed lengths current ────────────────────────────────────────
 // A cable with no length, or a routed one, gets the length its route measures;
-// an entered length is the user's and is never touched. Returns the same rack
+// an entered length is the user's and is never touched, nor is one the user
+// wrote that the page could not read (lengthAsWritten): that intent wins. Returns the same rack
 // when nothing changed, so the page can tell whether to save.
 export function withRoutedLengths(rack, ctx) {
   let changed = false;
   const cables = (rack.cables || []).map(c => {
-    if (c.length && c.length.source !== 'routed') return c;
+    if (c.lengthAsWritten != null || (c.length && c.length.source !== 'routed')) return c;
     const got = routedLength(rack, c, ctx);
     if (!got) return c;
     const measured = Math.round(got.measured * 100) / 100;

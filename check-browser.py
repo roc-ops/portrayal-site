@@ -6774,19 +6774,21 @@ def check_rack_cables_drawn(page, base):
     got = page.evaluate(PANES_JS)
     front, rear = got["front"], got["rear"]
 
-    # Both panes widen by the same 260 mm column - the front to its right, the
-    # rear to its left - and by 40 mm below.
+    # With cables the rack draws 40 mm lane gutters beside the rails (route.js LANE_GAP) instead of the
+    # plain 6 mm, so the recorded base box is the plain viewBox 34 mm wider on each side. These
+    # fixture cables are routed (their automatic routes have lane waypoints), and a routed cable's tag
+    # sits in its gutter on either side, so each pane then widens by the 260 mm column on BOTH sides
+    # (widenForCables, both) and by 40 mm below.
     pf, pr = plain["front"]["vb"], plain["rear"]["vb"]
-    # The height too: the cabled panes' recorded base box is exactly the plain viewBox.
+    lane = 40 - 6
     for p, pv in (("front", pf), ("rear", pr)):
-        if [round(float(n), 4) for n in (got[p]["baseBox"] or "x").split()[:4] if n != "x"] != [round(n, 4) for n in pv]:
-            bad.append(f"cables drawn: the {p} pane's base box is {got[p]['baseBox']}, the plain viewBox is {pv}")
-    if not (near(front["vb"][0], pf[0], 0.01) and near(front["vb"][2], pf[2] + 260, 0.01)
-            and near(front["vb"][3], pf[3] + 40, 0.01)):
-        bad.append(f"cables drawn: the front pane's viewBox is {front['vb']}, from {pf}")
-    if not (near(rear["vb"][0], pr[0] - 260, 0.01) and near(rear["vb"][2], pr[2] + 260, 0.01)
-            and near(rear["vb"][3], pr[3] + 40, 0.01)):
-        bad.append(f"cables drawn: the rear pane's viewBox is {rear['vb']}, from {pr}")
+        want = [round(n, 4) for n in (pv[0] - lane, pv[1], pv[2] + 2 * lane, pv[3])]
+        if [round(float(n), 4) for n in (got[p]["baseBox"] or "x").split()[:4] if n != "x"] != want:
+            bad.append(f"cables drawn: the {p} pane's base box is {got[p]['baseBox']}, the plain viewBox widened by the lane gutters is {want}")
+    for name, pane, pv in (("front", front, pf), ("rear", rear, pr)):
+        if not (near(pane["vb"][0], pv[0] - lane - 260, 0.01) and near(pane["vb"][2], pv[2] + 2 * lane + 520, 0.01)
+                and near(pane["vb"][3], pv[3] + 40, 0.01)):
+            bad.append(f"cables drawn: the {name} pane's viewBox is {pane['vb']}, from {pv}")
     # One U scale: the two panes are the same size, and U1 sits at the same height in both.
     if not (near(front["box"]["w"], rear["box"]["w"]) and near(front["box"]["h"], rear["box"]["h"])):
         bad.append(f"cables drawn: the panes differ in size ({front['box']} / {rear['box']})")
@@ -7744,7 +7746,10 @@ def check_rack_cable_lifecycle(page, base):
     select_item(page, "front", "i2")
     page.keyboard.press("ArrowUp")
     wait_fn(page, "lifecycle: leaf-1 moved up", "() => window.__rack.doc().racks[0].items[1].ru === 15")
-    if doc()["cables"] != before:
+    # A routed length is recomputed on every redraw (spec 8), so moving a device may re-measure it; nothing
+    # else may change - ends, media, label, route, routeEdited and entered lengths all stay exactly as they were.
+    unrouted = lambda cs: [{k: v for k, v in c.items() if not (k == "length" and v.get("source") == "routed")} for c in cs]
+    if unrouted(doc()["cables"]) != unrouted(before):
         bad.append("lifecycle: moving a device changed its cables")
     wait_sel(page, "lifecycle: c1 drawn after the move", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
     if page.get_attribute('svg[data-pane="front"] [data-cables] [data-cable-id="c1"]', "data-loose-lead"):
@@ -8392,7 +8397,8 @@ def check_rack_cable_length_units(page, base):
         wait_fn(page, "length units: clearing the length saves", "() => !document.getElementById('cableForm')", timeout=5000)
     except RuntimeError:
         bad.append(f"length units: clearing a yd length was refused ({err()!r})")
-    if "length" in cable("c2"):
+    # Cleared means no ENTERED length: the page then fills in the routed one (spec 8), which is not the user's.
+    if cable("c2").get("length", {}).get("source") == "entered":
         bad.append(f"length units: after clearing it c2's length is {cable('c2').get('length')}")
 
     # A LENGTH KEPT AS WRITTEN (c3's {value: 'long'}): an edit that leaves the
@@ -8440,7 +8446,7 @@ def check_rack_cable_length_units(page, base):
     page.click("#cSave")
     wait_fn(page, "length units: c3 saved as L3", "() => window.__rack.doc().racks[0].cables[2].label === 'L3'")
     c3 = cable("c3")
-    if "length" in c3 or "lengthAsWritten" in c3:
+    if c3.get("length", {}).get("source") == "entered" or "lengthAsWritten" in c3:
         bad.append(f"length units: after the length was cleared c3 is {c3}")
     return bad
 
@@ -10519,7 +10525,7 @@ def check_rack_dcim_kit_nautobot(page, base):
     cables = kit["zip"]["3-cables.csv"].split("\r\n")
     if cables != ["a_device,a_type,a_name,b_device,b_type,b_name,type,status,label,color,length,length_unit",
                   "leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,smf-os2,Planned,A1,,2,m",
-                  "leaf-1,dcim.interface,mgmt-eth,demarc-i3,dcim.interface,port-2-1,cat6a,Planned,c2,,,", ""]:
+                  "leaf-1,dcim.interface,mgmt-eth,demarc-i3,dcim.interface,port-2-1,cat6a,Planned,c2,,2,m", ""]:
         bad.append(f"Nautobot kit: the cables file reads {cables}")
     # No file in the kit can be fed to Nautobot's own cable importer: none has its id columns.
     if any("termination_a" in t for n, t in kit["zip"].items() if n.endswith(".csv")):
@@ -10679,7 +10685,7 @@ def check_rack_dcim_acceptance_kits(page, base):
     if got != [name64, "pt-verify-demarc-i4", "pt-verify-Twin-i6", "pt-verify-twin-i7", "pt-verify-leaf-1", "pt-verify-core-1"] or len(got[0]) != 64:
         bad.append(f"acceptance rack: NetBox devices {got}")
     got = [(r["label"], r["side_a_name"], r["side_b_name"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nb, "4-cables.csv")]
-    if got != [("pt-verify-A1", "port-1", "slot-2/p0", "smf-os2", "2", "m"), ("pt-verify-mgmt", "mgmt-eth", "port-2-1", "cat6a", "", ""),
+    if got != [("pt-verify-A1", "port-1", "slot-2/p0", "smf-os2", "2", "m"), ("pt-verify-mgmt", "mgmt-eth", "port-2-1", "cat6a", "2", "m"),
                ("pt-verify-blank", "port-3", "slot-2/p1", "", "1.5", "ft"), (label100, "port-2-1", "port-2-1", "cat6", "999999.99", "m"),
                ("pt-verify-limit", "port-2-2", "port-2-2", "cat6", "32766.5", "m")]:
         bad.append(f"acceptance rack: NetBox cables {got}")
@@ -10699,7 +10705,7 @@ def check_rack_dcim_acceptance_kits(page, base):
     if got != [name64, "pt-verify-demarc-i4", "pt-verify-Twin-i6", "pt-verify-twin-i7", "pt-verify-leaf-1", "pt-verify-demarc-i3", "pt-verify-core-1"]:
         bad.append(f"acceptance rack: Nautobot devices {got}")
     got = [(r["label"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nt, "3-cables.csv")]
-    if got != [("pt-verify-A1", "smf-os2", "2", "m"), ("pt-verify-mgmt", "cat6a", "", ""), ("pt-verify-pair", "cat6", "2", "ft"),
+    if got != [("pt-verify-A1", "smf-os2", "2", "m"), ("pt-verify-mgmt", "cat6a", "2", "m"), ("pt-verify-pair", "cat6", "2", "ft"),
                ("pt-verify-blank", "", "2", "ft"), (label100, "cat6", "", ""), ("pt-verify-limit", "cat6", "32767", "m")]:
         bad.append(f"acceptance rack: Nautobot cables {got}")
     left, notes = readme_lists(nt["zip"]["README.txt"])
