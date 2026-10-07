@@ -8069,6 +8069,49 @@ def check_rack_history(page, base):
     wait_fn(page, "history: unshrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 42")
     if items() != before:
         bad.append(f"history: Undo after a shrink left {items()}, expected {before}")
+    # A cable added between two placed devices is a step: Undo takes it back, Redo runs it again.
+    ids = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => i.id)")
+    ends = []
+    for i in ids[:2]:
+        ports = page.evaluate(f"() => window.__rack.query.freePorts({json.dumps(i)})") or []
+        if not ports:
+            bad.append(f"history: freePorts({i!r}) found no port to cable")
+            return bad
+        ends.append({"item": i, "path": ports[0]["path"], "view": ports[0]["view"]})
+    res = page.evaluate("([a, b]) => window.__rack.apply({op: 'cable.add', a, b})", ends)
+    if res.get("error"):
+        bad.append(f"history: cable.add refused: {res['error']}")
+        return bad
+    wait_fn(page, "history: cable added", "() => window.__rack.doc().racks[0].cables.length === 1")
+    wait_fn(page, "history: Undo describes the cable",
+            "() => (document.getElementById('undoWhat')?.textContent || '').startsWith('Added cable ')")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the cable undone", "() => window.__rack.doc().racks[0].cables.length === 0")
+    if len(items()) != len(ids):
+        bad.append(f"history: undoing the cable changed the devices: {items()}")
+    wait_sel(page, "history: Redo after undoing the cable", "#redoStep")
+    page.click("#redoStep")
+    wait_fn(page, "history: the cable redone", "() => window.__rack.doc().racks[0].cables.length === 1")
+    # Two steps with one summary, the second undone: the notice reads "Undid: <summary>",
+    # which holds the summary Undo now takes back, but Undo is described by that step,
+    # not by the notice.
+    page.evaluate("() => window.__rack.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 30, label: 'twin'})")
+    wait_fn(page, "history: twin placed", "() => window.__rack.doc().racks[0].items.some(i => i.label === 'twin')")
+    tid = page.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.label === 'twin').id")
+    page.evaluate(f"() => window.__rack.apply({{op: 'patch', id: {json.dumps(tid)}, turned: true}})")
+    page.evaluate(f"() => window.__rack.apply({{op: 'patch', id: {json.dumps(tid)}, turned: false}})")
+    wait_fn(page, "history: two same-summary steps",
+            f"() => window.__rack.doc().racks[0].items.find(i => i.id === {json.dumps(tid)}).turned === false")
+    wait_sel(page, "history: Undo after two same-summary steps", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the second step undone",
+            f"() => window.__rack.doc().racks[0].items.find(i => i.id === {json.dumps(tid)}).turned === true")
+    try:
+        wait_fn(page, "history: Undo described by its step, not by the Undid notice",
+                "() => document.getElementById('undoWhat')?.textContent === 'Changed twin.'")
+    except RuntimeError:
+        what = page.text_content("#undoWhat") if page.query_selector("#undoWhat") else None
+        bad.append(f"history: after an Undo of a repeated step, Undo describes {what!r}, expected 'Changed twin.'")
     return bad
 
 

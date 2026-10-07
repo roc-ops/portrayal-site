@@ -54,6 +54,7 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
+  saidStep: null,    // the summary of the step the notice says, which Undo may take as its description
   // Cable mode: on or off, and the A end picked and waiting for its B.
   cable: {on: false, a: null},
   // The cable list's filter: the viewer's, not the document's.
@@ -270,7 +271,7 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
-  if (say && !res.noop && res.summary) addNotice(res.summary, 'note');
+  if (say && !res.noop && res.summary) { addNotice(res.summary, 'note'); S.saidStep = res.summary; }
   if (res.noop && !quiet) renderSoon();
   return res;
 }
@@ -285,6 +286,10 @@ function renderSoon() {
 function onChange(ev) {
   if (ev.cause === 'load') { if (ev.findings.length) S.save.saveSoon(theDoc()); return; }
   for (const f of ev.findings) addNotice(f.text, f.kind);
+  // The notice says this step only when the step raised it: a finding that is
+  // its summary (a shrink), or edit()'s `say`, which runs after this. "Undid: X"
+  // is not step X, even when the step Undo now takes back is also called X.
+  S.saidStep = ev.cause === 'apply' && ev.summary && ev.findings.some(f => f.text.includes(ev.summary)) ? ev.summary : null;
   if (ev.cause === 'undo' || ev.cause === 'redo')
     addNotice(`${ev.cause === 'undo' ? 'Undid' : 'Redid'}: ${ev.summary}`, 'note');
   S.save.saveSoon(theDoc());
@@ -978,7 +983,7 @@ function renderSide() {
   // itself while it shows, then a line of its own. Either way it is the
   // button's description.
   const stepButton = (id, text, whatId, what, fn) => {
-    if (notice && what && notice.textContent.includes(what) && id === 'undoShrink') notice.id = whatId;
+    if (notice && what && S.saidStep === what && notice.textContent.includes(what) && id === 'undoShrink') notice.id = whatId;
     else if (what) kids.push(el('p', {id: whatId, class: 'rk-undo-what rk-muted', text: what}));
     const b = el('button', {type: 'button', id, text, ...(what ? {'aria-describedby': whatId} : {})});
     b.addEventListener('click', fn);
@@ -986,6 +991,7 @@ function renderSide() {
   };
   if (ed.canUndo) stepButton('undoShrink', 'Undo', 'undoWhat', ed.undoSummary, undoStep);
   if (ed.canRedo) stepButton('redoStep', 'Redo', 'redoWhat', ed.redoSummary, redoStep);
+  if (notice) S.saidStep = null;     // shown once, like the notice
   $('side').replaceChildren(...kids);
   const back = focusId ? document.getElementById(focusId) : null;
   const row = S.focusRow ? document.getElementById(`cableRow-${S.focusRow}`) : null;
@@ -1320,6 +1326,7 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     replaceRack: (next, undoable) => {
       if (undoable) addNotice(undoable.text, 'note');
       ed.replaceRack(next, undoable?.text ?? 'Changed the rack.');
+      if (undoable) S.saidStep = undoable.text;
     },
     apply: cmds => edit(cmds),
     undo: () => undoStep(),
