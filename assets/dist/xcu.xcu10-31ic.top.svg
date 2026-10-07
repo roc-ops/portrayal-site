@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.35mm" height="284.0mm" viewBox="0 0 431.35 284.0" data-device="xcu" data-view="top" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Fibrain XCU10","device-version":"0.2.1","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fibrain/xcu-drawer-plan@1":"1.0.0","fibrain/xcu-interior@1":"1.0.0","fibrain/xcu-shell-top@1":"1.0.0"},"source-sha256":"e64bfb276faad4498eba9f96348876e510aec7ab1004079e513d094aba38473a","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XCU10" data-sku="XCU10-31IC" data-part-number="XCU10-31IC" x="0" y="0" width="431.35" height="284" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="431.35" height="284" rx="0.6" fill="#141618" />
+  </g>
+  <g id="interior" data-path="interior" data-class="mechanical" data-ref="fibrain/xcu-interior@1:1.0.0" data-depth="20.2" data-wall="#101214" data-walls="inside" data-rel-pos="1" transform="translate(1.0,1.0)" data-group="interior" data-group-role="furniture" data-description="the inside of the shell, the space the drawer slides in." data-under="shell-top">
+    <title>interior</title>
+    <rect id="interior--floor" x="0" y="0" width="429.35" height="283.0" fill="#141618" stroke="#0c0d0e" stroke-width="0.4" data-path="interior/floor" data-class="bezel" />
+  </g>
+  <g id="drawer-plan" data-class="mechanical" transform="translate(0,34.0) rotate(180 215.675 125.0)" data-projection="1" data-of="drawer/module" data-in="interior" data-under="shell-top">
+    <title>drawer-plan</title>
+    <rect id="drawer-plan--floor" x="0" y="0" width="431.35" height="250.0" fill="#202326" stroke="#0c0d0e" stroke-width="0.4" />
+    <rect id="drawer-plan--rail-left" x="0" y="42" width="5" height="208.0" fill="#aab0b6" />
+    <rect id="drawer-plan--rail-right" x="426.35" y="42" width="5" height="208.0" fill="#aab0b6" />
+    <rect id="drawer-plan--front-plate" x="0" y="0" width="431.35" height="40" fill="#2b2f33" stroke="#0c0d0e" stroke-width="0.3" />
+    <g id="drawer-plan--screws">
+      <circle cx="9.0" cy="10" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="9.0" cy="30" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="112.5" cy="10" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="112.5" cy="30" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="215.7" cy="10" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="215.7" cy="30" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="318.9" cy="10" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="318.9" cy="30" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="422.3" cy="10" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="422.3" cy="30" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+    </g>
+    <g id="drawer-plan--splice-cassettes">
+      <rect x="118.18" y="85.0" width="195.0" height="93.6" rx="3" fill="#3a3d41" stroke="#6b7177" stroke-width="0.5" />
+      <circle cx="158.18" cy="131.8" r="30" fill="none" stroke="#6b7177" stroke-width="1.4" />
+      <circle cx="273.18" cy="131.8" r="30" fill="none" stroke="#6b7177" stroke-width="1.4" />
+      <rect id="drawer-plan--splice-holder-a" x="198.68" y="99.0" width="34" height="26" rx="1" fill="#e2443a" />
+      <rect id="drawer-plan--splice-holder-b" x="198.68" y="141.0" width="34" height="26" rx="1" fill="#e2443a" />
+    </g>
+  </g>
+  <g id="shell-top" data-path="shell-top" data-class="mechanical" data-behaviour="mounts" data-ref="fibrain/xcu-shell-top@1:1.0.0" data-wall="#101214" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="covers" data-group-role="furniture" data-description="the shell's top, which lifts off in the viewer to show the drawer from above.">
+    <title>shell-top</title>
+    <rect id="shell-top--cover" x="0" y="0" width="431.35" height="284.0" fill="#1b1e21" stroke="#0c0d0e" stroke-width="0.5" data-path="shell-top/cover" data-class="bezel" data-z-out="1.0" data-z-color="#1b1e21" />
+  </g>
+</svg>

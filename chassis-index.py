@@ -10,12 +10,25 @@ check-contract.py fails when it is stale.
     ./chassis-index.py          write site/rack/chassis.json
 """
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DIST = HERE / "assets" / "dist"
 OUT = HERE / "site" / "rack" / "chassis.json"
 RU = 44.45
+
+
+def marked(path):
+    """The ids a route can pass through on one compiled face: elements carrying
+    `data-guide` (a ring on a component, a duct rect) and pass-throughs
+    (`data-class="pass"`). Empty until upstream's guides and passes land."""
+    if not path.is_file():
+        return [], []
+    root = ET.parse(path).getroot()
+    guides = sorted({e.get("id") for e in root.iter() if e.get("data-guide") and e.get("id")})
+    passes = sorted({e.get("id") for e in root.iter() if e.get("data-class") == "pass" and e.get("id")})
+    return guides, passes
 
 
 def build():
@@ -43,6 +56,21 @@ def build():
         # only a stated mount other than a rack's, so the file barely grows
         if c.get("mount") and c["mount"] != "rack":
             out[d["name"]]["mount"] = c["mount"]
+        # a sheet body (rack3d.js hides its box), the vendor's stated cable
+        # capacity, and the ids a route can pass through (spec §3): each only
+        # when the device has it, so the file barely grows
+        entry = out[d["name"]]
+        if c.get("shell"):
+            entry["shell"] = c["shell"]
+        perf = (idx.get("attrs") or {}).get("performance") or {}
+        if perf.get("cable-capacity") is not None:
+            entry["capacity"] = {"count": perf["cable-capacity"], "basis": perf.get("cable-capacity-basis", "")}
+        for view in ("front", "rear"):
+            g, p = marked(DIST / f"{d['name']}.{idx.get('default')}.{view}.svg")
+            if g:
+                entry.setdefault("guides", {})[view] = g
+            if p:
+                entry.setdefault("passes", {})[view] = p
     return {"generated-from": "assets/dist/devices.json and <name>.configs.json, by chassis-index.py",
             "devices": out}
 

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32.3mm" height="43.6mm" viewBox="0 0 32.3 43.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="d-ring-snap-in" data-path="d-ring-snap-in" data-class="mechanical" data-behaviour="mounts" data-ref="fs/d-ring-snap-in@1:1.0.0" data-flammability="UL 94V-2" data-material="PC" transform="translate(0,0)">
+    <title>d-ring-snap-in</title>
+    <circle id="d-ring-snap-in--seat" cx="16.15" cy="21.8" r="16.15" fill="#131517" data-path="d-ring-snap-in/seat" data-class="bezel" data-z-cyl="2.0" data-z-color="#131517" />
+    <rect id="d-ring-snap-in--top" x="12.75" y="0" width="6.8" height="43.6" rx="2" fill="#0c0d0f" data-path="d-ring-snap-in/top" data-class="bezel" data-z-lift="35.0" data-z-bar="6.0" data-z-color="#0c0d0f" />
+    <rect id="d-ring-snap-in--leg-rear" x="12.75" y="0" width="6.8" height="6.8" rx="2" fill="#0c0d0f" data-path="d-ring-snap-in/leg-rear" data-class="bezel" data-z-cyl="41.0" data-z-color="#0c0d0f" />
+    <rect id="d-ring-snap-in--leg-front" x="12.75" y="36.8" width="6.8" height="6.8" rx="2" fill="#0c0d0f" data-path="d-ring-snap-in/leg-front" data-class="bezel" data-z-cyl="28.2" data-z-color="#0c0d0f" />
+    <rect id="d-ring-snap-in--hook" x="12.75" y="36.8" width="6.8" height="6.8" rx="2" fill="#0c0d0f" data-path="d-ring-snap-in/hook" data-class="bezel" data-z-cyl="9.0" data-z-lift="32.0" data-z-color="#0c0d0f" />
+  </g>
+</svg>

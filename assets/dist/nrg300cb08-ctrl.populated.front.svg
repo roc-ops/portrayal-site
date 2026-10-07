@@ -1,0 +1,1075 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="43.9mm" viewBox="0 0 431.8 43.9" data-device="nrg300cb08-ctrl" data-view="front" data-weight-empty-kg="5.44" data-weight-configured-kg="7.71" data-weight-configured-scope="populated, 17.0 lb in the datasheet; unpopulated is 12.0 lb" data-overall-mm="431.8 x 44 x 331 without brackets (17 x 1.75 x 13.0 in)" data-mounting="19 inch and 23 inch brackets included" data-input-voltage="±12 VDC, ±24 VDC and ±48 VDC nominal" data-input-dc="dual feed; maximum input load 325 A at 45 C per panel, de-rated to 200 A at 70 C; input wire 2/0 AWG to 350 MCM" data-short-circuit-withstand-a="5000" data-output-breaker-max="60 A single-pole; the UL rating holds to 48 A continuous per output" data-input-interrupt-max="125 percent of the panel rating" data-power-max-w="1.44" data-power-max-scope="the alarm card alone at 48 V (30 mA); 0.48 W at 24 V and 0.22 W at 12 V. THE MONITORING CARD ALSO DRAWS FROM THE A AND B FEEDS, and no document held states how much (gap monitoring-card-draw), so this figure is a floor for the panel, not its total. Separately the guide gives a nominal power LOSS of less than 45 W per side at 325 A and 48 V, which is heat in the conductors and not a draw." data-cooling="passive, perforated lid and base" data-operating-temp="to 70 C - 325 A per panel at 45 C, de-rated to 200 A at 70 C; no lower limit is stated" data-alarm-contacts="Form C relay per side, 2 A at 30 VDC and 0.6 A at 60 VDC, on wire-wrap terminals" data-safety="UL Listed" data-nebs="Level 3" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-a-alm.state-fault, #led-a-alm .state-fault, #led-nrg.state-fault, #led-nrg .state-fault, #led-b-alm.state-fault, #led-b-alm .state-fault { --led-color: #ef4444; }
+    #led-nrg.state-locate, #led-nrg .state-locate { --led-color: #22c55e; }
+    #led-nrg.state-locate [data-class='led'], #led-nrg .state-locate { animation: portrayal-blink 1s linear infinite; }
+    #led-a-pwr.state-ok, #led-a-pwr .state-ok, #led-nrg.state-ok, #led-nrg .state-ok, #led-b-pwr.state-ok, #led-b-pwr .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Amphenol Network Solutions nrg300CB08-CTRL","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"amphenol-ns/alarm-dip-8@1":"1.0.0","amphenol-ns/breaker-1ru@1":"1.0.0","amphenol-ns/cover-thumbscrew@1":"1.0.0","amphenol-ns/guard-mount-1ru@1":"1.0.0","amphenol-ns/nrg-oled@1":"1.0.0","amphenol-ns/touch-guard-1ru@1":"1.0.0","common/led-indicator@1":"1.2.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","std/rj45@2":"2.1.0"},"source-sha256":"5b3dd4d90c47fe28f267758c19b8bb1bd3e26690698368e781c537fb7f86a222","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="nrg300CB08-CTRL" x="0" y="0" width="431.8" height="43.9" rx="1.2" fill="#e6e4de" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="431.8" height="43.9" rx="0.6" fill="#e6e4de" />
+    <rect id="plate-1" data-kind="plate" x="13.2" y="1.5" width="158.5" height="41.1" rx="0.6" fill="#0e0f10" />
+    <rect id="plate-2" data-kind="plate" x="260.1" y="1.5" width="158.5" height="41.1" rx="0.6" fill="#0e0f10" />
+    <rect id="plate-3" data-kind="plate" x="185.9" y="35.9" width="60" height="1.6" rx="0.6" fill="#3a3c3e" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="6.4" y="10.5" font-family="sans-serif" font-size="7.5" text-anchor="middle" fill="#2b2d30" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">A</text>
+    <text x="6.4" y="31" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">325A</text>
+    <text x="6.4" y="33" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">INPUT</text>
+    <text x="6.4" y="40.5" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2d30" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="breaker-a1">POS 1</text>
+    <text x="425.4" y="10.5" font-family="sans-serif" font-size="7.5" text-anchor="middle" fill="#2b2d30" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">B</text>
+    <text x="425.4" y="31" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">325A</text>
+    <text x="425.4" y="33" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">INPUT</text>
+    <text x="425.4" y="40.5" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2d30" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="breaker-b8">POS 8</text>
+    <text x="177.3" y="11.66" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2d30" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="254.6" y="11.66" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2d30" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan">LAN</text>
+    <text x="216.3" y="20.73" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#2b2d30" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <text x="184.4" y="23.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2d30" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dip-a">1</text>
+    <text x="209.4" y="23.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2d30" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dip-a">8</text>
+    <text x="222.5" y="23.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2d30" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dip-b">1</text>
+    <text x="247.5" y="23.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2d30" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dip-b">8</text>
+    <text x="216.2" y="26.9" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-nrg">nrg</text>
+    <path d="M 0 0 H 3.0 M 0 1.1 H 0.8 M 1.1 1.1 H 1.9 M 2.2 1.1 H 3.0" fill="none" stroke="#2b2d30" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(183.5 29.15)" id="dc-a" data-path="silk:dc-a" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-a-pwr" />
+    <path d="M 0 0 L 1.9 3.3 H -1.9 Z M 0 1.1 V 2.2 M 0 2.6 V 2.75" fill="none" stroke="#2b2d30" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(197.2 28.05)" id="alm-a" data-path="silk:alm-a" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-a-alm" />
+    <path d="M 0 0 L 1.9 3.3 H -1.9 Z M 0 1.1 V 2.2 M 0 2.6 V 2.75" fill="none" stroke="#2b2d30" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(235.2 28.05)" id="alm-b" data-path="silk:alm-b" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-b-alm" />
+    <path d="M 0 0 H 3.0 M 0 1.1 H 0.8 M 1.1 1.1 H 1.9 M 2.2 1.1 H 3.0" fill="none" stroke="#2b2d30" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(245.9 29.15)" id="dc-b" data-path="silk:dc-b" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-b-pwr" />
+    <text x="179.6" y="37.4" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">±12/24/48</text>
+    <text x="178.4" y="39.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2d30" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">V</text>
+    <path d="M 0 0 H 2.2 M 0 0.8 H 0.6 M 0.8 0.8 H 1.4 M 1.6 0.8 H 2.2" fill="none" stroke="#2b2d30" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(179.4 38.6)" id="dc-rating" data-path="silk:dc-rating" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 0 L 2.2 3.8 H -2.2 Z" fill="none" stroke="#2b2d30" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(254.5 36.4)" id="esd-mark" data-path="silk:esd-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-enabled="no" data-media="rj45" data-role="mgmt" data-speed="100m" data-rel-pos="1" transform="translate(181.4,4.6) rotate(180 7.9 6.6)" data-group="network" data-group-role="management" data-description="the controller network jacks: LAN, which carries the web interface and SNMP, and MGMT, which the firmware does not enable">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="lan" data-path="lan" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="100m" data-rel-pos="2" transform="translate(234.6,4.6) rotate(180 7.9 6.6)" data-group="network" data-group-role="management" data-description="the controller network jacks: LAN, which carries the web interface and SNMP, and MGMT, which the firmware does not enable">
+    <title>lan</title>
+    <g id="lan--jack" data-path="lan/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>lan--jack</title>
+      <path id="lan--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan/jack/opening" data-class="cutout" />
+      <g id="lan--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="lan--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="lan--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="lan--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="display" data-path="display" data-class="display" data-ref="amphenol-ns/nrg-oled@1:1.0.0" data-rel-pos="6" transform="translate(203.7,6.9)" data-group="status" data-group-role="indicator" data-for="chassis">
+    <title>display</title>
+    <rect id="display--bezel" x="0" y="0" width="24.9" height="7.6" rx="0.4" fill="#15171a" stroke="#050606" stroke-width="0.25" />
+    <rect id="display--screen" x="0.8" y="0.8" width="23.3" height="6.0" fill="#04060a" data-path="display/screen" data-class="display" data-characters="40" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="3" transform="translate(210.1,18.3)" data-group="alarm-enable" data-group-role="management" data-description="one eight-way DIP switch per side, a switch enabling the alarm for the breaker position of the same number; and the controller RESET button" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="dip-a" data-path="dip-a" data-class="button" data-ref="amphenol-ns/alarm-dip-8@1:1.0.0" data-wall="#0c0d0e" data-rel-pos="1" transform="translate(185.9,20.3)" data-group="alarm-enable" data-group-role="management" data-description="one eight-way DIP switch per side, a switch enabling the alarm for the breaker position of the same number; and the controller RESET button" data-for="chassis">
+    <title>dip-a</title>
+    <rect id="dip-a--slot" x="0" y="0" width="21.9" height="4.6" rx="0.3" fill="#0c0d0e" />
+    <rect id="dip-a--sw-1" x="0.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-1" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-2" x="3.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-2" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-3" x="6.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-3" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-4" x="8.75" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-4" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-5" x="11.35" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-5" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-6" x="13.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-6" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-7" x="16.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-7" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--sw-8" x="19.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-a/sw-8" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-a--slider-1" x="1.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-1" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-2" x="3.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-2" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-3" x="6.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-3" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-4" x="8.90" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-4" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-5" x="11.50" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-5" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-6" x="14.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-6" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-7" x="16.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-7" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-a--slider-8" x="19.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-a/slider-8" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+  </g>
+  <g id="dip-b" data-path="dip-b" data-class="button" data-ref="amphenol-ns/alarm-dip-8@1:1.0.0" data-wall="#0c0d0e" data-rel-pos="2" transform="translate(224.0,20.3)" data-group="alarm-enable" data-group-role="management" data-description="one eight-way DIP switch per side, a switch enabling the alarm for the breaker position of the same number; and the controller RESET button" data-for="chassis">
+    <title>dip-b</title>
+    <rect id="dip-b--slot" x="0" y="0" width="21.9" height="4.6" rx="0.3" fill="#0c0d0e" />
+    <rect id="dip-b--sw-1" x="0.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-1" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-2" x="3.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-2" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-3" x="6.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-3" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-4" x="8.75" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-4" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-5" x="11.35" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-5" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-6" x="13.95" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-6" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-7" x="16.55" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-7" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--sw-8" x="19.15" y="0.7" width="1.6" height="3.2" rx="0.2" fill="#3b3e41" data-path="dip-b/sw-8" data-class="button" data-z-out="0.6" data-z-color="#3b3e41" />
+    <rect id="dip-b--slider-1" x="1.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-1" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-2" x="3.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-2" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-3" x="6.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-3" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-4" x="8.90" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-4" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-5" x="11.50" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-5" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-6" x="14.10" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-6" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-7" x="16.70" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-7" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+    <rect id="dip-b--slider-8" x="19.30" y="0.85" width="1.3" height="1.4" rx="0.15" fill="#eceae5" data-path="dip-b/slider-8" data-class="button" data-z-out="1.6" data-z-color="#eceae5" />
+  </g>
+  <g id="led-a-pwr" data-path="led-a-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="1" transform="translate(188.8,27.7)" data-group="status" data-group-role="indicator" data-states="off ok" data-for="chassis">
+    <title>led-a-pwr</title>
+    <circle id="led-a-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-a-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-a-pwr/lamp" data-class="led" data-states="off ok" data-z-dome="0.45" />
+  </g>
+  <g id="led-a-alm" data-path="led-a-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="2" transform="translate(201.5,27.7)" data-group="status" data-group-role="indicator" data-states="off fault" data-for="chassis">
+    <title>led-a-alm</title>
+    <circle id="led-a-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-a-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-a-alm/lamp" data-class="led" data-states="off fault" data-z-dome="0.45" />
+  </g>
+  <g id="led-nrg" data-path="led-nrg" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="5" transform="translate(214.2,27.7)" data-group="status" data-group-role="indicator" data-states="off fault ok locate" data-for="chassis">
+    <title>led-nrg</title>
+    <circle id="led-nrg--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-nrg--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-nrg/lamp" data-class="led" data-states="off fault ok locate" data-z-dome="0.45" />
+  </g>
+  <g id="led-b-alm" data-path="led-b-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="3" transform="translate(226.9,27.7)" data-group="status" data-group-role="indicator" data-states="off fault" data-for="chassis">
+    <title>led-b-alm</title>
+    <circle id="led-b-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-b-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-b-alm/lamp" data-class="led" data-states="off fault" data-z-dome="0.45" />
+  </g>
+  <g id="led-b-pwr" data-path="led-b-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="4" transform="translate(239.6,27.7)" data-group="status" data-group-role="indicator" data-states="off ok" data-for="chassis">
+    <title>led-b-pwr</title>
+    <circle id="led-b-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-b-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-b-pwr/lamp" data-class="led" data-states="off ok" data-z-dome="0.45" />
+  </g>
+  <g id="breaker-a1" data-path="breaker-a1" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="1">
+    <title>breaker-a1</title>
+    <rect id="breaker-a1--opening" x="14.2" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a1--module" data-path="breaker-a1/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="60" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(23.1,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a1--module</title>
+      <rect id="breaker-a1--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a1/module/body" data-class="mechanical" />
+      <rect id="breaker-a1--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a1--module--flag" data-path="breaker-a1/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a1--module--handle" data-path="breaker-a1/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a1--module--silkscreen">
+          <text id="breaker-a1--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">60</text>
+        </g>
+      </g>
+      <g id="breaker-a1--module--guard" data-path="breaker-a1/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a1--module--guard</title>
+        <g id="breaker-a1--module--guard--insert-top" data-path="breaker-a1/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a1--module--guard--insert-bottom" data-path="breaker-a1/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a1--module--guard-occupant" data-path="breaker-a1/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a1/module/guard">
+        <title>breaker-a1--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a1--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a1--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a1--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a1/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a1--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a1/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a1--module--guard-occupant--screw-top" data-path="breaker-a1/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a1--module--guard-occupant--screw-bottom" data-path="breaker-a1/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a2" data-path="breaker-a2" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="2">
+    <title>breaker-a2</title>
+    <rect id="breaker-a2--opening" x="34.01" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a2--module" data-path="breaker-a2/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="60" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(42.91,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a2--module</title>
+      <rect id="breaker-a2--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a2/module/body" data-class="mechanical" />
+      <rect id="breaker-a2--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a2--module--flag" data-path="breaker-a2/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a2--module--handle" data-path="breaker-a2/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a2--module--silkscreen">
+          <text id="breaker-a2--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">60</text>
+        </g>
+      </g>
+      <g id="breaker-a2--module--guard" data-path="breaker-a2/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a2--module--guard</title>
+        <g id="breaker-a2--module--guard--insert-top" data-path="breaker-a2/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a2--module--guard--insert-bottom" data-path="breaker-a2/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a2--module--guard-occupant" data-path="breaker-a2/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a2/module/guard">
+        <title>breaker-a2--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a2--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a2--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a2--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a2/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a2--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a2/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a2--module--guard-occupant--screw-top" data-path="breaker-a2/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a2--module--guard-occupant--screw-bottom" data-path="breaker-a2/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a3" data-path="breaker-a3" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="3">
+    <title>breaker-a3</title>
+    <rect id="breaker-a3--opening" x="53.82" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a3--module" data-path="breaker-a3/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="50" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(62.72,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a3--module</title>
+      <rect id="breaker-a3--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a3/module/body" data-class="mechanical" />
+      <rect id="breaker-a3--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a3--module--flag" data-path="breaker-a3/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a3--module--handle" data-path="breaker-a3/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a3--module--silkscreen">
+          <text id="breaker-a3--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">50</text>
+        </g>
+      </g>
+      <g id="breaker-a3--module--guard" data-path="breaker-a3/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a3--module--guard</title>
+        <g id="breaker-a3--module--guard--insert-top" data-path="breaker-a3/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a3--module--guard--insert-bottom" data-path="breaker-a3/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a3--module--guard-occupant" data-path="breaker-a3/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a3/module/guard">
+        <title>breaker-a3--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a3--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a3--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a3--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a3/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a3--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a3/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a3--module--guard-occupant--screw-top" data-path="breaker-a3/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a3--module--guard-occupant--screw-bottom" data-path="breaker-a3/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a4" data-path="breaker-a4" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="4">
+    <title>breaker-a4</title>
+    <rect id="breaker-a4--opening" x="73.63" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a4--module" data-path="breaker-a4/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="40" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(82.53,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a4--module</title>
+      <rect id="breaker-a4--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a4/module/body" data-class="mechanical" />
+      <rect id="breaker-a4--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a4--module--flag" data-path="breaker-a4/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a4--module--handle" data-path="breaker-a4/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a4--module--silkscreen">
+          <text id="breaker-a4--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">40</text>
+        </g>
+      </g>
+      <g id="breaker-a4--module--guard" data-path="breaker-a4/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a4--module--guard</title>
+        <g id="breaker-a4--module--guard--insert-top" data-path="breaker-a4/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a4--module--guard--insert-bottom" data-path="breaker-a4/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a4--module--guard-occupant" data-path="breaker-a4/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a4/module/guard">
+        <title>breaker-a4--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a4--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a4--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a4--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a4/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a4--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a4/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a4--module--guard-occupant--screw-top" data-path="breaker-a4/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a4--module--guard-occupant--screw-bottom" data-path="breaker-a4/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a5" data-path="breaker-a5" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="5">
+    <title>breaker-a5</title>
+    <rect id="breaker-a5--opening" x="93.44" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a5--module" data-path="breaker-a5/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="30" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(102.34,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a5--module</title>
+      <rect id="breaker-a5--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a5/module/body" data-class="mechanical" />
+      <rect id="breaker-a5--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a5--module--flag" data-path="breaker-a5/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a5--module--handle" data-path="breaker-a5/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a5--module--silkscreen">
+          <text id="breaker-a5--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">30</text>
+        </g>
+      </g>
+      <g id="breaker-a5--module--guard" data-path="breaker-a5/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a5--module--guard</title>
+        <g id="breaker-a5--module--guard--insert-top" data-path="breaker-a5/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a5--module--guard--insert-bottom" data-path="breaker-a5/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a5--module--guard-occupant" data-path="breaker-a5/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a5/module/guard">
+        <title>breaker-a5--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a5--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a5--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a5--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a5/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a5--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a5/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a5--module--guard-occupant--screw-top" data-path="breaker-a5/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a5--module--guard-occupant--screw-bottom" data-path="breaker-a5/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a6" data-path="breaker-a6" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="6">
+    <title>breaker-a6</title>
+    <rect id="breaker-a6--opening" x="113.25" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a6--module" data-path="breaker-a6/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="30" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(122.15,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a6--module</title>
+      <rect id="breaker-a6--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a6/module/body" data-class="mechanical" />
+      <rect id="breaker-a6--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a6--module--flag" data-path="breaker-a6/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a6--module--handle" data-path="breaker-a6/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a6--module--silkscreen">
+          <text id="breaker-a6--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">30</text>
+        </g>
+      </g>
+      <g id="breaker-a6--module--guard" data-path="breaker-a6/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a6--module--guard</title>
+        <g id="breaker-a6--module--guard--insert-top" data-path="breaker-a6/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a6--module--guard--insert-bottom" data-path="breaker-a6/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a6--module--guard-occupant" data-path="breaker-a6/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a6/module/guard">
+        <title>breaker-a6--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a6--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a6--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a6--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a6/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a6--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a6/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a6--module--guard-occupant--screw-top" data-path="breaker-a6/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a6--module--guard-occupant--screw-bottom" data-path="breaker-a6/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a7" data-path="breaker-a7" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="7">
+    <title>breaker-a7</title>
+    <rect id="breaker-a7--opening" x="133.06" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a7--module" data-path="breaker-a7/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="20" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(141.96,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a7--module</title>
+      <rect id="breaker-a7--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a7/module/body" data-class="mechanical" />
+      <rect id="breaker-a7--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a7--module--flag" data-path="breaker-a7/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a7--module--handle" data-path="breaker-a7/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a7--module--silkscreen">
+          <text id="breaker-a7--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">20</text>
+        </g>
+      </g>
+      <g id="breaker-a7--module--guard" data-path="breaker-a7/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a7--module--guard</title>
+        <g id="breaker-a7--module--guard--insert-top" data-path="breaker-a7/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a7--module--guard--insert-bottom" data-path="breaker-a7/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a7--module--guard-occupant" data-path="breaker-a7/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a7/module/guard">
+        <title>breaker-a7--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a7--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a7--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a7--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a7/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a7--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a7/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a7--module--guard-occupant--screw-top" data-path="breaker-a7/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a7--module--guard-occupant--screw-bottom" data-path="breaker-a7/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-a8" data-path="breaker-a8" data-class="bay" data-group="breakers-a" data-group-role="traffic" data-rel-pos="8">
+    <title>breaker-a8</title>
+    <rect id="breaker-a8--opening" x="152.87" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-a8--module" data-path="breaker-a8/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="10" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(161.77,22.05) translate(-8.9,-19.55)">
+      <title>breaker-a8--module</title>
+      <rect id="breaker-a8--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-a8/module/body" data-class="mechanical" />
+      <rect id="breaker-a8--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-a8--module--flag" data-path="breaker-a8/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-a8--module--handle" data-path="breaker-a8/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-a8--module--silkscreen">
+          <text id="breaker-a8--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">10</text>
+        </g>
+      </g>
+      <g id="breaker-a8--module--guard" data-path="breaker-a8/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-a8--module--guard</title>
+        <g id="breaker-a8--module--guard--insert-top" data-path="breaker-a8/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-a8--module--guard--insert-bottom" data-path="breaker-a8/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-a8--module--guard-occupant" data-path="breaker-a8/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-a8/module/guard">
+        <title>breaker-a8--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-a8--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-a8--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-a8--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-a8/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-a8--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-a8/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-a8--module--guard-occupant--screw-top" data-path="breaker-a8/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-a8--module--guard-occupant--screw-bottom" data-path="breaker-a8/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b1" data-path="breaker-b1" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="1">
+    <title>breaker-b1</title>
+    <rect id="breaker-b1--opening" x="261.1" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b1--module" data-path="breaker-b1/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="60" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(270,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b1--module</title>
+      <rect id="breaker-b1--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b1/module/body" data-class="mechanical" />
+      <rect id="breaker-b1--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b1--module--flag" data-path="breaker-b1/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b1--module--handle" data-path="breaker-b1/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b1--module--silkscreen">
+          <text id="breaker-b1--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">60</text>
+        </g>
+      </g>
+      <g id="breaker-b1--module--guard" data-path="breaker-b1/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b1--module--guard</title>
+        <g id="breaker-b1--module--guard--insert-top" data-path="breaker-b1/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b1--module--guard--insert-bottom" data-path="breaker-b1/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b1--module--guard-occupant" data-path="breaker-b1/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b1/module/guard">
+        <title>breaker-b1--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b1--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b1--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b1--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b1/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b1--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b1/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b1--module--guard-occupant--screw-top" data-path="breaker-b1/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b1--module--guard-occupant--screw-bottom" data-path="breaker-b1/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b2" data-path="breaker-b2" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="2">
+    <title>breaker-b2</title>
+    <rect id="breaker-b2--opening" x="280.91" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b2--module" data-path="breaker-b2/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="60" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(289.81,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b2--module</title>
+      <rect id="breaker-b2--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b2/module/body" data-class="mechanical" />
+      <rect id="breaker-b2--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b2--module--flag" data-path="breaker-b2/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b2--module--handle" data-path="breaker-b2/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b2--module--silkscreen">
+          <text id="breaker-b2--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">60</text>
+        </g>
+      </g>
+      <g id="breaker-b2--module--guard" data-path="breaker-b2/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b2--module--guard</title>
+        <g id="breaker-b2--module--guard--insert-top" data-path="breaker-b2/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b2--module--guard--insert-bottom" data-path="breaker-b2/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b2--module--guard-occupant" data-path="breaker-b2/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b2/module/guard">
+        <title>breaker-b2--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b2--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b2--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b2--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b2/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b2--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b2/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b2--module--guard-occupant--screw-top" data-path="breaker-b2/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b2--module--guard-occupant--screw-bottom" data-path="breaker-b2/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b3" data-path="breaker-b3" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="3">
+    <title>breaker-b3</title>
+    <rect id="breaker-b3--opening" x="300.72" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b3--module" data-path="breaker-b3/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="50" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(309.62,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b3--module</title>
+      <rect id="breaker-b3--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b3/module/body" data-class="mechanical" />
+      <rect id="breaker-b3--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b3--module--flag" data-path="breaker-b3/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b3--module--handle" data-path="breaker-b3/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b3--module--silkscreen">
+          <text id="breaker-b3--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">50</text>
+        </g>
+      </g>
+      <g id="breaker-b3--module--guard" data-path="breaker-b3/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b3--module--guard</title>
+        <g id="breaker-b3--module--guard--insert-top" data-path="breaker-b3/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b3--module--guard--insert-bottom" data-path="breaker-b3/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b3--module--guard-occupant" data-path="breaker-b3/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b3/module/guard">
+        <title>breaker-b3--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b3--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b3--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b3--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b3/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b3--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b3/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b3--module--guard-occupant--screw-top" data-path="breaker-b3/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b3--module--guard-occupant--screw-bottom" data-path="breaker-b3/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b4" data-path="breaker-b4" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="4">
+    <title>breaker-b4</title>
+    <rect id="breaker-b4--opening" x="320.53" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b4--module" data-path="breaker-b4/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="40" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(329.43,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b4--module</title>
+      <rect id="breaker-b4--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b4/module/body" data-class="mechanical" />
+      <rect id="breaker-b4--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b4--module--flag" data-path="breaker-b4/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b4--module--handle" data-path="breaker-b4/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b4--module--silkscreen">
+          <text id="breaker-b4--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">40</text>
+        </g>
+      </g>
+      <g id="breaker-b4--module--guard" data-path="breaker-b4/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b4--module--guard</title>
+        <g id="breaker-b4--module--guard--insert-top" data-path="breaker-b4/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b4--module--guard--insert-bottom" data-path="breaker-b4/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b4--module--guard-occupant" data-path="breaker-b4/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b4/module/guard">
+        <title>breaker-b4--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b4--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b4--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b4--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b4/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b4--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b4/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b4--module--guard-occupant--screw-top" data-path="breaker-b4/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b4--module--guard-occupant--screw-bottom" data-path="breaker-b4/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b5" data-path="breaker-b5" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="5">
+    <title>breaker-b5</title>
+    <rect id="breaker-b5--opening" x="340.34" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b5--module" data-path="breaker-b5/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="30" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(349.24,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b5--module</title>
+      <rect id="breaker-b5--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b5/module/body" data-class="mechanical" />
+      <rect id="breaker-b5--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b5--module--flag" data-path="breaker-b5/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b5--module--handle" data-path="breaker-b5/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b5--module--silkscreen">
+          <text id="breaker-b5--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">30</text>
+        </g>
+      </g>
+      <g id="breaker-b5--module--guard" data-path="breaker-b5/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b5--module--guard</title>
+        <g id="breaker-b5--module--guard--insert-top" data-path="breaker-b5/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b5--module--guard--insert-bottom" data-path="breaker-b5/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b5--module--guard-occupant" data-path="breaker-b5/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b5/module/guard">
+        <title>breaker-b5--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b5--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b5--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b5--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b5/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b5--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b5/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b5--module--guard-occupant--screw-top" data-path="breaker-b5/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b5--module--guard-occupant--screw-bottom" data-path="breaker-b5/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b6" data-path="breaker-b6" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="6">
+    <title>breaker-b6</title>
+    <rect id="breaker-b6--opening" x="360.15" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b6--module" data-path="breaker-b6/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="30" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(369.05,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b6--module</title>
+      <rect id="breaker-b6--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b6/module/body" data-class="mechanical" />
+      <rect id="breaker-b6--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b6--module--flag" data-path="breaker-b6/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b6--module--handle" data-path="breaker-b6/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b6--module--silkscreen">
+          <text id="breaker-b6--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">30</text>
+        </g>
+      </g>
+      <g id="breaker-b6--module--guard" data-path="breaker-b6/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b6--module--guard</title>
+        <g id="breaker-b6--module--guard--insert-top" data-path="breaker-b6/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b6--module--guard--insert-bottom" data-path="breaker-b6/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b6--module--guard-occupant" data-path="breaker-b6/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b6/module/guard">
+        <title>breaker-b6--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b6--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b6--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b6--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b6/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b6--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b6/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b6--module--guard-occupant--screw-top" data-path="breaker-b6/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b6--module--guard-occupant--screw-bottom" data-path="breaker-b6/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b7" data-path="breaker-b7" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="7">
+    <title>breaker-b7</title>
+    <rect id="breaker-b7--opening" x="379.96" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b7--module" data-path="breaker-b7/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="20" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(388.86,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b7--module</title>
+      <rect id="breaker-b7--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b7/module/body" data-class="mechanical" />
+      <rect id="breaker-b7--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b7--module--flag" data-path="breaker-b7/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b7--module--handle" data-path="breaker-b7/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b7--module--silkscreen">
+          <text id="breaker-b7--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">20</text>
+        </g>
+      </g>
+      <g id="breaker-b7--module--guard" data-path="breaker-b7/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b7--module--guard</title>
+        <g id="breaker-b7--module--guard--insert-top" data-path="breaker-b7/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b7--module--guard--insert-bottom" data-path="breaker-b7/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b7--module--guard-occupant" data-path="breaker-b7/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b7/module/guard">
+        <title>breaker-b7--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b7--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b7--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b7--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b7/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b7--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b7/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b7--module--guard-occupant--screw-top" data-path="breaker-b7/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b7--module--guard-occupant--screw-bottom" data-path="breaker-b7/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="breaker-b8" data-path="breaker-b8" data-class="bay" data-group="breakers-b" data-group-role="traffic" data-rel-pos="8">
+    <title>breaker-b8</title>
+    <rect id="breaker-b8--opening" x="399.77" y="2.5" width="17.8" height="39.1" fill="#101214" />
+    <g id="breaker-b8--module" data-path="breaker-b8/module" data-class="breaker" data-behaviour="fills" data-ref="amphenol-ns/breaker-1ru@1:1.0.0" data-body-depth="127.5" data-wall="#0f1112" data-model="1RU Circuit Breaker" data-poles="1" data-rating="10" data-series="AIRPAX 1U" data-terminal="bullet" transform="translate(408.67,22.05) translate(-8.9,-19.55)">
+      <title>breaker-b8--module</title>
+      <rect id="breaker-b8--module--body" x="0" y="1.05" width="17.8" height="37.0" rx="0.6" fill="#1a1c1e" stroke="#060707" stroke-width="0.25" data-path="breaker-b8/module/body" data-class="mechanical" />
+      <rect id="breaker-b8--module--window" x="4.3" y="10.6" width="9.2" height="14.8" rx="0.5" fill="#0a0b0c" />
+      <g id="breaker-b8--module--flag" data-path="breaker-b8/module/flag" data-class="marking">
+        <rect x="13.6" y="14.0" width="2.6" height="4.0" fill="#c8312b" />
+        <rect x="13.6" y="18.0" width="2.6" height="4.0" fill="#2f9a56" />
+      </g>
+      <g id="breaker-b8--module--handle" data-path="breaker-b8/module/handle" data-class="button" data-z-out="12.4" data-z-color="#17191b">
+        <rect x="4.9" y="12.0" width="8.0" height="12.0" rx="1.0" fill="#232628" stroke="#050606" stroke-width="0.25" />
+        <rect x="5.7" y="14.6" width="6.4" height="6.8" rx="0.4" fill="#ecebe6" />
+        <g id="breaker-b8--module--silkscreen">
+          <text id="breaker-b8--module--rating" data-from="rating" x="8.9" y="19.7" font-size="4.6" font-family="Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle" fill="#111213">10</text>
+        </g>
+      </g>
+      <g id="breaker-b8--module--guard" data-path="breaker-b8/module/guard" data-class="mechanical" data-ref="amphenol-ns/guard-mount-1ru@1:1.0.0" transform="translate(7.3,3.4)">
+        <title>breaker-b8--module--guard</title>
+        <g id="breaker-b8--module--guard--insert-top" data-path="breaker-b8/module/guard/insert-top" data-class="mechanical">
+          <circle cx="1.6" cy="1.6" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="1.6" r="0.75" fill="#2a2416" />
+        </g>
+        <g id="breaker-b8--module--guard--insert-bottom" data-path="breaker-b8/module/guard/insert-bottom" data-class="mechanical">
+          <circle cx="1.6" cy="30.7" r="1.5" fill="#c9a557" stroke="#6f5a2c" stroke-width="0.2" />
+          <circle cx="1.6" cy="30.7" r="0.75" fill="#2a2416" />
+        </g>
+        <g data-cp="mate" data-cp-at="1.6 16.15" data-cp-dir="front" />
+      </g>
+      <g id="breaker-b8--module--guard-occupant" data-path="breaker-b8/module/guard-occupant" data-class="mechanical" data-behaviour="occupies" data-ref="amphenol-ns/touch-guard-1ru@1:1.0.0" data-wall="#0f1112" data-vendor-sku="307794" data-vendor-sku-note="a set of sixteen" transform="translate(0.0,0.0)" data-for="breaker-b8/module/guard">
+        <title>breaker-b8--module--guard-occupant</title>
+        <defs>
+          <linearGradient id="breaker-b8--module--guard-occupant--g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#26292c" />
+            <stop offset="0.5" stop-color="#17191b" />
+            <stop offset="1" stop-color="#0f1112" />
+          </linearGradient>
+        </defs>
+        <rect id="breaker-b8--module--guard-occupant--guard" x="0" y="0" width="17.8" height="39.1" rx="0.8" fill="url(#breaker-b8--module--guard-occupant--g)" stroke="#060707" stroke-width="0.25" data-path="breaker-b8/module/guard-occupant/guard" data-class="mechanical" />
+        <rect id="breaker-b8--module--guard-occupant--hood" x="1.4" y="2.6" width="15.0" height="33.9" rx="2.2" fill="#1b1e20" stroke="#08090a" stroke-width="0.25" data-path="breaker-b8/module/guard-occupant/hood" data-class="mechanical" data-z-out="14.7" data-z-color="#17191b" data-z-shape="1" />
+        <g id="breaker-b8--module--guard-occupant--screw-top" data-path="breaker-b8/module/guard-occupant/screw-top" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="8.0" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 8.0 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g id="breaker-b8--module--guard-occupant--screw-bottom" data-path="breaker-b8/module/guard-occupant/screw-bottom" data-class="screw" data-z-out="14.75" data-z-color="#3a3e42">
+          <circle cx="8.9" cy="30.5" r="1.5" fill="#3a3e42" stroke="#0a0b0c" stroke-width="0.3" />
+          <path d="M 7.9 30.5 H 9.9" stroke="#0a0b0c" stroke-width="0.35" />
+        </g>
+        <g data-cp="mate" data-cp-at="8.9 19.55" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="thumbscrew-left" data-path="thumbscrew-left" data-class="screw" data-behaviour="mounts" data-ref="amphenol-ns/cover-thumbscrew@1:1.0.0" data-rel-pos="1" transform="translate(1.55,17.35)" data-group="cover" data-group-role="furniture">
+    <title>thumbscrew-left</title>
+    <defs>
+      <radialGradient id="thumbscrew-left--m" cx="0.35" cy="0.35" r="0.8">
+        <stop offset="0" stop-color="#f1f2f3" />
+        <stop offset="1" stop-color="#8d9297" />
+      </radialGradient>
+    </defs>
+    <g id="thumbscrew-left--head" data-path="thumbscrew-left/head" data-class="screw" data-z-cyl="7.0" data-z-color="#a9aeb3" data-z-knurl="1">
+      <circle cx="4.85" cy="4.85" r="4.7" fill="url(#thumbscrew-left--m)" stroke="#5c6166" stroke-width="0.25" />
+      <circle cx="4.85" cy="4.85" r="2.9" fill="none" stroke="#6b7075" stroke-width="0.3" />
+      <path d="M 4.85 3.0 V 6.7 M 3.0 4.85 H 6.7" stroke="#3f4347" stroke-width="0.55" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="thumbscrew-right" data-path="thumbscrew-right" data-class="screw" data-behaviour="mounts" data-ref="amphenol-ns/cover-thumbscrew@1:1.0.0" data-rel-pos="2" transform="translate(420.55,17.35)" data-group="cover" data-group-role="furniture">
+    <title>thumbscrew-right</title>
+    <defs>
+      <radialGradient id="thumbscrew-right--m" cx="0.35" cy="0.35" r="0.8">
+        <stop offset="0" stop-color="#f1f2f3" />
+        <stop offset="1" stop-color="#8d9297" />
+      </radialGradient>
+    </defs>
+    <g id="thumbscrew-right--head" data-path="thumbscrew-right/head" data-class="screw" data-z-cyl="7.0" data-z-color="#a9aeb3" data-z-knurl="1">
+      <circle cx="4.85" cy="4.85" r="4.7" fill="url(#thumbscrew-right--m)" stroke="#5c6166" stroke-width="0.25" />
+      <circle cx="4.85" cy="4.85" r="2.9" fill="none" stroke="#6b7075" stroke-width="0.3" />
+      <path d="M 4.85 3.0 V 6.7 M 3.0 4.85 H 6.7" stroke="#3f4347" stroke-width="0.55" stroke-linecap="round" />
+    </g>
+  </g>
+</svg>

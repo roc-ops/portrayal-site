@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="43.9mm" viewBox="0 0 431.8 43.9" data-device="nrg300cb08-sens" data-view="rear" data-weight-empty-kg="5.44" data-weight-configured-kg="7.71" data-weight-configured-scope="populated, 17.0 lb in the datasheet; unpopulated is 12.0 lb" data-overall-mm="431.8 x 44 x 331 without brackets (17 x 1.75 x 13.0 in)" data-mounting="19 inch and 23 inch brackets included" data-input-voltage="±12 VDC, ±24 VDC and ±48 VDC nominal" data-input-dc="dual feed; maximum input load 325 A at 45 C per panel, de-rated to 200 A at 70 C; input wire 2/0 AWG to 350 MCM" data-short-circuit-withstand-a="5000" data-output-breaker-max="60 A single-pole; the UL rating holds to 48 A continuous per output" data-input-interrupt-max="125 percent of the panel rating" data-power-max-w="1.44" data-power-max-scope="the alarm card alone at 48 V (30 mA); 0.48 W at 24 V and 0.22 W at 12 V. THE MONITORING CARD ALSO DRAWS FROM THE A AND B FEEDS, and no document held states how much (gap monitoring-card-draw), so this figure is a floor for the panel, not its total. Separately the guide gives a nominal power LOSS of less than 45 W per side at 325 A and 48 V, which is heat in the conductors and not a draw." data-cooling="passive, perforated lid and base" data-operating-temp="to 70 C - 325 A per panel at 45 C, de-rated to 200 A at 70 C; no lower limit is stated" data-alarm-contacts="Form C relay per side, 2 A at 30 VDC and 0.6 A at 60 VDC, on wire-wrap terminals" data-safety="UL Listed" data-nebs="Level 3" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Amphenol Network Solutions nrg300CB08-SENS","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"amphenol-ns/input-feed-studs@1":"1.0.0","amphenol-ns/input-stud-pair@1":"1.0.0","amphenol-ns/nrg-rear-block@1":"1.0.0","amphenol-ns/output-terminal@1":"1.0.0"},"source-sha256":"31b11d674ceb8ce2ce3876624aa401a9a4bc99f554b402daffc65303072a2a22","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="nrg300CB08-SENS" x="0" y="0" width="431.8" height="43.9" rx="1.2" fill="#e6e4de" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="431.8" height="43.9" rx="0.6" fill="#e6e4de" />
+    <rect id="plate-1" data-kind="plate" x="65.6" y="0.5" width="129.7" height="42.9" rx="0.6" fill="#1b1d20" />
+    <rect id="plate-2" data-kind="plate" x="236.5" y="0.5" width="129.7" height="42.9" rx="0.6" fill="#1b1d20" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="79.88" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b8">8</text>
+    <text x="94.62" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b7">7</text>
+    <text x="109.38" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b6">6</text>
+    <text x="124.12" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b5">5</text>
+    <text x="138.88" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b4">4</text>
+    <text x="153.62" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b3">3</text>
+    <text x="168.38" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b2">2</text>
+    <text x="183.12" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b1">1</text>
+    <text x="250.78" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a8">8</text>
+    <text x="265.52" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a7">7</text>
+    <text x="280.27" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a6">6</text>
+    <text x="295.02" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a5">5</text>
+    <text x="309.77" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a4">4</text>
+    <text x="324.52" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a3">3</text>
+    <text x="339.27" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a2">2</text>
+    <text x="354.02" y="3.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a1">1</text>
+    <text x="192.7" y="13.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c7ccd1" transform="rotate(90 192.7 13.6)" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b1">BATT</text>
+    <text x="192.7" y="30.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c7ccd1" transform="rotate(90 192.7 30.2)" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-b1">RTN</text>
+    <text x="239.2" y="13.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c7ccd1" transform="rotate(90 239.2 13.6)" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a8">BATT</text>
+    <text x="239.2" y="30.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c7ccd1" transform="rotate(90 239.2 30.2)" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="output-a8">RTN</text>
+  </g>
+  <g id="input-b" data-path="input-b" data-class="inlet" data-ref="amphenol-ns/input-feed-studs@1:1.0.0" data-rel-pos="2" transform="translate(0.2,1.45)" data-group="feeds" data-group-role="service" data-description="one feed per side, A and B, each a BATT and an RTN stud terminal; which terminal is which is a recorded gap">
+    <title>input-b</title>
+    <g id="input-b--terminal-1" data-path="input-b/terminal-1" data-class="inlet" data-ref="amphenol-ns/input-stud-pair@1:1.0.0" data-wall="#0c0d0e" data-lug-holes="2" data-stud-centres-mm="25.4" data-stud-thread="3/8-16" transform="translate(0.0,0.0)">
+      <title>input-b--terminal-1</title>
+      <rect id="input-b--terminal-1--well" x="0" y="0" width="29" height="41" rx="0.6" fill="#15171a" stroke="#050606" stroke-width="0.25" />
+      <circle id="input-b--terminal-1--washer-top" cx="14.5" cy="9.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-b--terminal-1--nut-top" d="M 14.5 2.5999999999999996 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-b--terminal-1--stud-top" cx="14.5" cy="9.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-b/terminal-1/stud-top" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+      <circle id="input-b--terminal-1--washer-bottom" cx="14.5" cy="32.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-b--terminal-1--nut-bottom" d="M 14.5 25.6 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-b--terminal-1--stud-bottom" cx="14.5" cy="32.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-b/terminal-1/stud-bottom" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+    </g>
+    <g id="input-b--terminal-2" data-path="input-b/terminal-2" data-class="inlet" data-ref="amphenol-ns/input-stud-pair@1:1.0.0" data-wall="#0c0d0e" data-lug-holes="2" data-stud-centres-mm="25.4" data-stud-thread="3/8-16" transform="translate(35.1,0.0)">
+      <title>input-b--terminal-2</title>
+      <rect id="input-b--terminal-2--well" x="0" y="0" width="29" height="41" rx="0.6" fill="#15171a" stroke="#050606" stroke-width="0.25" />
+      <circle id="input-b--terminal-2--washer-top" cx="14.5" cy="9.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-b--terminal-2--nut-top" d="M 14.5 2.5999999999999996 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-b--terminal-2--stud-top" cx="14.5" cy="9.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-b/terminal-2/stud-top" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+      <circle id="input-b--terminal-2--washer-bottom" cx="14.5" cy="32.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-b--terminal-2--nut-bottom" d="M 14.5 25.6 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-b--terminal-2--stud-bottom" cx="14.5" cy="32.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-b/terminal-2/stud-bottom" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+    </g>
+  </g>
+  <g id="input-a" data-path="input-a" data-class="inlet" data-ref="amphenol-ns/input-feed-studs@1:1.0.0" data-rel-pos="1" transform="translate(367.5,1.45)" data-group="feeds" data-group-role="service" data-description="one feed per side, A and B, each a BATT and an RTN stud terminal; which terminal is which is a recorded gap">
+    <title>input-a</title>
+    <g id="input-a--terminal-1" data-path="input-a/terminal-1" data-class="inlet" data-ref="amphenol-ns/input-stud-pair@1:1.0.0" data-wall="#0c0d0e" data-lug-holes="2" data-stud-centres-mm="25.4" data-stud-thread="3/8-16" transform="translate(0.0,0.0)">
+      <title>input-a--terminal-1</title>
+      <rect id="input-a--terminal-1--well" x="0" y="0" width="29" height="41" rx="0.6" fill="#15171a" stroke="#050606" stroke-width="0.25" />
+      <circle id="input-a--terminal-1--washer-top" cx="14.5" cy="9.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-a--terminal-1--nut-top" d="M 14.5 2.5999999999999996 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-a--terminal-1--stud-top" cx="14.5" cy="9.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-a/terminal-1/stud-top" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+      <circle id="input-a--terminal-1--washer-bottom" cx="14.5" cy="32.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-a--terminal-1--nut-bottom" d="M 14.5 25.6 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-a--terminal-1--stud-bottom" cx="14.5" cy="32.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-a/terminal-1/stud-bottom" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+    </g>
+    <g id="input-a--terminal-2" data-path="input-a/terminal-2" data-class="inlet" data-ref="amphenol-ns/input-stud-pair@1:1.0.0" data-wall="#0c0d0e" data-lug-holes="2" data-stud-centres-mm="25.4" data-stud-thread="3/8-16" transform="translate(35.1,0.0)">
+      <title>input-a--terminal-2</title>
+      <rect id="input-a--terminal-2--well" x="0" y="0" width="29" height="41" rx="0.6" fill="#15171a" stroke="#050606" stroke-width="0.25" />
+      <circle id="input-a--terminal-2--washer-top" cx="14.5" cy="9.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-a--terminal-2--nut-top" d="M 14.5 2.5999999999999996 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-a--terminal-2--stud-top" cx="14.5" cy="9.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-a/terminal-2/stud-top" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+      <circle id="input-a--terminal-2--washer-bottom" cx="14.5" cy="32.0" r="9.0" fill="#c9cdd1" stroke="#70757a" stroke-width="0.3" data-z-out="2.0" data-z-color="#b9bdc1" data-z-shape="1" />
+      <path id="input-a--terminal-2--nut-bottom" d="M 14.5 25.6 l 5.54 3.2 v 6.4 l -5.54 3.2 l -5.54 -3.2 v -6.4 z" fill="#e3e6e8" stroke="#6a6f74" stroke-width="0.3" data-z-out="10.0" data-z-color="#d0d3d6" data-z-shape="1" />
+      <circle id="input-a--terminal-2--stud-bottom" cx="14.5" cy="32.0" r="3.6" fill="#b4b9be" stroke="#5f6468" stroke-width="0.3" data-path="input-a/terminal-2/stud-bottom" data-class="inlet" data-z-cyl="24.0" data-z-color="#a4a9ae" data-z-thread="1.59" />
+    </g>
+  </g>
+  <g id="output-b8" data-path="output-b8" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="8" transform="translate(72.5,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b8</title>
+    <rect id="output-b8--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b8--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b8--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b8--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b8--batt" data-path="output-b8/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b8--rtn" data-path="output-b8/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b7" data-path="output-b7" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="7" transform="translate(87.25,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b7</title>
+    <rect id="output-b7--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b7--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b7--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b7--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b7--batt" data-path="output-b7/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b7--rtn" data-path="output-b7/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b6" data-path="output-b6" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="6" transform="translate(102.0,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b6</title>
+    <rect id="output-b6--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b6--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b6--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b6--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b6--batt" data-path="output-b6/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b6--rtn" data-path="output-b6/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b5" data-path="output-b5" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="5" transform="translate(116.75,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b5</title>
+    <rect id="output-b5--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b5--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b5--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b5--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b5--batt" data-path="output-b5/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b5--rtn" data-path="output-b5/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b4" data-path="output-b4" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="4" transform="translate(131.5,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b4</title>
+    <rect id="output-b4--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b4--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b4--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b4--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b4--batt" data-path="output-b4/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b4--rtn" data-path="output-b4/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b3" data-path="output-b3" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="3" transform="translate(146.25,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b3</title>
+    <rect id="output-b3--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b3--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b3--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b3--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b3--batt" data-path="output-b3/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b3--rtn" data-path="output-b3/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b2" data-path="output-b2" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="2" transform="translate(161.0,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b2</title>
+    <rect id="output-b2--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b2--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b2--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b2--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b2--batt" data-path="output-b2/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b2--rtn" data-path="output-b2/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-b1" data-path="output-b1" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="1" transform="translate(175.75,5.1)" data-group="outputs-b" data-group-role="traffic">
+    <title>output-b1</title>
+    <rect id="output-b1--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-b1--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b1--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-b1--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b1--batt" data-path="output-b1/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-b1--rtn" data-path="output-b1/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a8" data-path="output-a8" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="8" transform="translate(243.4,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a8</title>
+    <rect id="output-a8--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a8--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a8--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a8--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a8--batt" data-path="output-a8/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a8--rtn" data-path="output-a8/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a7" data-path="output-a7" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="7" transform="translate(258.15,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a7</title>
+    <rect id="output-a7--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a7--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a7--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a7--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a7--batt" data-path="output-a7/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a7--rtn" data-path="output-a7/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a6" data-path="output-a6" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="6" transform="translate(272.9,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a6</title>
+    <rect id="output-a6--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a6--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a6--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a6--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a6--batt" data-path="output-a6/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a6--rtn" data-path="output-a6/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a5" data-path="output-a5" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="5" transform="translate(287.65,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a5</title>
+    <rect id="output-a5--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a5--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a5--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a5--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a5--batt" data-path="output-a5/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a5--rtn" data-path="output-a5/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a4" data-path="output-a4" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="4" transform="translate(302.4,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a4</title>
+    <rect id="output-a4--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a4--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a4--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a4--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a4--batt" data-path="output-a4/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a4--rtn" data-path="output-a4/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a3" data-path="output-a3" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="3" transform="translate(317.15,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a3</title>
+    <rect id="output-a3--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a3--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a3--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a3--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a3--batt" data-path="output-a3/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a3--rtn" data-path="output-a3/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a2" data-path="output-a2" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="2" transform="translate(331.9,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a2</title>
+    <rect id="output-a2--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a2--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a2--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a2--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a2--batt" data-path="output-a2/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a2--rtn" data-path="output-a2/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="output-a1" data-path="output-a1" data-class="inlet" data-ref="amphenol-ns/output-terminal@1:1.0.0" data-wall="#101113" data-lug-holes="1" data-screw-thread="#10-32" data-rel-pos="1" transform="translate(346.65,5.1)" data-group="outputs-a" data-group-role="traffic">
+    <title>output-a1</title>
+    <rect id="output-a1--block" x="0" y="0" width="14.75" height="34" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+    <rect id="output-a1--rib-left" x="0" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a1--rib-right" x="13.85" y="1.0" width="0.9" height="32.0" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect id="output-a1--rib-mid" x="0.9" y="16.2" width="12.95" height="1.2" fill="#26292c" data-z-out="7.0" data-z-color="#1b1d20" />
+    <rect x="1.0" y="2.3" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a1--batt" data-path="output-a1/batt" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="8.5" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 5.9 V 11.1 M 4.775 8.5 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+    <rect x="1.0" y="18.900000000000002" width="12.75" height="12.4" rx="0.5" fill="#0d0e10" />
+    <g id="output-a1--rtn" data-path="output-a1/rtn" data-class="inlet" data-z-cyl="2.5" data-z-color="#c2c6ca">
+      <circle cx="7.375" cy="25.1" r="4.4" fill="#d5d8db" stroke="#72777c" stroke-width="0.3" />
+      <path d="M 7.375 22.5 V 27.700000000000003 M 4.775 25.1 H 9.975" stroke="#4a4e52" stroke-width="0.7" stroke-linecap="round" />
+    </g>
+  </g>
+  <g id="monitor-block" data-path="monitor-block" data-class="port" data-ref="amphenol-ns/nrg-rear-block@1:1.0.0" data-nrgnet-bus="RS485" data-nrgnet-pins="5" data-rel-pos="1" transform="translate(196.5,0.5)" data-group="alarms" data-group-role="management" data-description="the rear centre block: alarm relay headers, nrgNET IN and OUT, and two temperature probe jacks">
+    <title>monitor-block</title>
+    <rect id="monitor-block--plate" x="0" y="0" width="39" height="42.8" fill="#e4e2dc" stroke="#9a9993" stroke-width="0.25" />
+    <g id="monitor-block--alarm-b" data-path="monitor-block/alarm-b" data-class="port" data-inner="1" data-z-out="6.0" data-z-color="#f1f0eb">
+      <rect x="2.9" y="1.9" width="12.5" height="6.4" rx="0.3" fill="#f4f3ee" stroke="#6f6e69" stroke-width="0.25" />
+      <circle cx="5.10" cy="5.1" r="0.6" fill="#d9b24a" />
+      <circle cx="8.60" cy="5.1" r="0.6" fill="#d9b24a" />
+      <circle cx="12.10" cy="5.1" r="0.6" fill="#d9b24a" />
+    </g>
+    <g id="monitor-block--alarm-a" data-path="monitor-block/alarm-a" data-class="port" data-inner="1" data-z-out="6.0" data-z-color="#f1f0eb">
+      <rect x="23.2" y="1.9" width="12.2" height="6.4" rx="0.3" fill="#f4f3ee" stroke="#6f6e69" stroke-width="0.25" />
+      <circle cx="25.40" cy="5.1" r="0.6" fill="#d9b24a" />
+      <circle cx="28.90" cy="5.1" r="0.6" fill="#d9b24a" />
+      <circle cx="32.40" cy="5.1" r="0.6" fill="#d9b24a" />
+    </g>
+    <g id="monitor-block--screw">
+      <circle cx="19.3" cy="4.3" r="1.8" fill="#c8ccd0" stroke="#6b7075" stroke-width="0.25" />
+      <path d="M 19.3 3.3 V 5.3 M 18.3 4.3 H 20.3" stroke="#4a4e52" stroke-width="0.35" />
+    </g>
+    <g id="monitor-block--nrgnet-in" data-path="monitor-block/nrgnet-in" data-class="port" data-inner="1" data-z-out="8.0" data-z-color="#3f9d5a">
+      <rect x="1.0" y="13.9" width="20.3" height="6.9" rx="0.4" fill="#3f9d5a" stroke="#1f5e33" stroke-width="0.25" />
+      <rect x="1.65" y="15.1" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="2.90" cy="17.35" r="0.9" fill="#c9cdd1" />
+      <rect x="5.46" y="15.1" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="6.71" cy="17.35" r="0.9" fill="#c9cdd1" />
+      <rect x="9.27" y="15.1" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="10.52" cy="17.35" r="0.9" fill="#c9cdd1" />
+      <rect x="13.08" y="15.1" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="14.33" cy="17.35" r="0.9" fill="#c9cdd1" />
+      <rect x="16.89" y="15.1" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="18.14" cy="17.35" r="0.9" fill="#c9cdd1" />
+    </g>
+    <g id="monitor-block--nrgnet-out" data-path="monitor-block/nrgnet-out" data-class="port" data-inner="1" data-z-out="8.0" data-z-color="#3f9d5a">
+      <rect x="1.0" y="27.7" width="20.3" height="6.9" rx="0.4" fill="#3f9d5a" stroke="#1f5e33" stroke-width="0.25" />
+      <rect x="1.65" y="28.9" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="2.90" cy="31.15" r="0.9" fill="#c9cdd1" />
+      <rect x="5.46" y="28.9" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="6.71" cy="31.15" r="0.9" fill="#c9cdd1" />
+      <rect x="9.27" y="28.9" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="10.52" cy="31.15" r="0.9" fill="#c9cdd1" />
+      <rect x="13.08" y="28.9" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="14.33" cy="31.15" r="0.9" fill="#c9cdd1" />
+      <rect x="16.89" y="28.9" width="2.5" height="4.5" rx="0.3" fill="#1f5e33" />
+      <circle cx="18.14" cy="31.15" r="0.9" fill="#c9cdd1" />
+    </g>
+    <g id="monitor-block--temp-1" data-path="monitor-block/temp-1" data-class="port" data-inner="1" data-z-out="3.0" data-z-color="#1b1d20">
+      <rect x="23.8" y="12.0" width="10.7" height="9.5" rx="0.5" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+      <circle cx="29.15" cy="16.75" r="2.6" fill="#050606" stroke="#4a4e52" stroke-width="0.4" />
+    </g>
+    <g id="monitor-block--temp-2" data-path="monitor-block/temp-2" data-class="port" data-inner="1" data-z-out="3.0" data-z-color="#1b1d20">
+      <rect x="23.8" y="24.9" width="10.7" height="10.2" rx="0.5" fill="#1b1d20" stroke="#060707" stroke-width="0.2" />
+      <circle cx="29.15" cy="30.00" r="2.6" fill="#050606" stroke="#4a4e52" stroke-width="0.4" />
+    </g>
+    <g id="monitor-block--silkscreen">
+      <text x="11.15" y="12.9" font-size="1.5" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#2b2d30">IN</text>
+      <text x="11.15" y="26.7" font-size="1.5" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#2b2d30">OUT</text>
+      <text x="11.15" y="37.2" font-size="1.6" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#2b2d30">nrgNET</text>
+      <text x="29.15" y="11.2" font-size="1.4" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#2b2d30">TEMP 1</text>
+    </g>
+  </g>
+</svg>

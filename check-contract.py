@@ -1215,6 +1215,19 @@ if _spec and (HERE / "chassis-index.py").is_file():
 else:
     check(False, "chassis-index.py exists", "the rack builder's catalog has no sizes")
 
+# RACK-FACE MANAGERS (docs/superpowers/specs/2026-10-07-rack-face-managers-design.md §3):
+# the catalog holds the first one, as a 1U sheet part on the rail face, and the
+# vendored relief can build a sheet body - without it the part is a solid block
+# hiding the ports it serves.
+_cat = json.loads((HERE / "site" / "rack" / "chassis.json").read_text())["devices"]
+_mgr = _cat.get("fhd-cmp5dr", {})
+check(_mgr.get("mount") == "rack-face" and _mgr.get("ru") == 1 and _mgr.get("shell") == "sheet",
+      "fhd-cmp5dr is in the catalog as a 1U rack-face sheet part",
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+check("sheetShell" in (HERE / "vendor" / "relief.js").read_text(),
+      "the vendored relief.js builds sheet bodies",
+      "run ./refresh-assets.sh against an upstream main that has #827")
+
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",
                   "annotate.html", "drawio.html", "exporter.html", "index.html", "rack.html", "kit.html"):
