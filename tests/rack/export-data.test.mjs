@@ -172,5 +172,5 @@ test('the picker flags a device that is not rack-mount, in its own words', () =>
 test('a rack-face part is placeable on the rail face, never "needs a shelf"', () => {
   assert.equal(X.mountText('rack-face'), null);
   assert.deepEqual(X.mountPick('rack-face'),
-    {tag: '0U, rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'});
+    {tag: '0U, mounts on the rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'});
 });

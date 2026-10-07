@@ -268,8 +268,10 @@ function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
   const notes = [];
   doc = {...doc, racks: doc.racks.map(r => { const s = settleManagers(r, chassisOf); notes.push(...s.notices); return s.rack; })};
-  S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
-  for (const n of notes) addNotice(n);
+  S.doc = doc;
+  if (notes.length) S.save.saveSoon(doc);   // the repair is saved like an edit, with no Undo
+  S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
+  for (const n of notes) addNotice(n, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
@@ -813,13 +815,20 @@ function renderSide() {
     else if (isRackFace(chassisOf(it.ref))) {
       const host = it.on ? itemById(it.on) : null;
       const hostHere = host ? null : hostAt(r, it.face, it.ru, chassisOf);
+      // Like the device panel's Remove: these may outlive the rack they were
+      // built for, so each acts on the item as it is now, or just redraws.
+      const live = fn => {
+        const cur = rack().items.find(i => i.id === it.id);
+        if (S.sel?.kind !== 'item' || S.sel.id !== it.id || !cur) { render(); return; }
+        fn(cur);
+      };
       body = managerInspector({item: it, rack: r, chassis: chassisOf(it.ref), host, hostHere,
         onPatch: patch => patchItem(it.id, patch),
         onSelectHost: () => select({kind: 'item', id: host.id}),
-        onDetach: () => commit(detachedRack(rack(), it.id)),
-        onAttach: () => patchItem(it.id, {ru: it.ru, face: it.face}),
+        onDetach: () => live(cur => commit(detachedRack(rack(), cur.id))),
+        onAttach: () => live(cur => patchItem(cur.id, {ru: cur.ru, face: cur.face})),
         onMove: () => select({kind: 'move', id: it.id}),
-        onRemove: () => { if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(rack(), it.id)); } },
+        onRemove: () => live(cur => { if (confirm(`Remove ${cur.label} from the rack?`)) { S.sel = null; commit(withoutItem(rack(), cur.id)); } }),
         onExplore: () => explore(it.id)});
     } else body = el('div', {}, [inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
@@ -844,7 +853,11 @@ function renderSide() {
       managerRows({host: it, rack: r, chassisOf,
         onAdd: unit => select({kind: 'u', face: it.face, ru: it.ru + unit - 1, onlyMount: 'rack-face'}),
         onSelect: id => select({kind: 'item', id}),
-        onRemove: id => commit(withoutItem(rack(), id), {text: `Removed ${itemById(id).label}.`})})]);
+        onRemove: id => {
+          const m = itemById(id);
+          if (!m) { render(); return; }
+          commit(withoutItem(rack(), id), {text: `Removed ${m.label}.`});
+        }})]);
   }
   const kids = [body];
   const notice = noticeParagraph();
@@ -896,6 +909,16 @@ function onPaneClick(ev) {
     if (u) {
       const id = S.sel.id;
       const r = patchItem(id, {ru: Number(u.dataset.u), face: u.dataset.face});
+      if (!r.ok) S.notice = {text: r.reason, kind: 'error'};
+      select({kind: 'item', id});
+      return;
+    }
+    // No U target (a device's own panel): take the U and face from the click,
+    // so a cable manager can be moved onto a device by clicking it.
+    const svg = ev.target.closest('svg[data-pane]');
+    if (svg) {
+      const id = S.sel.id;
+      const r = patchItem(id, {ru: uAtY(rack().frame, svgY(svg, ev.clientX, ev.clientY)), face: svg.dataset.pane});
       if (!r.ok) S.notice = {text: r.reason, kind: 'error'};
       select({kind: 'item', id});
       return;

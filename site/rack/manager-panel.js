@@ -3,6 +3,7 @@
 // Like inspector.js, it changes nothing itself: every action is a callback.
 
 import {el} from './dom.js';
+import {positionOf} from './model.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
@@ -34,7 +35,7 @@ export function managerInspector({item, rack, chassis, host, hostHere, onPatch, 
   return el('div', {class: 'rk-inspector'}, [
     el('h3', {text: item.label}),
     el('p', {class: 'rk-muted', text: `${chassis?.manufacturer ?? ''} ${chassis?.model ?? item.ref} · 0U cable manager, ` +
-                                      `U${item.ru} ${item.face}, ${where}`.trim()}),
+                                      `U${positionOf(rack.frame, item.ru, 1)} ${item.face}, ${where}`.trim()}),
     el('label', {}, ['Label', label]),
     ...(cap ? [el('p', {id: 'mCapacity', class: 'rk-muted', text: `${cap.count} cables (${cap.basis})`})] : []),
     el('div', {class: 'rk-actions'}, [

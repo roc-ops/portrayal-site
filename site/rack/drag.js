@@ -6,8 +6,7 @@
 
 import {RU, OPENING} from './rails.js';
 import {uAtY} from './elevation.js';
-import {fits, isRackFace} from './fit.js';
-import {placement} from './managers.js';
+import {moveItem} from './managers.js';
 import {svgEl, svgY} from './dom.js';
 
 const THRESHOLD = 4; // CSS px before a press becomes a drag, not a click
@@ -63,8 +62,8 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     const pointerU = uAtY(r.frame, y);
     const maxRu = Math.max(1, r.frame.heightRU - d.ruH + 1);
     const ru = Math.min(maxRu, Math.max(1, pointerU - d.grabOffsetU));
-    const at = isRackFace(chassisOf(d.item.ref)) ? placement(r, {face, ru}, chassisOf, {ignoreId: d.id}) : {ru, face};
-    const f = fits(r, {ref: d.item.ref, ...at}, chassisOf, {ignoreId: d.id});
+    // The same call the drop makes (patchItem -> moveItem), so the preview agrees with it.
+    const f = moveItem(r, d.id, {ru, face}, chassisOf);
     d.target = {face, ru, ok: f.ok};
     drawPreview(svg, r.frame, ru, d.ruH, f.ok);
     setStatus(f.ok ? 'Drop to move here.' : f.reason);

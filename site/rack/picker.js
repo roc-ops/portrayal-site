@@ -12,7 +12,7 @@
 
 import {el} from './dom.js';
 import {fits} from './fit.js';
-import {placement} from './managers.js';
+import {placement, hostAt} from './managers.js';
 import {uLabel} from './model.js';
 import {mountPick} from './export-data.js';
 
@@ -27,6 +27,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount));
   const fitOf = new Map(live.map(e => [e.name, fits(rack, {ref: e.name, ...(e.mount === 'rack-face'
     ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf)]));
+  // A U a rack device spans on this face is not empty: a rack-face part would attach to it.
+  const host = hostAt(rack, face, ru, chassisOf);
   const byRef = new Map(live.map(e => [e.name, e]));
 
   let state = {query: '', vendor: ALL, fitsOnly: true, device: null, cfgByRef: {}, ...pick};
@@ -62,7 +64,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
       const f = fitOf.get(e.name);
       const prefix = state.vendor === ALL ? `${e.manufacturer ?? ''} ${e.model}`.trim() : e.model;
       const mp = mountPick(e.mount);
-      const text = `${prefix} · ${e.ru}U · ${Math.round(e.d ?? 0)} mm${mp ? ` · ${mp.tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
+      const text = `${prefix} · ${e.mount === 'rack-face' ? 0 : e.ru}U · ${Math.round(e.d ?? 0)} mm${mp ? ` · ${mp.tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
       return el('option', {value: e.name, text, 'data-fits': f.ok ? 'true' : 'false'});
     }));
     if (!list.some(e => e.name === state.device)) setState({device: list[0]?.name ?? null});
@@ -83,7 +85,9 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const chosen = state.cfgByRef[entry.name] ?? entry.default ?? configs[0];
     cfg.replaceChildren(...configs.map(c => el('option', {value: c, text: c, ...(c === chosen ? {selected: ''} : {})})));
     const f = fitOf.get(entry.name);
-    fitLine.textContent = f.ok ? (mountPick(entry.mount)?.fit ?? 'Fits here.') : f.reason;
+    fitLine.textContent = !f.ok ? f.reason
+      : entry.mount === 'rack-face' && host ? `Fits here: it mounts on the rail face over ${host.label}, and takes no U of its own.`
+      : (mountPick(entry.mount)?.fit ?? 'Fits here.');
     fitLine.className = f.ok ? 'rk-muted' : 'rk-error';
   }
 
@@ -130,7 +134,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   queueMicrotask(() => query.focus());
 
   return el('div', {class: 'rk-picker'}, [
-    el('h3', {text: `U${uLabel(rack.frame, ru)} · ${face}, empty`}),
+    el('h3', {text: `U${uLabel(rack.frame, ru)} · ${face}, ${host ? `on ${host.label}` : 'empty'}`}),
     el('label', {}, ['Search', query]),
     el('label', {class: 'rk-check'}, [fitsOnly, ' Only what fits here']),
     el('label', {}, ['Vendor', vendor]),

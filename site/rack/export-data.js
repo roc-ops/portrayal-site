@@ -258,7 +258,7 @@ export const mountText = mount => { const m = mountOf(mount); return m && `${m.w
 // The picker's words: the list row's tag and the fit line.
 export function mountPick(mount) {
   if (mount === 'rack-face')
-    return {tag: '0U, rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'};
+    return {tag: '0U, mounts on the rail face', fit: 'Fits here: it mounts on the rail face and takes no U of its own.'};
   const m = mountOf(mount);
   return m && {tag: m.tag, fit: `Fits here, on ${m.where}: this is ${m.what}.`};
 }
