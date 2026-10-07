@@ -180,3 +180,22 @@ test('removing a host leaves its managers in place, unhosted', () => {
   assert.equal('on' in after.items[0], false);
   assert.equal('unit' in after.items[0], false);
 });
+
+test('a cable keeps its edited route; a malformed waypoint is kept aside, not dropped', () => {
+  const [c] = M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i2', path: 'q'}, routeEdited: true,
+    route: [{item: 'i3', via: 'guide-2'}, {lane: 'left-front', ru: 12}, {lane: 'left-front'}, 'x']}]);
+  assert.deepEqual(c.route, [{item: 'i3', via: 'guide-2'}, {lane: 'left-front', ru: 12}]);
+  assert.deepEqual(c.routeAsWritten, [{item: 'i3', via: 'guide-2'}, {lane: 'left-front', ru: 12}, {lane: 'left-front'}, 'x']);
+  assert.equal(c.routeEdited, true);
+});
+
+test('routeEdited is only ever true; an automatic cable has none', () => {
+  const [c] = M.readCables([{id: 'c1', a: {}, b: {}, routeEdited: 'yes', route: []}]);
+  assert.equal('routeEdited' in c, false);
+  assert.equal('routeAsWritten' in c, false);
+});
+
+test('a routed length keeps its measurement', () => {
+  const [c] = M.readCables([{id: 'c1', a: {}, b: {}, length: {value: 2, unit: 'm', source: 'routed', measured: 1.62}}]);
+  assert.deepEqual(c.length, {value: 2, unit: 'm', source: 'routed', measured: 1.62});
+});

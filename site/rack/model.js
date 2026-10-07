@@ -154,6 +154,20 @@ function readItems(list, cables) {
   return items;
 }
 
+// A ROUTE (docs/superpowers/specs/2026-10-07-cable-routing-pathways-design.md §4)
+// is waypoints in order: {item, via}, an element of a placed device's drawing,
+// or {lane, ru}, a lane beside the rails at a U. An entry of neither shape is
+// not thrown away: the whole route as written moves to `routeAsWritten`, as a
+// length this page cannot use moves to `lengthAsWritten`.
+const isWaypoint = w => w && typeof w === 'object' && !Array.isArray(w) && (
+  (typeof w.item === 'string' && w.item && typeof w.via === 'string' && w.via) ||
+  (typeof w.lane === 'string' && w.lane && Number.isInteger(w.ru)));
+const readRoute = r => {
+  const list = Array.isArray(r) ? r : [];
+  const kept = list.filter(isWaypoint).map(w => ('lane' in w ? {lane: w.lane, ru: w.ru} : {item: w.item, via: w.via}));
+  return kept.length === list.length ? {route: kept} : {route: kept, routeAsWritten: structuredClone(list)};
+};
+
 // CABLES ARE NEVER DROPPED ON LOAD (spec §9.3: a cable is never silently
 // deleted). A cable that names a missing item, an unknown media or no port at
 // all is kept and shown as a loose end; what is normalized is only its shape:
@@ -193,10 +207,12 @@ export function readCables(list) {
     const length = value
       ? {...len, value, unit: len.unit ?? 'm', source: String(len.source ?? 'entered')}
       : null;
+    const routeEdited = c.routeEdited;
+    delete c.routeEdited; delete c.routeAsWritten;
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
-              ...(length ? {length} : len == null ? {} : {lengthAsWritten: len}),
-              route: Array.isArray(c.route) ? c.route : []});
+              ...readRoute(c.route), ...(routeEdited === true ? {routeEdited: true} : {}),
+              ...(length ? {length} : len == null ? {} : {lengthAsWritten: len})});
   }
   return out;
 }
