@@ -9638,8 +9638,18 @@ def parse_only(text):
         else:
             missing.append(f"  {name} - no such check")
     if missing:
+        head = f"check-browser: --only asks for {len(missing)} check(s) that are not registered"
+        # THE PARTIAL CASE IS THE ONE THAT MISLEADS, so it gets the counts. One unmatched
+        # name refuses the whole run, so somebody who asked for four checks and mistyped
+        # one of them ran none of the four - and an error printed under a four-name
+        # command reads easily as "the other three were fine", which is the one thing it
+        # does not mean. Said out loud, this is a refusal that gets read rather than
+        # retried unchanged. When every name is wrong there is no such confusion and
+        # nothing to add.
+        if len(missing) < len(names):
+            head += f", of the {len(names)} it was given, and nothing ran at all"
         raise SystemExit("\n".join(
-            [f"check-browser: --only asks for {len(missing)} check(s) that are not registered:"]
+            [head + ":"]
             + missing
             + ["  the names --only takes are this file's @extra functions; "
                "`--plan 1` lists every unit of the whole pass"]))
@@ -10453,8 +10463,10 @@ def check_rack_dcim_acceptance_kits(page, base):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
-    ap.add_argument("--only", help="run only these registered extra checks, by function "
-                                   "name, comma-separated - skips the page sweep and the stages")
+    ap.add_argument("--only", help="run only these checks, by function name, comma-separated - "
+                                   "the ones registered with @extra, which is NOT every check in "
+                                   "this file; an unmatched name is an error, never an empty pass. "
+                                   "Skips the page sweep and the stages")
     ap.add_argument("--shard", metavar="i/n", help="run only the i-th of n balanced parts of "
                                                    "the whole pass - how CI runs it, n jobs at once")
     ap.add_argument("--plan", metavar="n", type=int, help="print what each of n shards would run, "

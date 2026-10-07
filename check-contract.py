@@ -1370,9 +1370,15 @@ _only_bad = []
 if "check_hero_3d" in _registered or not callable(getattr(_cb, "check_hero_3d", None)):
     _only_bad.append("check_hero_3d is no longer a non-@extra function in check-browser.py - "
                      "name one that is")
+# THE LAST CASE IS THE ONE THAT HID. Before any of this, a list with one wrong
+# name among good ones ran the good ones and printed their `ok` lines, so the run
+# looked healthy while doing less than it was asked - harder to notice than a run
+# that printed nothing, and the reason one bad name has to refuse the whole list.
 for _arg, _why in [("check_hero_3d", "a function in the file that is not an @extra"),
                    ("totally_bogus_name_xyz", "a name that is nothing at all"),
-                   ("", "--only with no name")]:
+                   ("", "--only with no name"),
+                   (f"{_registered[0]},totally_bogus_name_xyz",
+                    "a list with one wrong name among registered ones")]:
     try:
         _cb.parse_only(_arg)
         _only_bad.append(f"accepted {_why}")
