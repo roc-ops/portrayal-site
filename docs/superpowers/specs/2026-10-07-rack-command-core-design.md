@@ -1,7 +1,7 @@
 # Rack Builder command core
 
 **Date:** 2026-10-07
-**Status:** design approved in conversation; spec awaiting review
+**Status:** implemented (plan: docs/superpowers/plans/2026-10-07-rack-command-core.md)
 **Builds on:** `2026-09-26-rack-builder-design.md` (§5 the rack file, §9 cables), `2026-10-07-rack-face-managers-design.md`
 **Asked for by:** the "Agent integration research" session (agents with bring-your-own inference will drive the Rack Builder next)
 
