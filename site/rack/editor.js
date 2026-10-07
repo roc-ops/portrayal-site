@@ -2,7 +2,7 @@
 // way in for edits. The page draws what it is told by `change`; an agent drives
 // the same object. Selection is the page's, not this.
 
-import {apply as applyCommands} from './commands.js';
+import {apply as applyCommands, COMMANDS} from './commands.js';
 import {settleManagers} from './managers.js';
 import {createHistory} from './history.js';
 
@@ -21,11 +21,23 @@ export function createRackEditor({doc, chassisOf, cap = 100}) {
   let current = doc;
   const rack = () => current.racks[0];
   const put = next => { current = {...current, racks: [next, ...current.racks.slice(1)]}; };
-  const emit = ev => { for (const fn of [...listeners]) fn(ev); };
+  // A LISTENER THAT THROWS is its own fault: the edit has landed, so apply
+  // still answers, and the listeners after it still hear of it.
+  const emit = ev => {
+    for (const fn of [...listeners]) {
+      try { fn(ev); } catch (e) { console.error(e); }
+    }
+  };
   const list = cmds => (Array.isArray(cmds) ? cmds : [cmds]);
 
   function apply(cmds, {origin = 'ui'} = {}) {
     const commands = list(cmds), before = rack();
+    // A SYSTEM COMMAND is the page's own (routed lengths it measured): an agent
+    // or a control that sends one is refused like any other bad command.
+    if (origin !== 'system') {
+      const index = commands.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(COMMANDS, c.op) && COMMANDS[c.op].system);
+      if (index >= 0) return {error: `${commands[index].op} is the page's own command.`, index};
+    }
     const res = applyCommands(before, commands, ctx);
     if (res.error || res.noop) return res;
     put(res.rack);

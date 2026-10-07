@@ -67,3 +67,25 @@ test('replaceRack is one step with its summary', () => {
   ed.replaceRack({...ed.rack(), name: 'X'}, 'Dropped demarc.');
   assert.deepEqual([ed.rack().name, ed.undoSummary], ['X', 'Dropped demarc.']);
 });
+
+test('a system command is refused unless the system sends it', () => {
+  const {ed, evs} = fresh();
+  assert.deepEqual(ed.apply([P(10), {op: 'lengths.routed', routeCtx: {}}], {origin: 'agent'}),
+                   {error: "lengths.routed is the page's own command.", index: 1});
+  assert.deepEqual([ed.rack().items.length, evs.length], [0, 0]);
+  assert.equal(ed.apply({op: 'lengths.routed', routeCtx: {}}, {origin: 'system'}).noop, true);
+});
+
+test('a listener that throws neither undoes the edit nor stops the others', () => {
+  const {ed, evs} = fresh();
+  const errors = [], was = console.error;
+  console.error = (...a) => errors.push(a);
+  ed.on('change', () => { throw new Error('boom'); });
+  const later = [];
+  ed.on('change', e => later.push(e.cause));
+  let res;
+  try { res = ed.apply(P(10)); } finally { console.error = was; }
+  assert.equal(res.step, true);
+  assert.equal(ed.rack().items.length, 1);
+  assert.deepEqual([evs.length, later, errors.length], [1, ['apply'], 1]);
+});
