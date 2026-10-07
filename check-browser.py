@@ -2614,6 +2614,9 @@ def check_schema_nos_tab(page, base):
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
     have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
     other = "overlay" if have == "listing" else "listing"
+    # Extract site-owned schemas (those not vendored in assets/schemas/) from site/schema.js
+    schema_js = (HERE / "site" / "schema.js").read_text()
+    site_owned = re.findall(r"^\s*(\w+):\s*\{url:\s*'(?!assets/schemas/)", schema_js, re.M)
     # as vendored - and without asking for a schema the site does not carry
     misses = []
     page.on("response", lambda r: misses.append(r.url) if r.status == 404 else None)
@@ -2623,7 +2626,8 @@ def check_schema_nos_tab(page, base):
     got = page.evaluate(tabs)
     # the lab schema (Portrayal #852) is a tab of its own when the snapshot carries it
     lab = ["lab"] if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "lab.schema.json").exists() else []
-    if got != ["device", "component", have] + lab:
+    # site-owned schemas (the rack file) are always tabs, since they are not vendored
+    if got != ["device", "component", have] + lab + site_owned:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")
     # the other side of #677: this snapshot's NOS schema gone, the other one served
@@ -2638,7 +2642,8 @@ def check_schema_nos_tab(page, base):
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
     order = ["device", "component", "listing"] if other == "listing" else ["device", "component", "overlay"]
-    if got != order:
+    # site-owned schemas (the rack file) are always tabs, since they are not vendored
+    if got != order + site_owned:
         bad.append(f"schema: with only {other}.schema.json the tabs are {got}")
     if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
         bad.append(f"schema: ?doc={other} did not render the {other} schema")
