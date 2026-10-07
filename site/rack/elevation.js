@@ -218,9 +218,10 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     }
     out.append(g);
     // A manager is mostly air: a click on its tray or ears is meant for the
-    // host behind it. Its rings (data-kind="ring"; any data-ref component
-    // too, for future parts) still take clicks (spec section 7).
-    if (isFace(it) && !through) {
+    // host behind it, or the empty U on the far face. This holds on either
+    // face. Its rings (data-kind="ring"; any data-ref component too, for
+    // future parts) and the gutter mark still take clicks (spec section 7).
+    if (isFace(it)) {
       g.setAttribute('pointer-events', 'none');
       for (const part of g.querySelectorAll('[data-kind="ring"], [data-ref]')) {
         part.setAttribute('pointer-events', 'visiblePainted');
@@ -237,9 +238,12 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
   // see-through. The marker is also how a click reaches it.
   for (const it of shown.filter(i => isFace(i) && i.face === view)) {
     const y0 = totalH - (it.ru - baseRU + 1) * RU;
-    out.append(svgEl('path', {d: `M ${-RAIL_W - 5} ${y0 + 4} l 4 ${RU / 2 - 4} l -4 ${RU / 2 - 4} z`,
-      fill: 'var(--pt-brass)', 'data-manager-mark': it.id, 'data-item-id': it.id,
-      'data-device-name': it.label, style: 'cursor: pointer'}));
+    const mark = svgEl('g', {'data-manager-mark': it.id, 'data-item-id': it.id,
+      'data-device-name': it.label, style: 'cursor: pointer'});
+    mark.append(svgEl('rect', {x: -RAIL_W - 6, y: y0, width: RAIL_W + 6, height: RU, fill: 'transparent'}),
+      svgEl('path', {d: `M ${-RAIL_W - 5} ${y0 + 4} l 4 ${RU / 2 - 4} l -4 ${RU / 2 - 4} z`,
+        fill: 'var(--pt-brass)'}));
+    out.append(mark);
   }
   for (const [top, ruH] of rings) out.append(ring(top, ruH));
   return out;
