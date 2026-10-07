@@ -143,7 +143,11 @@ class _Md(HTMLParser):
             self.emit("[")
 
     def handle_startendtag(self, tag, attrs):
+        # <svg id="x"/>: a start with no end to come. Opened and closed at
+        # once, so a skipped tag cannot go on skipping the rest of the page.
         self.handle_starttag(tag, attrs)
+        if tag not in VOID:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag):
         if tag == "title":
