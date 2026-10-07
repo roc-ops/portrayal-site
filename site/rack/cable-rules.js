@@ -130,8 +130,11 @@ export function cablePlan3d(rack) {
 // where each one's two ends are, and its media (its color; the showcase's
 // 'copper' is colored by purpose, so there the purpose counts too). Two racks
 // that agree on those draw the same tubes and seat the same plugs. A label, a
-// length, a route, or the purpose of any other media changes nothing in the
-// scene, so an edit to one of those need not rebuild it.
+// length, or the purpose of any other media changes nothing in the scene, so
+// an edit to one of those need not rebuild it. An EDITED route does change
+// it, and it is in the key so the rebuild is scheduled by the commit itself;
+// an automatic route follows the items, and rack-page.js's routesSig (the
+// resolved waypoints) rebuilds when render() finds them changed.
 export function sameCables3d(a, b) {
   const ca = a.cables || [], cb = b.cables || [];
   if (ca === cb) return true;

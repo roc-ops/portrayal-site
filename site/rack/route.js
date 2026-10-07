@@ -129,7 +129,7 @@ export function routeText(route, nameOf = id => id, frame = null) {
 // 3D draw from their own drawings; this is the rack's own measure, so the
 // length is the same whatever is on screen.
 const railDepthOf = f => (f.kind === 'two-post' ? 0 : f.railDepth);
-const laneX = side => (side === 'left' ? -1 : 1) * (OPENING / 2 + RAIL_W + LANE_GAP / 2);
+export const laneX = side => (side === 'left' ? -1 : 1) * (OPENING / 2 + RAIL_W + LANE_GAP / 2);
 const planeZ = (f, pane) => (pane === 'rear' ? -railDepthOf(f) : 0);
 
 export function pointOf(rack, w, ctx) {

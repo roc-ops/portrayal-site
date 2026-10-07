@@ -10,7 +10,7 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from './cable-rules.js';
 import {drawCables3d} from './cables.js';
-import {LANE_GAP} from './route.js';
+import {laneX} from './route.js';
 import {RU} from './rails.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
@@ -27,6 +27,7 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // and pass rects); a lane LANE_GAP/2 outside the posts at the U's middle.
 // Cables that share a waypoint are spread on a small grid so their tubes do
 // not overlap.
+const SPREAD = 6;   // mm between cables sharing a waypoint
 function waypointsFor(scene, routes, THREE) {
   const used = new Map();
   const m = scene.metrics();
@@ -35,21 +36,34 @@ function waypointsFor(scene, routes, THREE) {
     if (!r) return [];
     const out = [];
     for (const w of r.waypoints) {
-      let p = null;
+      let p = null, run = 'x';
       if (w.lane) {
         const [side, face = 'front'] = w.lane.split('-');
-        const x = (side === 'left' ? -1 : 1) * (m.rackWidth / 2 + LANE_GAP / 2);
-        p = new THREE.Vector3(x, (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
+        p = new THREE.Vector3(laneX(side), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
+        run = 'y';
       } else {
-        for (const id of [w.via, `${w.via}-end`, `guide--${w.via}`, `pass--${w.via}`]) {
-          const a = await scene.guideAnchor({id: w.item}, id);
-          if (a) { p = a.position.clone(); break; }
+        // A ring: x and z from its top-view component, y from the center of
+        // its end rect, so the point is the center of the OPENING. A duct runs
+        // along x like a ring; a pass crosses the face, along z.
+        const [top, end] = await Promise.all([w.via, `${w.via}-end`].map(id => scene.guideAnchor({id: w.item}, id)));
+        if (top || end) {
+          p = (top || end).position.clone();
+          if (top && end) p.y = end.position.y;
+        } else {
+          const duct = await scene.guideAnchor({id: w.item}, `guide--${w.via}`);
+          const pass = duct ? null : await scene.guideAnchor({id: w.item}, `pass--${w.via}`);
+          if (duct || pass) p = (duct || pass).position.clone();
+          if (pass) run = 'z';
         }
       }
       if (!p) continue;
+      // Spread across the run: the first cable at 0, then +-1 steps, on a 3x3
+      // grid (it wraps after 9 cables sharing a waypoint).
       const key = w.lane ? `${w.lane}|${w.ru}` : `${w.item}|${w.via}`;
       const k = used.get(key) || 0; used.set(key, k + 1);
-      p.x += ((k % 3) - 1) * 6; p.y += ((Math.floor(k / 3) % 3) - 1) * 6;
+      const off = n => ((n + 1) % 3 - 1) * SPREAD;   // 0, +1, -1, 0, ...
+      const [u, v] = run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x', 'y'];
+      p[u] += off(k % 3); p[v] += off(Math.floor(k / 3) % 3);
       out.push(p);
     }
     return out;
