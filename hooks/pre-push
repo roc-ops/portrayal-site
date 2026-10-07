@@ -30,7 +30,19 @@ BROWSER="check-browser.py"
 touches_the_site() {
   # Anything the pages load, are, or are served by. assets/ is in the list
   # because a drawing that goes away is a page that fetches a 404.
-  grep -qE '^(vendor/|site/|assets/|brand/|tests/|[^/]+\.html$|check-browser\.py$|serve\.py$)'
+  # A PAGE IS NOT ALWAYS AT THE ROOT. This read `[^/]+\.html$`, which is a file
+  # with no slash in it, and that was every page until components/catalog.html -
+  # the first one in a subdirectory, whose edits then skipped this pass with
+  # nothing to say they had. Any .html is a page now, at whatever depth, except
+  # under coming-soon/: the teaser is the rollback, served instead of the site
+  # rather than as part of it, and the browser pass does not check it.
+  #
+  # Over-triggering is cheap and under-triggering is not: a push that runs this
+  # pass without needing it costs nine minutes, and one that skips it when it
+  # was needed is a page nobody checked. check-contract.py exercises this
+  # function itself, so the next page in a folder cannot slip through quietly.
+  grep -vE '^coming-soon/' |
+  grep -qE '^(vendor/|site/|assets/|brand/|tests/|.*\.html$|check-browser\.py$|serve\.py$)'
 }
 
 # GIT OPENS THE CONNECTION BEFORE IT RUNS THIS HOOK, and over SSH that

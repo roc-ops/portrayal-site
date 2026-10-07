@@ -1613,6 +1613,34 @@ check(not _flat,
 check("site/catalog-page.js" in _cat_html,
       "components/catalog.html renders through site/catalog-page.js")
 
+# ── THE PRE-PUSH HOOK'S IDEA OF "THE SITE" ──────────────────────────────
+# hooks/pre-push runs the browser pass only when a push touches the site, and
+# decides that with one regex. It listed .html as `[^/]+\.html$` - a file at the
+# repository root - which was every page until components/catalog.html, the
+# first in a subdirectory: editing it skipped the pass entirely, and nothing
+# said so. The hook is the gate people trust before CI sees the branch, so the
+# rule is exercised here against the real function rather than eyeballed.
+#
+# OVER-TRIGGERING IS SAFE AND UNDER-TRIGGERING IS THE BUG: a push that runs the
+# pass it did not need costs nine minutes; one that skips the pass it did need
+# is a page nobody checked.
+_hook_src = (HERE / "hooks" / "pre-push").read_text()
+_hook_fn = re.search(r"^touches_the_site\(\) \{.*?^\}", _hook_src, re.S | re.M)
+def _touches(path):
+    return _sp.run(["sh", "-c", f"{_hook_fn.group(0)}\nprintf '%s\\n' \"$1\" | touches_the_site", "_", path],
+                   capture_output=True).returncode == 0
+_want_pass = ["index.html", "components/catalog.html", "site/rack/exports.js",
+              "assets/dist/components.json", "vendor/relief.js", "brand/tokens.css",
+              "tests/rack/dcim.test.mjs", "check-browser.py", "serve.py"]
+_want_skip = ["README.md", "docs/superpowers/specs/x.md", "tools/build-public.py",
+              "check-contract.py", "coming-soon/index.html"]
+check(_hook_fn is not None, "hooks/pre-push defines touches_the_site")
+_hook_bad = ([f"{p} should run the browser pass" for p in _want_pass if not _touches(p)]
+             + [f"{p} should not" for p in _want_skip if _touches(p)])
+check(not _hook_bad,
+      "hooks/pre-push runs the browser pass for every page, including one in a subdirectory",
+      "; ".join(_hook_bad))
+
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:
