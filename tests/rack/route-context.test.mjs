@@ -31,3 +31,12 @@ test('dedupeGuides keeps one guide per via and face, the first', () => {
   const c = {via: 'guide-1', face: 'rear', x: 3};
   assert.deepEqual(dedupeGuides([a, b, c]), [a, c]);
 });
+
+import {pathBox} from '../../site/rack/route-context.js';
+test('pathBox reads an absolute obround path, bulges included, and refuses relative ones', () => {
+  const b = pathBox('M33.900 9.400 H48.800 A12.800 12.800 0 0 1 48.800 35.000 H33.900 A12.800 12.800 0 0 1 33.900 9.400 Z');
+  assert.deepEqual([b.x, b.y, b.w, Math.round(b.h * 10) / 10].map(v => Math.round(v * 10) / 10), [21.1, 9.4, 40.5, 25.6]);
+  assert.equal(pathBox('m1 1 l2 2'), null);
+  const g = guidesFromRects([{id: 'pass--window-1', cls: 'pass', x: b.x, y: b.y, w: b.w, h: b.h}], 'front', 483);
+  assert.equal(g[0].via, 'window-1');
+});

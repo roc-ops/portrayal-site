@@ -675,7 +675,7 @@ async function render() {
   const mine = ++S.draws;
   pruneCable();
   pruneFilter();
-  const r = rack();
+  let r = rack();
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
     ? `tapped${r.frame.holes.thread ? ` ${r.frame.holes.thread}` : ''}` : 'square holes';
@@ -720,12 +720,15 @@ async function render() {
     const at = S.doc;
     const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
     if (mine !== S.draws) return;
-    if (rf && S.doc === at) {
+    if (!rf) S.routes = null;
+    else if (S.doc === at) {
       S.routes = rf;
       const next = withRoutedLengths(r, rf.ctx);
       if (next !== r) {
         S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
         S.save.saveSoon(S.doc);
+        keepScene(r, next);
+        r = next;               // the drawing below shows the length just kept
       }
     }
   } else S.routes = null;

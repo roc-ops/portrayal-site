@@ -46,6 +46,33 @@ export function dedupeGuides(list) {
   return list.filter(g => { const k = `${g.via}|${g.face}`; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
+// The box of a compiled path's `d`. Compiled paths are ABSOLUTE (M H V L A Z,
+// as the obround passes are); a relative command is not read and the path
+// gives no box (null). A half-circle arc adds the bulge of its radius.
+export function pathBox(d) {
+  if (/[a-z]/.test(d.replace(/e[-+]?\d/gi, ''))) return null;
+  const toks = d.match(/[A-Za-z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || [];
+  let x = 0, y = 0, i = 0, cmd = '';
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (px, py) => { x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); };
+  const num = () => +toks[i++];
+  while (i < toks.length) {
+    if (/[A-Za-z]/.test(toks[i])) cmd = toks[i++];
+    if (cmd === 'Z') continue;
+    if (cmd === 'M' || cmd === 'L') { x = num(); y = num(); }
+    else if (cmd === 'H') x = num();
+    else if (cmd === 'V') y = num();
+    else if (cmd === 'A') {
+      const rx = num(); num(); num(); num(); const sweep = num(), nx = num(), ny = num();
+      if (nx === x && ny !== y) add(nx + ((sweep === 1) === (ny > y) ? rx : -rx), (y + ny) / 2);
+      else if (ny === y && nx !== x) add((x + nx) / 2, ny + ((sweep === 1) === (nx < x) ? rx : -rx));
+      x = nx; y = ny;
+    } else return null;
+    add(x, y);
+  }
+  return x0 <= x1 ? {x: x0, y: y0, w: x1 - x0, h: y1 - y0} : null;
+}
+
 const rootOf = text => new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
 const translate = el => {
   const m = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)\s*\)/.exec(el.getAttribute('transform') || '');
@@ -63,11 +90,19 @@ function offset(el, root, own = false) {
 // Rects of an SVG with their translate() ancestors applied: enough for
 // compiled faces, whose guides are plain rects under translated groups.
 function rectsOf(root) {
-  return [...root.querySelectorAll('rect[id]')].map(el => {
+  const rects = [...root.querySelectorAll('rect[id]')].map(el => {
     const [dx, dy] = offset(el, root), n = a => parseFloat(el.getAttribute(a)) || 0;
     return {id: el.id, kind: el.getAttribute('data-kind'), cls: el.getAttribute('data-class'),
             x: n('x') + dx, y: n('y') + dy, w: n('width'), h: n('height')};
   });
+  // Pass-throughs drawn as paths (obround windows): the box of their `d`.
+  const paths = [...root.querySelectorAll('[data-class="pass"][id^="pass--"]:not(rect)')].flatMap(el => {
+    const b = pathBox(el.getAttribute('d') || '');
+    if (!b) return [];
+    const [dx, dy] = offset(el, root);
+    return [{id: el.id, kind: null, cls: 'pass', x: b.x + dx, y: b.y + dy, w: b.w, h: b.h}];
+  });
+  return [...rects, ...paths];
 }
 
 // Ring groups of a face: each group's horizontal extent from its child rects.
@@ -130,8 +165,9 @@ export async function routeFacts(rack, chassisOf) {
     // Height above the floor: the item's top, less the port's depth into its face.
     portY: end => { const p = port(end), it = itemOf(end.item);
       if (!p || !it) return null;
+      // The drawing is centered, unscaled, in its U span (elevation.js).
       const u = Math.max(1, chassisOf(it.ref)?.ru ?? 1);
-      return (it.ru - 1 + u) * RU - p.y * (u * RU / p.faceH); },
+      return (it.ru - 1 + u) * RU - ((u * RU - p.faceH) / 2 + p.y); },
   };
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
