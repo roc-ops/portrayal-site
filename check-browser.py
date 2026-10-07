@@ -3728,6 +3728,91 @@ def check_rack_export_other_vendor(page, base):
     return bad
 
 
+@extra("rack.html: a cable manager on a switch - drawn over it, clicked through to it, moved with it, and outside the rails in 3D")
+def check_rack_face_managers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#rkMode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/site/rack/model.js'), C = await import('/site/rack/chassis.js');
+      const cat = await C.loadChassis();
+      let r = M.newRack({name: 'Managers'});
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_selector('#paneFront svg [data-item-id="i2"][data-panel="mounted"]', timeout=READY_MS)
+    order = page.evaluate("""() => {
+      const s = document.querySelector('#paneFront svg');
+      const h = s.querySelector('[data-item-id="i1"][data-panel="mounted"]'), m = s.querySelector('[data-item-id="i2"][data-panel="mounted"]');
+      return !!(h.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }""")
+    if not order:
+        bad.append("2D: the manager is not drawn after its host")
+    if not page.query_selector('#paneFront svg [data-manager-mark="i2"]'):
+        bad.append("2D: no gutter mark for the manager")
+    if page.query_selector('#paneRear svg [data-item-id="i2"]'):
+        bad.append("2D: the manager shows on the rear, behind the switch")
+    # A point over the manager whose top element belongs to the host: a gap.
+    gap = page.evaluate("""() => {
+      const m = document.querySelector('#paneFront svg [data-item-id="i2"][data-panel="mounted"]').getBoundingClientRect();
+      for (let fx = 0.05; fx < 1; fx += 0.03) for (let fy = 0.2; fy < 0.9; fy += 0.2) {
+        const x = m.left + m.width * fx, y = m.top + m.height * fy;
+        if (document.elementFromPoint(x, y)?.closest('[data-item-id]')?.dataset.itemId === 'i1') return [x, y];
+      }
+      return null;
+    }""")
+    if not gap:
+        bad.append("2D: no point over the manager reaches the switch behind it")
+    else:
+        page.mouse.click(*gap)
+        if page.inner_text("#side h3") != "leaf-1":
+            bad.append(f"2D: a click between the rings selected {page.inner_text('#side h3')!r}, not leaf-1")
+    ring = page.query_selector('#paneFront svg [data-item-id="i2"] [data-kind="ring"]')
+    if not ring:
+        bad.append("2D: the manager has no ring to click")
+    else:
+        ring.click()
+        if page.inner_text("#side h3") != "mgr-1":
+            bad.append(f"2D: a click on a ring selected {page.inner_text('#side h3')!r}, not mgr-1")
+    page.click('#paneFront svg [data-manager-mark="i2"]')
+    if page.inner_text("#side h3") != "mgr-1":
+        bad.append("2D: the gutter mark does not select the manager")
+    page.click("#mSelectHost")
+    if not page.query_selector("#mgrRows"):
+        bad.append("inspector: the host shows no Cable managers section")
+    page.click("#iMove")
+    page.click('#paneFront svg [data-u="24"][data-face="front"]')
+    items = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.id, i.ru, i.on ?? null])")
+    if items != [["i1", 24, None], ["i2", 24, "i1"]]:
+        bad.append(f"move: the manager did not follow its host: {items}")
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const g = s.three.scene.getObjectByName('device-i2'), h = s.three.scene.getObjectByName('device-i1');
+      const face = s.metrics().faceZ;
+      const box = g.children.find(c => c.isMesh && Array.isArray(c.material));
+      const a = await s.guideAnchor({id: 'i2'}, 'guide-1');
+      return {mgrZ: g.position.z, hostZ: h.position.z, face, hidden: box.material.every(m => !m.visible), anchor: !!a};
+    }""")
+    if not (got["mgrZ"] > got["face"] > got["hostZ"]):
+        bad.append(f"3D: the manager is not in front of the rails ({got})")
+    if not got["hidden"]:
+        bad.append("3D: the manager's sheet body is drawn as a solid box")
+    if not got["anchor"]:
+        bad.append("3D: guideAnchor finds no guide-1 on the manager")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
+        bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB with the manager's node")
+    return bad
+
+
 @extra("rack.html: Export - a slot emptied by a null swap yields no part, where its default would have seated one")
 def check_rack_export_emptied_slot(page, base):
     bad = []

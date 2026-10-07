@@ -1,7 +1,7 @@
 # Rack-face cable managers in the Rack Builder
 
 **Date:** 2026-10-07
-**Status:** design approved in conversation; spec awaiting review
+**Status:** implemented (plan: docs/superpowers/plans/2026-10-07-rack-face-managers.md)
 **Builds on:** `2026-09-26-rack-builder-design.md` (§5.3 zero-U, §9.5 out of scope, §9.6 routing plumbing)
 **Upstream:** roc-ops/Portrayal `docs/cable-managers-design.md` (#827, merged 2026-10-06); branches `claude/cm-guides`, `claude/cm-brush-passes`, `claude/cm-lab-placement` (unmerged at the time of writing)
 
