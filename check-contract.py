@@ -1322,8 +1322,22 @@ try:
     _locs = [u.findtext("{http://www.sitemaps.org/schemas/sitemap/0.9}loc") for u in _sm]
 except _ET.ParseError as _e:
     _sm, _locs = None, [f"unparseable: {_e}"]
+# THE EXPECTATION COMES FROM PAGES, because that is what the sitemap is
+# generated from. Reading it out of the source text rather than importing the
+# module keeps the two independent: a check that re-ran the generator's own
+# logic would only prove it agrees with itself.
+#
+# This filtered everything served by `"/" not in d` before, which worked while
+# every page sat at the repository root and quietly excluded the first one that
+# did not. components/catalog.html is listed in the sitemap, correctly, and was
+# not in this check's expectation. The slash was doing two jobs - telling a page
+# from a file inside site/, brand/ or vendor/, which are also served and also
+# end in .html - and PAGES draws that line properly.
+_bp_pages = re.findall(r'"([^"]+\.html)"',
+                       re.search(r"^PAGES = \[(.*?)\]",
+                                 (HERE / "tools" / "build-public.py").read_text(), re.S | re.M).group(1))
 _want = sorted("https://portrayal.dev/" + ("" if d == "index.html" else d[:-5])
-               for d in _srv if d.endswith(".html") and "/" not in d and d not in ("404.html", "kit-frame.html"))
+               for d in _bp_pages if d not in ("404.html", "kit-frame.html"))
 check("sitemap.xml" in _srv and _sm is not None and _sm.tag == "{http://www.sitemaps.org/schemas/sitemap/0.9}urlset"
       and sorted(_locs) == _want,
       "/sitemap.xml lists every public page once, at its canonical extensionless URL",
@@ -1502,8 +1516,8 @@ _cat_html = _cat.read_text() if _cat.exists() else ""
 
 # A PAGE NOT IN build-public.py's PAGES IS NOT PUBLISHED, and nothing else
 # says so: the site builds, deploys, and serves a 404 at a URL upstream links.
-_bp = (HERE / "tools" / "build-public.py").read_text()
-check('"components/catalog.html"' in _bp,
+_bp_src = (HERE / "tools" / "build-public.py").read_text()
+check('"components/catalog.html"' in _bp_src,
       "components/catalog.html is in build-public.py PAGES",
       "the page would not be published, and /components/catalog would 404")
 
