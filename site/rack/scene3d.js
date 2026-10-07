@@ -29,7 +29,7 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // not overlap.
 const SPREAD = 6;   // mm between cables sharing a waypoint
 function waypointsFor(scene, routes, THREE) {
-  const used = new Map();
+  const used = new Map(), slot = new Map();
   const m = scene.metrics();
   return async link => {
     const r = routes?.get(link.id);
@@ -59,8 +59,11 @@ function waypointsFor(scene, routes, THREE) {
       if (!p) continue;
       // Spread across the run: the first cable at 0, then +-1 steps, on a 3x3
       // grid (it wraps after 9 cables sharing a waypoint).
-      const key = w.lane ? `${w.lane}|${w.ru}` : `${w.item}|${w.via}`;
-      const k = used.get(key) || 0; used.set(key, k + 1);
+      // A lane takes one slot per cable per lane, so the cable's run along it is
+      // straight (vertical), as cable-view.js draws it; a ring or duct takes one per cable.
+      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`, own = `${link.id}|${key}`;
+      if (!slot.has(own)) { slot.set(own, used.get(key) || 0); used.set(key, (used.get(key) || 0) + 1); }
+      const k = slot.get(own);
       const off = n => ((n + 1) % 3 - 1) * SPREAD;   // 0, +1, -1, 0, ...
       const [u, v] = run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x', 'y'];
       p[u] += off(k % 3); p[v] += off(Math.floor(k / 3) % 3);

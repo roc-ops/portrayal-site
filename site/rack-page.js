@@ -20,7 +20,7 @@ import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
-import {exportStatus, UNCHECKED_NOTE} from './rack/export-data.js';
+import {exportStatus, UNCHECKED_NOTE, fillNotes} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
@@ -87,6 +87,9 @@ function disposeScene3d() {
 // The waypoints the 3D scene hangs its routed cables by, as one string: the
 // scene is rebuilt when this changes (routes are resolved by render(), later
 // than the commit that changed them, so sameCables3d alone cannot see them).
+// Does the rack have a routed cable (a resolved route with waypoints)? Only then are the
+// gutters widened (spec 7); a cable with no route draws as before.
+const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
 const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints])) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
@@ -307,6 +310,7 @@ function setDoc(doc) {
   S.doc = doc;
   if (notes.length) S.save.saveSoon(doc);   // the repair is saved like an edit, with no Undo
   S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
+  S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
   for (const n of notes) addNotice(n, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
@@ -514,7 +518,9 @@ function cableListPanel() {
   const r = rack();
   pruneFilter();
   const on = S.cableFilter;
-  return cableList({rack: r, ends: S.cableFacts.ends, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+  // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
+  const notes = S.routes ? fillNotes(r, S.routes, id => itemById(id)?.label ?? id) : [];
+  return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
@@ -801,12 +807,37 @@ async function render() {
         return UNCHECKED;
       });
     if (facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
+    // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
+    // length is the document's, so when one changes it is saved, without an
+    // Undo - it is the page's measurement, not an edit. No render is triggered
+    // from here: the side panel and cable list below read S.routes.
+    if (r.cables.length) {
+      const at = S.doc;
+      const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      if (mine !== S.draws) return;
+      if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
+      else if (S.doc === at) {
+        S.routes = rf;
+        if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
+        // Not from facts with a face missing: a port not found there is not a port that is loose.
+        const next = rf.complete ? withRoutedLengths(r, rf.ctx) : r;
+        if (next !== r) {
+          S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
+          S.save.saveSoon(S.doc);
+          keepScene(r, next);
+          r = next;               // the drawing below shows the length just kept
+        }
+      }
+    } else {
+      S.routes = null;
+      if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
+    }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-      laneGap: (r.cables || []).length ? LANE_GAP : 0})));
+      laneGap: hasRoutes() ? LANE_GAP : 0})));
   } catch (err) {
     if (mine !== S.draws) return;
     console.warn('[portrayal] the rack elevation failed to draw', err);
@@ -815,30 +846,6 @@ async function render() {
   }
   if (mine !== S.draws) return;
   S.cableFacts = facts;
-  // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
-  // length is the document's, so when one changes it is saved, without an
-  // Undo - it is the page's measurement, not an edit. No render is triggered
-  // from here: the side panel and cable list below read S.routes.
-  if (r.cables.length) {
-    const at = S.doc;
-    const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
-    if (mine !== S.draws) return;
-    if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
-    else if (S.doc === at) {
-      S.routes = rf;
-      if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
-      const next = withRoutedLengths(r, rf.ctx);
-      if (next !== r) {
-        S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
-        S.save.saveSoon(S.doc);
-        keepScene(r, next);
-        r = next;               // the drawing below shows the length just kept
-      }
-    }
-  } else {
-    S.routes = null;
-    if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
-  }
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
   // The SVGs are new nodes every render, so the zoom (a style on the old
@@ -847,7 +854,7 @@ async function render() {
   // With cables, both panes widen by the same side column, before the zoom
   // below reads their viewBox; with none they are exactly as they were.
   const cabled = r.cables.length > 0;
-  const routed = !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
+  const routed = hasRoutes();
   if (cabled) for (const svg of S.svgs) widenForCables(svg, routed);
   // #panes is hidden while in 3D (showMode()) - applyZoom measures its own
   // column width to fit into, and a hidden element measures 0, which is what

@@ -132,14 +132,15 @@ function aperturesOf(root) {
   return out;
 }
 
-const faceOf = it => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
-  .catch(() => null);
+// A face that could not be read is null, and `failed.n` counts it: the facts are then incomplete.
+const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
+  .catch(() => { failed.n++; return null; });
 
 export async function routeFacts(rack, chassisOf) {
-  const guides = new Map(), ports = new Map();
+  const guides = new Map(), ports = new Map(), failed = {n: 0};
   await Promise.all(rack.items.map(async it => {
     const c = chassisOf(it.ref) || {};
-    const get = faceOf(it);
+    const get = faceOf(it, failed);
     const [front, rear, top] = await Promise.all([get('front'), get('rear'), c.guides?.top ? get('top') : null]);
     const aps = top ? aperturesOf(rootOf(top.text)) : {};
     const list = [];
@@ -171,5 +172,5 @@ export async function routeFacts(rack, chassisOf) {
   };
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
-  return {ctx, routes, fill: fill(rack, ctx), over: capacityOver(rack, ctx), lengths, endPane: e => endPane(rack, e)};
+  return {ctx, complete: failed.n === 0, routes, fill: fill(rack, ctx), over: capacityOver(rack, ctx), lengths, endPane: e => endPane(rack, e)};
 }

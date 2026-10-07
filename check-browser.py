@@ -3904,6 +3904,16 @@ def check_rack_face_managers(page, base):
         bad.append("3D: the manager's sheet body is drawn as a solid box")
     if not got["anchor"]:
         bad.append("3D: guideAnchor finds no guide-1 on the manager")
+    # The rail labels of the host and its manager are at one height: they sit side by side.
+    tags = page.evaluate("""() => {
+      const sc = window.__rack.scene().three.scene, y = sc.getObjectByName('device-i1').position.y;
+      return sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1)
+        .map(c => [c.position.x - c.scale.x / 2, c.position.x + c.scale.x / 2]);
+    }""")
+    if len(tags) < 2:
+        bad.append(f"3D: the host and its manager do not both have a rail label at their height: {tags}")
+    elif any(a[0] < b[1] and b[0] < a[1] for i, a in enumerate(tags) for b in tags[i + 1:]):
+        bad.append(f"3D: the host's and the manager's rail labels overlap: {tags}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
@@ -3991,6 +4001,9 @@ def check_rack_cable_routes(page, base):
     # Editing. Select c1 from the list, open its form, type a label, add a waypoint after row 0.
     page.click('#cableList [data-cable-row="c1"]')
     page.click("#cableEdit")
+    routed_text = page.inner_text("#cRouted")
+    if not re.match(r"^\d+(\.\d+)? m \(routed, [\d.]+ m measured\)", routed_text):
+        bad.append(f"form: the routed length reads {routed_text!r}, not 'N m (routed, X m measured)'")
     page.fill("#cLabel", "uplink-A")
     page.focus("#routeRow-0")
     page.keyboard.press("Enter")
@@ -7748,7 +7761,8 @@ def check_rack_cable_lifecycle(page, base):
     wait_fn(page, "lifecycle: leaf-1 moved up", "() => window.__rack.doc().racks[0].items[1].ru === 15")
     # A routed length is recomputed on every redraw (spec 8), so moving a device may re-measure it; nothing
     # else may change - ends, media, label, route, routeEdited and entered lengths all stay exactly as they were.
-    unrouted = lambda cs: [{k: v for k, v in c.items() if not (k == "length" and v.get("source") == "routed")} for c in cs]
+    # A routed length's value may change with a move, but it may not appear or vanish: it is a marker.
+    unrouted = lambda cs: [{k: ("routed" if k == "length" and v.get("source") == "routed" else v) for k, v in c.items()} for c in cs]
     if unrouted(doc()["cables"]) != unrouted(before):
         bad.append("lifecycle: moving a device changed its cables")
     wait_sel(page, "lifecycle: c1 drawn after the move", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
@@ -8398,7 +8412,7 @@ def check_rack_cable_length_units(page, base):
     except RuntimeError:
         bad.append(f"length units: clearing a yd length was refused ({err()!r})")
     # Cleared means no ENTERED length: the page then fills in the routed one (spec 8), which is not the user's.
-    if cable("c2").get("length", {}).get("source") == "entered":
+    if cable("c2").get("length", {}).get("source") not in (None, "routed"):
         bad.append(f"length units: after clearing it c2's length is {cable('c2').get('length')}")
 
     # A LENGTH KEPT AS WRITTEN (c3's {value: 'long'}): an edit that leaves the

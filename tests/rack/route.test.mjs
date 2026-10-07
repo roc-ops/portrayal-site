@@ -218,3 +218,26 @@ test('withRoutedLengths leaves a cable alone whose written length the page could
   assert.equal(out, r);
   assert.equal(out.cables[0].length, undefined);
 });
+
+test('a loose end (no port found) gets no routed length, and a routed length already there is kept', () => {
+  let r = add(M.newRack(), 'sw', 1);
+  r = add(r, 'pp', 21);
+  const base = {a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i2', path: 'q', view: 'front'}, route: []};
+  r = {...r, cables: [{id: 'c1', ...base}, {id: 'c3', ...base, length: {value: 9, unit: 'm', source: 'routed', measured: 8.7}}]};
+  const ctx = {...ctxFor(r, {}), portY: () => null, portX: end => (end.item === 'i2' ? null : -100)};
+  assert.equal(R.portPoint(r, base.b, ctx), null);
+  assert.equal(R.routedLength(r, r.cables[0], ctx), null);
+  const out = R.withRoutedLengths(r, ctx);
+  assert.equal(out, r);
+  assert.equal(out.cables[0].length, undefined);
+  assert.deepEqual(out.cables[1].length, {value: 9, unit: 'm', source: 'routed', measured: 8.7});
+});
+
+test('a rack device\'s guide on its far panel sits at its chassis depth, like a port there', () => {
+  let r = add(M.newRack(), 'sw', 3);               // a front-face 515 mm device
+  const g = {via: 'rear-ring', kind: 'ring', face: 'rear', x: 10};
+  const ctx = ctxFor(r, {}, {i1: [g]});
+  assert.equal(R.pointOf(r, {item: 'i1', via: 'rear-ring'}, ctx).z, -515);
+  const own = ctxFor(r, {}, {i1: [{...g, face: 'front'}]});
+  assert.equal(R.pointOf(r, {item: 'i1', via: 'rear-ring'}, own).z, 0);
+});

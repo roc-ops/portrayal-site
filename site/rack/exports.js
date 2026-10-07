@@ -146,7 +146,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true,
-                   laneGap: cabled ? LANE_GAP : 0})));
+                   laneGap: routed ? LANE_GAP : 0})));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});
@@ -158,8 +158,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
     host.append(sheet);
     if (cabled) for (const pane of panes) widenForCables(pane, routed);
     // Every pane has one width: drawElevation's own, plus the column when cabled.
-    // The gutters are wider with cables (the lane gap), and routed cables widen both sides.
-    const faceW = cabled ? FACE_W + 2 * (LANE_GAP - 6) + ROOM * (routed ? 2 : 1) : FACE_W;
+    // Routed cables widen the gutters (the lane gap) and both sides; the width is the widened pane's own.
+    const faceW = cabled ? Math.max(...panes.map(pane => boxOf(pane)[2])) : FACE_W;
     panes.forEach((pane, i) => {
       const x = M + i * (faceW + GAP);
       // The heading sits over the rack, not over the rear pane's column to its left.

@@ -228,14 +228,16 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     const title = rec.g?.querySelector('title');
     if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
   }
-  // A pathway over its capacity is outlined where this pane draws it.
-  for (const f of routes?.fill || []) {
-    if (!f.over) continue;
-    const e = wayEl(svg, f);
+  // A pathway filled past its limit, and a manager with more cables through it
+  // than it states, are outlined where this pane draws them.
+  const overs = [...(routes?.fill || []).filter(f => f.over),
+    ...(routes?.over || []).map(o => ({item: o.item, via: null}))];
+  for (const f of overs) {
+    const e = f.via == null ? panelGroup(svg, f.item) : wayEl(svg, f);   // a manager over its count: the whole part
     if (!e) continue;
     const b = inPane(svg, e);
     svg.append(svgEl('rect', {x: b.x, y: b.y, width: b.w, height: b.h, fill: 'none', stroke: 'var(--pt-warn)',
-      'stroke-width': 1.2, 'pointer-events': 'none', 'data-fill-over': `${f.item}|${f.via}`, 'data-pt-ui': '*'}));
+      'stroke-width': 1.2, 'pointer-events': 'none', 'data-fill-over': `${f.item}|${f.via ?? ''}`, 'data-pt-ui': '*'}));
   }
   return recs;
 }

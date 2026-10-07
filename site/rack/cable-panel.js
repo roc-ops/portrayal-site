@@ -106,7 +106,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // mismatch as a warning. A row the filter leaves out is hidden; the count
 // line says how many match. `uOf` is endName's: how tall a device is, for
 // the U a row names it with.
-export function cableList({rack, ends, on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
+export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -156,6 +156,7 @@ export function cableList({rack, ends, on, uOf, selectedId = null, mode3d = fals
     filterRow('media', 'Media'),
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
+    ...notes.map(n => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text: n})),
     el('ul', {}, rows),
   ]);
 }

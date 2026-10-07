@@ -73,6 +73,8 @@ const dedupe = list => list.filter((w, i) => i === 0 || !sameWp(w, list[i - 1]))
 export function autoRoute(rack, cable, ctx) {
   const ends = [cable.a, cable.b].map(e => {
     const it = itemOf(rack, e.item), pane = it && endPane(rack, e);
+    // A port not found only defaults the SIDE (to the left, as a port at the center does);
+    // no length is ever measured from it (portPoint).
     return it && pane ? {e, it, pane, x: ctx.portX(e) ?? 0} : null;
   });
   if (ends.some(x => !x)) return [];
@@ -143,18 +145,25 @@ export function pointOf(rack, w, ctx) {
   // A rack-face part stands out from its rail plane by half its depth; a rack
   // device's guide is on its face, at the rail plane.
   const c = ctx.chassisOf(it.ref) || {};
+  // A guide on a rack device's FAR panel is the chassis depth in, as portPoint puts a port there.
   const out = c.mount === 'rack-face' ? (c.d ?? 0) / 2 : 0;
-  const z = g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
+  const far = c.mount !== 'rack-face' && g.face !== it.face;
+  const d = c.d ?? 0;
+  const z = far ? (it.face === 'front' ? -d : -railDepthOf(f) + d)
+    : g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
   return {x: g.x, y: (it.ru - 0.5) * RU, z};
 }
 
 export function portPoint(rack, end, ctx) {
   const it = itemOf(rack, end.item), pane = it && endPane(rack, end);
   if (!pane) return null;
+  // No port found on the drawing: no point, and so no length - never an invented x of 0.
+  const x = ctx.portX(end);
+  if (x == null) return null;
   const f = rack.frame, d = ctx.chassisOf(it.ref)?.d ?? 0;
   // On its own face a panel is at that rail; the far panel is the chassis depth away.
   const z = pane === it.face ? planeZ(f, pane) : (it.face === 'front' ? -d : -railDepthOf(f) + d);
-  return {x: ctx.portX(end) ?? 0, y: ctx.portY?.(end) ?? (it.ru - 0.5) * RU, z};
+  return {x, y: ctx.portY?.(end) ?? (it.ru - 0.5) * RU, z};
 }
 
 const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);

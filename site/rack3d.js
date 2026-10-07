@@ -476,6 +476,7 @@ export function createRackScene(container, opts = {}) {
 
   // ── devices ────────────────────────────────────────────────────────────
   const mounted = [];   // {entry, group}
+  const tagRow = new Map();   // half-U row -> mm of rail label already laid out there (cleared on rebuild)
 
   // A FACE BELONGS TO A MOUNT, NOT TO A MODEL. The override table is keyed by
   // the URL a face is fetched from, and that URL is `<ref>.<cfg>.<view>.svg` -
@@ -689,7 +690,11 @@ export function createRackScene(container, opts = {}) {
     let tag = null;
     if (RAILS) {
       tag = labelSprite(entry.label, 30, LABEL_TAG);
-      tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
+      // Labels at one height (a manager and its host, a rear and a front part at one U) sit
+      // side by side, outward from the rail, not on top of one another.
+      const k = Math.round(group.position.y / (RU / 2)), used = tagRow.get(k) || 0;
+      tag.position.set(-(RACK_W / 2 + 120) - used - tag.scale.x / 2, group.position.y, 46);
+      tagRow.set(k, used + tag.scale.x + 12);
       scene.add(tag);
     }
     scene.add(group);
@@ -973,6 +978,7 @@ export function createRackScene(container, opts = {}) {
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
+    tagRow.clear();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
     dropAnchorDocs();         // measured against overrides that are now gone
