@@ -1,0 +1,231 @@
+{
+ "aliases": [],
+ "attrs": {
+  "compliance": {
+   "environment": "Indoor"
+  },
+  "environmental": {
+   "operating-humidity": "95% Relative Humidity (max.), Non-condensing",
+   "operating-temp": "-10 to 60\u00b0C (14 to 140\u00b0F)"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "cable-capacity": 192,
+   "cable-capacity-basis": "Cat6 24AWG, a theoretical value - FS CMH-BS-DFDABS2U datasheet specification table, which states no fill basis and does not divide it between the two sides"
+  },
+  "physical": {
+   "color": "Black",
+   "material": "ABS",
+   "mounting-hardware": "M6*15mm Screw x4 and M6 Nut x4"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 176,
+  "h": 93.5,
+  "mount": "rack",
+  "power": null,
+  "ru": 2,
+  "shell": "sheet",
+  "thickness": 7.3,
+  "w": 434
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The dual-sided finger duct as FS ships it, both covers fitted.",
+   "files": {
+    "bottom": "cmh-bs-dfdabs2u.base.bottom.svg",
+    "front": "cmh-bs-dfdabs2u.base.front.svg",
+    "left": "cmh-bs-dfdabs2u.base.left.svg",
+    "rear": "cmh-bs-dfdabs2u.base.rear.svg",
+    "right": "cmh-bs-dfdabs2u.base.right.svg",
+    "top": "cmh-bs-dfdabs2u.base.top.svg"
+   },
+   "kind": "base",
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "cmh-bs-dfdabs2u",
+ "gaps": [
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the FS CMH-BS-DFDABS2U datasheet is titled Single Sided Manager and its overview says the single-sided design keeps wiring simple; its specification table says Product Type Dual Sided. The plan draws two channels back to back, and the part is modelled dual-sided.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "FS to correct the title or the table",
+   "what": "sided-ness"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the FS CMH-BS-DFDABS2U datasheet, the only document FS publishes for the part, states no weight, and the part has no product page.",
+   "scope": [
+    "base"
+   ],
+   "wanted": "the weight from FS, or the part on a scale",
+   "what": "weight"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet has no side view, so the thickness of a finger wall and where it stands in the 87 are estimated from the CMH-SFD1U side view.",
+   "scope": [
+    "fingers"
+   ],
+   "wanted": "a side view or a photograph of the end of the duct",
+   "what": "wall-section"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet calls the cover dual hinged, opening upward or downward; no view draws a hinge, and each cover is drawn as one fitted plate.",
+   "scope": [
+    "cover"
+   ],
+   "wanted": "a drawing or a close photograph of the cover end",
+   "what": "cover-hinge"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CMH-BS-DFDABS2U",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - material, colour, style, the mounting hardware, the operating temperature and humidity, and the indoor environment are the specification table."
+  },
+  "bottom": {
+   "confidence": "drawing",
+   "note": "drawing - the front and rear views draw equal walls top and bottom; the bottom is the plan again."
+  },
+  "capacity": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"Cable Capacity (Theoretical Value)\" in the specification table, 192 pcs (Cat6 24AWG). FS gives one cable type and no fill basis, and does not say whether the figure is per side or for both; it is stated for the manager."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - THE BODY BETWEEN THE EARS. The table gives 3.43\"x19\"x6.93\" (87x482.6x176mm) overall. The ears are a flange at the rear face of the spine, 87 high with six slotted holes each, 465 between hole centres; they are not drawn, and they take 24.3 mm at each end. The duct between them reads 433.3 on the front view and 434.7 on the plan, and 434.0 is taken. Height 93.5 is the cover: the front view draws it 527.5 px over an ear of 491.5 px (93.4 at the ear's 5.649 px/mm) and the rear view 527.5 over 491 (93.5); FS dimensions only the 87 of the ear. The covers overhang the rack unit by 3.25 mm above and 3.25 below (3.4 and 3.0 on the front view, 3.3 and 3.2 on the rear), the spine and the finger walls centred on them; the table's 87 is the ear and the rack unit, not the part. `depth` is the vendor 176, on both sides of the ear plane."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Color: Black\". FS publishes no photograph or render of the part; the shades are the ones the CMH-SFD1U renders give the sibling ABS duct."
+  },
+  "front": {
+   "confidence": "drawing",
+   "note": "drawing - the front cover, fitted, from the front view, which draws a plain cover between the ear ends. The `duct` guide is the channel between the inner faces of the two finger walls; where the walls stand in the 87 of the spine is estimated, at the 1.2 from the edge of the CMH-SFD1U side view, and the cover overhangs the spine by 3.25 above and below."
+  },
+  "full-depth": {
+   "confidence": "drawing",
+   "note": "`full-depth: false` - the duct reaches 99.6 mm in front of its ears and 76.4 behind them (the plan), so it serves the face it is bolted to and the space just behind the rail, and leaves the far face of its rack unit free for another part."
+  },
+  "guides": {
+   "confidence": "drawing",
+   "note": "drawing - one duct on each face, the channel between that side of the finger walls, run across the rack, at the plan pitch and slot."
+  },
+  "left": {
+   "confidence": "estimated",
+   "note": "estimated - no side view is published. The section is built from the plan depths and the CMH-SFD1U side view: each wall 7.3 thick, 1.2 from the edge of the 87 spine, the spine through the middle and a cover 93.5 high at each face, its lips at its edges. Both channels are open at the ends."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE VENDOR DRAWING. FS publishes one datasheet for the part (datasheet 12085, published 2026-10-06) with a front view, a plan and a rear view, millimetre dimensions; there is no product page, gallery, render or stencil, so the drawing is the only picture of it. The plan is 5.551 px/mm across the 482.6 and 5.582 down the 176, the front view 5.626 down the 87: one to one and a half per cent apart, so the views are near orthographic and carry geometry to about a millimetre. The drawing is embedded as a 60 dpi raster, about 1.5 px/mm on the part; the converted figure that was measured is the same raster upsampled."
+  },
+  "rear": {
+   "confidence": "drawing",
+   "note": "drawing - the rear cover, fitted, from the rear view, the front side again: the plan is symmetric, and the same base, spine, fingers and cover are placed. The rear view draws the cover 441 wide with a 2.5 mm rim inside its outline, against 433.3 on the front view; the rim reads as the end lips of the cover, and the cover is drawn the width of the duct on both sides."
+  },
+  "shell": {
+   "confidence": "drawing",
+   "note": "drawing - TWO HOLLOW DUCTS BACK TO BACK, NOT A BOX. Each side is a well 87.9 deep to just short of the middle of the spine, whose floor is that half of the spine; half the spine stands 12.2 on each floor, the finger walls stand on it, and the cover lies across the finger tips and lifts off to open the channel. The channels and their ends are open air."
+  },
+  "sides": {
+   "confidence": "drawing",
+   "note": "drawing - DUAL-SIDED, FROM THE DRAWING. The datasheet is titled Single Sided, and its overview calls the design single-sided, while its specification table says Dual Sided; the plan settles it: a spine in the middle with a wall of fingers, a slotted channel and a cover on each side, symmetric about the middle of the 176. Both sides are built, each with its own fingers and its own cover, and the disagreement is a gap."
+  },
+  "thickness": {
+   "confidence": "estimated",
+   "note": "estimated - no FS document states a wall gauge for the ABS moulding. 7.3 is the finger wall of the CMH-SFD1U side view, the sibling ABS duct; no view of this part draws the section of a wall."
+  },
+  "top": {
+   "confidence": "drawing",
+   "note": "drawing - the plan, rear at y=0: the rear cover, the rear finger tips and stems, the roots, the spine, then the front side mirrored. Slots 18.3 wide, fingers 16.3, on a 34.61 pitch; the slots are open air. The two rows of cells and the two bolts the plan draws in the spine are not drawn."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

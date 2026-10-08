@@ -2624,8 +2624,10 @@ def check_schema_nos_tab(page, base):
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
-    # the lab schema (Portrayal #852) is a tab of its own when the snapshot carries it
-    lab = ["lab"] if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "lab.schema.json").exists() else []
+    # the lab schema (Portrayal #852), the rack file's (kit 0.3.0) and the marks
+    # document's (Portrayal #898) are tabs of their own when the snapshot carries them
+    lab = [k for k in ("lab", "rack", "marks")
+           if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / f"{k}.schema.json").exists()]
     # site-owned schemas (the rack file) are always tabs, since they are not vendored
     if got != ["device", "component", have] + lab + site_owned:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
@@ -2893,7 +2895,7 @@ def check_rack_elevation(page, base):
     page.goto(f"{base}/index.html", wait_until="load")
     r = page.evaluate("""async () => {
       const E = await import('/site/rack/elevation.js');
-      const M = await import('/site/rack/model.js');
+      const M = await import('/vendor/rack/model.js');
       const frame = M.normalizeFrame({kind: 'four-post', heightRU: 24,
                                       holes: {style: 'tapped', thread: '12-24'}});
       // i2 (front, U20) and i3 (rear, U20) share a U - a four-post pair - so
@@ -2951,7 +2953,7 @@ def check_rack_library(page, base):
     page.goto(f"{base}/index.html", wait_until="load")
     r = page.evaluate("""async () => {
       const L = await import('/site/rack/library.js');
-      const M = await import('/site/rack/model.js');
+      const M = await import('/vendor/rack/model.js');
       const lib = await L.openLibrary();
       const a = M.newDoc({name: 'Alpha'}), b = M.newDoc({name: 'Beta'});
       await lib.put(a); await new Promise(r => setTimeout(r, 5)); await lib.put(b);
@@ -3843,8 +3845,8 @@ def check_rack_face_managers(page, base):
     page.evaluate("() => window.__rack.ready")
     page.click('#rkMode [data-mode="2d"]')
     built = page.evaluate("""async () => {
-      const M = await import('/site/rack/model.js'), C = await import('/site/rack/chassis.js');
-      const cat = await C.loadChassis();
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
       let r = M.newRack({name: 'Managers'});
       ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1'}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
@@ -3953,8 +3955,8 @@ def check_rack_cable_routes(page, base):
     # The cables must land: optics at both ends' ports, a splice cassette in the
     # panel, and fiber between them (cat6 into these ports leaves ends loose).
     built = page.evaluate("""async () => {
-      const M = await import('/site/rack/model.js'), C = await import('/site/rack/chassis.js'), K = await import('/site/rack/cable-rules.js');
-      const cat = await C.loadChassis();
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
       let r = M.newRack({name: 'Routes'});
       const optic = {'port-1': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
       ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
@@ -4068,7 +4070,7 @@ def check_rack_cable_routes(page, base):
     page.click('#rkMode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     res = page.evaluate("""async () => {
-      const R = await import('/site/rack/route.js');
+      const R = await import('/vendor/rack/route.js');
       const s = window.__rack.scene(); await s.complete?.();
       const deadline = Date.now() + 20000;
       while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
@@ -4278,8 +4280,8 @@ def check_rack_mount_flag_3d_exports(page, base):
 
     # The BOM of a rack holding only these says nothing of cage nuts it does not count.
     only = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       return (await X.bomCsv({...r, items: r.items.filter(i => i.ref !== 'tm-280')}, of)).data;
     }""")
@@ -4431,7 +4433,7 @@ def check_rack_export_notes_truthful(page, base):
             bad.append(f"{target} kit: the README carries {readme_count(kit['zip']['README.txt'])} notes, but the status reads {status!r}")
 
     got = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), E = await import('/site/rack/export-data.js');
+      const X = await import('/site/rack/exports.js'), E = await import('/vendor/rack/export-data.js');
       const r = window.__rack.doc().racks[0];
       const lookup = () => ({manufacturer: 'Edgecore', ru: 1});
       const wired = {...r, items: r.items.filter(i => i.id === 'i2'), zeroU: [{}, {}],
@@ -9193,8 +9195,8 @@ def check_rack_export_cable_schedule(page, base):
 
     # A label that opens as a formula is guarded; a length kept as written is in the notes, not the number.
     odd = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       const cables = [{...r.cables[0], label: '=SUM(A1)', length: undefined, lengthAsWritten: {value: 'about 3', unit: 'm'}}];
       return {sched: (await X.cableScheduleCsv({...r, cables}, of)).data, bom: (await X.bomCsv({...r, cables}, of)).data};
@@ -9235,8 +9237,8 @@ def check_rack_export_cable_failures(page, base):
     # Fix round 1: the schedule's U is the device import's position, whatever the numbering.
     for numbering in ("top-down", "bottom-up"):
         got = page.evaluate("""async numbering => {
-          const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-          const of = C.chassisLookup(await C.loadChassis());
+          const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+          const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
           const r = window.__rack.doc().racks[0];
           const rack = {...r, frame: {...r.frame, numbering}};
           return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.dcimKit(rack, of, 'nautobot')).files['1-devices.csv']};
@@ -9355,8 +9357,8 @@ def check_rack_export_drawio_ids(page, base):
     except RuntimeError as e:
         return bad + [f"draw.io ids: {e}"]
     out = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       const [leaf, , d3, d4] = [r.items[1], r.items[0], r.items[2], r.items[3]];
       const end = (item, path) => ({item, path, view: 'front'});
@@ -9438,8 +9440,8 @@ def check_rack_export_bom_cables(page, base):
         bad.append("BOM cables: a rack with no cables has a Cables row or a cable note")
     # Zero-U items are still said to be left out; only the cable line is retired.
     kept = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       return (await X.bomCsv({...r, zeroU: [{}]}, of)).notes;
     }""")
@@ -9454,11 +9456,11 @@ def check_rack_export_bom_cables(page, base):
 # whether today's sheetSvg gives the same bytes, and where they first differ.
 SHEET_1B_JS = """async ([y, m, d]) => {
   const X = await import('/site/rack/exports.js'), E = await import('/site/rack/elevation.js'),
-        D = await import('/site/rack/export-data.js'), F = await import('/site/rack/fit.js'),
-        R = await import('/site/rack/rails.js'), C = await import('/site/rack/chassis.js'),
+        D = await import('/vendor/rack/export-data.js'), F = await import('/vendor/rack/fit.js'),
+        R = await import('/vendor/rack/rails.js'), C = await import('/vendor/rack/catalog.js'),
         V = await import('/site/svg-export.js'), U = await import('/site/rack/dom.js'),
-        L = await import('/site/rack/model.js');
-  const chassisOf = C.chassisLookup(await C.loadChassis());
+        L = await import('/vendor/rack/model.js');
+  const chassisOf = (await C.loadCatalog('/assets/dist/')).chassisOf;
   const rack = window.__rack.doc().racks[0], date = new Date(y, m, d);
   const FACE_W = R.OPENING + R.RAIL_W * 2 + 12, M = 24, GAP = 48, HEAD = 28, LINE = 16, NOTE_LINE = 13;
   const INK = '#1D2125', MUTED = '#5B636B', PAPER = '#FFFFFF', RULE = '#B9BFC6';
@@ -9703,8 +9705,8 @@ def check_rack_export_sheet_cables(page, base):
     for scheme in ("light", "dark"):
         page.emulate_media(color_scheme=scheme)
         seen[scheme] = page.evaluate("""async () => {
-          const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-          const of = C.chassisLookup(await C.loadChassis());
+          const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+          const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
           return (await X.sheetSvg(window.__rack.doc().racks[0], of, {date: new Date(2026, 0, 2)})).data;
         }""")
     if seen["light"] != seen["dark"]:
@@ -9810,8 +9812,8 @@ def check_rack_export_drawio_cables(page, base):
     # turned shows its ports to the rear, where the demarc at U14 covers it.
     # And a cable with no media takes the neutral color.
     odd = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       const hidden = await X.drawioFile({...r, items: r.items.map(i => (i.id === 'i2' ? {...i, turned: true} : i))}, of);
       const plain = await X.drawioFile({...r, cables: [{...r.cables[1], media: '', label: '<b>&"'}]}, of);
@@ -9937,7 +9939,7 @@ def check_rack_export_3d_cables(page, base):
 
     # The notes, with scenes that export nothing: only what modelFile says is under test.
     got = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), E = await import('/site/rack/export-data.js');
+      const X = await import('/site/rack/exports.js'), E = await import('/vendor/rack/export-data.js');
       const r = window.__rack.doc().racks[0];
       const scene = hung => ({running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
                               toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4), rackCables: hung});
@@ -10068,8 +10070,8 @@ def one_u_fixture():
 
 # modelFile's notes for a rack, from a scene that exports nothing: every cable hung, none lost.
 STUB_GLB_NOTES_JS = """async () => {
-  const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-  const of = C.chassisLookup(await C.loadChassis());
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+  const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
   const r = window.__rack.doc().racks[0];
   const scene = {running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
                  toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4),
@@ -10682,9 +10684,9 @@ def check_rack_dcim_settings_ime(page, base):
 # probe makes fail. Returns its name, its README notes, the status line the
 # page would show, and the zip, read: the entry names in order, each text file.
 KIT_JS = """async ([target, patch, fail]) => {
-  const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js'),
-        E = await import('/site/rack/export-data.js');
-  const of = C.chassisLookup(await C.loadChassis());
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js'),
+        E = await import('/vendor/rack/export-data.js');
+  const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
   const r = window.__rack.doc().racks[0];
   const rack = {...r, ...(patch.numbering ? {frame: {...r.frame, numbering: patch.numbering}} : {}),
                 ...(patch.dcim ? {dcim: patch.dcim} : {}), ...(patch.cables === 'none' ? {cables: []} : {}),
@@ -11007,8 +11009,8 @@ def check_rack_dcim_kit_repeat(page, base):
     except RuntimeError as e:
         return bad + [f"kit repeat: {e}"]
     got = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
-      const of = C.chassisLookup(await C.loadChassis());
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
       const r = window.__rack.doc().racks[0];
       const bytes = async d => Array.from(new Uint8Array(await (await X.dcimKit(r, of, 'netbox', {date: d})).data.arrayBuffer()));
       const morning = await bytes(new Date(2026, 9, 4, 0, 5, 7)), evening = await bytes(new Date(2026, 9, 4, 23, 58, 41));

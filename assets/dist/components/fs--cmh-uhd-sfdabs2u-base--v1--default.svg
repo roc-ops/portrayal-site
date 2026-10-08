@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.4mm" height="88mm" viewBox="0 0 443.4 88">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cmh-uhd-sfdabs2u-base" data-path="cmh-uhd-sfdabs2u-base" data-class="mechanical" data-ref="fs/cmh-uhd-sfdabs2u-base@1:1.0.0" data-depth="172.4" data-wall="#232527" transform="translate(0,0)">
+    <title>cmh-uhd-sfdabs2u-base</title>
+    <path id="cmh-uhd-sfdabs2u-base--floor" fill="#232527" fill-rule="evenodd" d="M0,0 H443.4 V88 H0 Z M11.7,19.15 H131.7 A10,10 0 0 1 141.7,29.15 V58.85 A10,10 0 0 1 131.7,68.85 H11.7 A10,10 0 0 1 1.7,58.85 V29.15 A10,10 0 0 1 11.7,19.15 Z M161.7,19.15 H281.7 A10,10 0 0 1 291.7,29.15 V58.85 A10,10 0 0 1 281.7,68.85 H161.7 A10,10 0 0 1 151.7,58.85 V29.15 A10,10 0 0 1 161.7,19.15 Z M311.7,19.15 H431.7 A10,10 0 0 1 441.7,29.15 V58.85 A10,10 0 0 1 431.7,68.85 H311.7 A10,10 0 0 1 301.7,58.85 V29.15 A10,10 0 0 1 311.7,19.15 Z" data-path="cmh-uhd-sfdabs2u-base/floor" data-class="bezel" />
+  </g>
+</svg>

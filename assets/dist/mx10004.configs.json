@@ -4,6 +4,11 @@
   "physical": {
    "weight-base-kg": 99,
    "weight-premium-kg": 113
+  },
+  "power": {
+   "power-envelope": "fully-configured",
+   "power-typical-scope": "datasheet - typical, fully loaded (MX10000 datasheet); no ambient or side named",
+   "power-typical-w": 7500
   }
  },
  "bays": {
@@ -326,22 +331,12 @@
    "what": "rcb-vendor-width"
   },
   {
-   "because": "vendor-silent",
-   "blocks": [],
-   "kind": "declared",
-   "scope": [
-    "cooling"
-   ],
-   "wanted": "per-tray power draw - not in the extraction's text layer.",
-   "what": "fan-tray-power"
-  },
-  {
    "because": "CAP",
    "blocks": [
     "specified"
    ],
    "kind": "derived",
-   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
   },
   {
@@ -375,7 +370,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet-table - the guide capacity table: two JNP10K-PWR-AC2 at high power deliver 11,000 W, three 16,500 W"
+   "note": "datasheet-table - the guide capacity table: two JNP10K-PWR-AC2 at high power deliver 11,000 W, three 16,500 W. The MX10000 datasheet states typical power consumption 7.5 kW, fully loaded, naming no ambient or side - carried as power-typical-w. Its footnote calling the figures power supply ratings is attached to the power system rating row, not to this one. The guide rates every FRU by ambient (Table 55, including the fan trays: JNP10004-FAN2 651 W, JNP10004-FAN3 880 W) and works an example of 10,082 W for an MX10004-PREMIUM with four MX10K-LC9600 (3002 W + 7080 W) - a sample, not carried"
   },
   "rear": {
    "note": "photo - the rear studio figure g101087 anchored per-axis to the 442 mm body: PSU stack ~84 mm wide at the left (PSU 0 top, PSU 2 bottom, as the printed arrows in the figure), two ~176 mm fan trays filling the rest"
@@ -387,6 +382,7 @@
    "note": "MX10004 Hardware Guide (424 pages, 182 figures), the shared MX10000 datasheet, the frontwtop studio photograph and the rear studio figure g101087"
   }
  },
+ "seat-turns": {},
  "views": [
   "front",
   "rear",

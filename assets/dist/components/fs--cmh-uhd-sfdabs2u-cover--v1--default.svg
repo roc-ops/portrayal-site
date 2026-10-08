@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.8mm" height="84.2mm" viewBox="0 0 439.8 84.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cmh-uhd-sfdabs2u-cover" data-path="cmh-uhd-sfdabs2u-cover" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-uhd-sfdabs2u-cover@1:1.0.1" data-material="ABS" transform="translate(0,0)">
+    <title>cmh-uhd-sfdabs2u-cover</title>
+    <rect id="cmh-uhd-sfdabs2u-cover--hinge-top" x="0" y="3.3" width="439.8" height="9.8" fill="#333639" stroke="#2b2d30" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/hinge-top" data-class="bezel" data-z-out="172.3" data-z-lift="169" data-z-color="#333639" />
+    <rect id="cmh-uhd-sfdabs2u-cover--hinge-bottom" x="0" y="71.1" width="439.8" height="9.8" fill="#333639" stroke="#2b2d30" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/hinge-bottom" data-class="bezel" data-z-out="172.3" data-z-lift="169" data-z-color="#333639" />
+    <g id="cmh-uhd-sfdabs2u-cover--plate" data-path="cmh-uhd-sfdabs2u-cover/plate" data-class="bezel" data-z-out="172.4" data-z-lift="170.4" data-z-color="#333639">
+      <rect id="cmh-uhd-sfdabs2u-cover--plate-face" x="0" y="0" width="439.8" height="84.2" rx="1.5" fill="#333639" />
+      <path d="M 0 3.3 H 439.8" stroke="#2b2d30" stroke-width="0.4" fill="none" />
+      <path d="M 0 80.9 H 439.8" stroke="#2b2d30" stroke-width="0.4" fill="none" />
+      <path d="M 0 13.1 H 439.8" stroke="#2b2d30" stroke-width="0.4" fill="none" />
+      <path d="M 0 71.1 H 439.8" stroke="#2b2d30" stroke-width="0.4" fill="none" />
+      <rect id="cmh-uhd-sfdabs2u-cover--clip-1" x="119.6" y="0" width="22.4" height="23.1" fill="#3d4043" stroke="#25272a" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/clip-1" data-class="bezel" />
+      <rect id="cmh-uhd-sfdabs2u-cover--clip-2" x="297.9" y="0" width="22.4" height="23.1" fill="#3d4043" stroke="#25272a" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/clip-2" data-class="bezel" />
+      <rect id="cmh-uhd-sfdabs2u-cover--clip-3" x="75.2" y="61.1" width="22.4" height="23.1" fill="#3d4043" stroke="#25272a" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/clip-3" data-class="bezel" />
+      <rect id="cmh-uhd-sfdabs2u-cover--clip-4" x="342.2" y="61.1" width="22.4" height="23.1" fill="#3d4043" stroke="#25272a" stroke-width="0.4" data-path="cmh-uhd-sfdabs2u-cover/clip-4" data-class="bezel" />
+    </g>
+  </g>
+</svg>

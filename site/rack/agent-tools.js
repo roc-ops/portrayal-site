@@ -4,7 +4,7 @@
 // apart from what it is handed - no DOM, no fetch - so it is tested in Node and
 // registered by the page (site/agent/webmcp.js).
 
-import {COMMANDS} from './commands.js';
+import {COMMANDS} from '../../vendor/rack/commands.js';
 
 // Chrome's WebMCP guidance: tool output of about 1.5K characters at most.
 export const LIMIT = 1500;

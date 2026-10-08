@@ -47,7 +47,7 @@ import {rackDiagram} from '../../../vendor/drawio.js';
 import {configuredFace} from '../../rack/face.js';
 import {colorOf} from '../cables.js';
 import {looseReason, endView} from '../plan.js';
-import {drawioMedia} from '../../rack/export-data.js';
+import {drawioMedia} from '../../../vendor/rack/export-data.js';
 import {rasterize} from '../../raster.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated. Stages may use

@@ -18,7 +18,7 @@
 import {configuredFace, components, findComp, DIST} from './face.js';
 import {jdist} from '../../vendor/dist.js';
 import {faceCages} from '../../vendor/swap.js';
-import {endKey, plugSeats, connectorOf, looseReason, holderPath} from './cable-rules.js';
+import {endKey, plugSeats, connectorOf, looseReason, holderPath} from '../../vendor/rack/cable-rules.js';
 
 const at = (root, path) => root.querySelector(`[data-path="${CSS.escape(path)}"]`);
 const refOf = el => (el?.getAttribute('data-ref') || '').split(':')[0];

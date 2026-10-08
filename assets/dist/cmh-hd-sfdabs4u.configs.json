@@ -1,0 +1,205 @@
+{
+ "aliases": [],
+ "attrs": {
+  "compliance": {
+   "environment": "Indoor",
+   "flammability": "UL 94V-0 (finger ducts)"
+  },
+  "environmental": {
+   "operating-humidity": "95% Relative Humidity (max.), Non-condensing",
+   "operating-temp": "-10 to 60\u00b0C (14 to 140\u00b0F)"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "cable-capacity": 192,
+   "cable-capacity-basis": "Cat6 24AWG, a theoretical value - FS CMH-HD-SFDABS4U datasheet specification table, which states no fill basis"
+  },
+  "physical": {
+   "color": "Black",
+   "material": "ABS",
+   "mounting-hardware": "M6*15mm Screw x4 and M6 Nut x4"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 112,
+  "h": 178,
+  "mount": "rack",
+  "power": null,
+  "ru": 4,
+  "shell": "sheet",
+  "thickness": 2.6,
+  "w": 443.4
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The finger duct as FS ships it, cover fitted.",
+   "files": {
+    "bottom": "cmh-hd-sfdabs4u.base.bottom.svg",
+    "front": "cmh-hd-sfdabs4u.base.front.svg",
+    "left": "cmh-hd-sfdabs4u.base.left.svg",
+    "rear": "cmh-hd-sfdabs4u.base.rear.svg",
+    "right": "cmh-hd-sfdabs4u.base.right.svg",
+    "top": "cmh-hd-sfdabs4u.base.top.svg"
+   },
+   "kind": "base",
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "cmh-hd-sfdabs4u",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the FS CMH-HD-SFDABS4U datasheet, the only document FS publishes for the part, states no weight, and the part has no product page.",
+   "scope": [
+    "base"
+   ],
+   "wanted": "the weight from FS, or the part on a scale",
+   "what": "weight"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet calls the cover dual hinged, opening upward or downward; the side view draws a knuckle over each finger wall, and the cover is drawn as one fitted plate with a rail along each.",
+   "scope": [
+    "cover"
+   ],
+   "wanted": "a drawing or a photograph of the hinge",
+   "what": "cover-hinge"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CMH-HD-SFDABS4U",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - material, colour, style, the mounting hardware, the operating temperature and humidity, and the indoor environment are the specification table; the UL 94V-0 rating of the finger ducts is stated in the overview of the same datasheet."
+  },
+  "bottom": {
+   "confidence": "drawing",
+   "note": "drawing - the side view draws two equal walls and the rear view two equal rows of blocks; the bottom is the plan again."
+  },
+  "capacity": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"Cable Capacity (Theoretical Value)\" in the specification table, 192 pcs (Cat6 24AWG). FS gives one cable type and no fill basis for this part. Not divided between the walls: FS states it for the manager."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - THE BODY BETWEEN THE EARS. The table gives 7\"x19\"x4.4\" (178x482.6x112mm) overall. The ears are the ends of the flat back plate, 178 high with two slotted holes each, 465 between hole centres; they are not drawn, and they take 19.6 mm at each end. The five finger blocks span 443.4 between them on the plan (443.4 and 442.9 on two drawings), and that is the width. `depth` is the vendor 112, all of it in front of the mounting plane."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Color: Black\". FS publishes no photograph or render of the part; the shades are the ones the CMH-SFD1U renders give the sibling ABS duct, base, walls and cover."
+  },
+  "front": {
+   "confidence": "drawing",
+   "note": "drawing - the cover, fitted, with its four latches, from the front view. The `duct` guide is the channel between the inner faces of the two finger walls, the side view: the two walls 9.3 to 10.2 thick, 9.8 taken, stand 5.2 in from the top and bottom edges of the plate (4.8 to 5.6 on five drawings), so the channel between them is 148."
+  },
+  "full-depth": {
+   "confidence": "drawing",
+   "note": "`full-depth: false` - the plate is the mounting plane and everything else stands in front of it, 112 mm on the plan, so the rear face of its rack unit stays free for another part."
+  },
+  "guides": {
+   "confidence": "drawing",
+   "note": "drawing - the duct on the front view is the channel between the finger walls, run across the rack. Its finger pitch is 44.34 and its gap the 33.14 between two stems; the neck between two T heads, where a cable is pressed in, is 4.14."
+  },
+  "left": {
+   "confidence": "drawing",
+   "note": "drawing - the side view: the plate, the two finger walls standing to the T heads, the hinge rails over them and the cover face. The duct is open at both ends, and a cable runs out of it there: nothing is built across the ends."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE VENDOR DRAWING. FS publishes one datasheet for the part (datasheet 12087, published 2026-10-06) with a front, plan, side and rear view; there is no product page, gallery, render or stencil, so the drawing is the only picture of it. The plan reads 3.566 px/mm across the 482.6 of the rear and front views and 3.573 across the 178 of the side view, so the views are orthographic. Its drawing is embedded as a 60 dpi raster, about 0.8 px/mm on the part, and every figure here is good to a millimetre and a half; the converted figures were measured, which are the same raster upsampled."
+  },
+  "rear": {
+   "confidence": "drawing",
+   "note": "drawing - the back of the plate from the rear view, with its six pass-through windows (six windows in two rows of three, each 140.1 x 50.2 with 10 mm corners, 150.0 apart across and 20.1 apart down, 28.7 from the top and bottom edges). The windows are drawn here square-cornered, as the plate round them; the floor of the well, which is what 3D builds, carries the corners. The rear view also draws the latches of the cover and the seams of the finger blocks through and past the windows; they are the parts behind, not marks on the plate."
+  },
+  "shell": {
+   "confidence": "drawing",
+   "note": "drawing - A HOLLOW DUCT, NOT A BOX. Cables lie in the channel between the two finger walls, so the body is a sheet body (docs/cable-managers-design.md section 4) and its six views are elevations. The solid is what its parts build: the back plate on the front view as a well 109.4 deep, its floor the plate and open at the windows; the two walls of fingers standing in it; and the cover in it across the finger heads, which lifts off and opens the channel. The plate is built as the floor, inside the 112 envelope. The channel and its two ends are open air."
+  },
+  "thickness": {
+   "confidence": "estimated",
+   "note": "estimated - no FS document states a gauge for the ABS moulding. 2.6 is the back plate, drawn as two lines 10 px apart on the plan at 3.75 px/mm; the walls and the cover carry their own figures in their parts."
+  },
+  "top": {
+   "confidence": "drawing",
+   "note": "drawing - the plan, rear at y=0: the back plate, the solid root of the finger blocks, the ten stems on a 44.34 pitch and their T heads, and the cover across the front. The arms of the Y between each root and stem are not drawn on this elevation; the root of each finger builds them in 3D. The gaps between the stems are open air."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

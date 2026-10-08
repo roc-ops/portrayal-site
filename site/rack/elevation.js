@@ -11,11 +11,11 @@
 //
 // Every device goes through configuredFace, with its own swaps and fields.
 
-import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from './rails.js';
+import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
-import {uLabel} from './model.js';
-import {isRackMount} from './export-data.js';
+import {uLabel} from '../../vendor/rack/model.js';
+import {isRackMount} from '../../vendor/rack/export-data.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.

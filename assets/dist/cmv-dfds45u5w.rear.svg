@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="169mm" height="2000.25mm" viewBox="0 0 169 2000.25" data-device="cmv-dfds45u5w" data-view="rear" data-shell="sheet" data-weight-kg="19.2" data-material="Steel (SPCC)" data-cover-material="Steel (SPCC)" data-finger-material="Plastic" data-color="Black" data-mounting-hardware="Quick Release Brackets x8, Brackets x8, Plastic Buckles x8, M4x12 x8, Toothed Washers x8, M4x10 CSK x32 and M6 Floating Nut x16" data-rohs="RoHS Compliant" data-iso="ISO9001 Certificate">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMV-DFDS45U5W","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/cmv-dfds45u5w-base@1":"1.0.0","fs/cmv-dfds45u5w-cover-lower@1":"1.0.0","fs/cmv-dfds45u5w-cover-upper@1":"1.0.0","fs/cmv-dfds45u5w-wall@1":"1.0.0","fs/cmv-fds45u5w-finger@1":"1.0.0"},"source-sha256":"b10fa3a2422104d77443afd728b76c60b69a5f8fc64ac896ec91ecc7ba1c4945","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMV-DFDS45U5W" x="0" y="0" width="169" height="2000.25" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct-rear" data-class="guide" data-guide="duct" data-guide-run="y" data-guide-finger-pitch="44.45" data-guide-finger-gap="34.25" x="13.74" y="0" width="141.52" height="2000.25" fill="none" stroke="none" pointer-events="none" />
+  <g id="base-rear" data-path="base-rear" data-class="mechanical" data-ref="fs/cmv-dfds45u5w-base@1:1.0.0" data-depth="152.63" data-wall="#1b1c1e" data-rel-pos="4" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the spine seen from the front channel and from the rear one, and the four steel returns">
+    <title>base-rear</title>
+    <path id="base-rear--floor" fill="#1b1c1e" fill-rule="evenodd" d="     M0,0 H169 V2000.25 H0 Z     M54.5,28.3 H114.5 V96.5 H54.5 Z     M54.5,257.8 H114.5 V408.5 H54.5 Z     M54.5,568.6 H114.5 V719.3 H54.5 Z     M54.5,879.4 H114.5 V1030.1 H54.5 Z     M54.5,1190.2 H114.5 V1340.9 H54.5 Z     M54.5,1501 H114.5 V1651.7 H54.5 Z     M54.5,1812.1 H114.5 V1962.8 H54.5 Z" data-path="base-rear/floor" data-class="bezel" />
+    <rect id="base-rear--seam-left" x="0" y="976.9" width="54.5" height="0.6" fill="#0c0d0e" />
+    <rect id="base-rear--seam-right" x="114.5" y="976.9" width="54.5" height="0.6" fill="#0c0d0e" />
+  </g>
+  <g id="wall-rear-left" data-path="wall-rear-left" data-class="mechanical" data-ref="fs/cmv-dfds45u5w-wall@1:1.0.0" data-material="Steel" data-rel-pos="5" transform="translate(4.74,0)" data-group="body" data-group-role="furniture" data-description="the spine seen from the front channel and from the rear one, and the four steel returns" data-z-lift="-152.63" data-in="base-rear" data-under="finger-rear-left-1 finger-rear-left-2 finger-rear-left-3 finger-rear-left-4 finger-rear-left-5 finger-rear-left-6 finger-rear-left-7 finger-rear-left-8 finger-rear-left-9 finger-rear-left-10 finger-rear-left-11 finger-rear-left-12 finger-rear-left-13 finger-rear-left-14 finger-rear-left-15 finger-rear-left-16 finger-rear-left-17 finger-rear-left-18 finger-rear-left-19 finger-rear-left-20 finger-rear-left-21 finger-rear-left-22 finger-rear-left-23 finger-rear-left-24 finger-rear-left-25 finger-rear-left-26 finger-rear-left-27 finger-rear-left-28 finger-rear-left-29 finger-rear-left-30 finger-rear-left-31 finger-rear-left-32 finger-rear-left-33 finger-rear-left-34 finger-rear-left-35 finger-rear-left-36 finger-rear-left-37 finger-rear-left-38 finger-rear-left-39 finger-rear-left-40 finger-rear-left-41 finger-rear-left-42 finger-rear-left-43 finger-rear-left-44 cover-rear-1 cover-rear-2">
+    <title>wall-rear-left</title>
+    <rect id="wall-rear-left--root" x="0" y="0" width="9" height="2000.25" fill="#1d1e20" data-path="wall-rear-left/root" data-class="bezel" data-z-out="-114.93" data-z-color="#1d1e20" />
+    <rect id="wall-rear-left--seam" x="0" y="976.9" width="9" height="0.6" fill="#0c0d0e" />
+  </g>
+  <g id="wall-rear-right" data-path="wall-rear-right" data-class="mechanical" data-ref="fs/cmv-dfds45u5w-wall@1:1.0.0" data-material="Steel" data-rel-pos="6" transform="translate(155.26,0)" data-group="body" data-group-role="furniture" data-description="the spine seen from the front channel and from the rear one, and the four steel returns" data-z-lift="-152.63" data-in="base-rear" data-under="finger-rear-right-1 finger-rear-right-2 finger-rear-right-3 finger-rear-right-4 finger-rear-right-5 finger-rear-right-6 finger-rear-right-7 finger-rear-right-8 finger-rear-right-9 finger-rear-right-10 finger-rear-right-11 finger-rear-right-12 finger-rear-right-13 finger-rear-right-14 finger-rear-right-15 finger-rear-right-16 finger-rear-right-17 finger-rear-right-18 finger-rear-right-19 finger-rear-right-20 finger-rear-right-21 finger-rear-right-22 finger-rear-right-23 finger-rear-right-24 finger-rear-right-25 finger-rear-right-26 finger-rear-right-27 finger-rear-right-28 finger-rear-right-29 finger-rear-right-30 finger-rear-right-31 finger-rear-right-32 finger-rear-right-33 finger-rear-right-34 finger-rear-right-35 finger-rear-right-36 finger-rear-right-37 finger-rear-right-38 finger-rear-right-39 finger-rear-right-40 finger-rear-right-41 finger-rear-right-42 finger-rear-right-43 finger-rear-right-44 cover-rear-1 cover-rear-2">
+    <title>wall-rear-right</title>
+    <rect id="wall-rear-right--root" x="0" y="0" width="9" height="2000.25" fill="#1d1e20" data-path="wall-rear-right/root" data-class="bezel" data-z-out="-114.93" data-z-color="#1d1e20" />
+    <rect id="wall-rear-right--seam" x="0" y="976.9" width="9" height="0.6" fill="#0c0d0e" />
+  </g>
+  <g id="finger-rear-left-1" data-path="finger-rear-left-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="89" transform="translate(4.74,44.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-1</title>
+    <rect id="finger-rear-left-1--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-1/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-1--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-1/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-1--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-1/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-2" data-path="finger-rear-left-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="90" transform="translate(4.74,88.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-2</title>
+    <rect id="finger-rear-left-2--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-2/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-2--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-2/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-2--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-2/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-3" data-path="finger-rear-left-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="91" transform="translate(4.74,133.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-3</title>
+    <rect id="finger-rear-left-3--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-3/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-3--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-3/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-3--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-3/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-4" data-path="finger-rear-left-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="92" transform="translate(4.74,177.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-4</title>
+    <rect id="finger-rear-left-4--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-4/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-4--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-4/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-4--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-4/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-5" data-path="finger-rear-left-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="93" transform="translate(4.74,222.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-5</title>
+    <rect id="finger-rear-left-5--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-5/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-5--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-5/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-5--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-5/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-6" data-path="finger-rear-left-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="94" transform="translate(4.74,266.7)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-6</title>
+    <rect id="finger-rear-left-6--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-6/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-6--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-6/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-6--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-6/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-7" data-path="finger-rear-left-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="95" transform="translate(4.74,311.15)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-7</title>
+    <rect id="finger-rear-left-7--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-7/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-7--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-7/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-7--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-7/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-8" data-path="finger-rear-left-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="96" transform="translate(4.74,355.6)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-8</title>
+    <rect id="finger-rear-left-8--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-8/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-8--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-8/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-8--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-8/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-9" data-path="finger-rear-left-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="97" transform="translate(4.74,400.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-9</title>
+    <rect id="finger-rear-left-9--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-9/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-9--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-9/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-9--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-9/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-10" data-path="finger-rear-left-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="98" transform="translate(4.74,444.5)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-10</title>
+    <rect id="finger-rear-left-10--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-10/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-10--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-10/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-10--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-10/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-11" data-path="finger-rear-left-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="99" transform="translate(4.74,488.95)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-11</title>
+    <rect id="finger-rear-left-11--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-11/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-11--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-11/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-11--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-11/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-12" data-path="finger-rear-left-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="100" transform="translate(4.74,533.4)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-12</title>
+    <rect id="finger-rear-left-12--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-12/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-12--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-12/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-12--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-12/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-13" data-path="finger-rear-left-13" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="101" transform="translate(4.74,577.85)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-13</title>
+    <rect id="finger-rear-left-13--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-13/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-13--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-13/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-13--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-13/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-14" data-path="finger-rear-left-14" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="102" transform="translate(4.74,622.3)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-14</title>
+    <rect id="finger-rear-left-14--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-14/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-14--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-14/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-14--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-14/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-15" data-path="finger-rear-left-15" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="103" transform="translate(4.74,666.75)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-15</title>
+    <rect id="finger-rear-left-15--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-15/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-15--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-15/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-15--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-15/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-16" data-path="finger-rear-left-16" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="104" transform="translate(4.74,711.2)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-16</title>
+    <rect id="finger-rear-left-16--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-16/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-16--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-16/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-16--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-16/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-17" data-path="finger-rear-left-17" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="105" transform="translate(4.74,755.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-17</title>
+    <rect id="finger-rear-left-17--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-17/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-17--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-17/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-17--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-17/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-18" data-path="finger-rear-left-18" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="106" transform="translate(4.74,800.1)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-18</title>
+    <rect id="finger-rear-left-18--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-18/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-18--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-18/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-18--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-18/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-19" data-path="finger-rear-left-19" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="107" transform="translate(4.74,844.55)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-19</title>
+    <rect id="finger-rear-left-19--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-19/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-19--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-19/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-19--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-19/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-20" data-path="finger-rear-left-20" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="108" transform="translate(4.74,889)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-20</title>
+    <rect id="finger-rear-left-20--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-20/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-20--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-20/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-20--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-20/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-21" data-path="finger-rear-left-21" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="109" transform="translate(4.74,933.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-left-21</title>
+    <rect id="finger-rear-left-21--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-21/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-21--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-21/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-21--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-21/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-22" data-path="finger-rear-left-22" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="110" transform="translate(4.74,977.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-22</title>
+    <rect id="finger-rear-left-22--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-22/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-22--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-22/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-22--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-22/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-23" data-path="finger-rear-left-23" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="111" transform="translate(4.74,1022.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-23</title>
+    <rect id="finger-rear-left-23--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-23/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-23--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-23/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-23--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-23/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-24" data-path="finger-rear-left-24" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="112" transform="translate(4.74,1066.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-24</title>
+    <rect id="finger-rear-left-24--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-24/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-24--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-24/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-24--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-24/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-25" data-path="finger-rear-left-25" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="113" transform="translate(4.74,1111.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-25</title>
+    <rect id="finger-rear-left-25--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-25/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-25--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-25/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-25--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-25/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-26" data-path="finger-rear-left-26" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="114" transform="translate(4.74,1155.7)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-26</title>
+    <rect id="finger-rear-left-26--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-26/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-26--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-26/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-26--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-26/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-27" data-path="finger-rear-left-27" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="115" transform="translate(4.74,1200.15)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-27</title>
+    <rect id="finger-rear-left-27--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-27/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-27--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-27/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-27--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-27/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-28" data-path="finger-rear-left-28" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="116" transform="translate(4.74,1244.6)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-28</title>
+    <rect id="finger-rear-left-28--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-28/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-28--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-28/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-28--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-28/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-29" data-path="finger-rear-left-29" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="117" transform="translate(4.74,1289.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-29</title>
+    <rect id="finger-rear-left-29--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-29/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-29--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-29/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-29--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-29/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-30" data-path="finger-rear-left-30" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="118" transform="translate(4.74,1333.5)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-30</title>
+    <rect id="finger-rear-left-30--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-30/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-30--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-30/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-30--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-30/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-31" data-path="finger-rear-left-31" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="119" transform="translate(4.74,1377.95)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-31</title>
+    <rect id="finger-rear-left-31--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-31/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-31--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-31/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-31--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-31/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-32" data-path="finger-rear-left-32" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="120" transform="translate(4.74,1422.4)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-32</title>
+    <rect id="finger-rear-left-32--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-32/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-32--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-32/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-32--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-32/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-33" data-path="finger-rear-left-33" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="121" transform="translate(4.74,1466.85)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-33</title>
+    <rect id="finger-rear-left-33--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-33/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-33--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-33/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-33--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-33/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-34" data-path="finger-rear-left-34" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="122" transform="translate(4.74,1511.3)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-34</title>
+    <rect id="finger-rear-left-34--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-34/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-34--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-34/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-34--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-34/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-35" data-path="finger-rear-left-35" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="123" transform="translate(4.74,1555.75)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-35</title>
+    <rect id="finger-rear-left-35--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-35/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-35--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-35/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-35--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-35/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-36" data-path="finger-rear-left-36" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="124" transform="translate(4.74,1600.2)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-36</title>
+    <rect id="finger-rear-left-36--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-36/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-36--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-36/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-36--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-36/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-37" data-path="finger-rear-left-37" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="125" transform="translate(4.74,1644.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-37</title>
+    <rect id="finger-rear-left-37--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-37/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-37--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-37/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-37--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-37/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-38" data-path="finger-rear-left-38" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="126" transform="translate(4.74,1689.1)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-38</title>
+    <rect id="finger-rear-left-38--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-38/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-38--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-38/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-38--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-38/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-39" data-path="finger-rear-left-39" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="127" transform="translate(4.74,1733.55)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-39</title>
+    <rect id="finger-rear-left-39--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-39/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-39--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-39/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-39--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-39/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-40" data-path="finger-rear-left-40" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="128" transform="translate(4.74,1778)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-40</title>
+    <rect id="finger-rear-left-40--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-40/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-40--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-40/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-40--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-40/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-41" data-path="finger-rear-left-41" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="129" transform="translate(4.74,1822.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-41</title>
+    <rect id="finger-rear-left-41--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-41/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-41--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-41/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-41--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-41/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-42" data-path="finger-rear-left-42" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="130" transform="translate(4.74,1866.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-42</title>
+    <rect id="finger-rear-left-42--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-42/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-42--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-42/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-42--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-42/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-43" data-path="finger-rear-left-43" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="131" transform="translate(4.74,1911.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-43</title>
+    <rect id="finger-rear-left-43--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-43/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-43--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-43/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-43--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-43/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-left-44" data-path="finger-rear-left-44" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="132" transform="translate(4.74,1955.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-left-44</title>
+    <rect id="finger-rear-left-44--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-left-44/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-left-44--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-left-44/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-left-44--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-left-44/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-1" data-path="finger-rear-right-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="133" transform="translate(155.26,44.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-1</title>
+    <rect id="finger-rear-right-1--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-1/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-1--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-1/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-1--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-1/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-2" data-path="finger-rear-right-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="134" transform="translate(155.26,88.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-2</title>
+    <rect id="finger-rear-right-2--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-2/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-2--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-2/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-2--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-2/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-3" data-path="finger-rear-right-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="135" transform="translate(155.26,133.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-3</title>
+    <rect id="finger-rear-right-3--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-3/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-3--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-3/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-3--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-3/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-4" data-path="finger-rear-right-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="136" transform="translate(155.26,177.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-4</title>
+    <rect id="finger-rear-right-4--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-4/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-4--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-4/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-4--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-4/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-5" data-path="finger-rear-right-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="137" transform="translate(155.26,222.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-5</title>
+    <rect id="finger-rear-right-5--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-5/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-5--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-5/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-5--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-5/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-6" data-path="finger-rear-right-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="138" transform="translate(155.26,266.7)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-6</title>
+    <rect id="finger-rear-right-6--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-6/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-6--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-6/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-6--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-6/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-7" data-path="finger-rear-right-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="139" transform="translate(155.26,311.15)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-7</title>
+    <rect id="finger-rear-right-7--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-7/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-7--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-7/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-7--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-7/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-8" data-path="finger-rear-right-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="140" transform="translate(155.26,355.6)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-8</title>
+    <rect id="finger-rear-right-8--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-8/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-8--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-8/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-8--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-8/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-9" data-path="finger-rear-right-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="141" transform="translate(155.26,400.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-9</title>
+    <rect id="finger-rear-right-9--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-9/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-9--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-9/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-9--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-9/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-10" data-path="finger-rear-right-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="142" transform="translate(155.26,444.5)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-10</title>
+    <rect id="finger-rear-right-10--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-10/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-10--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-10/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-10--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-10/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-11" data-path="finger-rear-right-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="143" transform="translate(155.26,488.95)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-11</title>
+    <rect id="finger-rear-right-11--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-11/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-11--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-11/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-11--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-11/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-12" data-path="finger-rear-right-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="144" transform="translate(155.26,533.4)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-12</title>
+    <rect id="finger-rear-right-12--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-12/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-12--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-12/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-12--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-12/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-13" data-path="finger-rear-right-13" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="145" transform="translate(155.26,577.85)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-13</title>
+    <rect id="finger-rear-right-13--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-13/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-13--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-13/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-13--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-13/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-14" data-path="finger-rear-right-14" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="146" transform="translate(155.26,622.3)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-14</title>
+    <rect id="finger-rear-right-14--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-14/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-14--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-14/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-14--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-14/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-15" data-path="finger-rear-right-15" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="147" transform="translate(155.26,666.75)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-15</title>
+    <rect id="finger-rear-right-15--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-15/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-15--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-15/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-15--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-15/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-16" data-path="finger-rear-right-16" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="148" transform="translate(155.26,711.2)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-16</title>
+    <rect id="finger-rear-right-16--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-16/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-16--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-16/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-16--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-16/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-17" data-path="finger-rear-right-17" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="149" transform="translate(155.26,755.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-17</title>
+    <rect id="finger-rear-right-17--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-17/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-17--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-17/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-17--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-17/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-18" data-path="finger-rear-right-18" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="150" transform="translate(155.26,800.1)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-18</title>
+    <rect id="finger-rear-right-18--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-18/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-18--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-18/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-18--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-18/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-19" data-path="finger-rear-right-19" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="151" transform="translate(155.26,844.55)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-19</title>
+    <rect id="finger-rear-right-19--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-19/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-19--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-19/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-19--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-19/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-20" data-path="finger-rear-right-20" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="152" transform="translate(155.26,889)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-20</title>
+    <rect id="finger-rear-right-20--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-20/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-20--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-20/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-20--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-20/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-21" data-path="finger-rear-right-21" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="153" transform="translate(155.26,933.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-1">
+    <title>finger-rear-right-21</title>
+    <rect id="finger-rear-right-21--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-21/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-21--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-21/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-21--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-21/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-22" data-path="finger-rear-right-22" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="154" transform="translate(155.26,977.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-22</title>
+    <rect id="finger-rear-right-22--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-22/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-22--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-22/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-22--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-22/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-23" data-path="finger-rear-right-23" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="155" transform="translate(155.26,1022.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-23</title>
+    <rect id="finger-rear-right-23--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-23/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-23--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-23/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-23--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-23/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-24" data-path="finger-rear-right-24" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="156" transform="translate(155.26,1066.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-24</title>
+    <rect id="finger-rear-right-24--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-24/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-24--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-24/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-24--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-24/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-25" data-path="finger-rear-right-25" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="157" transform="translate(155.26,1111.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-25</title>
+    <rect id="finger-rear-right-25--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-25/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-25--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-25/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-25--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-25/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-26" data-path="finger-rear-right-26" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="158" transform="translate(155.26,1155.7)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-26</title>
+    <rect id="finger-rear-right-26--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-26/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-26--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-26/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-26--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-26/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-27" data-path="finger-rear-right-27" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="159" transform="translate(155.26,1200.15)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-27</title>
+    <rect id="finger-rear-right-27--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-27/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-27--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-27/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-27--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-27/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-28" data-path="finger-rear-right-28" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="160" transform="translate(155.26,1244.6)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-28</title>
+    <rect id="finger-rear-right-28--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-28/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-28--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-28/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-28--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-28/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-29" data-path="finger-rear-right-29" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="161" transform="translate(155.26,1289.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-29</title>
+    <rect id="finger-rear-right-29--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-29/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-29--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-29/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-29--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-29/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-30" data-path="finger-rear-right-30" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="162" transform="translate(155.26,1333.5)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-30</title>
+    <rect id="finger-rear-right-30--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-30/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-30--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-30/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-30--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-30/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-31" data-path="finger-rear-right-31" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="163" transform="translate(155.26,1377.95)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-31</title>
+    <rect id="finger-rear-right-31--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-31/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-31--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-31/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-31--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-31/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-32" data-path="finger-rear-right-32" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="164" transform="translate(155.26,1422.4)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-32</title>
+    <rect id="finger-rear-right-32--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-32/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-32--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-32/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-32--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-32/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-33" data-path="finger-rear-right-33" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="165" transform="translate(155.26,1466.85)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-33</title>
+    <rect id="finger-rear-right-33--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-33/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-33--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-33/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-33--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-33/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-34" data-path="finger-rear-right-34" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="166" transform="translate(155.26,1511.3)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-34</title>
+    <rect id="finger-rear-right-34--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-34/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-34--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-34/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-34--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-34/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-35" data-path="finger-rear-right-35" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="167" transform="translate(155.26,1555.75)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-35</title>
+    <rect id="finger-rear-right-35--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-35/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-35--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-35/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-35--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-35/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-36" data-path="finger-rear-right-36" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="168" transform="translate(155.26,1600.2)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-36</title>
+    <rect id="finger-rear-right-36--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-36/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-36--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-36/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-36--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-36/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-37" data-path="finger-rear-right-37" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="169" transform="translate(155.26,1644.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-37</title>
+    <rect id="finger-rear-right-37--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-37/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-37--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-37/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-37--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-37/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-38" data-path="finger-rear-right-38" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="170" transform="translate(155.26,1689.1)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-38</title>
+    <rect id="finger-rear-right-38--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-38/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-38--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-38/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-38--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-38/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-39" data-path="finger-rear-right-39" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="171" transform="translate(155.26,1733.55)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-39</title>
+    <rect id="finger-rear-right-39--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-39/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-39--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-39/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-39--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-39/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-40" data-path="finger-rear-right-40" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="172" transform="translate(155.26,1778)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-40</title>
+    <rect id="finger-rear-right-40--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-40/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-40--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-40/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-40--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-40/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-41" data-path="finger-rear-right-41" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="173" transform="translate(155.26,1822.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-41</title>
+    <rect id="finger-rear-right-41--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-41/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-41--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-41/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-41--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-41/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-42" data-path="finger-rear-right-42" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="174" transform="translate(155.26,1866.9)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-42</title>
+    <rect id="finger-rear-right-42--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-42/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-42--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-42/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-42--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-42/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-43" data-path="finger-rear-right-43" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="175" transform="translate(155.26,1911.35)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-43</title>
+    <rect id="finger-rear-right-43--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-43/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-43--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-43/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-43--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-43/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="finger-rear-right-44" data-path="finger-rear-right-44" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-fds45u5w-finger@1:1.0.0" data-material="Plastic" data-rel-pos="176" transform="translate(155.26,1955.8)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 44 a row - the front channel left row top to bottom, its right row, then the rear channel the same way" data-z-lift="-152.63" data-in="base-rear" data-under="cover-rear-2">
+    <title>finger-rear-right-44</title>
+    <rect id="finger-rear-right-44--root" x="0" y="0" width="9" height="44.45" fill="#202123" data-path="finger-rear-right-44/root" data-class="bezel" data-z-out="-90.23" data-z-lift="37.7" data-z-color="#202123" />
+    <rect id="finger-rear-right-44--stem" x="0" y="17.13" width="9" height="10.2" fill="#28292c" data-path="finger-rear-right-44/stem" data-class="bezel" data-z-out="-11.33" data-z-lift="62.4" data-z-color="#28292c" />
+    <rect id="finger-rear-right-44--head" x="0" y="2.53" width="9" height="39.4" rx="1.0" fill="#323437" data-path="finger-rear-right-44/head" data-class="bezel" data-z-out="-4.2" data-z-lift="141.3" data-z-color="#323437" />
+  </g>
+  <g id="cover-rear-1" data-path="cover-rear-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-dfds45u5w-cover-upper@1:1.0.0" data-material="Steel" data-rel-pos="3" transform="translate(0,0)" data-group="cover" data-group-role="furniture" data-description="the four covers, front upper and lower, then rear upper and lower" data-z-lift="-152.63" data-in="base-rear">
+    <title>cover-rear-1</title>
+    <rect id="cover-rear-1--plate" x="0" y="0" width="169" height="976.95" rx="1.0" fill="#272829" data-path="cover-rear-1/plate" data-class="bezel" data-z-out="-0.6" data-z-lift="150.83" data-z-color="#272829" />
+    <rect id="cover-rear-1--clip-1" x="2" y="166.3" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-1" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--clip-2" x="2" y="477.1" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-2" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--clip-3" x="2" y="787.9" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-3" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--clip-4" x="148" y="166.3" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-4" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--clip-5" x="148" y="477.1" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-5" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--clip-6" x="148" y="787.9" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-1/clip-6" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-1--logo-zone" x="60" y="88" width="60" height="28" fill="none" data-path="cover-rear-1/logo-zone" data-class="label" />
+  </g>
+  <g id="cover-rear-2" data-path="cover-rear-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-dfds45u5w-cover-lower@1:1.0.0" data-material="Steel" data-rel-pos="4" transform="translate(0,978.85)" data-group="cover" data-group-role="furniture" data-description="the four covers, front upper and lower, then rear upper and lower" data-z-lift="-152.63" data-in="base-rear">
+    <title>cover-rear-2</title>
+    <rect id="cover-rear-2--plate" x="0" y="0" width="169" height="1021.4" rx="1.0" fill="#272829" data-path="cover-rear-2/plate" data-class="bezel" data-z-out="-0.6" data-z-lift="150.83" data-z-color="#272829" />
+    <rect id="cover-rear-2--clip-1" x="2" y="164.55" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-1" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-2--clip-2" x="2" y="475.35" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-2" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-2--clip-3" x="2" y="786.15" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-3" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-2--clip-4" x="148" y="164.55" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-4" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-2--clip-5" x="148" y="475.35" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-5" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+    <rect id="cover-rear-2--clip-6" x="148" y="786.15" width="19" height="23" rx="0.6" fill="#1d1e20" data-path="cover-rear-2/clip-6" data-class="bezel" data-z-out="0" data-z-lift="141.3" data-z-color="#1d1e20" />
+  </g>
+</svg>
