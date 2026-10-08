@@ -8,14 +8,12 @@ import {readFileSync, readdirSync} from 'node:fs';
 const REDUCERS = ['withItem', 'updateItem', 'withoutItem', 'withFrame', 'renamed', 'withDcim', 'detached', 'withCable',
                   'updateCable', 'withoutCable', 'withoutCablesOf', 'moveItem', 'shrinkRack', 'withRoutedLengths'];
 // The core may call them; drag.js may call moveItem for its PREVIEW only (the drop is a move command).
-// The core is the kit's now (vendor/rack/); history.js and validate.js stay
-// in site/rack/ only as re-exports of it.
-const CORE = new Set(['history.js', 'validate.js']);
+// The core is the kit's now (vendor/rack/).
 const ALLOWED = {'drag.js': ['moveItem']};
 
 test('the page and the UI modules import no reducer', () => {
   const files = [['rack-page.js', new URL('../../site/rack-page.js', import.meta.url)],
-    ...readdirSync(new URL('../../site/rack/', import.meta.url)).filter(f => f.endsWith('.js') && !CORE.has(f))
+    ...readdirSync(new URL('../../site/rack/', import.meta.url)).filter(f => f.endsWith('.js'))
       .map(f => [f, new URL(`../../site/rack/${f}`, import.meta.url)])];
   for (const [name, url] of files) {
     const src = readFileSync(url, 'utf8');
