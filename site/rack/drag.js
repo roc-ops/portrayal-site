@@ -8,6 +8,7 @@
 import {RU, OPENING} from '../../vendor/rack/rails.js';
 import {uAtY} from './elevation.js';
 import {moveItem} from '../../vendor/rack/managers.js';
+import {sidedItem, fitsSided} from './zero-u.js';
 import {svgEl, svgY} from './dom.js';
 
 const THRESHOLD = 4; // CSS px before a press becomes a drag, not a click
@@ -63,8 +64,11 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     const pointerU = uAtY(r.frame, y);
     const maxRu = Math.max(1, r.frame.heightRU - d.ruH + 1);
     const ru = Math.min(maxRu, Math.max(1, pointerU - d.grabOffsetU));
-    // What the drop's move command calls (managers.js moveItem), so the preview agrees with it.
-    const f = moveItem(r, d.id, {ru, face}, chassisOf);
+    // What the drop's move command calls (managers.js moveItem, or for a narrow part
+    // on one rail zero-u.js's own check), so the preview agrees with it.
+    const sided = sidedItem(r, d.id, chassisOf);
+    const f = sided ? fitsSided(r, {ref: sided.ref, ru, face, side: sided.side}, chassisOf, {ignoreId: d.id})
+      : moveItem(r, d.id, {ru, face}, chassisOf);
     d.target = {face, ru, ok: f.ok};
     drawPreview(svg, r.frame, ru, d.ruH, f.ok);
     setStatus(f.ok ? 'Drop to move here.' : f.reason);

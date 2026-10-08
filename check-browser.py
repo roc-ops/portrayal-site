@@ -4103,6 +4103,143 @@ def check_rack_cable_routes(page, base):
     return bad
 
 
+@extra("rack.html: zero-U - a vertical duct placed beside a two-post rack is drawn in 2D and 3D, a cable's lane runs through it and fills it, narrow brackets go on one rail each, and the exports carry it with no position")
+def check_rack_zero_u(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#rkMode [data-mode="2d"]')
+    # A 45U two-post (the FS ducts' own rack is the APC AR201, a 45U two-post), a
+    # switch at U10 with an optic, a splice panel at U30, one fiber between them.
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.withFrame(M.newRack({name: 'Zero-U', kind: 'two-post'}), {heightRU: 45});
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 10, label: 'leaf-1', swaps: {'port-1': 'generic/qsfp-lc@2'}}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i2', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length === 1", timeout=READY_MS)
+    # Placed through the catalog at U1: beside the left upright, never on the rails.
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="1"]')
+    page.fill("#catQuery", "CMV-SFD45U5W")
+    page.select_option("#catDevice", "cmv-sfd45u5w")
+    if page.is_hidden("#catAt"):
+        bad.append("picker: a rack-side duct does not offer the upright it stands beside")
+    page.select_option("#catAt", "left")
+    page.click("#catPlace")
+    page.wait_for_function("() => window.__rack.doc().racks[0].zeroU.length === 1", timeout=READY_MS)
+    doc = page.evaluate("() => window.__rack.doc().racks[0]")
+    z = doc["zeroU"][0]
+    if (z.get("ref"), z.get("at"), z.get("offsetMm")) != ("cmv-sfd45u5w", "left", 0) or len(doc["items"]) != 2:
+        bad.append(f"place: the duct is not in zeroU at left, offset 0, with the items untouched: {z}, {len(doc['items'])} items")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-zerou-id=\"z1\"]') && document.querySelector('#paneRear svg [data-zerou-id=\"z1\"]')", timeout=READY_MS)
+    # 2D: outside the left rail on the front, outside the right one on the rear (mirrored), portrait.
+    geo = page.evaluate("""() => {
+      const box = pane => { const s = document.querySelector(`#${pane} svg`), g = s.querySelector('[data-zerou-id="z1"]');
+        const m = s.getScreenCTM().inverse().multiply(g.getScreenCTM()), b = g.getBBox();
+        const p0 = new DOMPoint(b.x, b.y).matrixTransform(m), p1 = new DOMPoint(b.x + b.width, b.y + b.height).matrixTransform(m);
+        return {x0: Math.min(p0.x, p1.x), x1: Math.max(p0.x, p1.x), h: Math.abs(p1.y - p0.y)}; };
+      return {front: box('paneFront'), rear: box('paneRear')};
+    }""")
+    f, r = geo["front"], geo["rear"]
+    if not (f["x1"] <= -26 + 0.5 and f["h"] > f["x1"] - f["x0"]):
+        bad.append(f"2D: the front pane's duct is not portrait and left of the left rail: {f}")
+    if not (r["x0"] >= 450.85 + 26 - 0.5):
+        bad.append(f"2D: the rear pane's duct is not right of the (mirrored) left rail: {r}")
+    # The cable's lane runs up the duct's channel: its centre line, not the 40 mm gutter.
+    page.wait_for_function("() => (window.__rack.routes() || []).some(([id, ws]) => ws.some(w => w.lane === 'left'))", timeout=READY_MS)
+    lane = page.evaluate("""() => { const s = document.querySelector('#paneFront svg');
+      const g = s.querySelector('[data-cables] [data-cable-id="c1"]'); const xs = [];
+      for (const p of g.querySelectorAll('path')) { if (p.dataset.leader) continue; const L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 1) xs.push(p.getPointAtLength(t).x); }
+      return Math.min(...xs); }""")
+    centre = -26 - 138.8 / 2
+    if abs(lane - centre) > 2:
+        bad.append(f"2D: the cable's lane runs at x {lane}, not through the duct's centre {centre}")
+    fill = page.evaluate("() => window.__rack.fill()")
+    zf = [x for x in (fill or {}).get("fill", []) if x["item"] == "z1"]
+    if not zf or zf[0]["count"] != 1 or zf[0]["cables"] != ["c1"]:
+        bad.append(f"fill: the duct does not count the cable through it: {fill}")
+    else:
+        # Its channel: the drawn guide's 93.4 mm by the part's 165.1 mm depth; one OS2 fiber (3.0 mm) against 40% of it.
+        ap = zf[0].get("aperture") or {}
+        want_pct = round(math.pi * 1.5 ** 2 / (0.4 * 93.4 * 165.1) * 100)
+        if abs(ap.get("w", 0) - 93.4) > 0.05 or abs(ap.get("h", 0) - 165.1) > 0.05 or zf[0]["percent"] != want_pct or zf[0]["over"]:
+            bad.append(f"fill: the duct's channel or percent is not 93.4 x 165.1 mm at {want_pct}%: {zf[0]}")
+    # Selected, it has its own panel; an edit there is one undo step.
+    page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
+    page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
+    page.check("#zBetween")
+    page.wait_for_function("() => window.__rack.doc().racks[0].zeroU[0].between === true", timeout=READY_MS)
+    page.evaluate("() => window.__rack.undo()")
+    page.wait_for_function("() => !('between' in window.__rack.doc().racks[0].zeroU[0])", timeout=READY_MS)
+    # Narrow finger brackets: one on each rail at one U, through the catalog.
+    for side in ("right", "left"):
+        page.click('svg[data-pane="front"] rect.rk-u[data-u="20"]')
+        page.fill("#catQuery", "CMV-5U3W")
+        page.select_option("#catDevice", "cmv-5u3w")
+        page.select_option("#catSide", side)
+        page.click("#catPlace")
+        page.wait_for_function("(s) => window.__rack.doc().racks[0].items.some(i => i.ref === 'cmv-5u3w' && i.side === s)", arg=side, timeout=READY_MS)
+    xs = page.evaluate("""() => { const s = document.querySelector('#paneFront svg');
+      return Object.fromEntries([...s.querySelectorAll('[data-side]')].map(g => { const b = g.getBoundingClientRect();
+        const m = s.getScreenCTM().inverse(); return [g.dataset.side, new DOMPoint(b.left + b.width / 2, 0).matrixTransform(m).x]; })); }""")
+    if not (xs.get("left", 999) < 20 and xs.get("right", -999) > 450.85 - 20):
+        bad.append(f"2D: the brackets are not on their rails (centres {xs})")
+    # A third on a rail already taken there is refused, and changes nothing.
+    third = page.evaluate("() => window.__rack.apply({op: 'side.place', ref: 'cmv-5u3w', face: 'front', ru: 22, side: 'left'})")
+    n = page.evaluate("() => window.__rack.doc().racks[0].items.filter(i => i.ref === 'cmv-5u3w').length")
+    if not (third.get("error") and "Taken by" in third["error"]) or n != 2:
+        bad.append(f"side: a second bracket on the left rail at U22 was not refused ({third.get('error')}, {n} brackets)")
+    # It survives a reload, sides and all.
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    again = page.evaluate("() => { const r = window.__rack.doc().racks[0]; return {z: r.zeroU.map(z => z.id + '@' + z.at), sides: r.items.filter(i => i.side).map(i => i.side).sort()}; }")
+    if again != {"z": ["z1@left"], "sides": ["left", "right"]}:
+        bad.append(f"reload: the duct or the brackets' sides did not come back: {again}")
+    # DCIM: a device of the rack with no position and no face, its place in the comment.
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-zerou-id=\"z1\"]')", timeout=READY_MS)
+    _, kit = export_kit(page, "netbox")
+    rows = list(csv.DictReader(io.StringIO(kit["zip"]["2-devices.csv"])))
+    duct = [x for x in rows if x["device_type"] == "CMV-SFD45U5W"]
+    if not duct or duct[0]["position"] or duct[0]["face"] or duct[0]["rack"] != "Zero-U" or "beside the rack at left" not in duct[0]["comments"]:
+        bad.append(f"NetBox: the duct's device row is not in the rack with no position and no face: {duct}")
+    if not any(n.endswith("CMV-SFD45U5W.yaml") for n in kit["names"]):
+        bad.append("NetBox: the duct's device type (u_height 0) is not in the kit")
+    # 3D: stood beside the upright, and the tube runs up its channel.
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    res = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const deadline = Date.now() + 20000;
+      while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+      const g = s.three.scene.getObjectByName('device-z1');
+      const pts = (s.rackCables?.tubes ?? []).flatMap(t => t.points || []);
+      const sided = Object.fromEntries(window.__rack.doc().racks[0].items.filter(i => i.side).map(i => {
+        const b = s.three.scene.getObjectByName(`device-${i.id}`);
+        return [i.side, b ? {x: b.position.x, rz: b.rotation.z} : null]; }));
+      return {x: g ? g.position.x : null, minX: pts.length ? Math.min(...pts.map(p => p.x)) : null, sided};
+    }""")
+    want = -(450.85 / 2 + 26 + 138.8 / 2)
+    if res["x"] is None or abs(res["x"] - want) > 1:
+        bad.append(f"3D: the duct does not stand beside the left upright (x {res['x']}, want {want})")
+    if res["minX"] is None or abs(res["minX"] - want) > 8:
+        bad.append(f"3D: the tube does not run up the duct's channel (closest x {res['minX']}, want {want})")
+    # The brackets stand over their own rails' hole lines (rails.js: 232.55 mm either side), the right one turned.
+    sd = res["sided"]
+    lx, rx = (sd.get("left") or {}).get("x"), (sd.get("right") or {}).get("x")
+    if lx is None or rx is None or abs(lx + 232.55) > 0.5 or abs(rx - 232.55) > 0.5 or abs(abs(sd["right"]["rz"]) - math.pi) > 1e-3:
+        bad.append(f"3D: the brackets are not on their rails (left x {lx}, right x {rx}, turned {sd.get('right')})")
+    return bad
+
+
 @extra("rack.html: Export - a slot emptied by a null swap yields no part, where its default would have seated one")
 def check_rack_export_emptied_slot(page, base):
     bad = []

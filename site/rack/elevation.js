@@ -16,6 +16,7 @@ import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
+import {faceOfAt, sideOfAt, STANDOFF} from './zero-u.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.
@@ -142,17 +143,93 @@ export function uAtY(frame, y, baseRU = 1) {
   return Math.min(baseRU + frame.heightRU - 1, Math.max(baseRU, baseRU + i));
 }
 
+// ZERO-U PARTS (site/rack/zero-u.js): a duct standing beside an upright, drawn
+// as it stands, portrait, outside the rail. `zeroU` entries are {id, ref, cfg,
+// label, at, ru, w, h}: w and h the part's chassis width and drawn height in mm,
+// ru its bottom U. A two-post's uprights are seen from both panes (its front
+// view from the front, its rear view from the rear, mirrored across); a
+// four-post's upright is on one face, and only that pane draws the part, by
+// its working (front) face. Every pane is widened and raised for every part
+// whichever pane draws it, so the two panes keep one box and one U scale.
+const zeroUShown = (z, view) => { const f = faceOfAt(z.at); return f == null || f === view; };
+const zeroUPanel = (z, view) => (faceOfAt(z.at) == null ? view : 'front');
+// Its centre across the pane: rack x is right as seen from the front; the rear pane mirrors it.
+const zeroUPaneX = (z, view) => {
+  const s = sideOfAt(z.at) === 'left' ? -1 : 1, xr = s * (OPENING / 2 + RAIL_W + STANDOFF + (z.w || 0) / 2);
+  return view === 'rear' ? OPENING / 2 - xr : OPENING / 2 + xr;
+};
+function zeroUBox(zeroU, frame, baseRU, g) {
+  const totalH = frame.heightRU * RU;
+  const wide = Math.max(0, ...zeroU.map(z => STANDOFF + (z.w || 0) + 4));
+  const top = Math.min(-18, ...zeroU.map(z => totalH - (z.ru - baseRU) * RU - (z.h || 0) - 6));
+  const side = Math.max(g, wide);
+  return {x: -RAIL_W - side, y: top, w: OPENING + RAIL_W * 2 + side * 2, h: totalH + 12 - top};
+}
+// A NARROW RACK-FACE PART on one rail stands over that rail's holes, not
+// across the opening; on the right rail it is the left-hand drawing turned end
+// over end (upstream design 3, as built). `side` is as seen from its own face.
+const SIDED = new Set(['left', 'right']);
+function sidedTransform(it, view, w, h, y) {
+  const left = (it.side === 'left') === (it.face === view);
+  const cx = OPENING / 2 + (left ? SIDES[0].hole : SIDES[1].hole);
+  const x = cx - w / 2;
+  const turn = it.side === 'right' ? ` rotate(180 ${w / 2} ${h / 2})` : '';
+  return `translate(${x} ${y})${turn}`;
+}
+
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true, ears = false, metal = false, paper = false, laneGap = 0}) {
+                                     placeholders = true, ears = false, metal = false, paper = false, laneGap = 0,
+                                     zeroU = [], selectedZeroU = null}) {
   const C = metal ? METAL : THEMED;
   const totalH = frame.heightRU * RU;
   // Lanes (cable routing spec §7): with routed cables the gutter beside each
   // rail widens to the lane gap, so a run up the side has room.
   const g = Math.max(6, laneGap);
+  const box = zeroU.length ? zeroUBox(zeroU, frame, baseRU, g) : null;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
-    viewBox: `${-RAIL_W - g} -18 ${OPENING + RAIL_W * 2 + g * 2} ${totalH + 30}`});
+    viewBox: box ? `${box.x} ${box.y} ${box.w} ${box.h}` : `${-RAIL_W - g} -18 ${OPENING + RAIL_W * 2 + g * 2} ${totalH + 30}`});
   drawRails(out, frame, baseRU, totalH, C);
+  let zStyled = false;
+  for (const z of zeroU.filter(x => zeroUShown(x, view))) {
+    const panel = zeroUPanel(z, view);
+    const face = await configuredFace({ref: z.ref, cfg: z.cfg, view: panel, swaps: {}, fields: {}});
+    const bottom = totalH - (z.ru - baseRU) * RU;
+    const attrs = {'data-zerou-id': z.id, 'data-device-name': z.label, 'data-device-ref': z.ref,
+                   'data-panel': 'zerou', 'data-zerou-at': z.at, style: 'cursor: pointer',
+                   ...(z.id === selectedZeroU ? {class: 'rk-selected'} : {})};
+    let w = z.w || 0, h = z.h || 0, gz;
+    if (face) {
+      const root = new DOMParser().parseFromString(face.text, 'image/svg+xml').documentElement;
+      const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+      w = parseFloat(root.getAttribute('width')) || vb[2] || w;
+      h = parseFloat(root.getAttribute('height')) || vb[3] || h;
+      gz = svgEl('g', {transform: `translate(${zeroUPaneX(z, view) - w / 2} ${bottom - h})`, ...attrs});
+      for (const kid of [...root.childNodes]) {
+        if (kid.nodeName === 'style') { if (zStyled) continue; zStyled = true; }
+        gz.append(document.importNode(kid, true));
+      }
+      // The whole part takes a click: its backing rect, under its drawing.
+      gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
+    } else {
+      gz = svgEl('g', attrs);
+      if (placeholders) {
+        const x0 = zeroUPaneX(z, view) - w / 2;
+        const P = paper ? OUTLINE_PAPER : OUTLINE;
+        gz.append(svgEl('rect', {x: x0 + 0.5, y: bottom - h + 0.5, width: Math.max(1, w - 1), height: Math.max(1, h - 1), rx: 2,
+          fill: P.fill, 'fill-opacity': 0.35, stroke: P.ink, 'stroke-width': 1, 'stroke-dasharray': '4 3'}));
+        const t = svgEl('text', {x: x0 + w / 2, y: bottom - h / 2, 'text-anchor': 'middle', 'font-size': 11,
+          'font-family': 'IBM Plex Mono, monospace', fill: P.ink, transform: `rotate(-90 ${x0 + w / 2} ${bottom - h / 2})`});
+        t.textContent = `${z.label} · no ${panel} drawing`;
+        gz.append(t);
+      }
+    }
+    out.append(gz);
+    if (z.id === selectedZeroU) {
+      out.append(svgEl('rect', {x: zeroUPaneX(z, view) - w / 2 - 3, y: bottom - h - 1.5, width: w + 6, height: h + 3,
+        rx: 3, fill: 'none', stroke: 'var(--pt-brass)', 'stroke-width': 2.5, class: 'rk-sel-ring', 'pointer-events': 'none'}));
+    }
+  }
   // Under the devices, so a click on a device is the device's; a click on an
   // empty U lands here.
   if (hitTargets) {
@@ -208,7 +285,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const h = parseFloat(root.getAttribute('height')) || vb[3];
     if (it.u == null) ruH = Math.max(1, Math.round(h / RU));
     const y = topOf(ruH) + (ruH * RU - h) / 2;
-    const g = svgEl('g', {transform: `translate(${(OPENING - w) / 2} ${y})`, ...common,
+    const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${(OPENING - w) / 2} ${y})`, ...common,
+                          ...(isFace(it) && SIDED.has(it.side) ? {'data-side': it.side} : {}),
                           'data-panel': through ? 'through' : 'mounted'});
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
     // no url(#...) and no href="#...", so there is nothing to collide - and
