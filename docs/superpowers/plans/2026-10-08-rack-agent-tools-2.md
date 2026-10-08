@@ -487,14 +487,14 @@ test('edit_rack passes the kit\'s fit and field refusals through, and nothing ch
 
 test('a finding survives a long summary: notes keep room of their own', async () => {
   const {ed, tools} = setup();
-  const finding = {kind: 'note', text: 'Removed the cables on bay-1/lc12: these ports are not on FHD 6 SC. c1 is kept as a loose end.'};
+  const finding = {kind: 'note', text: 'Kept the cables on bay-1/lc12 as loose ends (c1): these ports are not on FHD 6 SC.'};
   const spy = Object.assign(Object.create(ed), {apply: (c, o) => { const r = ed.apply(c, o); return r.error ? r : {...r, findings: [...r.findings, finding]}; }});
   const t = Object.fromEntries(rackTools({ed: spy, chassisOf, queries: {}, runExport: async () => ({}),
     context: async () => ({slotsOf, compByRef})}).map(x => [x.name, x]));
   const commands = Array.from({length: 40}, (_, i) => ({op: 'place', ref: 'as7726-32x', face: 'front', ru: i + 1, label: `switch-with-a-long-name-${i}`}));
   const out = text(await t.edit_rack.execute({commands}));
   assert.ok(out.length <= LIMIT, `${out.length}`);
-  assert.match(out, /\nNote: Removed the cables on bay-1\/lc12/);
+  assert.match(out, /\nNote: Kept the cables on bay-1\/lc12/);
   assert.match(out, /\nUndo takes all of this back in one step\./);
   assert.ok(tools);
 });
