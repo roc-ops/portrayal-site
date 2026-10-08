@@ -37,7 +37,8 @@ const LIMIT = 1500;
 export function describe(rack, {chassisOf}) {
   const f = rack.frame;
   const holes = f.holes.style === 'tapped' ? `tapped${f.holes.thread ? ` ${f.holes.thread}` : ''} holes` : 'square holes';
-  const head = `${rack.name}: ${f.heightRU}U ${f.kind}, ${holes}, numbered ${f.numbering}.`;
+  const head = `${rack.name}: ${f.heightRU}U ${f.kind}, ${holes}, numbered ${f.numbering}`
+    + `${f.setback ? `, faceplates set back ${f.setback} mm` : ''}.`;
   const uOf = heightOf(chassisOf);
   const span = i => {
     const [a, b] = [uLabel(f, i.ru), uLabel(f, i.ru + uOf(i) - 1)].sort((x, y) => x - y);
@@ -46,6 +47,7 @@ export function describe(rack, {chassisOf}) {
   const item = (i, short) => {
     const ms = managersOf(rack, i.id).map(m => m.id);
     return [`${i.id}${short ? '' : ` ${i.label}`} ${span(i)} ${i.face}${i.turned ? ' turned' : ''}`,
+            ...('setback' in i ? [`set back ${i.setback} mm`] : []),
             ...(i.on ? [`on ${i.on} unit ${i.unit}`] : []), ...(ms.length ? [`carries ${ms.join(' ')}`] : [])].join(', ');
   };
   const side = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}`;

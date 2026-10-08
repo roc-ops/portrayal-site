@@ -35,8 +35,24 @@ export function normalizeFrame(f = {}) {
     usableDepth: Number(f.usableDepth) > 0 ? Number(f.usableDepth)
       : four ? railDepth + USABLE_BEYOND : TWO_POST_USABLE,
     ref: f.ref ?? null,
+    // Stated only when it is not 0, so a frame that never had one saves as it did.
+    ...(setbackMm(f.setback) ? {setback: setbackMm(f.setback)} : {}),
   };
 }
+
+// FACEPLATE SETBACK: how far behind its rail a device's faceplate sits, in
+// millimetres - where its ears are, as a vendor states them. Most gear mounts
+// flush (0). The frame's `setback` is the rack's default; an item's own, when
+// it has one, is that device's. Millimetres rather than a share of anything:
+// rail depth and device depth both vary, and a datasheet gives the ear's
+// position in mm. A value that is not a number of 0 or more is no setback.
+export const setbackMm = v => {
+  const n = typeof v === 'number' ? v : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+// The setback a device stands at: its own, or the rack's.
+export const setbackOf = (item, rack) =>
+  (item && 'setback' in item ? setbackMm(item.setback) : setbackMm(rack?.frame?.setback));
 
 export const defaultFrame = (kind = 'four-post') => normalizeFrame({kind});
 
@@ -78,16 +94,26 @@ const hostOf = ({on, unit}) => (typeof on === 'string' && on && Number.isInteger
   ? {on, unit} : {});
 export const detached = ({on, unit, ...rest}) => rest;
 
+// An item's own setback is kept only when it states one (0 included: flush in
+// a rack whose default is not); null or nothing means the rack's.
+const ownSetback = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? {setback: v} : {});
+
 export function withItem(rack, {ref, cfg, ru, face = 'front', turned = false, label = ref,
-                                swaps = {}, fields = {}, on, unit}) {
+                                swaps = {}, fields = {}, on, unit, setback}) {
   const item = {id: nextId(itemIdsInUse(rack), 'i'), ref, cfg, label, ru,
                 face: face === 'rear' ? 'rear' : 'front', turned: !!turned,
-                swaps: {...swaps}, fields: structuredClone(fields), ...hostOf({on, unit})};
+                swaps: {...swaps}, fields: structuredClone(fields), ...hostOf({on, unit}), ...ownSetback(setback)};
   return {rack: {...rack, items: [...rack.items, item]}, item};
 }
 
+// A setback patched to null goes back to the rack's: the key is dropped.
 export const updateItem = (rack, id, patch) =>
-  ({...rack, items: rack.items.map(i => (i.id === id ? {...i, ...patch} : i))});
+  ({...rack, items: rack.items.map(i => {
+    if (i.id !== id) return i;
+    const next = {...i, ...patch};
+    if ('setback' in patch && patch.setback == null) delete next.setback;
+    return next;
+  })});
 // A manager on the removed item stays where it is, unhosted (spec D3): it
 // bolts to the rack, not to the device.
 export const withoutItem = (rack, id) => ({...rack, items: rack.items.filter(i => i.id !== id)
@@ -131,7 +157,7 @@ function readItem(i, n) {
   return {id: String(i.id ?? ''), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
           ru: i.ru, face: i.face === 'rear' ? 'rear' : 'front', turned: !!i.turned,
           swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {}),
-          ...hostOf({on: i.on == null ? undefined : String(i.on), unit: i.unit})};
+          ...hostOf({on: i.on == null ? undefined : String(i.on), unit: i.unit}), ...ownSetback(i.setback)};
 }
 
 // Every item needs an id unique within its rack: a missing one (an older

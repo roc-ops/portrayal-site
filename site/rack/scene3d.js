@@ -12,6 +12,8 @@ import {mergeSeats, cablePlan3d, endKey} from './cable-rules.js';
 import {drawCables3d} from './cables.js';
 import {laneX} from './route.js';
 import {RU} from './rails.js';
+import {setbackOf} from './model.js';
+import {labelsFor} from './stage.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -97,8 +99,10 @@ async function hangCables(scene, rack, facts, routes) {
 // `camera`, when given, is `{position, target}` from a previous build - saved
 // by the page just before it disposes the old scene, so a rebuild (a commit,
 // or a frame change) restores the orbit instead of snapping back to the
-// opening view.
-export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null}) {
+// opening view. `stage` is the background colour the reader picked (stage.js);
+// the page changes it on a built scene with setStage below.
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null,
+                                              stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -123,6 +127,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     id: item.id,
     ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label,
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
+    // The faceplate setback the 2D fit rules measure by (model.js setbackOf):
+    // the item's own, or the rack's, or flush - never rack3d.js's showcase 30.
+    recess: setbackOf(item, rack),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
   }));
@@ -136,9 +143,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
     const built = createRackScene(container, {
-      stack, heightRU: frame.heightRU,
+      stack, heightRU: frame.heightRU, recess: setbackOf(null, rack),
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
+      background: stage, ...labelsFor(stage),
     });
+    built.setStage = c => { built.setBackground(c); built.setLabelColors(labelsFor(c)); };
     await built.build();
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).

@@ -3,7 +3,7 @@
 // placement rules and says no with the reason; the control then snaps back.
 
 import {el} from './dom.js';
-import {positionOf} from './model.js';
+import {positionOf, setbackMm} from './model.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});
@@ -33,6 +33,20 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
   const turned = el('input', {id: 'iTurned', type: 'checkbox', ...(item.turned ? {checked: ''} : {})});
   turned.addEventListener('change', () => apply({turned: turned.checked}, () => { turned.checked = item.turned; }));
 
+  // FACEPLATE SETBACK, in mm behind the rail. Blank is the rack's default
+  // (the Frame form's), which the placeholder says; 0 is flush. A cable
+  // manager stands on the rail face and has none.
+  const rackBack = setbackMm(rack.frame.setback);
+  const own = 'setback' in item ? String(item.setback) : '';
+  const setback = el('input', {id: 'iSetback', type: 'number', min: '0', step: '1', value: own,
+                               placeholder: `${Math.round(rackBack)} (the rack's)`});
+  setback.addEventListener('change', () => {
+    const raw = setback.value.trim(), n = Number(raw);
+    if (raw && !(n >= 0)) { err.textContent = 'Enter a setback of 0 mm or more, or leave it blank for the rack\'s.'; setback.value = own; return; }
+    apply({setback: raw ? n : null}, () => { setback.value = own; });
+  });
+  const onFace = chassis?.mount === 'rack-face';
+
   const d = chassis?.d;
   const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
   return el('div', {class: 'rk-inspector'}, [
@@ -42,6 +56,7 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
     field('Configuration', cfg),
     field('Mounted on', face),
     el('label', {class: 'rk-check'}, [turned, ' Turned (its rear panel faces out)']),
+    ...(onFace ? [] : [field('Faceplate setback (mm)', setback)]),
     el('p', {class: 'rk-depth rk-muted', text: d ? `${Math.round(d)} mm deep · ${Math.round(available)} mm available here` : 'Depth unknown'}),
     el('div', {class: 'rk-actions'}, [
       button('iExplore', 'Open in Explorer', onExplore),

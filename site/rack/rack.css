@@ -12,16 +12,23 @@
 .rk-zoom { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
 .rk-zoom button { min-width: 2rem; }
 #zoomLevel { color: var(--pt-ink-muted); font-size: 0.85rem; min-width: 3.2rem; text-align: center; }
-/* The 2D/3D switch, in the showcase's own #stageMode style (site/site.css's
-   .stage-mode) - the two toggles should read as the same control even though
-   they live on different pages. */
-.rk-mode { display: inline-flex; border: 1px solid var(--pt-line); border-radius: 6px; overflow: hidden; }
-.rk-mode button { background: none; border: none; color: var(--pt-ink-muted); cursor: pointer;
-  font: inherit; font-size: 0.85rem; padding: 0.3rem 0.7rem; }
-.rk-mode button + button { border-left: 1px solid var(--pt-line); }
-.rk-mode button:hover { color: var(--pt-ink); }
-.rk-mode button[aria-pressed="true"] { color: var(--pt-ink); background: var(--pt-surface-2); }
-.rk-mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
+/* The 2D/3D switch and the 3D background swatches are the Explorer's and
+   Annotate's: their shape is site/mode3d.js's MODE3D_CSS, which this page
+   injects too, and these are the shell's button and swatch rules
+   (vendor/shell.js), which this page does not otherwise load. The variables
+   are the shell's, mapped onto the site's by site/tool-theme.css. #mode
+   outranks .rk-bar button, so this page's own bar buttons do not reach it. */
+#mode button { font: inherit; font-size: 0.78rem; background: var(--control); color: var(--ink);
+  border: 1px solid var(--control-line); padding: 0.26rem 0.5rem; cursor: pointer; }
+#mode button:hover { background: var(--control-hover); border-color: var(--control-line); }
+#mode button.on { background: var(--on-bg); border-color: var(--accent); color: var(--on-ink); }
+#mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+#stagebg { display: flex; align-items: center; gap: 0.25rem; }
+#stagebg .sw { width: 0.95rem; height: 0.95rem; border-radius: 3px; cursor: pointer; padding: 0;
+  border: 1px solid var(--control-line); }
+#stagebg .sw:hover { border-color: var(--control-line); }
+#stagebg .sw.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+#stagebg .sw:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 /* THE PAGE IS NOT FINISHED, and says so: a brass pill that opens a short note
    on what works and what is coming. Brass, the site's accent - not a marking
    color, which the drawings reserve for what a person marks. */

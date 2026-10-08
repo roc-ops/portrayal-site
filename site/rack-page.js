@@ -19,6 +19,8 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
+import {mountStage, loadStage} from './rack/stage.js';
+import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, fillNotes} from './rack/export-data.js';
@@ -54,7 +56,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   routes: null,
@@ -111,14 +113,17 @@ async function rebuild3d() {
   const forRack = rack();
   const sig = routesSig(S.routes);
   disposeScene3d();
+  const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null});
+    routes: S.routes?.routes ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
   // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
+  // A swatch picked while this was building found no scene to tell.
+  if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
   S.scene3dRoutes = sig;
   // Routes are resolved by render(), after an edit: if they settled while
@@ -142,9 +147,19 @@ function scheduleRebuild3d() {
   clearTimeout(rebuild3dTimer);
   rebuild3dTimer = setTimeout(rebuild3d, 300);
 }
+// The Explorer's switch (mode3d.js): `on` is how it looks, aria-pressed what it says.
 function paintMode() {
-  for (const b of document.querySelectorAll('#rkMode [data-mode]'))
+  for (const b of document.querySelectorAll('#mode [data-mode]')) {
+    b.classList.toggle('on', b.dataset.mode === S.mode);
     b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
+  }
+}
+// THE 3D BACKGROUND IS THE READER'S, as in the Explorer: picked from the
+// swatches, remembered (stage.js), and handed to the scene on screen and to
+// every one built after it.
+function setStage(c) {
+  S.stage = c;
+  S.scene3d?.setStage?.(c);
 }
 // Which container is shown. Both the `hidden` property AND an explicit
 // inline `display` are set on the one being hidden: `.rk-panes` sets its own
@@ -166,6 +181,11 @@ function showMode() {
   $('cableBtn').title = is3d ? CABLES_3D : '';
   $('stage3d').hidden = !is3d;
   $('stage3d').style.display = is3d ? '' : 'none';
+  // The swatches colour the 3D stage only, so in 2D they are invisible and
+  // inert - keeping their place, as the zoom controls keep theirs, because the
+  // bar is pushed right and anything that came and went would move the switch.
+  $('stagebg').style.visibility = is3d ? '' : 'hidden';
+  $('stagebg').inert = !is3d;
 }
 function setMode(m) {
   if ((m !== '2d' && m !== '3d') || m === S.mode) return;
@@ -877,7 +897,8 @@ function summary() {
   const managers = r.items.length - devices.length;
   const used = devices.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
   const warnings = r.items
-    .map(i => ({i, f: fits(r, {ref: i.ref, ru: i.ru, face: i.face}, chassisOf, {ignoreId: i.id})}))
+    .map(i => ({i, f: fits(r, {ref: i.ref, ru: i.ru, face: i.face, ...('setback' in i ? {setback: i.setback} : {})},
+                               chassisOf, {ignoreId: i.id})}))
     .filter(x => !x.f.ok);
   return el('div', {}, [
     el('h3', {text: r.name}),
@@ -1258,7 +1279,9 @@ async function bootInner() {
     if (S.cable.on) { S.cable = {on: false, a: null}; paintCableMode(); }
     select(S.sel?.kind === 'frame' ? null : {kind: 'frame'});
   });
-  $('rkMode').addEventListener('click', ev => {
+  document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
+  S.stage = mountStage($('stagebg'), setStage).get();
+  $('mode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
   });

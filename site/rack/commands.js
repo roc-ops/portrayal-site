@@ -5,7 +5,7 @@
 // and {chassisOf} in, a new rack out - and says no with a sentence. One that
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
-import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint} from './model.js';
+import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint, setbackOf} from './model.js';
 import {fits, isRackFace, heightOf, shrinkRack} from './fit.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, withoutCable, cablesOf, withoutCablesOf, cableName, MEDIA} from './cable-rules.js';
@@ -59,17 +59,28 @@ function move(rack, {id, ru, face}, {chassisOf}) {
 
 // A configuration change is a delta against the OLD configuration: one that
 // leaves an item with no swaps or fields to carry forward says they went.
-function patch(rack, {id, ...given}) {
+function patch(rack, {id, ...given}, {chassisOf} = {}) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
   // The rack keeps its own copy, as withItem does: a caller that goes on to
   // change the object it passed changes neither the rack nor its history.
   const p = {...given, ...('swaps' in given ? {swaps: {...given.swaps}} : {}),
              ...('fields' in given ? {fields: structuredClone(given.fields)} : {})};
-  const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
-    .filter(k => k in p && !same(p[k], it[k])).map(k => [k, p[k]]));
+  // A setback of null is the rack's own: a change only when the item had one.
+  const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned', 'setback']
+    .filter(k => k in p && !same(p[k], it[k] ?? (k === 'setback' ? null : undefined))).map(k => [k, p[k]]));
   if (!Object.keys(changes).length) return unchanged(rack);
   const next = {...it, ...changes};
+  // Set further back, a device takes up more depth: it may no longer fit.
+  // Brought forward it takes up less, which is never refused - not even in a
+  // rack it already overflows for another reason.
+  if ('setback' in changes && chassisOf) {
+    const placed = updateItem(rack, id, {setback: changes.setback});
+    if (setbackOf(itemOf(placed, id), placed) > setbackOf(it, rack)) {
+      const f = fits(placed, itemOf(placed, id), chassisOf, {ignoreId: id});
+      if (!f.ok) return {error: f.reason};
+    }
+  }
   const had = Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length;
   const has = Object.keys(next.swaps ?? {}).length || Object.keys(next.fields ?? {}).length;
   return {rack: updateItem(rack, id, changes), summary: `Changed ${it.label}.`,
@@ -240,12 +251,13 @@ export const COMMANDS = {
       face: FACE, ru: RU, label: {type: 'string', description: 'The name shown on the drawing; its model when left out.'}, as: AS})},
   move: {run: move, description: 'Move a device to another U and/or face. Its cable managers move with it; a cable manager moved onto a device bolts onto it.',
     args: args(['id'], {id: ID('device'), ru: RU, face: FACE})},
-  patch: {run: patch, description: "Change a placed device's configuration, label, turned state, or its Explorer swaps and fields.",
+  patch: {run: patch, description: "Change a placed device's configuration, label, turned state, faceplate setback, or its Explorer swaps and fields.",
     args: args(['id'], {id: ID('device'), cfg: {type: 'string', description: 'Which of its configurations.'},
       swaps: {type: 'object', description: 'What is seated where: slot path to part ref, as the Explorer writes it.'},
       fields: {type: 'object', description: 'Editable text on the device, as the Explorer writes it.'},
       label: {type: 'string', description: 'The name shown on the drawing.'},
-      turned: {type: 'boolean', description: 'true when mounted back to front.'}})},
+      turned: {type: 'boolean', description: 'true when mounted back to front.'},
+      setback: {type: ['number', 'null'], minimum: 0, description: "Millimetres its faceplate sits behind the rail (0 is flush); null for the rack's default."}})},
   remove: {run: remove, description: 'Take a device out of the rack. Its cables are kept as loose ends, or removed with it; its cable managers stay on the rack.',
     args: args(['id'], {id: ID('device'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
   attach: {run: attach, description: 'Bolt an unattached cable manager onto the device at its U.',
@@ -260,7 +272,8 @@ export const COMMANDS = {
         properties: {style: {enum: ['square', 'tapped'], description: 'square or tapped.'},
                      thread: {enum: ['12-24', '10-32', 'M6', null], description: 'The thread of tapped holes.'}}},
       railDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres between the front and rear rails (four-post).'},
-      usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'}})},
+      usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'},
+      setback: {type: 'number', minimum: 0, description: 'The default faceplate setback, in millimetres behind the rail, for a device that states none of its own; 0 is flush.'}})},
   rename: {run: rename, description: 'Rename the rack.', args: args(['name'], {name: {type: 'string', description: 'The new name.'}})},
   dcim: {run: dcim, step: false, description: 'Set the names a NetBox or Nautobot import needs: the site (or location) and the device role. Not an undo step.',
     args: args([], {site: {type: 'string', description: "NetBox's site, Nautobot's location."}, role: {type: 'string', description: 'The device role.'}})},

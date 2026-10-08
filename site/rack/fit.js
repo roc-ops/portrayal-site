@@ -8,9 +8,14 @@
 // rail. On four posts the two share a U when those do not overlap, which is
 // dFront + dRear <= railDepth. Two-post rails are one plane that every body
 // passes through, so there a U is never shared.
+//
+// A device's faceplate may sit back from its rail (model.js setbackOf), and
+// then its body starts that far in: everything above measures setback + d,
+// the depth it takes up, rather than d alone.
 
 import {RU} from './rails.js';
 import {isRackMount} from './export-data.js';
+import {setbackOf} from './model.js';
 
 export const REACH_MM = 50;   // within this of the far rail, a device's far panel is visible there
 
@@ -22,6 +27,10 @@ export const isRackFace = c => c?.mount === 'rack-face';
 // The depth between the rails a body must exceed to come out of the far one:
 // two-post rails are one plane, so any body does.
 const between = f => (f.kind === 'two-post' ? 0 : f.railDepth);
+// How far back from its own rail a rack device reaches: its setback and its
+// depth. A rack-face part stands on the face, and takes no setback.
+export const extentOf = (item, rack, c) => (isRackFace(c) ? 0 : setbackOf(item, rack)) + (c?.d ?? 0);
+const deepText = (c, s) => `${mm(c.d)} mm deep${s ? ` and set back ${mm(s)} mm` : ''}`;
 
 function fitsRackFace(rack, cand, c, chassisOf, {ignoreId = null} = {}) {
   const f = rack.frame, rd = between(f);
@@ -46,8 +55,8 @@ function fitsRackFace(rack, cand, c, chassisOf, {ignoreId = null} = {}) {
       if (o.face === cand.face) return {ok: false, reason: `Taken by ${o.label} on the ${o.face}.`};
       continue;
     }
-    if (o.face !== cand.face && oc.d > rd)
-      return {ok: false, reason: `${o.label} is ${mm(oc.d)} mm deep and reaches past the ${cand.face} rail; ` +
+    if (o.face !== cand.face && extentOf(o, rack, oc) > rd)
+      return {ok: false, reason: `${o.label} is ${deepText(oc, setbackOf(o, rack))} and reaches past the ${cand.face} rail; ` +
                                  `a ${cand.face} manager here would hit it.`};
   }
   return {ok: true};
@@ -68,21 +77,23 @@ export function fits(rack, cand, chassisOf, {ignoreId = null} = {}) {
   if (lo < 1) return {ok: false, reason: 'Below U1.'};
   if (hi > f.heightRU)
     return {ok: false, reason: `${c.ru}U needed; ${f.heightRU - lo + 1}U free from U${lo} to the top.`};
-  if (c.d > f.usableDepth) return {ok: false, reason: `${mm(c.d)} mm deep; this rack allows ${mm(f.usableDepth)} mm.`};
+  const s = setbackOf(cand, rack), depth = s + c.d;
+  if (depth > f.usableDepth) return {ok: false, reason: `${deepText(c, s)}; this rack allows ${mm(f.usableDepth)} mm.`};
   for (const o of rack.items) {
     if (o.id === ignoreId) continue;
     const oc = chassisOf(o.ref);
     if (!oc || !overlaps([lo, hi], span(o, chassisOf))) continue;
     if (isRackFace(oc)) {
-      if (o.face !== cand.face && c.d > between(f))
-        return {ok: false, reason: `${mm(c.d)} mm deep; it would reach past the ${o.face} rail into ${o.label}.`};
+      if (o.face !== cand.face && depth > between(f))
+        return {ok: false, reason: `${deepText(c, s)}; it would reach past the ${o.face} rail into ${o.label}.`};
       continue;
     }
     if (o.face === cand.face) return {ok: false, reason: `Taken by ${o.label} on the ${o.face}.`};
     if (f.kind === 'two-post')
       return {ok: false, reason: `Taken by ${o.label}; two-post rails are shared by front and rear.`};
-    if (c.d + oc.d > f.railDepth)
-      return {ok: false, reason: `${mm(c.d)} mm deep; ${Math.max(0, mm(f.railDepth - oc.d))} mm free behind ${o.label}.`};
+    const theirs = extentOf(o, rack, oc);
+    if (depth + theirs > f.railDepth)
+      return {ok: false, reason: `${deepText(c, s)}; ${Math.max(0, mm(f.railDepth - theirs))} mm free behind ${o.label}.`};
   }
   return {ok: true};
 }
@@ -91,20 +102,21 @@ export function fits(rack, cand, chassisOf, {ignoreId = null} = {}) {
 // a ghost of the space it takes?
 export function reaches(item, rack, chassisOf) {
   if (rack.frame.kind === 'two-post') return true;
-  return (chassisOf(item.ref)?.d ?? 0) >= rack.frame.railDepth - REACH_MM;
+  return extentOf(item, rack, chassisOf(item.ref)) >= rack.frame.railDepth - REACH_MM;
 }
 
 // The depth this item could have where it stands: what the other face leaves
-// on the U range it shares, or the rack's usable depth.
+// on the U range it shares, or the rack's usable depth - less its own setback,
+// which comes before the body starts.
 export function availableDepth(rack, item, chassisOf) {
-  const f = rack.frame;
-  if (f.kind === 'two-post') return f.usableDepth;
+  const f = rack.frame, own = setbackOf(item, rack);
+  if (f.kind === 'two-post') return f.usableDepth - own;
   const mine = span(item, chassisOf);
   const other = rack.items.filter(o => o.id !== item.id && o.face !== item.face
                                        && !isRackFace(chassisOf(o.ref))
                                        && overlaps(mine, span(o, chassisOf)));
-  if (!other.length) return f.usableDepth;
-  return Math.min(f.usableDepth, f.railDepth - Math.max(...other.map(o => chassisOf(o.ref)?.d ?? 0)));
+  if (!other.length) return f.usableDepth - own;
+  return Math.min(f.usableDepth, f.railDepth - Math.max(...other.map(o => extentOf(o, rack, chassisOf(o.ref))))) - own;
 }
 
 // Every item with the U height its chassis entry gives it (or 1, unknown or

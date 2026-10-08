@@ -44,6 +44,15 @@ export function frameForm({rack, onName, onFrame}) {
 
   const rail = num('fRail', f.railDepth ?? 740, 1);
   rail.addEventListener('change', () => { const n = Number(rail.value); if (n > 0) onFrame({railDepth: n}); });
+  // The rack's default faceplate setback (model.js setbackOf): where a device
+  // that states none of its own has its faceplate, in mm behind the rail.
+  const setback = num('fSetback', f.setback ?? 0, 0);
+  setback.addEventListener('change', () => {
+    const n = Number(setback.value);
+    if (!(n >= 0) || setback.value.trim() === '') { err.textContent = 'Enter a setback of 0 mm or more.'; return; }
+    err.textContent = '';
+    onFrame({setback: n});
+  });
   const usable = num('fUsable', f.usableDepth, 1);
   usable.addEventListener('change', () => { const n = Number(usable.value); if (n > 0) onFrame({usableDepth: n}); });
 
@@ -57,6 +66,7 @@ export function frameForm({rack, onName, onFrame}) {
     ...(f.holes.style === 'tapped' ? [field('Thread', thread)] : []),
     ...(f.kind === 'four-post' ? [field('Front-to-rear rail depth (mm)', rail)] : []),
     field('Usable depth from the front rail (mm)', usable),
+    field('Faceplate setback (mm, 0 is flush)', setback),
     err,
   ]);
 }

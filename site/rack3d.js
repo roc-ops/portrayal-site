@@ -121,14 +121,23 @@ export function createRackScene(container, opts = {}) {
   // stage asked for (roc-ops/portrayal-site#9): the emphasis tone is the one
   // that inverts, being the lightest of the three. labelUnitColor is there for
   // pulling the numbers back off the tags when you want the two apart again.
-  const LABEL_TAG = opts.labelColor ?? '#D7DBDF';
-  const LABEL_UNIT = opts.labelUnitColor ?? opts.labelColor ?? '#6B727A';
-  const LABEL_EMPH = opts.labelEmphasisColor ?? '#E4E7EA';
+  //
+  // setLabelColors() takes the same three later, for a host whose reader picks
+  // the stage after the scene is built (the Rack Builder's swatches).
+  const LABEL_DEFAULTS = {tag: '#D7DBDF', unit: '#6B727A', emph: '#E4E7EA'};
+  const labelTones = o => ({
+    tag: o.labelColor ?? LABEL_DEFAULTS.tag,
+    unit: o.labelUnitColor ?? o.labelColor ?? LABEL_DEFAULTS.unit,
+    emph: o.labelEmphasisColor ?? LABEL_DEFAULTS.emph,
+  });
+  let LABEL = labelTones(opts);
 
   // How far back the faceplate sits from the mounting rails. Most gear mounts
   // flush and wants 0; the default is the setback the showcase was drawn with,
-  // so passing nothing changes nothing.
+  // so passing nothing changes nothing. A stack entry's own `recess` is that
+  // device's, which is how a Rack Builder rack sets each one.
   const RECESS = opts.recess ?? RECESS_DEFAULT;
+  const recessOf = entry => (Number.isFinite(entry?.recess) && entry.recess >= 0 ? entry.recess : RECESS);
 
   // Which view the scene opens at, and which one double-click returns to.
   // Named rather than a vector, because the useful ones carry their own aim and
@@ -354,7 +363,9 @@ export function createRackScene(container, opts = {}) {
     t.minFilter = THREE.LinearMipmapLinearFilter;
     return t;
   }
-  function labelSprite(text, px = 30, color = '#9AA1A8') {
+  // The text is drawn white and tinted by the material, so a label changes
+  // colour without being drawn again: `tone` is which of LABEL's it follows.
+  function labelSprite(text, px, tone) {
     const cv = document.createElement('canvas');
     const probe = cv.getContext('2d');
     probe.font = `600 ${px}px ui-monospace, monospace`;
@@ -362,11 +373,13 @@ export function createRackScene(container, opts = {}) {
     cv.height = px + 12;
     const c = cv.getContext('2d');
     c.font = `600 ${px}px ui-monospace, monospace`;
-    c.fillStyle = color;
+    c.fillStyle = '#ffffff';
     c.textBaseline = 'middle';
     c.fillText(text, 6, cv.height / 2);
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({map: tex(cv), depthTest: false}));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({map: tex(cv), depthTest: false,
+                                                        color: new THREE.Color(LABEL[tone])}));
     s.scale.set(cv.width / px * 22, cv.height / px * 22, 1);
+    s.userData.labelTone = tone;
     return s;
   }
 
@@ -409,7 +422,7 @@ export function createRackScene(container, opts = {}) {
         }
         // U numbers ON the rail, on its outboard half, on BOTH rails. They
         // used to float off the left side only.
-        const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? LABEL_EMPH : LABEL_UNIT);
+        const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? 'emph' : 'unit');
         n.scale.multiplyScalar(0.45);   // sized to sit inside a 26 mm face; adjust by eye
         n.position.set(s.number, u * RU + RU / 2, mountZ + dir * 0.6);
         rack.add(n);
@@ -437,7 +450,7 @@ export function createRackScene(container, opts = {}) {
   // running toward the front, and its screw heads facing the back - the
   // mirror image of a front ear, not a copy of it parented somewhere else.
   // Defaulted to the front pair, so nothing that already calls this changes.
-  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1) {
+  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, recess = RECESS) {
     const g = new THREE.Group();
     const yBase = (ru - 1) * RU;
     const h = ruHeight * RU - 4.5;
@@ -450,7 +463,7 @@ export function createRackScene(container, opts = {}) {
     // chassis the old proportion ran 450 mm back and rendered as a plate over
     // the whole flank. Shallow gear keeps the proportion, because on a 150 mm
     // box three inches would be most of it anyway.
-    const legLen = RECESS + Math.min(EAR_GRIP_MAX, depth * 0.75);
+    const legLen = recess + Math.min(EAR_GRIP_MAX, depth * 0.75);
     for (const side of [-1, 1]) {
       // The screw lands on the rail's own hole, not a second hand-derived x -
       // rail geometry lives only in rails.js.
@@ -653,9 +666,10 @@ export function createRackScene(container, opts = {}) {
     // its body outward: toward the viewer from the front rails, away from the
     // rear ones. A rack device's body goes the other way, between the rails.
     const rackFace = entry.mount === 'rack-face';
+    const recess = recessOf(entry);
     const z = rackFace
       ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
-      : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
+      : (face === 'rear' ? mountZ + recess + D / 2 : mountZ - recess - D / 2);
     group.position.set(0, (entry.ru - 1) * RU + H / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is
@@ -681,7 +695,7 @@ export function createRackScene(container, opts = {}) {
     // (none for a device the caller marks as not rack-mount: `entry.mount`)
     const noEars = !!entry.mount && entry.mount !== 'rack';
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
+      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, recess);
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
 
@@ -689,7 +703,7 @@ export function createRackScene(container, opts = {}) {
     // the rails.
     let tag = null;
     if (RAILS) {
-      tag = labelSprite(entry.label, 30, LABEL_TAG);
+      tag = labelSprite(entry.label, 30, 'tag');
       // Labels at one height (a manager and its host, a rear and a front part at one U) sit
       // side by side, outward from the rail, not on top of one another.
       const k = Math.round(group.position.y / (RU / 2)), used = tagRow.get(k) || 0;
@@ -1066,13 +1080,21 @@ export function createRackScene(container, opts = {}) {
     // reaching into the scene graph by hand: [{ref, face, z, rotY}].
     devices: () => mounted.map(({entry, group}) => ({
       ref: entry.ref, face: entry.face === 'rear' ? 'rear' : 'front',
-      z: group.position.z, rotY: group.rotation.y})),
+      z: group.position.z, rotY: group.rotation.y, recess: recessOf(entry)})),
     // The measurements this scene mounts by, for a host that needs the frame
     // rather than one point in it. `faceZ` is only ever meaningful with
     // `recess`, which is why they are handed over together rather than as a
     // constant somebody has to pair up correctly on their own.
     metrics: () => ({RU, rackWidth: RACK_W, faceZ: RACK_FACE_Z, railDepth: FRAME ? RAIL_DEPTH : 34, recess: RECESS,
                      heightRU: UNITS, pxmm: PXMM}),
+    // THE STAGE, after the fact: the colour behind the rack, and the labels'
+    // colours to read against it - {labelColor, labelUnitColor,
+    // labelEmphasisColor}, as at construction; one left out is its default.
+    setBackground(c) { scene.background = new THREE.Color(c); },
+    setLabelColors(o = {}) {
+      LABEL = labelTones(o);
+      scene.traverse(x => { if (x.isSprite && x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
+    },
     resize,
     reframe: frameCamera,
     // Stop and restart the render loop, for a host that knows it is not seen.

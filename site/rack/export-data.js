@@ -4,7 +4,7 @@
 // and (below, Tasks 4-5) DCIM matching and the bill of materials.
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
-import {positionOf, uLabel} from './model.js';
+import {positionOf, uLabel, setbackOf, setbackMm} from './model.js';
 import {routeText} from './route.js';
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
@@ -266,11 +266,19 @@ export function mountPick(mount) {
   const m = mountOf(mount);
   return m && {tag: m.tag, fit: `Fits here, on ${m.where}: this is ${m.what}.`};
 }
+// Where faceplates sit is said once for the rack (its default setback) and
+// then for each device that differs from it - a rack of forty recessed
+// switches is one line, not forty.
 export function mountNotes(items, chassisOf, frame) {
   const out = [];
+  const rackBack = setbackMm(frame?.setback);
+  if (rackBack) out.push(`Faceplates are set back ${Math.round(rackBack)} mm from the rail unless noted.`);
   for (const it of items) {
+    const at = `${it.label} at U${frame ? uOfItem(frame, it, chassisOf) : it.ru}`;
     const t = mountText(chassisOf(it.ref)?.mount);
-    if (t) out.push(`${it.label} at U${frame ? uOfItem(frame, it, chassisOf) : it.ru}: ${t}.`);
+    if (t) out.push(`${at}: ${t}.`);
+    const back = chassisOf(it.ref)?.mount === 'rack-face' ? rackBack : setbackOf(it, {frame});
+    if (back !== rackBack) out.push(back ? `${at}: faceplate set back ${Math.round(back)} mm from the rail.` : `${at}: faceplate flush with the rail.`);
   }
   return out;
 }
@@ -689,6 +697,8 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     const mt = mountText(it.mount);
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
+    const back = it.mount === 'rack-face' ? 0 : setbackOf(it, rack);
+    if (back) notes.push(`Faceplate set back ${Math.round(back)} mm from the rail.`);
     const zeroU = it.mount === 'rack-face';
     if (zeroU) {
       const host = it.on ? items.find(o => o.id === it.on) : null;
