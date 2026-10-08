@@ -2,6 +2,7 @@
 
 **Date:** 2026-10-08
 **Status:** implemented (plan: docs/superpowers/plans/2026-10-08-annotate-command-api.md)
+**Agent API status:** `window.portrayalAnnotate` is experimental until #146 is fixed: `setDoc` is not race-safe for back-to-back calls on the same device, a device load has no time bound, and a document naming no swaps does not clear seated ones. No Annotate agent adapter is built on it before then.
 **Piece:** 4a of the Rack Builder kit move (see `2026-10-07-rack-command-core-design.md` §1). Piece 4b, the Explorer API, gets its own spec.
 **Builds on:** the Rack Builder command core (#132), whose generic `history.js` and `validate.js` this reuses; the rack kit move (roc-ops/Portrayal#896 and its site half), which vendors them to `vendor/rack/`.
 

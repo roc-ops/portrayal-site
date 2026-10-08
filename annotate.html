@@ -404,6 +404,10 @@ let doc = ed.getDoc();
 let report = [];
 let hadLegend = false;
 
+// EXPERIMENTAL until portrayal-site#146 is fixed: setDoc is not race-safe for
+// back-to-back calls on the same device, a device load has no time bound, and
+// a document naming no swaps does not clear seated ones. No agent adapter is
+// to be built on this before then.
 // THE PAGE'S API, for agents (spec §2.3), set before anything is awaited so a
 // script that loads with the page finds it at once. `ready` resolves once the
 // drawing is up and any document in the URL has been laid on it, so a setDoc
