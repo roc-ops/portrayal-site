@@ -66,3 +66,87 @@ export const EXPORT_KINDS = {
   drawio: 'drawio', 'netbox import': 'netbox-import', 'nautobot import': 'nautobot-import',
   'bill of materials': 'bom', 'cable schedule': 'cables', 'rack file': 'json',
 };
+
+const say = t => ({content: [{type: 'text', text: fit(t)}]});
+const refuse = t => ({...say(t), isError: true});
+// A tool that throws is answered, never thrown: the agent hears what failed.
+const safe = fn => async (args = {}) => {
+  try { return await fn(args ?? {}); } catch (e) {
+    console.error('[portrayal] agent tool', e);
+    return refuse(`That didn't work: ${e?.message ?? e}.`);
+  }
+};
+const FACE = {type: 'string', enum: ['front', 'rear'], description: 'Which face of the rack: front or rear.'};
+const READ = {readOnlyHint: true};
+const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
+
+export function rackTools({ed, chassisOf, queries, runExport}) {
+  const tool = (name, title, description, properties, required, annotations, run) => ({
+    name, title, description, annotations,
+    inputSchema: {type: 'object', properties, ...(required.length ? {required} : {}), additionalProperties: false},
+    execute: safe(run),
+  });
+  const tools = [
+    tool('describe_rack', 'Describe the rack',
+      'Read the open rack: its frame, every device and cable manager with its id, U range and face, every cable, the cable ends that do not land, and what Undo would take back. Call this first; edit_rack addresses things by these ids.',
+      {}, [], UNTRUSTED,
+      async () => {
+        const rack = ed.rack();
+        const lines = [ed.canUndo ? `Undo would take back: ${ed.undoSummary}` : 'Nothing to undo.'];
+        if (rack.frame.numbering === 'top-down')
+          lines.push("This rack's U labels count top-down; commands take ru counted from 1 at the bottom of the rails.");
+        lines.push(queries.describe(rack));
+        const loose = await queries.looseEnds(rack);
+        if (loose.ends.length) lines.push('Loose ends:', ...loose.ends.map(e => `${e.cable}: the ${e.end.item} end does not land: ${e.reason}`));
+        if (loose.unchecked) lines.push('Some ports could not be checked.');
+        return say(lines.join('\n'));
+      }),
+    tool('find_devices', 'Find devices',
+      'Search the devices that can be put in a rack, by words in the manufacturer, model or id, by height in U, by family or by mount. Each result gives the ref and configs that edit_rack\'s place command takes.',
+      {text: {type: 'string', description: 'Words to look for, e.g. "dell r740" or "patch panel".'},
+       ru: {type: 'integer', minimum: 1, description: 'Only devices this many U tall.'},
+       family: {type: 'string', description: 'Only this product family.'},
+       mount: {type: 'string', enum: ['rack', 'rack-face'], description: 'rack for devices, rack-face for cable managers.'}},
+      [], READ,
+      async ({text, ru, family, mount}) => {
+        const all = queries.catalog({text, ru, family, mount});
+        if (!all.length) return say('No devices match. Try fewer words, or none.');
+        const line = e => `${e.ref} | ${[e.manufacturer, e.model].filter(Boolean).join(' ')} | ${e.ru}U${e.mount !== 'rack' ? ` ${e.mount}` : ''} | configs: ${e.configs.join(', ')}${e.default ? ` (default ${e.default})` : ''}`;
+        const shown = all.slice(0, 20).map(line);
+        if (all.length > 20) shown.push(`and ${all.length - 20} more: narrow the search.`);
+        return say(shown.join('\n'));
+      }),
+    tool('check_fit', 'Check where a device fits',
+      'Ask whether a device fits at a U on a face, and why not if it does not. Leave out ru to list every U it fits at, in the same numbers place takes.',
+      {ref: {type: 'string', description: 'The device, as find_devices names it.'}, face: FACE,
+       ru: {type: 'integer', minimum: 1, description: 'The U its bottom would sit at.'}},
+      ['ref', 'face'], READ,
+      async ({ref, face, ru}) => {
+        if (!chassisOf(ref)) return refuse(`There is no device called ${ref}. Use find_devices to find its ref.`);
+        const rack = ed.rack();
+        if (ru != null) {
+          const r = queries.fitsAt(rack, {ref, face, ru});
+          return say(r.ok ? 'Fits.' : r.reason);
+        }
+        const us = queries.freeUs(rack, {ref, face});
+        const note = rack.frame.numbering === 'top-down' ? ' (counted from the bottom, as place takes them)' : '';
+        return say(us.length ? `${ref} fits on the ${face} at ${ranges(us)}${note}.` : `${ref} fits nowhere on the ${face} of this rack.`);
+      }),
+    tool('list_free_ports', 'List free ports',
+      'List the ports of one device that have no cable, front and rear, with speed and media. cable.add takes a port as {item, path, view}.',
+      {item: {type: 'string', description: 'The device id, as describe_rack gives it (e.g. i3).'}},
+      ['item'], UNTRUSTED,
+      async ({item}) => {
+        const ports = await queries.freePorts(ed.rack(), item);
+        if (ports.error) return refuse(ports.error);
+        const lines = [];
+        for (const view of ['front', 'rear']) {
+          const here = ports.filter(p => p.view === view);
+          lines.push(`${view === 'front' ? 'Front' : 'Rear'}:`,
+                     ...(here.length ? here.map(p => `${p.path}: ${[p.label, p.speed, p.media].filter(Boolean).join(', ')}`) : ['no free ports']));
+        }
+        return say(lines.join('\n'));
+      }),
+  ];
+  return tools;
+}
