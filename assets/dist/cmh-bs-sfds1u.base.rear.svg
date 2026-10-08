@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="435.2mm" height="43.8mm" viewBox="0 0 435.2 43.8" data-device="cmh-bs-sfds1u" data-view="rear" data-shell="sheet" data-material="Steel" data-finger-material="ABS" data-color="Black" data-mounting-hardware="M6*15mm Screw x4 and M6 Nut x4" data-cable-capacity="48" data-cable-capacity-basis="Cat6 24AWG, theoretical value, no fill basis stated (FS CMH-BS-SFDS1U datasheet, specification table)" data-operating-temp="-10 to 60°C (14 to 140°F)" data-operating-humidity="95% Relative Humidity (max.), Non-condensing" data-environment="Indoor">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMH-BS-SFDS1U","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"4a9e5cff6ae58f7e746d08762bbe7b032af7bd5e78907aec4629d0eba55088f0","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMH-BS-SFDS1U" x="0" y="0" width="435.2" height="43.8" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="backbone-top" data-kind="base" x="0" y="0" width="435.2" height="8.3" rx="0.6" fill="#1b1c1e" data-groove="0.05" />
+    <rect id="backbone-bottom" data-kind="base" x="0" y="35.5" width="435.2" height="8.3" rx="0.6" fill="#1b1c1e" data-groove="0.05" />
+    <rect id="backbone-1" data-kind="base" x="0" y="8.3" width="40.1" height="27.2" rx="0.6" fill="#1b1c1e" data-groove="0.05" />
+    <rect id="backbone-2" data-kind="base" x="194.3" y="8.3" width="46.6" height="27.2" rx="0.6" fill="#1b1c1e" data-groove="0.05" />
+    <rect id="backbone-3" data-kind="base" x="395.1" y="8.3" width="40.1" height="27.2" rx="0.6" fill="#1b1c1e" data-groove="0.05" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <path id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="obround" data-pass-cover="open" d="M53.700 8.300 H180.700 A13.600 13.600 0 0 1 180.700 35.500 H53.700 A13.600 13.600 0 0 1 53.700 8.300 Z" fill="none" stroke="none" />
+    <path id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="obround" data-pass-cover="open" d="M254.500 8.300 H381.500 A13.600 13.600 0 0 1 381.500 35.500 H254.500 A13.600 13.600 0 0 1 254.500 8.300 Z" fill="none" stroke="none" />
+  </g>
+</svg>

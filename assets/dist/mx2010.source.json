@@ -67,12 +67,22 @@
    ],
    "wanted": "the AC, 240V-China and HVAC/HVDC PSM faces; the photographed unit is -48 V DC.",
    "what": "psu-variants"
+  },
+  {
+   "note": "The guide states a figure and it does not hold together, so none is carried. Table 60 gives the base system (no MPCs, ADCs or MICs) 9,439 W at 55 C and 2,142 W typical, identical to the MX2020 base row (MX2020 guide Table 65) for a different base system: this row lists two fan trays and four PSMs, the MX2020 row four and eight. 2,142 W is also exactly Table 71's typical INPUT power per PSM. The row's two fan trays disagree with Table 61, which lists four (two upper, two lower). And the DC thermal example (Table 84) assumes 34.5 kW of output for a loaded chassis, more than the 22.5 kW Table 82 gives the whole system, and its input line divides 16.5 by 0.91 to reach 37.9 kW; the MX2020 guide uses the same 34.5 kW. Table 80's sample counts 5.5 kW for the CB-REs, SFBs and fan trays alone.",
+   "reason": "sources-disagree",
+   "scope": [
+    "fact:peak-power-w",
+    "fact:typical-power-w"
+   ],
+   "wanted": "an MX2010 power-planning page or datasheet that states a chassis draw for this chassis rather than one shared with the MX2020.",
+   "what": "chassis-power-figure"
   }
  ],
  "groups": {
   "craft": {
    "index-origin": 0,
-   "role": "indicator",
+   "role": "management",
    "term": "Panel"
   },
   "fpcs": {
@@ -138,7 +148,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet-table - the guide power overview: the -48 V pool is 22.5 kW with 2.5 kW reserved for PSM redundancy (8+1 across nine PSMs)"
+   "note": "datasheet-table - the guide power overview: the -48 V pool is 22.5 kW with 2.5 kW reserved for PSM redundancy (8+1 across nine PSMs). No chassis draw is carried, because the guide contradicts itself - see the chassis-power-figure gap"
   },
   "rear": {
    "note": "photo - the rear studio photograph: fan tray 2/3 grille at the top, the PDM1 zone, nine PSM bays across the middle, the PDM0 zone, the air filter panel (with the fan tray 0/1 lamps) and the bottom grille. The photographed unit is -48 V DC"
@@ -156,7 +166,7 @@
    "title": "Juniper MX2010 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "0.2.21",
+ "version": "0.3.2",
  "views": {
   "bottom": {
    "panel": {
@@ -206,6 +216,7 @@
        15.0
       ],
       "default": "juniper/mx2000-craft@1",
+      "for": "chassis",
       "group": "craft",
       "id": "craft",
       "rel-pos": 0,

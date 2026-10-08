@@ -5,9 +5,9 @@
 // A rear-facing panel is seen mirrored, so its x is negated.
 
 import {configuredFace} from './face.js';
-import {resolveRoute, fill, capacityOver, routedLength, endPane} from './route.js';
-import {portPathOf} from './cable-rules.js';
-import {RU} from './rails.js';
+import {resolveRoute, fill, capacityOver, routedLength, endPane} from '../../vendor/rack/route.js';
+import {portPathOf} from '../../vendor/rack/cable-rules.js';
+import {RU} from '../../vendor/rack/rails.js';
 
 const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 

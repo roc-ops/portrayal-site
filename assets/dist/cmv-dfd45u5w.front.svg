@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="138.8mm" height="2108.0mm" viewBox="0 0 138.8 2108.0" data-device="cmv-dfd45u5w" data-view="front" data-shell="sheet" data-weight-kg="16.8" data-material="ABS" data-cover-material="PVC" data-color="Black" data-mounting-hardware="Brackets x4, M6*15mm Screw x8 and M6 Nut x8" data-cable-capacity="5490" data-cable-capacity-basis="Cat6 24AWG, 6.1 mm - a theoretical value for reference (FS Vertical Cable Managers with Finger Ducts datasheet), both channels together, which states no fill" data-rohs="RoHS Compliant" data-iso="ISO9001 Certificate">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMV-DFD45U5W","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/cmv-sfd45u5w-base@1":"1.0.0","fs/cmv-sfd45u5w-clip@1":"1.0.0","fs/cmv-sfd45u5w-cover@1":"1.0.0","fs/cmv-sfd45u5w-finger@1":"1.0.0","fs/cmv-sfd45u5w-wall@1":"1.0.0"},"source-sha256":"c4159b1c7bc45ffc7204e72ca3ec3d855e2271919481a0ddde0b4df05c858db4","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMV-DFD45U5W" x="0" y="0" width="138.8" height="2108" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--front-duct" data-class="guide" data-guide="duct" data-guide-run="y" data-guide-finger-pitch="44.44" data-guide-finger-gap="25.5" x="22.7" y="0" width="93.4" height="2108" fill="none" stroke="none" pointer-events="none" />
+  <g id="front-base" data-path="front-base" data-class="mechanical" data-ref="fs/cmv-sfd45u5w-base@1:1.0.0" data-depth="138.2" data-wall="#232527" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first">
+    <title>front-base</title>
+    <path id="front-base--floor" fill="#232527" fill-rule="evenodd" d="     M6.7,0 H132.1 V2108 H6.7 Z     M41.4,74 A28,28 0 0 1 97.4,74 V89.8 A28,28 0 0 1 41.4,89.8 Z     M41.4,352.8 A28,28 0 0 1 97.4,352.8 V434.6 A28,28 0 0 1 41.4,434.6 Z     M41.4,619.4 A28,28 0 0 1 97.4,619.4 V701.2 A28,28 0 0 1 41.4,701.2 Z     M41.4,964.2 A28,28 0 0 1 97.4,964.2 V980 A28,28 0 0 1 41.4,980 Z     M41.4,1128 A28,28 0 0 1 97.4,1128 V1143.8 A28,28 0 0 1 41.4,1143.8 Z     M41.4,1406.8 A28,28 0 0 1 97.4,1406.8 V1488.6 A28,28 0 0 1 41.4,1488.6 Z     M41.4,1673.4 A28,28 0 0 1 97.4,1673.4 V1755.2 A28,28 0 0 1 41.4,1755.2 Z     M41.4,2018.2 A28,28 0 0 1 97.4,2018.2 V2034 A28,28 0 0 1 41.4,2034 Z" data-path="front-base/floor" data-class="bezel" />
+    <rect id="front-base--seam" x="6.7" y="1053.7" width="125.4" height="0.6" fill="#101112" />
+  </g>
+  <g id="front-wall-left" data-path="front-wall-left" data-class="mechanical" data-ref="fs/cmv-sfd45u5w-wall@1:1.0.0" data-material="ABS" data-rel-pos="2" transform="translate(6.7,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first" data-z-lift="-138.2" data-in="front-base" data-under="front-finger-left-1 front-finger-left-2 front-finger-left-3 front-finger-left-4 front-finger-left-5 front-finger-left-6 front-finger-left-7 front-finger-left-8 front-finger-left-9 front-finger-left-10 front-finger-left-11 front-finger-left-12 front-finger-left-13 front-finger-left-14 front-finger-left-15 front-finger-left-16 front-finger-left-17 front-finger-left-18 front-finger-left-19 front-finger-left-20 front-finger-left-21 front-finger-left-22 front-finger-left-23 front-finger-left-24 front-finger-left-25 front-finger-left-26 front-finger-left-27 front-finger-left-28 front-finger-left-29 front-finger-left-30 front-finger-left-31 front-finger-left-32 front-finger-left-33 front-finger-left-34 front-finger-left-35 front-finger-left-36 front-finger-left-37 front-finger-left-38 front-finger-left-39 front-finger-left-40 front-finger-left-41 front-finger-left-42 front-finger-left-43 front-finger-left-44 front-finger-left-45 front-finger-left-46 front-clip-left-1 front-clip-left-2 front-clip-left-3 front-clip-left-4 front-clip-left-5 front-clip-left-6 front-clip-left-7 front-clip-left-8 front-clip-left-9 front-clip-left-10 front-clip-left-11 front-clip-left-12 front-cover-1 front-cover-2">
+    <title>front-wall-left</title>
+    <rect id="front-wall-left--root" x="0" y="0" width="16" height="2108" fill="#202224" data-path="front-wall-left/root" data-class="bezel" data-z-out="-121.7" data-z-color="#202224" />
+    <rect id="front-wall-left--seam" x="0" y="1053.7" width="16" height="0.6" fill="#101112" />
+  </g>
+  <g id="front-wall-right" data-path="front-wall-right" data-class="mechanical" data-ref="fs/cmv-sfd45u5w-wall@1:1.0.0" data-material="ABS" data-rel-pos="3" transform="translate(116.1,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first" data-z-lift="-138.2" data-in="front-base" data-under="front-finger-right-1 front-finger-right-2 front-finger-right-3 front-finger-right-4 front-finger-right-5 front-finger-right-6 front-finger-right-7 front-finger-right-8 front-finger-right-9 front-finger-right-10 front-finger-right-11 front-finger-right-12 front-finger-right-13 front-finger-right-14 front-finger-right-15 front-finger-right-16 front-finger-right-17 front-finger-right-18 front-finger-right-19 front-finger-right-20 front-finger-right-21 front-finger-right-22 front-finger-right-23 front-finger-right-24 front-finger-right-25 front-finger-right-26 front-finger-right-27 front-finger-right-28 front-finger-right-29 front-finger-right-30 front-finger-right-31 front-finger-right-32 front-finger-right-33 front-finger-right-34 front-finger-right-35 front-finger-right-36 front-finger-right-37 front-finger-right-38 front-finger-right-39 front-finger-right-40 front-finger-right-41 front-finger-right-42 front-finger-right-43 front-finger-right-44 front-finger-right-45 front-finger-right-46 front-clip-right-1 front-clip-right-2 front-clip-right-3 front-clip-right-4 front-clip-right-5 front-clip-right-6 front-clip-right-7 front-clip-right-8 front-clip-right-9 front-clip-right-10 front-clip-right-11 front-clip-right-12 front-cover-1 front-cover-2">
+    <title>front-wall-right</title>
+    <rect id="front-wall-right--root" x="0" y="0" width="16" height="2108" fill="#202224" data-path="front-wall-right/root" data-class="bezel" data-z-out="-121.7" data-z-color="#202224" />
+    <rect id="front-wall-right--seam" x="0" y="1053.7" width="16" height="0.6" fill="#101112" />
+  </g>
+  <g id="front-finger-left-1" data-path="front-finger-left-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="1" transform="translate(6.7,7.73)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-1</title>
+    <rect id="front-finger-left-1--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-1/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-1--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-1/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-2" data-path="front-finger-left-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="2" transform="translate(6.7,52.17)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-2</title>
+    <rect id="front-finger-left-2--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-2/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-2--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-2/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-3" data-path="front-finger-left-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="3" transform="translate(6.7,96.61)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-1">
+    <title>front-finger-left-3</title>
+    <rect id="front-finger-left-3--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-3/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-3--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-3/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-4" data-path="front-finger-left-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="4" transform="translate(6.7,141.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-4</title>
+    <rect id="front-finger-left-4--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-4/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-4--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-4/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-5" data-path="front-finger-left-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="5" transform="translate(6.7,185.49)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-2">
+    <title>front-finger-left-5</title>
+    <rect id="front-finger-left-5--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-5/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-5--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-5/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-6" data-path="front-finger-left-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="6" transform="translate(6.7,229.93)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-6</title>
+    <rect id="front-finger-left-6--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-6/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-6--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-6/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-7" data-path="front-finger-left-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="7" transform="translate(6.7,274.37)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-7</title>
+    <rect id="front-finger-left-7--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-7/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-7--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-7/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-8" data-path="front-finger-left-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="8" transform="translate(6.7,318.81)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-8</title>
+    <rect id="front-finger-left-8--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-8/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-8--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-8/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-9" data-path="front-finger-left-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="9" transform="translate(6.7,363.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-9</title>
+    <rect id="front-finger-left-9--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-9/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-9--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-9/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-10" data-path="front-finger-left-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="10" transform="translate(6.7,407.69)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-10</title>
+    <rect id="front-finger-left-10--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-10/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-10--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-10/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-11" data-path="front-finger-left-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="11" transform="translate(6.7,452.13)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-3">
+    <title>front-finger-left-11</title>
+    <rect id="front-finger-left-11--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-11/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-11--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-11/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-12" data-path="front-finger-left-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="12" transform="translate(6.7,496.57)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-12</title>
+    <rect id="front-finger-left-12--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-12/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-12--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-12/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-13" data-path="front-finger-left-13" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="13" transform="translate(6.7,541.01)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-4">
+    <title>front-finger-left-13</title>
+    <rect id="front-finger-left-13--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-13/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-13--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-13/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-14" data-path="front-finger-left-14" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="14" transform="translate(6.7,585.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-14</title>
+    <rect id="front-finger-left-14--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-14/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-14--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-14/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-15" data-path="front-finger-left-15" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="15" transform="translate(6.7,629.89)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-15</title>
+    <rect id="front-finger-left-15--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-15/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-15--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-15/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-16" data-path="front-finger-left-16" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="16" transform="translate(6.7,674.33)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-16</title>
+    <rect id="front-finger-left-16--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-16/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-16--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-16/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-17" data-path="front-finger-left-17" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="17" transform="translate(6.7,718.77)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-17</title>
+    <rect id="front-finger-left-17--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-17/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-17--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-17/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-18" data-path="front-finger-left-18" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="18" transform="translate(6.7,763.21)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-18</title>
+    <rect id="front-finger-left-18--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-18/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-18--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-18/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-19" data-path="front-finger-left-19" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="19" transform="translate(6.7,807.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-5">
+    <title>front-finger-left-19</title>
+    <rect id="front-finger-left-19--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-19/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-19--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-19/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-20" data-path="front-finger-left-20" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="20" transform="translate(6.7,852.09)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-20</title>
+    <rect id="front-finger-left-20--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-20/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-20--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-20/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-21" data-path="front-finger-left-21" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="21" transform="translate(6.7,896.53)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-left-6">
+    <title>front-finger-left-21</title>
+    <rect id="front-finger-left-21--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-21/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-21--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-21/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-22" data-path="front-finger-left-22" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="22" transform="translate(6.7,940.97)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-22</title>
+    <rect id="front-finger-left-22--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-22/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-22--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-22/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-23" data-path="front-finger-left-23" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="23" transform="translate(6.7,985.41)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-left-23</title>
+    <rect id="front-finger-left-23--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-23/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-23--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-23/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-24" data-path="front-finger-left-24" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="24" transform="translate(6.7,1061.73)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-24</title>
+    <rect id="front-finger-left-24--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-24/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-24--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-24/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-25" data-path="front-finger-left-25" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="25" transform="translate(6.7,1106.17)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-25</title>
+    <rect id="front-finger-left-25--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-25/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-25--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-25/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-26" data-path="front-finger-left-26" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="26" transform="translate(6.7,1150.61)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-7">
+    <title>front-finger-left-26</title>
+    <rect id="front-finger-left-26--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-26/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-26--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-26/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-27" data-path="front-finger-left-27" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="27" transform="translate(6.7,1195.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-27</title>
+    <rect id="front-finger-left-27--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-27/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-27--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-27/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-28" data-path="front-finger-left-28" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="28" transform="translate(6.7,1239.49)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-8">
+    <title>front-finger-left-28</title>
+    <rect id="front-finger-left-28--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-28/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-28--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-28/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-29" data-path="front-finger-left-29" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="29" transform="translate(6.7,1283.93)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-29</title>
+    <rect id="front-finger-left-29--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-29/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-29--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-29/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-30" data-path="front-finger-left-30" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="30" transform="translate(6.7,1328.37)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-30</title>
+    <rect id="front-finger-left-30--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-30/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-30--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-30/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-31" data-path="front-finger-left-31" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="31" transform="translate(6.7,1372.81)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-31</title>
+    <rect id="front-finger-left-31--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-31/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-31--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-31/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-32" data-path="front-finger-left-32" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="32" transform="translate(6.7,1417.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-32</title>
+    <rect id="front-finger-left-32--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-32/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-32--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-32/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-33" data-path="front-finger-left-33" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="33" transform="translate(6.7,1461.69)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-33</title>
+    <rect id="front-finger-left-33--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-33/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-33--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-33/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-34" data-path="front-finger-left-34" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="34" transform="translate(6.7,1506.13)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-9">
+    <title>front-finger-left-34</title>
+    <rect id="front-finger-left-34--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-34/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-34--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-34/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-35" data-path="front-finger-left-35" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="35" transform="translate(6.7,1550.57)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-35</title>
+    <rect id="front-finger-left-35--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-35/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-35--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-35/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-36" data-path="front-finger-left-36" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="36" transform="translate(6.7,1595.01)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-10">
+    <title>front-finger-left-36</title>
+    <rect id="front-finger-left-36--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-36/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-36--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-36/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-37" data-path="front-finger-left-37" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="37" transform="translate(6.7,1639.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-37</title>
+    <rect id="front-finger-left-37--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-37/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-37--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-37/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-38" data-path="front-finger-left-38" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="38" transform="translate(6.7,1683.89)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-38</title>
+    <rect id="front-finger-left-38--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-38/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-38--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-38/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-39" data-path="front-finger-left-39" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="39" transform="translate(6.7,1728.33)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-39</title>
+    <rect id="front-finger-left-39--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-39/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-39--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-39/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-40" data-path="front-finger-left-40" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="40" transform="translate(6.7,1772.77)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-40</title>
+    <rect id="front-finger-left-40--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-40/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-40--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-40/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-41" data-path="front-finger-left-41" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="41" transform="translate(6.7,1817.21)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-41</title>
+    <rect id="front-finger-left-41--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-41/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-41--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-41/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-42" data-path="front-finger-left-42" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="42" transform="translate(6.7,1861.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-11">
+    <title>front-finger-left-42</title>
+    <rect id="front-finger-left-42--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-42/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-42--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-42/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-43" data-path="front-finger-left-43" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="43" transform="translate(6.7,1906.09)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-43</title>
+    <rect id="front-finger-left-43--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-43/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-43--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-43/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-44" data-path="front-finger-left-44" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="44" transform="translate(6.7,1950.53)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-left-12">
+    <title>front-finger-left-44</title>
+    <rect id="front-finger-left-44--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-44/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-44--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-44/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-45" data-path="front-finger-left-45" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="45" transform="translate(6.7,1994.97)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-45</title>
+    <rect id="front-finger-left-45--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-45/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-45--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-45/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-46" data-path="front-finger-left-46" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="46" transform="translate(6.7,2039.41)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-left-46</title>
+    <rect id="front-finger-left-46--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-left-46/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-left-46--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-left-46/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-1" data-path="front-finger-right-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="47" transform="translate(116.1,7.73)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-1</title>
+    <rect id="front-finger-right-1--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-1/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-1--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-1/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-2" data-path="front-finger-right-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="48" transform="translate(116.1,52.17)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-2</title>
+    <rect id="front-finger-right-2--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-2/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-2--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-2/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-3" data-path="front-finger-right-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="49" transform="translate(116.1,96.61)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-1">
+    <title>front-finger-right-3</title>
+    <rect id="front-finger-right-3--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-3/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-3--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-3/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-4" data-path="front-finger-right-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="50" transform="translate(116.1,141.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-4</title>
+    <rect id="front-finger-right-4--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-4/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-4--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-4/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-5" data-path="front-finger-right-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="51" transform="translate(116.1,185.49)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-2">
+    <title>front-finger-right-5</title>
+    <rect id="front-finger-right-5--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-5/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-5--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-5/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-6" data-path="front-finger-right-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="52" transform="translate(116.1,229.93)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-6</title>
+    <rect id="front-finger-right-6--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-6/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-6--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-6/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-7" data-path="front-finger-right-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="53" transform="translate(116.1,274.37)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-7</title>
+    <rect id="front-finger-right-7--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-7/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-7--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-7/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-8" data-path="front-finger-right-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="54" transform="translate(116.1,318.81)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-8</title>
+    <rect id="front-finger-right-8--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-8/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-8--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-8/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-9" data-path="front-finger-right-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="55" transform="translate(116.1,363.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-9</title>
+    <rect id="front-finger-right-9--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-9/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-9--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-9/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-10" data-path="front-finger-right-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="56" transform="translate(116.1,407.69)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-10</title>
+    <rect id="front-finger-right-10--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-10/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-10--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-10/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-11" data-path="front-finger-right-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="57" transform="translate(116.1,452.13)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-3">
+    <title>front-finger-right-11</title>
+    <rect id="front-finger-right-11--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-11/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-11--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-11/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-12" data-path="front-finger-right-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="58" transform="translate(116.1,496.57)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-12</title>
+    <rect id="front-finger-right-12--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-12/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-12--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-12/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-13" data-path="front-finger-right-13" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="59" transform="translate(116.1,541.01)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-4">
+    <title>front-finger-right-13</title>
+    <rect id="front-finger-right-13--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-13/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-13--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-13/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-14" data-path="front-finger-right-14" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="60" transform="translate(116.1,585.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-14</title>
+    <rect id="front-finger-right-14--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-14/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-14--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-14/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-15" data-path="front-finger-right-15" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="61" transform="translate(116.1,629.89)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-15</title>
+    <rect id="front-finger-right-15--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-15/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-15--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-15/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-16" data-path="front-finger-right-16" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="62" transform="translate(116.1,674.33)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-16</title>
+    <rect id="front-finger-right-16--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-16/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-16--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-16/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-17" data-path="front-finger-right-17" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="63" transform="translate(116.1,718.77)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-17</title>
+    <rect id="front-finger-right-17--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-17/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-17--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-17/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-18" data-path="front-finger-right-18" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="64" transform="translate(116.1,763.21)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-18</title>
+    <rect id="front-finger-right-18--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-18/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-18--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-18/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-19" data-path="front-finger-right-19" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="65" transform="translate(116.1,807.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-5">
+    <title>front-finger-right-19</title>
+    <rect id="front-finger-right-19--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-19/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-19--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-19/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-20" data-path="front-finger-right-20" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="66" transform="translate(116.1,852.09)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-20</title>
+    <rect id="front-finger-right-20--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-20/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-20--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-20/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-21" data-path="front-finger-right-21" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="67" transform="translate(116.1,896.53)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1 front-clip-right-6">
+    <title>front-finger-right-21</title>
+    <rect id="front-finger-right-21--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-21/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-21--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-21/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-22" data-path="front-finger-right-22" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="68" transform="translate(116.1,940.97)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-22</title>
+    <rect id="front-finger-right-22--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-22/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-22--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-22/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-23" data-path="front-finger-right-23" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="69" transform="translate(116.1,985.41)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-finger-right-23</title>
+    <rect id="front-finger-right-23--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-23/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-23--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-23/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-24" data-path="front-finger-right-24" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="70" transform="translate(116.1,1061.73)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-24</title>
+    <rect id="front-finger-right-24--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-24/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-24--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-24/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-25" data-path="front-finger-right-25" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="71" transform="translate(116.1,1106.17)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-25</title>
+    <rect id="front-finger-right-25--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-25/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-25--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-25/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-26" data-path="front-finger-right-26" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="72" transform="translate(116.1,1150.61)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-7">
+    <title>front-finger-right-26</title>
+    <rect id="front-finger-right-26--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-26/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-26--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-26/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-27" data-path="front-finger-right-27" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="73" transform="translate(116.1,1195.05)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-27</title>
+    <rect id="front-finger-right-27--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-27/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-27--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-27/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-28" data-path="front-finger-right-28" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="74" transform="translate(116.1,1239.49)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-8">
+    <title>front-finger-right-28</title>
+    <rect id="front-finger-right-28--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-28/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-28--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-28/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-29" data-path="front-finger-right-29" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="75" transform="translate(116.1,1283.93)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-29</title>
+    <rect id="front-finger-right-29--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-29/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-29--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-29/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-30" data-path="front-finger-right-30" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="76" transform="translate(116.1,1328.37)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-30</title>
+    <rect id="front-finger-right-30--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-30/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-30--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-30/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-31" data-path="front-finger-right-31" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="77" transform="translate(116.1,1372.81)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-31</title>
+    <rect id="front-finger-right-31--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-31/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-31--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-31/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-32" data-path="front-finger-right-32" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="78" transform="translate(116.1,1417.25)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-32</title>
+    <rect id="front-finger-right-32--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-32/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-32--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-32/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-33" data-path="front-finger-right-33" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="79" transform="translate(116.1,1461.69)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-33</title>
+    <rect id="front-finger-right-33--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-33/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-33--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-33/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-34" data-path="front-finger-right-34" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="80" transform="translate(116.1,1506.13)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-9">
+    <title>front-finger-right-34</title>
+    <rect id="front-finger-right-34--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-34/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-34--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-34/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-35" data-path="front-finger-right-35" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="81" transform="translate(116.1,1550.57)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-35</title>
+    <rect id="front-finger-right-35--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-35/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-35--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-35/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-36" data-path="front-finger-right-36" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="82" transform="translate(116.1,1595.01)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-10">
+    <title>front-finger-right-36</title>
+    <rect id="front-finger-right-36--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-36/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-36--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-36/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-37" data-path="front-finger-right-37" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="83" transform="translate(116.1,1639.45)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-37</title>
+    <rect id="front-finger-right-37--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-37/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-37--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-37/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-38" data-path="front-finger-right-38" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="84" transform="translate(116.1,1683.89)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-38</title>
+    <rect id="front-finger-right-38--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-38/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-38--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-38/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-39" data-path="front-finger-right-39" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="85" transform="translate(116.1,1728.33)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-39</title>
+    <rect id="front-finger-right-39--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-39/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-39--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-39/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-40" data-path="front-finger-right-40" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="86" transform="translate(116.1,1772.77)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-40</title>
+    <rect id="front-finger-right-40--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-40/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-40--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-40/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-41" data-path="front-finger-right-41" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="87" transform="translate(116.1,1817.21)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-41</title>
+    <rect id="front-finger-right-41--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-41/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-41--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-41/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-42" data-path="front-finger-right-42" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="88" transform="translate(116.1,1861.65)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-11">
+    <title>front-finger-right-42</title>
+    <rect id="front-finger-right-42--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-42/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-42--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-42/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-43" data-path="front-finger-right-43" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="89" transform="translate(116.1,1906.09)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-43</title>
+    <rect id="front-finger-right-43--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-43/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-43--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-43/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-44" data-path="front-finger-right-44" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="90" transform="translate(116.1,1950.53)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2 front-clip-right-12">
+    <title>front-finger-right-44</title>
+    <rect id="front-finger-right-44--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-44/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-44--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-44/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-45" data-path="front-finger-right-45" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="91" transform="translate(116.1,1994.97)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-45</title>
+    <rect id="front-finger-right-45--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-45/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-45--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-45/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-46" data-path="front-finger-right-46" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-finger@1:1.0.0" data-material="ABS" data-rel-pos="92" transform="translate(116.1,2039.41)" data-group="fingers" data-group-role="furniture" data-description="the fingers, 23 a section; the front channel left wall top to bottom and then its right, then the rear channel" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-finger-right-46</title>
+    <rect id="front-finger-right-46--arm" x="0" y="21.1" width="16" height="18.9" fill="#26282a" data-path="front-finger-right-46/arm" data-class="bezel" data-z-out="-22.4" data-z-color="#26282a" />
+    <rect id="front-finger-right-46--tip" x="0" y="0" width="16" height="34.8" rx="2" fill="#2a2c2e" data-path="front-finger-right-46/tip" data-class="bezel" data-z-out="-13.1" data-z-lift="115.8" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-clip-left-1" data-path="front-clip-left-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="1" transform="translate(6.7,96.61)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-1</title>
+    <rect id="front-clip-left-1--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-1/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-2" data-path="front-clip-left-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="2" transform="translate(6.7,185.49)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-2</title>
+    <rect id="front-clip-left-2--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-2/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-3" data-path="front-clip-left-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="3" transform="translate(6.7,452.13)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-3</title>
+    <rect id="front-clip-left-3--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-3/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-4" data-path="front-clip-left-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="4" transform="translate(6.7,541.01)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-4</title>
+    <rect id="front-clip-left-4--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-4/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-5" data-path="front-clip-left-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="5" transform="translate(6.7,807.65)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-5</title>
+    <rect id="front-clip-left-5--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-5/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-6" data-path="front-clip-left-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="6" transform="translate(6.7,896.53)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-left-6</title>
+    <rect id="front-clip-left-6--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-6/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-7" data-path="front-clip-left-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="7" transform="translate(6.7,1150.61)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-7</title>
+    <rect id="front-clip-left-7--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-7/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-8" data-path="front-clip-left-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="8" transform="translate(6.7,1239.49)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-8</title>
+    <rect id="front-clip-left-8--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-8/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-9" data-path="front-clip-left-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="9" transform="translate(6.7,1506.13)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-9</title>
+    <rect id="front-clip-left-9--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-9/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-10" data-path="front-clip-left-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="10" transform="translate(6.7,1595.01)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-10</title>
+    <rect id="front-clip-left-10--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-10/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-11" data-path="front-clip-left-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="11" transform="translate(6.7,1861.65)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-11</title>
+    <rect id="front-clip-left-11--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-11/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-left-12" data-path="front-clip-left-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="12" transform="translate(6.7,1950.53)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-left-12</title>
+    <rect id="front-clip-left-12--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-left-12/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-1" data-path="front-clip-right-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="13" transform="translate(116.1,96.61)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-1</title>
+    <rect id="front-clip-right-1--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-1/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-2" data-path="front-clip-right-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="14" transform="translate(116.1,185.49)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-2</title>
+    <rect id="front-clip-right-2--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-2/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-3" data-path="front-clip-right-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="15" transform="translate(116.1,452.13)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-3</title>
+    <rect id="front-clip-right-3--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-3/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-4" data-path="front-clip-right-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="16" transform="translate(116.1,541.01)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-4</title>
+    <rect id="front-clip-right-4--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-4/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-5" data-path="front-clip-right-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="17" transform="translate(116.1,807.65)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-5</title>
+    <rect id="front-clip-right-5--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-5/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-6" data-path="front-clip-right-6" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="18" transform="translate(116.1,896.53)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-1">
+    <title>front-clip-right-6</title>
+    <rect id="front-clip-right-6--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-6/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-7" data-path="front-clip-right-7" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="19" transform="translate(116.1,1150.61)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-7</title>
+    <rect id="front-clip-right-7--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-7/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-8" data-path="front-clip-right-8" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="20" transform="translate(116.1,1239.49)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-8</title>
+    <rect id="front-clip-right-8--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-8/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-9" data-path="front-clip-right-9" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="21" transform="translate(116.1,1506.13)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-9</title>
+    <rect id="front-clip-right-9--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-9/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-10" data-path="front-clip-right-10" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="22" transform="translate(116.1,1595.01)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-10</title>
+    <rect id="front-clip-right-10--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-10/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-11" data-path="front-clip-right-11" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="23" transform="translate(116.1,1861.65)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-11</title>
+    <rect id="front-clip-right-11--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-11/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-clip-right-12" data-path="front-clip-right-12" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-clip@1:1.0.0" data-material="ABS" data-rel-pos="24" transform="translate(116.1,1950.53)" data-group="clips" data-group-role="furniture" data-description="the cover clips on the finger tips, six a wall in each section; the front channel first" data-z-lift="-138.2" data-in="front-base" data-under="front-cover-2">
+    <title>front-clip-right-12</title>
+    <rect id="front-clip-right-12--clip" x="0" y="0" width="16" height="40.3" rx="1.5" fill="#2e3033" data-path="front-clip-right-12/clip" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2e3033" />
+  </g>
+  <g id="front-cover-1" data-path="front-cover-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-cover@1:1.0.0" data-material="PVC" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="cover" data-group-role="furniture" data-description="the hinged covers, one a section on each face; the front upper first, then the rear" data-z-lift="-138.2" data-in="front-base">
+    <title>front-cover-1</title>
+    <rect id="front-cover-1--rail-left" x="6.7" y="0" width="16" height="1054" fill="#2a2c2e" data-path="front-cover-1/rail-left" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2a2c2e" />
+    <rect id="front-cover-1--rail-right" x="116.1" y="0" width="16" height="1054" fill="#2a2c2e" data-path="front-cover-1/rail-right" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2a2c2e" />
+    <rect id="front-cover-1--plate" x="0" y="0" width="138.8" height="1054" fill="#2f3134" data-path="front-cover-1/plate" data-class="bezel" data-z-out="0" data-z-lift="136.7" data-z-color="#2f3134" />
+    <rect id="front-cover-1--edge-top" x="0" y="0" width="138.8" height="0.6" fill="#1a1b1d" />
+    <rect id="front-cover-1--edge-bottom" x="0" y="1053.4" width="138.8" height="0.6" fill="#1a1b1d" />
+  </g>
+  <g id="front-cover-2" data-path="front-cover-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmv-sfd45u5w-cover@1:1.0.0" data-material="PVC" data-rel-pos="2" transform="translate(0.0,1054)" data-group="cover" data-group-role="furniture" data-description="the hinged covers, one a section on each face; the front upper first, then the rear" data-z-lift="-138.2" data-in="front-base">
+    <title>front-cover-2</title>
+    <rect id="front-cover-2--rail-left" x="6.7" y="0" width="16" height="1054" fill="#2a2c2e" data-path="front-cover-2/rail-left" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2a2c2e" />
+    <rect id="front-cover-2--rail-right" x="116.1" y="0" width="16" height="1054" fill="#2a2c2e" data-path="front-cover-2/rail-right" data-class="bezel" data-z-out="-1.5" data-z-lift="125.1" data-z-color="#2a2c2e" />
+    <rect id="front-cover-2--plate" x="0" y="0" width="138.8" height="1054" fill="#2f3134" data-path="front-cover-2/plate" data-class="bezel" data-z-out="0" data-z-lift="136.7" data-z-color="#2f3134" />
+    <rect id="front-cover-2--edge-top" x="0" y="0" width="138.8" height="0.6" fill="#1a1b1d" />
+    <rect id="front-cover-2--edge-bottom" x="0" y="1053.4" width="138.8" height="0.6" fill="#1a1b1d" />
+  </g>
+</svg>

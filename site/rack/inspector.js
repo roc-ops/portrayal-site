@@ -3,7 +3,7 @@
 // placement rules and says no with the reason; the control then snaps back.
 
 import {el} from './dom.js';
-import {positionOf} from './model.js';
+import {positionOf} from '../../vendor/rack/model.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});

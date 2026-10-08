@@ -114,6 +114,14 @@ fi
 for f in "$KIT"/*.js; do
   cp "$f" "$HERE/vendor/$(basename "$f")"
 done
+# The Rack Builder's pure core, kit/rack/ since @portrayal/kit 0.3.0. Cleared
+# first, for the reason assets/dist is: a module upstream drops should go here
+# too, not linger where a stale import could still find it.
+rm -rf "$HERE/vendor/rack"
+mkdir -p "$HERE/vendor/rack"
+for f in "$KIT"/rack/*.js; do
+  cp "$f" "$HERE/vendor/rack/$(basename "$f")"
+done
 
 # Every device, because the Explorer offers the whole library and a picker with
 # holes in it looks broken.
@@ -157,6 +165,9 @@ cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 # moved to the example patching plan (site/showcase/patching.json), but the
 # dist keeps it: still a bare cp, so a refresh that loses it says so.
 cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
+# rack.json is the Rack Builder's catalogue (Portrayal's rack_index.py, kit
+# 0.3.0): a bare cp, because the builder cannot place anything without it.
+cp "$SRC"/dist/rack.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
 # vendors.json carries the alias and lineage registry - who owns a brand now,
 # which is what stops an ArcOS box being filed under the metal it runs on.
@@ -479,8 +490,11 @@ PYEOF
 # right and every tool page blank, so assert on the files - and on the export
 # each page actually imports, because an empty file is also a file.
 missing=0
-for f in "$KIT"/*.js; do
-  m=$(basename "$f")
+for f in "$KIT"/*.js "$KIT"/rack/*.js; do
+  case "$f" in
+    "$KIT"/rack/*) m="rack/$(basename "$f")" ;;
+    *) m=$(basename "$f") ;;
+  esac
   v="$HERE/vendor/$m"
   if [ ! -s "$v" ] || ! grep -q '^export' "$v"; then
     echo "  MISSING or empty: vendor/$m" >&2
@@ -504,8 +518,5 @@ du -sh "$HERE/assets/dist" "$HERE/vendor"
 # something this site depends on goes away the failure is SILENT - a tab renders
 # slightly wrong, or a download comes out empty. This is the only thing that
 # turns that into a noise. Non-zero exit fails the refresh.
-
-# The rack builder's catalog sizes, distilled from what was just vendored.
-python3 ./chassis-index.py
 
 python3 "$HERE/check-contract.py"

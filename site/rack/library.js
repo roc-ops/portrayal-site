@@ -7,8 +7,8 @@
 // NO INDEXEDDB (a private window, blocked storage): the library is off, every
 // method is a no-op, and the page says so - Save and Open still work.
 
-import {parseDoc, serialize} from './model.js';
-import {fileStem} from './export-data.js';
+import {parseDoc, serialize} from '../../vendor/rack/model.js';
+import {fileStem} from '../../vendor/rack/export-data.js';
 
 const DB = 'portrayal-racks', STORE = 'docs';
 const done = req => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });

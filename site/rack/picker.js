@@ -11,10 +11,10 @@
 // drop focus mid-word.
 
 import {el} from './dom.js';
-import {fits} from './fit.js';
-import {placement, hostAt} from './managers.js';
-import {uLabel} from './model.js';
-import {mountPick} from './export-data.js';
+import {fits} from '../../vendor/rack/fit.js';
+import {placement, hostAt} from '../../vendor/rack/managers.js';
+import {uLabel} from '../../vendor/rack/model.js';
+import {mountPick} from '../../vendor/rack/export-data.js';
 
 const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="430.0mm" height="88.8mm" viewBox="0 0 430.0 88.8" data-device="uscmh-5dr1u" data-view="bottom" data-shell="sheet" data-weight-kg="0.41" data-material="SPCC" data-ring-material="PC, UL 94V-2" data-mounting-hardware="M6*15mm Screw x4 and M6 Nut x4" data-cable-capacity="55" data-cable-capacity-basis="Cat6 24AWG cables, theoretical - FS 0U/1U Horizontal Cable Manager datasheet, specification table, third column" data-environment="Indoor">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com USCMH-5DR1U","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/uscmh-5dr1u-flange@1":"1.0.0"},"source-sha256":"16e129862d27e6b5381d73a4a81fe2cea61d99ca29f7bf61389df6ab4848486f","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="USCMH-5DR1U" x="0" y="0" width="430" height="88.8" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-edge" data-kind="panel" x="0" y="6.8" width="430" height="1.2" rx="0" fill="#1b1d20" />
+    <rect id="guide-1-arm" data-kind="ring" x="6" y="8" width="10" height="80" rx="0" fill="#111315" />
+    <rect id="guide-2-arm" data-kind="ring" x="108" y="8" width="10" height="80" rx="0" fill="#111315" />
+    <rect id="guide-3-arm" data-kind="ring" x="210" y="8" width="10" height="80" rx="0" fill="#111315" />
+    <rect id="guide-4-arm" data-kind="ring" x="312" y="8" width="10" height="80" rx="0" fill="#111315" />
+    <rect id="guide-5-arm" data-kind="ring" x="414" y="8" width="10" height="80" rx="0" fill="#111315" />
+    <rect id="cover-edge" data-kind="cover" x="0" y="88" width="430" height="0.8" rx="0" fill="#222427" />
+  </g>
+  <g id="flange-bottom" data-path="flange-bottom" data-class="mechanical" data-ref="fs/uscmh-5dr1u-flange@1:1.0.0" data-depth="1.2" data-wall="#1b1d20" data-rel-pos="3" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel and its folded edges">
+    <title>flange-bottom</title>
+    <rect id="flange-bottom--flange" x="0" y="0" width="430" height="8" fill="#1b1d20" data-path="flange-bottom/flange" data-class="bezel" />
+  </g>
+</svg>

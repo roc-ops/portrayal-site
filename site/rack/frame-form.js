@@ -4,7 +4,7 @@
 // from the bottom (fit.js's shrinkRack), rather than refusing the edit.
 
 import {el} from './dom.js';
-import {THREADS} from './model.js';
+import {THREADS} from '../../vendor/rack/model.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});

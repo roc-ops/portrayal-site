@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="413.5mm" height="29.5mm" viewBox="0 0 413.5 29.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="mpc4e-3d-32xge-sfpp" data-path="mpc4e-3d-32xge-sfpp" data-class="line-card" data-behaviour="fills" data-ref="juniper/mpc4e-3d-32xge-sfpp@2:2.0.0" data-model="MPC4E-3D-32XGE-SFPP" data-power-draw-max-w="610" data-states="ok fail absent" transform="translate(0,0)">
+    <title>mpc4e-3d-32xge-sfpp</title>
+    <rect id="mpc4e-3d-32xge-sfpp--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="mpc4e-3d-32xge-sfpp--lever-left">
+      <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--lever-right">
+      <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--lamps">
+      <circle id="mpc4e-3d-32xge-sfpp--led-ok-fail" cx="32.3" cy="21.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--silkscreen">
+      <g id="mpc4e-3d-32xge-sfpp--t87-silkscreen">
+        <text x="32.3" y="12.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(-90 32.3 12.7)">OK/FAIL</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t88-silkscreen">
+        <text x="11.4" y="25.5" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="start">MPC4E-3D-32XGE-SFPP</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t67-silkscreen">
+        <text x="42.19" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t68-silkscreen">
+        <text x="56.49" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t69-silkscreen">
+        <text x="70.78" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t70-silkscreen">
+        <text x="85.08" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t71-silkscreen">
+        <text x="33.85" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">0/</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t72-silkscreen">
+        <text x="106.38" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t73-silkscreen">
+        <text x="120.68" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t74-silkscreen">
+        <text x="134.96" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t75-silkscreen">
+        <text x="149.26" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t76-silkscreen">
+        <text x="98.03" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">1/</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t77-silkscreen">
+        <text x="170.57" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t78-silkscreen">
+        <text x="184.87" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t79-silkscreen">
+        <text x="199.15" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t80-silkscreen">
+        <text x="213.45" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t81-silkscreen">
+        <text x="162.22" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">2/</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t82-silkscreen">
+        <text x="234.75" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t83-silkscreen">
+        <text x="249.05" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t84-silkscreen">
+        <text x="263.33" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t85-silkscreen">
+        <text x="277.64" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="mpc4e-3d-32xge-sfpp--t86-silkscreen">
+        <text x="226.41" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">3/</text>
+      </g>
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-0" data-path="mpc4e-3d-32xge-sfpp/port-0-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(35.05,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-0</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-0/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-1" data-path="mpc4e-3d-32xge-sfpp/port-0-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(35.05,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-1</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-1/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-2" data-path="mpc4e-3d-32xge-sfpp/port-0-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(49.34,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-2</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-2/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-3" data-path="mpc4e-3d-32xge-sfpp/port-0-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(49.34,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-3</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-3/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-4" data-path="mpc4e-3d-32xge-sfpp/port-0-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(63.63,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-4</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-4/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-5" data-path="mpc4e-3d-32xge-sfpp/port-0-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(63.63,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-5</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-5/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-6" data-path="mpc4e-3d-32xge-sfpp/port-0-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(77.93,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-6</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-6/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-0-7" data-path="mpc4e-3d-32xge-sfpp/port-0-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(77.93,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-0-7</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-0-7/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-0-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-0" data-path="mpc4e-3d-32xge-sfpp/port-1-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(99.24,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-0</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-0/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-1" data-path="mpc4e-3d-32xge-sfpp/port-1-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(99.24,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-1</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-1/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-2" data-path="mpc4e-3d-32xge-sfpp/port-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(113.53,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-2</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-2/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-3" data-path="mpc4e-3d-32xge-sfpp/port-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(113.53,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-3</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-3/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-4" data-path="mpc4e-3d-32xge-sfpp/port-1-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(127.82,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-4</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-4/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-5" data-path="mpc4e-3d-32xge-sfpp/port-1-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(127.82,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-5</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-5/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-6" data-path="mpc4e-3d-32xge-sfpp/port-1-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(142.11,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-6</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-6/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-1-7" data-path="mpc4e-3d-32xge-sfpp/port-1-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(142.11,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-1-7</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-1-7/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-1-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-0" data-path="mpc4e-3d-32xge-sfpp/port-2-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(163.42,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-0</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-0/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-1" data-path="mpc4e-3d-32xge-sfpp/port-2-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(163.42,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-1</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-1/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-2" data-path="mpc4e-3d-32xge-sfpp/port-2-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(177.72,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-2</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-2/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-3" data-path="mpc4e-3d-32xge-sfpp/port-2-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(177.72,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-3</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-3/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-4" data-path="mpc4e-3d-32xge-sfpp/port-2-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(192.01,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-4</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-4/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-5" data-path="mpc4e-3d-32xge-sfpp/port-2-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(192.01,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-5</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-5/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-6" data-path="mpc4e-3d-32xge-sfpp/port-2-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(206.3,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-6</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-6/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-2-7" data-path="mpc4e-3d-32xge-sfpp/port-2-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(206.3,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-2-7</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-2-7/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-2-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-0" data-path="mpc4e-3d-32xge-sfpp/port-3-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(227.61,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-0</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-0/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-1" data-path="mpc4e-3d-32xge-sfpp/port-3-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(227.61,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-1</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-1/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-2" data-path="mpc4e-3d-32xge-sfpp/port-3-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(241.9,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-2</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-2/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-3" data-path="mpc4e-3d-32xge-sfpp/port-3-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(241.9,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-3</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-3/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-4" data-path="mpc4e-3d-32xge-sfpp/port-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(256.19,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-4</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-4/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-5" data-path="mpc4e-3d-32xge-sfpp/port-3-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(256.19,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-5</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-5/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-6" data-path="mpc4e-3d-32xge-sfpp/port-3-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(270.49,3.6)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-6</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-6/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mpc4e-3d-32xge-sfpp--port-3-7" data-path="mpc4e-3d-32xge-sfpp/port-3-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(270.49,15.2) rotate(180 7.125 5.2)">
+      <title>mpc4e-3d-32xge-sfpp--port-3-7</title>
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc4e-3d-32xge-sfpp/port-3-7/opening" data-class="cutout" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc4e-3d-32xge-sfpp--port-3-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>
