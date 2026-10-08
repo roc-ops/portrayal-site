@@ -1745,16 +1745,17 @@ check("site/catalog-page.js" in _cat_html,
       "components/catalog.html renders through site/catalog-page.js")
 
 # ── THE PRE-PUSH HOOK'S IDEA OF "THE SITE" ──────────────────────────────
-# hooks/pre-push runs the browser pass only when a push touches the site, and
-# decides that with one regex. It listed .html as `[^/]+\.html$` - a file at the
+# hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks
+# for it (#144: CI runs it on every PR), and even then only when the push
+# touches the site, which it decides with one regex. It listed .html as `[^/]+\.html$` - a file at the
 # repository root - which was every page until components/catalog.html, the
 # first in a subdirectory: editing it skipped the pass entirely, and nothing
 # said so. The hook is the gate people trust before CI sees the branch, so the
 # rule is exercised here against the real function rather than eyeballed.
 #
 # OVER-TRIGGERING IS SAFE AND UNDER-TRIGGERING IS THE BUG: a push that runs the
-# pass it did not need costs nine minutes; one that skips the pass it did need
-# is a page nobody checked.
+# pass it did not need costs minutes; one that skips the pass it was asked for
+# and did need is a page nobody checked.
 _hook_src = (HERE / "hooks" / "pre-push").read_text()
 _hook_fn = re.search(r"^touches_the_site\(\) \{.*?^\}", _hook_src, re.S | re.M)
 def _touches(path):
@@ -1771,6 +1772,10 @@ _hook_bad = ([f"{p} should run the browser pass" for p in _want_pass if not _tou
 check(not _hook_bad,
       "hooks/pre-push runs the browser pass for every page, including one in a subdirectory",
       "; ".join(_hook_bad))
+# And only on request: the default push runs the contract check, not the pass.
+_hook_gate = _hook_src.find("PORTRAYAL_HOOK_BROWSER:-0")
+check(0 <= _hook_gate < _hook_src.find('python3 "$BROWSER"'),
+      "hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks for it")
 
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

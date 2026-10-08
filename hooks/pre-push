@@ -1,5 +1,21 @@
 #!/bin/sh
-# The checks, before the push rather than after it.
+# The contract check, before the push rather than after it.
+#
+# WHAT RUNS WHERE:
+#   on every push   check-contract.py (and the rack builder's node tests) -
+#                   seconds, against your tree
+#   in CI           all of that again, plus check-browser.py in four shards,
+#                   against a clean checkout, on every pull request
+#   locally         the browser pass only when asked:
+#                       PORTRAYAL_HOOK_BROWSER=1 git push
+#                   or, better, the change's own checks before pushing:
+#                       python3 check-browser.py --only <check>[,<check>]
+#
+# The browser pass used to run here whenever a push touched the site, which is
+# nearly every real push, and on a loaded machine it cost eleven to twenty
+# minutes per push while CI ran the same pass again on every PR, sharded, in
+# about nine (portrayal-site#144). A hook that slow gets --no-verify'd into
+# retirement, and then not even the contract check runs.
 #
 # Not a replacement for .github/workflows/checks.yml, and not made redundant by
 # it either. This runs against YOUR TREE, so it is fast and it catches what you
@@ -20,13 +36,12 @@ set -e
 CONTRACT="check-contract.py"
 BROWSER="check-browser.py"
 
-# WHAT A PUSH HAS TO EARN. The contract check reads files and takes under a
-# second, so it runs always. The browser pass opens every page, walks the
-# showcase and the rack builder in 2D and 3D, and presses Run on the marks
-# harness: six to nine minutes, which is worth paying when the push can break a
-# page and is worth skipping when it plainly cannot. A pre-push hook that costs
-# that on a README fix is a hook that gets --no-verify'd into retirement, and
-# then neither check runs.
+# WHAT A PUSH HAS TO EARN. The contract check reads files and takes seconds, so
+# it runs always. The browser pass opens every page, walks the showcase and the
+# rack builder in 2D and 3D, and presses Run on the marks harness: CI runs it on
+# every pull request, so here it runs only when PORTRAYAL_HOOK_BROWSER asks for
+# it - and even then only when the push can break a page. Asking for it on a
+# README fix still skips it.
 touches_the_site() {
   # Anything the pages load, are, or are served by. assets/ is in the list
   # because a drawing that goes away is a page that fetches a 404.
@@ -38,8 +53,8 @@ touches_the_site() {
   # rather than as part of it, and the browser pass does not check it.
   #
   # Over-triggering is cheap and under-triggering is not: a push that runs this
-  # pass without needing it costs nine minutes, and one that skips it when it
-  # was needed is a page nobody checked. check-contract.py exercises this
+  # pass without needing it costs minutes, and one that skips it when it was
+  # asked for and needed is a page nobody checked. check-contract.py exercises this
   # function itself, so the next page in a folder cannot slip through quietly.
   grep -vE '^coming-soon/' |
   grep -qE '^(vendor/|site/|assets/|brand/|tests/|.*\.html$|check-browser\.py$|serve\.py$)'
@@ -54,7 +69,9 @@ touches_the_site() {
 # it asks again after the hook rather than holding a session open. So the fix
 # is a keepalive, set once per clone, and this says so BEFORE the long pass
 # rather than after it. A warning and not a refusal: a machine that finishes
-# under GitHub's limit pushes fine without one.
+# under GitHub's limit pushes fine without one. Only an asked-for browser pass
+# is long enough to need it, so the warning comes with that pass and not before
+# the contract check.
 remote_url="${2:-}"
 keepalive_ok() {
   case "$remote_url" in
@@ -102,6 +119,11 @@ if command -v node >/dev/null 2>&1 && ls tests/*/*.test.mjs >/dev/null 2>&1; the
   node --test tests/*/*.test.mjs
 fi
 
+# THE BROWSER PASS, ON REQUEST. Any value but empty or 0 asks for it.
+case "${PORTRAYAL_HOOK_BROWSER:-0}" in
+  ""|0) exit 0 ;;
+esac
+
 if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
   if python3 -c "import playwright" 2>/dev/null; then
     if ! keepalive_ok; then
@@ -110,7 +132,7 @@ if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
       echo "          push will likely fail after the checks pass. Once per clone:" >&2
       echo "            git config core.sshCommand \"ssh -o ServerAliveInterval=30\"" >&2
     fi
-    echo "pre-push: $BROWSER (six to nine minutes; --no-verify skips it)"
+    echo "pre-push: $BROWSER (PORTRAYAL_HOOK_BROWSER is set; minutes, not seconds)"
     python3 "$BROWSER"
   else
     # NOT FATAL BY DEFAULT, and loud. A hook that refuses to push because an
@@ -122,4 +144,7 @@ if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
       exit 1
     fi
   fi
+else
+  echo "pre-push: PORTRAYAL_HOOK_BROWSER is set, but nothing a page loads changed;"
+  echo "          skipping $BROWSER"
 fi
