@@ -341,19 +341,20 @@ test('undo and redo, with and without a step', async () => {
   assert.equal(text(await run('redo')), 'Nothing to redo.');
 });
 
-test('export_rack: a word picks the page export, and only its name and notes come back', async () => {
-  const {run, exported} = setup();
-  // An import kit leaves out a cable with an unconnected end; the agent can't read the zip,
-  // so the result says where that is written and who should read it (stumble in the first real run).
+test('export_rack: a word picks the page export, and a kit export names blank DCIM settings first', async () => {
+  const {ed, run, exported} = setup();
+  const kit = ' The kit\'s README.txt lists anything left out, such as a cable whose end is not connected: do not say every cable is in the file, and tell the user to read it.';
   assert.equal(text(await run('export_rack', {kind: 'netbox import'})),
-    'Saved rack.netbox-import. Exported 1 device. The kit\'s README.txt lists anything left out, such as a cable whose end is not connected: do not say every cable is in the file, and tell the user to read it.');
-  assert.deepEqual(exported, ['netbox-import']);
+    `The DCIM site and role are blank; the user sets them under Export > DCIM import settings. Saved rack.netbox-import. Exported 1 device.${kit}`);
+  ed.apply({op: 'dcim', site: 'dc1'});
+  assert.equal(text(await run('export_rack', {kind: 'nautobot import'})),
+    `The DCIM role is blank; the user sets it under Export > DCIM import settings. Saved rack.nautobot-import. Exported 1 device.${kit}`);
+  assert.deepEqual(exported, ['netbox-import', 'nautobot-import']);
   assert.equal(text(await run('export_rack', {kind: 'bill of materials'})), 'Saved rack.bom. Exported 1 device.');
   const bad = await run('export_rack', {kind: 'pdf'});
   assert.equal(bad.isError, true);
   assert.match(text(bad), /^There is no export called pdf\. Choose one of: sheet svg, /);
 });
-
 test('a tool whose reader throws answers with isError', async () => {
   const {ed, tools} = setup();
   const broken = rackTools({ed, chassisOf, runExport: async () => { throw new Error('disk full'); },
@@ -715,4 +716,107 @@ test('new_rack with no library is refused, and the open rack is untouched', asyn
   assert.equal(text(res), "This browser isn't keeping a library, so a new rack would lose this one. Ask the user to start one with the rack menu's New rack, which offers to save this one first.");
   assert.equal(library.saved.length, 0);
   assert.equal(ed.getDoc(), before);
+});
+
+// ── round 2: the wording pass (plan Task 9) ──
+const TOOL_NAMES = ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo'];
+// Every description in a tool: its own, and every one in its schema at any depth.
+const described = t => {
+  const out = [{where: t.name, d: t.description, long: true}];
+  const walk = (node, where) => {
+    if (Array.isArray(node)) { node.forEach((n, i) => walk(n, `${where}[${i}]`)); return; }
+    if (!node || typeof node !== 'object') return;
+    if (typeof node.description === 'string')
+      out.push({where, d: node.description, node, long: /\.oneOf\[\d+\]$/.test(where), prop: /\.properties\.[^.]+$/.test(where)});
+    for (const [k, v] of Object.entries(node)) if (k !== 'description') walk(v, `${where}.${k}`);
+  };
+  walk(t.inputSchema, t.name);
+  return out;
+};
+const argNames = tools => {
+  const names = new Set();
+  const walk = node => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (!node || typeof node !== 'object') return;
+    if (node.properties) for (const k of Object.keys(node.properties)) names.add(k);
+    Object.values(node).forEach(walk);
+  };
+  Object.values(tools).forEach(t => walk(t.inputSchema));
+  return names;
+};
+
+test('descriptions: within bounds, naming only real tools and arguments, and no function', () => {
+  const {tools} = setup();
+  assert.deepEqual(Object.keys(tools).sort(), TOOL_NAMES);
+  const args = argNames(tools);
+  for (const t of Object.values(tools)) for (const {where, d, long} of described(t)) {
+    assert.ok(d.length <= (long ? 500 : 150), `${where} is ${d.length} characters`);
+    assert.doesNotMatch(d, /\b[A-Za-z_]\w*\(\)/, `${where} names a function: ${d}`);
+    for (const w of d.match(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g) ?? [])
+      assert.ok(TOOL_NAMES.includes(w) || args.has(w), `${where} names ${w}, which is neither a tool nor an argument`);
+    assert.doesNotMatch(d, /Only the first rack/, where);
+  }
+});
+
+// The defaults the code applies, and only those, are stated (spec section 5).
+const DEFAULTS = {
+  'describe_rack.section': 'both when left out', 'describe_rack.offset': '0 when left out', 'describe_rack.limit': '40 when left out',
+  'find_devices.offset': '0 when left out',
+  'list_free_ports.view': 'both when left out', 'list_free_ports.offset': '0 when left out',
+  'inspect.cfg': 'its default when left out', 'inspect.section': 'the start when left out', 'inspect.offset': '0 when left out',
+  'new_rack.name': 'when left out, the next free', 'new_rack.height': '42 when left out', 'new_rack.kind': 'four-post when left out',
+};
+test('descriptions state each default the code applies, and no other', () => {
+  const {tools} = setup();
+  for (const t of Object.values(tools)) {
+    if (t.name === 'edit_rack') continue;
+    for (const [k, p] of Object.entries(t.inputSchema.properties ?? {})) {
+      const key = `${t.name}.${k}`, d = (p.description ?? '').toLowerCase();
+      if (DEFAULTS[key]) assert.ok(d.includes(DEFAULTS[key]), `${key}: "${p.description}" should say "${DEFAULTS[key]}"`);
+      else assert.doesNotMatch(d, /when left out|default/, `${key} claims a default: ${p.description}`);
+    }
+  }
+});
+
+test('every object argument gives its shape, and edits go to the open rack', () => {
+  const {tools} = setup();
+  for (const t of Object.values(tools)) for (const {where, d, node, prop} of described(t)) {
+    const type = [node?.type].flat();
+    if (prop && type.includes('object')) assert.match(d, /\{/, `${where} is an object argument with no shape: ${d}`);
+  }
+  for (const b of tools.edit_rack.inputSchema.properties.commands.items.oneOf)
+    if (b.properties.rack) assert.equal(b.properties.rack.description, 'Edits go to the rack that is open; describe_rack names it.');
+});
+
+test('one name per concept: id for an item or cable, ref for a catalog device', () => {
+  const {tools} = setup();
+  for (const t of Object.values(tools)) {
+    const props = t.inputSchema.properties ?? {};
+    if ('item' in props) {
+      assert.equal(t.name, 'list_free_ports');
+      assert.match(props.item.description, /^Old name for id/);
+    }
+  }
+});
+
+test('undo says when the step it took back was the user\'s own', async () => {
+  const {ed, run} = setup();
+  ed.apply({op: 'rename', name: 'Mine'});   // the page's own edit: origin ui
+  assert.equal(text(await run('undo')), 'Undid your edit: Renamed the rack to Mine.');
+  await run('edit_rack', {commands: [{op: 'rename', name: 'Agent'}]});
+  assert.equal(text(await run('undo')), 'Undid: Renamed the rack to Agent.');
+});
+
+test('descriptions hold with the page\'s own command table too (zero-U)', async () => {
+  const {ALL_COMMANDS} = await import('../../site/rack/zero-u.js');
+  const ed = createRackEditor({doc: M.newDoc(), chassisOf});
+  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries: {}, runExport: async () => ({}), commands: ALL_COMMANDS}).map(t => [t.name, t]));
+  const args = argNames(tools);
+  for (const t of Object.values(tools)) for (const {where, d, long, node, prop} of described(t)) {
+    assert.ok(d.length <= (long ? 500 : 150), `${where} is ${d.length} characters`);
+    assert.doesNotMatch(d, /\b[A-Za-z_]\w*\(\)/, `${where} names a function: ${d}`);
+    for (const w of d.match(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g) ?? [])
+      assert.ok(TOOL_NAMES.includes(w) || args.has(w), `${where} names ${w}`);
+    if (prop && [node?.type].flat().includes('object')) assert.match(d, /\{/, `${where} has no shape: ${d}`);
+  }
 });

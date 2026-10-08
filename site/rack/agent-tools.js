@@ -5,7 +5,7 @@
 // registered by the page (site/agent/webmcp.js).
 
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
-import {newRack, withItem, dcimOf} from '../../vendor/rack/model.js';
+import {newRack, dcimOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
@@ -21,15 +21,47 @@ export const agentMay = (op, commands = COMMANDS) =>
 // edit_rack's argument schema, generated from the command table, so a command
 // added there is offered here with no other change. A guide for the agent:
 // apply() checks every argument again, strictly, and says what is wrong.
+// THE KIT'S ARGUMENTS, AS AN AGENT HERE READS THEM (spec 2026-10-08 section 5):
+// the shape of every object argument, the open rack, and this site's tool
+// names where a kit description names one of its own functions.
+const ARG_WORDS = {
+  rack: 'Edits go to the rack that is open; describe_rack names it.',
+  a: 'One end: {item, path, view}: a device id, a port path from list_free_ports, and front or rear.',
+  b: 'The other end: {item, path, view}, as for a.',
+  length: 'How long: {value, unit} with unit m or ft (m when left out), or null for not known.',
+  holes: 'The rail holes: {style, thread}: square or tapped, and the thread of tapped holes.',
+  swaps: 'Replaces every swap: {slot path: part ref}. To change one slot, use fit.',
+  fields: 'Replaces every field: {part path: {key: value}}. To set one, use field.',
+};
+const ARG_WORDS_BY_OP = {
+  'cable.update': {
+    a: 'Moves end a to another port: {item, path, view}. The cable keeps its id, media, label and length.',
+    b: 'Moves end b to another port: {item, path, view}, as for a.',
+  },
+};
+const TOOL_WORDS = [[/\bdescribe\(\)/g, 'describe_rack'], [/\bfreePorts\(\)/g, 'list_free_ports'],
+                    [/\bcatalog\(\)/g, 'find_devices'], [/\binspect\(\)/g, 'inspect']];
+const words = d => TOOL_WORDS.reduce((s, [re, w]) => s.replace(re, w), d);
+// Every description at any depth, in this site's words.
+const reword = node => {
+  if (Array.isArray(node)) return node.map(reword);
+  if (!node || typeof node !== 'object') return node;
+  return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, k === 'description' && typeof v === 'string' ? words(v) : reword(v)]));
+};
+
 const SELECT = {type: 'object', description: 'In place of id: {item}, {item, path, view}, {loose: true}, {purpose} or {media}. Reads the rack as it was before this batch.'};
 export function editSchema(commands = COMMANDS) {
   const oneOf = Object.keys(commands).filter(op => agentMay(op, commands)).map(op => {
-    const a = commands[op].args ?? {type: 'object', properties: {}};
+    const a = reword(commands[op].args ?? {type: 'object', properties: {}});
     const props = {...(a.properties ?? {})};
+    for (const k of Object.keys(props)) {
+      const w = ARG_WORDS_BY_OP[op]?.[k] ?? ARG_WORDS[k];
+      if (w) props[k] = {...props[k], description: w};
+    }
     let required = a.required ?? [];
     if (SELECTABLE.has(op)) { props.select = SELECT; required = required.filter(r => r !== 'id'); }
     return {
-      type: 'object', description: commands[op].description,
+      type: 'object', description: words(commands[op].description),
       required: ['op', ...required],
       properties: {op: {const: op}, ...props},
       ...('additionalProperties' in a ? {additionalProperties: a.additionalProperties} : {}),
@@ -149,9 +181,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           const c = chassisOf(ref);
           if (!c) return refuse(`There is no device called ${ref}. Use find_devices to find its ref.`);
           if (cfg != null && !(c.configs ?? []).includes(cfg)) return refuse(`${ref} has no config called ${cfg}. It has: ${cutList(c.configs ?? [])}.`);
-          // A catalog device is read placed alone in an empty rack, which the page never sees.
-          const probe = withItem(newRack(), {ref, cfg: cfg ?? c.default ?? '', ru: 1, face: 'front', label: c.model ?? ref});
-          const o = await queries.inspect(probe.rack, probe.item.id, await context(probe.rack, [ref]));
+          // A catalog device is read as one item in an empty rack of its own,
+          // written out here: a throwaway the editor and the page never see.
+          const item = {id: 'i1', ref, cfg: cfg ?? c.default ?? '', label: c.model ?? ref, ru: 1, face: 'front', turned: false, swaps: {}, fields: {}};
+          const probe = {...newRack(), items: [item], cables: []};
+          const o = await queries.inspect(probe, item.id, await context(probe, [ref]));
           if (o.error) return refuse(o.error);
           return say(inspectText({...o, id: null, label: null, ru: null, cables: []},
             {section, offset: offset ?? 0, ask: {ref, ...(cfg ? {cfg} : {})}}));
@@ -251,7 +285,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
   const kinds = Object.keys(EXPORT_KINDS);
   tools.push(
     tool('edit_rack', 'Edit the rack',
-      'Apply edits in order. All apply or none; one undo step. Name what a command creates with as: "srv", then use "@srv" as a later id or cable end item. Get ref and cfg from find_devices, port paths from list_free_ports. Send only the fields you are changing. dry_run checks without changing anything.',
+      'Apply edits to the open rack, in order: all apply or none, as one undo step. Name what a command creates with as: "srv", then use "@srv" as a later id. Refs and cfgs come from find_devices, port paths from list_free_ports, slot paths and field keys from inspect. fit seats one optic or module; field sets one value. cable.remove and cable.update take select in place of id. Send only what changes. dry_run checks without changing anything.',
       editSchema(table).properties, ['commands'], {readOnlyHint: false},
       async ({commands, dry_run}) => {
         if (!Array.isArray(commands) || !commands.length) return refuse('Send commands: a list of at least one {op, ...}.');
@@ -304,22 +338,35 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const r = ed.rack();
         return say(`Opened ${r.name} (${r.id}), ${r.frame.heightRU}U ${r.frame.kind}. Undo can't take this back; the old rack, ${old}, is in the library.`);
       }),
-    tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was.', {}, [], {readOnlyHint: false},
-      async () => { const s = ed.undo(); return say(s ? `Undid: ${s.summary}` : 'Nothing to undo.'); }),
+    tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was. "Undid your edit" means the step was the user\'s own, made on the page.', {}, [], {readOnlyHint: false},
+      async () => {
+        // The editor says whose step it was on its change event; undo() itself says only what.
+        let origin = null;
+        const off = ed.on('change', e => { origin = e.origin; });
+        let s;
+        try { s = ed.undo(); } finally { off(); }
+        if (!s) return say('Nothing to undo.');
+        return say(`Undid${(s.origin ?? origin) === 'ui' ? ' your edit' : ''}: ${s.summary}`);
+      }),
     tool('redo', 'Redo', 'Put back the last edit Undo took back, and say what it was.', {}, [], {readOnlyHint: false},
       async () => { const s = ed.redo(); return say(s ? `Redid: ${s.summary}` : 'Nothing to redo.'); }),
     tool('export_rack', 'Export the rack',
-      'Save the rack as a file through the browser\'s download: a drawing (svg, png), a draw.io diagram, a NetBox or Nautobot import kit, a bill of materials, a cable schedule, or the rack file. Returns the file name and notes, not the file.',
+      'Save the rack as a file through the browser\'s download: a drawing (svg, png), a draw.io diagram, a NetBox or Nautobot import kit, a bill of materials, a cable schedule, or the rack file. Returns the file name and notes, not the file. An import kit uses the DCIM site and role the user sets; the answer says when they are blank.',
       {kind: {type: 'string', enum: kinds, description: 'Which export.'}}, ['kind'], {readOnlyHint: false},
       async ({kind}) => {
         const key = EXPORT_KINDS[kind];
         if (!key) return refuse(`There is no export called ${kind}. Choose one of: ${kinds.join(', ')}.`);
         const out = await runExport(key);
         if (!out || out.error) return refuse(out?.error ?? "That export didn't work. Try again.");
+        const isKit = key === 'netbox-import' || key === 'nautobot-import';
+        // Read after the export: runExport stores what is typed in the settings form first.
+        const blank = isKit ? dcimBlank(ed.rack()) : [];
+        const dcim = blank.length
+          ? `The DCIM ${blank.join(' and ')} ${blank.length > 1 ? 'are' : 'is'} blank; the user sets ${blank.length > 1 ? 'them' : 'it'} under Export > DCIM import settings. ` : '';
         // The agent can't open the zip, so it is told where an import kit's omissions are written.
-        const kit = key === 'netbox-import' || key === 'nautobot-import'
+        const kit = isKit
           ? " The kit's README.txt lists anything left out, such as a cable whose end is not connected: do not say every cable is in the file, and tell the user to read it." : '';
-        return say(`Saved ${out.name}.${out.notes ? ` ${out.notes}` : ''}${kit}`);
+        return say(`${dcim}Saved ${out.name}.${out.notes ? ` ${out.notes}` : ''}${kit}`);
       }),
   );
   return tools;

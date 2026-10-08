@@ -260,7 +260,7 @@ function sideMove(rack, {id, ru, face}, {chassisOf}) {
 const RACK = {type: 'string', description: 'The id of the rack to edit. Only the first rack can be edited today.'};
 const AS = {type: 'string', minLength: 1, description: 'A name for what this creates; later commands in the same batch can use "@name" as its id.'};
 const ID = what => ({type: 'string', minLength: 1, description: `The id of the ${what}, as describe() lists it, or "@name" from earlier in this batch.`});
-const AT = {type: 'string', minLength: 1, description: 'Which upright it stands beside: left or right on a two-post frame; left-front, right-front, left-rear or right-rear on a four-post. The cable lane of the same name runs through it.'};
+const AT = {type: 'string', minLength: 1, description: 'Its upright: left or right (two-post); left-front, right-front, left-rear or right-rear (four-post). The lane of that name runs through it.'};
 const RU_ARG = {type: 'integer', minimum: 1, description: 'The U its bottom sits level with, counted from 1 at the bottom of the rails.'};
 const BETWEEN = {type: 'boolean', description: 'true when it stands between this rack and the next one, serving both.'};
 const SIDE = {enum: ['left', 'right'], description: 'Which rail it is on, as seen from its face.'};
