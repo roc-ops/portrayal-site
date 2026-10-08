@@ -35,6 +35,38 @@ export const MODE3D_CSS = `
 const CAN_3D = 3;
 const kb = n => n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 
+// HOW MANY MESHES AN EXPORT CARRIES, read off the file itself (#111). An export
+// of a scene that has not built yet is a valid, empty file - a 112-byte GLB - and
+// reporting its size reads as success. A GLB's JSON chunk lists its meshes; a
+// USDZ is an uncompressed zip with one `geometries/Geometry_<id>.usda` per mesh.
+// Anything unreadable counts as none: an unreadable file is not the model either.
+export function exportMeshes(fmt, data) {
+  try {
+    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+    if (fmt === 'glb') {
+      const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      if (bytes.byteLength < 20 || dv.getUint32(0, true) !== 0x46546c67) return 0;   // 'glTF'
+      if (dv.getUint32(16, true) !== 0x4e4f534a) return 0;                          // 'JSON'
+      const json = JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + dv.getUint32(12, true))));
+      return Array.isArray(json.meshes) ? json.meshes.length : 0;
+    }
+    if (fmt === 'usdz') {
+      const text = new TextDecoder('latin1').decode(bytes);
+      return new Set(text.match(/geometries\/Geometry_\d+\.usda/g) || []).size;
+    }
+  } catch { /* fall through: not a file we can read */ }
+  return 0;
+}
+
+const saveFile = (data, filename, type) => {
+  const url = URL.createObjectURL(new Blob([data], {type}));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);   // Safari is still reading it
+};
+
 // WHY 3D IS NOT SHOWING, in words a reader can act on (Portrayal #746). A
 // browser keeps only about sixteen WebGL contexts alive and, after repeated GPU
 // resets, refuses new ones until it restarts; three.js reports either as "Error
@@ -85,6 +117,8 @@ export function createMode3d(shell, opts = {}) {
   let inflight = null;
   // The browser took the WebGL context away and has not handed it back yet.
   let gpuLost = false;
+  // The download bar, once mounted, and whether an export from it is running.
+  let glx = null, exporting = false;
 
   async function ensureViewer() {
     if (viewer) return viewer;
@@ -108,10 +142,11 @@ export function createMode3d(shell, opts = {}) {
       // drawing, rebuilds the scene when the browser hands the context back, and
       // says both. A page's hover readout is its own overlay, not this line, so
       // nothing else has to hold off while the message is up.
-      v.on('contextlost', () => { gpuLost = true; shell.el.status.textContent = LOST_MSG; });
+      v.on('contextlost', () => { gpuLost = true; shell.el.status.textContent = LOST_MSG; paintDownloads(); });
       v.on('contextrestored', err => {
         gpuLost = false;
         shell.el.status.textContent = err ? why3d(err) : '';
+        paintDownloads();
       });
       mountDownloads(v);
       if (extras) extras(v, host3d);
@@ -128,6 +163,30 @@ export function createMode3d(shell, opts = {}) {
 
   // A GLB is the one output that survives someone not being able to reach the
   // site. The module does the exporting; the page is two buttons and a line.
+  //
+  // THE BUTTONS ARE ON ONLY WHILE THE SCENE IS THE ONE ASKED FOR (#111). The
+  // viewer exports the scene as it stands, with no wait for a build in flight,
+  // so a press before the first build - or during a rebuild for a new config or
+  // swap - saved an empty file, or the device before the change, and said it
+  // worked. sceneReady() is the same test as settled(), plus that what loaded is
+  // what the page now wants.
+  const wantKey = () => `${state.device}.${state.cfg}|${swapKey()}`;
+  const sceneReady = () => !!viewer && !inflight && loadedKey !== '' && loadedKey === wantKey() && !gpuLost;
+  const WAIT_MSG = 'building the scene…';
+  function paintDownloads() {
+    if (!glx) return;
+    const ready = sceneReady();
+    glx.bar.dataset.ready = ready ? '1' : '0';
+    for (const b of glx.buttons) b.disabled = exporting || !ready;
+    if (exporting) return;
+    if (!ready) {
+      glx.msg.classList.remove('bad');
+      glx.msg.textContent = WAIT_MSG;
+    } else if (glx.msg.textContent === WAIT_MSG) {
+      glx.msg.textContent = '';
+    }
+  }
+
   function mountDownloads(v) {
     if (typeof v.download !== 'function') return;
     const bar = document.createElement('div');
@@ -139,21 +198,40 @@ export function createMode3d(shell, opts = {}) {
     host3d.appendChild(bar);
     const msg = bar.querySelector('.msg');
     const all = [...bar.querySelectorAll('button')];
+    glx = {bar, msg, buttons: all};
     for (const b of all) b.onclick = async () => {
       const fmt = b.dataset.fmt;
+      // A page can change its state a moment before it syncs - a config picked,
+      // its drawing still fetching - so the press is refused on the state as it
+      // is now, not only on how the buttons were last painted.
+      if (exporting || !sceneReady()) { paintDownloads(); return; }
+      exporting = true;
       all.forEach(x => { x.disabled = true; });
       msg.classList.remove('bad');
       msg.textContent = `building ${fmt.toUpperCase()}…`;
       try {
-        const {name, size} = await v.download(fmt);
+        let name, size;
+        if (typeof v.exportData === 'function' && typeof v.exportName === 'function') {
+          // Exported, then counted, then saved: a file with no meshes is not
+          // the model, and is reported as a failure rather than handed over.
+          const data = await v.exportData(fmt);
+          if (!exportMeshes(fmt, data)) throw new Error('the scene has no geometry yet, so nothing was saved');
+          name = `${v.exportName()}.${fmt}`;
+          saveFile(data, name, fmt === 'glb' ? 'model/gltf-binary' : 'model/vnd.usdz+zip');
+          size = data.byteLength ?? data.length;
+        } else {
+          ({name, size} = await v.download(fmt));
+        }
         msg.textContent = `${name} — ${kb(size)}`;
       } catch (err) {
         msg.textContent = `${fmt.toUpperCase()} failed: ${err.message || err}`;
         msg.classList.add('bad');
       } finally {
-        all.forEach(x => { x.disabled = false; });
+        exporting = false;
+        paintDownloads();
       }
     };
+    paintDownloads();
   }
 
   // One button per removable unit, carrying the unit's own path - the name the
@@ -189,9 +267,12 @@ export function createMode3d(shell, opts = {}) {
     .map(([k, v]) => `${k}=${v || ''}`).join(',');
 
   async function sync() {
+    // Every sync is a possible rebuild: the buttons go off at once, before the
+    // first await, if what is wanted is no longer what is loaded.
+    paintDownloads();
     if (mode !== '3d') return;
     const v = await ensureViewer();
-    const key = `${state.device}.${state.cfg}|${swapKey()}`;
+    const key = wantKey();
     // BEFORE the early return, and before the load: states and pulls set while
     // the drawing was showing are exactly the case where the device and the
     // swaps have not changed and the scene still has to catch up; and build()
@@ -214,8 +295,13 @@ export function createMode3d(shell, opts = {}) {
     }
     const done = v.load({device: state.device, config: state.cfg, overrides: overrides()});
     inflight = {key, done};
-    try { await done; } finally { if (inflight && inflight.done === done) inflight = null; }
+    paintDownloads();
+    try { await done; } finally {
+      if (inflight && inflight.done === done) inflight = null;
+      paintDownloads();
+    }
     loadedKey = key;                // only once it is actually the thing on screen
+    paintDownloads();
     fruBar(v);
     if (state.sel) v.select(state.sel);
     // AND ONCE MORE ON THE BUILT SCENE. A page that re-syncs on every edit can
