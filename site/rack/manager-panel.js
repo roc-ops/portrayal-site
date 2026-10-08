@@ -3,7 +3,7 @@
 // Like inspector.js, it changes nothing itself: every action is a callback.
 
 import {el} from './dom.js';
-import {positionOf} from './model.js';
+import {positionOf} from '../../vendor/rack/model.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 

@@ -41,7 +41,9 @@ def documents():
     return {p.name: json.loads(p.read_text()) for p in sorted(SCHEMAS.glob("*.schema.json"))}
 
 
-SITE_SCHEMAS = [HERE / "site" / "rack" / "rack.schema.json"]
+# None today: the rack file's schema was the site's until the rack core moved
+# into the kit (0.3.0); it is vendored with the rest now.
+SITE_SCHEMAS = []
 
 
 def site_documents():

@@ -29,10 +29,11 @@ const SOURCES = {
   // A LAB: placements in a rack, rack-face parts on a host (Portrayal #852, lab.schema.json).
   lab:       {url: 'assets/schemas/lab.schema.json',       label: 'a lab of devices placed in a rack'},
   overlay:   {url: 'assets/schemas/overlay.schema.json',   label: "an operating system's naming"},
-  // The Rack Builder's own file. Site-owned until the rack core moves to the
-  // kit (piece 2 of docs/superpowers/specs/2026-10-07-rack-command-core-design.md),
-  // so it is not in assets/schemas/, which every sync replaces.
-  rack:      {url: 'site/rack/rack.schema.json',            label: 'a rack built in the Rack Builder'},
+  // The Rack Builder's file. Portrayal's since the rack core moved into the kit
+  // (@portrayal/kit 0.3.0, spec/schemas/rack.schema.json), so vendored like the rest.
+  rack:      {url: 'assets/schemas/rack.schema.json',      label: 'a rack built in the Rack Builder'},
+  // A MARKED-UP DRAWING: what Annotate's marks normalise to (Portrayal #898, marks.schema.json).
+  marks:     {url: 'assets/schemas/marks.schema.json',     label: 'a drawing marked up in Annotate'},
 };
 
 const KNOWN = new Set([

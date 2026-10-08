@@ -8,10 +8,10 @@
 
 import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {mergeSeats, cablePlan3d, endKey} from './cable-rules.js';
+import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d} from './cables.js';
-import {laneX} from './route.js';
-import {RU} from './rails.js';
+import {laneX} from '../../vendor/rack/route.js';
+import {RU} from '../../vendor/rack/rails.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 

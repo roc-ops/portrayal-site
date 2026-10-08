@@ -134,6 +134,12 @@
   }
  ],
  "groups": {
+  "esd": {
+   "description": "the wrist-strap ESD points, on the front badge strip and the rear right (guide Figure 11, ESD Points)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
   "fan-leds": {
    "description": "Table 12 - bicolour fan lamp on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, yellow steady = faulty",
    "index-origin": 0,
@@ -180,6 +186,7 @@
    "term": "LED"
   },
   "grounding": {
+   "description": "the rear protective-earthing plate, two M6 screws on 5/8 in. centres (guide Figure 28)",
    "index-origin": 0,
    "role": "furniture",
    "term": "Point"
@@ -246,8 +253,16 @@
   "front-cover": {
    "note": "not modelled - the optional front cover with air filter (JNP-FLTRDR-2RU + JNP-AIRFLTR-2RU, Table 22) bolts over the entire front face; the guide documents replacement procedures for both. Modelled configuration is the bare front as photographed; see gaps"
   },
+  "ground-stud-pitch": {
+   "confidence": "datasheet",
+   "note": "the guide's \"0.63-in. (16-mm) centers\" is the 5/8 in. pattern, 15.875: 0.63 in. is how two-hole lug tables print 5/8 in. (Panduit LCD6-10A-L, a 5/8 in. lug, is listed at 0.63 hole spacing) and 16 mm is the metric rounding of 15.875. A literal 16.0 would be 0.125 off the pitch of every 5/8 in. lug. @1 drew the holes 16.0 apart; they moved symmetrically about the same centre inside the plate, and the plate, its cutout and the earth symbol did not move (#828)"
+  },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the guide: two threaded holes on the rear side fit M6 pan head screws, and the grounding lug is secured with M6 pan head screws: the `stud-size` of the plate's pair. The guide also calls the terminal \"sized for M6 hex screws\""
+  },
   "grounding": {
-   "note": "guide grounding specifications + photo - two threaded holes for M6 pan-head screws on 16 mm centres at the rear right, under the earth symbol; the protective earthing terminal bracket attaches here. Modelled as juniper/mx304-ground-plate"
+   "note": "guide grounding specifications + photo - two threaded holes for M6 pan-head screws at the rear right, under the earth symbol; the protective earthing terminal bracket attaches here. Modelled as juniper/mx304-ground-plate@2, which presents `stud-pair-5-8`, so one two-hole lug (generic/two-hole-lug-5-8@1) lands across the pair and the ring lug still lands on either screw, `ground-plate/1` and `/2`; a lug's wire leaves downward"
   },
   "lifecycle": {
    "note": "none-announced - searched \"Juniper MX304 end of life end of sale\" 2026-08-26; the third-party EOL trackers list no dates and the 2022 NANOG thread names the MX304 as the successor replacing the MX204 and MX10003. Absence of the announcement is the finding"
@@ -281,7 +296,7 @@
    "title": "Juniper MX304 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "3.0.14",
+ "version": "4.0.1",
  "views": {
   "bottom": {
    "panel": {
@@ -403,7 +418,7 @@
        2.3
       ],
       "for": "chassis",
-      "group": "grounding",
+      "group": "esd",
       "id": "esd-front-jack",
       "ref": "common/esd-jack@1",
       "rel-pos": 0
@@ -702,10 +717,10 @@
        7.7
       ],
       "for": "chassis",
-      "group": "grounding",
+      "group": "esd",
       "id": "esd-rear-jack",
       "ref": "common/esd-jack@1",
-      "rel-pos": 0
+      "rel-pos": 1
      },
      {
       "at": [
@@ -853,9 +868,12 @@
        422.4,
        24.5
       ],
+      "attrs": {
+       "stud-size": "M6"
+      },
       "group": "grounding",
       "id": "ground-plate",
-      "ref": "juniper/mx304-ground-plate@1",
+      "ref": "juniper/mx304-ground-plate@2",
       "rel-pos": 0
      }
     ]

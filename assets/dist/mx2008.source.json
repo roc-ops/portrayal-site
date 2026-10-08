@@ -2,7 +2,12 @@
  "attrs": {
   "power": {
    "note": "2.5 kW of the pool reserved for PSM redundancy",
-   "pool-w": 22500
+   "pool-w": 22500,
+   "power-envelope": "bare",
+   "power-max-scope": "base system excluding MPCs, ADCs and MICs, at 55 C (Table 25); side not named",
+   "power-max-w": 4420,
+   "power-typical-scope": "base system excluding MPCs, ADCs and MICs, at 25 C (Table 25); side not named",
+   "power-typical-w": 1520
   }
  },
  "chassis": {
@@ -69,7 +74,7 @@
  "groups": {
   "craft": {
    "index-origin": 0,
-   "role": "indicator",
+   "role": "management",
    "term": "Panel"
   },
   "fpcs": {
@@ -135,7 +140,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet-table - the guide power overview: nine PSMs at 2500 W each, 8+1, over a 22.5 kW pool with 2.5 kW held for redundancy"
+   "note": "datasheet-table - the guide power overview: nine PSMs at 2500 W each, 8+1, over a 22.5 kW pool with 2.5 kW held for redundancy. Table 25 (base AC power requirements) gives the base system - excluding MPCs, ADCs and MICs, and listing seven SFBs, one RCB, two fan trays, the craft interface, three PSMs and two PDMs - 1,520 W typical at 25 C and 4,420 W at 55 C; carried as power-typical-w and power-max-w, envelope bare. The row names no side. It does not reconcile with the FRU tables: Table 41 rates each MX2000-FANTRAY-S at 1500 W typical, so two trays alone exceed the 1,520 W base - recorded, not resolved. The DC and HVAC/HVDC thermal examples (Tables 112 and 117) assume 34.5 kW of output for a loaded chassis, which is the MX2020 figure and exceeds this chassis's own 22.5 kW pool; it is not carried"
   },
   "rear": {
    "confidence": "drawing",
@@ -151,7 +156,7 @@
    "title": "Juniper MX2008 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "0.2.21",
+ "version": "0.3.2",
  "views": {
   "bottom": {
    "panel": {
@@ -201,6 +206,7 @@
        0.0
       ],
       "default": "juniper/mx2000-craft@1",
+      "for": "chassis",
       "group": "craft",
       "id": "craft",
       "rel-pos": 0,

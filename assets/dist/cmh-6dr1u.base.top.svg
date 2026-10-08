@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="430.0mm" height="100.0mm" viewBox="0 0 430.0 100.0" data-device="cmh-6dr1u" data-view="top" data-shell="sheet" data-weight-kg="0.66" data-material="Steel, Powder-coated Black" data-ring-material="Steel, Powder-coated Black" data-mounting-hardware="M6*15mm Screw x4 and M6Nut x4" data-cable-capacity="87" data-cable-capacity-basis="Cat6 24AWG (6.1 mm) cables at 100 % fill through the four D-rings, theoretical; 26 at the recommended 30 %. The two end rings are stated apart, 153 (46 at 30 %), for vertical runs - FS Horizontal Cable Managers with D-rings datasheet, Cable Capacity Reference Guide">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMH-6DR1U","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/cmh-5dr1u-n-flange@1":"1.0.0"},"source-sha256":"93833c9588da8ca11a4b24c2a395b879e630f3dcb20dd6b20531b86e99d2feb8","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMH-6DR1U" x="0" y="0" width="430" height="100" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-edge" data-kind="panel" x="0" y="10.8" width="430" height="1.2" rx="0" fill="#1b1d20" />
+    <rect id="guide-1-arm" data-kind="ring" x="55.65" y="12" width="12.7" height="77" rx="0" fill="#0c0d0f" />
+    <rect id="guide-2-arm" data-kind="ring" x="157.65" y="12" width="12.7" height="77" rx="0" fill="#0c0d0f" />
+    <rect id="guide-3-arm" data-kind="ring" x="259.65" y="12" width="12.7" height="77" rx="0" fill="#0c0d0f" />
+    <rect id="guide-4-arm" data-kind="ring" x="361.65" y="12" width="12.7" height="77" rx="0" fill="#0c0d0f" />
+    <rect id="guide-1-lower" data-kind="ring" x="55.65" y="89" width="12.7" height="11" rx="0" fill="#16181b" />
+    <rect id="guide-2-lower" data-kind="ring" x="157.65" y="89" width="12.7" height="11" rx="0" fill="#16181b" />
+    <rect id="guide-3-lower" data-kind="ring" x="259.65" y="89" width="12.7" height="11" rx="0" fill="#16181b" />
+    <rect id="guide-4-lower" data-kind="ring" x="361.65" y="89" width="12.7" height="11" rx="0" fill="#16181b" />
+  </g>
+  <g id="flange-top" data-path="flange-top" data-class="mechanical" data-ref="fs/cmh-5dr1u-n-flange@1:1.0.0" data-depth="1.2" data-wall="#1b1d20" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel and its folded edges">
+    <title>flange-top</title>
+    <rect id="flange-top--flange" x="0" y="0" width="430" height="12" fill="#1b1d20" data-path="flange-top/flange" data-class="bezel" />
+  </g>
+</svg>

@@ -6,7 +6,7 @@
 
 import {el} from './dom.js';
 import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, endKey, countsBy,
-        matches} from './cable-rules.js';
+        matches} from '../../vendor/rack/cable-rules.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});

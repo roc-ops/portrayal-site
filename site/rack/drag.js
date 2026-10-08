@@ -5,9 +5,9 @@
 // The previews along the way are moveItem's answers, never edits. The pure half - a pointer's y to a U - is uAtY in
 // elevation.js, so this stays about gesture handling, not layout math.
 
-import {RU, OPENING} from './rails.js';
+import {RU, OPENING} from '../../vendor/rack/rails.js';
 import {uAtY} from './elevation.js';
-import {moveItem} from './managers.js';
+import {moveItem} from '../../vendor/rack/managers.js';
 import {svgEl, svgY} from './dom.js';
 
 const THRESHOLD = 4; // CSS px before a press becomes a drag, not a click

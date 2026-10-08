@@ -483,17 +483,17 @@ if opt.is_file():
 # The 2D rails and the 3D posts were two ideas of a rail. The right 2D rail
 # was a copy of the left instead of its mirror, so its numbers sat inside and
 # its holes outside. rails.js now holds the only description, and neither
-# renderer may keep its own.
-rails = HERE / "site" / "rack" / "rails.js"
+# renderer may keep its own. It is the kit's since 0.3.0 (kit/rack/rails.js).
+rails = HERE / "vendor" / "rack" / "rails.js"
 rtxt = rails.read_text() if rails.is_file() else ""
-check(bool(rtxt), "site/rack/rails.js exists", "the rail has no single description")
+check(bool(rtxt), "vendor/rack/rails.js exists", "the rail has no single description")
 for name in ("RU", "RAIL_W", "OPENING", "HOLE_CC", "HOLE_DY", "HOLE_SQUARE", "HOLE_ROUND", "HOLE_SIZE", "SIDES"):
     check(re.search(rf"export const {name}\b", rtxt) is not None,
           f"rails.js exports {name}", "missing")
 shim = (HERE / "site" / "showcase" / "rails.js")
-check(shim.is_file() and "export * from '../rack/rails.js'" in shim.read_text()
+check(shim.is_file() and "export * from '../../vendor/rack/rails.js'" in shim.read_text()
       and "export const" not in shim.read_text(),
-      "site/showcase/rails.js only re-exports site/rack/rails.js",
+      "site/showcase/rails.js only re-exports vendor/rack/rails.js",
       "the rail has a second description")
 # THE MIRROR, STRUCTURALLY (spec §6). SIDES is computed from the constants
 # above; recompute it here from the same numbers and hold its shape, so a
@@ -529,7 +529,7 @@ check("0.22" not in rack_js and "0.78" not in rack_js,
       "rack.js has no non-EIA hole fractions", "holes must come from HOLE_DY")
 
 r3d = (HERE / "site" / "rack3d.js").read_text()
-check("from './rack/rails.js'" in r3d, "rack3d.js draws its rails from rails.js")
+check("from '../vendor/rack/rails.js'" in r3d, "rack3d.js draws its rails from rails.js")
 check(not re.search(r"\[\s*6\.35\s*,\s*22\.22", r3d),
       "rack3d.js keeps no hole positions of its own", "HOLE_DY belongs to rails.js")
 
@@ -876,8 +876,11 @@ for name, doc in alldocs.items():
 # floating callout, and every link in its table seats parts the drawing's
 # cages actually accept.
 hero = (HERE / "site" / "hero-reveal.js").read_text()
-cab = (HERE / "site" / "rack" / "cables.js").read_text()
-check(re.search(r"export const JACKETS\s*=\s*\{", cab) is not None
+# The table is the kit's (kit/rack/cable-geometry.js); cables.js re-exports it.
+cab = (HERE / "vendor" / "rack" / "cable-geometry.js").read_text()
+check(re.search(r"\bJACKETS\b[^;]*from '\.\./\.\./vendor/rack/cable-geometry\.js'",
+                (HERE / "site" / "rack" / "cables.js").read_text()) is not None
+      and re.search(r"export const JACKETS\s*=\s*\{", cab) is not None
       and all(re.search(rf"\b{k}\s*:", cab.split("export const JACKETS", 1)[-1][:400]) for k in ("mm", "sm", "dac", "cu")),
       "cables.js names the four jacket colors the hero draws (mm, sm, dac, cu)",
       "no JACKETS export with mm/sm/dac/cu")
@@ -1205,26 +1208,64 @@ check("index.json" in (HERE / "site" / "schema.js").read_text() and "method: 'HE
 check("assets/schemas/index.json" in (HERE / "refresh-assets.sh").read_text(),
       "refresh-assets.sh writes assets/schemas/index.json", "no index.json written for the schemas")
 
-# ── the rack builder's chassis index ───────────────────────────────────────
+# ── the rack builder's catalogue and core: the kit's ─────────────────────
 # The catalog grays out what will not fit, which needs every device's RU and
-# depth; those live only in 158 configs.json files (7.9 MB). chassis-index.py
-# distils them into site/rack/chassis.json, and refresh-assets.sh regenerates
-# it after every sync - this is what fails if a sync forgot to.
+# depth. Portrayal builds that index now (rack_index.py -> dist/rack.json, kit
+# 0.3.0) and the site vendors it with the rest of dist; it used to distil its
+# own, site/rack/chassis.json, with chassis-index.py.
+import os
 import importlib.util as _ilu
-_spec = _ilu.spec_from_file_location("chassis_index", HERE / "chassis-index.py")
-if _spec and (HERE / "chassis-index.py").is_file():
-    _ci = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_ci)
-    _out = HERE / "site" / "rack" / "chassis.json"
-    check(_out.is_file() and _out.read_text() == _ci.text(),
-          "site/rack/chassis.json matches assets/dist", "run ./chassis-index.py")
-else:
-    check(False, "chassis-index.py exists", "the rack builder's catalog has no sizes")
+_rj = HERE / "assets" / "dist" / "rack.json"
+_rack = json.loads(_rj.read_text()) if _rj.is_file() else {}
+check(_rack.get("format") == 1 and bool(_rack.get("devices")),
+      "assets/dist/rack.json is the rack catalogue, format 1",
+      f"format {_rack.get('format')!r}, {len(_rack.get('devices') or {})} devices - "
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+_devs = json.loads((HERE / "assets" / "dist" / "devices.json").read_text()).get("devices") or []
+check({d["name"] for d in _devs} <= set(_rack.get("devices") or {}),
+      "every device in devices.json is in rack.json",
+      "rack.json and devices.json are from different builds")
+
+# THE CORE IS THE KIT'S (kit/rack/, vendored into vendor/rack/). Exactly the
+# kit's files when the upstream clone is here to ask; always, every module the
+# site imports, each able to resolve its own imports.
+VRACK = VENDOR / "rack"
+_vrack = sorted(p.name for p in VRACK.glob("*.js")) if VRACK.is_dir() else []
+_kitrack = Path(os.environ.get("PORTRAYAL_KIT")
+                or Path(os.environ.get("PORTRAYAL_UPSTREAM") or "/Volumes/External/portrayal-upstream") / "kit") / "rack"
+if _kitrack.is_dir():
+    _want = sorted(p.name for p in _kitrack.glob("*.js"))
+    check(_vrack == _want, "vendor/rack/ holds exactly the kit's rack/*.js",
+          f"vendor/rack {_vrack}, kit/rack {_want} - run ./refresh-assets.sh")
+for _m in ("rails", "model", "fit", "managers", "cable-rules", "route-path", "route", "export-data",
+           "dcim-rules", "cable-geometry", "catalog", "validate", "commands", "history", "editor", "queries"):
+    check(f"{_m}.js" in _vrack, f"vendor/rack/{_m}.js is vendored", "run ./refresh-assets.sh")
+_RIMP = re.compile(r"""^\s*(?:import|export)\b[^'"]*from\s*['"](\.\.?/[\w./-]+\.js)['"]""", re.M)
+for _f in _vrack:
+    for _dep in sorted(set(_RIMP.findall((VRACK / _f).read_text()))):
+        check((VRACK / _dep).resolve().is_file(), f"vendor/rack/{_f} can resolve {_dep}",
+              "the kit's rack core needs a kit module that is not vendored")
+
+# NO SECOND COPY. A site/rack/ module may re-export a kit name
+# (export {...} from '../../vendor/rack/...'), never declare one of its own:
+# that is how the site's copies drifted from the kit's before the move.
+_DECL = re.compile(r"^\s*export\s+(?:async\s+)?(?:function\*?|const|let|var|class)\s+([A-Za-z_$][\w$]*)", re.M)
+_REEXP = re.compile(r"^\s*export\s*\{([^}]*)\}\s*from", re.M)
+_kit_names = set()
+for _f in _vrack:
+    _t = (VRACK / _f).read_text()
+    _kit_names |= set(_DECL.findall(_t))
+    _kit_names |= {n.strip().split(" as ")[-1].strip() for g in _REEXP.findall(_t) for n in g.split(",") if n.strip()}
+_redef = sorted(f"{p.name}: {n}" for p in sorted((HERE / "site" / "rack").glob("*.js"))
+                for n in _DECL.findall(p.read_text()) if n in _kit_names)
+check(bool(_kit_names) and not _redef, "no site/rack module redefines a name the kit's rack core exports",
+      "; ".join(_redef) + " - import it from vendor/rack/ (re-export it if others import it from here)")
 
 # RACK-FACE MANAGERS (docs/superpowers/specs/2026-10-07-rack-face-managers-design.md §3):
 # the catalog holds the first one, as a 1U sheet part on the rail face, and the
 # vendored relief can build a sheet body - without it the part is a solid block
 # hiding the ports it serves.
-_cat = json.loads((HERE / "site" / "rack" / "chassis.json").read_text())["devices"]
+_cat = _rack.get("devices") or {}
 _mgr = _cat.get("fhd-cmp5dr", {})
 check(_mgr.get("mount") == "rack-face" and _mgr.get("ru") == 1 and _mgr.get("shell") == "sheet",
       "fhd-cmp5dr is in the catalog as a 1U rack-face sheet part",
@@ -1243,16 +1284,16 @@ check(all(n in _cat for n in ("fhd-cmp5dr", "cmh-4drb1u", "cmh-sfd1u")),
 check(set(_g("fhd-cmp5dr", "top")) >= {f"guide-{i}" for i in range(1, 6)}
       and set(_g("fhd-cmp5dr", "front")) >= {f"guide-{i}" for i in range(1, 6)},
       "fhd-cmp5dr's five rings are indexed on its top and front views",
-      "run ./chassis-index.py")
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
 check(bool(_g("cmh-sfd1u", "front")) and bool((_cat.get("cmh-4drb1u", {}).get("passes") or {})),
       "the duct of cmh-sfd1u and the brush pass of cmh-4drb1u are indexed",
-      "run ./chassis-index.py")
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
 check(set(_g("cmh-4drb1u", "front")) >= {f"guide-{i}" for i in range(1, 5)},
       "cmh-4drb1u's four D-rings are indexed on its front view",
-      "run ./chassis-index.py")
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
 check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
       "fhd-cmp5dr carries its stated capacity, 30",
-      "run ./chassis-index.py")
+      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
 
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",

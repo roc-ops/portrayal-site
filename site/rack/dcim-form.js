@@ -17,7 +17,7 @@
 // text says so in one sentence.
 
 import {el} from './dom.js';
-import {dcimOf} from './model.js';
+import {dcimOf} from '../../vendor/rack/model.js';
 
 export function dcimForm({rack, draft = null, onEdit, onDone, onCancel}) {
   const d = {...dcimOf(rack), ...(draft || {})};

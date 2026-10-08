@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="430.0mm" height="44.0mm" viewBox="0 0 430.0 44.0" data-device="cmh-5dr1u" data-view="front" data-shell="sheet" data-weight-kg="0.46" data-material="Steel, Powder-coated Black" data-ring-material="PC, UL 94V-2" data-mounting-hardware="M6*15mm Screw x4 and M6 Nut x4" data-cable-capacity="55" data-cable-capacity-basis="Cat6 24AWG (6.1 mm) cables at 100 % fill, theoretical; 17 at the recommended 30 % - FS 0U/1U Horizontal Cable Manager datasheet table, and the Cable Capacity Reference Guide of the Horizontal Cable Managers with D-rings datasheet" data-environment="Indoor">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMH-5DR1U","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/cmh-5dr1u-panel@1":"1.0.0","fs/cmh-5dr1u-ring@1":"1.0.0"},"source-sha256":"64f03de5b20954d61b2cc456346d13ba929cbd3efaa51ada08a62966836e0e5b","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMH-5DR1U" x="0" y="0" width="430" height="44" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="panel" data-path="panel" data-class="mechanical" data-ref="fs/cmh-5dr1u-panel@1:1.0.0" data-depth="85.5" data-wall="#1b1d20" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel and its folded edges">
+    <title>panel</title>
+    <rect id="panel--plate" x="0" y="0" width="430" height="44" fill="#1b1d20" data-path="panel/plate" data-class="bezel" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-5dr1u-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="26.8 68.3" data-flammability="UL 94V-2" data-material="PC" data-rel-pos="1" transform="translate(18.6,0.0)" data-group="guides" data-group-role="furniture" data-description="five detachable polycarbonate D-rings, cables passing through along the panel" data-z-lift="-85.5" data-in="panel">
+    <title>guide-1</title>
+    <circle id="guide-1--seat" cx="16.4" cy="22" r="16.4" fill="#151719" data-path="guide-1/seat" data-class="bezel" data-z-cyl="1.5" data-z-color="#151719" />
+    <rect id="guide-1--base" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#111315" data-path="guide-1/base" data-class="bezel" data-z-out="-76.5" data-z-color="#111315" />
+    <rect id="guide-1--top" x="11.45" y="0.2" width="9.9" height="8.3" rx="1.5" fill="#0d0f10" data-path="guide-1/top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-1--bottom" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#0d0f10" data-path="guide-1/bottom" data-class="bezel" data-z-out="-17.7" data-z-color="#111315" />
+    <rect id="guide-1--front" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#0d0f10" data-path="guide-1/front" data-class="bezel" data-z-out="0" data-z-lift="77.3" data-z-color="#111315" />
+    <rect id="guide-1--foot" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#101214" data-path="guide-1/foot" data-class="bezel" data-z-out="-8.2" data-z-lift="71.9" data-z-color="#111315" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-5dr1u-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="26.8 68.3" data-flammability="UL 94V-2" data-material="PC" data-rel-pos="2" transform="translate(108.6,0.0)" data-group="guides" data-group-role="furniture" data-description="five detachable polycarbonate D-rings, cables passing through along the panel" data-z-lift="-85.5" data-in="panel">
+    <title>guide-2</title>
+    <circle id="guide-2--seat" cx="16.4" cy="22" r="16.4" fill="#151719" data-path="guide-2/seat" data-class="bezel" data-z-cyl="1.5" data-z-color="#151719" />
+    <rect id="guide-2--base" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#111315" data-path="guide-2/base" data-class="bezel" data-z-out="-76.5" data-z-color="#111315" />
+    <rect id="guide-2--top" x="11.45" y="0.2" width="9.9" height="8.3" rx="1.5" fill="#0d0f10" data-path="guide-2/top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-2--bottom" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#0d0f10" data-path="guide-2/bottom" data-class="bezel" data-z-out="-17.7" data-z-color="#111315" />
+    <rect id="guide-2--front" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#0d0f10" data-path="guide-2/front" data-class="bezel" data-z-out="0" data-z-lift="77.3" data-z-color="#111315" />
+    <rect id="guide-2--foot" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#101214" data-path="guide-2/foot" data-class="bezel" data-z-out="-8.2" data-z-lift="71.9" data-z-color="#111315" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-5dr1u-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="26.8 68.3" data-flammability="UL 94V-2" data-material="PC" data-rel-pos="3" transform="translate(198.6,0.0)" data-group="guides" data-group-role="furniture" data-description="five detachable polycarbonate D-rings, cables passing through along the panel" data-z-lift="-85.5" data-in="panel">
+    <title>guide-3</title>
+    <circle id="guide-3--seat" cx="16.4" cy="22" r="16.4" fill="#151719" data-path="guide-3/seat" data-class="bezel" data-z-cyl="1.5" data-z-color="#151719" />
+    <rect id="guide-3--base" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#111315" data-path="guide-3/base" data-class="bezel" data-z-out="-76.5" data-z-color="#111315" />
+    <rect id="guide-3--top" x="11.45" y="0.2" width="9.9" height="8.3" rx="1.5" fill="#0d0f10" data-path="guide-3/top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-3--bottom" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#0d0f10" data-path="guide-3/bottom" data-class="bezel" data-z-out="-17.7" data-z-color="#111315" />
+    <rect id="guide-3--front" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#0d0f10" data-path="guide-3/front" data-class="bezel" data-z-out="0" data-z-lift="77.3" data-z-color="#111315" />
+    <rect id="guide-3--foot" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#101214" data-path="guide-3/foot" data-class="bezel" data-z-out="-8.2" data-z-lift="71.9" data-z-color="#111315" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-5dr1u-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="26.8 68.3" data-flammability="UL 94V-2" data-material="PC" data-rel-pos="4" transform="translate(288.6,0.0)" data-group="guides" data-group-role="furniture" data-description="five detachable polycarbonate D-rings, cables passing through along the panel" data-z-lift="-85.5" data-in="panel">
+    <title>guide-4</title>
+    <circle id="guide-4--seat" cx="16.4" cy="22" r="16.4" fill="#151719" data-path="guide-4/seat" data-class="bezel" data-z-cyl="1.5" data-z-color="#151719" />
+    <rect id="guide-4--base" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#111315" data-path="guide-4/base" data-class="bezel" data-z-out="-76.5" data-z-color="#111315" />
+    <rect id="guide-4--top" x="11.45" y="0.2" width="9.9" height="8.3" rx="1.5" fill="#0d0f10" data-path="guide-4/top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-4--bottom" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#0d0f10" data-path="guide-4/bottom" data-class="bezel" data-z-out="-17.7" data-z-color="#111315" />
+    <rect id="guide-4--front" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#0d0f10" data-path="guide-4/front" data-class="bezel" data-z-out="0" data-z-lift="77.3" data-z-color="#111315" />
+    <rect id="guide-4--foot" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#101214" data-path="guide-4/foot" data-class="bezel" data-z-out="-8.2" data-z-lift="71.9" data-z-color="#111315" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-behaviour="mounts" data-ref="fs/cmh-5dr1u-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="26.8 68.3" data-flammability="UL 94V-2" data-material="PC" data-rel-pos="5" transform="translate(378.6,0.0)" data-group="guides" data-group-role="furniture" data-description="five detachable polycarbonate D-rings, cables passing through along the panel" data-z-lift="-85.5" data-in="panel">
+    <title>guide-5</title>
+    <circle id="guide-5--seat" cx="16.4" cy="22" r="16.4" fill="#151719" data-path="guide-5/seat" data-class="bezel" data-z-cyl="1.5" data-z-color="#151719" />
+    <rect id="guide-5--base" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#111315" data-path="guide-5/base" data-class="bezel" data-z-out="-76.5" data-z-color="#111315" />
+    <rect id="guide-5--top" x="11.45" y="0.2" width="9.9" height="8.3" rx="1.5" fill="#0d0f10" data-path="guide-5/top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-5--bottom" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#0d0f10" data-path="guide-5/bottom" data-class="bezel" data-z-out="-17.7" data-z-color="#111315" />
+    <rect id="guide-5--front" x="11.45" y="0.2" width="9.9" height="43.6" rx="1.5" fill="#0d0f10" data-path="guide-5/front" data-class="bezel" data-z-out="0" data-z-lift="77.3" data-z-color="#111315" />
+    <rect id="guide-5--foot" x="11.45" y="35.3" width="9.9" height="8.5" rx="1.5" fill="#101214" data-path="guide-5/foot" data-class="bezel" data-z-out="-8.2" data-z-lift="71.9" data-z-color="#111315" />
+  </g>
+</svg>
