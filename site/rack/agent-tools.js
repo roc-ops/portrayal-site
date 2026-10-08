@@ -7,7 +7,7 @@
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
 import {newRack, dcimOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
-import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, SECTIONS} from './agent-text.js';
+import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
 
@@ -172,7 +172,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
       {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
        ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
        cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
-       section: {type: 'string', enum: SECTIONS, description: 'Where a page starts: bays, cages, fields or cables. The start when left out.'},
+       section: {type: 'string', enum: INSPECT_SECTIONS, description: 'Where a page starts: bays, cages, fields or cables. The start when left out.'},
        offset: {type: 'integer', minimum: 0, description: 'Where in section the page starts; 0 when left out.'}},
       [], UNTRUSTED,
       async ({id, ref, cfg, section, offset}) => {

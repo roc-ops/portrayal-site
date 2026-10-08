@@ -74,7 +74,7 @@ export function windowLines(lines, offset, room) {
 // The kit's inspect (vendor/rack/queries.js) answers with plain data; this is
 // how an agent reads it (spec 2026-10-08 section 3): the device, then its bays,
 // cages, fields and cables, in runs.
-export const SECTIONS = ['bays', 'cages', 'fields', 'cables'];
+export const INSPECT_SECTIONS = ['bays', 'cages', 'fields', 'cables'];
 const TITLE = {bays: 'Bays', cages: 'Cages', fields: 'Fields', cables: 'Cables'};
 const NOT_LOADED = 'Its parts list could not be loaded, so its bays, cages and fields are not shown.';
 const paren = s => (s ? ` (${s})` : '');
@@ -128,16 +128,16 @@ export function sectionLines(o) {
 export function inspectText(o, {section = null, offset = 0, ask = {}} = {}) {
   const parts = sectionLines(o);
   if (section == null && !offset) {
-    const whole = [...itemHead(o), ...SECTIONS.flatMap(s => (parts[s].length ? [`${TITLE[s]}:`, ...parts[s]] : []))].join('\n');
+    const whole = [...itemHead(o), ...INSPECT_SECTIONS.flatMap(s => (parts[s].length ? [`${TITLE[s]}:`, ...parts[s]] : []))].join('\n');
     if (whole.length <= LIMIT) return whole;
   }
   const firstPage = section == null && !offset;
   const head = itemHead(o, {configs: firstPage ? 3 : 0}).map(l => clip(l, 300));
-  const flat = SECTIONS.flatMap(s => parts[s].map((line, i) => ({s, i, line: clip(line, 300)})));
-  const si = SECTIONS.indexOf(section ?? SECTIONS[0]);
-  const start = flat.findIndex(x => SECTIONS.indexOf(x.s) > si || (SECTIONS.indexOf(x.s) === si && x.i >= offset));
+  const flat = INSPECT_SECTIONS.flatMap(s => parts[s].map((line, i) => ({s, i, line: clip(line, 300)})));
+  const si = INSPECT_SECTIONS.indexOf(section ?? INSPECT_SECTIONS[0]);
+  const start = flat.findIndex(x => INSPECT_SECTIONS.indexOf(x.s) > si || (INSPECT_SECTIONS.indexOf(x.s) === si && x.i >= offset));
   const name = o.id ?? o.ref;
-  if (start < 0) return [`Nothing in ${name} from ${SECTIONS[si]} ${offset} on.`, ...head].join('\n');
+  if (start < 0) return [`Nothing in ${name} from ${INSPECT_SECTIONS[si]} ${offset} on.`, ...head].join('\n');
   // 200 characters are kept for the first line, which is written last.
   const room = LIMIT - head.join('\n').length - 200;
   const page = [];
@@ -150,7 +150,7 @@ export function inspectText(o, {section = null, offset = 0, ask = {}} = {}) {
     last = x.s;
     end = k + 1;
   }
-  const shown = SECTIONS.map(s => {
+  const shown = INSPECT_SECTIONS.map(s => {
     const xs = flat.slice(start, end).filter(x => x.s === s);
     return xs.length ? `${s} ${xs[0].i + 1}-${xs.at(-1).i + 1} of ${parts[s].length}` : null;
   }).filter(Boolean).join(', ');
