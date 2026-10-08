@@ -6,7 +6,7 @@
 import {newDoc, nextRackName, positionOf, dcimOf} from './rack/model.js';
 import {hostAt, managersOf} from './rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
-import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
+import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
 import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
@@ -34,12 +34,18 @@ import {createRackEditor} from './rack/editor.js';
 import {GONE, NOT_ADDED} from './rack/commands.js';
 import * as Q from './rack/queries.js';
 import {configuredFace} from './rack/face.js';
+import {rackTools} from './rack/agent-tools.js';
+import {registerTools} from './agent/webmcp.js';
+import {touchedIds, markTouched} from './rack/agent-mark.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
+const AGENT_MARK_MS = 3000;
+// The highlight preference lives with the switch (Task 7); until then it is on.
+let agentHighlightOn = () => true;
 const CABLES_3D = 'Cables are added in 2D. Switch to 2D to add one.';
 function loadMode() {
   try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
@@ -283,8 +289,23 @@ function renderSoon() {
   renderQueued = true;
   queueMicrotask(() => { renderQueued = false; render(); });
 }
+// An agent's edit is outlined for a moment (spec §5). Each render redraws the
+// SVG, so the mark is put back on until it runs out, then taken off.
+function paintAgentMark() {
+  const m = S.agentMark;
+  if (!m) return;
+  const on = Date.now() < m.until;
+  markTouched(document, m.ids, on);
+  if (!on) { S.agentMark = null; return; }
+  clearTimeout(S.agentMarkTimer);
+  S.agentMarkTimer = setTimeout(paintAgentMark, m.until - Date.now() + 20);
+}
 function onChange(ev) {
   if (ev.cause === 'load') { if (ev.findings.length) S.save.saveSoon(theDoc()); return; }
+  if (ev.cause === 'apply' && ev.origin === 'agent') {
+    if (ev.summary) addNotice(`Your assistant: ${ev.summary}`, 'note');
+    if (agentHighlightOn()) S.agentMark = {ids: touchedIds(ev), until: Date.now() + AGENT_MARK_MS};
+  }
   for (const f of ev.findings) addNotice(f.text, f.kind);
   // The notice says this step only when the step raised it: a finding that is
   // its summary (a shrink), or edit()'s `say`, which runs after this. "Undid: X"
@@ -642,10 +663,11 @@ async function runExport(kind) {
   // What is typed in the settings form, Done not pressed, is part of the rack
   // the export builds from: store it before any builder reads rack().
   storeDcimDraft();
-  if (kind === 'json') { downloadDoc(theDoc()); return; }
-  if (kind === 'to-3d') { setMode('3d'); return; }
-  if (kind === 'dcim-settings') { openDcimSettings(); return; }
-  if (exporting || !BUILD[kind]) return;
+  if (kind === 'json') { const doc = theDoc(); downloadDoc(doc); return {name: fileName(doc), notes: ''}; }
+  if (kind === 'to-3d') { setMode('3d'); return {name: '', notes: ''}; }
+  if (kind === 'dcim-settings') { openDcimSettings(); return {name: '', notes: ''}; }
+  if (exporting) return {error: 'Another export is still running. Try again in a moment.'};
+  if (!BUILD[kind]) return {error: `There is no export called ${kind}.`};
   exporting = true;
   // The line is one row and cuts a long sentence short (.rk-export-status),
   // so the whole of it is the element's title too.
@@ -653,12 +675,15 @@ async function runExport(kind) {
   say('Preparing…');
   try {
     const out = await BUILD[kind]();
-    if (out.error) { say(out.error); return; }
+    if (out.error) { say(out.error); return {error: out.error}; }
     save(out.data, out.name, out.type);
-    say(exportStatus(out));
+    const notes = exportStatus(out);
+    say(notes);
+    return {name: out.name, notes};
   } catch (err) {
     console.warn('[portrayal] export', kind, err);
     say("That export didn't work. Try again.");
+    return {error: "That export didn't work. Try again."};
   } finally {
     exporting = false;
   }
@@ -829,6 +854,7 @@ async function render() {
     }
   }
   renderSide();
+  paintAgentMark();
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -1313,14 +1339,30 @@ async function bootInner() {
   showMode();
   ed = createRackEditor({doc, chassisOf});
   ed.on('change', onChange);
+  // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
+  // Registered now for a browser that has WebMCP; the Connect your AI switch
+  // (site/agent/relay.js) registers them for one that doesn't.
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport});
+  S.agentAbort = new AbortController();
+  S.agentNative = (await registerTools(S.agentTools, {signal: S.agentAbort.signal})).registered > 0;
   setDoc(doc);
 }
 
+// The queries, bound to this page's readers: the probe hook and the agent tools
+// ask the same questions the same way.
+const facePorts = async (item, view) =>
+  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+const boundQueries = () => ({
+  describe: r => Q.describe(r, {chassisOf}),
+  catalog: filter => Q.catalog(S.devices, filter),
+  fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
+  freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
+  freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
+  looseEnds: r => Q.looseEnds(r, {cableFacts}),
+});
+
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
-  // The ports of a device's own panel, as the queries read them.
-  const facePorts = async (item, view) =>
-    ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
   window.__rack = {ready, doc: () => ed.getDoc(), flush: () => S.save.flush(), scene: () => S.scene3d,
     // Probe only: put a rack in as one undo step, as any edit that changes the rack under the page does.
     replaceRack: (next, undoable) => {
@@ -1332,13 +1374,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     undo: () => undoStep(),
     redo: () => redoStep(),
     history: () => ({canUndo: ed.canUndo, canRedo: ed.canRedo, undoSummary: ed.undoSummary, redoSummary: ed.redoSummary}),
-    query: {
-      describe: () => Q.describe(rack(), {chassisOf}),
-      catalog: filter => Q.catalog(S.devices, filter),
-      fitsAt: spot => Q.fitsAt(rack(), spot, {chassisOf}),
-      freePorts: id => Q.freePorts(rack(), id, {portsOf: facePorts}),
-      looseEnds: () => Q.looseEnds(rack(), {cableFacts}),
-    },
+    query: (() => { const q = boundQueries(); return {
+      describe: () => q.describe(rack()), catalog: f => q.catalog(f), fitsAt: s => q.fitsAt(rack(), s),
+      freePorts: id => q.freePorts(rack(), id), looseEnds: () => q.looseEnds(rack())}; })(),
     // Probe only: a notice raised earlier in the same action.
     addNotice: text => addNotice(text, 'note'),
     // Probe only: make the exports' own reading of the cables fail, or one sheet pane's cables (see exports.js).

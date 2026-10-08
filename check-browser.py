@@ -8152,6 +8152,100 @@ def check_rack_commands(page, base):
     return bad
 
 
+# A stand-in for the browser's WebMCP: records what the page registers, so the
+# tools can be called as an agent would, with no relay and no flag.
+STAND_IN_MODEL_CONTEXT = """
+window.__tools = {};
+const mc = {registerTool(t, o) {
+  window.__tools[t.name] = t;
+  o?.signal?.addEventListener('abort', () => delete window.__tools[t.name]);
+  return Promise.resolve();
+}};
+Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
+"""
+AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "list_free_ports", "redo", "undo"]
+
+
+def agent_call(page, name, args):
+    return page.evaluate("([n, a]) => window.__tools[n].execute(a)", [name, args])
+
+
+@extra("rack.html: agent tools - registered on load, an agent's edit shown and undone, a dry run, an export, a busy export, a removed panel")
+def check_rack_agent_tools(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "agent: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0")
+    wait_fn(page, "agent: tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    if sorted(page.evaluate("() => Object.keys(window.__tools)")) != AGENT_TOOLS:
+        bad.append(f"agent: registered {page.evaluate('() => Object.keys(window.__tools)')}")
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.length")
+    # An edit, as an agent sends it
+    res = agent_call(page, "edit_rack", {"commands": [
+        {"op": "place", "ref": "as7726-32x", "face": "front", "ru": 40, "as": "a"},
+        {"op": "place", "ref": "as7726-32x", "face": "front", "ru": 38, "as": "b"}]})
+    if res.get("isError") or "Placed" not in res["content"][0]["text"]:
+        bad.append(f"agent: edit_rack answered {res}")
+    try:
+        wait_fn(page, "agent: the notice names the assistant",
+                "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('Your assistant: Placed')")
+    except RuntimeError:
+        bad.append("agent: no 'Your assistant:' notice after an agent edit")
+    try:
+        wait_fn(page, "agent: highlighted", "() => document.querySelectorAll('svg .rk-agent-touched').length >= 2")
+        wait_fn(page, "agent: highlight fades", "() => !document.querySelector('.rk-agent-touched')", timeout=8000)
+    except RuntimeError as e:
+        bad.append(f"agent: highlight - {e}")
+    # Undo by the page's own button, then redo by the agent
+    page.click("#undoShrink")
+    wait_fn(page, "agent: undone by button", "() => window.__rack.doc().racks[0].items.length === 0")
+    if agent_call(page, "redo", {})["content"][0]["text"].split(":")[0] != "Redid":
+        bad.append("agent: redo did not say Redid")
+    wait_fn(page, "agent: redone", "() => window.__rack.doc().racks[0].items.length === 2")
+    # A dry run changes nothing
+    dry = agent_call(page, "edit_rack", {"commands": [{"op": "remove", "id": "i1", "cables": "keep"}], "dry_run": True})
+    if "Would:" not in dry["content"][0]["text"] or items() != 2:
+        bad.append(f"agent: dry run answered {dry} with {items()} items")
+    # The page's own command is refused
+    if not agent_call(page, "edit_rack", {"commands": [{"op": "lengths.routed"}]}).get("isError"):
+        bad.append("agent: lengths.routed was accepted")
+    # describe_rack sees the edit
+    if "i1" not in agent_call(page, "describe_rack", {})["content"][0]["text"]:
+        bad.append("agent: describe_rack does not list i1")
+    # An export arrives as a download, named as the tool said
+    page.evaluate("() => window.__rack.apply({op: 'dcim', site: 'dc1', role: 'leaf'})")
+    with page.expect_download(timeout=READY_MS) as dl:
+        out = agent_call(page, "export_rack", {"kind": "netbox import"})
+    said = out["content"][0]["text"]
+    if out.get("isError") or dl.value.suggested_filename not in said:
+        bad.append(f"agent: export said {said!r}, downloaded {dl.value.suggested_filename!r}")
+    # Two exports at once: the second is told to wait, not left hanging
+    both = page.evaluate("""async () => {
+        const t = window.__tools.export_rack;
+        const [a, b] = await Promise.all([t.execute({kind: 'netbox import'}), t.execute({kind: 'bill of materials'})]);
+        return [a, b]; }""")
+    if not any(r.get("isError") and "still running" in r["content"][0]["text"] for r in both):
+        bad.append(f"agent: two exports at once answered {both}")
+    # The user has i1's panel open when the agent removes it
+    page.click('svg [data-item-id="i1"]')
+    wait_fn(page, "agent: i1's panel open", "() => (document.querySelector('.rk-side')?.textContent || '').includes('AS7726-32X')")
+    agent_call(page, "edit_rack", {"commands": [{"op": "remove", "id": "i1", "cables": "remove"}]})
+    wait_fn(page, "agent: i1 gone", "() => window.__rack.doc().racks[0].items.length === 1")
+    page.wait_for_timeout(300)
+    if page.evaluate("() => !!document.querySelector('.rk-side [data-item-id=\"i1\"], .rk-side #iRemove')"):
+        bad.append("agent: the side panel still shows the removed device")
+    if mcpb:
+        bad.append(f"agent: MCP-B loaded with the switch off: {mcpb[:2]}")
+    return bad
+
+
 @extra("rack.html: when the cables' faces cannot be read, the rack still draws, no end is marked loose, and the panel says so; the answers are frozen")
 def check_rack_cable_facts_fallback(page, base):
     bad = []
