@@ -8673,7 +8673,7 @@ def relay_connect_asserts(page):
         bad.append(f"relay: a tools list request did not say 'Found your relay.' (status {status()!r})")
     from_frame({"type": "webmcp.relay.rejected"})
     try:
-        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('Your relay refused this page.')")
+        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent === `Your relay refused this page. Start it with --widget-origin ${location.origin}.`")
     except RuntimeError:
         bad.append(f"relay: a rejection did not overwrite the status (status {status()!r})")
     return bad
@@ -8727,8 +8727,13 @@ def check_rack_agent_tools_2(page, base):
     hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
     if not hint.get("webmcp") or sorted(hint.get("tools", [])) != AGENT_TOOLS:
         bad.append(f"agent2: the page hint says {hint}")
-    if "executeTool" not in (page.text_content("#webmcp-hint-text") or ""):
-        bad.append("agent2: the hint paragraph does not say how to call the tools")
+    hint_p = page.text_content("#webmcp-hint-text") or ""
+    if "executeTool" not in hint_p or f"The tools are: {', '.join(page.evaluate('() => Object.keys(window.__tools)'))}." not in hint_p \
+            or not hint.get("registered"):
+        bad.append(f"agent2: the hint paragraph does not name the registered tools and how to call them: {hint_p!r}, {hint}")
+    first = page.evaluate("() => [document.body.firstElementChild?.id, document.body.getAttribute('aria-describedby')]")
+    if first != ["webmcp-hint-text", "webmcp-hint-text"]:
+        bad.append(f"agent2: the hint is not the body's first element and its description: {first}")
     # new_rack: the old rack stays in the library, the new one is open
     old = page.evaluate("() => ({id: window.__rack.doc().id, name: window.__rack.doc().racks[0].name})")
     out = agent_exec(page, "new_rack", {"name": "Agent rack", "height": 24})
@@ -8751,6 +8756,11 @@ def check_rack_agent_tools_2(page, base):
     if fitted.get("isError"):
         bad.append(f"agent2: fitting an optic answered {fitted}")
         return bad
+    # A part the cage does not take is refused, with what it takes, and nothing changes
+    wrong = agent_exec(page, "edit_rack", {"commands": [{"op": "fit", "id": "i1", "path": "port-2", "ref": "fs/fhd-fap6scd-os2@1"}]})
+    if not wrong.get("isError") or "does not take fs/fhd-fap6scd-os2@1" not in said(wrong) \
+            or doc("r.items[0].swaps['port-2'] ?? null") is not None:
+        bad.append(f"agent2: a wrong part in a cage answered {wrong}")
     look = inspect_all(page, {"id": "i1"})
     if "holds generic/qsfp-lc@2" not in look:
         bad.append(f"agent2: inspect does not show the optic: {look[:300]!r}")
@@ -8786,6 +8796,13 @@ def check_rack_agent_tools_2(page, base):
     repointed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.update", "id": "c1", "b": end("i2", fresh[0])}]})
     if repointed.get("isError") or doc("r.cables.find(c => c.id === 'c1')?.b.path") != fresh[0]["path"]:
         bad.append(f"agent2: re-pointing c1 answered {repointed}")
+    # A hand route through a waypoint the rack lacks is refused, with what exists
+    for way, want in [({"item": "i1", "via": "guide-9"}, "has no"), ({"lane": "middle", "ru": 20}, "no gutter called middle")]:
+        routed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.route", "id": "c1", "route": [way]}]})
+        if not routed.get("isError") or want not in said(routed):
+            bad.append(f"agent2: a route through {way} answered {routed}")
+    if doc("r.cables.find(c => c.id === 'c1')?.routeEdited === true"):
+        bad.append("agent2: a refused route still changed c1")
     # The cables on a device, removed by selector
     agent_exec(page, "edit_rack", {"commands": [{"op": "cable.add", "a": end("i1", sw[1]), "b": end("i2", fresh[1])}]})
     removed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.remove", "select": {"item": "i1"}}]})
@@ -8812,11 +8829,20 @@ def check_rack_agent_relay(page, base):
         bad.append(f"relay: the Connect your AI button is off screen at 375px: {box}")
     page.click("#agentMenu > summary")
     panel = page.text_content("#agentSlot") or ""
-    for want in ["--widget-origin https://portrayal.dev", "Your AI runs on your computer and talks to this page directly.",
+    origin = page.evaluate("() => location.origin")
+    for want in [f"--widget-origin {origin}", "Your AI runs on your computer and talks to this page directly.",
                  "Export this rack for NetBox."]:
         if want not in panel:
             bad.append(f"relay: the panel does not say {want!r}")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered") or hint.get("tools") or "Connect your AI" not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"relay: with nothing registered the page hint says {hint}")
     page.check("#agentRelay")
+    try:
+        wait_fn(page, "relay: the hint names the tools once the switch registers them",
+                f"() => JSON.parse(document.getElementById('webmcp-hint').textContent).tools.length === {len(AGENT_TOOLS)}")
+    except RuntimeError as e:
+        bad.append(str(e))
     try:
         wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
     except RuntimeError:

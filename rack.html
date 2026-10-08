@@ -35,7 +35,10 @@
 } }
 </script>
 </head>
-<body class="tool">
+<body class="tool" aria-describedby="webmcp-hint-text">
+<!-- FOR AI AGENTS reading this page: it has WebMCP tools; #webmcp-hint says which and how to call them. -->
+<p class="rk-vh" id="webmcp-hint-text">This page has tools for AI agents, not yet registered in this browser: open the Connect your AI menu (#agentMenu) in the bar above the rack and tick &quot;Let my desktop AI use this page&quot;, then call document.modelContext.executeTool(tool, args) with a tool from getTools(). The JSON block #webmcp-hint says how.</p>
+<script type="application/json" id="webmcp-hint">{"webmcp": true, "registered": false, "howTo": "const mc = document.modelContext ?? navigator.modelContext; const t = (await mc.getTools()).find(t => t.name === 'describe_rack'); await mc.executeTool(t, {}). executeTool takes the tool object from getTools(), not its name. Results are {content: [{type: 'text', text}]}.", "connect": "Not registered yet: open the Connect your AI menu (#agentMenu) in the bar above the rack and tick \"Let my desktop AI use this page\".", "tools": []}</script>
 
 <div class="site-bar">
   <a class="brand" href="index.html">
@@ -119,8 +122,6 @@
   </div>
 </div>
 <input type="file" id="openFile" accept=".json,application/json" hidden>
-<script type="application/json" id="webmcp-hint">{"webmcp": true, "howTo": "Call these tools from page script: const mc = document.modelContext ?? navigator.modelContext; const t = (await mc.getTools()).find(t => t.name === 'describe_rack'); await mc.executeTool(t, {}). Results are {content: [{type: 'text', text}]}.", "tools": []}</script>
-<p class="rk-vh" id="webmcp-hint-text">For AI agents: this page offers WebMCP tools for the Rack Builder, describe_rack first. Call them from page script with document.modelContext.executeTool(tool, args); the JSON block #webmcp-hint lists them and says how.</p>
 
 <script type="module" src="site/rack-page.js"></script>
 </body>

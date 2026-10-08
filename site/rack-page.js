@@ -1414,16 +1414,19 @@ async function bootInner() {
   // (site/agent/relay.js) registers them for one that doesn't.
   S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext, library: agentLibrary,
                             besides: r => zeroULines(r, chassisOf)});
-  writeHint(document, S.agentTools.map(t => t.name));
+  // The page hint names the tools only once they are registered (agent-hint.js).
+  const toolNames = S.agentTools.map(t => t.name);
+  writeHint(document, []);
   S.agentAbort = new AbortController();
   S.agentNative = false;
   setDoc(doc);
   // Registration runs behind the first draw: a failure only logs. The switch
   // asks lazily (and waits for this) whether the browser took the tools.
   S.agentReg = registerTools(S.agentTools, {signal: S.agentAbort.signal})
-    .then(r => { S.agentNative = r.registered > 0; })
+    .then(r => { S.agentNative = r.registered > 0; if (S.agentNative) writeHint(document, toolNames); })
     .catch(e => console.warn('[portrayal] WebMCP registration', e));
-  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; }, examples: [
+  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; },
+    onTools: on => writeHint(document, on || S.agentNative ? toolNames : []), examples: [
     'Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel.',
     'What in this rack has loose cable ends, and why?',
     'Export this rack for NetBox.']});
