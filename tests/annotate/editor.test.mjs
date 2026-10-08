@@ -65,6 +65,8 @@ test('the shell owns the target: retarget is not a step, and undo keeps it', () 
   const n = evs.length;
   ed.retarget({device: 'b'});
   assert.equal(evs.length, n);              // the same target is a no-op
+  ed.retarget({swaps: {'p': 'x/y@1'}, fields: {}, view: 'rear'});
+  assert.equal(evs.length, n);              // and so is the same target in another key order
 });
 
 test('loadDoc normalises, clears history and emits load', () => {

@@ -6,6 +6,7 @@
 import {apply as applyCommands} from './commands.js';
 import {normalise} from '../../vendor/marks.js';
 import {createHistory} from '../rack/history.js';
+import {same} from '../rack/validate.js';
 
 // THE SHELL OWNS THE TARGET. Which device, configuration and view, and what is
 // seated and written on it, change only by the shell loading something - so an
@@ -14,7 +15,6 @@ import {createHistory} from '../rack/history.js';
 // lies about its own drawing.
 const TARGET = ['device', 'config', 'view', 'swaps', 'fields'];
 const keepTarget = (doc, from) => ({...doc, ...Object.fromEntries(TARGET.map(k => [k, from[k]]))});
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 export function createMarksEditor({doc = {}, cap = 100} = {}) {
   const history = createHistory({cap});
