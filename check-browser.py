@@ -6600,6 +6600,41 @@ def check_annotate_api(page, base):
         bad.append(f"annotate api: after an unknown device the document reads {got}")
     if page.evaluate(f"() => {api}.ready.then(r => JSON.stringify(r))") != "{}":
         bad.append("annotate api: ready did not resolve to {} on a clean start")
+    # setDoc resolves with the answer and the drawing it describes: findings as
+    # texts, and the document as getDoc() reads it straight after
+    set_doc = lambda d: page.evaluate(f"""async d => {{ const r = await {api}.setDoc(d);
+        const g = {api}.getDoc();
+        return {{findings: (r.findings || []).map(f => f.kind + ': ' + f.text), error: r.error || null,
+                 target: [g.device, g.config, g.view], swaps: g.swaps, describe: {api}.describe()}}; }}""", d)
+    # another device, a view only: the device's own configuration, read at once.
+    # First, so that the s9510 below is loaded fresh, with nothing seated.
+    r = set_doc({"device": "c40g", "view": "rear", "marks": [{"select": ".a"}]})
+    if r["error"] or r["findings"] or r["target"] != ["c40g", "base", "rear"]:
+        bad.append(f"annotate api: another device's view resolved to {r['target']} with {r['findings']}")
+    swap = {"port-0": "generic/qsfp-cable@1"}
+    # a configuration that is not here: the device is reached, the swaps are not laid on another drawing
+    r = set_doc({"device": "s9510-28dc", "config": "nope", "view": "front", "swaps": swap, "marks": [{"select": ".a"}]})
+    if not any("no config called nope" in f for f in r["findings"]) or not any("none were applied" in f for f in r["findings"]):
+        bad.append(f"annotate api: a refused config answered {r['findings']}")
+    if r["target"][0] != "s9510-28dc" or "port-0" in r["swaps"]:
+        bad.append(f"annotate api: after a refused config the document reads {r['target']} with swaps {r['swaps']}")
+    # a view that is not here: a note, and the swaps still go on - they belong to the device and configuration
+    r = set_doc({"device": "s9510-28dc", "config": "dc", "view": "nope", "swaps": swap, "marks": [{"select": ".a"}]})
+    if not any(f.startswith("note: ") and "no view called nope" in f for f in r["findings"]) \
+            or any("none were applied" in f or "do not fit" in f for f in r["findings"]):
+        bad.append(f"annotate api: a refused view answered {r['findings']}")
+    if r["target"][:2] != ["s9510-28dc", "dc"] or r["swaps"].get("port-0") != swap["port-0"]:
+        bad.append(f"annotate api: after a refused view the document reads {r['target']} with swaps {r['swaps']}")
+    # a configuration and a view changed together: both reached before setDoc
+    # resolves, and still so once any reload the shell started has finished
+    r = set_doc({"device": "s9510-28dc", "config": "ac", "view": "rear", "marks": [{"select": ".a"}]})
+    if r["error"] or r["findings"] or r["target"] != ["s9510-28dc", "ac", "rear"] \
+            or not r["describe"].startswith("s9510-28dc, config ac, rear."):
+        bad.append(f"annotate api: config and view together resolved to {r['target']} with {r['findings']}, describe {r['describe'][:60]!r}")
+    page.wait_for_timeout(3000)
+    later = page.evaluate(f"() => {{ const g = {api}.getDoc(); return [g.device, g.config, g.view]; }}")
+    if later != ["s9510-28dc", "ac", "rear"]:
+        bad.append(f"annotate api: 3 s after setDoc the document reads {later}, not the ac rear it resolved with")
     return bad
 
 

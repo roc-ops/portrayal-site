@@ -579,9 +579,18 @@ shell.on('change', () => {
 // link's device and configuration, and each move reloads the drawing - which
 // resets the configuration's bays and cages to what it built. So the swaps are
 // applied once the drawing the link names has finished loading, never before.
-let pendingSwaps = null, pendingFields = null, landing = null;
-const atTarget = w => (!w.device || state.device === w.device) &&
-                      (!w.config || state.cfg === w.config);
+let pendingSwaps = null, pendingFields = null;
+
+// THE NEXT DRAWING THE SHELL LOADS, as a promise. Settled by this page's own
+// 'load' handler, after it has written the target and drawn - so whoever waits
+// on it sees the document as it is on the new drawing. Bounded, so a load that
+// never comes cannot hold a caller for ever.
+const LOAD_MS = 20000;
+let loadWaiters = [];
+const nextLoad = () => new Promise(resolve => {
+  loadWaiters.push(() => resolve(true));
+  setTimeout(() => resolve(false), LOAD_MS);
+});
 async function applyPendingSwaps() {
   const map = pendingSwaps, fields = pendingFields;
   pendingSwaps = pendingFields = null;
@@ -611,39 +620,55 @@ async function applyPendingSwaps() {
   return {swaps: Object.keys(ignored || {}).length, fields: lost};
 }
 
-// Moves the shell to the drawing a document names. `moving` is true when the
-// shell is reloading, in which case its 'load' re-enters; `refused` lists, as
-// sentences, what the document asked for that this library cannot show. The
-// reader is told in the message box, and a caller gets them to pass on - an
-// agent that named a device that is not here must not hear that it worked.
-async function retarget(d) {
+// Moves the shell to the drawing a document names, and returns once it is
+// there: every reload it starts is waited for, so the document and the report
+// a caller reads next are of the new drawing. `moving` is true when the shell
+// reloaded (its 'load' has already written the target and drawn). What could
+// not be reached comes back as sentences, in two lists, because they cost
+// different things: a device or configuration that is not here is a different
+// drawing (`drawing`), and the swaps and fields made on it do not belong on
+// this one; a view that is not here is the same hardware seen from somewhere
+// else (`view`), and costs nothing but the view. The reader is told in the
+// message box, and a caller passes them on - an agent that named a device that
+// is not here must not hear that it worked. `live` says whether the caller is
+// still the newest; once it is not, no further reload is started.
+async function retarget(d, live = () => true) {
+  const drawing = [], view = [];
+  let moving = false;
+  const refuse = (list, text, msg) => { list.push(text); say('#expmsg', msg, 'bad'); };
   if (d.device && d.device !== state.device) {
     if (!shell.devices().some(x => x.name === d.device)) {
-      say('#expmsg', `no such device: ${d.device}`, 'bad');
-      return {moving: false, refused: [`There is no device called ${d.device}; the document was laid on ${state.device} instead.`]};
+      refuse(drawing, `There is no device called ${d.device}; the document was laid on ${state.device} instead.`,
+             `no such device: ${d.device}`);
+      return {moving, drawing, view};
     }
-    await shell.loadDevice(d.device);
-    // loadDevice resets config and view to the device's defaults, so the rest of
-    // the target has to be replayed against the device we have just arrived at
-    const rest = await retarget({...d, device: ''});
-    return {moving: true, refused: rest.refused};
-  }
-  const refused = [];
-  for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
-    const want = d[key];
-    if (!want || want === sel.value) continue;
-    if (![...sel.options].some(o => o.value === want)) {
-      say('#expmsg', `this device has no ${key} '${want}'`, 'bad');
-      refused.push(`${state.device} has no ${key} called ${want}.`);
-      continue;
+    // One reload: loadDevice takes the configuration and view it is asked for
+    // where the device has them, and its own defaults where it does not.
+    await shell.loadDevice(d.device, {config: d.config, view: d.view});
+    moving = true;
+  } else {
+    // ONE CHANGE AT A TIME, each waited for. The shell's configuration handler
+    // reloads with the view it already has, so a configuration and a view sent
+    // together would land on the old view if both were dispatched at once.
+    for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
+      const want = d[key];
+      if (!want || want === sel.value || ![...sel.options].some(o => o.value === want) || !live()) continue;
+      const landed = nextLoad();
+      sel.value = want;
+      // the shell's own handler owns the reload: it also re-reads the config's
+      // bay occupancy, which setting state.cfg by hand would skip
+      sel.dispatchEvent(new Event('change'));
+      moving = true;
+      if (!await landed) drawing.push(`The ${key} ${want} did not finish loading.`);
     }
-    sel.value = want;
-    // the shell's own handler owns the reload: it also re-reads the config's bay
-    // occupancy, which setting state.cfg by hand would skip
-    sel.dispatchEvent(new Event('change'));
-    return {moving: true, refused};
   }
-  return {moving: false, refused};
+  if (d.config && state.cfg !== d.config)
+    refuse(drawing, `${state.device} has no config called ${d.config}; it shows ${state.cfg} instead.`,
+           `this device has no config '${d.config}'`);
+  if (d.view && state.view !== d.view)
+    refuse(view, `${state.device} has no view called ${d.view}; it shows ${state.view} instead.`,
+           `this device has no view '${d.view}'`);
+  return {moving, drawing, view};
 }
 
 function addMark(m) {
@@ -1555,7 +1580,7 @@ shell.on('load', () => {
   writeTarget();
   buildRules();
   render({fit: true});
-  if (landing && atTarget(landing.want)) { const done = landing.resolve; landing = null; done(); }
+  for (const done of loadWaiters.splice(0)) done();
 });
 
 // The tree is rebuilt whole on a bay swap, which drops the dots with it. 'row'
@@ -1577,27 +1602,30 @@ let loads = 0;
 async function restore(input) {
   const mine = ++loads;
   const next = marks.normalise(input);
-  const want = {device: next.device, config: next.config};
   pendingSwaps = Object.keys(next.swaps).length ? {...next.swaps} : null;
   pendingFields = Object.keys(next.fields).length ? {...next.fields} : null;
   ed.loadDoc(next);
-  const {moving, refused} = await retarget(next);
-  // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON. When the shell
-  // could not reach it, they are not laid on whatever it shows instead.
+  const live = () => mine === loads;
+  // retarget waits for every reload it starts, so past this line the shell is
+  // on the drawing it could reach and the page has drawn it
+  const {moving, drawing, view} = await retarget(next, live);
+  if (!live()) return OVERTAKEN;
+  // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON: its device and
+  // configuration, not its view. When the shell could not reach that drawing
+  // they are not laid on whatever it shows instead; a view it lacks drops
+  // nothing.
   let dropped = 0;
-  if (refused.length) {
+  if (drawing.length) {
     dropped = Object.keys(next.swaps).length + Object.keys(next.fields).length;
     pendingSwaps = pendingFields = null;
   }
-  if ((pendingSwaps || pendingFields) && moving && !atTarget(want))
-    // bounded, so a link naming a configuration this device lacks still
-    // applies what it can rather than waiting forever for a load that is not coming
-    await new Promise(resolve => { landing = {want, resolve}; setTimeout(resolve, 8000); });
-  if (mine !== loads) return OVERTAKEN;
   const left = await applyPendingSwaps() || {};
-  if (mine !== loads) return OVERTAKEN;
-  if (!moving) { writeTarget(); render({fit: true}); }
-  return {left, refused, dropped};
+  if (!live()) return OVERTAKEN;
+  // the target as the shell now has it - held while swaps were pending, and
+  // not written at all when nothing reloaded
+  writeTarget();
+  if (!moving) render({fit: true});
+  return {left, refused: [...drawing, ...view], dropped};
 }
 // What an agent gets back: what could not be shown, as findings in the rack
 // editor's shape.
