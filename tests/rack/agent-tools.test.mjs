@@ -153,3 +153,92 @@ test('list_free_ports: grouped by view, and a gone device is an error', async ()
   assert.equal(gone.isError, true);
   assert.match(text(gone), /no longer in the rack/);
 });
+
+test('edit_rack: a batch is one agent step, with created ids and the undo line', async () => {
+  const {ed, run} = setup();
+  const res = await run('edit_rack', {commands: [
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 40, as: 'a'},
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 38, as: 'b'},
+    {op: 'cable.add', a: {item: '@a', path: 'port-1', view: 'front'}, b: {item: '@b', path: 'port-1', view: 'front'}}]});
+  assert.equal(res.isError, undefined, text(res));
+  assert.match(text(res), /^Placed AS7726-32X at U40/);
+  assert.match(text(res), /\na = i1, b = i2\nCreated: i1, i2, c1\nUndo takes all of this back in one step\.$/);
+  assert.equal(ed.undoSummary.startsWith('Placed'), true);
+  ed.undo();
+  assert.equal(ed.rack().items.length, 0);
+});
+
+test('edit_rack: a refusal names the command, and nothing changes', async () => {
+  const {ed, run} = setup();
+  const before = ed.rack();
+  const res = await run('edit_rack', {commands: [
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 10},
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}]});
+  assert.equal(res.isError, true);
+  assert.match(text(res), /^Command 2 of 2 \(place\) was refused: Taken by .*Nothing was changed\.$/s);
+  assert.equal(ed.rack(), before);
+});
+
+test('edit_rack: dry_run says what would happen and changes nothing', async () => {
+  const {ed, run} = setup();
+  const evs = []; ed.on('change', e => evs.push(e));
+  const res = await run('edit_rack', {commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}], dry_run: true});
+  assert.match(text(res), /^Would: Placed AS7726-32X at U10.*\nNothing was changed\.$/s);
+  assert.deepEqual([ed.rack().items.length, ed.canUndo, evs.length], [0, false, 0]);
+});
+
+test('edit_rack refuses the page\'s own commands and the DCIM settings, by index', async () => {
+  const {ed, run} = setup();
+  for (const op of ['lengths.routed', 'dcim']) {
+    const res = await run('edit_rack', {commands: [{op: 'rename', name: 'X'}, {op}]});
+    assert.equal(res.isError, true);
+    assert.match(text(res), new RegExp(`^Command 2 of 2 \\(${op.replace('.', '\\.')}\\) is not for agents`));
+  }
+  assert.equal(ed.rack().name, 'Rack 1');
+});
+
+test('edit_rack: echoing a cable back unchanged is refused with the reason, and the rack is untouched', async () => {
+  const {ed, run} = setup();
+  await run('edit_rack', {commands: [
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 40, as: 'a'},
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 38, as: 'b'},
+    {op: 'cable.add', a: {item: '@a', path: 'port-1', view: 'front'}, b: {item: '@b', path: 'port-1', view: 'front'}}]});
+  const before = ed.rack();
+  const res = await run('edit_rack', {commands: [{op: 'cable.update', id: 'c1', length: {value: 300, unit: 'cm'}}]});
+  assert.equal(res.isError, true);
+  assert.match(text(res), /^Command 1 of 1 \(cable\.update\) was refused: .+ Nothing was changed\.$/s);
+  assert.equal(ed.rack(), before);
+});
+
+test('edit_rack: a no-op says so', async () => {
+  const {run} = setup();
+  assert.match(text(await run('edit_rack', {commands: [{op: 'rename', name: 'Rack 1'}]})), /^Nothing changed/);
+});
+
+test('undo and redo, with and without a step', async () => {
+  const {run} = setup();
+  assert.equal(text(await run('undo')), 'Nothing to undo.');
+  await run('edit_rack', {commands: [{op: 'rename', name: 'Core A'}]});
+  assert.equal(text(await run('undo')), 'Undid: Renamed the rack to Core A.');
+  assert.equal(text(await run('redo')), 'Redid: Renamed the rack to Core A.');
+  assert.equal(text(await run('redo')), 'Nothing to redo.');
+});
+
+test('export_rack: a word picks the page export, and only its name and notes come back', async () => {
+  const {run, exported} = setup();
+  assert.equal(text(await run('export_rack', {kind: 'netbox import'})), 'Saved rack.netbox-import. Exported 1 device.');
+  assert.deepEqual(exported, ['netbox-import']);
+  const bad = await run('export_rack', {kind: 'pdf'});
+  assert.equal(bad.isError, true);
+  assert.match(text(bad), /^There is no export called pdf\. Choose one of: sheet svg, /);
+});
+
+test('a tool whose reader throws answers with isError', async () => {
+  const {ed, tools} = setup();
+  const broken = rackTools({ed, chassisOf, runExport: async () => { throw new Error('disk full'); },
+    queries: {describe: () => { throw new Error('boom'); }, looseEnds: async () => ({ends: []})}});
+  const t = Object.fromEntries(broken.map(x => [x.name, x]));
+  assert.deepEqual(await t.describe_rack.execute({}), {content: [{type: 'text', text: "That didn't work: boom."}], isError: true});
+  assert.equal((await t.export_rack.execute({kind: 'drawio'})).isError, true);
+  assert.ok(tools);
+});

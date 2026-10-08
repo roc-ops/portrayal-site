@@ -148,5 +148,42 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
         return say(lines.join('\n'));
       }),
   ];
+  const kinds = Object.keys(EXPORT_KINDS);
+  tools.push(
+    tool('edit_rack', 'Edit the rack',
+      'Apply edits in order. All apply or none; one undo step. Name what a command creates with as: "srv", then use "@srv" as a later id or cable end item. Get ref and cfg from find_devices, port paths from list_free_ports. Send only the fields you are changing. dry_run checks without changing anything.',
+      editSchema().properties, ['commands'], {readOnlyHint: false},
+      async ({commands, dry_run}) => {
+        if (!Array.isArray(commands) || !commands.length) return refuse('Send commands: a list of at least one {op, ...}.');
+        const n = commands.length;
+        const at = i => `Command ${i + 1} of ${n} (${commands[i]?.op})`;
+        const banned = commands.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(COMMANDS, c.op) && !agentMay(c.op));
+        if (banned >= 0) return refuse(`${at(banned)} is not for agents: the page sends it itself, or the user sets it. Nothing was changed.`);
+        const res = dry_run ? ed.preview(commands) : ed.apply(commands, {origin: 'agent'});
+        if (res.error) return refuse(`${at(res.index ?? 0)} was refused: ${res.error} Nothing was changed.`);
+        if (res.noop) return say('Nothing changed: the rack already looks like that.');
+        const named = Object.entries(res.created ?? {}).filter(([k]) => k !== 'ids').map(([k, v]) => `${k} = ${v}`);
+        const lines = [`${dry_run ? 'Would: ' : ''}${res.summary}`,
+          ...res.findings.map(f => `${f.kind === 'error' ? 'Problem' : 'Note'}: ${f.text}`),
+          ...(named.length ? [named.join(', ')] : []),
+          ...(res.created?.ids?.length ? [`Created: ${res.created.ids.join(', ')}`] : []),
+          dry_run ? 'Nothing was changed.' : 'Undo takes all of this back in one step.'];
+        return say(lines.join('\n'));
+      }),
+    tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was.', {}, [], {readOnlyHint: false},
+      async () => { const s = ed.undo(); return say(s ? `Undid: ${s.summary}` : 'Nothing to undo.'); }),
+    tool('redo', 'Redo', 'Put back the last edit Undo took back, and say what it was.', {}, [], {readOnlyHint: false},
+      async () => { const s = ed.redo(); return say(s ? `Redid: ${s.summary}` : 'Nothing to redo.'); }),
+    tool('export_rack', 'Export the rack',
+      'Save the rack as a file through the browser\'s download: a drawing (svg, png), a draw.io diagram, a NetBox or Nautobot import kit, a bill of materials, a cable schedule, or the rack file. Returns the file name and notes, not the file.',
+      {kind: {type: 'string', enum: kinds, description: 'Which export.'}}, ['kind'], {readOnlyHint: false},
+      async ({kind}) => {
+        const key = EXPORT_KINDS[kind];
+        if (!key) return refuse(`There is no export called ${kind}. Choose one of: ${kinds.join(', ')}.`);
+        const out = await runExport(key);
+        if (!out || out.error) return refuse(out?.error ?? "That export didn't work. Try again.");
+        return say(`Saved ${out.name}.${out.notes ? ` ${out.notes}` : ''}`);
+      }),
+  );
   return tools;
 }
