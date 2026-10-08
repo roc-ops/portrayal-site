@@ -31,6 +31,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {svgEl} from './dom.js';
 import {OPENING} from '../../vendor/rack/rails.js';
 import {routed2d} from '../../vendor/rack/route-path.js';
+import {reverseMarks} from '../../vendor/rack/route.js';
 import {colorOf, WIDTH, TAG_H, sag2d, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
         danglePoints3d, reaches, clearOf} from '../../vendor/rack/cable-geometry.js';
 
@@ -167,8 +168,8 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     if (starts.length === 2) {
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
-      const via = link.via2d?.[view];
-      stroke(g, via?.length ? routed2d([a, ...via, b])
+      const via = link.via2d?.[view], rings = link.rings2d?.[view];
+      stroke(g, via?.length ? routed2d([a, ...via, b], 4, rings ? [null, ...rings, null] : null)
         : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
@@ -193,10 +194,13 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
         // A ROUTED cross-face cable stops at its last waypoint (spec §7): it
         // does not cross the face to the side column. Its tag sits just
         // outboard of that gutter point.
+        // Its ring marks (link.rings2d, turned to this pane by its caller)
+        // reverse with it: a ring passed from the far end is passed the other way.
         const v = landedSide === 'from' ? via : [...via].reverse();
+        const rv = link.rings2d?.[view], rings = rv && (landedSide === 'from' ? rv : reverseMarks(rv));
         const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
         column.push({rec, want: last[1], lane: dir, place: y => {
-          stroke(g, routed2d([a, ...v]), color, WIDTH);
+          stroke(g, routed2d([a, ...v], 4, rings ? [null, ...rings] : null), color, WIDTH);
           return tag([last[0] + dir * 6, y], other, link);
         }});
       } else column.push({rec, want: a[1] + 30, place: y => {
@@ -308,10 +312,15 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     if (loose.length === 2) { tubes.push({link, i, mesh: null, loose, points: [], starts: []}); continue; }
     const landed = ends.filter(Boolean);
     const dangling = landed.length === 1;
-    const wps = !dangling && waypoints ? await waypoints(link) : [];
+    // `waypoints(link)` gives the points, or {points, marks}: the ring marks
+    // (route.js ringMarks, in the scene's axes, dropped in step with the
+    // points), so each ring is passed through along its run as it was measured.
+    const got = !dangling && waypoints ? await waypoints(link) : [];
     if (!live()) return null;
+    const wps = Array.isArray(got) ? got : got?.points ?? [];
+    const marks = Array.isArray(got) ? null : got?.marks?.length === wps.length ? got.marks : null;
     const pts = clearOf(dangling ? danglePoints3d(THREE, landed[0])
-      : wps.length ? routePoints3d(THREE, ends[0], ends[1], wps) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
+      : wps.length ? routePoints3d(THREE, ends[0], ends[1], wps, 30, marks) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
     const main = new THREE.Mesh(new THREE.TubeGeometry(

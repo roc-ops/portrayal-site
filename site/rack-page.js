@@ -21,14 +21,14 @@ import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
-import {exportStatus, UNCHECKED_NOTE, fillNotes} from '../vendor/rack/export-data.js';
+import {exportStatus, UNCHECKED_NOTE} from '../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
-import {routeFacts} from './rack/route-context.js';
+import {routeFacts, routeNotes} from './rack/route-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
@@ -106,7 +106,8 @@ function disposeScene3d() {
 // Does the rack have a routed cable (a resolved route with waypoints)? Only then are the
 // gutters widened (spec 7); a cable with no route draws as before.
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
-const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints])) : '');
+// The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
+const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null])) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
@@ -115,7 +116,7 @@ async function rebuild3d() {
   const sig = routesSig(S.routes);
   disposeScene3d();
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null});
+    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -569,7 +570,7 @@ function cableListPanel() {
   pruneFilter();
   const on = S.cableFilter;
   // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
-  const notes = S.routes ? fillNotes(r, S.routes, nameOfId) : [];
+  const notes = S.routes ? routeNotes(r, S.routes, nameOfId) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     onFilter: next => {
       S.cableFilter = next;
@@ -1449,6 +1450,10 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     routes: () => (S.routes ? [...S.routes.routes].map(([id, r]) => [id, r.waypoints]) : null),
     // The pathway fill the page resolved (route.js fill, and the ducts beside the rack), as plain data.
     fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f})), over: S.routes.over.map(o => ({...o}))} : null),
+    // The ring marks the panes and the scene drew by (route.js ringMarks, rack axes), and the
+    // rings a route would enter and leave by one face (route.js ringFindings), as plain data.
+    rings: () => (S.routes ? {marks: [...S.routes.marks].map(([id, m]) => [id, m.map(x => (x ? {...x} : null))]),
+                              findings: S.routes.ringFindings.map(f => ({...f}))} : null),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }
