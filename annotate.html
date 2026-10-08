@@ -404,10 +404,6 @@ let doc = ed.getDoc();
 let report = [];
 let hadLegend = false;
 
-// EXPERIMENTAL until portrayal-site#146 is fixed: setDoc is not race-safe for
-// back-to-back calls on the same device, a device load has no time bound, and
-// a document naming no swaps does not clear seated ones. No agent adapter is
-// to be built on this before then.
 // THE PAGE'S API, for agents (spec §2.3), set before anything is awaited so a
 // script that loads with the page finds it at once. `ready` resolves once the
 // drawing is up and any document in the URL has been laid on it, so a setDoc
@@ -585,16 +581,37 @@ shell.on('change', () => {
 // applied once the drawing the link names has finished loading, never before.
 let pendingSwaps = null, pendingFields = null;
 
-// THE NEXT DRAWING THE SHELL LOADS, as a promise. Settled by this page's own
-// 'load' handler, after it has written the target and drawn - so whoever waits
-// on it sees the document as it is on the new drawing. Bounded, so a load that
-// never comes cannot hold a caller for ever.
+// A LOAD THIS PAGE STARTED, waited for, and bounded: true once it has finished,
+// false when it failed or has not finished in LOAD_MS - a manifest or a face
+// that never arrives must not hold a caller for ever (#146). The promise is the
+// load's own, so it is settled by that load and no other; the shell's 'load'
+// handler below has already written the target and drawn by the time it is.
+// The timer is cleared as soon as the race is decided. `__portrayalLoadMs`
+// shortens the bound for the browser check, and is read per call.
 const LOAD_MS = 20000;
-let loadWaiters = [];
-const nextLoad = () => new Promise(resolve => {
-  loadWaiters.push(() => resolve(true));
-  setTimeout(() => resolve(false), LOAD_MS);
-});
+const loadMs = () => Number(globalThis.__portrayalLoadMs) || LOAD_MS;
+function settle(p) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(p).then(() => true, err => { console.error('[portrayal] a drawing did not load', err); return false; }),
+    new Promise(resolve => { timer = setTimeout(() => resolve(false), loadMs()); }),
+  ]).finally(() => clearTimeout(timer));
+}
+// THE DRAWING ON SCREEN, as the last 'load' left it. The shell's own state is
+// not that: loadDevice names the new device before it has fetched anything, and
+// a configuration change names the new configuration before its face arrives,
+// so state.device and state.cfg can describe a drawing that is still loading -
+// or one that never will. A restore asks this whether the shell is steady
+// before it trusts the selects, and a load that stalled leaves the document
+// naming this, not what it was asked for.
+let shown = null;
+const steady = () => !!shown && shown.svg === state.svg && shown.device === state.device
+  && shown.config === state.cfg && shown.view === state.view;
+// WHAT THE READER CHANGED ON THIS DRAWING: swaps, written parts or turns that
+// the configuration did not build. A document is laid on the drawing as built.
+const changedFromBuilt = () => Object.keys(swapsNow(shell)).length > 0
+  || Object.keys(fieldsNow(shell)).length > 0
+  || Object.keys(shell.turnDelta?.() || {}).length > 0;
 async function applyPendingSwaps() {
   const map = pendingSwaps, fields = pendingFields;
   pendingSwaps = pendingFields = null;
@@ -635,35 +652,55 @@ async function applyPendingSwaps() {
 // else (`view`), and costs nothing but the view. The reader is told in the
 // message box, and a caller passes them on - an agent that named a device that
 // is not here must not hear that it worked. `live` says whether the caller is
-// still the newest; once it is not, no further reload is started.
+// still the newest; once it is not, no further reload is started. `stalled`
+// is true when a load it started did not finish in time.
 async function retarget(d, live = () => true) {
   const drawing = [], view = [];
   let moving = false;
   const refuse = (list, text, msg) => { list.push(text); say('#expmsg', msg, 'bad'); };
-  if (d.device && d.device !== state.device) {
-    if (!shell.devices().some(x => x.name === d.device)) {
-      refuse(drawing, `There is no device called ${d.device}; the document was laid on ${state.device} instead.`,
-             `no such device: ${d.device}`);
-      return {moving, drawing, view};
-    }
-    // One reload: loadDevice takes the configuration and view it is asked for
-    // where the device has them, and its own defaults where it does not.
-    await shell.loadDevice(d.device, {config: d.config, view: d.view});
+  const stall = what => {
+    refuse(drawing, `${what} did not finish loading.`, `${what} did not finish loading`);
+    return {moving, drawing, view, stalled: true};
+  };
+  const here = shown?.device || state.device;
+  if (d.device && !shell.devices().some(x => x.name === d.device)) {
+    refuse(drawing, `There is no device called ${d.device}; the document was laid on ${here} instead.`,
+           `no such device: ${d.device}`);
+    return {moving, drawing, view};
+  }
+  const device = d.device || here;
+  const has = (list, v) => !!v && (list || []).includes(v);
+  if (!steady() || device !== state.device) {
+    // ANOTHER DEVICE, or a shell that is not settled on the one it names - a
+    // load still in flight or one that stalled, whose selects are not this
+    // device's. One reload: loadDevice takes the configuration and view it is
+    // asked for where the device has them, and its own defaults where not.
+    if (!live()) return {moving, drawing, view};
     moving = true;
+    if (!await settle(shell.loadDevice(device, {config: d.config, view: d.view}))) return stall(device);
   } else {
-    // ONE CHANGE AT A TIME, each waited for. The shell's configuration handler
-    // reloads with the view it already has, so a configuration and a view sent
-    // together would land on the old view if both were dispatched at once.
-    for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
-      const want = d[key];
-      if (!want || want === sel.value || ![...sel.options].some(o => o.value === want) || !live()) continue;
-      const landed = nextLoad();
-      sel.value = want;
-      // the shell's own handler owns the reload: it also re-reads the config's
-      // bay occupancy, which setting state.cfg by hand would skip
-      sel.dispatchEvent(new Event('change'));
+    const wantCfg = has(state.meta?.configs?.map(c => c.name), d.config) && d.config !== state.cfg;
+    const wantView = has(state.meta?.views, d.view) && d.view !== state.view;
+    // A DOCUMENT IS LAID ON THE DRAWING AS BUILT. A configuration change gets
+    // that from the reload; so does a drawing the reader has changed - the
+    // swaps, written parts and turns a previous document or the reader left
+    // on it - or a document that names none would keep them (#146). The
+    // shell's way back to the built occupancy is loadDevice: it reads the
+    // configuration's bays and optics again, which nothing else it offers
+    // does. Configuration and view go in the one reload.
+    if ((wantCfg || changedFromBuilt()) && live()) {
       moving = true;
-      if (!await landed) drawing.push(`The ${key} ${want} did not finish loading.`);
+      const cfg = wantCfg ? d.config : state.cfg, v = wantView ? d.view : state.view;
+      if (!await settle(shell.loadDevice(device, {config: cfg, view: v})))
+        return stall(wantCfg ? `The config ${cfg}` : `${device}`);
+    } else if (wantView && live()) {
+      // a view alone keeps what is seated: the shell's own view handler,
+      // done here so the load it starts is the one waited for
+      moving = true;
+      shell.el.view.value = d.view;
+      state.view = d.view;
+      state.module = null;
+      if (!await settle(shell.loadStage())) return stall(`The view ${d.view}`);
     }
   }
   if (d.config && state.cfg !== d.config)
@@ -1572,6 +1609,7 @@ m3d.on('mode', m => {
 // new drawing is a new key and the old answers are unreachable rather than
 // merely overwritten on time.
 shell.on('load', () => {
+  shown = {device: state.device, config: state.cfg, view: state.view, svg: state.svg};
   lastSel = null;
   disarmCrop();
   // A crop is millimetres of THIS drawing. The marks survive a view change on
@@ -1584,7 +1622,6 @@ shell.on('load', () => {
   writeTarget();
   buildRules();
   render({fit: true});
-  for (const done of loadWaiters.splice(0)) done();
 });
 
 // The tree is rebuilt whole on a bay swap, which drops the dots with it. 'row'
@@ -1601,18 +1638,37 @@ shell.on('row', () => {
 // first, letting the reload re-enter render(), then laying its swaps and fields
 // on, then its marks. It is a new document, so the history starts again. The
 // newest call wins: an older one still moving the shell is overtaken.
+//
+// ONE AT A TIME (#146). A newer call waits for the one before it to finish -
+// bounded, as every load is - before it compares the document with the
+// drawing, because until then the shell's device, configuration and selects
+// can be the older call's half-loaded answer. Its own document is taken only
+// once that wait is over, so the swaps and fields pending are always its own.
 const OVERTAKEN = {error: 'Overtaken by a newer document.'};
-let loads = 0;
+let loads = 0, restoring = Promise.resolve();
 async function restore(input) {
   const mine = ++loads;
+  const live = () => mine === loads;
+  const before = restoring;
+  let done;
+  restoring = new Promise(resolve => { done = resolve; });
+  try {
+    await settle(before);
+    if (!live()) return OVERTAKEN;
+    return await restoreNow(input, live);
+  } finally {
+    done();
+  }
+}
+async function restoreNow(input, live) {
   const next = marks.normalise(input);
   pendingSwaps = Object.keys(next.swaps).length ? {...next.swaps} : null;
   pendingFields = Object.keys(next.fields).length ? {...next.fields} : null;
   ed.loadDoc(next);
-  const live = () => mine === loads;
   // retarget waits for every reload it starts, so past this line the shell is
-  // on the drawing it could reach and the page has drawn it
-  const {moving, drawing, view} = await retarget(next, live);
+  // on the drawing it could reach and the page has drawn it - or the load it
+  // started did not finish in time, and `stalled` says so
+  const {moving, drawing, view, stalled} = await retarget(next, live);
   if (!live()) return OVERTAKEN;
   // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON: its device and
   // configuration, not its view. When the shell could not reach that drawing
@@ -1622,6 +1678,16 @@ async function restore(input) {
   if (drawing.length) {
     dropped = Object.keys(next.swaps).length + Object.keys(next.fields).length;
     pendingSwaps = pendingFields = null;
+  }
+  if (stalled) {
+    // A LOAD THAT DID NOT FINISH reached nothing, so the document names the
+    // drawing last shown, not the one asked for and not the shell's half-set
+    // state, and carries none of the swaps or fields it could not lay. Should
+    // the load finish later, its own 'load' writes the target it reached.
+    ed.retarget({device: shown?.device || '', config: shown?.config || '', view: shown?.view || '',
+                 swaps: {}, fields: {}});
+    render();
+    return {left: {}, refused: [...drawing, ...view], dropped};
   }
   const left = await applyPendingSwaps() || {};
   if (!live()) return OVERTAKEN;

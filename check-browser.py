@@ -6752,6 +6752,86 @@ def check_annotate_api(page, base):
     later = page.evaluate(f"() => {{ const g = {api}.getDoc(); return [g.device, g.config, g.view]; }}")
     if later != ["s9510-28dc", "ac", "rear"]:
         bad.append(f"annotate api: 3 s after setDoc the document reads {later}, not the ac rear it resolved with")
+
+    # portrayal-site#146: the setDoc defects found in review, one case each.
+    occupant = "() => document.querySelector(\"#stage svg [id='port-0-occupant']\")?.dataset.ref || null"
+    # 3. A SETDOC NAMING NO SWAPS CLEARS THE SEATED ONES. Same device,
+    # configuration and view, so nothing reloads on its own: the swap seated by
+    # the first call must not survive the second, in the document or the drawing.
+    r = set_doc({"device": "s9510-28dc", "config": "dc", "view": "front", "swaps": swap, "marks": [{"select": ".a"}]})
+    if r["swaps"].get("port-0") != swap["port-0"]:
+        bad.append(f"annotate api #146: the swap to clear was never seated ({r['swaps']}, {r['findings']})")
+    r = set_doc({"device": "s9510-28dc", "config": "dc", "view": "front", "marks": [{"select": ".a"}]})
+    seated = page.evaluate(occupant)
+    if r["error"] or r["findings"] or r["swaps"] or seated == swap["port-0"]:
+        bad.append(f"annotate api #146: a setDoc naming no swaps left swaps {r['swaps']}, port-0 holding {seated}, "
+                   f"findings {r['findings']}")
+    # 1. BACK-TO-BACK SETDOC ON THE SAME DEVICE. From c40g base/rear, the second
+    # call is sent while the first is still loading c100g: it must land on its
+    # own configuration and view, with no false refusal, and stay there.
+    set_doc({"device": "c40g", "config": "base", "view": "rear", "marks": []})
+    r = page.evaluate(f"""async () => {{
+        const a = {api}.setDoc({{device: 'c100g', view: 'rear'}});
+        const b = {api}.setDoc({{device: 'c100g', config: 'docsis-classic', view: 'front'}});
+        const [ra, rb] = await Promise.all([a, b]);
+        const g = {api}.getDoc();
+        return {{findings: (rb.findings || []).map(f => f.text), error: rb.error || null,
+                 target: [g.device, g.config, g.view], describe: {api}.describe()}}; }}""")
+    if r["error"] or r["findings"] or r["target"] != ["c100g", "docsis-classic", "front"] \
+            or not r["describe"].startswith("c100g, config docsis-classic, front."):
+        bad.append(f"annotate api #146: back-to-back setDoc resolved to {r['target']} with {r['findings']} "
+                   f"{r['error']}, describe {r['describe'][:60]!r}")
+    page.wait_for_timeout(2000)
+    later = page.evaluate(f"() => {{ const g = {api}.getDoc(); return [g.device, g.config, g.view, {api}.describe().slice(0, 40)]; }}")
+    if later[:3] != ["c100g", "docsis-classic", "front"] or not later[3].startswith("c100g, config docsis-classic, front."):
+        bad.append(f"annotate api #146: 2 s after back-to-back setDoc the page reads {later}")
+    # 2. A DEVICE LOAD THAT NEVER FINISHES is bounded. Its manifest is held, so
+    # the load never completes; setDoc must still answer, with a drawing
+    # finding, and the document must not name the device it never reached. The
+    # bound is shortened for the check: the page reads window.__portrayalLoadMs
+    # per call. Then a configuration whose face is held, the same way.
+    held = []
+    hang = lambda route: held.append(route)
+    page.route("**/assets/dist/agr110.configs.json", hang)
+    page.route("**/assets/dist/c100g.bdm2m-11plus1.front.svg", hang)
+    page.evaluate("() => { window.__portrayalLoadMs = 3000; }")
+    race = lambda d: page.evaluate(f"""async d => {{
+        const r = await Promise.race([{api}.setDoc(d), new Promise(ok => setTimeout(() => ok('hung'), 12000))]);
+        if (r === 'hung') return {{hung: true}};
+        const g = {api}.getDoc();
+        return {{findings: (r.findings || []).map(f => f.text), error: r.error || null,
+                 target: [g.device, g.config, g.view], swaps: g.swaps}}; }}""", d)
+    try:
+        r = race({"device": "agr110", "swaps": swap, "marks": []})
+        if r.get("hung"):
+            bad.append("annotate api #146: setDoc on a device whose load never finishes did not answer in 12 s")
+        else:
+            if not any("did not finish loading" in f for f in r["findings"]) \
+                    or not any("none were applied" in f for f in r["findings"]):
+                bad.append(f"annotate api #146: a device load that never finished answered {r['findings']}")
+            if r["target"][0] == "agr110" or r["swaps"]:
+                bad.append(f"annotate api #146: after a stalled device load the document reads {r['target']}, swaps {r['swaps']}")
+        # the page is not left believing it is on the stalled device: the next
+        # document is laid on the drawing it names
+        r = set_doc({"device": "c100g", "config": "docsis-classic", "view": "front", "marks": []})
+        if r["error"] or r["findings"] or r["target"] != ["c100g", "docsis-classic", "front"] \
+                or not r["describe"].startswith("c100g, config docsis-classic, front."):
+            bad.append(f"annotate api #146: after a stalled load the next setDoc resolved to {r['target']} "
+                       f"with {r['findings']}, describe {r['describe'][:60]!r}")
+        # a configuration that times out is not the one the document names
+        r = race({"device": "c100g", "config": "bdm2m-11plus1", "view": "front", "marks": []})
+        if r.get("hung"):
+            bad.append("annotate api #146: setDoc on a configuration whose drawing never loads did not answer in 12 s")
+        elif not any("did not finish loading" in f for f in r["findings"]) or r["target"][1] == "bdm2m-11plus1":
+            bad.append(f"annotate api #146: a stalled configuration answered {r['findings']}, the document reads {r['target']}")
+    finally:
+        page.evaluate("() => { delete window.__portrayalLoadMs; }")
+        # released before the routes go, so no handler is left waiting to be cancelled
+        for route in held:
+            with contextlib.suppress(Exception):
+                route.abort()
+        page.unroute("**/assets/dist/agr110.configs.json")
+        page.unroute("**/assets/dist/c100g.bdm2m-11plus1.front.svg")
     return bad
 
 
