@@ -41,12 +41,12 @@ Pure functions over a normalised marks document, plus a `COMMANDS` table and an 
 
 | Command | Arguments | Effect | Refusals |
 |---|---|---|---|
-| `mark.add` | `select, color?, state?, label?, lamp?, id?, as?` | Appends a mark. `id` is given, or the next free `m<n>`, past every id in use. `color` defaults to the page's next palette color only when the page sends it; a command never invents ink. | an `id` already in use; an empty `select`; `lamp` not a hex colour |
+| `mark.add` | `select, color?, state?, label?, lamp?, id?, as?` | Appends a mark. `id` is given, or the next free `m<n>`, past every id in use. `color` defaults to the page's next palette color only when the page sends it; a command never invents ink. | an `id` already in use; an empty `select`; `lamp` not a hex color |
 | `mark.update` | `mark, select?, color?, state?, label?, lamp?, id?` | Changes the named fields. `id` names, or renames, the mark. | MARK_GONE ("There is no mark X."); an ambiguous `select` (below); a new `id` in use |
 | `mark.remove` | `mark` | Removes it. | as `mark.update` |
 | `marks.clear` | none | Removes every mark. | none |
 | `lamp.state` | `path, state` | The tree chip: sets `state` on the mark selecting `[data-path='<path>']`, adding one if there is none. Setting the state it already has clears it. A mark left saying nothing is removed. This is today's `setState`. | none |
-| `lamp.color` | `path, hex` (`hex` null clears) | The tree swatch: today's `setLamp` / `clearLamp`, including "a color on a lamp turned off clears the off". | `hex` not a hex colour |
+| `lamp.color` | `path, hex` (`hex` null clears) | The tree swatch: today's `setLamp` / `clearLamp`, including "a color on a lamp turned off clears the off". | `hex` not a hex color |
 | `crop` | `rect` (`{x, y, w, h}` or null) | Sets or clears the crop. The page clamps it to the drawing (`marks.clampCrop`) before sending, as today. | a rect with a non-positive width or height |
 | `legend` | `on` (boolean, or a legend object) | Sets `legend`, as `normalise` reads it. | none |
 
