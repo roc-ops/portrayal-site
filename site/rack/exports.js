@@ -142,7 +142,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   // nobody chose is never "the part chosen".
   // The parts beside the rack are drawn (zero-u.js), so the sheet says where each is, not that it is left out.
   const zeroU = zeroUEntries(rack, chassisOf);
-  const notes = [...await faceNotesFor(withoutZeroU(rack), base, faces, chassisOf, {cables: false}), ...zeroUNotes(rack, chassisOf)];
+  const notes = [...await faceNotesFor(withoutZeroU(rack, chassisOf), base, faces, chassisOf, {cables: false}), ...zeroUNotes(rack, chassisOf)];
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
   const uOf = heightOf(chassisOf);
   // The cables' own notes wait for the drawing: they say which cables the sheet holds.
@@ -362,7 +362,7 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     // own reading only for a scene that has none (a stub, a failed hang).
     const facts = !(rack.cables || []).length ? UNCHECKED : scene.rackCables?.facts ?? await cableEnds(rack);
     // The scene stands the parts beside the rack (scene3d.js), so the model carries them.
-    const notes = uniq([...rackNotes(withoutZeroU(rack), {cables: false}), ...zeroUNotes(rack, chassisOf), ...mountNotes(rack.items, chassisOf, rack.frame),
+    const notes = uniq([...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...zeroUNotes(rack, chassisOf), ...mountNotes(rack.items, chassisOf, rack.frame),
                         ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts, heightOf(chassisOf))]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
@@ -479,8 +479,8 @@ export async function dcimContext(rack, chassisOf, target) {
   const rails = itemsWithU(rack, chassisOf);
   const items = [...rails, ...zeroUEntries(rack, chassisOf).map(z => ({id: z.id, ref: z.ref, cfg: z.cfg, label: z.label,
     ru: z.ru, u: z.u, face: 'front', turned: false, swaps: {}, fields: {}, mount: 'rack-face', zeroU: z}))];
-  const notes = [...rackNotes(withoutZeroU(rack), {cables: false}), ...mountNotes(rails, chassisOf, rack.frame),
-                 ...zeroUNotes(rack, chassisOf).filter(n => !items.some(i => i.zeroU && n.startsWith(`${i.label}:`)))];
+  // Where each part stands is its row's comment (dcimKit), not a note of the kit.
+  const notes = [...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...mountNotes(rails, chassisOf, rack.frame)];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
     ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
@@ -707,7 +707,7 @@ export async function bomCsv(rack, chassisOf) {
   const cabled = (rack.cables || []).length > 0;
   const facts = cabled ? await cableEnds(rack) : UNCHECKED;
   const sides = zeroUEntries(rack, chassisOf);
-  notes.unshift(...rackNotes(withoutZeroU(rack), {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
+  notes.unshift(...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
                 ...managerNotes(items, chassisOf, rack.frame), ...zeroUNotes(rack, chassisOf),
                 ...sides.map(z => `${z.label} hangs on its own brackets beside the upright, as its maker ships them; no rail hardware is counted for it.`));
   for (const m of managers.filter(i => i.on)) {

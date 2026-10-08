@@ -83,7 +83,7 @@ export function fitsZeroUSide(rack, cand, chassisOf, {ignoreId = null} = {}) {
   if (top > f.heightRU)
     return no(`${u}U tall; ${f.heightRU - cand.ru + 1}U from U${uLabel(f, cand.ru)} to the top of this ${f.heightRU}U rack.`);
   for (const o of zeroUOf(rack)) {
-    if (o.id === ignoreId || o.at !== cand.at) continue;
+    if (o.id === ignoreId || o.at !== cand.at || !isRackSide(chassisOf(o.ref))) continue;
     const [lo, hi] = zSpan(o, chassisOf);
     if (cand.ru <= hi && lo <= top) return no(`Overlaps ${nameOf(o, chassisOf)} at ${o.at}.`);
   }
@@ -441,22 +441,21 @@ export function zeroUEntries(rack, chassisOf) {
             w: Number(c.w) || 0, h: Number(c.h) || (Math.max(1, c.ru ?? 1) * RU), mount: 'rack-side'};
   });
 }
-// The rack without its zero-U record: for an export that carries the parts,
-// so the kit's "not in this export yet" note (export-data.js rackNotes) is not said.
-export const withoutZeroU = rack => ({...rack, zeroU: []});
-// Where each part is, as a sentence, for the sheets, the BOM and the model; and
-// one for each entry this page cannot read, which no export carries.
+// The rack without the zero-U parts an export carries: the kit's "not in this
+// export yet" note (export-data.js rackNotes) is then said only of an entry this
+// page cannot place, in its own words and place.
+export const withoutZeroU = (rack, chassisOf = () => null) => {
+  const placed = new Set(zeroUEntries(rack, chassisOf).map(z => z.id));
+  return {...rack, zeroU: list(rack).filter(z => !(z && placed.has(z.id)))};
+};
+// Where each part is, as a sentence, for the sheets, the BOM and the model.
 export function zeroUNotes(rack, chassisOf) {
-  const placed = zeroUEntries(rack, chassisOf);
-  const out = placed.map(z => {
+  return zeroUEntries(rack, chassisOf).map(z => {
     const c = chassisOf(z.ref);
     const what = [c.manufacturer, c.model].filter(Boolean).join(' ') || z.ref;
     return `${z.label}: ${what}, 0U, ${whereText(rack, zeroUById(rack, z.id), chassisOf)}` +
       `${z.between ? '; it serves the next rack too, which this file does not hold' : ''}.`;
   });
-  const left = list(rack).length - placed.length;
-  if (left > 0) out.push(`${left} zero-U ${left === 1 ? 'entry is' : 'entries are'} not a part this page can place, so ${left === 1 ? 'it is' : 'they are'} not in this export.`);
-  return out;
 }
 // A zero-U part's DCIM comment: where it stands, which neither DCIM has a field for.
 export const zeroUComment = (rack, z, chassisOf, T) =>

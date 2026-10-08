@@ -262,8 +262,9 @@ test('a duct over its fill is named in the notes as any pathway is, and where ea
     '0U, a vertical cable manager between racks at right, U1-U45, serving the next rack too; NetBox has no field for that.');
   assert.deepEqual(zeroUEntries(r, chassisOf)[0],
     {id: 'z1', ref: DUCT, cfg: 'base', label: 'vcm-1', at: 'right', between: true, ru: 1, u: 45, w: 138.8, h: 2108, mount: 'rack-side'});
-  assert.deepEqual(withoutZeroU(r).zeroU, []);
-  // An entry this page cannot place is said, not drawn.
+  assert.deepEqual(withoutZeroU(r, chassisOf).zeroU, []);
+  // An entry this page cannot place stays, so the kit's own note still says it is left out.
   const odd = {...r, zeroU: [...r.zeroU, {id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']};
-  assert.match(zeroUNotes(odd, chassisOf).at(-1), /^2 zero-U entries are not a part this page can place/);
+  assert.deepEqual(withoutZeroU(odd, chassisOf).zeroU, [{id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']);
+  assert.equal(zeroUNotes(odd, chassisOf).length, 1);
 });
