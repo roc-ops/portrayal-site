@@ -44,13 +44,14 @@ Pure functions over a normalised marks document, plus a `COMMANDS` table and an 
 | `mark.add` | `select, color?, state?, label?, lamp?, id?, as?` | Appends a mark. `id` is given, or the next free `m<n>`, past every id in use. `color` defaults to the page's next palette color only when the page sends it; a command never invents ink. | an `id` already in use; an empty `select`; `lamp` not a hex color |
 | `mark.update` | `mark, select?, color?, state?, label?, lamp?, id?` | Changes the named fields. `id` names, or renames, the mark. | MARK_GONE ("There is no mark X."); an ambiguous `select` (below); a new `id` in use |
 | `mark.remove` | `mark` | Removes it. | as `mark.update` |
+| `mark.move` | `mark, to` | Moves the mark to index `to` (0-based), as the row's up and down buttons do. | as `mark.update`; `to` outside the list |
 | `marks.clear` | none | Removes every mark. | none |
 | `lamp.state` | `path, state` | The tree chip: sets `state` on the mark selecting `[data-path='<path>']`, adding one if there is none. Setting the state it already has clears it. A mark left saying nothing is removed. This is today's `setState`. | none |
 | `lamp.color` | `path, hex` (`hex` null clears) | The tree swatch: today's `setLamp` / `clearLamp`, including "a color on a lamp turned off clears the off". | `hex` not a hex color |
 | `crop` | `rect` (`{x, y, w, h}` or null) | Sets or clears the crop. The page clamps it to the drawing (`marks.clampCrop`) before sending, as today. | a rect with a non-positive width or height |
 | `legend` | `on` (boolean, or a legend object) | Sets `legend`, as `normalise` reads it. | none |
 
-**Addressing (D3).** A `mark` argument is first an id. Failing that, it is an exact `select` of a mark with no id. When two id-less marks share that selector, the command refuses with "Two marks select X; give one an id first (mark.update with id)." `mark.update {mark, id}` is how an agent names an id-less mark.
+**Addressing (D3).** A `mark` argument is a whole number (the mark's 0-based index, which is how the page's rows address it and what `describe()` lists), or a string: first an id, then an exact `select` of a mark with no id. When two id-less marks share that selector, the command refuses with "Two marks select X; give one an id first (mark.update with id)." `mark.update {mark, id}` is how an agent names an id-less mark.
 
 The sentences above are new except where a command reproduces today's page behaviour (`lamp.state`, `lamp.color`), whose effects match the page's current functions exactly.
 
@@ -64,12 +65,15 @@ ed.loadDoc(doc)          -> {findings}   // normalise; clears history; emits cau
 ed.apply(cmds, {origin}) -> apply's result
 ed.preview(cmds)
 ed.undo(); ed.redo()     -> {summary} | null
-ed.retarget(patch)       // the shell's fields, never a step; emits cause 'target'
+ed.retarget(patch)       // the shell's fields, never a step; emits cause 'target'.
+                         // A new drawing's re-cut crop (marks.clampCrop) also goes through it.
 ed.canUndo / canRedo / undoSummary / redoSummary
 ed.on('change', fn)      // {cause, origin, step, commands, summary, findings, before, after}
 ```
 
 History is `vendor/rack/history.js`.
+
+**Typing is one step.** The row editor sends a `mark.update` on every keystroke. `apply(cmds, {origin, merge})` takes an optional `merge` key (the page passes `<mark index>:<field>`). When the newest step was recorded with the same key and nothing else happened since, the new edit replaces that step: same `before`, new `after`. A burst of typing in one field is then one undo step. The editor does it with `history.js` as it is: it undoes the old step and records the merged one.
 
 **The shell owns the target.** `device`, `config`, `view`, `swaps` and `fields` change only through `retarget`, which the page calls when the shell reports a load, a swap or a field. They are never history steps. An undo or redo restores marks, crop and legend and keeps the current target fields, generalizing the Rack Builder's "Undo never takes the DCIM settings back". Without this, undoing a mark after switching devices would write a `device` the shell is not showing.
 
