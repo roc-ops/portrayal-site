@@ -10,7 +10,7 @@ import {newRack, dcimOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
-import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
+import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
 
@@ -264,8 +264,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const shown = ports.filter(p => !view || p.view === view)
           .sort((a, b) => (a.view === b.view ? order.compare(a.path, b.path) : a.view === 'front' ? -1 : 1))
           .map(p => {
-            const k = `${p.view}|${portPathOf(p.path)}`;
-            return {...p, cage: holds.has(k) ? (holds.get(k) ? `cage, holds ${holds.get(k)}` : 'cage, empty') : null};
+            // Only the cage's own port is the cage: an optic's own ports
+            // (port-1-occupant/...) are ports on the optic, not cages.
+            const k = `${p.view}|${p.path}`;
+            const isCage = portPathOf(p.path) === p.path && holds.has(k);
+            return {...p, cage: isCage ? (holds.get(k) ? `cage, holds ${holds.get(k)}` : 'cage, empty') : null};
           });
         const lines = runs(shown, p => JSON.stringify([p.view, p.speed, p.media, p.cage]))
           .map(p => `${p.path}, ${p.view}: ${[p.speed, p.media, p.cage].filter(Boolean).join(' ') || 'port'}`);
@@ -311,7 +314,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         if (res.error) return refuse(`${at(x.from[res.index ?? 0] ?? 0)} was refused: ${res.error} Nothing was changed.`);
         if (res.noop) return say('Nothing changed: the rack already looks like that.');
         const verb = {'cable.remove': dry_run ? 'Would remove' : 'Removed', 'cable.update': dry_run ? 'Would update' : 'Updated'};
-        const echoed = x.selected.map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
+        const echoed = reached(x).map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
         const notes = x.unchecked ? ['Note: some ports could not be checked, so a loose cable may have been missed.'] : [];
         return say(editResult(res, {dryRun: !!dry_run, echoed, notes}));
       }),

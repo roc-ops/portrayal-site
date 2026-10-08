@@ -348,3 +348,11 @@ test('the editor: kit 0.4.0 checks a fit against the per-call parts lists, throu
   // no ctx: unchecked, as the page's own calls always were
   assert.equal(ed.preview(bad).error, undefined);
 });
+
+test('the site commands\' own words: the open rack, and the tool that lists ids', () => {
+  for (const [op, def] of Object.entries(ZERO_U_COMMANDS)) {
+    const props = def.args?.properties ?? {};
+    if (props.rack) assert.equal(props.rack.description, 'Edits go to the rack that is open; describe_rack names it.', op);
+    assert.doesNotMatch(JSON.stringify(def.args ?? {}), /Only the first rack|describe\(\)/, op);
+  }
+});

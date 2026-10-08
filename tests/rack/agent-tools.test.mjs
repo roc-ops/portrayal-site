@@ -820,3 +820,28 @@ test('descriptions hold with the page\'s own command table too (zero-U)', async 
     if (prop && [node?.type].flat().includes('object')) assert.match(d, /\{/, `${where} has no shape: ${d}`);
   }
 });
+
+// ── round 2 review fixes ──
+test('list_free_ports: an optic\'s own ports are not marked as cages; only the cage\'s port is', async () => {
+  const ports = [{path: 'port-1', cls: 'port', speed: '100G', media: 'qsfp28'},
+                 {path: 'port-1-occupant/lc1', cls: 'port', speed: '100G', media: 'lc'},
+                 {path: 'port-2', cls: 'port', speed: '100G', media: 'qsfp28'}];
+  const {ed, run} = setup({ports});
+  ed.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10});
+  await run('edit_rack', {commands: [{op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/qsfp-lc@2'}]});
+  const out = text(await run('list_free_ports', {id: 'i1', view: 'front'}));
+  assert.match(out, /\nport-1, front: 100G qsfp28 cage, holds generic\/qsfp-lc@2\n/);
+  assert.match(out, /\nport-1-occupant\/lc1, front: 100G lc\n/);
+  assert.doesNotMatch(out, /lc1, front: [^\n]*cage/);
+});
+
+test('edit_rack: a selector and an explicit id that overlap echo every cable removed, each once', async () => {
+  const {ed, run} = setup();
+  await twoCabled(run);
+  // c3 joins i2 and i3: named by id, then reached again by the i2 selector; c1 by both selectors
+  const res = await run('edit_rack', {commands: [
+    {op: 'cable.remove', id: 'c3'}, {op: 'cable.remove', select: {item: 'i1'}}, {op: 'cable.remove', select: {item: 'i2'}}]});
+  assert.equal(res.isError, undefined, text(res));
+  assert.match(text(res), /^Removed: c3, c1, c2\.\n/);
+  assert.equal(ed.rack().cables.length, 0);
+});

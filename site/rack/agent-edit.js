@@ -62,6 +62,15 @@ export async function expandSelectors(rack, commands, select) {
   return {commands: out, from, selected, unchecked};
 }
 
+// THE IDS A BATCH WITH SELECTORS REACHED, per op, as the kit will act on them:
+// every cable.remove or cable.update in the expanded batch, the ones named by
+// id too, each once. A selector and an explicit id that overlap say every cable
+// actually removed, not only the selector's share.
+export function reached(x) {
+  const ops = [...new Set(x.selected.map(s => s.op))];
+  return ops.map(op => ({op, ids: [...new Set(x.commands.filter(c => c?.op === op).map(c => c.id))]}));
+}
+
 // THE ANSWER, in the round-1 order: names bound, ids created, ids a selector
 // reached (`echoed`), the undo line, then the summary and the kit's notes. The
 // ids and the undo line are what the next call needs, so the summary is cut
