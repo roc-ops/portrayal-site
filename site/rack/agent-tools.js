@@ -1,6 +1,7 @@
 // site/rack/agent-tools.js
-// THE RACK BUILDER'S AGENT TOOLS (spec 2026-10-07-rack-agent-tools-design.md):
-// piece 1's editor and queries, handed to an agent as eight WebMCP tools. Pure
+// THE RACK BUILDER'S AGENT TOOLS (spec 2026-10-07-rack-agent-tools-design.md,
+// round 2 in 2026-10-08-rack-agent-tools-2-design.md): the kit's editor and
+// queries, handed to an agent as ten WebMCP tools. Pure
 // apart from what it is handed - no DOM, no fetch - so it is tested in Node and
 // registered by the page (site/agent/webmcp.js).
 
@@ -18,9 +19,6 @@ export {LIMIT, fit, ranges};
 export const agentMay = (op, commands = COMMANDS) =>
   Object.hasOwn(commands, op) && !commands[op].system && op !== 'dcim';
 
-// edit_rack's argument schema, generated from the command table, so a command
-// added there is offered here with no other change. A guide for the agent:
-// apply() checks every argument again, strictly, and says what is wrong.
 // THE KIT'S ARGUMENTS, AS AN AGENT HERE READS THEM (spec 2026-10-08 section 5):
 // the shape of every object argument, the open rack, and this site's tool
 // names where a kit description names one of its own functions.
@@ -49,6 +47,10 @@ const reword = node => {
   return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, k === 'description' && typeof v === 'string' ? words(v) : reword(v)]));
 };
 
+// edit_rack's argument schema, generated from the command table, so a command
+// added there is offered here with no other change. A guide for the agent:
+// apply() checks every argument again, strictly, and says what is wrong.
+// cable.remove and cable.update take select in place of id (agent-edit.js).
 const SELECT = {type: 'object', description: 'In place of id: {item}, {item, path, view}, {loose: true}, {purpose} or {media}. Reads the rack as it was before this batch.'};
 export function editSchema(commands = COMMANDS) {
   const oneOf = Object.keys(commands).filter(op => agentMay(op, commands)).map(op => {
