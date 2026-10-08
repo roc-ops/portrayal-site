@@ -5,6 +5,7 @@ import {LIMIT, fit, ranges, editSchema, agentMay, EXPORT_KINDS, rackTools} from 
 import * as M from '../../site/rack/model.js';
 import * as Q from '../../site/rack/queries.js';
 import {createRackEditor} from '../../site/rack/editor.js';
+import {endKey} from '../../site/rack/cable-rules.js';
 
 test('fit leaves short text alone and cuts long text at a whole line, saying how much', () => {
   assert.equal(fit('a\nb'), 'a\nb');
@@ -100,6 +101,24 @@ test('describe_rack stays bounded with huge or hostile labels, and returns them 
   const out = text(await run('describe_rack'));
   assert.ok(out.length <= 1500, `describe_rack is ${out.length}`);
   assert.equal((await run('describe_rack')).isError, undefined);
+});
+
+test('describe_rack: a big rack keeps its loose ends, and the undo line is cut short', async () => {
+  const end = (i, n) => ({item: `@d${i}`, path: `port-${n}`, view: 'front'});
+  const cmds = [];
+  for (let i = 0; i < 20; i++) cmds.push({op: 'place', ref: 'as7726-32x', face: 'front', ru: 2 * i + 1, as: `d${i}`, label: `switch-${i}`});
+  for (let i = 0; i < 10; i++) cmds.push({op: 'cable.add', a: end(2 * i, 1), b: end(2 * i + 1, 1), label: 'c'.repeat(300)});
+  const facts = {ends: new Map()};
+  const {ed, run} = setup({facts});
+  const res = await run('edit_rack', {commands: cmds});
+  assert.equal(res.isError, undefined, text(res));
+  const loose = ed.rack().cables[0].a;
+  facts.ends.set(endKey(loose), {reason: 'the port is not on that device'});
+  const out = text(await run('describe_rack'));
+  assert.ok(out.length <= 1500, `describe_rack is ${out.length}`);
+  assert.match(out, /Loose ends:\nc1: the i1 end does not land: the port is not on that device/);
+  assert.ok(out.split('\n')[0].length <= 150, out.split('\n')[0]);
+  assert.ok(out.split('\n')[0].startsWith('Undo would take back: '));
 });
 
 test('find_devices: one line per device, at most 20, and a nudge when there are more', async () => {

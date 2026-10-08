@@ -92,13 +92,16 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
       {}, [], UNTRUSTED,
       async () => {
         const rack = ed.rack();
-        const lines = [ed.canUndo ? `Undo would take back: ${ed.undoSummary}` : 'Nothing to undo.'];
+        // The undo line is cut short and the loose ends come before the listing,
+        // so a big rack's listing is what fit() trims, never the problems.
+        const undo = `Undo would take back: ${ed.undoSummary}`;
+        const lines = [ed.canUndo ? (undo.length > 150 ? `${undo.slice(0, 149)}…` : undo) : 'Nothing to undo.'];
         if (rack.frame.numbering === 'top-down')
           lines.push("This rack's U labels count top-down; commands take ru counted from 1 at the bottom of the rails.");
-        lines.push(queries.describe(rack));
         const loose = await queries.looseEnds(rack);
         if (loose.ends.length) lines.push('Loose ends:', ...loose.ends.map(e => `${e.cable}: the ${e.end.item} end does not land: ${e.reason}`));
         if (loose.unchecked) lines.push('Some ports could not be checked.');
+        lines.push(queries.describe(rack));
         return say(lines.join('\n'));
       }),
     tool('find_devices', 'Find devices',
