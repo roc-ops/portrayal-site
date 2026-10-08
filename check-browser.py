@@ -8163,6 +8163,7 @@ const mc = {registerTool(t, o) {
 }};
 Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
 """
+RELAY_FRAME = "iframe[data-webmcp-relay]"
 AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "list_free_ports", "redo", "undo"]
 
 
@@ -8243,6 +8244,50 @@ def check_rack_agent_tools(page, base):
         bad.append("agent: the side panel still shows the removed device")
     if mcpb:
         bad.append(f"agent: MCP-B loaded with the switch off: {mcpb[:2]}")
+    return bad
+
+
+@extra("rack.html: Connect your AI - nothing loads until it is on, it remembers, it turns off, and it fits at 375px")
+def check_rack_agent_relay(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("() => { try { localStorage.removeItem('portrayal.agent.relay'); } catch {} }")
+    if mcpb:
+        bad.append(f"relay: loaded before it was switched on: {mcpb[:2]}")
+    box = page.locator("#agentMenu > summary").bounding_box()
+    if not box or box["x"] + box["width"] > 375:
+        bad.append(f"relay: the Connect your AI button is off screen at 375px: {box}")
+    page.click("#agentMenu > summary")
+    panel = page.text_content("#agentSlot") or ""
+    for want in ["--widget-origin https://portrayal.dev", "Your AI runs on your computer and talks to this page directly.",
+                 "Export this rack for NetBox."]:
+        if want not in panel:
+            bad.append(f"relay: the panel does not say {want!r}")
+    page.check("#agentRelay")
+    try:
+        wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
+    except RuntimeError:
+        bad.append("relay: switching on loaded nothing from vendor/mcp-b/")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    try:
+        wait_fn(page, "relay: remembered after reload", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
+    except RuntimeError:
+        bad.append("relay: the switch was not remembered")
+    page.click("#agentMenu > summary")
+    page.uncheck("#agentRelay")
+    try:
+        wait_fn(page, "relay: the relay frame removed", f"() => !document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: switching off left the relay frame in the page")
+    if page.evaluate("() => { try { return localStorage.getItem('portrayal.agent.relay'); } catch { return null; } }") != "off":
+        bad.append("relay: switching off was not remembered")
     return bad
 
 

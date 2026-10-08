@@ -36,6 +36,7 @@ import * as Q from './rack/queries.js';
 import {configuredFace} from './rack/face.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
+import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
 
 const $ = id => document.getElementById(id);
@@ -45,7 +46,8 @@ const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
 const AGENT_MARK_MS = 3000;
 // The highlight preference lives with the switch (Task 7); until then it is on.
-let agentHighlightOn = () => true;
+// The highlight preference lives with the Connect your AI switch.
+const agentHighlightOn = () => prefs.highlight;
 const CABLES_3D = 'Cables are added in 2D. Switch to 2D to add one.';
 function loadMode() {
   try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
@@ -1345,6 +1347,10 @@ async function bootInner() {
   S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport});
   S.agentAbort = new AbortController();
   S.agentNative = (await registerTools(S.agentTools, {signal: S.agentAbort.signal})).registered > 0;
+  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: S.agentNative, examples: [
+    'Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel.',
+    'What in this rack has loose cable ends, and why?',
+    'Export this rack for NetBox.']});
   setDoc(doc);
 }
 
