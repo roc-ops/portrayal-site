@@ -48,6 +48,16 @@
  "format": 1,
  "gaps": [
   {
+   "note": "The grounding plate carries two screws for one lug, but no held document dimensions them: the rear photograph and the datasheet rear read the two screws 16.2 to 16.7 apart, and neither document names the screw or a lug. A two-hole lug lands on a pair host built at a lug pattern and a screw size, so both screws stay nominal and unsized, at the reading, until a source gives the size and the spacing.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-1",
+    "ground-2"
+   ],
+   "wanted": "the grounding screw size and hole spacing, or the part number of the kit lug",
+   "what": "ground-pair-pitch"
+  },
+  {
    "reason": "sources-disagree",
    "scope": [
     "front",
@@ -172,6 +182,10 @@
    "confidence": "measured",
    "note": "MEASURED AT NATIVE RESOLUTION, NOT ON THE PAGE RENDER, and that is the finding that made this device's Gate 1 decisive. Rendering the pages at 600 dpi gave a datasheet elevation at an apparent 9.08 px/mm and a guide elevation at 5.04; `pdfimages -list` says the datasheet's elevations are embedded at 1000 px across a 440 mm face - 2.27 px/mm, upsampled fourfold by the renderer - while the guide's are embedded at 2460 and 2474 px. THE BEST INSTRUMENT ON THIS DEVICE IS THE GUIDE'S OVERVIEW FRONT ELEVATION at its own 5.455 px/mm, and the page render of the datasheet is a magnified copy of something coarser. At native resolution the panel bboxes are: guide Overview front 2400 x 240, ratio 10.000; guide package-contents front 2401 x 240, ratio 10.004; guide Overview rear 1233 x 124, ratio 9.944; rear product photograph 954 x 95, ratio 10.042. Against 440 x 44 those are 0.00%, +0.04%, -0.56% and +0.42%. Against 440 x 44.45 they are +1.02%, +1.06%, +0.45% and +1.44%. SO THIS DEVICE IS DRAWN TO 44.00 mm, the figure both its documents publish, and its two shell-mates are not. edgecore/eps121 and edgecore/eps122 record six instruments that fail at 44.0 and pass at 44.45 on the OTHER guide's line art. Same shell, two draughting heights, and this one's evidence is the stronger: two of its four instruments are exact to four decimal places where the siblings' spread is a full percent. Every y measurement in this file uses the 44.00 scale. Filed as `shell-height-disagreement`."
   },
+  "ground-pair": {
+   "confidence": "photo-measured",
+   "note": "TWO SCREWS ON ONE PLATE, ONE ABOVE THE OTHER, AND ONE EARTH SYMBOL TO THEIR RIGHT (#830). The grounding point (datasheet callout 9, guide callout 7) is a plain plate at the far left of the rear carrying two pan-head screws, one above the other. Read on the rear photograph (photos 4-EPS112-B, 960 x 700, body x 1 to 958 and y 304 to 398 px, 2.18 and 2.14 px/mm) the heads centre at x 22 px and y 329.5 and 364.5 px, 35 px apart: x 9.6, y 11.8 and 28.0, 16.2 apart. On the datasheet rear (fig-0008, 3.27 px/mm across, 3.21 down) they centre at x 124.5 px and y 508.5 and 562 px: x 9.3, y 11.7 and 28.4, 16.4 to 16.7 apart. Drawn at x 9.5, y 11.85 and 28.15, 16.3 apart. The two screws are both common/ground-screw@1, the nominal unsized screw without an earth symbol, and the symbol the chassis prints is silkscreen where it prints it. THE SYMBOL is a circled IEC earth printed to the RIGHT of the lower screw, at its height: its ring centres at (53.1, 365.5) px on the photograph, (23.9, 28.8), and at (171.0, 562.8) px on the datasheet rear, (23.5, 28.7), about 9.4 across on both. Drawn at (23.7, 28.7), ring radius 4.5. NO SIZE IS CLAIMED: neither document names the screw or a lug, so no pair host is placed. Formerly one common/ground-lug@1, ground, whose stud sat on the lower screw (8.05, 28.0) with its own symbol above it."
+  },
   "power": {
    "confidence": "datasheet",
    "note": "THE SUPPLY'S OWN WATTAGE IS PUBLISHED, which is unusual in this corpus. The datasheet's Interfaces callouts read \"11. PSU 1: 600W\" and \"12. PSU 2: 600W\", and the Power section reads \"PSUs: 2 pcs 1+1 redundant, load-sharing, hot-swappable 600 W AC (80Plus Platinum compliant)\". The ordering table names the part: UP6001R-1079G, a UMEC 600 W AC supply with an IEC 60320 C14 inlet, \"for EPS112/AS4625-30P\". THE MACHINE'S FIGURES: maximum power consumption \"Low-line: 1150 Watts, High-line: 1200 Watts\"; input \"Low-line: 8.5 A for 90 VAC~136 VAC, High-line: 4.5A for 180 VAC~264 VAC\"; the guide's own table gives a per-PSU system input rating of \"100-240 VAC, 50/60 Hz, 8.5 A max.\" PoE budget \"450 W for 1 PSU/1000 W for 2 PSU\", with the datasheet's own caveat that \"AC PSUs are redundant in terms of system and networking, but not fully redundant in terms of PoE functions and the power budget\". That caveat is why the psus group's redundancy note says what it says."
@@ -198,7 +212,7 @@
   },
   "the-rear": {
    "confidence": "measured",
-   "note": "MEASURED ON THE GUIDE'S REAR ELEVATION at its native 2.80 px/mm, which is the best rear instrument this device has and is coarse: one pixel is 0.36 mm. The square-on rear product photograph (2.17 px/mm) was used to check every figure and agrees within its own resolution. THREE ROUND FAN OPENINGS, 25.1 across, at x centres 70.22, 117.91 and 165.78 - a pitch of 47.87 - on y 23.22. THE EPS121 RECORDS 47.8 for the same three fans on the other guide, so the fan positions are shared across the shell even though the guards are drawn as rectangles there and circles here. TWO SUPPLY BAYS, and the two modules' silver faces measure IDENTICALLY: x 270.45-343.68 and 354.76-427.99, both 73.23 wide, both y 2.55-42.79, both 40.24 tall, on a pitch of 84.31. The photograph puts the handles 83.9 apart and the latches 84.8, which brackets it. THE GROUNDING POINT is two studs and an IEC earth symbol at the far left, x 3.95 to about 22, vertically centred - the datasheet's callout 9 and the guide's callout 7. SILKSCREEN: FAN1, FAN2 and FAN3 under and right of their own fans at x 84.0-90.0, 132.2-138.6 and 180.4-186.9 on y 39.5; PSU1 and PSU2 on the black web to the RIGHT of each bay, at x 346.6-352.0 and 432.2-438.0, vertically centred. The PSU labels are legible only on the photograph; the elevation blurs them."
+   "note": "MEASURED ON THE GUIDE'S REAR ELEVATION at its native 2.80 px/mm, which is the best rear instrument this device has and is coarse: one pixel is 0.36 mm. The square-on rear product photograph (2.17 px/mm) was used to check every figure and agrees within its own resolution. THREE ROUND FAN OPENINGS, 25.1 across, at x centres 70.22, 117.91 and 165.78 - a pitch of 47.87 - on y 23.22. THE EPS121 RECORDS 47.8 for the same three fans on the other guide, so the fan positions are shared across the shell even though the guards are drawn as rectangles there and circles here. TWO SUPPLY BAYS, and the two modules' silver faces measure IDENTICALLY: x 270.45-343.68 and 354.76-427.99, both 73.23 wide, both y 2.55-42.79, both 40.24 tall, on a pitch of 84.31. The photograph puts the handles 83.9 apart and the latches 84.8, which brackets it. THE GROUNDING POINT is two screws one above the other at the far left, x 9.5, and an IEC earth symbol in a circle to their right at (23.7, 28.7) - the datasheet's callout 9 and the guide's callout 7 (provenance ground-pair). SILKSCREEN: FAN1, FAN2 and FAN3 under and right of their own fans at x 84.0-90.0, 132.2-138.6 and 180.4-186.9 on y 39.5; PSU1 and PSU2 on the black web to the RIGHT of each bay, at x 346.6-352.0 and 432.2-438.0, vertically centred. The PSU labels are legible only on the photograph; the elevation blurs them."
   },
   "the-status-lamps": {
    "confidence": "measured",
@@ -225,7 +239,7 @@
    "title": "Edgecore EPS112 / AS4625-30P Enterprise Switch Datasheet"
   }
  ],
- "version": "1.0.8",
+ "version": "2.0.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any staged source. The guide's package contents list \"Four adhesive rubber feet\" for this shell, so there are feet down there, but nothing says where.",
@@ -3527,13 +3541,23 @@
      },
      {
       "at": [
-       4.55,
-       18.2
+       6.7,
+       9.05
       ],
       "group": "grounding",
-      "id": "ground",
-      "ref": "common/ground-lug@1",
+      "id": "ground-1",
+      "ref": "common/ground-screw@1",
       "rel-pos": 1
+     },
+     {
+      "at": [
+       6.7,
+       25.35
+      ],
+      "group": "grounding",
+      "id": "ground-2",
+      "ref": "common/ground-screw@1",
+      "rel-pos": 2
      },
      {
       "at": [
@@ -3578,6 +3602,20 @@
     ]
    },
    "silkscreen": [
+    {
+     "at": [
+      23.7,
+      28.7
+     ],
+     "fill": "#d8dcdf",
+     "for": [
+      "ground-1",
+      "ground-2"
+     ],
+     "id": "ground-mark",
+     "path": "M 0 -4.5 A 4.5 4.5 0 1 0 0.01 -4.5 Z M 0 -2.93 V 0.45 M -3.15 0.45 H 3.15 M -2.02 1.57 H 2.02 M -1.12 2.7 H 1.12",
+     "stroke-width": 0.4
+    },
     {
      "anchor": "middle",
      "at": [

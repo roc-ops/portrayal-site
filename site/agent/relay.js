@@ -10,9 +10,13 @@ const VERSION = '5.1.0';  // @mcp-b/webmcp-local-relay, as vendored (vendor/mcp-
 const SRC = {global: '/vendor/mcp-b/global.js', embed: '/vendor/mcp-b/embed.js'};
 const INTEGRITY = {};  // set only for the jsDelivr fallback (none: self-hosted)
 const RELAY_FRAME = 'iframe[data-webmcp-relay]';  // Spike findings
-const COMMAND = `npx -y @mcp-b/webmcp-local-relay@${VERSION} --widget-origin https://portrayal.dev`;
-const CONFIG = JSON.stringify({mcpServers: {portrayal: {command: 'npx',
-  args: ['-y', `@mcp-b/webmcp-local-relay@${VERSION}`, '--widget-origin', 'https://portrayal.dev']}}}, null, 2);
+// The relay accepts one page origin, so the commands name THIS page's own: on
+// portrayal.dev that is https://portrayal.dev, and a localhost or preview page
+// tells its user the flag that page needs.
+export const relayCommand = origin => `npx -y @mcp-b/webmcp-local-relay@${VERSION} --widget-origin ${origin}`;
+export const relayConfig = origin => JSON.stringify({mcpServers: {portrayal: {command: 'npx',
+  args: ['-y', `@mcp-b/webmcp-local-relay@${VERSION}`, '--widget-origin', origin]}}}, null, 2);
+export const rejectedText = origin => `Your relay refused this page. Start it with --widget-origin ${origin}.`;
 
 const store = {
   get: k => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -47,7 +51,9 @@ const copyRow = (label, text) => {
   return el('div', {className: 'rk-agent-copy'}, el('span', {className: 'rk-muted', textContent: label}), code, btn);
 };
 
-export function relaySwitch({mount, tools, native, examples}) {
+// `onTools(registered)` hears when this switch has registered the tools (true)
+// and when switching off took them back (false): the page's hint says so.
+export function relaySwitch({mount, tools, native, examples, onTools = () => {}}) {
   let ac = null;
   const status = el('p', {className: 'rk-muted', role: 'status'});
   // Only a change is written: the region would announce a repeat again.
@@ -63,7 +69,7 @@ export function relaySwitch({mount, tools, native, examples}) {
     const frame = document.querySelector(RELAY_FRAME);
     if (!frame || e.source !== frame.contentWindow) return;
     if (e.data?.type === 'webmcp.tools.list.request') say('Found your relay.');
-    if (e.data?.type === 'webmcp.relay.rejected') say('Your relay refused this page. Start it with --widget-origin https://portrayal.dev.');
+    if (e.data?.type === 'webmcp.relay.rejected') say(rejectedText(location.origin));
   };
   connect.addEventListener('click', () => {
     const win = document.querySelector(RELAY_FRAME)?.contentWindow;
@@ -98,8 +104,9 @@ export function relaySwitch({mount, tools, native, examples}) {
       if (!(typeof native === 'function' ? await native() : native)) {
         const mineAc = new AbortController();
         ac = mineAc;
-        await registerTools(tools, {signal: mineAc.signal});
+        const r = await registerTools(tools, {signal: mineAc.signal});
         if (run !== mine) { mineAc.abort(); return; }
+        if (r?.registered > 0) onTools(true);
       }
       say('On. Start the relay on your computer first, then press Connect.');
     } catch (e) {
@@ -111,6 +118,7 @@ export function relaySwitch({mount, tools, native, examples}) {
   function off() {
     run++;
     window.removeEventListener('message', onMessage);
+    if (ac) onTools(false);
     ac?.abort(); ac = null;
     for (const f of document.querySelectorAll(RELAY_FRAME)) f.remove();
     reaper.observe(document.body, {childList: true});
@@ -127,8 +135,8 @@ export function relaySwitch({mount, tools, native, examples}) {
     status,
     connect,
     el('p', {textContent: 'Your AI runs on your computer and talks to this page directly. portrayal.dev sees nothing of it.'}),
-    copyRow('Run on your computer', COMMAND),
-    copyRow('Or add to Claude Desktop or Claude Code', CONFIG),
+    copyRow('Run on your computer', relayCommand(location.origin)),
+    copyRow('Or add to Claude Desktop or Claude Code', relayConfig(location.origin)),
     el('p', {className: 'rk-muted', textContent: 'Try asking:'}),
     ...examples.map(x => copyRow('', x)),
     el('label', {className: 'rk-agent-switch'}, markBox, " Outline what my AI changes"),

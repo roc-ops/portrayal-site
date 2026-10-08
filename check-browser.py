@@ -8629,7 +8629,7 @@ const mc = {registerTool(t, o) {
 Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
 """
 RELAY_FRAME = "iframe[data-webmcp-relay]"
-AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "list_free_ports", "redo", "undo"]
+AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "inspect", "list_free_ports", "new_rack", "redo", "undo"]
 
 
 def agent_call(page, name, args):
@@ -8753,9 +8753,173 @@ def relay_connect_asserts(page):
         bad.append(f"relay: a tools list request did not say 'Found your relay.' (status {status()!r})")
     from_frame({"type": "webmcp.relay.rejected"})
     try:
-        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('Your relay refused this page.')")
+        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent === `Your relay refused this page. Start it with --widget-origin ${location.origin}.`")
     except RuntimeError:
         bad.append(f"relay: a rejection did not overwrite the status (status {status()!r})")
+    return bad
+
+
+# The stand-in again, with what an agent in the page calls: getTools() and
+# executeTool(tool, args) - the tool object first, as Chromium's WebMCP takes it.
+# Kept apart from STAND_IN_MODEL_CONTEXT: a model context with executeTool reads
+# as the MCP-B polyfill to the relay switch (site/agent/relay.js).
+STAND_IN_WITH_EXECUTE = STAND_IN_MODEL_CONTEXT + """
+mc.getTools = async () => Object.values(window.__tools);
+// As the MCP-B polyfill (vendor/mcp-b/global.js 5.1.0) and Chromium's testing
+// call do: the arguments come as a JSON string, an object is refused, and the
+// answer goes back as a JSON string. A caller that passes an object fails here
+// as it fails in the real page.
+mc.executeTool = async (t, input) => {
+  let a;
+  try { a = JSON.parse(input); } catch { a = null; }
+  if (typeof input !== 'string' || !a || typeof a !== 'object')
+    throw new DOMException('Failed to parse input arguments', 'UnknownError');
+  return JSON.stringify(await t.execute(a));
+};
+"""
+
+
+def agent_exec(page, name, args):
+    """A tool called as the page hint says: found in getTools(), run with
+    executeTool(tool, JSON.stringify(args)), its JSON string answer parsed."""
+    return page.evaluate("""async ([n, a]) => {
+      const mc = document.modelContext ?? navigator.modelContext;
+      const t = (await mc.getTools()).find(t => t.name === n);
+      return JSON.parse(await mc.executeTool(t, JSON.stringify(a)));
+    }""", [name, args])
+
+
+# THE PAGE HINT'S SNIPPET, RUN AS WRITTEN: #webmcp-hint's howTo, its last
+# expression returned. Answers [text, error].
+RUN_HOW_TO = """async () => {
+  const howTo = JSON.parse(document.getElementById('webmcp-hint').textContent).howTo;
+  const cut = howTo.lastIndexOf('; ');
+  const body = `${howTo.slice(0, cut + 2)}return ${howTo.slice(cut + 2)};`;
+  try { return [await new (Object.getPrototypeOf(async () => {}).constructor)(body)(), null]; }
+  catch (e) { return [null, String(e)]; }
+}"""
+
+
+def inspect_all(page, args):
+    """Every page of an inspect answer, as an agent reads it: each page's first
+    line names the next one ({...}) until "That is the end."."""
+    out = []
+    for _ in range(30):
+        text = agent_exec(page, "inspect", args)["content"][0]["text"]
+        out.append(text)
+        m = re.search(r"Next: (\{.*?\})\.$", text.split("\n")[0])
+        if not m:
+            break
+        args = json.loads(m.group(1))
+    return "\n".join(out)
+
+
+@extra("rack.html: agent tools 2 - the page hint, new_rack, an optic fitted and its latch painted, a cassette swapped and its cable re-pointed, cables removed by selector")
+def check_rack_agent_tools_2(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    said = lambda r: r["content"][0]["text"]
+    doc = lambda expr: page.evaluate(f"() => {{ const r = window.__rack.doc().racks[0]; return {expr}; }}")
+    page.add_init_script(STAND_IN_WITH_EXECUTE)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    wait_fn(page, "agent2: tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    # The page hint lists exactly what was registered
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if not hint.get("webmcp") or sorted(hint.get("tools", [])) != AGENT_TOOLS:
+        bad.append(f"agent2: the page hint says {hint}")
+    hint_p = page.text_content("#webmcp-hint-text") or ""
+    if "executeTool" not in hint_p or f"The tools are: {', '.join(page.evaluate('() => Object.keys(window.__tools)'))}." not in hint_p \
+            or not hint.get("registered"):
+        bad.append(f"agent2: the hint paragraph does not name the registered tools and how to call them: {hint_p!r}, {hint}")
+    text, err = page.evaluate(RUN_HOW_TO)
+    if err or not re.match(r".+ \(r\d+\): \d+ items?, \d+ cables?\.", text or ""):
+        bad.append(f"agent2: the hint's own snippet answered {text!r}, {err}")
+    obj = page.evaluate("""async () => { const mc = document.modelContext;
+      const t = (await mc.getTools()).find(t => t.name === 'describe_rack');
+      try { await mc.executeTool(t, {}); return 'took an object'; } catch (e) { return String(e); } }""")
+    if "Failed to parse input arguments" not in obj:
+        bad.append(f"agent2: the stand-in took an object argument: {obj}")
+    first = page.evaluate("() => [document.body.firstElementChild?.id, document.body.getAttribute('aria-describedby')]")
+    if first != ["webmcp-hint-text", "webmcp-hint-text"]:
+        bad.append(f"agent2: the hint is not the body's first element and its description: {first}")
+    # new_rack: the old rack stays in the library, the new one is open
+    old = page.evaluate("() => ({id: window.__rack.doc().id, name: window.__rack.doc().racks[0].name})")
+    out = agent_exec(page, "new_rack", {"name": "Agent rack", "height": 24})
+    if out.get("isError") or "Opened Agent rack" not in said(out) or "is in the library" not in said(out):
+        bad.append(f"agent2: new_rack answered {out}")
+    now = page.evaluate("() => { const d = window.__rack.doc(); const r = d.racks[0]; return [d.id, r.name, r.frame.heightRU, r.items.length]; }")
+    if now[0] == old["id"] or now[1:] != ["Agent rack", 24, 0]:
+        bad.append(f"agent2: after new_rack the open rack is {now}")
+    page.click("#libMenu > summary")
+    try:
+        wait_fn(page, "agent2: the old rack is in the library",
+                f"() => [...document.querySelectorAll('#libItems button')].some(b => b.textContent === {json.dumps(old['name'])})")
+    except RuntimeError as e:
+        bad.append(str(e))
+    page.click("#libMenu > summary")
+    # An optic fitted, then its latch color set: the drawing shows the color
+    fitted = agent_exec(page, "edit_rack", {"commands": [
+        {"op": "place", "ref": "as7726-32x", "face": "front", "ru": 20, "as": "sw"},
+        {"op": "fit", "id": "@sw", "path": "port-1", "ref": "generic/qsfp-lc@2"}]})
+    if fitted.get("isError"):
+        bad.append(f"agent2: fitting an optic answered {fitted}")
+        return bad
+    # A part the cage does not take is refused, with what it takes, and nothing changes
+    wrong = agent_exec(page, "edit_rack", {"commands": [{"op": "fit", "id": "i1", "path": "port-2", "ref": "fs/fhd-fap6scd-os2@1"}]})
+    if not wrong.get("isError") or "does not take fs/fhd-fap6scd-os2@1" not in said(wrong) \
+            or doc("r.items[0].swaps['port-2'] ?? null") is not None:
+        bad.append(f"agent2: a wrong part in a cage answered {wrong}")
+    look = inspect_all(page, {"id": "i1"})
+    if "holds generic/qsfp-lc@2" not in look:
+        bad.append(f"agent2: inspect does not show the optic: {look[:300]!r}")
+    latch = next((l.split(":")[0] for l in look.splitlines() if "latch-color =" in l), None)
+    if not latch or ".." in latch:
+        bad.append(f"agent2: inspect names no single latch-color field for port-1: {look[:300]!r}")
+        return bad
+    colored = agent_exec(page, "edit_rack", {"commands": [
+        {"op": "field", "id": "i1", "path": latch, "key": "latch-color", "value": "#c22f2f"}]})
+    if colored.get("isError"):
+        bad.append(f"agent2: setting the latch color answered {colored}")
+    try:
+        wait_fn(page, "agent2: the latch is painted",
+                "() => [...document.querySelectorAll('#panes svg [data-fill-from=\"latch-color\"]')].some(n => n.getAttribute('fill') === '#c22f2f')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    # A cassette swapped: the orphaned cable is said, then re-pointed with cable.update {b}
+    agent_exec(page, "edit_rack", {"commands": [{"op": "place", "ref": "fhd-1ufce", "cfg": "panels", "face": "front", "ru": 18}]})
+    end = lambda item, p: {"item": item, "path": p["path"], "view": p["view"]}
+    sw = page.evaluate("() => window.__rack.query.freePorts('i1')")
+    bay = [p for p in page.evaluate("() => window.__rack.query.freePorts('i2')") if p["path"].startswith("bay-1/")]
+    if len(sw) < 2 or len(bay) < 7:
+        bad.append(f"agent2: not enough free ports to cable (switch {len(sw)}, bay-1 {len(bay)})")
+        return bad
+    agent_exec(page, "edit_rack", {"commands": [{"op": "cable.add", "a": end("i1", sw[0]), "b": end("i2", bay[-1])}]})
+    swap = agent_exec(page, "edit_rack", {"commands": [{"op": "fit", "id": "i2", "path": "bay-1", "ref": "fs/fhd-fap6scd-os2@1"}]})
+    if swap.get("isError") or not ("c1" in said(swap) or bay[-1]["path"] in said(swap)):
+        bad.append(f"agent2: the cassette swap did not say what it orphaned: {said(swap)!r}")
+    fresh = [p for p in page.evaluate("() => window.__rack.query.freePorts('i2')") if p["path"].startswith("bay-1/")]
+    if not fresh:
+        bad.append("agent2: the new cassette has no free ports")
+        return bad
+    repointed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.update", "id": "c1", "b": end("i2", fresh[0])}]})
+    if repointed.get("isError") or doc("r.cables.find(c => c.id === 'c1')?.b.path") != fresh[0]["path"]:
+        bad.append(f"agent2: re-pointing c1 answered {repointed}")
+    # A hand route through a waypoint the rack lacks is refused, with what exists
+    route_before = doc("JSON.stringify(r.cables.find(c => c.id === 'c1')?.route ?? null)")
+    for way, want in [({"item": "i1", "via": "guide-9"}, "has no"), ({"lane": "middle", "ru": 20}, "no gutter called middle")]:
+        routed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.route", "id": "c1", "route": [way]}]})
+        if not routed.get("isError") or want not in said(routed):
+            bad.append(f"agent2: a route through {way} answered {routed}")
+    if doc("JSON.stringify(r.cables.find(c => c.id === 'c1')?.route ?? null)") != route_before \
+            or doc("r.cables.find(c => c.id === 'c1')?.routeEdited === true"):
+        bad.append("agent2: a refused route still changed c1")
+    # The cables on a device, removed by selector
+    agent_exec(page, "edit_rack", {"commands": [{"op": "cable.add", "a": end("i1", sw[1]), "b": end("i2", fresh[1])}]})
+    removed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.remove", "select": {"item": "i1"}}]})
+    if removed.get("isError") or not said(removed).startswith("Removed: c1, c2.") or doc("r.cables.length") != 0:
+        bad.append(f"agent2: removing by selector answered {removed}, {doc('r.cables.length')} cables left")
     return bad
 
 
@@ -8777,11 +8941,32 @@ def check_rack_agent_relay(page, base):
         bad.append(f"relay: the Connect your AI button is off screen at 375px: {box}")
     page.click("#agentMenu > summary")
     panel = page.text_content("#agentSlot") or ""
-    for want in ["--widget-origin https://portrayal.dev", "Your AI runs on your computer and talks to this page directly.",
+    origin = page.evaluate("() => location.origin")
+    for want in [f"--widget-origin {origin}", "Your AI runs on your computer and talks to this page directly.",
                  "Export this rack for NetBox."]:
         if want not in panel:
             bad.append(f"relay: the panel does not say {want!r}")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered") or hint.get("tools") or "Connect your AI" not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"relay: with nothing registered the page hint says {hint}")
     page.check("#agentRelay")
+    try:
+        wait_fn(page, "relay: the hint names the tools once the switch registers them",
+                f"() => JSON.parse(document.getElementById('webmcp-hint').textContent).tools.length === {len(AGENT_TOOLS)}")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        # The hint's snippet, as written, against the REAL vendored polyfill
+        # (vendor/mcp-b/global.js) that the switch loaded: a parseable answer.
+        text, err = page.evaluate(RUN_HOW_TO)
+        if err or not re.match(r".+ \(r\d+\): \d+ items?, \d+ cables?\.", text or ""):
+            bad.append(f"relay: the page hint's snippet, run against the polyfill, answered {text!r}, {err}")
+        # and the call the hint used to give, an object argument, is the one the polyfill refuses
+        obj = page.evaluate("""async () => { const mc = document.modelContext;
+          const t = (await mc.getTools()).find(t => t.name === 'describe_rack');
+          try { await mc.executeTool(t, {}); return 'took an object'; } catch (e) { return String(e); } }""")
+        if "Failed to parse input arguments" not in obj:
+            bad.append(f"relay: the polyfill's executeTool took an object, so the hint's JSON-string advice needs another look: {obj}")
     try:
         wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
     except RuntimeError:

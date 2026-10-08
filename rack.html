@@ -35,7 +35,9 @@
 } }
 </script>
 </head>
-<body class="tool">
+<body class="tool" aria-describedby="webmcp-hint-text">
+<p class="rk-vh" id="webmcp-hint-text">This page has tools for AI agents, not yet registered in this browser: open the Connect your AI menu (#agentMenu) in the bar above the rack and tick "Let my desktop AI use this page", then call await document.modelContext.executeTool(tool, JSON.stringify(args)) with a tool from getTools(), and JSON.parse the string it answers. The JSON block #webmcp-hint has a snippet that runs as written.</p>
+<script type="application/json" id="webmcp-hint">{"webmcp":true,"registered":false,"howTo":"const mc = document.modelContext ?? navigator.modelContext; const t = (await mc.getTools()).find(t => t.name === 'describe_rack'); const result = JSON.parse(await mc.executeTool(t, JSON.stringify({}))); result.content[0].text","calling":"executeTool takes the tool object from getTools(), not its name, and the arguments as a JSON string (JSON.stringify(args)); it answers with a JSON string: JSON.parse it to get {content: [{type: 'text', text}], isError?}.","connect":"Not registered yet: open the Connect your AI menu (#agentMenu) in the bar above the rack and tick \"Let my desktop AI use this page\".","tools":[]}</script>
 
 <div class="site-bar">
   <a class="brand" href="index.html">

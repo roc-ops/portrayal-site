@@ -9,7 +9,7 @@ import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
 import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
-import {loadCatalog} from '../vendor/rack/catalog.js';
+import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -33,9 +33,10 @@ import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
 import * as Q from '../vendor/rack/queries.js';
-import {configuredFace} from './rack/face.js';
+import {configuredFace, DIST} from './rack/face.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
+import {writeHint} from './rack/agent-hint.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
 import {withZeroUEditor, zeroUEntries, zeroUById, zeroUOf, fitsItem, fitsZeroUSide, ruOfZ, isRackSide, isNarrowFace,
@@ -1167,6 +1168,32 @@ async function offerDownloadIfNoLibrary() {
     downloadDoc(theDoc());
 }
 
+// THE LIBRARY'S NEW: the open rack is saved, then a new one opens. The menu
+// and an agent's new_rack both come here. `shape` lets new_rack build its name
+// and frame into the new rack, so it opens as it was asked for.
+async function startNewRack(shape = r => r) {
+  storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
+  // A document switch drops whatever the previous rack's last edit had
+  // queued (saveSoon fires 500ms later); flushing first means it lands
+  // before the switch instead of being silently skipped.
+  await S.save.flush();
+  const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
+  d.racks[0] = shape(d.racks[0]);
+  await S.lib.put(d); setDoc(d);
+  return {name: d.racks[0].name};
+}
+// What new_rack is handed: never the no-library dialog, which an agent can't
+// answer (new_rack refuses instead), and the step said as the assistant's.
+const agentLibrary = {
+  get available() { return !!S.lib?.available; },
+  async newRack(shape) {
+    const r = await startNewRack(shape);
+    addNotice(`Your assistant: Started ${r.name}.`, 'note');
+    renderSoon();
+    return r;
+  },
+};
+
 let libDraws = 0;
 async function renderLibrary() {
   const mine = ++libDraws;
@@ -1174,14 +1201,9 @@ async function renderLibrary() {
   const act = (text, fn) => { const b = el('button', {type: 'button', text}); b.addEventListener('click', () => { $('libMenu').open = false; fn(); }); return b; };
   const kids = [
     act('New rack', async () => {
-      storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
+      storeDcimDraft();       // typed for this rack: it must reach a download of it too
       await offerDownloadIfNoLibrary();
-      // A document switch drops whatever the previous rack's last edit had
-      // queued (saveSoon fires 500ms later); flushing first means it lands
-      // before the switch instead of being silently skipped.
-      await S.save.flush();
-      const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
-      await S.lib.put(d); setDoc(d);
+      await startNewRack();
     }),
     act('Duplicate', async () => {
       // The copy is of the rack as stored: what is typed in an open settings
@@ -1390,17 +1412,21 @@ async function bootInner() {
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS,
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext, library: agentLibrary,
                             besides: r => zeroULines(r, chassisOf)});
+  // The page hint names the tools only once they are registered (agent-hint.js).
+  const toolNames = S.agentTools.map(t => t.name);
+  writeHint(document, []);
   S.agentAbort = new AbortController();
   S.agentNative = false;
   setDoc(doc);
   // Registration runs behind the first draw: a failure only logs. The switch
   // asks lazily (and waits for this) whether the browser took the tools.
   S.agentReg = registerTools(S.agentTools, {signal: S.agentAbort.signal})
-    .then(r => { S.agentNative = r.registered > 0; })
+    .then(r => { S.agentNative = r.registered > 0; if (S.agentNative) writeHint(document, toolNames); })
     .catch(e => console.warn('[portrayal] WebMCP registration', e));
-  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; }, examples: [
+  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; },
+    onTools: on => writeHint(document, on || S.agentNative ? toolNames : []), examples: [
     'Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel.',
     'What in this rack has loose cable ends, and why?',
     'Export this rack for NetBox.']});
@@ -1411,13 +1437,29 @@ async function bootInner() {
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
 const boundQueries = () => ({
-  describe: r => Q.describe(r, {chassisOf}),
+  describe: (r, win) => Q.describe(r, {chassisOf}, win),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
+  selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
+  inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
 });
+
+// THE KIT'S PER-CALL CONTEXT for an agent's call (spec 2026-10-08 D5): the
+// parts lists of everything in the rack and of `refs` (a batch's new devices,
+// a catalog device inspected), the cabled ends' facts, and, for a cable's
+// routed length or a hand route's waypoints, the routing context, whose
+// guidesOf is each device's configured face (ruling K8). loadSlots memoizes
+// through the dist fetch, so a warm call fetches nothing.
+async function agentContext(r, refs = [], {route = false} = {}) {
+  const {slotsOf, compByRef} = await loadSlots(DIST, [...new Set([...r.items.map(i => i.ref), ...refs])]);
+  const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
+  if (!route) return ctx;
+  const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
+  return rf ? {...ctx, route: rf.ctx, guidesOf: rf.ctx.guidesOf} : ctx;
+}
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
