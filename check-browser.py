@@ -8549,7 +8549,7 @@ const mc = {registerTool(t, o) {
 Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
 """
 RELAY_FRAME = "iframe[data-webmcp-relay]"
-AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "inspect", "list_free_ports", "redo", "undo"]
+AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "inspect", "list_free_ports", "new_rack", "redo", "undo"]
 
 
 def agent_call(page, name, args):

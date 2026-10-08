@@ -83,7 +83,8 @@ const text = r => r.content[0].text;
 test('the tools: names, bounds, annotations', () => {
   const {tools} = setup();
   assert.deepEqual(Object.keys(tools).sort(),
-    ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'inspect', 'list_free_ports', 'redo', 'undo']);
+    ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo']);
+  assert.equal(tools.new_rack.annotations.readOnlyHint, false);
   for (const t of Object.values(tools)) {
     assert.ok(t.description.length <= 500, `${t.name} description is ${t.description.length}`);
     for (const [k, p] of Object.entries(t.inputSchema.properties ?? {}))
@@ -565,4 +566,62 @@ test('inspect: a cable whose ends cannot be read is answered, and says they are 
   const out = await run('inspect', {id: 'c1'});
   assert.equal(out.isError, undefined, text(out));
   assert.match(text(out), /\nIts ends could not be checked/);
+});
+
+// ── round 2: new_rack (plan Task 5) ──
+// The page's New path, as new_rack sees it: the open document is "saved", and a
+// new one is loaded with the shape new_rack asked for.
+const fakeLibrary = (getEd, {available = true} = {}) => {
+  const saved = [];
+  return {saved, available, async newRack(shape) {
+    const ed = getEd();
+    saved.push(ed.getDoc());
+    const d = M.newDoc({name: M.nextRackName(saved.map(x => x.racks[0].name))});
+    d.racks[0] = shape(d.racks[0]);
+    ed.loadDoc(d);
+    return {name: d.racks[0].name};
+  }};
+};
+const withLibrary = (opts = {}) => {
+  let ed = null;
+  const library = fakeLibrary(() => ed, opts);
+  const s = setup({library});
+  ed = s.ed;
+  return {...s, library};
+};
+
+test('new_rack: the old rack is saved, and a new one opens with its name and frame built in', async () => {
+  const {ed, run, library} = withLibrary();
+  await run('edit_rack', {commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}]});
+  const res = await run('new_rack', {name: 'Core B', height: 24, kind: 'two-post'});
+  assert.equal(res.isError, undefined, text(res));
+  assert.equal(text(res), "Opened Core B (r1), 24U two-post. Undo can't take this back; the old rack, Rack 1, is in the library.");
+  assert.equal(library.saved[0].racks[0].items.length, 1);
+  assert.deepEqual([ed.rack().name, ed.rack().frame.heightRU, ed.rack().frame.kind, ed.rack().items.length], ['Core B', 24, 'two-post', 0]);
+  assert.equal(ed.canUndo, false);
+});
+
+test('new_rack: its defaults - the next free name, 42U, four-post', async () => {
+  const {run} = withLibrary();
+  assert.equal(text(await run('new_rack')), "Opened Rack 2 (r1), 42U four-post. Undo can't take this back; the old rack, Rack 1, is in the library.");
+});
+
+test('new_rack: a frame the kit refuses starts nothing', async () => {
+  const {ed, run, library} = withLibrary();
+  const before = ed.getDoc();
+  const res = await run('new_rack', {height: 200});
+  assert.equal(res.isError, true);
+  assert.match(text(res), / No rack was started\.$/);
+  assert.equal(library.saved.length, 0);
+  assert.equal(ed.getDoc(), before);
+});
+
+test('new_rack with no library is refused, and the open rack is untouched', async () => {
+  const {ed, run, library} = withLibrary({available: false});
+  const before = ed.getDoc();
+  const res = await run('new_rack', {name: 'X'});
+  assert.equal(res.isError, true);
+  assert.equal(text(res), "This browser isn't keeping a library, so a new rack would lose this one. Ask the user to start one with the rack menu's New rack, which offers to save this one first.");
+  assert.equal(library.saved.length, 0);
+  assert.equal(ed.getDoc(), before);
 });

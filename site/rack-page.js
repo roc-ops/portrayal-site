@@ -1167,6 +1167,32 @@ async function offerDownloadIfNoLibrary() {
     downloadDoc(theDoc());
 }
 
+// THE LIBRARY'S NEW: the open rack is saved, then a new one opens. The menu
+// and an agent's new_rack both come here. `shape` lets new_rack build its name
+// and frame into the new rack, so it opens as it was asked for.
+async function startNewRack(shape = r => r) {
+  storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
+  // A document switch drops whatever the previous rack's last edit had
+  // queued (saveSoon fires 500ms later); flushing first means it lands
+  // before the switch instead of being silently skipped.
+  await S.save.flush();
+  const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
+  d.racks[0] = shape(d.racks[0]);
+  await S.lib.put(d); setDoc(d);
+  return {name: d.racks[0].name};
+}
+// What new_rack is handed: never the no-library dialog, which an agent can't
+// answer (new_rack refuses instead), and the step said as the assistant's.
+const agentLibrary = {
+  get available() { return !!S.lib?.available; },
+  async newRack(shape) {
+    const r = await startNewRack(shape);
+    addNotice(`Your assistant: Started ${r.name}.`, 'note');
+    renderSoon();
+    return r;
+  },
+};
+
 let libDraws = 0;
 async function renderLibrary() {
   const mine = ++libDraws;
@@ -1174,14 +1200,9 @@ async function renderLibrary() {
   const act = (text, fn) => { const b = el('button', {type: 'button', text}); b.addEventListener('click', () => { $('libMenu').open = false; fn(); }); return b; };
   const kids = [
     act('New rack', async () => {
-      storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
+      storeDcimDraft();       // typed for this rack: it must reach a download of it too
       await offerDownloadIfNoLibrary();
-      // A document switch drops whatever the previous rack's last edit had
-      // queued (saveSoon fires 500ms later); flushing first means it lands
-      // before the switch instead of being silently skipped.
-      await S.save.flush();
-      const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
-      await S.lib.put(d); setDoc(d);
+      await startNewRack();
     }),
     act('Duplicate', async () => {
       // The copy is of the rack as stored: what is typed in an open settings
@@ -1390,7 +1411,7 @@ async function bootInner() {
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext,
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext, library: agentLibrary,
                             besides: r => zeroULines(r, chassisOf)});
   S.agentAbort = new AbortController();
   S.agentNative = false;

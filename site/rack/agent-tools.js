@@ -4,7 +4,7 @@
 // apart from what it is handed - no DOM, no fetch - so it is tested in Node and
 // registered by the page (site/agent/webmcp.js).
 
-import {COMMANDS} from '../../vendor/rack/commands.js';
+import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
 import {newRack, withItem} from '../../vendor/rack/model.js';
 import {LIMIT, fit, ranges, cutList, inspectText, cableText, SECTIONS} from './agent-text.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
@@ -208,6 +208,31 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const echoed = x.selected.map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
         const notes = x.unchecked ? ['Note: some ports could not be checked, so a loose cable may have been missed.'] : [];
         return say(editResult(res, {dryRun: !!dry_run, echoed, notes}));
+      }),
+    tool('new_rack', 'Start a new rack',
+      "Start a new, empty rack and open it. The open rack is saved in this browser's library first and stays there; Undo can't take this back. Later edits go to the new rack. name, height and kind set its name and frame.",
+      {name: {type: 'string', minLength: 1, description: 'The new rack\'s name. When left out, the next free "Rack n".'},
+       height: {type: 'integer', minimum: 1, maximum: 100, description: 'How many U tall, 1 to 100; 42 when left out.'},
+       kind: {type: 'string', enum: ['four-post', 'two-post'], description: 'four-post or two-post; four-post when left out.'}},
+      [], {readOnlyHint: false},
+      async ({name, height, kind}) => {
+        if (!library?.available)
+          return refuse("This browser isn't keeping a library, so a new rack would lose this one. Ask the user to start one with the rack menu's New rack, which offers to save this one first.");
+        const cmds = [...(name != null ? [{op: 'rename', name}] : []),
+          ...(height != null || kind != null ? [{op: 'frame', ...(height != null ? {heightRU: height} : {}), ...(kind != null ? {kind} : {})}] : [])];
+        // The name and frame are checked before anything happens, then built
+        // into the new rack, so it opens as asked with no undo step of its own.
+        const check = cmds.length ? applyCommands(newRack(), cmds, {chassisOf}) : null;
+        if (check?.error) return refuse(`${check.error} No rack was started.`);
+        const shape = r => {
+          if (!cmds.length) return r;
+          const res = applyCommands(r, cmds, {chassisOf});
+          return res.error || res.noop ? r : res.rack;
+        };
+        const old = ed.rack().name;
+        await library.newRack(shape);
+        const r = ed.rack();
+        return say(`Opened ${r.name} (${r.id}), ${r.frame.heightRU}U ${r.frame.kind}. Undo can't take this back; the old rack, ${old}, is in the library.`);
       }),
     tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was.', {}, [], {readOnlyHint: false},
       async () => { const s = ed.undo(); return say(s ? `Undid: ${s.summary}` : 'Nothing to undo.'); }),
