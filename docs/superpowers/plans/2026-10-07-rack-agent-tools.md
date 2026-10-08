@@ -1461,13 +1461,39 @@ _Filled in by Task 1, before Task 2 starts._
 
 | Question | Answer |
 |---|---|
-| `VER` (`@mcp-b/webmcp-local-relay`) | |
-| `GVER` (`@mcp-b/global`) | |
-| Files to vendor, with paths under `vendor/mcp-b/` | |
-| Self-hosted works? | |
-| `--widget-origin` sees the page's origin or the iframe's? | |
-| `RELAY_FRAME` selector | |
-| Connection signal for the status line | |
-| `@mcp-b/global` with native `document.modelContext` | |
-| Local Network Access prompt, and once denied | |
-| Self-host or jsDelivr fallback (with SRI hashes) | |
+| `VER` (`@mcp-b/webmcp-local-relay`) | `5.1.0` |
+| `GVER` (`@mcp-b/global`) | `5.1.0` |
+| Files to vendor, with paths under `vendor/mcp-b/` | `@mcp-b/global@5.1.0` `dist/index.iife.js` -> `vendor/mcp-b/global.js` (284,517 bytes); `@mcp-b/webmcp-local-relay@5.1.0` `dist/browser/embed.js` -> `vendor/mcp-b/embed.js` (7,481 bytes); `dist/browser/widget.html` -> `vendor/mcp-b/widget.html` (8,896 bytes). `embed.js` does `fetch(new URL('widget.html', <its own script src>))`, so `widget.html` must sit next to `embed.js` under that exact name. `widget.html` inlines its script (no `<script src>`), so `dist/browser/widget.js` is NOT needed. No chunks. |
+| Self-hosted works? | Yes. `ping` returned `pong` through the relay with all three files served from `http://localhost:8941/vendor/mcp-b/`. The tool is listed as plain `ping` (no prefix) next to `webmcp_list_sources`, `webmcp_list_tools`, `webmcp_open_page`. `embed.js` must be a classic `<script src>` (it reads `document.currentScript`), loaded after `global.js`. Data attributes read: `data-debug`, `data-auto-connect` (default true), `data-relay-host` (default 127.0.0.1), `data-relay-port` (default 9333), `data-relay-id`, `data-relay-workspace`, `data-request-timeout`. |
+| `--widget-origin` sees the page's origin or the iframe's? | The page's origin. The iframe is a `blob:` URL created by `embed.js` and inherits the page origin, so the WebSocket `Origin` header is `http://localhost:8941`. `--widget-origin http://localhost:8941` accepted it; `--widget-origin http://localhost:9999` refused it (relay stderr: `rejecting source ... with disallowed host origin: http://localhost:8941`; `ping` never appeared). On the live site it must be `https://portrayal.dev` (scheme + host, no path). |
+| `RELAY_FRAME` selector | `iframe[data-webmcp-relay]` (outerHTML: `<iframe src="blob:..." aria-hidden="true" data-webmcp-relay="1" allow="loopback-network; local-network; local-network-access" style="display: none;">`). It is `display:none`, appended to `document.body` when `embed.js` runs; absent if `embed.js` was not loaded. |
+| Connection signal for the status line | No positive "connected" signal exists (no event, global or attribute is set on hello/accepted). What the page CAN read, via `window.addEventListener('message', e => ...)` with `e.origin === location.origin` and `e.source === document.querySelector('iframe[data-webmcp-relay]').contentWindow`: `e.data.type === 'webmcp.relay.rejected'` (fields `host`, `port`, `reason`, `message`; reason `host-origin-not-allowed`) means the relay is up but refuses this origin. A `webmcp.tools.list.request` message means the widget found a relay socket and is about to say hello, but it is sent before acceptance and also precedes a rejection, so it is not proof of a working connection. No relay running produces no message at all (only console WebSocket errors). Conclusion: an honest status line can show only "relay refused this origin"; "connected" cannot be shown, so leave it out (spec §4.3). The widget retries (about every 0.5 s after a rejection), so `rejected` messages repeat. |
+| `@mcp-b/global` with native `document.modelContext` | Native `document.modelContext` did NOT appear in the Playwright Chromium (Chrome 145.0.7632.6) with `--enable-features=WebMCPTesting` (alone: no native at all) or with `--enable-experimental-web-platform-features` (a native `ModelContext` appears on `navigator.modelContext` only, with the older API: `clearContext`, `provideContext`, `registerTool`, `unregisterTool`, no `getTools`). Source (`dist/index.js`): `global` reads `document.modelContext ?? navigator.modelContext`; it leaves the context alone ONLY if it is already a `BrowserMcpServer`; otherwise it installs its own `BrowserMcpServer` over BOTH `document` and `navigator` (wrapping the native one via `{native}` and calling `syncNativeTools()`). It does not leave a native context alone. With the 145 experimental native, the wrapper breaks the relay: `this.native.getTools is not a function`, so `tools/list` never shows `ping`. With no native (the default and the WebMCPTesting-only case) it works. Risk for Task 8: Jason's Chrome with a native WebMCP of a different shape may behave either way. |
+| Local Network Access prompt, and once denied | Deferred to Jason's live run (Task 8). Cannot be answered headlessly. Note `embed.js` already sets `allow="loopback-network; local-network; local-network-access"` on the iframe. |
+| Self-host or jsDelivr fallback (with SRI hashes) | Self-host. Questions 1 and 2 pass self-hosted, so no jsDelivr fallback and no SRI hashes are needed. |
+
+### Evidence
+
+Scratch dir: `/private/tmp/claude-501/.../scratchpad/mcpb` (not committed). No `claude mcp add/remove` was run; I acted as the MCP client myself.
+
+```
+npm view @mcp-b/webmcp-local-relay version   -> 5.1.0
+npm view @mcp-b/global version               -> 5.1.0
+npm pack both; files found: global dist/index.iife.js; relay dist/browser/{embed.js,widget.html,widget.js}
+python3 -m http.server 8941 --directory site      # site/vendor/mcp-b/{global.js,embed.js,widget.html} + index.html with the ping tool
+node client.mjs http://localhost:8941 40          # @modelcontextprotocol/sdk client spawning: npx -y @mcp-b/webmcp-local-relay@5.1.0 --widget-origin http://localhost:8941
+python3 page.py http://localhost:8941/            # Playwright Chromium 145, default flags
+```
+
+Key output, good origin:
+```
+[relay stderr] server mode: listening on ws://127.0.0.1:9333 (allowed origins: http://localhost:8941)
+initialized {"name":"webmcp-local-relay","version":"0.0.0"}
+tools/list ["webmcp_list_sources","webmcp_list_tools","webmcp_open_page","ping"]
+call {"content":[{"type":"text","text":"pong"}]}
+```
+Wrong origin (`--widget-origin http://localhost:9999`): relay stderr `rejecting source ... with disallowed host origin: http://localhost:8941`; `tools/list ["webmcp_list_sources","webmcp_list_tools","webmcp_open_page"]` (no `ping`); the page received repeated `{type:'webmcp.relay.rejected'}` messages from origin `http://localhost:8941`.
+
+Native check (`native.py`), blank page before / test page after `global.js`: default and `WebMCPTesting` give `document.modelContext` and `navigator.modelContext` both `undefined` before; with `--enable-experimental-web-platform-features` `navigator.modelContext` is a native `ModelContext` before. After `global.js`, all four flag sets show constructor name `Mg` (the `BrowserMcpServer`) on `document.modelContext` and `navigator.modelContext`. Relay run with the experimental flag: page console `TypeError: this.native.getTools is not a function` (repeated), and `tools/list` without `ping`.
+
+All processes (http server, relay, Chromium) were killed afterwards; ports 8941 and 9333 are free.
