@@ -109,8 +109,14 @@ export function sectionLines(o) {
       `${b.path}${paren(both(b.group, b.view === 'rear' && 'rear'))}: holds ${b.holds ?? 'nothing'}; ${takes(b.accepts ?? [])}`),
     cages: runs(o.cages ?? [], slotKey).map(c =>
       `${c.path}${paren(both(c.interface, c.view === 'rear' && 'rear'))}: holds ${c.holds ?? 'nothing'}; ${takes(c.accepts ?? [])}`),
-    fields: runs(fields, f => JSON.stringify([f.key, f.value ?? null, f.default ?? null, f.type])).map(f =>
-      `${f.path}: ${f.key} = ${clip(f.value ?? f.default ?? '', 160)}${f.value == null ? ' (default)' : ''} (${f.type})${f.choices?.length ? `; choices: ${cutList(f.choices)}` : ''}`),
+    // The kit gives a field's value as it reads, its default when unset: a
+    // value equal to the default is said to be the default, and an empty one
+    // is shown as "".
+    fields: runs(fields, f => JSON.stringify([f.key, f.value ?? null, f.default ?? null, f.type])).map(f => {
+      const v = String(f.value ?? f.default ?? '');
+      const isDefault = f.value == null || v === String(f.default ?? '');
+      return `${f.path}: ${f.key} = ${v === '' ? '""' : clip(v, 160)}${isDefault ? ' (default)' : ''} (${f.type})${f.choices?.length ? `; choices: ${cutList(f.choices)}` : ''}`;
+    }),
     cables: (o.cables ?? []).map(c => `${c.id}: its ${c.end} end on ${c.path}${c.view === 'rear' ? ' (rear)' : ''}, to ${c.other}`),
   };
 }

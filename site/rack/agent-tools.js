@@ -5,7 +5,8 @@
 // registered by the page (site/agent/webmcp.js).
 
 import {COMMANDS} from '../../vendor/rack/commands.js';
-import {LIMIT, fit, ranges} from './agent-text.js';
+import {newRack, withItem} from '../../vendor/rack/model.js';
+import {LIMIT, fit, ranges, cutList, inspectText, cableText, SECTIONS} from './agent-text.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -95,6 +96,40 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const side = besides(rack);
         if (side.length) lines.push('Beside the rack (zero-U, no rack unit; edit with zerou.update and zerou.remove):', ...side);
         return say(lines.join('\n'));
+      }),
+    tool('inspect', 'Inspect a device or cable',
+      'Read one device or cable in full. A device: its configs, its bays and cages with what each holds and takes, its editable fields, and its cables. A cable: its ends, media, length, routed length and stock size, route, the waypoints it can take, and why an end is loose. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
+      {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
+       ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
+       cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
+       section: {type: 'string', enum: SECTIONS, description: 'Where a page starts: bays, cages, fields or cables. The start when left out.'},
+       offset: {type: 'integer', minimum: 0, description: 'Where in section the page starts; 0 when left out.'}},
+      [], UNTRUSTED,
+      async ({id, ref, cfg, section, offset}) => {
+        if (!id === !ref) return refuse('Send id for something in the rack, or ref for a device from find_devices.');
+        if (ref) {
+          const c = chassisOf(ref);
+          if (!c) return refuse(`There is no device called ${ref}. Use find_devices to find its ref.`);
+          if (cfg != null && !(c.configs ?? []).includes(cfg)) return refuse(`${ref} has no config called ${cfg}. It has: ${cutList(c.configs ?? [])}.`);
+          // A catalog device is read placed alone in an empty rack, which the page never sees.
+          const probe = withItem(newRack(), {ref, cfg: cfg ?? c.default ?? '', ru: 1, face: 'front', label: c.model ?? ref});
+          const o = await queries.inspect(probe.rack, probe.item.id, await context(probe.rack, [ref]));
+          if (o.error) return refuse(o.error);
+          return say(inspectText({...o, id: null, label: null, ru: null, cables: []},
+            {section, offset: offset ?? 0, ask: {ref, ...(cfg ? {cfg} : {})}}));
+        }
+        const rack = ed.rack();
+        const isCable = (rack.cables ?? []).some(c => c.id === id);
+        const ctx = await context(rack, [], {route: isCable});
+        // A cable's ends are read through the page's cable facts, which can
+        // fail: then they are unchecked, and the rest is still answered.
+        let o;
+        try { o = await queries.inspect(rack, id, ctx); } catch (e) {
+          if (!isCable) throw e;
+          o = {...await queries.inspect(rack, id, {...ctx, cableFacts: undefined}), unchecked: true};
+        }
+        if (o.error) return refuse(o.error);
+        return say(o.kind === 'cable' ? cableText(o) : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',
       'Search the devices that can be put in a rack, by words in the manufacturer, model or id, by height in U, by family or by mount. Each result gives the ref and configs that edit_rack\'s place command takes.',

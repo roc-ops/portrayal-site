@@ -1418,6 +1418,7 @@ const boundQueries = () => ({
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
+  inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
 });
 
 // THE KIT'S PER-CALL CONTEXT for an agent's call (spec 2026-10-08 D5): the
