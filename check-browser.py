@@ -4179,8 +4179,10 @@ def check_rack_ring_doubles_back(page, base):
       }
       return {cx: c.x, maxX};
     }""")
+    # Up to the face, never past it; routed2d rounds the turn back by its
+    # corner radius (4), so the stroke stops short of the vertex by up to that.
     face2d = geo["cx"] - half
-    if abs(geo["maxX"] - face2d) > 0.5:
+    if not (face2d - 4 <= geo["maxX"] <= face2d + 0.5):
         bad.append(f"2D: the doubled-back cable reaches x {geo['maxX']:.2f}, not guide-5's left face at {face2d:.2f} (centre {geo['cx']:.2f})")
     page.click('#rkMode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
