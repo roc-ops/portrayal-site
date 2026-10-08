@@ -273,6 +273,8 @@ import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { docToScene, legendItems } from './site/annotate3d.js';
+import { createMarksEditor } from './site/annotate/editor.js';
+import { describe as describeMarks } from './site/annotate/describe.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
 // stays here is the markup and the handlers that put it on screen.
@@ -393,10 +395,39 @@ const sync3d = () => {
 // else is state: the panel, the stage, the exports and the URL are all built
 // from it. That is the whole point of the schema - a UI that keeps its own
 // parallel model would be a second source of truth for an MCP client to
-// disagree with.
-let doc = {v: 1, device: '', config: '', view: '', legend: true, crop: null, marks: []};
+// disagree with. The editor holds it (site/annotate/editor.js): every edit is
+// a command through it, from this page's controls and an agent alike, and
+// `doc` is read everywhere and written nowhere - the editor's document as it
+// is now.
+const ed = createMarksEditor({doc: {legend: true}});
+let doc = ed.getDoc();
 let report = [];
 let hadLegend = false;
+
+// EXPERIMENTAL until portrayal-site#146 is fixed: setDoc is not race-safe for
+// back-to-back calls on the same device, a device load has no time bound, and
+// a document naming no swaps does not clear seated ones. No agent adapter is
+// to be built on this before then.
+// THE PAGE'S API, for agents (spec §2.3), set before anything is awaited so a
+// script that loads with the page finds it at once. `ready` resolves once the
+// drawing is up and any document in the URL has been laid on it, so a setDoc
+// sent after it is never overtaken by the page's own restore. It resolves to
+// {} or, when the page could not start or restore its link, {error}.
+let settled = false, markReady;
+const ready = new Promise(resolve => { markReady = resolve; });
+window.portrayalAnnotate = Object.freeze({
+  ready,
+  get settled() { return settled; },
+  getDoc: () => ed.getDoc(),
+  setDoc: d => loadDoc(d),
+  apply: (cmds, opts = {}) => ed.apply(cmds, {origin: opts.origin ?? 'agent'}),
+  preview: cmds => ed.preview(cmds),
+  undo: () => ed.undo(),
+  redo: () => ed.redo(),
+  history: () => ({canUndo: ed.canUndo, canRedo: ed.canRedo, undoSummary: ed.undoSummary, redoSummary: ed.redoSummary}),
+  describe: () => describeMarks(ed.getDoc(), report),
+  on: (type, fn) => ed.on(type, fn),
+});
 
 const NEXT = ['#ff2d95', '#00e676', '#00d5ff', '#ffd400', '#ff6d00', '#b388ff', '#ffffff'];
 const nextColor = () => NEXT[doc.marks.length % NEXT.length];
@@ -425,6 +456,7 @@ panel.innerHTML = `
 <section class="grow">
   <h2>highlights<span class="sp"></span>
     <span class="msg" id="perf" style="margin:0"></span>
+    <button id="undoStep" hidden></button><button id="redoStep" hidden></button>
     <button id="clearall">clear all</button>
   </h2>
   <div id="rows"></div>
@@ -460,15 +492,55 @@ const say = (sel, text, cls) => {
 
 // ---------------------------------------------------------------- the document
 
+// THE ONE WAY AN EDIT REACHES THE DOCUMENT: a command, through the editor. The
+// caller says how much to redraw, as each handler did before - a keystroke in a
+// row must not rebuild the row the reader is typing in. An agent's edit, an
+// Undo and a Redo take the default, a full render.
+let redraw = 'render';
+function edit(cmds, {draw = 'render', merge = null} = {}) {
+  redraw = draw;
+  try {
+    const res = ed.apply(cmds, {origin: 'ui', merge});
+    if (res.error) say('#expmsg', res.error, 'bad');
+    return res;
+  } finally { redraw = 'render'; }
+}
+ed.on('change', ev => {
+  doc = ev.after;
+  $('#legend').checked = !!doc.legend;
+  paintSteps();
+  // the load and target paths draw for themselves, once the shell has moved
+  if (ev.cause === 'target' || ev.cause === 'load') return;
+  if (redraw === 'schedule') schedule(); else if (redraw === 'restage') restage(); else render();
+});
+
+// Undo and Redo, each while there is a step to take, each saying what it would do.
+function paintSteps() {
+  for (const [id, can, what, word] of [['undoStep', ed.canUndo, ed.undoSummary, 'undo'],
+                                       ['redoStep', ed.canRedo, ed.redoSummary, 'redo']]) {
+    const b = $(`#${id}`);
+    b.hidden = !can;
+    b.textContent = word;
+    b.title = can ? `${word}: ${what}` : '';
+    b.setAttribute('aria-label', can ? `${word}: ${what}` : word);
+  }
+}
+$('#undoStep').onclick = () => ed.undo();
+$('#redoStep').onclick = () => ed.redo();
+// Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z, outside a field: in one, the field's own
+// undo is the one the reader means.
+addEventListener('keydown', e => {
+  if (e.target.closest?.('input, select, textarea') || !(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+  e.preventDefault();
+  if (e.shiftKey) ed.redo(); else ed.undo();
+});
+
 // device/config/view are FIELDS OF THE DOCUMENT, not page state, and apply()
 // deliberately ignores them - a document applied to the wrong drawing looks
 // exactly like a document full of bad selectors. So the two are kept in step in
 // both directions: the shell's bar writes the document, and a document arriving
 // from a share URL moves the shell's bar.
 function writeTarget() {
-  doc.device = state.device || '';
-  doc.config = state.cfg || '';
-  doc.view = state.view || '';
   // WHAT THE READER CHANGED IN THE DRAWING IS PART OF WHAT WAS MARKED UP. A
   // mark on port-4's optic means nothing on a drawing with no optic in port-4,
   // so the swaps - modules in bays and optics in ports - travel with the
@@ -476,14 +548,20 @@ function writeTarget() {
   // since Portrayal #441 and which (its PR says) had no writer until this page.
   // Held while a link's own swaps are still waiting to be applied, so the
   // reload that moves the shell does not overwrite them with nothing.
-  if (!pendingSwaps) doc.swaps = swapsNow(shell);
+  //
   // AND WHAT THE READER WROTE ON THEM, by the same argument one step in. A
   // swap says an optic is in port-4; the fields say its latch is red and what
   // is printed on it. Seating the optic and losing the writing restores half a
   // picture, so they travel together, in slot 8 beside the swaps. Held on the
   // same terms - a link's own fields are applied after its swaps, and until
   // then the live drawing has nothing to say about them.
-  if (!pendingFields) doc.fields = fieldsNow(shell);
+  //
+  // The shell's fields, so not an edit: retarget, never a step to undo.
+  ed.retarget({
+    device: state.device || '', config: state.cfg || '', view: state.view || '',
+    ...(pendingSwaps ? {} : {swaps: swapsNow(shell)}),
+    ...(pendingFields ? {} : {fields: fieldsNow(shell)}),
+  });
 }
 // AN OPTIC CHANGES WHAT THE MARKS CAN MATCH, and seating one does not reload
 // the drawing - a bay swap reloads it, and 'load' re-applies the marks; an optic
@@ -496,8 +574,7 @@ function writeTarget() {
 let lastSeated = '';
 shell.on('change', () => {
   if (pendingSwaps || pendingFields) return;
-  doc.swaps = swapsNow(shell);
-  doc.fields = fieldsNow(shell);
+  ed.retarget({swaps: swapsNow(shell), fields: fieldsNow(shell)});
   const now = JSON.stringify([doc.swaps, doc.fields]);
   if (now !== lastSeated) { lastSeated = now; render(); }
 });
@@ -506,9 +583,18 @@ shell.on('change', () => {
 // link's device and configuration, and each move reloads the drawing - which
 // resets the configuration's bays and cages to what it built. So the swaps are
 // applied once the drawing the link names has finished loading, never before.
-let pendingSwaps = null, pendingFields = null, landing = null;
-const atTarget = w => (!w.device || state.device === w.device) &&
-                      (!w.config || state.cfg === w.config);
+let pendingSwaps = null, pendingFields = null;
+
+// THE NEXT DRAWING THE SHELL LOADS, as a promise. Settled by this page's own
+// 'load' handler, after it has written the target and drawn - so whoever waits
+// on it sees the document as it is on the new drawing. Bounded, so a load that
+// never comes cannot hold a caller for ever.
+const LOAD_MS = 20000;
+let loadWaiters = [];
+const nextLoad = () => new Promise(resolve => {
+  loadWaiters.push(() => resolve(true));
+  setTimeout(() => resolve(false), LOAD_MS);
+});
 async function applyPendingSwaps() {
   const map = pendingSwaps, fields = pendingFields;
   pendingSwaps = pendingFields = null;
@@ -528,8 +614,7 @@ async function applyPendingSwaps() {
     if (svg?.querySelector(`[data-path="${CSS.escape(path)}"]`)) shell.setFields(path, vals);
     else lost++;
   }
-  doc.swaps = swapsNow(shell);
-  doc.fields = fieldsNow(shell);
+  ed.retarget({swaps: swapsNow(shell), fields: fieldsNow(shell)});
   lastSeated = JSON.stringify([doc.swaps, doc.fields]);
   render();
   // RETURNED RATHER THAN SAID. This used to say it here, into the same box the
@@ -539,39 +624,61 @@ async function applyPendingSwaps() {
   return {swaps: Object.keys(ignored || {}).length, fields: lost};
 }
 
-/** @returns true if the shell is reloading, in which case its 'load' re-enters. */
-async function retarget(d) {
+// Moves the shell to the drawing a document names, and returns once it is
+// there: every reload it starts is waited for, so the document and the report
+// a caller reads next are of the new drawing. `moving` is true when the shell
+// reloaded (its 'load' has already written the target and drawn). What could
+// not be reached comes back as sentences, in two lists, because they cost
+// different things: a device or configuration that is not here is a different
+// drawing (`drawing`), and the swaps and fields made on it do not belong on
+// this one; a view that is not here is the same hardware seen from somewhere
+// else (`view`), and costs nothing but the view. The reader is told in the
+// message box, and a caller passes them on - an agent that named a device that
+// is not here must not hear that it worked. `live` says whether the caller is
+// still the newest; once it is not, no further reload is started.
+async function retarget(d, live = () => true) {
+  const drawing = [], view = [];
+  let moving = false;
+  const refuse = (list, text, msg) => { list.push(text); say('#expmsg', msg, 'bad'); };
   if (d.device && d.device !== state.device) {
     if (!shell.devices().some(x => x.name === d.device)) {
-      say('#expmsg', `no such device: ${d.device}`, 'bad');
-      return false;
+      refuse(drawing, `There is no device called ${d.device}; the document was laid on ${state.device} instead.`,
+             `no such device: ${d.device}`);
+      return {moving, drawing, view};
     }
-    await shell.loadDevice(d.device);
-    // loadDevice resets config and view to the device's defaults, so the rest of
-    // the target has to be replayed against the device we have just arrived at
-    return await retarget({...d, device: ''}) || true;
-  }
-  for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
-    const want = d[key];
-    if (!want || want === sel.value) continue;
-    if (![...sel.options].some(o => o.value === want)) {
-      say('#expmsg', `this device has no ${key} '${want}'`, 'bad');
-      continue;
+    // One reload: loadDevice takes the configuration and view it is asked for
+    // where the device has them, and its own defaults where it does not.
+    await shell.loadDevice(d.device, {config: d.config, view: d.view});
+    moving = true;
+  } else {
+    // ONE CHANGE AT A TIME, each waited for. The shell's configuration handler
+    // reloads with the view it already has, so a configuration and a view sent
+    // together would land on the old view if both were dispatched at once.
+    for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
+      const want = d[key];
+      if (!want || want === sel.value || ![...sel.options].some(o => o.value === want) || !live()) continue;
+      const landed = nextLoad();
+      sel.value = want;
+      // the shell's own handler owns the reload: it also re-reads the config's
+      // bay occupancy, which setting state.cfg by hand would skip
+      sel.dispatchEvent(new Event('change'));
+      moving = true;
+      if (!await landed) drawing.push(`The ${key} ${want} did not finish loading.`);
     }
-    sel.value = want;
-    // the shell's own handler owns the reload: it also re-reads the config's bay
-    // occupancy, which setting state.cfg by hand would skip
-    sel.dispatchEvent(new Event('change'));
-    return true;
   }
-  return false;
+  if (d.config && state.cfg !== d.config)
+    refuse(drawing, `${state.device} has no config called ${d.config}; it shows ${state.cfg} instead.`,
+           `this device has no config '${d.config}'`);
+  if (d.view && state.view !== d.view)
+    refuse(view, `${state.device} has no view called ${d.view}; it shows ${state.view} instead.`,
+           `this device has no view '${d.view}'`);
+  return {moving, drawing, view};
 }
 
 function addMark(m) {
-  doc.marks.push({select: '', color: '', state: '', label: '', ...m});
-  render();
+  const r = edit({op: 'mark.add', ...m});
   // a mark you cannot see is a mark you cannot fix
-  $('#rows').lastElementChild?.scrollIntoView({block: 'nearest'});
+  if (!r.error) $('#rows').lastElementChild?.scrollIntoView({block: 'nearest'});
 }
 
 // ---------------------------------------------------------------- apply
@@ -773,9 +880,9 @@ function drawRows() {
 // drawing has to say about it, which states are on offer - refreshed in place.
 // Nothing the user types is written back to, and the element that has focus is
 // never rebuilt: the whole point of this pass is that it can run on a keystroke.
-const sigOf = row => {
+const sigOf = (row, st) => {
   const m = doc.marks[+row.dataset.i], r = report[+row.dataset.i] || EMPTY;
-  return `${(r.states || []).join(',')}|${m ? m.state : ''}`;
+  return `${(r.states || []).join(',')}|${st ?? (m ? m.state : '')}`;
 };
 
 function paintRows() {
@@ -815,39 +922,44 @@ function paintRows() {
 
 // Edits are delegated, so a redraw of the list cannot leave a listener behind on
 // a row that no longer exists.
+// A keystroke restages and never rebuilds, and a burst of them in one field is
+// one Undo: the merge key names the row and the field.
 $('#rows').addEventListener('input', ev => {
   const row = ev.target.closest('.mark'); if (!row) return;
-  const m = doc.marks[+row.dataset.i]; if (!m) return;
+  const i = +row.dataset.i;
+  if (!doc.marks[i]) return;
   const t = ev.target;
-  if (t.classList.contains('sel')) m.select = t.value;
-  else if (t.classList.contains('lab')) m.label = t.value;
-  else if (t.classList.contains('col')) { m.color = t.value; row.querySelector('.paint').checked = true; }
-  else if (t.classList.contains('paint')) m.color = t.checked ? row.querySelector('.col').value : '';
-  else if (t.classList.contains('lamp')) { m.lamp = t.value; t.classList.remove('unset'); }
+  let field, value;
+  if (t.classList.contains('sel')) [field, value] = ['select', t.value];
+  else if (t.classList.contains('lab')) [field, value] = ['label', t.value];
+  else if (t.classList.contains('col')) { [field, value] = ['color', t.value]; row.querySelector('.paint').checked = true; }
+  else if (t.classList.contains('paint')) [field, value] = ['color', t.checked ? row.querySelector('.col').value : ''];
+  else if (t.classList.contains('lamp')) { [field, value] = ['lamp', t.value]; t.classList.remove('unset'); }
   else return;
-  schedule();
+  edit({op: 'mark.update', mark: i, [field]: value}, {draw: 'schedule', merge: `${i}:${field}`});
 });
 $('#rows').addEventListener('change', ev => {
   const row = ev.target.closest('.mark'); if (!row) return;
-  const m = doc.marks[+row.dataset.i]; if (!m) return;
-  if (!ev.target.classList.contains('st')) return;
-  m.state = ev.target.value;
-  row._sig = sigOf(row);              // the user just set it; do not rebuild under them
-  restage();
+  const i = +row.dataset.i;
+  if (!doc.marks[i] || !ev.target.classList.contains('st')) return;
+  // the user just set it; do not rebuild under them. Set before the edit, since
+  // the edit restages at once, and from the value being set rather than the
+  // document, which does not hold it yet.
+  row._sig = sigOf(row, ev.target.value);
+  edit({op: 'mark.update', mark: i, state: ev.target.value}, {draw: 'restage'});
 });
 $('#rows').addEventListener('click', ev => {
   const row = ev.target.closest('.mark'); if (!row) return;
   const i = +row.dataset.i;
-  if (ev.target.classList.contains('lx')) { doc.marks[i].lamp = ''; render(); }
-  else if (ev.target.classList.contains('x')) { doc.marks.splice(i, 1); render(); }
+  if (ev.target.classList.contains('lx')) edit({op: 'mark.update', mark: i, lamp: ''});
+  else if (ev.target.classList.contains('x')) edit({op: 'mark.remove', mark: i});
   else if (ev.target.classList.contains('mv')) {
     const j = i + (+ev.target.dataset.d);
     if (j < 0 || j >= doc.marks.length) return;
-    [doc.marks[i], doc.marks[j]] = [doc.marks[j], doc.marks[i]];
-    render();
+    edit({op: 'mark.move', mark: i, to: j});
   }
 });
-$('#clearall').onclick = () => { doc.marks = []; render(); };
+$('#clearall').onclick = () => edit({op: 'marks.clear'});
 
 // ---------------------------------------------------------------- tree dots
 
@@ -895,17 +1007,10 @@ function drawTreeDots() {
 // export still reproduce the condition the drawing was showing.
 const pathSel = path => `[data-path='${path}']`;
 
-function setState(path, st) {
-  const select = pathSel(path);
-  const m = doc.marks.find(x => x.select === select);
-  if (!m) return st ? addMark({select, state: st}) : undefined;
-  m.state = m.state === st ? '' : st;
-  // a mark with nothing left to say is not kept as an empty row: the tree is
-  // where it was made, and clearing a state there should leave the document as
-  // it was before the state was set
-  if (!m.state && !m.color && !m.label && !m.lamp) doc.marks.splice(doc.marks.indexOf(m), 1);
-  render();
-}
+// A mark with nothing left to say is not kept as an empty row: the tree is
+// where it was made, and clearing a state there should leave the document as
+// it was before the state was set. The command (lamp.state) keeps that rule.
+const setState = (path, st) => edit({op: 'lamp.state', path, state: st});
 
 // The lamp colour writes the same document, on the same mark, addressed by the
 // same selector as the state chips beside it - because it is the same kind of
@@ -918,23 +1023,9 @@ function setState(path, st) {
 // paints it", coloured means "this". So choosing a colour does not touch
 // `state`, with one exception: choosing a colour for a lamp the document has
 // explicitly turned off is a contradiction, and the newer statement wins.
-function setLamp(path, hex) {
-  const select = pathSel(path);
-  const m = doc.marks.find(x => x.select === select);
-  if (!m) return addMark({select, lamp: hex});
-  m.lamp = hex;
-  if (m.state === 'off') m.state = '';
-  render();
-}
-
-function clearLamp(path) {
-  const select = pathSel(path);
-  const m = doc.marks.find(x => x.select === select);
-  if (!m) return;
-  m.lamp = '';
-  if (!m.state && !m.color && !m.label) doc.marks.splice(doc.marks.indexOf(m), 1);
-  render();
-}
+// lamp.color is that rule, and a mark left saying nothing goes, as above.
+const setLamp = (path, hex) => edit({op: 'lamp.color', path, hex});
+const clearLamp = path => edit({op: 'lamp.color', path, hex: null});
 
 const lampOf = path => doc.marks.find(x => x.select === pathSel(path))?.lamp || '';
 
@@ -1112,9 +1203,8 @@ function toggleMark(select, label) {
     // a mark carrying a state or a lamp colour was made in the tree and says
     // something about the device: take the highlight off it rather than
     // deleting the statement
-    if (m.state || m.lamp) { m.color = ''; m.label = ''; }
-    else doc.marks.splice(i, 1);
-    render();
+    if (m.state || m.lamp) edit({op: 'mark.update', mark: i, color: '', label: ''});
+    else edit({op: 'mark.remove', mark: i});
     return;
   }
   addMark({select, color: nextColor(), label: label || ''});
@@ -1231,7 +1321,12 @@ function armCrop(on) {
 }
 const disarmCrop = () => armCrop(false);
 $('#crop').onclick = () => armCrop(!cropArmed);
-$('#cropclear').onclick = () => { doc.crop = null; render(); };
+$('#cropclear').onclick = () => edit({op: 'crop', rect: null});
+
+// THE RECTANGLE BEING DRAGGED is the page's, not the document's: a drag is one
+// edit when it ends, not one per pointer move. Undefined when no drag is on.
+let cropDraft;
+const cropNow = () => (cropDraft !== undefined ? cropDraft : doc.crop);
 
 // clientX/Y through the root's own CTM: the stage's zoom and pan are a CSS
 // transform on the SVG element, and getScreenCTM already accounts for it, so
@@ -1254,7 +1349,7 @@ veil.addEventListener('pointerdown', ev => {
   const move = e => {
     const p = toUser(e);
     if (!p) return;
-    doc.crop = marks.clampCrop(state.svg, between(p0, p));
+    cropDraft = marks.clampCrop(state.svg, between(p0, p));
     drawCrop();
   };
   veil.addEventListener('pointermove', move);
@@ -1264,9 +1359,11 @@ veil.addEventListener('pointerdown', ev => {
     const r = between(p0, p);
     // a click rather than a drag is a cancel, not a crop of nothing: 2mm is
     // under a port pitch on every device in the library
-    doc.crop = r.w > 2 && r.h > 2 ? marks.clampCrop(state.svg, r) : null;
+    cropDraft = undefined;
+    edit({op: 'crop', rect: r.w > 2 && r.h > 2 ? marks.clampCrop(state.svg, r) : null});
     disarmCrop();
-    render();
+    // a cancelled drag changes nothing, so nothing redraws: take its draft off
+    drawCrop();
   }, {once: true});
 });
 
@@ -1277,7 +1374,7 @@ function drawCrop() {
   if (!state.svg) return;
   for (const e of state.svg.querySelectorAll('[data-portrayal^="crop"]')) e.remove();
   updateCropUI();
-  const c = doc.crop;
+  const c = cropNow();
   if (!c) return;
   const vb = marks.baseViewBox(state.svg);
   // one path, two subpaths, evenodd: everything outside the crop goes dim, which
@@ -1304,7 +1401,7 @@ function drawCrop() {
 }
 
 function updateCropUI() {
-  const c = doc.crop;
+  const c = cropNow();
   const mm = n => (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
   $('#cropwhat').innerHTML = c
     ? `<b>${mm(c.w)} × ${mm(c.h)} mm</b> at ${mm(c.x)},${mm(c.y)}`
@@ -1314,7 +1411,7 @@ function updateCropUI() {
 
 // ---------------------------------------------------------------- export
 
-$('#legend').onchange = () => { doc.legend = $('#legend').checked; render(); };
+$('#legend').onchange = () => edit({op: 'legend', on: $('#legend').checked});
 
 // toSvg() deep-clones the root it is given, INLINE STYLE INCLUDED - and the
 // shell's fit() writes `width/height/transform` onto that root every time you
@@ -1483,11 +1580,11 @@ shell.on('load', () => {
   // silently exporting the same corner of it would be wrong without a word. So
   // it is re-cut against the drawing that is now loaded, and dropped when it
   // misses it entirely - the readout beside the button says which happened.
-  if (doc.crop) doc.crop = marks.clampCrop(state.svg, doc.crop);
+  if (doc.crop) ed.retarget({crop: marks.clampCrop(state.svg, doc.crop)});
   writeTarget();
   buildRules();
   render({fit: true});
-  if (landing && atTarget(landing.want)) { const done = landing.resolve; landing = null; done(); }
+  for (const done of loadWaiters.splice(0)) done();
 });
 
 // The tree is rebuilt whole on a bay swap, which drops the dots with it. 'row'
@@ -1499,26 +1596,58 @@ shell.on('row', () => {
   dotJob = setTimeout(() => { drawTreeDots(); drawTreeChips(); }, 0);
 });
 
-await shell.ready;
-
-// A share hash is the document, and the document names its own drawing. Applying
-// it means moving the shell first, then letting the reload re-enter render().
-const fromHash = marks.decode(location.hash);
-if (fromHash) {
-  doc = fromHash;
-  const want = {device: doc.device, config: doc.config};
-  pendingSwaps = Object.keys(doc.swaps || {}).length ? {...doc.swaps} : null;
-  pendingFields = Object.keys(doc.fields || {}).length ? {...doc.fields} : null;
-  $('#legend').checked = doc.legend;
-  const moving = await retarget(doc);
-  if ((pendingSwaps || pendingFields) && moving && !atTarget(want))
-    // bounded, so a link naming a configuration this device lacks still
-    // applies what it can rather than waiting forever for a load that is not coming
-    await new Promise(resolve => { landing = {want, resolve}; setTimeout(resolve, 8000); });
+// A DOCUMENT FROM OUTSIDE - a share link, a pasted hash, an agent - is the
+// document, and it names its own drawing. Applying it means moving the shell
+// first, letting the reload re-enter render(), then laying its swaps and fields
+// on, then its marks. It is a new document, so the history starts again. The
+// newest call wins: an older one still moving the shell is overtaken.
+const OVERTAKEN = {error: 'Overtaken by a newer document.'};
+let loads = 0;
+async function restore(input) {
+  const mine = ++loads;
+  const next = marks.normalise(input);
+  pendingSwaps = Object.keys(next.swaps).length ? {...next.swaps} : null;
+  pendingFields = Object.keys(next.fields).length ? {...next.fields} : null;
+  ed.loadDoc(next);
+  const live = () => mine === loads;
+  // retarget waits for every reload it starts, so past this line the shell is
+  // on the drawing it could reach and the page has drawn it
+  const {moving, drawing, view} = await retarget(next, live);
+  if (!live()) return OVERTAKEN;
+  // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON: its device and
+  // configuration, not its view. When the shell could not reach that drawing
+  // they are not laid on whatever it shows instead; a view it lacks drops
+  // nothing.
+  let dropped = 0;
+  if (drawing.length) {
+    dropped = Object.keys(next.swaps).length + Object.keys(next.fields).length;
+    pendingSwaps = pendingFields = null;
+  }
   const left = await applyPendingSwaps() || {};
-  if (!moving) { writeTarget(); render({fit: true}); }
-  const n = Object.keys(doc.swaps || {}).length;
-  const f = Object.keys(doc.fields || {}).length;
+  if (!live()) return OVERTAKEN;
+  // the target as the shell now has it - held while swaps were pending, and
+  // not written at all when nothing reloaded
+  writeTarget();
+  if (!moving) render({fit: true});
+  return {left, refused: [...drawing, ...view], dropped};
+}
+// What an agent gets back: what could not be shown, as findings in the rack
+// editor's shape.
+async function loadDoc(input) {
+  const r = await restore(input);
+  if (r.error) return r;
+  const texts = [...r.refused,
+    r.dropped && `${r.dropped} swap(s) and written part(s) were for that drawing, so none were applied.`,
+    r.left.swaps && `${r.left.swaps} swap(s) do not fit this drawing and were left out.`,
+    r.left.fields && `${r.left.fields} written part(s) do not fit this drawing and were left out.`];
+  return {findings: texts.filter(Boolean).map(text => ({kind: 'note', text}))};
+}
+// What the reader is told when a link restores, in the one message box.
+function sayRestored({left, refused}) {
+  // the refusal is already in the box, and is the thing to read
+  if (refused.length) return;
+  const n = Object.keys(doc.swaps).length;
+  const f = Object.keys(doc.fields).length;
   const got = [`${doc.marks.length} mark(s)`, n && `${n} swap(s)`,
                f && `${f} written part(s)`].filter(Boolean).join(', ');
   const out = [left.swaps && `${left.swaps} swap(s)`,
@@ -1526,6 +1655,48 @@ if (fromHash) {
   say('#expmsg', `restored ${got} from the URL` +
                  (out ? `; ${out} do not fit this drawing and were left out` : ''),
       out ? 'bad' : 'good');
+}
+
+// A link that cannot be restored is said, never thrown past the page: the
+// reader sees why, and the hashchange listener and `ready` below still happen.
+async function restoreLink(d) {
+  try {
+    const r = await restore(d);
+    if (!r.error) sayRestored(r);
+    return r;
+  } catch (err) {
+    console.error('[portrayal] restoring a link failed', err);
+    say('#expmsg', `could not restore the link: ${err.message || err}`, 'bad');
+    return {error: `The link could not be restored: ${err.message || err}`};
+  }
+}
+
+// `ready` ALWAYS RESOLVES, with {error} when the page could not start or its
+// link could not be restored, and the listener is always attached: a page that
+// failed once must still take the next link pasted into it.
+let boot = {};
+try {
+  await shell.ready;
+  const fromHash = marks.decode(location.hash);
+  if (fromHash) {
+    const r = await restoreLink(fromHash);
+    if (r.error) boot = {error: r.error};
+  }
+} catch (err) {
+  console.error('[portrayal] Annotate could not start', err);
+  boot = {error: `Annotate could not start: ${err.message || err}`};
+} finally {
+  // A LINK PASTED INTO AN OPEN TAB is a document arriving, as at boot. The
+  // page's own replaceState fires no hashchange, so only a paste or a
+  // navigation gets here, and a hash that is the document already on screen is
+  // let be.
+  addEventListener('hashchange', () => {
+    const d = marks.decode(location.hash);
+    if (!d || marks.encode(d) === marks.encode(ed.getDoc())) return;
+    restoreLink(d);
+  });
+  settled = true;
+  markReady(boot);
 }
 
 // A LINK OPENS IN ITS MODE: ?mode=3d beside the document, as the share button writes it.

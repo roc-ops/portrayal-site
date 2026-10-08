@@ -6276,6 +6276,123 @@ def check_3d_context_loss(page, base):
     return bad
 
 
+# A GLB PRESSED BEFORE THE SCENE HAS BUILT IS NOT A GLB OF THE DEVICE
+# (portrayal-site#111). The viewer exports the scene as it stands, so a press
+# straight after switching to 3D saved a 112-byte file with no geometry and
+# called it "0.1 KB". Pressed here the moment the button exists, without
+# waiting: no file may arrive until the scene is up, and every file that does
+# arrive is the model. Then the same during a config rebuild, and an export with
+# no meshes must say it failed rather than save.
+GLB_EARLY_MIN_BYTES = 4096
+
+
+@extra("3D: Download GLB pressed before the scene has built saves nothing, and an empty export says it failed")
+def check_3d_download_waits_for_scene(page, base):
+    bad, got = [], []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("download", lambda d: got.append(d))
+
+    def sizes():
+        return [pathlib.Path(d.path()).stat().st_size for d in got]
+
+    glb = '#glx button[data-fmt="glb"]'
+    ready_js = (f"() => document.querySelector('{glb}') && !document.querySelector('{glb}').disabled"
+                " && document.querySelector('#status').textContent === ''")
+
+    def until(expr, what, timeout=READY_3D_MS):
+        try:
+            page.wait_for_function(expr, timeout=timeout)
+            return True
+        except Exception:
+            st = page.evaluate(f"""() => ({{status: document.querySelector('#status')?.textContent,
+              msg: document.querySelector('#glx .msg')?.textContent,
+              disabled: document.querySelector('{glb}')?.disabled,
+              ready: document.querySelector('#glx')?.dataset.ready,
+              cfg: document.querySelector('#cfg')?.value}})""")
+            bad.append(f"timed out waiting for {what} - {st}")
+            return False
+
+    page.goto(f"{base}/explorer.html?device=s9510-28dc&config=dc&debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_3d_download_waits_for_scene] no WebGL here - nothing to export")
+        return bad
+    # The press is made from the page itself, on the first frame the button is
+    # in the DOM - a Playwright click would wait for it to be enabled, which is
+    # exactly the wait this check must not do.
+    page.evaluate("""() => new Promise(done => {
+      const press = () => {
+        const b = document.querySelector('#glx button[data-fmt="glb"]');
+        if (!b) return requestAnimationFrame(press);
+        b.click();
+        done();
+      };
+      press();
+      document.querySelector('#mode [data-mode="3d"]').click();
+    })""")
+    page.wait_for_timeout(3000)
+    early = [n for n in sizes() if n < GLB_EARLY_MIN_BYTES]
+    if early:
+        msg = page.text_content("#glx .msg")
+        return bad + [f"early press: saved a {early[0]}-byte file before the scene had built (status {msg!r})"]
+    if not until(ready_js, "the scene to come up"):
+        return bad
+    page.wait_for_timeout(500)
+    if got:
+        bad.append(f"early press: a file arrived after the scene was up, from a press made before it - {sizes()}")
+    got.clear()
+
+    # Ready: the same button gives the model.
+    with page.expect_download(timeout=READY_3D_MS) as dl:
+        page.click(glb)
+    n = pathlib.Path(dl.value.path()).stat().st_size
+    if not until("() => !/building GLB/.test(document.querySelector('#glx .msg').textContent)", "the GLB to finish"):
+        return bad
+    if n < GLB_EARLY_MIN_BYTES:
+        bad.append(f"ready press: the GLB is {n} bytes")
+    got.clear()
+
+    # A rebuild for another config turns the buttons off at once, and a press
+    # made as it starts saves nothing.
+    page.evaluate("""() => {
+      const b = document.querySelector('#glx button[data-fmt="glb"]');
+      window.__offs = 0;
+      new MutationObserver(() => { if (b.disabled) window.__offs++; })
+        .observe(b, {attributes: true, attributeFilter: ['disabled']});
+      const sel = document.querySelector('#cfg');
+      sel.value = 'ac';
+      sel.dispatchEvent(new Event('change', {bubbles: true}));
+      b.click();
+    }""")
+    page.wait_for_timeout(1500)
+    # (the status line is not a signal here: after a config change it holds the
+    # drawing's own note, "2 bays")
+    if not until(f"() => !document.querySelector('{glb}').disabled", "the rebuild for config ac"):
+        return bad
+    page.wait_for_timeout(500)
+    if not page.evaluate("() => window.__offs"):
+        bad.append("rebuild: the Download buttons stayed on while the scene rebuilt for another config")
+    if got:
+        bad.append(f"rebuild: a press as the rebuild started saved a file - {sizes()}")
+    got.clear()
+
+    # An export with no meshes is a failure in the status line, and no file.
+    page.evaluate("""() => {
+      const json = new TextEncoder().encode('{"asset":{"version":"2.0"},"scenes":[{}],"scene":0}  ');
+      const out = new Uint8Array(20 + json.length), dv = new DataView(out.buffer);
+      dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+      dv.setUint32(12, json.length, true); dv.setUint32(16, 0x4e4f534a, true); out.set(json, 20);
+      window.__viewer.exportData = async () => out.buffer;
+    }""")
+    page.click(glb)
+    until("() => document.querySelector('#glx .msg').classList.contains('bad')",
+          "the empty export to say it failed", READY_MS)
+    page.wait_for_timeout(1000)
+    if got:
+        bad.append(f"empty export: a file was saved - {sizes()}")
+    return bad
+
+
 # A LINK CANNOT ASK FOR WHAT THE BUTTON REFUSES (#93). The 3D button is disabled
 # below portrayal level 3 - the scene would be a plausible wrong box - and a
 # ?mode=3d link to such a device has to be refused the same way, with the reason,
@@ -6506,6 +6623,135 @@ def check_annotate_mode_in_address(page, base):
     again = page.evaluate(where)
     if again["q"].get("mode") != "3d" or again["q"].get("debug") != "1" or again["hash"] != at3d["hash"]:
         bad.append(f"address: back in 3D the address is {again}, not mode=3d with debug=1 and the document")
+    return bad
+
+
+# ANNOTATE'S API FOR AGENTS (spec 2026-10-08-annotate-command-api-design.md
+# §2.3): window.portrayalAnnotate sets a document that names another drawing
+# and a swap, edits through commands with Undo and Redo, refuses in words
+# without touching the document, and reads back a selector that matches
+# nothing. Then the page's own row: typing keeps focus and a burst is one Undo.
+# Then a link pasted into the open tab restores, and the page's own hash write
+# does not loop back into a load.
+@extra("annotate.html: window.portrayalAnnotate sets and reads the document, edits through commands with Undo and Redo, restores a pasted hash, and says when a selector matches nothing")
+def check_annotate_api(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate api: settled", f"() => {api} && {api}.settled")
+    if not page.evaluate(f"() => {api}.getDoc().device"):
+        return bad + ["annotate api: getDoc() names no device after the page settled"]
+    # setDoc: another drawing, a swap on it, and one mark with an id
+    res = page.evaluate(f"""() => {api}.setDoc({{device: 's9510-28dc', config: 'dc', view: 'front',
+        swaps: {{'port-0': 'generic/qsfp-cable@1'}},
+        marks: [{{id: 'one', select: "[data-path='port-0']", color: '#ff2d95'}}]}})""")
+    if res.get("error") or res.get("findings"):
+        bad.append(f"annotate api: setDoc answered {res}")
+    page.wait_for_selector("#stage svg [id='port-0-occupant']", state="attached", timeout=READY_MS)
+    got = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, d.swaps['port-0'], d.marks.length]; }}")
+    if got != ["s9510-28dc", "generic/qsfp-cable@1", 1]:
+        bad.append(f"annotate api: after setDoc the document reads {got}")
+    wait_fn(page, "annotate api: the mark is a row", "() => document.querySelectorAll('#rows .mark').length === 1")
+    # apply, as one step, then undo and redo
+    r = page.evaluate(f"""() => {api}.apply([{{op: 'mark.add', select: '.does-not-exist', as: 'miss'}},
+                                            {{op: 'mark.update', mark: 'one', label: 'Here'}}])""")
+    if r.get("error") or r.get("created", {}).get("miss") != "m1":
+        bad.append(f"annotate api: apply answered {r}")
+    wait_fn(page, "annotate api: two rows", "() => document.querySelectorAll('#rows .mark').length === 2")
+    if page.is_hidden("#undoStep"):
+        bad.append("annotate api: Undo is not offered after an edit")
+    text = page.evaluate(f"() => {api}.describe()")
+    if "m1 .does-not-exist: matches nothing" not in text or 'label "Here"' not in text:
+        bad.append(f"annotate api: describe() reads {text!r}")
+    page.evaluate(f"() => {api}.undo()")
+    wait_fn(page, "annotate api: undone", f"() => {api}.getDoc().marks.length === 1 && {api}.getDoc().marks[0].label === ''")
+    if page.evaluate(f"() => {api}.getDoc().device") != "s9510-28dc":
+        bad.append("annotate api: Undo took the device back")
+    if page.is_hidden("#redoStep"):
+        bad.append("annotate api: Redo is not offered after an Undo")
+    page.evaluate(f"() => {api}.redo()")
+    wait_fn(page, "annotate api: redone", "() => document.querySelectorAll('#rows .mark').length === 2")
+    # a refusal changes nothing and says why
+    before = page.evaluate(f"() => JSON.stringify({api}.getDoc())")
+    r = page.evaluate(f"() => {api}.apply({{op: 'mark.remove', mark: 'nope'}})")
+    if r.get("error") != "There is no mark nope." or page.evaluate(f"() => JSON.stringify({api}.getDoc())") != before:
+        bad.append(f"annotate api: a refused remove answered {r} or changed the document")
+    # typing in a row keeps focus, and the burst is one step
+    page.click("#rows .mark:first-child .lab")
+    page.keyboard.press("End")
+    page.keyboard.type("abc")
+    page.wait_for_timeout(400)       # past the row's restage
+    if not page.evaluate("() => !!document.activeElement?.classList.contains('lab')"):
+        bad.append("annotate api: typing in a row's label lost focus")
+    if page.evaluate(f"() => {api}.getDoc().marks[0].label") != "Hereabc":
+        bad.append(f"annotate api: typing wrote {page.evaluate(f'() => {api}.getDoc().marks[0].label')!r}, expected 'Hereabc'")
+    page.keyboard.press("Escape")
+    page.evaluate(f"() => {api}.undo()")
+    lab = page.evaluate(f"() => {api}.getDoc().marks[0].label")
+    if lab != "Here":
+        bad.append(f"annotate api: one Undo after typing 'abc' left the label {lab!r}, expected 'Here'")
+    # the page's own hash write (share) is not a document arriving: no load, so
+    # the Redo just made available survives it
+    page.click('button[data-act="share"]')
+    page.wait_for_timeout(300)
+    if not page.evaluate(f"() => {api}.history().canRedo"):
+        bad.append("annotate api: the share button's own hash write reloaded the document")
+    # a link pasted into the open tab restores that document
+    enc = page.evaluate("""async () => (await import('/vendor/marks.js')).encode({device: 's9510-28dc', config: 'dc',
+        marks: [{select: '.pasted', label: 'from a link'}]})""")
+    page.evaluate("h => { location.hash = h; }", enc)
+    wait_fn(page, "annotate api: pasted hash restored",
+            f"() => {api}.getDoc().marks.length === 1 && {api}.getDoc().marks[0].label === 'from a link'")
+    if page.evaluate(f"() => {api}.history().canUndo"):
+        bad.append("annotate api: a pasted document kept the history of the one before it")
+    # a document naming a device that is not here is said, as a finding, and its
+    # swaps are not laid on the drawing that is
+    res = page.evaluate(f"""() => {api}.setDoc({{device: 'bogus', swaps: {{'port-0': 'generic/qsfp-cable@1'}},
+        marks: [{{select: '.x'}}]}})""")
+    notes = [f.get("text", "") for f in res.get("findings", []) if f.get("kind") == "note"]
+    if not any("bogus" in t for t in notes) or not any("none were applied" in t for t in notes):
+        bad.append(f"annotate api: setDoc with an unknown device answered {res}")
+    got = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, Object.keys(d.swaps).length, d.marks.length]; }}")
+    if got[0] in ("", "bogus") or got[2] != 1:
+        bad.append(f"annotate api: after an unknown device the document reads {got}")
+    if page.evaluate(f"() => {api}.ready.then(r => JSON.stringify(r))") != "{}":
+        bad.append("annotate api: ready did not resolve to {} on a clean start")
+    # setDoc resolves with the answer and the drawing it describes: findings as
+    # texts, and the document as getDoc() reads it straight after
+    set_doc = lambda d: page.evaluate(f"""async d => {{ const r = await {api}.setDoc(d);
+        const g = {api}.getDoc();
+        return {{findings: (r.findings || []).map(f => f.kind + ': ' + f.text), error: r.error || null,
+                 target: [g.device, g.config, g.view], swaps: g.swaps, describe: {api}.describe()}}; }}""", d)
+    # another device, a view only: the device's own configuration, read at once.
+    # First, so that the s9510 below is loaded fresh, with nothing seated.
+    r = set_doc({"device": "c40g", "view": "rear", "marks": [{"select": ".a"}]})
+    if r["error"] or r["findings"] or r["target"] != ["c40g", "base", "rear"]:
+        bad.append(f"annotate api: another device's view resolved to {r['target']} with {r['findings']}")
+    swap = {"port-0": "generic/qsfp-cable@1"}
+    # a configuration that is not here: the device is reached, the swaps are not laid on another drawing
+    r = set_doc({"device": "s9510-28dc", "config": "nope", "view": "front", "swaps": swap, "marks": [{"select": ".a"}]})
+    if not any("no config called nope" in f for f in r["findings"]) or not any("none were applied" in f for f in r["findings"]):
+        bad.append(f"annotate api: a refused config answered {r['findings']}")
+    if r["target"][0] != "s9510-28dc" or "port-0" in r["swaps"]:
+        bad.append(f"annotate api: after a refused config the document reads {r['target']} with swaps {r['swaps']}")
+    # a view that is not here: a note, and the swaps still go on - they belong to the device and configuration
+    r = set_doc({"device": "s9510-28dc", "config": "dc", "view": "nope", "swaps": swap, "marks": [{"select": ".a"}]})
+    if not any(f.startswith("note: ") and "no view called nope" in f for f in r["findings"]) \
+            or any("none were applied" in f or "do not fit" in f for f in r["findings"]):
+        bad.append(f"annotate api: a refused view answered {r['findings']}")
+    if r["target"][:2] != ["s9510-28dc", "dc"] or r["swaps"].get("port-0") != swap["port-0"]:
+        bad.append(f"annotate api: after a refused view the document reads {r['target']} with swaps {r['swaps']}")
+    # a configuration and a view changed together: both reached before setDoc
+    # resolves, and still so once any reload the shell started has finished
+    r = set_doc({"device": "s9510-28dc", "config": "ac", "view": "rear", "marks": [{"select": ".a"}]})
+    if r["error"] or r["findings"] or r["target"] != ["s9510-28dc", "ac", "rear"] \
+            or not r["describe"].startswith("s9510-28dc, config ac, rear."):
+        bad.append(f"annotate api: config and view together resolved to {r['target']} with {r['findings']}, describe {r['describe'][:60]!r}")
+    page.wait_for_timeout(3000)
+    later = page.evaluate(f"() => {{ const g = {api}.getDoc(); return [g.device, g.config, g.view]; }}")
+    if later != ["s9510-28dc", "ac", "rear"]:
+        bad.append(f"annotate api: 3 s after setDoc the document reads {later}, not the ac rear it resolved with")
     return bad
 
 

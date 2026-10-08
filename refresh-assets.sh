@@ -122,6 +122,19 @@ mkdir -p "$HERE/vendor/rack"
 for f in "$KIT"/rack/*.js; do
   cp "$f" "$HERE/vendor/rack/$(basename "$f")"
 done
+# Which commit that was, for check-contract.py: it compares vendor/rack/ with
+# kit/rack/ AT this commit, file by file, rather than with the clone's HEAD,
+# which moves on while the snapshot here does not.
+kit_sha=$(git -C "$KIT" rev-parse HEAD 2>/dev/null || true)
+if [ -z "$kit_sha" ]; then
+  echo "refusing: $KIT is not in a git checkout, so vendor/rack/SOURCE cannot name its commit" >&2
+  exit 1
+fi
+if [ -n "$(git -C "$KIT" status --porcelain -- rack 2>/dev/null)" ]; then
+  echo "WARNING: $KIT/rack has uncommitted changes; vendor/rack/ will not match $kit_sha" >&2
+fi
+printf '# The Portrayal commit vendor/rack/ was copied from (kit/rack/). Written by refresh-assets.sh.\n%s\n' \
+  "$kit_sha" > "$HERE/vendor/rack/SOURCE"
 
 # Every device, because the Explorer offers the whole library and a picker with
 # holes in it looks broken.

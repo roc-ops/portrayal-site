@@ -81,28 +81,55 @@ machine with no GPU. It needs Playwright (`pip install playwright && playwright
 install chromium`), which is why it is not part of `refresh-assets.sh`: the
 refresh should run anywhere a build does.
 
-## Running both without being asked
+## What runs where
+
+| Check | On every push (the hook) | In CI, every pull request | Locally, by hand |
+|---|---|---|---|
+| `check-contract.py` | yes, seconds | yes | any time |
+| `node --test tests/*/*.test.mjs` | yes, under a second | yes | any time |
+| `check-browser.py` | only with `PORTRAYAL_HOOK_BROWSER=1` | yes, four shards | your change's own `--only` checks, or the whole pass |
+
+Install the hook once per clone:
 
 ```sh
 git config core.hooksPath hooks
+```
+
+`hooks/pre-push` then runs the contract check (and the rack builder's node
+tests) on every push. It does not run the browser pass unless asked: CI runs
+that on every pull request, against a clean checkout, and a hook that cost
+eleven to twenty minutes on every push was a hook people retired with
+`--no-verify` (#144). Before pushing a change to a page, run its own checks,
+which take seconds:
+
+```sh
+python3 check-browser.py --only <check>[,<check>]
+```
+
+To have the hook run the whole pass for one push:
+
+```sh
+PORTRAYAL_HOOK_BROWSER=1 git push
+```
+
+Even then it runs only when the push touches anything a page loads: `vendor/`,
+`site/`, `assets/`, `brand/`, `tests/`, any `.html` outside `coming-soon/`, or
+the server itself. A README fix skips it. Missing Playwright is a loud skip
+rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
+
+Over SSH, an asked-for pass also wants a keepalive:
+
+```sh
 git config core.sshCommand "ssh -o ServerAliveInterval=30"
 ```
 
-The second line matters over SSH. Git opens the connection before it runs the
-hook and holds it idle until the hook is done, and GitHub closes an idle SSH
-connection before the browser pass ends - so without a keepalive a push that
-passed every check still fails, with "Connection to github.com closed by remote
-host" (#79). An HTTPS remote does not need it. The hook warns before the pass
-if it is missing.
+Git opens the connection before it runs the hook and holds it idle until the
+hook is done, and GitHub closes an idle SSH connection before the browser pass
+ends - so without a keepalive a push that passed every check still fails, with
+"Connection to github.com closed by remote host" (#79). An HTTPS remote does
+not need it. The hook warns before the pass if it is missing.
 
-`hooks/pre-push` then runs the contract check on every push — under a second —
-and the browser pass when the push touches anything a page loads: `vendor/`,
-`site/`, `assets/`, `brand/`, a top-level `.html`, or the server itself. A
-README fix does not pay the six to nine minutes, which is the difference between a hook
-people keep and one they retire with `--no-verify`. Missing Playwright is a
-loud skip rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
-
-`.github/workflows/checks.yml` runs the same two on every pull request. The
+`.github/workflows/checks.yml` runs all three on every pull request. The
 hook and the workflow are not redundant: the workflow checks a CLEAN CHECKOUT,
 which is the only place a page that depends on an untracked file shows up as
 broken. The hook runs against your tree, where that file is sitting there
@@ -117,7 +144,7 @@ is weighed as a short one, so a new check needs no entry. `python3
 check-browser.py --plan 4` prints who runs what. The contract check fails if
 the shards ever stop covering every check exactly once, or if the workflow
 stops asking for all of them. Without `--shard` the script runs everything, as
-the hook does.
+the hook does when asked.
 
 Then click through the showcase and check it still behaves.
 
