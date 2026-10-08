@@ -6507,6 +6507,88 @@ def check_annotate_mode_in_address(page, base):
     return bad
 
 
+# ANNOTATE'S API FOR AGENTS (spec 2026-10-08-annotate-command-api-design.md
+# §2.3): window.portrayalAnnotate sets a document that names another drawing
+# and a swap, edits through commands with Undo and Redo, refuses in words
+# without touching the document, and reads back a selector that matches
+# nothing. Then the page's own row: typing keeps focus and a burst is one Undo.
+# Then a link pasted into the open tab restores, and the page's own hash write
+# does not loop back into a load.
+@extra("annotate.html: window.portrayalAnnotate sets and reads the document, edits through commands with Undo and Redo, restores a pasted hash, and says when a selector matches nothing")
+def check_annotate_api(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate api: settled", f"() => {api} && {api}.settled")
+    if not page.evaluate(f"() => {api}.getDoc().device"):
+        return bad + ["annotate api: getDoc() names no device after the page settled"]
+    # setDoc: another drawing, a swap on it, and one mark with an id
+    res = page.evaluate(f"""() => {api}.setDoc({{device: 's9510-28dc', config: 'dc', view: 'front',
+        swaps: {{'port-0': 'generic/qsfp-cable@1'}},
+        marks: [{{id: 'one', select: "[data-path='port-0']", color: '#ff2d95'}}]}})""")
+    if res.get("error") or res.get("findings"):
+        bad.append(f"annotate api: setDoc answered {res}")
+    page.wait_for_selector("#stage svg [id='port-0-occupant']", state="attached", timeout=READY_MS)
+    got = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, d.swaps['port-0'], d.marks.length]; }}")
+    if got != ["s9510-28dc", "generic/qsfp-cable@1", 1]:
+        bad.append(f"annotate api: after setDoc the document reads {got}")
+    wait_fn(page, "annotate api: the mark is a row", "() => document.querySelectorAll('#rows .mark').length === 1")
+    # apply, as one step, then undo and redo
+    r = page.evaluate(f"""() => {api}.apply([{{op: 'mark.add', select: '.does-not-exist', as: 'miss'}},
+                                            {{op: 'mark.update', mark: 'one', label: 'Here'}}])""")
+    if r.get("error") or r.get("created", {}).get("miss") != "m1":
+        bad.append(f"annotate api: apply answered {r}")
+    wait_fn(page, "annotate api: two rows", "() => document.querySelectorAll('#rows .mark').length === 2")
+    if page.is_hidden("#undoStep"):
+        bad.append("annotate api: Undo is not offered after an edit")
+    text = page.evaluate(f"() => {api}.describe()")
+    if "m1 .does-not-exist: matches nothing" not in text or 'label "Here"' not in text:
+        bad.append(f"annotate api: describe() reads {text!r}")
+    page.evaluate(f"() => {api}.undo()")
+    wait_fn(page, "annotate api: undone", f"() => {api}.getDoc().marks.length === 1 && {api}.getDoc().marks[0].label === ''")
+    if page.evaluate(f"() => {api}.getDoc().device") != "s9510-28dc":
+        bad.append("annotate api: Undo took the device back")
+    if page.is_hidden("#redoStep"):
+        bad.append("annotate api: Redo is not offered after an Undo")
+    page.evaluate(f"() => {api}.redo()")
+    wait_fn(page, "annotate api: redone", "() => document.querySelectorAll('#rows .mark').length === 2")
+    # a refusal changes nothing and says why
+    before = page.evaluate(f"() => JSON.stringify({api}.getDoc())")
+    r = page.evaluate(f"() => {api}.apply({{op: 'mark.remove', mark: 'nope'}})")
+    if r.get("error") != "There is no mark nope." or page.evaluate(f"() => JSON.stringify({api}.getDoc())") != before:
+        bad.append(f"annotate api: a refused remove answered {r} or changed the document")
+    # typing in a row keeps focus, and the burst is one step
+    page.click("#rows .mark:first-child .lab")
+    page.keyboard.press("End")
+    page.keyboard.type("abc")
+    page.wait_for_timeout(400)       # past the row's restage
+    if not page.evaluate("() => !!document.activeElement?.classList.contains('lab')"):
+        bad.append("annotate api: typing in a row's label lost focus")
+    if page.evaluate(f"() => {api}.getDoc().marks[0].label") != "Hereabc":
+        bad.append(f"annotate api: typing wrote {page.evaluate(f'() => {api}.getDoc().marks[0].label')!r}, expected 'Hereabc'")
+    page.keyboard.press("Escape")
+    page.evaluate(f"() => {api}.undo()")
+    lab = page.evaluate(f"() => {api}.getDoc().marks[0].label")
+    if lab != "Here":
+        bad.append(f"annotate api: one Undo after typing 'abc' left the label {lab!r}, expected 'Here'")
+    # the page's own hash write (share) is not a document arriving: no load, so
+    # the Redo just made available survives it
+    page.click('button[data-act="share"]')
+    page.wait_for_timeout(300)
+    if not page.evaluate(f"() => {api}.history().canRedo"):
+        bad.append("annotate api: the share button's own hash write reloaded the document")
+    # a link pasted into the open tab restores that document
+    enc = page.evaluate("""async () => (await import('/vendor/marks.js')).encode({device: 's9510-28dc', config: 'dc',
+        marks: [{select: '.pasted', label: 'from a link'}]})""")
+    page.evaluate("h => { location.hash = h; }", enc)
+    wait_fn(page, "annotate api: pasted hash restored",
+            f"() => {api}.getDoc().marks.length === 1 && {api}.getDoc().marks[0].label === 'from a link'")
+    if page.evaluate(f"() => {api}.history().canUndo"):
+        bad.append("annotate api: a pasted document kept the history of the one before it")
+    return bad
+
+
 @extra("svg-export.js is the one save/standalone; the showcase re-exports the same functions")
 def check_svg_export_leaf(page, base):
     bad = []
