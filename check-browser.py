@@ -8199,6 +8199,10 @@ def check_rack_agent_tools(page, base):
                 "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('Your assistant: Placed')")
     except RuntimeError:
         bad.append("agent: no 'Your assistant:' notice after an agent edit")
+    # The notice is Undo's description: no second line repeats the summary.
+    if page.evaluate("() => document.querySelectorAll('.rk-side .rk-undo-what').length") != 0 or \
+            "Your assistant:" not in (page.text_content("#undoWhat") or ""):
+        bad.append("agent: the side panel repeats the summary in a separate undo line")
     try:
         wait_fn(page, "agent: highlighted", "() => document.querySelectorAll('svg .rk-agent-touched').length >= 2")
         wait_fn(page, "agent: highlight fades", "() => !document.querySelector('.rk-agent-touched')", timeout=8000)
@@ -8247,6 +8251,49 @@ def check_rack_agent_tools(page, base):
     return bad
 
 
+def relay_connect_asserts(page):
+    """The embed never scans on its own; Connect asks the relay frame to (no real relay in CI)."""
+    bad = []
+    if page.evaluate("() => document.querySelector('script[src*=\"vendor/mcp-b/embed.js\"]')?.getAttribute('data-auto-connect')") != "false":
+        bad.append("relay: the embed script does not carry data-auto-connect=false")
+    btn = "#agentSlot button:text-is('Connect')"
+    if not page.is_visible(btn):
+        bad.append("relay: no Connect button while the switch is on")
+    status = lambda: page.text_content("#agentSlot [role=status]") or ""
+    try:
+        wait_fn(page, "relay: on", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('On.')")
+    except RuntimeError:
+        pass
+    if status() != "On. Start the relay on your computer first, then press Connect.":
+        bad.append(f"relay: the status after switch-on is {status()!r}")
+    # Record what the frame is sent.
+    page.evaluate(f"""() => {{
+      const w = document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow;
+      w.__got = []; w.addEventListener('message', e => w.__got.push(e.data));
+    }}""")
+    page.click(btn)
+    try:
+        wait_fn(page, "relay: connect posted", f"() => (document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow.__got || []).some(m => m && m.type === 'webmcp.connect')")
+    except RuntimeError:
+        bad.append("relay: Connect did not post webmcp.connect to the relay frame")
+    # What the widget says, posted from the frame's own window.
+    from_frame = lambda msg: page.evaluate(f"""() => {{
+      const w = document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow;
+      new w.Function("parent.postMessage(" + {json.dumps(json.dumps(msg))} + ", '*')")();
+    }}""")
+    from_frame({"type": "webmcp.tools.list.request", "requestId": "x"})
+    try:
+        wait_fn(page, "relay: found", "() => document.querySelector('#agentSlot [role=status]').textContent === 'Found your relay.'")
+    except RuntimeError:
+        bad.append(f"relay: a tools list request did not say 'Found your relay.' (status {status()!r})")
+    from_frame({"type": "webmcp.relay.rejected"})
+    try:
+        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('Your relay refused this page.')")
+    except RuntimeError:
+        bad.append(f"relay: a rejection did not overwrite the status (status {status()!r})")
+    return bad
+
+
 @extra("rack.html: Connect your AI - nothing loads until it is on, it remembers, it turns off, and it fits at 375px")
 def check_rack_agent_relay(page, base):
     bad = []
@@ -8278,6 +8325,8 @@ def check_rack_agent_relay(page, base):
         wait_fn(page, "relay: frame built", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
     except RuntimeError:
         bad.append("relay: switching on never built the relay frame")
+    else:
+        bad += relay_connect_asserts(page)
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     try:
@@ -8294,6 +8343,8 @@ def check_rack_agent_relay(page, base):
         wait_fn(page, "relay: the relay frame removed", f"() => !document.querySelector({json.dumps(RELAY_FRAME)})")
     except RuntimeError:
         bad.append("relay: switching off left the relay frame in the page")
+    if page.is_visible("#agentSlot button:text-is('Connect')"):
+        bad.append("relay: the Connect button shows while the switch is off")
     if page.evaluate("() => { try { return localStorage.getItem('portrayal.agent.relay'); } catch { return null; } }") != "off":
         bad.append("relay: switching off was not remembered")
     # On, then straight off: nothing may come up behind the switch.

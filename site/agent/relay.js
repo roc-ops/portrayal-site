@@ -29,6 +29,9 @@ const loaded = new Map();
 function loadScript(src) {
   if (!loaded.has(src)) loaded.set(src, new Promise((resolve, reject) => {
     const s = Object.assign(document.createElement('script'), {src, async: false});
+    // The widget scans 32 endpoints on its own, and after a failed pass Chromium
+    // throttles new sockets from this page. So it never scans: Connect asks.
+    if (src === SRC.embed) s.setAttribute('data-auto-connect', 'false');
     if (INTEGRITY[src]) { s.integrity = INTEGRITY[src]; s.crossOrigin = 'anonymous'; }
     s.onload = resolve; s.onerror = () => { loaded.delete(src); reject(new Error(`Could not load ${src}`)); };
     document.head.append(s);
@@ -47,6 +50,9 @@ const copyRow = (label, text) => {
 export function relaySwitch({mount, tools, native, examples}) {
   let ac = null;
   const status = el('p', {className: 'rk-muted', role: 'status'});
+  // Only a change is written: the region would announce a repeat again.
+  const say = text => { if (status.textContent !== text) status.textContent = text; };
+  const connect = el('button', {type: 'button', textContent: 'Connect', hidden: true});
   const relayBox = el('input', {type: 'checkbox', id: 'agentRelay', checked: prefs.relay});
   const markBox = el('input', {type: 'checkbox', id: 'agentMark', checked: prefs.highlight});
 
@@ -56,10 +62,14 @@ export function relaySwitch({mount, tools, native, examples}) {
     if (e.origin !== location.origin) return;
     const frame = document.querySelector(RELAY_FRAME);
     if (!frame || e.source !== frame.contentWindow) return;
-    if (e.data?.type === 'webmcp.relay.rejected') {
-      status.textContent = 'Your relay refused this page. Start it with --widget-origin https://portrayal.dev.';
-    }
+    if (e.data?.type === 'webmcp.tools.list.request') say('Found your relay.');
+    if (e.data?.type === 'webmcp.relay.rejected') say('Your relay refused this page. Start it with --widget-origin https://portrayal.dev.');
   };
+  connect.addEventListener('click', () => {
+    const win = document.querySelector(RELAY_FRAME)?.contentWindow;
+    if (!win) { say('Still starting. Try again in a moment.'); return; }
+    win.postMessage({type: 'webmcp.connect'}, location.origin);  // what embed.js sends when the tab returns
+  });
 
   // Off means off: a switch-on still waiting on its scripts must not finish
   // after a switch-off (run counts both), and a frame embed.js inserts late,
@@ -70,24 +80,32 @@ export function relaySwitch({mount, tools, native, examples}) {
   async function on() {
     const mine = ++run;
     reaper.disconnect();
-    status.textContent = 'Starting…';
+    connect.hidden = false;
+    say('Starting…');
     window.addEventListener('message', onMessage);
     try {
       if (!modelContext()) await loadScript(SRC.global);
       if (run !== mine) return;
       await loadScript(SRC.embed);
       if (run !== mine) return;
-      if (!native) {
+      const own = modelContext();
+      if (own && typeof own.executeTool !== 'function') {
+        // The browser's own WebMCP: the relay can't run tools through it (R6).
+        connect.hidden = true;
+        say("Your browser has its own WebMCP, which the desktop relay can't read yet. Your browser's own assistant can still use this page.");
+        return;
+      }
+      if (!(typeof native === 'function' ? await native() : native)) {
         const mineAc = new AbortController();
         ac = mineAc;
         await registerTools(tools, {signal: mineAc.signal});
         if (run !== mine) { mineAc.abort(); return; }
       }
-      status.textContent = 'On. Start the relay on your computer, then ask your AI to use this rack.';
+      say('On. Start the relay on your computer first, then press Connect.');
     } catch (e) {
       if (run !== mine) return;
       console.warn('[portrayal] relay', e);
-      status.textContent = "Couldn't start the connection. Reload the page and try again.";
+      say("Couldn't start the connection. Reload the page and try again.");
     }
   }
   function off() {
@@ -98,6 +116,7 @@ export function relaySwitch({mount, tools, native, examples}) {
     reaper.observe(document.body, {childList: true});
     // Let a later switch-on run the embed again, since it builds the frame.
     if (loaded.delete(SRC.embed)) document.querySelector(`script[src="${SRC.embed}"]`)?.remove();
+    connect.hidden = true;
     status.textContent = loaded.has(SRC.global) ? 'Off. A reload clears the last of it.' : 'Off.';
   }
   relayBox.addEventListener('change', () => { prefs.relay = relayBox.checked; (relayBox.checked ? on : off)(); });
@@ -106,6 +125,7 @@ export function relaySwitch({mount, tools, native, examples}) {
   mount.replaceChildren(
     el('label', {className: 'rk-agent-switch'}, relayBox, ' Let my desktop AI use this page'),
     status,
+    connect,
     el('p', {textContent: 'Your AI runs on your computer and talks to this page directly. portrayal.dev sees nothing of it.'}),
     copyRow('Run on your computer', COMMAND),
     copyRow('Or add to Claude Desktop or Claude Code', CONFIG),
