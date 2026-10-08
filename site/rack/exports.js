@@ -12,11 +12,11 @@
 // The rules (names, CSV, matching, counting) are export-data.js's, which
 // has no DOM and is tested with node --test.
 
-import {RU, RAIL_W, OPENING} from './rails.js';
+import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {drawElevation, panelFor} from './elevation.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
-import {itemsWithU, heightOf} from './fit.js';
+import {itemsWithU, heightOf} from '../../vendor/rack/fit.js';
 import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
@@ -26,13 +26,13 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, fillNotes, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
+        drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeFacts} from './route-context.js';
-import {LANE_GAP} from './route.js';
-import {mergeSeats, endKey, endName, portPathOf} from './cable-rules.js';
-import {dcimOf} from './model.js';
-import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from './dcim-rules.js';
+import {LANE_GAP} from '../../vendor/rack/route.js';
+import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
+import {dcimOf} from '../../vendor/rack/model.js';
+import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
 

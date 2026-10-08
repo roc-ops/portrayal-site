@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {COMMANDS} from '../../site/rack/commands.js';
+import {COMMANDS} from '../../vendor/rack/commands.js';
 import {LIMIT, fit, ranges, editSchema, agentMay, EXPORT_KINDS, rackTools} from '../../site/rack/agent-tools.js';
-import * as M from '../../site/rack/model.js';
-import * as Q from '../../site/rack/queries.js';
-import {createRackEditor} from '../../site/rack/editor.js';
-import {endKey} from '../../site/rack/cable-rules.js';
+import * as M from '../../vendor/rack/model.js';
+import * as Q from '../../vendor/rack/queries.js';
+import {createRackEditor} from '../../vendor/rack/editor.js';
+import {endKey} from '../../vendor/rack/cable-rules.js';
 
 test('fit leaves short text alone and cuts long text at a whole line, saying how much', () => {
   assert.equal(fit('a\nb'), 'a\nb');

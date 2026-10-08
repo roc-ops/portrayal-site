@@ -21,7 +21,7 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
-import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from './rack/rails.js';
+import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width

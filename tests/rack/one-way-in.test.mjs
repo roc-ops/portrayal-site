@@ -8,8 +8,9 @@ import {readFileSync, readdirSync} from 'node:fs';
 const REDUCERS = ['withItem', 'updateItem', 'withoutItem', 'withFrame', 'renamed', 'withDcim', 'detached', 'withCable',
                   'updateCable', 'withoutCable', 'withoutCablesOf', 'moveItem', 'shrinkRack', 'withRoutedLengths'];
 // The core may call them; drag.js may call moveItem for its PREVIEW only (the drop is a move command).
-const CORE = new Set(['model.js', 'fit.js', 'managers.js', 'cable-rules.js', 'commands.js', 'editor.js', 'history.js',
-                      'queries.js', 'validate.js', 'route.js']);
+// The core is the kit's now (vendor/rack/); history.js and validate.js stay
+// in site/rack/ only as re-exports of it.
+const CORE = new Set(['history.js', 'validate.js']);
 const ALLOWED = {'drag.js': ['moveItem']};
 
 test('the page and the UI modules import no reducer', () => {

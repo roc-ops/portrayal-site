@@ -17,9 +17,9 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
-import {LANE_GAP} from './route.js';
-import {RU, RAIL_W, OPENING} from './rails.js';
-import {cablePlan, endKey, endName, tagText, portPathOf, matches} from './cable-rules.js';
+import {LANE_GAP} from '../../vendor/rack/route.js';
+import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
+import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
 // own figure), and below it for a lead hanging from the lowest device.

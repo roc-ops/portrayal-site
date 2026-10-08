@@ -3,13 +3,13 @@
 // editor's change event autosaves and redraws. What the side panel shows
 // follows S.sel.
 
-import {newDoc, nextRackName, positionOf, dcimOf} from './rack/model.js';
-import {hostAt, managersOf} from './rack/managers.js';
+import {newDoc, nextRackName, positionOf, dcimOf} from '../vendor/rack/model.js';
+import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from './rack/fit.js';
-import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
+import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
+import {loadCatalog} from '../vendor/rack/catalog.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -21,18 +21,18 @@ import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
-import {exportStatus, UNCHECKED_NOTE, fillNotes} from './rack/export-data.js';
+import {exportStatus, UNCHECKED_NOTE, fillNotes} from '../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
-import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
+import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
-import {RU, RAIL_W, OPENING} from './rack/rails.js';
+import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {routeFacts} from './rack/route-context.js';
-import {LANE_GAP, routeText} from './rack/route.js';
-import {createRackEditor} from './rack/editor.js';
-import {GONE, NOT_ADDED} from './rack/commands.js';
-import * as Q from './rack/queries.js';
+import {LANE_GAP, routeText} from '../vendor/rack/route.js';
+import {createRackEditor} from '../vendor/rack/editor.js';
+import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
+import * as Q from '../vendor/rack/queries.js';
 import {configuredFace} from './rack/face.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
@@ -1190,7 +1190,7 @@ async function renderLibrary() {
   }));
 }
 
-// If site/rack/chassis.json (or anything else here) fails to load, the page
+// If assets/dist/rack.json (or anything else here) fails to load, the page
 // otherwise stays blank with nothing in #side to say why - so this is caught
 // whole, reported once, and rethrown so window.__rack.ready still settles
 // (rejected) instead of hanging a probe forever.
@@ -1206,9 +1206,10 @@ async function boot() {
 }
 
 async function bootInner() {
-  S.devices = await loadChassis();
-  chassisOf = chassisLookup(S.devices);
-  S.entries = catalogEntries(S.devices);
+  const cat = await loadCatalog('assets/dist/');
+  S.devices = cat.devices;
+  chassisOf = cat.chassisOf;
+  S.entries = cat.entries;
   S.lib = await openLibrary();
   S.save = autosaver(S.lib);
   $('libNote').hidden = S.lib.available;
