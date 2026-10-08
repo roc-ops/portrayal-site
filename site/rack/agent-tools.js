@@ -163,11 +163,20 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
         if (res.error) return refuse(`${at(res.index ?? 0)} was refused: ${res.error} Nothing was changed.`);
         if (res.noop) return say('Nothing changed: the rack already looks like that.');
         const named = Object.entries(res.created ?? {}).filter(([k]) => k !== 'ids').map(([k, v]) => `${k} = ${v}`);
-        const lines = [`${dry_run ? 'Would: ' : ''}${res.summary}`,
-          ...res.findings.map(f => `${f.kind === 'error' ? 'Problem' : 'Note'}: ${f.text}`),
-          ...(named.length ? [named.join(', ')] : []),
+        // What the next call needs comes first, so a long batch can lose only
+        // the tail of its summary and its notes, never ids or the undo line.
+        const head = [...(named.length ? [named.join(', ')] : []),
           ...(res.created?.ids?.length ? [`Created: ${res.created.ids.join(', ')}`] : []),
           dry_run ? 'Nothing was changed.' : 'Undo takes all of this back in one step.'];
+        const notes = res.findings.map(f => `${f.kind === 'error' ? 'Problem' : 'Note'}: ${f.text}`);
+        const sum = `${dry_run ? 'Would: ' : ''}${res.summary}`;
+        const room = LIMIT - head.join('\n').length - 1;
+        const cut = sum.length <= room ? sum : `${sum.slice(0, Math.max(0, room - 1))}…`;
+        const lines = [...head, cut];
+        for (const n of notes) {
+          if ([...lines, n].join('\n').length > LIMIT) break;
+          lines.push(n);
+        }
         return say(lines.join('\n'));
       }),
     tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was.', {}, [], {readOnlyHint: false},

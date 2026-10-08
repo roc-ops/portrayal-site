@@ -161,8 +161,7 @@ test('edit_rack: a batch is one agent step, with created ids and the undo line',
     {op: 'place', ref: 'as7726-32x', face: 'front', ru: 38, as: 'b'},
     {op: 'cable.add', a: {item: '@a', path: 'port-1', view: 'front'}, b: {item: '@b', path: 'port-1', view: 'front'}}]});
   assert.equal(res.isError, undefined, text(res));
-  assert.match(text(res), /^Placed AS7726-32X at U40/);
-  assert.match(text(res), /\na = i1, b = i2\nCreated: i1, i2, c1\nUndo takes all of this back in one step\.$/);
+  assert.match(text(res), /^a = i1, b = i2\nCreated: i1, i2, c1\nUndo takes all of this back in one step\.\nPlaced AS7726-32X at U40/);
   assert.equal(ed.undoSummary.startsWith('Placed'), true);
   ed.undo();
   assert.equal(ed.rack().items.length, 0);
@@ -183,7 +182,7 @@ test('edit_rack: dry_run says what would happen and changes nothing', async () =
   const {ed, run} = setup();
   const evs = []; ed.on('change', e => evs.push(e));
   const res = await run('edit_rack', {commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}], dry_run: true});
-  assert.match(text(res), /^Would: Placed AS7726-32X at U10.*\nNothing was changed\.$/s);
+  assert.match(text(res), /^Created: i1\nNothing was changed\.\nWould: Placed AS7726-32X at U10/);
   assert.deepEqual([ed.rack().items.length, ed.canUndo, evs.length], [0, false, 0]);
 });
 
@@ -241,4 +240,16 @@ test('a tool whose reader throws answers with isError', async () => {
   assert.deepEqual(await t.describe_rack.execute({}), {content: [{type: 'text', text: "That didn't work: boom."}], isError: true});
   assert.equal((await t.export_rack.execute({kind: 'drawio'})).isError, true);
   assert.ok(tools);
+});
+
+test('edit_rack: a 30-command batch keeps its ids and undo line, and cuts only the summary', async () => {
+  const {run} = setup();
+  const commands = Array.from({length: 30}, (_, i) => ({op: 'place', ref: 'as7726-32x', face: 'front', ru: i + 1, as: `d${i + 1}`}));
+  const res = await run('edit_rack', {commands});
+  assert.equal(res.isError, undefined, text(res));
+  const out = text(res);
+  assert.ok(out.length <= 1500, `${out.length} characters`);
+  assert.match(out, /^d1 = i1, d2 = i2, /);
+  assert.match(out, /\nCreated: i1, i2, /);
+  assert.match(out, /\nUndo takes all of this back in one step\./);
 });
