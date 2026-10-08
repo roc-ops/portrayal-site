@@ -11,8 +11,8 @@ import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d} from './cables.js';
 import {laneX} from '../../vendor/rack/route.js';
-import {RU} from '../../vendor/rack/rails.js';
-import {zeroUOf, isRackSide, ruOfZ, faceOfAt, zeroUX, laneXAt} from './zero-u.js';
+import {RU, SIDES} from '../../vendor/rack/rails.js';
+import {zeroUOf, isRackSide, isNarrowFace, ruOfZ, faceOfAt, zeroUX, laneXAt} from './zero-u.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -94,6 +94,22 @@ function placeZeroU(scene, parts, chassisOf) {
   }
 }
 
+// A NARROW PART ON ONE RAIL (zero-u.js, `side`) stands over that rail's hole
+// line, as elevation.js draws it, and is turned end over end on the right rail.
+// `side` is as seen from its own face; a rear part's group is already turned
+// round, so its left is the rack's right as seen from the front.
+function placeSided(scene, items, chassisOf) {
+  for (const it of items) {
+    if (!(it.side === 'left' || it.side === 'right') || !isNarrowFace(chassisOf(it.ref))) continue;
+    const g = scene.three.scene.getObjectByName(`device-${it.id}`);
+    if (!g) continue;
+    const left = (it.side === 'left') === (it.face !== 'rear');
+    g.position.x = (left ? SIDES[0] : SIDES[1]).hole;
+    g.rotation.z = it.side === 'right' ? Math.PI : 0;
+    g.userData.side = it.side;
+  }
+}
+
 // Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
@@ -171,6 +187,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     });
     await built.build();
     placeZeroU(built, sideParts, chassisOf);
+    placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
     built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf) : null;

@@ -293,9 +293,6 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
-  // A batch of the site's own commands lands as one whole-rack step, whose change
-  // event carries no findings: they are said here (a kit batch's were said already).
-  for (const f of res.findings || []) addNotice(f.text, f.kind);
   if (say && !res.noop && res.summary) { addNotice(res.summary, 'note'); S.saidStep = res.summary; }
   if (res.noop && !quiet) renderSoon();
   return res;

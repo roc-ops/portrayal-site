@@ -168,7 +168,8 @@ export function zeroUFill(rack, routes, chassisOf, apertureOf = () => null) {
     if (ap?.w > 0 && ap?.h > 0) {
       const area = through.reduce((a, x) => a + areaOf(x.media), 0);
       const percent = Math.round(area / (FILL_LIMIT * ap.w * ap.h) * 100);
-      fill.push({item: z.id, via, count: through.length, percent, over: percent > 100, cables: through.map(x => x.id), zeroU: true});
+      fill.push({item: z.id, via, count: through.length, percent, over: percent > 100, cables: through.map(x => x.id),
+                 aperture: {w: ap.w, h: ap.h}, zeroU: true});
     }
     const cap = c.capacity?.count;
     if (cap && through.length > cap) over.push({item: z.id, count: through.length, capacity: cap});
@@ -292,10 +293,16 @@ export const ALL_COMMANDS = {...COMMANDS, ...ZERO_U_COMMANDS};
 // would put it on the rails), and a kit `move` of a part on one rail is the
 // site's (the kit would judge it as taking both).
 const isSite = op => typeof op === 'string' && Object.hasOwn(ZERO_U_COMMANDS, op);
+// A narrow part with no side placed or moved by the kit is judged by the kit on
+// its bottom unit only: the site judges it again on every unit it spans.
+const narrowItem = (rack, id, chassisOf) => {
+  const it = typeof id === 'string' ? rack.items.find(i => i.id === id) : null;
+  return it && isNarrowFace(chassisOf(it.ref)) ? it : null;
+};
 export function needsSite(rack, cmds, chassisOf) {
   return (Array.isArray(cmds) ? cmds : [cmds]).some(c => isSite(c?.op)
-    || (c?.op === 'place' && isRackSide(chassisOf(c.ref)))
-    || (c?.op === 'move' && typeof c.id === 'string' && !c.id.startsWith('@') && sidedItem(rack, c.id, chassisOf)));
+    || (c?.op === 'place' && (isRackSide(chassisOf(c.ref)) || isNarrowFace(chassisOf(c.ref))))
+    || (c?.op === 'move' && typeof c.id === 'string' && (c.id.startsWith('@') || narrowItem(rack, c.id, chassisOf))));
 }
 
 const typeWord = s => (s.enum ? `one of ${s.enum.filter(v => v !== null && v !== '').join(', ')}`
@@ -352,6 +359,12 @@ export function applySite(rack, cmds, ctx) {
     } else {
       const k = applyKit(cur, [cmd], ctx);
       if (k.error) return {error: k.error, index};
+      const nid = cmd.op === 'place' ? k.created?.ids?.[0] : cmd.op === 'move' ? cmd.id : null;
+      const n = nid && narrowItem(k.rack, nid, ctx.chassisOf);
+      if (n && !sideOf(n, ctx.chassisOf)) {
+        const f = fitsSided(k.rack, {ref: n.ref, face: n.face, ru: n.ru}, ctx.chassisOf, {ignoreId: n.id});
+        if (!f.ok) return {error: f.reason, index};
+      }
       res = {rack: k.rack, summary: k.summary, findings: k.findings, created: k.created?.ids?.length ? {id: k.created.ids[0]} : null, step: k.step};
     }
     if (res.step && res.summary) summaries.push(res.summary);
@@ -368,13 +381,21 @@ export function applySite(rack, cmds, ctx) {
 
 // THE EDITOR, WITH THE SITE'S COMMANDS. The kit's editor (editor.js) knows
 // only its own table, so a batch that needs the site's runs through
-// applySite and lands as one undo step through the editor's whole-rack step.
-// Every other batch is the kit's, untouched. Findings of such a batch are
-// handed back to the caller (the page shows them); the editor's change event
-// carries none.
+// applySite and lands as one undo step through the editor's whole-rack step,
+// recorded only when the batch is a step. Its change event is given the
+// batch's commands and findings, as the kit's own events carry them. A batch
+// that changes the rack but is no step (the DCIM settings beside a site
+// command that changed nothing) goes to the kit as its kit commands alone.
+// A per-call `ctx` (the kit's slot, configuration and swap checks) is laid over
+// {chassisOf} for that call, as the kit's editor does. Every other batch is
+// the kit's, untouched.
 export function withZeroUEditor(ed, {chassisOf}) {
-  const ctx = {chassisOf};
+  const base = {chassisOf};
+  const ctxOf = opts => (opts?.ctx ? {...base, ...opts.ctx} : base);
   const out = Object.create(ed);
+  let landing = null;    // {rack, commands, findings}: the site batch replaceRack is putting in
+  out.on = (type, fn) => ed.on(type, ev => fn(landing && ev.after === landing.rack
+    ? {...ev, commands: landing.commands, findings: landing.findings} : ev));
   out.apply = (cmds, opts = {}) => {
     if (!needsSite(ed.rack(), cmds, chassisOf)) return ed.apply(cmds, opts);
     const origin = opts.origin ?? 'ui';
@@ -383,12 +404,18 @@ export function withZeroUEditor(ed, {chassisOf}) {
       const index = all.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(COMMANDS, c.op) && COMMANDS[c.op].system);
       if (index >= 0) return {error: `${all[index].op} is the page's own command.`, index};
     }
-    const res = applySite(ed.rack(), all, ctx);
+    const res = applySite(ed.rack(), all, ctxOf(opts));
     if (res.error || res.noop) return res;
-    ed.replaceRack(res.rack, res.summary || 'Changed the rack.', origin);
+    if (!res.step) {
+      const kit = all.filter(c => !isSite(c?.op));
+      return kit.length ? {...ed.apply(kit, opts), created: res.created} : res;
+    }
+    landing = {rack: res.rack, commands: all, findings: res.findings};
+    try { ed.replaceRack(res.rack, res.summary || 'Changed the rack.', origin); } finally { landing = null; }
     return res;
   };
-  out.preview = cmds => (needsSite(ed.rack(), cmds, chassisOf) ? applySite(ed.rack(), cmds, ctx) : ed.preview(cmds));
+  out.preview = (cmds, opts = {}) => (needsSite(ed.rack(), cmds, chassisOf)
+    ? applySite(ed.rack(), cmds, ctxOf(opts)) : ed.preview(cmds, opts));
   return out;
 }
 
@@ -461,3 +488,20 @@ export function zeroUNotes(rack, chassisOf) {
 export const zeroUComment = (rack, z, chassisOf, T) =>
   `0U, a vertical cable manager ${whereText(rack, zeroUById(rack, z.id) ?? z, chassisOf)}` +
   `${z.between ? ', serving the next rack too' : ''}; ${T} has no field for that.`;
+
+// A NARROW PART'S RAIL in the notes and comments the kit words for a rack-face
+// part: the kit's sentence, with the rail it is on. `managerNote(it)` is the
+// kit's own note for that item (export-data.js managerNotes of [it]).
+export function railNotes(notes, items, chassisOf, managerNote) {
+  const swap = new Map();
+  for (const it of items) {
+    const side = sideOf(it, chassisOf);
+    const was = side && managerNote(it);
+    if (was) swap.set(was, was.replace(/\.$/, `, ${side} rail.`));
+  }
+  return notes.map(n => swap.get(n) ?? n);
+}
+export const railComment = (comment, item, chassisOf) => {
+  const side = sideOf(item, chassisOf);
+  return side ? comment.replace(/(0U cable manager on the \w+ rail face at U\d+)/, `$1, ${side} rail`) : comment;
+};

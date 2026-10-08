@@ -268,3 +268,61 @@ test('a duct over its fill is named in the notes as any pathway is, and where ea
   assert.deepEqual(withoutZeroU(odd, chassisOf).zeroU, [{id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']);
   assert.equal(zeroUNotes(odd, chassisOf).length, 1);
 });
+
+test('the editor: a per-call ctx reaches the kit, a no-step batch records no step, and its events carry the batch', async () => {
+  const doc = {...newDoc({kind: 'two-post'}), racks: [run(rackOf('two-post', 45), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).rack]};
+  const kit = createRackEditor({doc, chassisOf});
+  const seen = [];
+  const fake = Object.create(kit);
+  fake.preview = (cmds, opts) => { seen.push(['preview', opts]); return kit.preview(cmds, opts); };
+  const ed = withZeroUEditor(fake, {chassisOf});
+  ed.preview({op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 3}, {ctx: {probe: 1}});
+  assert.deepEqual(seen, [['preview', {ctx: {probe: 1}}]]);
+  // A site batch runs with the per-call ctx laid over {chassisOf}: here a lookup that makes the duct 50U.
+  const tall = ref => (ref === DUCT ? {...chassisOf(DUCT), ru: 50} : chassisOf(ref));
+  assert.match(ed.apply({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {ctx: {chassisOf: tall}}).error, /50U tall/);
+  assert.match(ed.preview({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {ctx: {chassisOf: tall}}).error, /50U tall/);
+  // A DCIM setting beside a site command that changes nothing: no undo step.
+  const events = [];
+  ed.on('change', ev => events.push(ev));
+  const r = ed.apply([{op: 'dcim', site: 'HQ'}, {op: 'zerou.update', id: 'z1', ru: 1}]);
+  assert.ok(!r.error, r.error);
+  assert.equal(ed.rack().dcim.site, 'HQ');
+  assert.ok(!ed.canUndo);
+  // A site step's event carries its commands and findings, and an agent's touches the part.
+  const cmds = [{op: 'zerou.update', id: 'z1', label: 'vcm-1'}];
+  ed.apply(cmds, {origin: 'agent'});
+  const ev = events.at(-1);
+  assert.deepEqual(ev.commands, cmds);
+  assert.deepEqual(ev.findings, []);
+  assert.equal(ev.origin, 'agent');
+  const {touchedIds} = await import('../../site/rack/agent-mark.js');
+  assert.deepEqual(touchedIds(ev), ['z1']);
+  const placed = ed.apply({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {origin: 'agent'});
+  assert.deepEqual(touchedIds(events.at(-1)), ['z2']);
+  assert.equal(placed.created.ids[0], 'z2');
+});
+
+test('a narrow part with no side, placed or moved by the kit, is judged on every unit it spans', () => {
+  const r = run(rackOf('two-post', 42), {op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'left'}).rack;
+  assert.ok(needsSite(r, [{op: 'place', ref: BRACKET, face: 'front', ru: 6}], chassisOf));
+  // Its bottom unit is free; its fifth is the sided bracket's bottom.
+  assert.match(run(r, {op: 'place', ref: BRACKET, face: 'front', ru: 6}).error, /Taken by CMV-5U3W/);
+  const ok = run(r, {op: 'place', ref: BRACKET, face: 'front', ru: 20});
+  assert.ok(!ok.error, ok.error);
+  assert.match(run(ok.rack, {op: 'move', id: 'i2', ru: 7}).error, /Taken by CMV-5U3W/);
+  assert.ok(!run(ok.rack, {op: 'move', id: 'i2', ru: 30}).error);
+});
+
+test('a narrow part names its rail in the kit\'s note and DCIM comment', async () => {
+  const {railNotes, railComment} = await import('../../site/rack/zero-u.js');
+  const {managerNotes} = await import('../../vendor/rack/export-data.js');
+  const r = run(rackOf('two-post', 42), {op: 'side.place', ref: BRACKET, face: 'front', ru: 20, side: 'left', label: 'fb-1'}).rack;
+  const it = r.items[0];
+  const note = managerNotes([it], chassisOf, r.frame)[0];
+  assert.deepEqual(railNotes([note, 'other'], r.items, chassisOf, x => managerNotes([x], chassisOf, r.frame)[0]),
+    [note.replace(/\.$/, ', left rail.'), 'other']);
+  assert.match(railNotes([note], r.items, chassisOf, x => managerNotes([x], chassisOf, r.frame)[0])[0], /at U20, front, left rail\.$/);
+  assert.equal(railComment('0U cable manager on the front rail face at U20; NetBox has no field for that.', it, chassisOf),
+    '0U cable manager on the front rail face at U20, left rail; NetBox has no field for that.');
+});

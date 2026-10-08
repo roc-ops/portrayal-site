@@ -35,7 +35,11 @@ import {dcimOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
-import {zeroUEntries, zeroUNotes, withoutZeroU, zeroUComment, zeroUOf} from './zero-u.js';
+import {zeroUEntries, zeroUNotes, withoutZeroU, zeroUComment, zeroUOf, railNotes, railComment} from './zero-u.js';
+
+// A narrow part's rail, in the kit's own note for it (zero-u.js railNotes).
+const withRails = (notes, rack, items, chassisOf) =>
+  railNotes(notes, items, chassisOf, it => managerNotes([it], chassisOf, rack.frame)[0]);
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -59,7 +63,7 @@ export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {
                                face: await faceOf(it, panel)}));
     }
   }
-  return uniq(notes);
+  return uniq(withRails(notes, rack, items, chassisOf));
 }
 
 const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {}) => {
@@ -624,6 +628,10 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   const names = uniqueNames(ctx.items);
   const dev = deviceImportRows({rack, items: ctx.items, types: ctx.types, target, dcim, why: ctx.why});
   // A part beside the rack went through as a rack-face part (no position, no face); its comment says where it really is.
+  for (const it of ctx.items.filter(i => i.side)) {
+    const row = dev.rows.find(r => r.name === names.get(it.id)?.name);
+    if (row) row.comments = railComment(row.comments, it, chassisOf);
+  }
   for (const it of ctx.items.filter(i => i.zeroU)) {
     const row = dev.rows.find(r => r.name === names.get(it.id)?.name);
     if (row) row.comments = row.comments.replace(/0U cable manager on the \w+ rail face at U\d+[^;]*; \w+ has no field for that\./,
@@ -730,7 +738,7 @@ export async function bomCsv(rack, chassisOf) {
   for (const it of items)
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
   if (railUs.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
-  const all = uniq(notes);
+  const all = uniq(withRails(notes, rack, items, chassisOf));
   const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs}),
                 ...cableBomRows(rack, facts.ends)];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),

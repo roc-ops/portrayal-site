@@ -27,3 +27,24 @@ test('the page and the UI modules import no reducer', () => {
     assert.deepEqual(bad, [], `${name} imports ${bad.join(', ')}`);
   }
 });
+
+// The site's own commands (zero-u.js) reach the rack only through the editor
+// it wraps: a UI module imports withZeroUEditor and the read helpers, never
+// the batch runner or a command's table entry to call.
+test('the page and the UI modules reach zero-u.js commands only through withZeroUEditor', () => {
+  const dir = new URL('../../site/rack/', import.meta.url);
+  const files = [['rack-page.js', new URL('../../site/rack-page.js', import.meta.url)],
+    ...readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'zero-u.js').map(f => [f, new URL(f, dir)])];
+  let wrapped = false;
+  for (const [name, url] of files) {
+    const src = readFileSync(url, 'utf8');
+    for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']*zero-u\.js)'/g)) {
+      const names = m[1].split(',').map(s => s.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+      const bad = names.filter(n => ['applySite', 'ZERO_U_COMMANDS', 'SITE_COMMANDS'].includes(n));
+      assert.deepEqual(bad, [], `${name} imports ${bad.join(', ')} from zero-u.js`);
+      if (names.includes('withZeroUEditor')) wrapped = true;
+    }
+    assert.doesNotMatch(src, /import\s*\*\s*as\s+\w+\s+from\s*'[^']*zero-u\.js'/, `${name} imports all of zero-u.js`);
+  }
+  assert.ok(wrapped, 'nothing wraps the editor with withZeroUEditor');
+});

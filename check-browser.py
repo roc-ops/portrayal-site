@@ -4165,6 +4165,12 @@ def check_rack_zero_u(page, base):
     zf = [x for x in (fill or {}).get("fill", []) if x["item"] == "z1"]
     if not zf or zf[0]["count"] != 1 or zf[0]["cables"] != ["c1"]:
         bad.append(f"fill: the duct does not count the cable through it: {fill}")
+    else:
+        # Its channel: the drawn guide's 93.4 mm by the part's 165.1 mm depth; one OS2 fiber (3.0 mm) against 40% of it.
+        ap = zf[0].get("aperture") or {}
+        want_pct = round(math.pi * 1.5 ** 2 / (0.4 * 93.4 * 165.1) * 100)
+        if abs(ap.get("w", 0) - 93.4) > 0.05 or abs(ap.get("h", 0) - 165.1) > 0.05 or zf[0]["percent"] != want_pct or zf[0]["over"]:
+            bad.append(f"fill: the duct's channel or percent is not 93.4 x 165.1 mm at {want_pct}%: {zf[0]}")
     # Selected, it has its own panel; an edit there is one undo step.
     page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
     page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
@@ -4185,6 +4191,11 @@ def check_rack_zero_u(page, base):
         const m = s.getScreenCTM().inverse(); return [g.dataset.side, new DOMPoint(b.left + b.width / 2, 0).matrixTransform(m).x]; })); }""")
     if not (xs.get("left", 999) < 20 and xs.get("right", -999) > 450.85 - 20):
         bad.append(f"2D: the brackets are not on their rails (centres {xs})")
+    # A third on a rail already taken there is refused, and changes nothing.
+    third = page.evaluate("() => window.__rack.apply({op: 'side.place', ref: 'cmv-5u3w', face: 'front', ru: 22, side: 'left'})")
+    n = page.evaluate("() => window.__rack.doc().racks[0].items.filter(i => i.ref === 'cmv-5u3w').length")
+    if not (third.get("error") and "Taken by" in third["error"]) or n != 2:
+        bad.append(f"side: a second bracket on the left rail at U22 was not refused ({third.get('error')}, {n} brackets)")
     # It survives a reload, sides and all.
     page.evaluate("() => window.__rack.flush()")
     page.reload(wait_until="load")
@@ -4211,13 +4222,21 @@ def check_rack_zero_u(page, base):
       while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
       const g = s.three.scene.getObjectByName('device-z1');
       const pts = (s.rackCables?.tubes ?? []).flatMap(t => t.points || []);
-      return {x: g ? g.position.x : null, minX: pts.length ? Math.min(...pts.map(p => p.x)) : null};
+      const sided = Object.fromEntries(window.__rack.doc().racks[0].items.filter(i => i.side).map(i => {
+        const b = s.three.scene.getObjectByName(`device-${i.id}`);
+        return [i.side, b ? {x: b.position.x, rz: b.rotation.z} : null]; }));
+      return {x: g ? g.position.x : null, minX: pts.length ? Math.min(...pts.map(p => p.x)) : null, sided};
     }""")
     want = -(450.85 / 2 + 26 + 138.8 / 2)
     if res["x"] is None or abs(res["x"] - want) > 1:
         bad.append(f"3D: the duct does not stand beside the left upright (x {res['x']}, want {want})")
     if res["minX"] is None or abs(res["minX"] - want) > 8:
         bad.append(f"3D: the tube does not run up the duct's channel (closest x {res['minX']}, want {want})")
+    # The brackets stand over their own rails' hole lines (rails.js: 232.55 mm either side), the right one turned.
+    sd = res["sided"]
+    lx, rx = (sd.get("left") or {}).get("x"), (sd.get("right") or {}).get("x")
+    if lx is None or rx is None or abs(lx + 232.55) > 0.5 or abs(rx - 232.55) > 0.5 or abs(abs(sd["right"]["rz"]) - math.pi) > 1e-3:
+        bad.append(f"3D: the brackets are not on their rails (left x {lx}, right x {rx}, turned {sd.get('right')})")
     return bad
 
 
