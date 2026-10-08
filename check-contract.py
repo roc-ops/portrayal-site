@@ -23,6 +23,7 @@ VENDOR = HERE / "vendor"
 
 problems = []
 notes = []
+skips = []   # checks that could not run here, printed by name so a pass never hides one
 
 
 def check(cond, what, detail=""):
@@ -1227,16 +1228,38 @@ check({d["name"] for d in _devs} <= set(_rack.get("devices") or {}),
       "rack.json and devices.json are from different builds")
 
 # THE CORE IS THE KIT'S (kit/rack/, vendored into vendor/rack/). Exactly the
-# kit's files when the upstream clone is here to ask; always, every module the
-# site imports, each able to resolve its own imports.
+# kit's files, byte for byte, at the commit refresh-assets.sh vendored from
+# (vendor/rack/SOURCE) - not the clone's HEAD, which moves under a snapshot that
+# did not. That needs the upstream clone; without it the check SKIPS out loud.
+# Always: every module the site imports, each able to resolve its own imports.
 VRACK = VENDOR / "rack"
 _vrack = sorted(p.name for p in VRACK.glob("*.js")) if VRACK.is_dir() else []
-_kitrack = Path(os.environ.get("PORTRAYAL_KIT")
-                or Path(os.environ.get("PORTRAYAL_UPSTREAM") or "/Volumes/External/portrayal-upstream") / "kit") / "rack"
-if _kitrack.is_dir():
-    _want = sorted(p.name for p in _kitrack.glob("*.js"))
-    check(_vrack == _want, "vendor/rack/ holds exactly the kit's rack/*.js",
-          f"vendor/rack {_vrack}, kit/rack {_want} - run ./refresh-assets.sh")
+_srcf = VRACK / "SOURCE"
+_src_sha = next((ln.strip() for ln in (_srcf.read_text().splitlines() if _srcf.is_file() else [])
+                 if ln.strip() and not ln.lstrip().startswith("#")), "")
+check(bool(re.fullmatch(r"[0-9a-f]{40}", _src_sha)),
+      "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from",
+      f"got {_src_sha!r} - run ./refresh-assets.sh")
+_upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or "/Volumes/External/portrayal-upstream")
+# Without the caller's GIT_* variables: under a git hook GIT_DIR names THIS
+# repository and would override -C, so every upstream commit looked missing.
+_git_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+_git = lambda *a: _sp.run(["git", "-C", str(_upstream), *a], capture_output=True, env=_git_env)
+if not (_upstream / ".git").exists():
+    skips.append(f"vendor/rack/ holds exactly the kit's rack/*.js - no upstream clone at {_upstream} "
+                 "(set PORTRAYAL_UPSTREAM to check the vendored rack core against its source)")
+elif not _src_sha or _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode != 0:
+    check(False, "vendor/rack/ holds exactly the kit's rack/*.js",
+          f"commit {_src_sha or '(none)'} is not in {_upstream} - git -C {_upstream} fetch, or run ./refresh-assets.sh")
+else:
+    _ls = _git("ls-tree", "--name-only", f"{_src_sha}:kit/rack")
+    _want = sorted(n for n in _ls.stdout.decode().split() if n.endswith(".js"))
+    _diff = [f for f in _want if f in _vrack
+             and _git("show", f"{_src_sha}:kit/rack/{f}").stdout != (VRACK / f).read_bytes()]
+    check(_ls.returncode == 0 and _vrack == _want and not _diff,
+          f"vendor/rack/ holds exactly the kit's rack/*.js at {_src_sha[:12]}",
+          f"only vendored {sorted(set(_vrack) - set(_want))}, only in kit {sorted(set(_want) - set(_vrack))}, "
+          f"contents differ {_diff} - run ./refresh-assets.sh")
 for _m in ("rails", "model", "fit", "managers", "cable-rules", "route-path", "route", "export-data",
            "dcim-rules", "cable-geometry", "catalog", "validate", "commands", "history", "editor", "queries"):
     check(f"{_m}.js" in _vrack, f"vendor/rack/{_m}.js is vendored", "run ./refresh-assets.sh")
@@ -1251,13 +1274,19 @@ for _f in _vrack:
 # that is how the site's copies drifted from the kit's before the move.
 _DECL = re.compile(r"^\s*export\s+(?:async\s+)?(?:function\*?|const|let|var|class)\s+([A-Za-z_$][\w$]*)", re.M)
 _REEXP = re.compile(r"^\s*export\s*\{([^}]*)\}\s*from", re.M)
+# A local list, `export {a, b as c}` with no `from`, exports names this module
+# declared, so it counts as declaring them (the exported name, after `as`).
+_LOCEXP = re.compile(r"^\s*export\s*\{([^}]*)\}(?!\s*from\b)", re.M)
+_local_exports = lambda t: [n.strip().split(" as ")[-1].strip()
+                            for g in _LOCEXP.findall(t) for n in g.split(",") if n.strip()]
 _kit_names = set()
 for _f in _vrack:
     _t = (VRACK / _f).read_text()
     _kit_names |= set(_DECL.findall(_t))
     _kit_names |= {n.strip().split(" as ")[-1].strip() for g in _REEXP.findall(_t) for n in g.split(",") if n.strip()}
+    _kit_names |= set(_local_exports(_t))
 _redef = sorted(f"{p.name}: {n}" for p in sorted((HERE / "site" / "rack").glob("*.js"))
-                for n in _DECL.findall(p.read_text()) if n in _kit_names)
+                for _t in [p.read_text()] for n in _DECL.findall(_t) + _local_exports(_t) if n in _kit_names)
 check(bool(_kit_names) and not _redef, "no site/rack module redefines a name the kit's rack core exports",
       "; ".join(_redef) + " - import it from vendor/rack/ (re-export it if others import it from here)")
 
@@ -1777,6 +1806,8 @@ _hook_gate = _hook_src.find("PORTRAYAL_HOOK_BROWSER:-0")
 check(0 <= _hook_gate < _hook_src.find('python3 "$BROWSER"'),
       "hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks for it")
 
+for s in skips:
+    print(f"SKIP  {s}")
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:
@@ -1786,4 +1817,4 @@ if problems:
     print("rather than when a page renders wrong.")
     sys.exit(1)
 
-print(f"contract: {len(notes)} checks passed")
+print(f"contract: {len(notes)} checks passed" + (f", {len(skips)} SKIPPED" if skips else ""))
