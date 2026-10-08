@@ -36,6 +36,7 @@ import * as Q from '../vendor/rack/queries.js';
 import {configuredFace, DIST} from './rack/face.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
+import {writeHint} from './rack/agent-hint.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
 import {withZeroUEditor, zeroUEntries, zeroUById, zeroUOf, fitsItem, fitsZeroUSide, ruOfZ, isRackSide, isNarrowFace,
@@ -1413,6 +1414,7 @@ async function bootInner() {
   // (site/agent/relay.js) registers them for one that doesn't.
   S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext, library: agentLibrary,
                             besides: r => zeroULines(r, chassisOf)});
+  writeHint(document, S.agentTools.map(t => t.name));
   S.agentAbort = new AbortController();
   S.agentNative = false;
   setDoc(doc);
