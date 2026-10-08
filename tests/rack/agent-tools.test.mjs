@@ -89,7 +89,7 @@ test('the tools: names, bounds, annotations', () => {
 
 test('describe_rack: the undo line first, then the rack', async () => {
   const {ed, run} = setup();
-  assert.match(text(await run('describe_rack')), /^Nothing to undo\.\nRack 1: 42U/);
+  assert.match(text(await run('describe_rack')), /^Nothing to undo\.\nRack 1 \(r1\): 0 items, 0 cables\.\n42U/);
   ed.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}, {origin: 'agent'});
   assert.match(text(await run('describe_rack')), /^Undo would take back: Placed AS7726-32X at U10/);
 });
