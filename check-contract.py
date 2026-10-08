@@ -1241,7 +1241,10 @@ check(bool(re.fullmatch(r"[0-9a-f]{40}", _src_sha)),
       "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from",
       f"got {_src_sha!r} - run ./refresh-assets.sh")
 _upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or "/Volumes/External/portrayal-upstream")
-_git = lambda *a: _sp.run(["git", "-C", str(_upstream), *a], capture_output=True)
+# Without the caller's GIT_* variables: under a git hook GIT_DIR names THIS
+# repository and would override -C, so every upstream commit looked missing.
+_git_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+_git = lambda *a: _sp.run(["git", "-C", str(_upstream), *a], capture_output=True, env=_git_env)
 if not (_upstream / ".git").exists():
     skips.append(f"vendor/rack/ holds exactly the kit's rack/*.js - no upstream clone at {_upstream} "
                  "(set PORTRAYAL_UPSTREAM to check the vendored rack core against its source)")
