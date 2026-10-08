@@ -5,8 +5,9 @@
 // registered by the page (site/agent/webmcp.js).
 
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
-import {newRack, withItem} from '../../vendor/rack/model.js';
-import {LIMIT, fit, ranges, cutList, inspectText, cableText, SECTIONS} from './agent-text.js';
+import {newRack, withItem, dcimOf} from '../../vendor/rack/model.js';
+import {MAX_WINDOW} from '../../vendor/rack/queries.js';
+import {LIMIT, fit, ranges, clip, cutList, inspectText, cableText, SECTIONS} from './agent-text.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -60,6 +61,18 @@ const safe = fn => async (args = {}) => {
   }
 };
 const FACE = {type: 'string', enum: ['front', 'rear'], description: 'Which face of the rack: front or rear.'};
+// describe_rack's largest window: the kit's own cap on a window.
+const MAX_LIMIT = MAX_WINDOW;
+
+// THE DCIM IMPORT SETTINGS stay the user's (spec 2026-10-08 section 3): an agent
+// is told what they are, and that a blank one is the user's to set.
+const SETS = 'the user sets them under Export > DCIM import settings';
+export const dcimBlank = rack => { const d = dcimOf(rack); return [!d.site && 'site', !d.role && 'role'].filter(Boolean); };
+export function dcimLine(rack) {
+  const d = dcimOf(rack);
+  const said = `site ${d.site ? clip(d.site, 60) : 'blank'}, role ${d.role ? clip(d.role, 60) : 'blank'}`;
+  return `DCIM import: ${said}${d.site && d.role ? '.' : `; ${SETS}.`}`;
+}
 const READ = {readOnlyHint: true};
 const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
 
@@ -79,23 +92,47 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
   });
   const tools = [
     tool('describe_rack', 'Describe the rack',
-      'Read the open rack: its frame, every device and cable manager with its id, U range and face, every cable, the cable ends that do not land, and what Undo would take back. Call this first; edit_rack addresses things by these ids.',
-      {}, [], UNTRUSTED,
-      async () => {
+      'Read the open rack: its name, id and totals first, then what Undo would take back, the DCIM import settings, the cable ends that do not land, the parts beside the rack, and its devices and cables with their ids. section, offset and limit page a long listing. Call this first; edit_rack and inspect address things by these ids.',
+      {section: {type: 'string', enum: ['items', 'cables'], description: 'List only items or only cables. Both when left out.'},
+       offset: {type: 'integer', minimum: 0, description: 'Skip this many entries of section; 0 when left out. Needs section.'},
+       limit: {type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `At most this many entries, up to ${MAX_LIMIT}; 40 when left out, fewer when they would not fit.`}},
+      [], UNTRUSTED,
+      async ({section, offset, limit}) => {
+        if (offset != null && section == null) return refuse('Send section with offset: items or cables.');
         const rack = ed.rack();
-        // The undo line is cut short and the loose ends come before the listing,
-        // so a big rack's listing is what fit() trims, never the problems.
+        // What comes between the kit's first line and its listing: the undo
+        // line (cut short), the DCIM settings, the loose ends and the parts
+        // beside the rack. The listing is what shrinks to keep the bound,
+        // never these.
         const undo = `Undo would take back: ${ed.undoSummary}`;
-        const lines = [ed.canUndo ? (undo.length > 150 ? `${undo.slice(0, 149)}…` : undo) : 'Nothing to undo.'];
+        const extra = [ed.canUndo ? clip(undo, 150) : 'Nothing to undo.'];
         if (rack.frame.numbering === 'top-down')
-          lines.push("This rack's U labels count top-down; commands take ru counted from 1 at the bottom of the rails.");
+          extra.push("This rack's U labels count top-down; commands take ru counted from 1 at the bottom of the rails.");
+        extra.push(dcimLine(rack));
         const loose = await queries.looseEnds(rack);
-        if (loose.ends.length) lines.push('Loose ends:', ...loose.ends.map(e => `${e.cable}: the ${e.end.item} end does not land: ${e.reason}`));
-        if (loose.unchecked) lines.push('Some ports could not be checked.');
-        lines.push(queries.describe(rack));
+        if (loose.ends.length) {
+          extra.push('Loose ends:', ...loose.ends.slice(0, 10).map(e => clip(`${e.cable}: the ${e.end.item} end does not land: ${e.reason}`, 150)));
+          if (loose.ends.length > 10) extra.push(`and ${loose.ends.length - 10} more; edit_rack's select {loose: true} reaches them all.`);
+        }
+        if (loose.unchecked) extra.push('Some ports could not be checked.');
         const side = besides(rack);
-        if (side.length) lines.push('Beside the rack (zero-U, no rack unit; edit with zerou.update and zerou.remove):', ...side);
-        return say(lines.join('\n'));
+        if (side.length) {
+          extra.push('Beside the rack (zero-U, no rack unit; edit with zerou.update and zerou.remove):', ...side.slice(0, 8).map(l => clip(l, 150)));
+          if (side.length > 8) extra.push(`and ${side.length - 8} more beside the rack.`);
+        }
+        // The kit's window names what it shows in its first line, so the limit
+        // shrinks until the answer fits rather than being cut after the fact.
+        // The kit's own window is unbounded in characters and capped at its
+        // MAX_WINDOW lines; this tool caps limit at MAX_LIMIT too.
+        for (let lim = Math.min(limit ?? 40, MAX_LIMIT); ;) {
+          const got = queries.describe(rack, {section, offset: offset ?? 0, limit: lim});
+          if (got?.error) return refuse(got.error);
+          const [first, ...rest] = got.split('\n');
+          const out = [first, ...extra, ...rest].join('\n');
+          if (out.length <= LIMIT || lim === 1) return say(out);
+          // the next try is scaled to what was over, and always smaller
+          lim = Math.max(1, Math.min(lim - 1, Math.floor(lim * LIMIT / out.length)));
+        }
       }),
     tool('inspect', 'Inspect a device or cable',
       'Read one device or cable in full. A device: its configs, its bays and cages with what each holds and takes, its editable fields, and its cables. A cable: its ends, media, length, routed length and stock size, route, the waypoints it can take, and why an end is loose. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',

@@ -1432,7 +1432,7 @@ async function bootInner() {
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
 const boundQueries = () => ({
-  describe: r => Q.describe(r, {chassisOf}),
+  describe: (r, win) => Q.describe(r, {chassisOf}, win),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
