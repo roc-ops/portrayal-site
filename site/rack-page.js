@@ -45,7 +45,6 @@ const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
 const AGENT_MARK_MS = 3000;
-// The highlight preference lives with the switch (Task 7); until then it is on.
 // The highlight preference lives with the Connect your AI switch.
 const agentHighlightOn = () => prefs.highlight;
 const CABLES_3D = 'Cables are added in 2D. Switch to 2D to add one.';
@@ -313,6 +312,8 @@ function onChange(ev) {
   // its summary (a shrink), or edit()'s `say`, which runs after this. "Undid: X"
   // is not step X, even when the step Undo now takes back is also called X.
   S.saidStep = ev.cause === 'apply' && ev.summary && ev.findings.some(f => f.text.includes(ev.summary)) ? ev.summary : null;
+  // An agent's step is said by its "Your assistant:" notice, which serves as Undo's description.
+  if (ev.cause === 'apply' && ev.origin === 'agent' && ev.summary) S.saidStep = ev.summary;
   if (ev.cause === 'undo' || ev.cause === 'redo')
     addNotice(`${ev.cause === 'undo' ? 'Undid' : 'Redid'}: ${ev.summary}`, 'note');
   S.save.saveSoon(theDoc());
@@ -1346,12 +1347,17 @@ async function bootInner() {
   // (site/agent/relay.js) registers them for one that doesn't.
   S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport});
   S.agentAbort = new AbortController();
-  S.agentNative = (await registerTools(S.agentTools, {signal: S.agentAbort.signal})).registered > 0;
-  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: S.agentNative, examples: [
+  S.agentNative = false;
+  setDoc(doc);
+  // Registration runs behind the first draw: a failure only logs. The switch
+  // asks lazily (and waits for this) whether the browser took the tools.
+  S.agentReg = registerTools(S.agentTools, {signal: S.agentAbort.signal})
+    .then(r => { S.agentNative = r.registered > 0; })
+    .catch(e => console.warn('[portrayal] WebMCP registration', e));
+  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; }, examples: [
     'Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel.',
     'What in this rack has loose cable ends, and why?',
     'Export this rack for NetBox.']});
-  setDoc(doc);
 }
 
 // The queries, bound to this page's readers: the probe hook and the agent tools
