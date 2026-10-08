@@ -429,3 +429,36 @@ export function zeroULines(rack, chassisOf) {
   });
 }
 
+
+// ── what the drawings and the exports read ───────────────────────────────
+// Each placeable zero-U part with what a drawing needs: its bottom U, its
+// height in U, and its chassis width and drawn height (mm).
+export function zeroUEntries(rack, chassisOf) {
+  return zeroUOf(rack).filter(z => isRackSide(chassisOf(z.ref))).map(z => {
+    const c = chassisOf(z.ref);
+    return {id: z.id, ref: z.ref, cfg: z.cfg ?? c.default ?? '', label: z.label || c.model || z.ref, at: z.at,
+            between: z.between === true, ru: ruOfZ(z), u: Math.max(1, c.ru ?? 1),
+            w: Number(c.w) || 0, h: Number(c.h) || (Math.max(1, c.ru ?? 1) * RU), mount: 'rack-side'};
+  });
+}
+// The rack without its zero-U record: for an export that carries the parts,
+// so the kit's "not in this export yet" note (export-data.js rackNotes) is not said.
+export const withoutZeroU = rack => ({...rack, zeroU: []});
+// Where each part is, as a sentence, for the sheets, the BOM and the model; and
+// one for each entry this page cannot read, which no export carries.
+export function zeroUNotes(rack, chassisOf) {
+  const placed = zeroUEntries(rack, chassisOf);
+  const out = placed.map(z => {
+    const c = chassisOf(z.ref);
+    const what = [c.manufacturer, c.model].filter(Boolean).join(' ') || z.ref;
+    return `${z.label}: ${what}, 0U, ${whereText(rack, zeroUById(rack, z.id), chassisOf)}` +
+      `${z.between ? '; it serves the next rack too, which this file does not hold' : ''}.`;
+  });
+  const left = list(rack).length - placed.length;
+  if (left > 0) out.push(`${left} zero-U ${left === 1 ? 'entry is' : 'entries are'} not a part this page can place, so ${left === 1 ? 'it is' : 'they are'} not in this export.`);
+  return out;
+}
+// A zero-U part's DCIM comment: where it stands, which neither DCIM has a field for.
+export const zeroUComment = (rack, z, chassisOf, T) =>
+  `0U, a vertical cable manager ${whereText(rack, zeroUById(rack, z.id) ?? z, chassisOf)}` +
+  `${z.between ? ', serving the next rack too' : ''}; ${T} has no field for that.`;

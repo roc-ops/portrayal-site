@@ -8,8 +8,10 @@ import {readFileSync, readdirSync} from 'node:fs';
 const REDUCERS = ['withItem', 'updateItem', 'withoutItem', 'withFrame', 'renamed', 'withDcim', 'detached', 'withCable',
                   'updateCable', 'withoutCable', 'withoutCablesOf', 'moveItem', 'shrinkRack', 'withRoutedLengths'];
 // The core may call them; drag.js may call moveItem for its PREVIEW only (the drop is a move command).
-// The core is the kit's now (vendor/rack/).
-const ALLOWED = {'drag.js': ['moveItem']};
+// The core is the kit's now (vendor/rack/). zero-u.js holds the site's own commands
+// (zero-U parts, narrow parts on one rail) until the kit has them: it is core, run
+// only through the editor (withZeroUEditor), and calls withItem as the kit's place does.
+const ALLOWED = {'drag.js': ['moveItem'], 'zero-u.js': ['withItem']};
 
 test('the page and the UI modules import no reducer', () => {
   const files = [['rack-page.js', new URL('../../site/rack-page.js', import.meta.url)],

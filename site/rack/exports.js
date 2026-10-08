@@ -35,6 +35,7 @@ import {dcimOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
+import {zeroUEntries, zeroUNotes, withoutZeroU, zeroUComment, zeroUOf} from './zero-u.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -87,7 +88,7 @@ const routesOf = (rack, chassisOf) => ((rack.cables || []).length
   ? routeFacts(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
   : Promise.resolve(null));
 const hasWaypoints = rf => !!rf && [...rf.routes.values()].some(x => x.waypoints?.length);
-const labelOf = rack => id => (rack.items || []).find(i => i.id === id)?.label ?? id;
+const labelOf = rack => id => (rack.items || []).find(i => i.id === id)?.label ?? zeroUOf(rack).find(z => z.id === id)?.label ?? id;
 
 const boxOf = svg => svg.getAttribute('viewBox').split(/\s+/).map(Number);
 const MONO = 'IBM Plex Mono, ui-monospace, monospace';
@@ -139,14 +140,16 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const routed = hasWaypoints(rf);
   // What a pane could not show is judged on the items' own swaps: a plug
   // nobody chose is never "the part chosen".
-  const notes = await faceNotesFor(rack, base, faces, chassisOf, {cables: false});
+  // The parts beside the rack are drawn (zero-u.js), so the sheet says where each is, not that it is left out.
+  const zeroU = zeroUEntries(rack, chassisOf);
+  const notes = [...await faceNotesFor(withoutZeroU(rack), base, faces, chassisOf, {cables: false}), ...zeroUNotes(rack, chassisOf)];
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
   const uOf = heightOf(chassisOf);
   // The cables' own notes wait for the drawing: they say which cables the sheet holds.
   const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true,
-                   laneGap: routed ? LANE_GAP : 0})));
+                   laneGap: routed ? LANE_GAP : 0, zeroU})));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});
@@ -159,7 +162,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
     if (cabled) for (const pane of panes) widenForCables(pane, routed);
     // Every pane has one width: drawElevation's own, plus the column when cabled.
     // Routed cables widen the gutters (the lane gap) and both sides; the width is the widened pane's own.
-    const faceW = cabled ? Math.max(...panes.map(pane => boxOf(pane)[2])) : FACE_W;
+    // A part beside the rack widens both panes alike (elevation.js), so it is the pane's own width too.
+    const faceW = cabled || zeroU.length ? Math.max(...panes.map(pane => boxOf(pane)[2])) : FACE_W;
     panes.forEach((pane, i) => {
       const x = M + i * (faceW + GAP);
       // The heading sits over the rack, not over the rear pane's column to its left.
@@ -196,7 +200,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       }
     }
     const all = uniq(notes);
-    const faceH = cabled ? boxOf(panes[0])[3] : rack.frame.heightRU * RU + 30;   // drawElevation's own viewBox height
+    const faceH = cabled || zeroU.length ? boxOf(panes[0])[3] : rack.frame.heightRU * RU + 30;   // drawElevation's own viewBox height
     const width = M * 2 + faces.length * faceW + (faces.length - 1) * GAP;
     const chars = Math.floor((width - M * 2 - 24) / 6.2);   // 10 px mono runs about 6 px a character
     const noteLines = all.flatMap(n => wrapText(n, chars - 2).map((l, i) => (i ? `  ${l}` : `• ${l}`)));
@@ -357,7 +361,8 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     // The facts the scene hung its cables by, when it kept them; the export's
     // own reading only for a scene that has none (a stub, a failed hang).
     const facts = !(rack.cables || []).length ? UNCHECKED : scene.rackCables?.facts ?? await cableEnds(rack);
-    const notes = uniq([...rackNotes(rack, {cables: false}), ...mountNotes(rack.items, chassisOf, rack.frame),
+    // The scene stands the parts beside the rack (scene3d.js), so the model carries them.
+    const notes = uniq([...rackNotes(withoutZeroU(rack), {cables: false}), ...zeroUNotes(rack, chassisOf), ...mountNotes(rack.items, chassisOf, rack.frame),
                         ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts, heightOf(chassisOf))]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
@@ -467,8 +472,15 @@ export async function dcimContext(rack, chassisOf, target) {
   if (idx.failed)
     causes.push(`The ${T} device type index (${EXPORTS_BASE}index.json) could not be read, so no device has a device type ` +
                 'and every device is left out. Check that the site is reachable and export again.');
-  const items = itemsWithU(rack, chassisOf);
-  const notes = [...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame)];
+  // A part beside the rack is a device of the rack with no position and no face, as a
+  // rack-face manager is: the kit's rows already write one so (export-data.js
+  // deviceImportRows), and dcimKit words its comment. Its type is upstream's,
+  // u_height 0 and not full depth.
+  const rails = itemsWithU(rack, chassisOf);
+  const items = [...rails, ...zeroUEntries(rack, chassisOf).map(z => ({id: z.id, ref: z.ref, cfg: z.cfg, label: z.label,
+    ru: z.ru, u: z.u, face: 'front', turned: false, swaps: {}, fields: {}, mount: 'rack-face', zeroU: z}))];
+  const notes = [...rackNotes(withoutZeroU(rack), {cables: false}), ...mountNotes(rails, chassisOf, rack.frame),
+                 ...zeroUNotes(rack, chassisOf).filter(n => !items.some(i => i.zeroU && n.startsWith(`${i.label}:`)))];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
     ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
@@ -611,6 +623,12 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
 
   const names = uniqueNames(ctx.items);
   const dev = deviceImportRows({rack, items: ctx.items, types: ctx.types, target, dcim, why: ctx.why});
+  // A part beside the rack went through as a rack-face part (no position, no face); its comment says where it really is.
+  for (const it of ctx.items.filter(i => i.zeroU)) {
+    const row = dev.rows.find(r => r.name === names.get(it.id)?.name);
+    if (row) row.comments = row.comments.replace(/0U cable manager on the \w+ rail face at U\d+[^;]*; \w+ has no field for that\./,
+      zeroUComment(rack, it.zeroU, chassisOf, TARGET_NAME[target]));
+  }
   const out = new Set(dev.left.map(l => l.id));
   const kept = new Set(ctx.items.filter(i => !out.has(i.id)).map(i => i.id));
   const deviceOf = id => ctx.types.get(id)?.lists ?? null;
@@ -688,17 +706,19 @@ export async function bomCsv(rack, chassisOf) {
   // a derived plug is never a part, and never a line here.
   const cabled = (rack.cables || []).length > 0;
   const facts = cabled ? await cableEnds(rack) : UNCHECKED;
-  notes.unshift(...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
-                ...managerNotes(items, chassisOf, rack.frame));
+  const sides = zeroUEntries(rack, chassisOf);
+  notes.unshift(...rackNotes(withoutZeroU(rack), {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
+                ...managerNotes(items, chassisOf, rack.frame), ...zeroUNotes(rack, chassisOf),
+                ...sides.map(z => `${z.label} hangs on its own brackets beside the upright, as its maker ships them; no rail hardware is counted for it.`));
   for (const m of managers.filter(i => i.on)) {
     const h = items.find(i => i.id === m.on);
     if (h) notes.push(`${m.label} shares ${h.label}'s rail screws; with two ears stacked, longer screws may be needed.`);
   }
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
   if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...fillNotes(rack, await routesOf(rack, chassisOf), labelOf(rack)));
-  if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
+  if (!items.length && !sides.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
-  const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
+  const devices = [...items, ...sides].map(it => ({ref: it.ref, cfg: it.cfg,
     manufacturer: chassisOf(it.ref)?.manufacturer ?? '', model: chassisOf(it.ref)?.model ?? it.ref}));
   const lines = parts.map(p => {
     const comp = findComp(comps, p.ref);

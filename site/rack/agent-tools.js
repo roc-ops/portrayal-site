@@ -80,7 +80,10 @@ const FACE = {type: 'string', enum: ['front', 'rear'], description: 'Which face 
 const READ = {readOnlyHint: true};
 const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
 
-export function rackTools({ed, chassisOf, queries, runExport}) {
+// `commands` is the table the editor runs (the page adds its own, zero-u.js);
+// `besides(rack)` lists what describe() leaves out: the parts beside the rack.
+export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS, besides = () => []}) {
+  const table = commands;
   const tool = (name, title, description, properties, required, annotations, run) => ({
     name, title, description, annotations,
     inputSchema: {type: 'object', properties, ...(required.length ? {required} : {}), additionalProperties: false},
@@ -102,6 +105,8 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
         if (loose.ends.length) lines.push('Loose ends:', ...loose.ends.map(e => `${e.cable}: the ${e.end.item} end does not land: ${e.reason}`));
         if (loose.unchecked) lines.push('Some ports could not be checked.');
         lines.push(queries.describe(rack));
+        const side = besides(rack);
+        if (side.length) lines.push('Beside the rack (zero-U, no rack unit; edit with zerou.update and zerou.remove):', ...side);
         return say(lines.join('\n'));
       }),
     tool('find_devices', 'Find devices',
@@ -109,7 +114,7 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
       {text: {type: 'string', description: 'Words to look for, e.g. "dell r740" or "patch panel".'},
        ru: {type: 'integer', minimum: 1, description: 'Only devices this many U tall.'},
        family: {type: 'string', description: 'Only this product family.'},
-       mount: {type: 'string', enum: ['rack', 'rack-face'], description: 'rack for devices, rack-face for cable managers.'}},
+       mount: {type: 'string', enum: ['rack', 'rack-face', 'rack-side'], description: 'rack for devices, rack-face for cable managers, rack-side for vertical cable managers that stand beside the rack (placed with zerou.place).'}},
       [], READ,
       async ({text, ru, family, mount}) => {
         const all = queries.catalog({text, ru, family, mount});
@@ -155,12 +160,12 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
   tools.push(
     tool('edit_rack', 'Edit the rack',
       'Apply edits in order. All apply or none; one undo step. Name what a command creates with as: "srv", then use "@srv" as a later id or cable end item. Get ref and cfg from find_devices, port paths from list_free_ports. Send only the fields you are changing. dry_run checks without changing anything.',
-      editSchema().properties, ['commands'], {readOnlyHint: false},
+      editSchema(table).properties, ['commands'], {readOnlyHint: false},
       async ({commands, dry_run}) => {
         if (!Array.isArray(commands) || !commands.length) return refuse('Send commands: a list of at least one {op, ...}.');
         const n = commands.length;
         const at = i => `Command ${i + 1} of ${n} (${commands[i]?.op})`;
-        const banned = commands.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(COMMANDS, c.op) && !agentMay(c.op));
+        const banned = commands.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(table, c.op) && !agentMay(c.op, table));
         if (banned >= 0) return refuse(`${at(banned)} is not for agents: the page sends it itself, or the user sets it. Nothing was changed.`);
         const res = dry_run ? ed.preview(commands) : ed.apply(commands, {origin: 'agent'});
         if (res.error) return refuse(`${at(res.index ?? 0)} was refused: ${res.error} Nothing was changed.`);

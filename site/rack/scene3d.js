@@ -12,6 +12,7 @@ import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js'
 import {drawCables3d} from './cables.js';
 import {laneX} from '../../vendor/rack/route.js';
 import {RU} from '../../vendor/rack/rails.js';
+import {zeroUOf, isRackSide, ruOfZ, faceOfAt, zeroUX, laneXAt} from './zero-u.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -28,7 +29,7 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // Cables that share a waypoint are spread on a small grid so their tubes do
 // not overlap.
 const SPREAD = 6;   // mm between cables sharing a waypoint
-function waypointsFor(scene, routes, THREE) {
+function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0])) {
   const used = new Map(), slot = new Map();
   const m = scene.metrics();
   return async link => {
@@ -38,8 +39,9 @@ function waypointsFor(scene, routes, THREE) {
     for (const w of r.waypoints) {
       let p = null, run = 'x';
       if (w.lane) {
-        const [side, face = 'front'] = w.lane.split('-');
-        p = new THREE.Vector3(laneX(side), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
+        const [, face = 'front'] = w.lane.split('-');
+        // Through a zero-U duct where one stands on this lane (zero-u.js laneXAt).
+        p = new THREE.Vector3(laneAt(w.lane, w.ru), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
         run = 'y';
       } else {
         // A ring: x and z from its top-view component, y from the center of
@@ -73,11 +75,30 @@ function waypointsFor(scene, routes, THREE) {
   };
 }
 
+// A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (zero-u.js
+// zeroUX, against the upright's outer face); along the rack, centred on the
+// upright's depth (a 34 mm post box behind its mounting face). Its height is
+// rack3d.js's own, from its bottom U. Every anchor (guideAnchor, portAnchor)
+// reads the group's world matrix, so moving the group moves them too.
+const POST_D = 34;
+function placeZeroU(scene, parts, chassisOf) {
+  const m = scene.metrics();
+  for (const z of parts) {
+    const g = scene.three.scene.getObjectByName(`device-${z.id}`);
+    if (!g) continue;
+    const rear = faceOfAt(z.at) === 'rear';
+    g.position.x = zeroUX(z, chassisOf);
+    g.position.z = rear ? m.faceZ - m.railDepth + POST_D / 2 : m.faceZ - POST_D / 2;
+    g.rotation.y = rear ? Math.PI : 0;
+    g.userData.zeroU = {id: z.id, at: z.at};
+  }
+}
+
 // Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-async function hangCables(scene, rack, facts, routes) {
+async function hangCables(scene, rack, facts, routes, chassisOf = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   try {
     const drawn = await drawCables3d(scene, cablePlan3d(rack), {anchor: async (item, path, view) => {
@@ -86,7 +107,7 @@ async function hangCables(scene, rack, facts, routes) {
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: waypointsFor(scene, routes, scene.three.THREE)});
+    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, (lane, ru) => laneXAt(rack, lane, ru, chassisOf))});
     return {...drawn, checked: !facts.unchecked, facts};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
@@ -126,6 +147,15 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
   }));
+  // ZERO-U PARTS stand beside an upright (zero-u.js): built as any device is,
+  // then stood in place once built (placeZeroU). A four-post's rear upright
+  // carries its part facing rearward, as a rear device faces.
+  const sideParts = chassisOf ? zeroUOf(rack).filter(z => isRackSide(chassisOf(z.ref))) : [];
+  for (const z of sideParts) {
+    stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: ruOfZ(z), label: z.label,
+                face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: {},
+                chassis: chassisOf(z.ref), mount: 'rack-side'});
+  }
 
   // Imported here, not at module load: rack-page.js pulls this module in on
   // every visit, most of which never switch to 3D, and three.js (through
@@ -140,9 +170,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
     });
     await built.build();
+    placeZeroU(built, sideParts, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

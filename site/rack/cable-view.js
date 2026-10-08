@@ -18,6 +18,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
+import {ductOnLane, zeroUX} from './zero-u.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -86,13 +87,17 @@ export function wayEl(svg, w) {
 
 // A waypoint's point in a pane, or null when it is not on this pane.
 // Lanes: sides are the rack's as seen from the front, so the rear pane mirrors them.
-function wayPoint(svg, w, view, frame, k) {
+// A lane through a zero-U duct (zero-u.js) runs up the duct's channel: `ductX(lane,
+// ru)` is the duct's centre in rack x, or null where no duct stands.
+function wayPoint(svg, w, view, frame, k, ductX = () => null) {
   if (w.lane) {
     const [side, face] = w.lane.split('-');
     if (face && face !== view) return null;
     const paneLeft = view === 'front' ? side === 'left' : side === 'right';
     const off = (k % 6) * 3;                       // cables sharing a lane, a little apart
-    const x = paneLeft ? -RAIL_W - LANE_GAP / 2 - off : OPENING + RAIL_W + LANE_GAP / 2 + off;
+    const xr = ductX(w.lane, w.ru);
+    const x = xr != null ? (view === 'rear' ? OPENING / 2 - xr : OPENING / 2 + xr) + (paneLeft ? -off : off)
+      : paneLeft ? -RAIL_W - LANE_GAP / 2 - off : OPENING + RAIL_W + LANE_GAP / 2 + off;
     return [x, frame.heightRU * RU - (w.ru - 0.5) * RU];
   }
   const el = wayEl(svg, w);
@@ -159,6 +164,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   // sharing a lane here are offset a little apart.
   if (routes?.routes) {
     const used = new Map();
+    const chassisOf = routes.ctx?.chassisOf;
+    const ductX = (lane, ru) => { const z = chassisOf && ductOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
       if (!ws?.length) continue;
@@ -167,7 +174,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       const pts = ws.map(w => {
         const key = w.lane ? `${w.lane}` : null;
         if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
-        return wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0);
+        return wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0, ductX);
       }).filter(Boolean);
       if (pts.length) link.via2d = {[pane]: pts};
     }
@@ -233,7 +240,9 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const overs = [...(routes?.fill || []).filter(f => f.over),
     ...(routes?.over || []).map(o => ({item: o.item, via: null}))];
   for (const f of overs) {
-    const e = f.via == null ? panelGroup(svg, f.item) : wayEl(svg, f);   // a manager over its count: the whole part
+    // A zero-U duct over its fill or count: the whole part (it is not an item).
+    const z = svg.querySelector(`[data-zerou-id="${CSS.escape(f.item)}"]`);
+    const e = z ?? (f.via == null ? panelGroup(svg, f.item) : wayEl(svg, f));   // a manager over its count: the whole part
     if (!e) continue;
     const b = inPane(svg, e);
     svg.append(svgEl('rect', {x: b.x, y: b.y, width: b.w, height: b.h, fill: 'none', stroke: 'var(--pt-warn)',

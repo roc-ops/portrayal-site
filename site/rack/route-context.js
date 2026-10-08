@@ -8,6 +8,7 @@ import {configuredFace} from './face.js';
 import {resolveRoute, fill, capacityOver, routedLength, endPane} from '../../vendor/rack/route.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
+import {zeroUOf, zeroUFill, isRackSide} from './zero-u.js';
 
 const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 
@@ -136,6 +137,25 @@ function aperturesOf(root) {
 const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
   .catch(() => { failed.n++; return null; });
 
+// A ZERO-U DUCT'S CHANNEL: as wide as its drawn guide (`data-guide-run="y"`, the
+// guide rect on its front view) and, an estimate, as deep as the part. Null
+// when the drawing has no such guide.
+export function ductAperture(rects, depth) {
+  const g = rects.find(r => r.cls === 'guide' && r.id.startsWith('guide--'));
+  return g && g.w > 0 && depth > 0 ? {w: g.w, h: depth} : null;
+}
+async function zeroUApertures(rack, chassisOf) {
+  const out = new Map();
+  await Promise.all(zeroUOf(rack).map(async z => {
+    const c = chassisOf(z.ref);
+    if (!isRackSide(c)) return;
+    const f = await configuredFace({ref: z.ref, cfg: z.cfg, view: 'front', swaps: {}, fields: {}}).catch(() => null);
+    const ap = f ? ductAperture(rectsOf(rootOf(f.text)), c.d) : null;
+    if (ap) out.set(z.id, ap);
+  }));
+  return out;
+}
+
 export async function routeFacts(rack, chassisOf) {
   const guides = new Map(), ports = new Map(), failed = {n: 0};
   await Promise.all(rack.items.map(async it => {
@@ -172,5 +192,10 @@ export async function routeFacts(rack, chassisOf) {
   };
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
-  return {ctx, complete: failed.n === 0, routes, fill: fill(rack, ctx), over: capacityOver(rack, ctx), lengths, endPane: e => endPane(rack, e)};
+  // Ducts beside the rack (zero-u.js): the lanes run through them, so they fill
+  // as any pathway does, and are counted against their stated capacity.
+  const ducts = await zeroUApertures(rack, chassisOf);
+  const side = zeroUFill(rack, routes, chassisOf, z => ducts.get(z.id) ?? null);
+  return {ctx, complete: failed.n === 0, routes, fill: [...fill(rack, ctx), ...side.fill],
+          over: [...capacityOver(rack, ctx), ...side.over], lengths, endPane: e => endPane(rack, e)};
 }

@@ -38,6 +38,9 @@ import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
+import {withZeroUEditor, zeroUEntries, zeroUById, zeroUOf, fitsItem, fitsZeroUSide, ruOfZ, isRackSide, isNarrowFace,
+        ALL_COMMANDS, zeroULines} from './rack/zero-u.js';
+import {zeroUInspector, sideControl} from './rack/zero-u-panel.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -135,7 +138,7 @@ async function rebuild3d() {
 // those build the same scene. A rack-level field the scene comes to read later
 // (zeroU) must be added here, or an edit to it will leave the scene, and a GLB
 // exported from it, showing the rack as it was.
-const sameScene = (a, b) => a.items === b.items && a.frame === b.frame && sameCables3d(a, b);
+const sameScene = (a, b) => a.items === b.items && a.frame === b.frame && a.zeroU === b.zeroU && sameCables3d(a, b);
 let rebuild3dTimer = null;
 function scheduleRebuild3d() {
   if (S.mode !== '3d') return;
@@ -195,6 +198,8 @@ function setMode(m) {
 const rack = () => ed.rack();
 const theDoc = () => ed.getDoc();
 const itemById = id => rack().items.find(i => i.id === id) || null;
+// A name for any id a note can carry: a device's, or a part's beside the rack.
+const nameOfId = id => itemById(id)?.label ?? zeroUById(rack(), id)?.label ?? id;
 
 // What removing a host leaves behind (spec section 5): its managers stay on
 // the rack, on their own. '' when it had none.
@@ -229,8 +234,18 @@ async function getDoc(id) {
 // The picker judged the fit against the rack it was built for, and its Place
 // button can outlive that rack (a redraw still on its way): the place command
 // judges it again, against the rack as it is now.
-function place(entry, cfg, face, ru) {
-  const res = edit({op: 'place', ref: entry.name, cfg, face, ru, label: entry.model || entry.name});
+// A part that stands beside the rack goes in its zero-U record, at the upright
+// chosen, its bottom level with this U; a narrow rail part on the rail chosen
+// (zero-u.js). Everything else is the kit's place.
+function place(entry, cfg, face, ru, extra = {}) {
+  const label = entry.model || entry.name;
+  if (isRackSide(entry)) {
+    const res = edit({op: 'zerou.place', ref: entry.name, cfg, at: extra.at, ru, between: !!extra.between, label});
+    if (!res.error) S.sel = {kind: 'zerou', id: res.created.ids[0]};
+    return;
+  }
+  const res = edit(isNarrowFace(entry) && extra.side ? {op: 'side.place', ref: entry.name, cfg, face, ru, side: extra.side, label}
+    : {op: 'place', ref: entry.name, cfg, face, ru, label});
   if (!res.error) S.sel = {kind: 'item', id: res.created.ids[0]};
 }
 
@@ -278,6 +293,9 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
+  // A batch of the site's own commands lands as one whole-rack step, whose change
+  // event carries no findings: they are said here (a kit batch's were said already).
+  for (const f of res.findings || []) addNotice(f.text, f.kind);
   if (say && !res.noop && res.summary) { addNotice(res.summary, 'note'); S.saidStep = res.summary; }
   if (res.noop && !quiet) renderSoon();
   return res;
@@ -554,7 +572,7 @@ function cableListPanel() {
   pruneFilter();
   const on = S.cableFilter;
   // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
-  const notes = S.routes ? fillNotes(r, S.routes, id => itemById(id)?.label ?? id) : [];
+  const notes = S.routes ? fillNotes(r, S.routes, nameOfId) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     onFilter: next => {
       S.cableFilter = next;
@@ -809,10 +827,11 @@ async function render() {
     }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
+    const zeroU = zeroUEntries(r, chassisOf);
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-      laneGap: hasRoutes() ? LANE_GAP : 0})));
+      laneGap: hasRoutes() ? LANE_GAP : 0, zeroU, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null})));
   } catch (err) {
     if (mine !== S.draws) return;
     console.warn('[portrayal] the rack elevation failed to draw', err);
@@ -876,13 +895,20 @@ function summary() {
   const devices = r.items.filter(i => !isRackFace(chassisOf(i.ref)));
   const managers = r.items.length - devices.length;
   const used = devices.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
+  // A narrow part on one rail is judged by its side (zero-u.js fitsItem).
   const warnings = r.items
-    .map(i => ({i, f: fits(r, {ref: i.ref, ru: i.ru, face: i.face}, chassisOf, {ignoreId: i.id})}))
+    .map(i => ({i, f: fitsItem(r, i, chassisOf)}))
+    .filter(x => !x.f.ok);
+  // A part beside the rack can stop fitting under it: a shorter frame, or two posts instead of four.
+  const side = zeroUOf(r);
+  const sideWarnings = side.map(z => ({z, f: fitsZeroUSide(r, {ref: z.ref, at: z.at, ru: ruOfZ(z)}, chassisOf, {ignoreId: z.id})}))
     .filter(x => !x.f.ok);
   return el('div', {}, [
     el('h3', {text: r.name}),
-    el('p', {class: 'rk-muted', text: `${devices.length} devices · ${used}U used on the rails${managers ? ` · ${managers} cable manager${managers === 1 ? '' : 's'}` : ''}.`}),
+    el('p', {class: 'rk-muted', text: `${devices.length} devices · ${used}U used on the rails${managers ? ` · ${managers} cable manager${managers === 1 ? '' : 's'}` : ''}` +
+      `${side.length ? ` · ${side.length} beside the rack` : ''}.`}),
     ...warnings.map(({i, f}) => el('p', {class: 'rk-error', text: `${i.label} at U${positionOf(r.frame, i.ru, uOf(i))}: ${f.reason}`})),
+    ...sideWarnings.map(({z, f}) => el('p', {class: 'rk-error', text: `${z.label} at ${z.at}: ${f.reason}`})),
     el('p', {class: 'rk-muted', text: 'Click an empty U on either face to place a device there.'}),
   ]);
 }
@@ -917,7 +943,18 @@ function renderSide() {
     onCancel: () => closeDcimForm(null)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
-    onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru), onlyMount: sel.onlyMount ?? null});
+    onPlace: (entry, cfg, extra) => place(entry, cfg, sel.face, sel.ru, extra), onlyMount: sel.onlyMount ?? null});
+  else if (sel.kind === 'zerou') {
+    const z = zeroUById(r, sel.id);
+    if (!z) { S.sel = null; body = homePanel(); }
+    else body = zeroUInspector({z, rack: r, chassis: chassisOf(z.ref), chassisOf,
+      // Like every panel's controls, these act on the part as it is now, or say it is gone.
+      onUpdate: patch => {
+        const res = edit({op: 'zerou.update', id: z.id, ...patch}, {report: false});
+        return res.error ? {ok: false, reason: res.error} : {ok: true};
+      },
+      onRemove: () => { S.sel = null; edit({op: 'zerou.remove', id: z.id}, {say: true}); }});
+  }
   else if (sel.kind === 'remove') {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
@@ -967,6 +1004,11 @@ function renderSide() {
         onMove: () => select({kind: 'move', id: it.id}),
         onRemove: () => live(cur => { S.sel = null; edit({op: 'remove', id: cur.id}, {say: true}); }),
         onExplore: () => explore(it.id)});
+      // A narrow part (a finger bracket) goes on one rail (zero-u.js side.set).
+      if (isNarrowFace(chassisOf(it.ref))) body.append(sideControl({item: it, onSide: side => {
+        const res = edit({op: 'side.set', id: it.id, side}, {report: false});
+        return res.error ? {ok: false, reason: res.error} : {ok: true};
+      }}));
     } else body = el('div', {}, [inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
@@ -1096,6 +1138,9 @@ function onPaneClick(ev) {
   // not a stand-in for empty space), and the U is actually free on this
   // face. Otherwise a through panel is clicked like any other panel: it
   // selects the item.
+  // A part beside the rack (zero-u.js) is selected as itself: it is not an item.
+  const zpart = ev.target.closest('[data-zerou-id]');
+  if (zpart) return select({kind: 'zerou', id: zpart.dataset.zerouId});
   const through = ev.target.closest('[data-panel="through"]');
   if (through) {
     const svg = through.closest('svg');
@@ -1341,12 +1386,15 @@ async function bootInner() {
   });
   paintMode();
   showMode();
-  ed = createRackEditor({doc, chassisOf});
+  // The kit's editor, with the site's commands for parts beside the rack and
+  // narrow parts on one rail (zero-u.js); every other batch is the kit's.
+  ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
   ed.on('change', onChange);
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport});
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS,
+                            besides: r => zeroULines(r, chassisOf)});
   S.agentAbort = new AbortController();
   S.agentNative = false;
   setDoc(doc);
