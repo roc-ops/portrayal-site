@@ -944,23 +944,26 @@
   "right": [
    {
     "accepts": [
-     "generic/ring-lug@1"
+     "generic/two-hole-lug-5-8@1"
     ],
     "at": [
-     45,
-     15
+     4.6625,
+     17.8
     ],
-    "bores": [],
+    "bores": [
+     "1",
+     "2"
+    ],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground-1",
-    "interface": "terminal-stud",
+    "id": "ground-screws",
+    "interface": "stud-pair-5-8",
     "kind": "connector",
-    "lift": 4.7,
+    "lift": 3.1,
     "mate": [
-     48.5,
-     24.8
+     16.6,
+     21.8
     ],
     "media": null,
     "mirror": false,
@@ -970,48 +973,10 @@
      "data-group-role": "furniture"
     },
     "rel-pos": 1,
-    "rotate": null,
+    "rotate": 0,
     "turns": [
      0,
-     90,
-     180,
-     270
-    ]
-   },
-   {
-    "accepts": [
-     "generic/ring-lug@1"
-    ],
-    "at": [
-     58,
-     15
-    ],
-    "bores": [],
-    "default": null,
-    "group": "grounding",
-    "group-states": false,
-    "id": "ground-2",
-    "interface": "terminal-stud",
-    "kind": "connector",
-    "lift": 4.7,
-    "mate": [
-     61.5,
-     24.8
-    ],
-    "media": null,
-    "mirror": false,
-    "occupant": null,
-    "occupant-attrs": {
-     "data-group": "grounding",
-     "data-group-role": "furniture"
-    },
-    "rel-pos": 2,
-    "rotate": null,
-    "turns": [
-     0,
-     90,
-     180,
-     270
+     180
     ]
    }
   ],
@@ -1087,6 +1052,17 @@
  "device": "m3000-14xc",
  "gaps": [
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "No held document dimensions the two grounding holes. The hardware installation guide names the screws (two M4) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; the flank figure reads 15.6 to 15.9 apart, and the pair is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a drawing that dimensions the grounding holes, or the accessory lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
    "because": "sources-disagree",
    "blocks": [],
    "kind": "declared",
@@ -1158,8 +1134,7 @@
    "kind": "declared",
    "note": "HIG section 8 says 'there are two locations on the case in which the grounding lug may be fixed' and Figure 22 shows one, on the right flank behind the front face. The second is shown in no figure and no photo in the intake reaches it. Only the documented one is drawn.",
    "scope": [
-    "ground-1",
-    "ground-2"
+    "ground-screws"
    ],
    "wanted": "a photograph or figure of the second designated grounding location",
    "what": "second-grounding-location"
@@ -1236,9 +1211,13 @@
    "confidence": "photo-measured",
    "note": "photo-measured - earth symbol in a circle printed at (430.1, 21.6) at the far right of the faceplate. No connector: the bonding points are on the right flank (HIG section 8); this mark is taken as pointing at them."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "ONE TWO-HOLE LANDING, NOT TWO SCREWS (#830). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws, so the point is common/ground-stud-pair-5-8-m4@1, two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. MEASURED, NOT ASSUMED: HIG Figure 22, the flank elevation section 8 draws, measured on the docling figure (889 x 422 px; the PDF embeds 643 x 318): chassis bar x 51 to 884 px for the 250 mm depth, 3.33 px/mm, y 5 to 149 px for 43.5. The two holes, light on the dark lug plate, centre at 80.1 and 132.6 px, y 77.3, so the holes sit 8.7 and 24.5 mm behind the front face, 15.76 mm apart, centred 16.6 from the front and 21.8 from the top. The same accessory lug, read the same way on THREE DISTINCT DRAWINGS ACROSS SEVEN GUIDES (one 544 x 266 image shared byte for byte by the S9500-22XST, S9501-28SMT, S9510-28DC and S9510-30XC guides as Figure 22, one shared by the M3000-14XC and S9502-16SMT guides, and Figure 15 of the S9511-20CT guide alone), gives 15.6 to 15.9, against about 0.65 mm per pixel of the embedded art: the 5/8 in. two-hole pattern. AXIS: x = 0 is the FRONT on a right view, and the front is the left end of the figure, as on ufispace/s9501-18smt. Formerly two common/ground-lug@1 placements, ground-1 and ground-2, at x 45 and 58 at y 15 (studs 13.0 apart, centred 51.5 from the front)."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws, the pair. The accessory lug is one two-hole lug held by both screws."
   },
   "left": {
    "confidence": "estimated",
@@ -1268,7 +1247,7 @@
   },
   "right": {
    "confidence": "drawing",
-   "note": "drawing-fraction estimates - HIG Fig 22 shows this flank (the timing jacks appear at its left edge, so the front is at the figure's left): two hex vent fields at roughly 0.29-0.44 and 0.67-0.84 of the depth from the front, and the designated grounding location (two tapped holes for the accessory lug, M4 screws) ~37-82 mm behind the front face, drawn as two common/ground-lug holes at x 45/58. The figure's aspect was not verifiable against 250 x 43.5, so all x positions are fractions, not measurements. AXIS: x = 0 is the FRONT on a right view (viewer3d.js convention)."
+   "note": "drawing-fraction estimates - HIG Fig 22 shows this flank (the timing jacks appear at its left edge, so the front is at the figure's left): two hex vent fields at roughly 0.29-0.44 and 0.67-0.84 of the depth from the front, and the designated grounding location (two tapped holes for the accessory lug, M4 screws) just behind the front face, drawn as one M4 pair measured off this figure (provenance ground-pair). The vent positions are fractions of the depth, not measurements. AXIS: x = 0 is the FRONT on a right view (viewer3d.js convention)."
   },
   "sfp-2x2": {
    "confidence": "photo-measured",
@@ -1308,10 +1287,13 @@
  },
  "seat-turns": {
   "right": {
-   "ground-1": {
+   "ground-screws": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-screws/1": {
     "generic/ring-lug@1": 0
    },
-   "ground-2": {
+   "ground-screws/2": {
     "generic/ring-lug@1": 0
    }
   }

@@ -30,6 +30,45 @@
    "description": "Chassis only - what you spec before deciding what goes in it. The 10 slot bays are EMPTY; psus, res, sfbs are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.",
    "kind": "base",
    "source": "derived - built from the group roles rather than from a vendor bundle: every bay whose group is `service` or `management` keeps its seat, every `traffic` bay takes a blank. This vendor publishes no base configuration for this chassis, so the library defines one. Where a vendor DOES publish one, follow it instead and say so here."
+  },
+  "photographed": {
+   "bays": {
+    "fpc0": "juniper/mx2000-lc-adapter@1",
+    "fpc0/mpc": "juniper/mpc2e-3d@3",
+    "fpc0/mpc/mic0": "juniper/mic-3d-4xge-xfp@3",
+    "fpc0/mpc/mic1": "juniper/mic-3d-4xge-xfp@3",
+    "fpc1": "juniper/mx2000-lc-adapter@1",
+    "fpc1/mpc": "juniper/mpc2e-3d@3",
+    "fpc1/mpc/mic0": "juniper/mx-mic-blank@2",
+    "fpc1/mpc/mic1": "juniper/mx-mic-blank@2",
+    "fpc2": "juniper/mx2000-lc-adapter@1",
+    "fpc2/mpc": "juniper/mpc4e-3d-32xge-sfpp@2",
+    "fpc3": "juniper/mx2000-lc-adapter@1",
+    "fpc3/mpc": "juniper/mpc4e-3d-32xge-sfpp@2",
+    "fpc4": "juniper/mx2000-lc-adapter@1",
+    "fpc4/mpc": "juniper/mpc4e-3d-32xge-sfpp@2",
+    "fpc5": "juniper/mx2000-lc-adapter@1",
+    "fpc5/mpc": "juniper/mpc4e-3d-32xge-sfpp@2",
+    "fpc6": "juniper/mx2000-lc-adapter@1",
+    "fpc6/mpc": "juniper/mpc2e-3d@3",
+    "fpc6/mpc/mic0": "juniper/mic-3d-4xge-xfp@3",
+    "fpc6/mpc/mic1": "juniper/mic-3d-2xge-xfp@2",
+    "fpc7": "juniper/mx2000-lc-adapter@1",
+    "fpc7/mpc": "juniper/mpc2e-3d@3",
+    "fpc7/mpc/mic0": "juniper/mx-mic-blank@2",
+    "fpc7/mpc/mic1": "juniper/mx-mic-blank@2",
+    "fpc8": "juniper/mx2000-lc-adapter@1",
+    "fpc8/mpc": "juniper/mpc2e-3d@3",
+    "fpc8/mpc/mic0": "juniper/mic-3d-2xge-xfp@2",
+    "fpc8/mpc/mic1": "juniper/mx-mic-blank@2",
+    "fpc9": "juniper/mx2000-lc-adapter@1",
+    "fpc9/mpc": "juniper/mpc2e-3d@3",
+    "fpc9/mpc/mic0": "juniper/mic-3d-2xge-xfp@2",
+    "fpc9/mpc/mic1": "juniper/mic-3d-2xge-xfp@2"
+   },
+   "description": "The MX2010 as the vendor photographed its front, as far as the photograph identifies the cards. LC7 and LC8 are UNCERTAIN at about 1 px/mm: LC7 may be an MPC-3D-16XGE-SFPP rather than an MPC2E, and LC8's lower MIC a 20GE SFP MIC; they are drawn as an MPC2E with blank MIC windows and a blank lower window rather than as a guess.",
+   "kind": "example",
+   "source": "photo - the Juniper image-library MX2010 front (#261): every lower slot holds an adapter and an MX240-form MPC. LC0 an MPC with two 4-port XFP MICs; LC2 to LC5 the 32x10GE MPC4E (dense SFP+ columns); LC6 a 4-port XFP MIC over a 2-port one; LC8 a 2-port XFP MIC over an 8-SFP MIC; LC9 two 2-port XFP MICs. The carrier of the XFP MICs is drawn as the MPC2E, the base carrier that takes both. LC1 holds a dual-wide 40-port RJ45 MIC, which no bay can seat yet, and LC7 and LC8's 8-SFP MICs are not identifiable at about 1 px/mm, so those windows carry blanks."
   }
  },
  "datasheet": {
@@ -44,7 +83,7 @@
    "scope": [
     "fpcs"
    ],
-   "wanted": "vertical authors for the MX2000 MPC range and the adapter card as its own layer - the photographed unit seats several card types the extraction cannot identify; only a dense 32xSFP+ class card (identified by arrangement, not legend) and the blank exist.",
+   "wanted": "the MICs in the photographed unit's LC7 and LC8 (eight SFP cages each) are not identifiable at about 1 px/mm, and LC1's dual-wide 40-port RJ45 MIC cannot be seated until a module can fill two bays. Since roc-ops/Portrayal#261 the MX240-form MPCs seat here through the adapter card (juniper/mx2000-lc-adapter@1), so the range is the MX960's.",
    "what": "mpc-catalogue"
   },
   {
@@ -143,6 +182,10 @@
   "front": {
    "note": "photo - the studio front photograph at ~1 px/mm vertically and ~1.1 horizontally: craft at y 15, EMI cover to 255, the upper cage (CB-RE0, SFB 0-7, CB-RE1) at y 275 over ~405 mm, the divider, the ten-slot lower cage at y 730 over ~425 mm, the LC 0-9 label strip, and the intake grille at the bottom. Cards are VERTICAL: authored tall with rotated jacks (the ASR-9010 pattern)"
   },
+  "lc-slots": {
+   "confidence": "datasheet",
+   "note": "each LC slot is the line-card adapter's face, 43.18 x 449.8 (1.7 x 17.71 in, the guide's ADC row), on its own width as pitch: ten slots, 431.8 mm, centred on the chassis at x 4.1 (#261). Four readings put the pitch there: the MX2010 front gives 41.36 px between slots against a 379.5 px MPC plate, 43.3 mm on the card's 396.0; the MX2008 front, isotropic at 1.264 px/mm once its flanges are taken as the 19 in, gives 54.7 px, 43.3 mm; the MX2020 front gives 31.9 px at 0.744 px/mm, 43.4 mm. Until #261 the slots were an estimated 41.0 x 425.0 on a 41.0 pitch, which no adapter fits. The native MX2K cards and the blank keep their estimated 41 x 425 and are centred in the wider slot. Down: the slot is centred on the photograph's adapters, whose frame and handle blocks run 724 to 1163 px (729 to 1177 mm on the chassis scale, 0.981 px/mm from a 1483 px height): y 728.1. The divider above now ends at 728.1 and the LC label strip, its legends and the cover below move down to clear it, the strip at 1179.0 as the photograph has it (1181 to 1204)."
+  },
   "other-faces": {
    "note": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings"
   },
@@ -166,7 +209,7 @@
    "title": "Juniper MX2010 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "0.3.2",
+ "version": "1.0.0",
  "views": {
   "bottom": {
    "panel": {
@@ -401,17 +444,7 @@
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -419,31 +452,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       15.0,
-       730.0
+       4.1,
+       728.1
       ],
-      "default": "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
+      "default": "juniper/mx2000-lc-adapter@1",
       "group": "fpcs",
       "id": "fpc0",
       "rel-pos": 0,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -451,31 +474,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       56.0,
-       730.0
+       47.28,
+       728.1
       ],
       "default": "juniper/mx2000-mpc-blank-v@1",
       "group": "fpcs",
       "id": "fpc1",
       "rel-pos": 1,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -483,31 +496,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       97.0,
-       730.0
+       90.46,
+       728.1
       ],
-      "default": "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
+      "default": "juniper/mx2000-lc-adapter@1",
       "group": "fpcs",
       "id": "fpc2",
       "rel-pos": 2,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -515,31 +518,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       138.0,
-       730.0
+       133.64,
+       728.1
       ],
       "default": "juniper/mx2000-mpc-blank-v@1",
       "group": "fpcs",
       "id": "fpc3",
       "rel-pos": 3,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -547,31 +540,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       179.0,
-       730.0
+       176.82,
+       728.1
       ],
-      "default": "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
+      "default": "juniper/mx2000-lc-adapter@1",
       "group": "fpcs",
       "id": "fpc4",
       "rel-pos": 4,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -580,30 +563,20 @@
       ],
       "at": [
        220.0,
-       730.0
+       728.1
       ],
       "default": "juniper/mx2000-mpc-blank-v@1",
       "group": "fpcs",
       "id": "fpc5",
       "rel-pos": 5,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -611,31 +584,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       261.0,
-       730.0
+       263.18,
+       728.1
       ],
-      "default": "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
+      "default": "juniper/mx2000-lc-adapter@1",
       "group": "fpcs",
       "id": "fpc6",
       "rel-pos": 6,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -643,31 +606,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       302.0,
-       730.0
+       306.36,
+       728.1
       ],
       "default": "juniper/mx2000-mpc-blank-v@1",
       "group": "fpcs",
       "id": "fpc7",
       "rel-pos": 7,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -675,31 +628,21 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       343.0,
-       730.0
+       349.54,
+       728.1
       ],
-      "default": "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
+      "default": "juniper/mx2000-lc-adapter@1",
       "group": "fpcs",
       "id": "fpc8",
       "rel-pos": 8,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      },
      {
       "accepts": [
-       "juniper/mpc-3d-16xge-sfpp-v2k@1",
-       "juniper/mpc1e-3d-v2k@1",
-       "juniper/mpc2e-3d-v2k@1",
-       "juniper/mpc3e-3d-v2k@1",
-       "juniper/mpc4e-3d-2cge-8xge-v2k@1",
-       "juniper/mpc4e-3d-32xge-sfpp-v2k@1",
-       "juniper/mpc5e-100g10g-v2k@1",
-       "juniper/mpc5e-40g10g-v2k@1",
-       "juniper/mpc7e-10g-v2k@1",
-       "juniper/mpc7e-mrate-v2k@1",
-       "juniper/ms-mpc-v2k@1",
+       "juniper/mx2000-lc-adapter@1",
        "juniper/mx2k-mpc11e-v2k@1",
        "juniper/mx2k-mpc6e-v2k@1",
        "juniper/mx2k-mpc8e-v2k@1",
@@ -707,16 +650,16 @@
        "juniper/mx2000-mpc-blank-v@1"
       ],
       "at": [
-       384.0,
-       730.0
+       392.72,
+       728.1
       ],
       "default": "juniper/mx2000-mpc-blank-v@1",
       "group": "fpcs",
       "id": "fpc9",
       "rel-pos": 9,
       "size": {
-       "h": 425.0,
-       "w": 41.0
+       "h": 449.8,
+       "w": 43.18
       }
      }
     ]
@@ -753,13 +696,13 @@
       "fill": "#4a4f55",
       "size": [
        440.0,
-       48.0
+       46.1
       ]
      },
      {
       "at": [
        0.0,
-       1157.0
+       1179.0
       ],
       "fill": "#4a4f55",
       "size": [
@@ -770,12 +713,12 @@
      {
       "at": [
        0.0,
-       1185.0
+       1206.0
       ],
       "fill": "#565b61",
       "size": [
        440.0,
-       165.0
+       144.0
       ]
      },
      {
@@ -797,7 +740,7 @@
      "anchor": "middle",
      "at": [
       14.0,
-      1175.0
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -807,8 +750,8 @@
     {
      "anchor": "middle",
      "at": [
-      35.5,
-      1175.0
+      25.69,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -818,8 +761,8 @@
     {
      "anchor": "middle",
      "at": [
-      76.5,
-      1175.0
+      68.87,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -829,8 +772,8 @@
     {
      "anchor": "middle",
      "at": [
-      117.5,
-      1175.0
+      112.05,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -840,8 +783,8 @@
     {
      "anchor": "middle",
      "at": [
-      158.5,
-      1175.0
+      155.23,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -851,8 +794,8 @@
     {
      "anchor": "middle",
      "at": [
-      199.5,
-      1175.0
+      198.41,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -862,8 +805,8 @@
     {
      "anchor": "middle",
      "at": [
-      240.5,
-      1175.0
+      241.59,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -873,8 +816,8 @@
     {
      "anchor": "middle",
      "at": [
-      281.5,
-      1175.0
+      284.77,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -884,8 +827,8 @@
     {
      "anchor": "middle",
      "at": [
-      322.5,
-      1175.0
+      327.95,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -895,8 +838,8 @@
     {
      "anchor": "middle",
      "at": [
-      363.5,
-      1175.0
+      371.13,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,
@@ -906,8 +849,8 @@
     {
      "anchor": "middle",
      "at": [
-      404.5,
-      1175.0
+      414.31,
+      1197.0
      ],
      "fill": "#e8eaec",
      "font-size": 2.6,

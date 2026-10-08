@@ -1497,23 +1497,26 @@
   "right": [
    {
     "accepts": [
-     "generic/ring-lug@1"
+     "generic/two-hole-lug-5-8@1"
     ],
     "at": [
-     22,
-     14.5
+     4.2625,
+     18
     ],
-    "bores": [],
+    "bores": [
+     "1",
+     "2"
+    ],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground-1",
-    "interface": "terminal-stud",
+    "id": "ground-screws",
+    "interface": "stud-pair-5-8",
     "kind": "connector",
-    "lift": 4.7,
+    "lift": 3.1,
     "mate": [
-     25.5,
-     24.3
+     16.2,
+     22.0
     ],
     "media": null,
     "mirror": false,
@@ -1523,48 +1526,10 @@
      "data-group-role": "furniture"
     },
     "rel-pos": 1,
-    "rotate": null,
+    "rotate": 0,
     "turns": [
      0,
-     90,
-     180,
-     270
-    ]
-   },
-   {
-    "accepts": [
-     "generic/ring-lug@1"
-    ],
-    "at": [
-     33,
-     14.5
-    ],
-    "bores": [],
-    "default": null,
-    "group": "grounding",
-    "group-states": false,
-    "id": "ground-2",
-    "interface": "terminal-stud",
-    "kind": "connector",
-    "lift": 4.7,
-    "mate": [
-     36.5,
-     24.3
-    ],
-    "media": null,
-    "mirror": false,
-    "occupant": null,
-    "occupant-attrs": {
-     "data-group": "grounding",
-     "data-group-role": "furniture"
-    },
-    "rel-pos": 2,
-    "rotate": null,
-    "turns": [
-     0,
-     90,
-     180,
-     270
+     180
     ]
    }
   ],
@@ -1640,6 +1605,17 @@
  "device": "s9501-28smt",
  "gaps": [
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "No held document dimensions the two grounding holes. The hardware installation guide names the screws (two M4) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; the flank figure reads 15.6 to 15.9 apart, and the pair is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a drawing that dimensions the grounding holes, or the accessory lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
    "because": "sources-disagree",
    "blocks": [],
    "kind": "declared",
@@ -1690,15 +1666,14 @@
    "what": "port-led-semantics"
   },
   {
-   "because": "needs-photo",
+   "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "HIG section 8 says 'there are two locations on the case in which the grounding lug may be fixed' and the Figure 5 inset shows one, on the right flank just behind the front face. The second is named in no figure and reached by no photograph in the intake. Two lug positions are drawn side by side at that one documented location because the accessory lug takes two M4 screws; that is the mounting, not the second location.",
+   "note": "HIG section 8 says 'there are two locations on the case in which the grounding lug may be fixed', and Figure 22 draws both on one unlabelled flank: Location-1 just behind the front face, drawn here as one M4 pair, and Location-2 about 194 and 209 mm behind it, which is not drawn yet. Which flank the figure shows is not stated; the right is taken from the Figure 5 inset.",
    "scope": [
-    "ground-1",
-    "ground-2"
+    "ground-screws"
    ],
-   "wanted": "a photograph or figure showing the second designated grounding location",
+   "wanted": "a photograph of the real unit flanks, or a figure captioned with the side",
    "what": "second-grounding-location"
   },
   {
@@ -1772,9 +1747,13 @@
   "ground-mark": {
    "note": "figure-measured - the earth symbol is printed at the extreme right of the faceplate, x 432.7-438.7, centred y 21.9. It is a mark, not a connector: the bonding points are on the flank (HIG section 8), and this symbol is taken as pointing at them."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "ONE TWO-HOLE LANDING, NOT TWO SCREWS (#830). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws, so the point is common/ground-stud-pair-5-8-m4@1, two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. MEASURED, NOT ASSUMED: HIG Figure 22, the flank elevation section 8 draws for this chassis, measured on the docling figure (910 x 446 px, an upsample of the 544 x 266 px image the PDF embeds): chassis bar x 76.5 to 843 px for the 302 mm depth, 2.54 px/mm, and 111 px for the 43.5 mm height. The two M4 holes of Location-1 centre at 97.6 and 137.6 px, y 121 px, so the holes sit 8.3 and 24.1 mm behind the front face, 15.76 mm apart, centred 16.2 from the front and 22 from the top. The same accessory lug, read the same way on THREE DISTINCT DRAWINGS ACROSS SEVEN GUIDES (one 544 x 266 image shared byte for byte by the S9500-22XST, S9501-28SMT, S9510-28DC and S9510-30XC guides as Figure 22, one shared by the M3000-14XC and S9502-16SMT guides, and Figure 15 of the S9511-20CT guide alone), gives 15.6 to 15.9, against about 0.65 mm per pixel of the embedded art: the 5/8 in. two-hole pattern. AXIS: x = 0 is the FRONT on a right view, and the front is the left end of the figure, as on ufispace/s9501-18smt. Formerly two common/ground-lug@1 placements, ground-1 and ground-2, at x 22 and 33 at y 14.5 (studs 11.0 apart, centred 27.5 from the front)."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws, the pair. The accessory lug is one two-hole lug held by both screws."
   },
   "left": {
    "confidence": "estimated",
@@ -1809,7 +1788,7 @@
   },
   "right": {
    "confidence": "drawing",
-   "note": "drawing-fraction estimates - the Fig 5 grounding-lug inset shows this flank with the lug bolted to two tapped holes just behind the front face, between the PSU bay opening and the front edge; Fig 10 shows the bracket holes along the same flank. The inset is a perspective vignette with no scale, so the two lug positions are fractions of the depth, not measurements. AXIS: x = 0 is the FRONT on a right view (viewer3d.js convention). The HIG says there are TWO designated locations and shows one - see the second-grounding-location gap."
+   "note": "drawing-fraction estimates - the Fig 5 grounding-lug inset shows this flank with the lug bolted to two tapped holes just behind the front face, between the PSU bay opening and the front edge; Fig 10 shows the bracket holes along the same flank. The inset is a perspective vignette with no scale; the landing is measured instead off the Figure 22 flank elevation (provenance ground-pair). AXIS: x = 0 is the FRONT on a right view (viewer3d.js convention). The HIG says there are TWO designated locations and Figure 22 draws both; only Location-1 is drawn here - see the second-grounding-location gap."
   },
   "rj45-ports": {
    "note": "figure-measured - ports 0-3 are a 2 x 2 ganged block in one white shell, x 209.1-240.4. Aperture columns measured 211.56-223.5 and 225.56-237.49 (centres 217.53 and 231.53, a 14.0 mm pitch); aperture rows 10.78-19.95 and 24.34-33.92 (centres 15.37 and 29.13, a 13.76 mm pitch). Both pitches are under 16 mm, so these are std/rj45-ganged as well. NUMBERING RUNS DOWN THE COLUMNS - 0 over 1, 2 over 3 - which is the vendor's own print, read off both front figures; the HIG port table's '0 ~ 3 RJ45 100M/1G' confirms only the range. Each jack carries a green lamp on its outer-left corner and an amber one on its outer-right; the top row's lamps are above the aperture and the bottom row's below, mirrored with the jacks (colour-detected at y 11.17-12.37 and 31.93-33.12)."
@@ -1841,10 +1820,13 @@
  },
  "seat-turns": {
   "right": {
-   "ground-1": {
+   "ground-screws": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-screws/1": {
     "generic/ring-lug@1": 0
    },
-   "ground-2": {
+   "ground-screws/2": {
     "generic/ring-lug@1": 0
    }
   }
