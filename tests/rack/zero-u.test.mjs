@@ -326,3 +326,25 @@ test('a narrow part names its rail in the kit\'s note and DCIM comment', async (
   assert.equal(railComment('0U cable manager on the front rail face at U20; NetBox has no field for that.', it, chassisOf),
     '0U cable manager on the front rail face at U20, left rail; NetBox has no field for that.');
 });
+
+// Kit 0.4.0's editor takes a per-call ctx (the parts lists loadSlots reads):
+// through this wrapper it reaches the kit's own check, on a kit batch and on a
+// site batch that carries a kit command, and is kept nowhere after the call.
+test('the editor: kit 0.4.0 checks a fit against the per-call parts lists, through either path', () => {
+  const SW = 'as7726-32x';
+  const slots = {bays: {front: [], rear: []}, cages: {front: [{id: 'port-1', interface: 'qsfp28', accepts: ['generic/qsfp-lc@2'], default: null}], rear: []},
+                 configs: [{name: chassisOf(SW).default, bays: {}, occupants: {}}], default: chassisOf(SW).default};
+  const parts = {slotsOf: ref => (ref === SW ? slots : null), compByRef: () => null};
+  const doc = {...newDoc({kind: 'two-post'}), racks: [rackOf('two-post', 45)]};
+  const ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
+  assert.ok(!ed.apply({op: 'place', ref: SW, face: 'front', ru: 10}).error);
+  const bad = {op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/sfp-lr@1'};
+  assert.match(ed.apply(bad, {origin: 'agent', ctx: parts}).error, /port-1 does not take generic\/sfp-lr@1/);
+  assert.match(ed.preview(bad, {ctx: parts}).error, /does not take/);
+  // a site batch with a kit command in it: the same check, through applySite
+  const mixed = [{op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}, bad];
+  assert.match(ed.apply(mixed, {origin: 'agent', ctx: parts}).error, /does not take/);
+  assert.match(ed.preview(mixed, {ctx: parts}).error, /does not take/);
+  // no ctx: unchecked, as the page's own calls always were
+  assert.equal(ed.preview(bad).error, undefined);
+});
