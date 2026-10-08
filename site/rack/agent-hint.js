@@ -11,19 +11,29 @@
 // how to connect.
 
 export const CONNECT = 'open the Connect your AI menu (#agentMenu) in the bar above the rack and tick "Let my desktop AI use this page"';
+// How a call is made, as the page's WebMCP takes it: the MCP-B polyfill that
+// Connect your AI loads (vendor/mcp-b/global.js), like Chromium's own testing
+// call, takes the tool OBJECT from getTools() and its arguments as a JSON
+// STRING, and answers with a JSON string. An object argument is refused
+// ("Failed to parse input arguments"). HOW_TO is a snippet that runs as written
+// (check-browser.py runs it against the vendored polyfill).
 export const HOW_TO = "const mc = document.modelContext ?? navigator.modelContext; " +
-  "const t = (await mc.getTools()).find(t => t.name === 'describe_rack'); await mc.executeTool(t, {}). " +
-  "executeTool takes the tool object from getTools(), not its name. Results are {content: [{type: 'text', text}]}.";
+  "const t = (await mc.getTools()).find(t => t.name === 'describe_rack'); " +
+  "const result = JSON.parse(await mc.executeTool(t, JSON.stringify({}))); result.content[0].text";
+export const CALLING = 'executeTool takes the tool object from getTools(), not its name, and the arguments as a JSON string ' +
+  "(JSON.stringify(args)); it answers with a JSON string: JSON.parse it to get {content: [{type: 'text', text}], isError?}.";
+const CALL = 'await document.modelContext.executeTool(tool, JSON.stringify(args))';
 
 // The paragraph, for tools registered (`names`) or not yet ([]).
 export function hintText(names) {
   if (names.length)
     return 'This page has tools for AI agents: use them rather than clicking the page. ' +
-      'Call document.modelContext.executeTool(tool, args), with the tool object from await document.modelContext.getTools(). ' +
+      `Call ${CALL}, with the tool object from await document.modelContext.getTools(); ` +
+      'it answers with a JSON string, which JSON.parse turns into {content: [...]}. ' +
       `The tools are: ${names.join(', ')}. Start with describe_rack.`;
   return 'This page has tools for AI agents, not yet registered in this browser: ' +
-    `${CONNECT}, then call document.modelContext.executeTool(tool, args) with a tool from getTools(). ` +
-    'The JSON block #webmcp-hint says how.';
+    `${CONNECT}, then call ${CALL} with a tool from getTools(), and JSON.parse the string it answers. ` +
+    'The JSON block #webmcp-hint has a snippet that runs as written.';
 }
 
 // Writes both: the JSON block's `registered` and `tools`, and the paragraph.
@@ -33,7 +43,7 @@ export function writeHint(doc, names = []) {
   let hint;
   try { hint = JSON.parse(el.textContent); } catch { return false; }
   const list = [...names];
-  el.textContent = JSON.stringify({...hint, registered: list.length > 0, tools: list,
+  el.textContent = JSON.stringify({...hint, howTo: HOW_TO, calling: CALLING, registered: list.length > 0, tools: list,
     ...(list.length ? {connect: undefined} : {connect: `Not registered yet: ${CONNECT}.`})});
   const p = doc.getElementById?.('webmcp-hint-text');
   if (p) p.textContent = hintText(list);

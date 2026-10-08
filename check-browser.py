@@ -8685,17 +8685,39 @@ def relay_connect_asserts(page):
 # as the MCP-B polyfill to the relay switch (site/agent/relay.js).
 STAND_IN_WITH_EXECUTE = STAND_IN_MODEL_CONTEXT + """
 mc.getTools = async () => Object.values(window.__tools);
-mc.executeTool = async (t, a) => t.execute(a);
+// As the MCP-B polyfill (vendor/mcp-b/global.js 5.1.0) and Chromium's testing
+// call do: the arguments come as a JSON string, an object is refused, and the
+// answer goes back as a JSON string. A caller that passes an object fails here
+// as it fails in the real page.
+mc.executeTool = async (t, input) => {
+  let a;
+  try { a = JSON.parse(input); } catch { a = null; }
+  if (typeof input !== 'string' || !a || typeof a !== 'object')
+    throw new DOMException('Failed to parse input arguments', 'UnknownError');
+  return JSON.stringify(await t.execute(a));
+};
 """
 
 
 def agent_exec(page, name, args):
-    """A tool called as the page hint says: found in getTools(), run with executeTool(tool, args)."""
+    """A tool called as the page hint says: found in getTools(), run with
+    executeTool(tool, JSON.stringify(args)), its JSON string answer parsed."""
     return page.evaluate("""async ([n, a]) => {
       const mc = document.modelContext ?? navigator.modelContext;
       const t = (await mc.getTools()).find(t => t.name === n);
-      return mc.executeTool(t, a);
+      return JSON.parse(await mc.executeTool(t, JSON.stringify(a)));
     }""", [name, args])
+
+
+# THE PAGE HINT'S SNIPPET, RUN AS WRITTEN: #webmcp-hint's howTo, its last
+# expression returned. Answers [text, error].
+RUN_HOW_TO = """async () => {
+  const howTo = JSON.parse(document.getElementById('webmcp-hint').textContent).howTo;
+  const cut = howTo.lastIndexOf('; ');
+  const body = `${howTo.slice(0, cut + 2)}return ${howTo.slice(cut + 2)};`;
+  try { return [await new (Object.getPrototypeOf(async () => {}).constructor)(body)(), null]; }
+  catch (e) { return [null, String(e)]; }
+}"""
 
 
 def inspect_all(page, args):
@@ -8731,6 +8753,14 @@ def check_rack_agent_tools_2(page, base):
     if "executeTool" not in hint_p or f"The tools are: {', '.join(page.evaluate('() => Object.keys(window.__tools)'))}." not in hint_p \
             or not hint.get("registered"):
         bad.append(f"agent2: the hint paragraph does not name the registered tools and how to call them: {hint_p!r}, {hint}")
+    text, err = page.evaluate(RUN_HOW_TO)
+    if err or not re.match(r".+ \(r\d+\): \d+ items?, \d+ cables?\.", text or ""):
+        bad.append(f"agent2: the hint's own snippet answered {text!r}, {err}")
+    obj = page.evaluate("""async () => { const mc = document.modelContext;
+      const t = (await mc.getTools()).find(t => t.name === 'describe_rack');
+      try { await mc.executeTool(t, {}); return 'took an object'; } catch (e) { return String(e); } }""")
+    if "Failed to parse input arguments" not in obj:
+        bad.append(f"agent2: the stand-in took an object argument: {obj}")
     first = page.evaluate("() => [document.body.firstElementChild?.id, document.body.getAttribute('aria-describedby')]")
     if first != ["webmcp-hint-text", "webmcp-hint-text"]:
         bad.append(f"agent2: the hint is not the body's first element and its description: {first}")
@@ -8797,11 +8827,13 @@ def check_rack_agent_tools_2(page, base):
     if repointed.get("isError") or doc("r.cables.find(c => c.id === 'c1')?.b.path") != fresh[0]["path"]:
         bad.append(f"agent2: re-pointing c1 answered {repointed}")
     # A hand route through a waypoint the rack lacks is refused, with what exists
+    route_before = doc("JSON.stringify(r.cables.find(c => c.id === 'c1')?.route ?? null)")
     for way, want in [({"item": "i1", "via": "guide-9"}, "has no"), ({"lane": "middle", "ru": 20}, "no gutter called middle")]:
         routed = agent_exec(page, "edit_rack", {"commands": [{"op": "cable.route", "id": "c1", "route": [way]}]})
         if not routed.get("isError") or want not in said(routed):
             bad.append(f"agent2: a route through {way} answered {routed}")
-    if doc("r.cables.find(c => c.id === 'c1')?.routeEdited === true"):
+    if doc("JSON.stringify(r.cables.find(c => c.id === 'c1')?.route ?? null)") != route_before \
+            or doc("r.cables.find(c => c.id === 'c1')?.routeEdited === true"):
         bad.append("agent2: a refused route still changed c1")
     # The cables on a device, removed by selector
     agent_exec(page, "edit_rack", {"commands": [{"op": "cable.add", "a": end("i1", sw[1]), "b": end("i2", fresh[1])}]})
@@ -8843,6 +8875,18 @@ def check_rack_agent_relay(page, base):
                 f"() => JSON.parse(document.getElementById('webmcp-hint').textContent).tools.length === {len(AGENT_TOOLS)}")
     except RuntimeError as e:
         bad.append(str(e))
+    else:
+        # The hint's snippet, as written, against the REAL vendored polyfill
+        # (vendor/mcp-b/global.js) that the switch loaded: a parseable answer.
+        text, err = page.evaluate(RUN_HOW_TO)
+        if err or not re.match(r".+ \(r\d+\): \d+ items?, \d+ cables?\.", text or ""):
+            bad.append(f"relay: the page hint's snippet, run against the polyfill, answered {text!r}, {err}")
+        # and the call the hint used to give, an object argument, is the one the polyfill refuses
+        obj = page.evaluate("""async () => { const mc = document.modelContext;
+          const t = (await mc.getTools()).find(t => t.name === 'describe_rack');
+          try { await mc.executeTool(t, {}); return 'took an object'; } catch (e) { return String(e); } }""")
+        if "Failed to parse input arguments" not in obj:
+            bad.append(f"relay: the polyfill's executeTool took an object, so the hint's JSON-string advice needs another look: {obj}")
     try:
         wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
     except RuntimeError:

@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {writeHint, hintText, CONNECT} from '../../site/rack/agent-hint.js';
+import {writeHint, hintText, CONNECT, HOW_TO, CALLING} from '../../site/rack/agent-hint.js';
 
 const page = (json = '{"webmcp": true, "howTo": "x", "tools": []}') => {
   const els = {'webmcp-hint': {textContent: json}, 'webmcp-hint-text': {textContent: ''}};
@@ -20,8 +20,11 @@ test('writeHint names the tools once registered, and until then says how to conn
   assert.equal(writeHint(doc, ['describe_rack', 'inspect']), true);
   j = JSON.parse(els['webmcp-hint'].textContent);
   assert.deepEqual([j.registered, j.tools, 'connect' in j], [true, ['describe_rack', 'inspect'], false]);
-  assert.match(els['webmcp-hint-text'].textContent,
-    /^This page has tools for AI agents: use them rather than clicking the page\. Call document\.modelContext\.executeTool\(tool, args\), with the tool object from await document\.modelContext\.getTools\(\)\. The tools are: describe_rack, inspect\. Start with describe_rack\.$/);
+  assert.equal(els['webmcp-hint-text'].textContent,
+    'This page has tools for AI agents: use them rather than clicking the page. ' +
+    'Call await document.modelContext.executeTool(tool, JSON.stringify(args)), with the tool object from await document.modelContext.getTools(); ' +
+    'it answers with a JSON string, which JSON.parse turns into {content: [...]}. The tools are: describe_rack, inspect. Start with describe_rack.');
+  assert.deepEqual([j.howTo, j.calling], [HOW_TO, CALLING]);
   assert.equal(writeHint({getElementById: () => null}, ['a']), false);
   assert.equal(writeHint({getElementById: () => ({textContent: 'not json'})}, ['a']), false);
 });
@@ -31,7 +34,7 @@ test('rack.html opens its body with the hint, as the body\'s description, saying
   const body = html.slice(html.indexOf('<body'));
   assert.match(body, /^<body class="tool" aria-describedby="webmcp-hint-text">\n/);
   // nothing visible comes before it: the paragraph and the JSON are the body's first elements
-  const first = body.split('\n').slice(1).filter(l => l.trim() && !l.trim().startsWith('<!--')).slice(0, 2);
+  const first = body.split('\n').slice(1, 3);
   assert.match(first[0], /^<p class="rk-vh" id="webmcp-hint-text">/);
   assert.match(first[1], /^<script type="application\/json" id="webmcp-hint">/);
   const p = /<p class="rk-vh" id="webmcp-hint-text">([^<]*)<\/p>/.exec(html)[1].replaceAll('&quot;', '"');
@@ -39,8 +42,10 @@ test('rack.html opens its body with the hint, as the body\'s description, saying
   const j = JSON.parse(/<script type="application\/json" id="webmcp-hint">([\s\S]*?)<\/script>/.exec(html)[1]);
   assert.deepEqual([j.webmcp, j.registered, j.tools], [true, false, []]);
   assert.equal(j.connect, `Not registered yet: ${CONNECT}.`);
-  assert.match(j.howTo, /document\.modelContext \?\? navigator\.modelContext/);
-  assert.match(j.howTo, /await mc\.executeTool\(t, \{\}\)/);
-  assert.match(j.howTo, /not its name/);
+  assert.deepEqual([j.howTo, j.calling], [HOW_TO, CALLING]);
+  // the polyfill's call: the arguments as a JSON string, the answer a JSON string
+  assert.match(j.howTo, /await mc\.executeTool\(t, JSON\.stringify\(\{\}\)\)/);
+  assert.match(j.howTo, /JSON\.parse\(await mc\.executeTool/);
+  assert.doesNotMatch(`${j.howTo} ${p}`, /executeTool\((?:t|tool), (?:\{\}|args)\)/);
   assert.match(html, /id="agentMenu"/);   // the menu the hint points at
 });
