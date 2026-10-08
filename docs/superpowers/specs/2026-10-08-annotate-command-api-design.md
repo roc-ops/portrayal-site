@@ -1,7 +1,7 @@
 # Annotate command API
 
 **Date:** 2026-10-08
-**Status:** design approved in conversation; spec awaiting review
+**Status:** implemented (plan: docs/superpowers/plans/2026-10-08-annotate-command-api.md)
 **Piece:** 4a of the Rack Builder kit move (see `2026-10-07-rack-command-core-design.md` §1). Piece 4b, the Explorer API, gets its own spec.
 **Builds on:** the Rack Builder command core (#132), whose generic `history.js` and `validate.js` this reuses; the rack kit move (roc-ops/Portrayal#896 and its site half), which vendors them to `vendor/rack/`.
 

@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - **Sequencing.** Task 1 (upstream) can start at once. Tasks 2-4 import `vendor/rack/history.js` and `vendor/rack/validate.js`, so they **start only once the rack kit move's site half has landed on `origin/main`**, meaning `vendor/rack/validate.js` exists there. The 0RU session ("0RU device support and cable management") messages the Refactor agent when it lands. Rebase `claude/annotate-command-api` onto `origin/main` first.
+- **Plan change (agreed before Tasks 2-4 started):** the rack kit move's site half (#136) had not landed, so `vendor/rack/` did not exist on the site. Tasks 2-4 import `site/rack/history.js` and `site/rack/validate.js` instead; #136 repoints those imports in `site/annotate/` along with the rest. Read `vendor/rack/` below as `site/rack/` until then.
 - **Pure means pure.** `site/annotate/commands.js`, `describe.js` and `editor.js` have no DOM, no `fetch` and no `localStorage`. They import only `../../vendor/marks.js` (for `normalise`), `../../vendor/rack/validate.js`, `../../vendor/rack/history.js` and each other.
 - **Spelling.** Comments in `site/annotate/*.js` use British spelling (they become kit code later). Page copy, refusal sentences, tests, checks and commit messages use American spelling. Upstream (roc-ops/Portrayal) is British throughout: its schema descriptions, tests, changelog and PR.
 - **Sentences.** Every refusal is a plain-English sentence. `lamp.state`'s and `lamp.color`'s effects match today's `setState`, `setLamp` and `clearLamp` in `annotate.html` exactly.
