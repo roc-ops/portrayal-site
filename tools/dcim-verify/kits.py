@@ -65,7 +65,7 @@ OWN_CELLS = {'1-rack.csv': ['site', 'name'], '2-devices.csv': ['name', 'role', '
              '4-cables.csv': ['side_a_device', 'side_b_device', 'label'],
              '1-devices.csv': ['name', 'role__name', 'location__name', 'rack__name', 'rack__location__name'],
              '2-modules.csv': ['parent_module_bay__parent_device__name'], '3-cables.csv': ['a_device', 'b_device', 'label']}
-# The exact header row of each CSV, per target (site/rack/export-data.js and dcim-rules.js write them). A file
+# The exact header row of each CSV, per target (vendor/rack/export-data.js and dcim-rules.js write them). A file
 # with any other column is not the Rack Builder's, and is not sent.
 HEADERS = {
     'netbox': {

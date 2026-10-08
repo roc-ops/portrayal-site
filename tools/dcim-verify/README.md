@@ -127,7 +127,7 @@ absent from the instance.
 
 ### The boundary values
 
-`acceptance.rack.json` carries the values DCIM_LIMITS (`site/rack/export-data.js`) screens
+`acceptance.rack.json` carries the values DCIM_LIMITS (`vendor/rack/export-data.js`) screens
 at, each exactly AT its limit, which the kit keeps: a device `pt-verify-boundary-name-64-…`
 whose final name is 64 characters (the kit prefixes manufacturer and type names, never a
 device's, so the `pt-verify-` is part of the rack's own label and counts toward the 64); a
