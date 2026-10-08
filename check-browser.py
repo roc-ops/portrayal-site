@@ -6276,6 +6276,123 @@ def check_3d_context_loss(page, base):
     return bad
 
 
+# A GLB PRESSED BEFORE THE SCENE HAS BUILT IS NOT A GLB OF THE DEVICE
+# (portrayal-site#111). The viewer exports the scene as it stands, so a press
+# straight after switching to 3D saved a 112-byte file with no geometry and
+# called it "0.1 KB". Pressed here the moment the button exists, without
+# waiting: no file may arrive until the scene is up, and every file that does
+# arrive is the model. Then the same during a config rebuild, and an export with
+# no meshes must say it failed rather than save.
+GLB_EARLY_MIN_BYTES = 4096
+
+
+@extra("3D: Download GLB pressed before the scene has built saves nothing, and an empty export says it failed")
+def check_3d_download_waits_for_scene(page, base):
+    bad, got = [], []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("download", lambda d: got.append(d))
+
+    def sizes():
+        return [pathlib.Path(d.path()).stat().st_size for d in got]
+
+    glb = '#glx button[data-fmt="glb"]'
+    ready_js = (f"() => document.querySelector('{glb}') && !document.querySelector('{glb}').disabled"
+                " && document.querySelector('#status').textContent === ''")
+
+    def until(expr, what, timeout=READY_3D_MS):
+        try:
+            page.wait_for_function(expr, timeout=timeout)
+            return True
+        except Exception:
+            st = page.evaluate(f"""() => ({{status: document.querySelector('#status')?.textContent,
+              msg: document.querySelector('#glx .msg')?.textContent,
+              disabled: document.querySelector('{glb}')?.disabled,
+              ready: document.querySelector('#glx')?.dataset.ready,
+              cfg: document.querySelector('#cfg')?.value}})""")
+            bad.append(f"timed out waiting for {what} - {st}")
+            return False
+
+    page.goto(f"{base}/explorer.html?device=s9510-28dc&config=dc&debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_3d_download_waits_for_scene] no WebGL here - nothing to export")
+        return bad
+    # The press is made from the page itself, on the first frame the button is
+    # in the DOM - a Playwright click would wait for it to be enabled, which is
+    # exactly the wait this check must not do.
+    page.evaluate("""() => new Promise(done => {
+      const press = () => {
+        const b = document.querySelector('#glx button[data-fmt="glb"]');
+        if (!b) return requestAnimationFrame(press);
+        b.click();
+        done();
+      };
+      press();
+      document.querySelector('#mode [data-mode="3d"]').click();
+    })""")
+    page.wait_for_timeout(3000)
+    early = [n for n in sizes() if n < GLB_EARLY_MIN_BYTES]
+    if early:
+        msg = page.text_content("#glx .msg")
+        return bad + [f"early press: saved a {early[0]}-byte file before the scene had built (status {msg!r})"]
+    if not until(ready_js, "the scene to come up"):
+        return bad
+    page.wait_for_timeout(500)
+    if got:
+        bad.append(f"early press: a file arrived after the scene was up, from a press made before it - {sizes()}")
+    got.clear()
+
+    # Ready: the same button gives the model.
+    with page.expect_download(timeout=READY_3D_MS) as dl:
+        page.click(glb)
+    n = pathlib.Path(dl.value.path()).stat().st_size
+    if not until("() => !/building GLB/.test(document.querySelector('#glx .msg').textContent)", "the GLB to finish"):
+        return bad
+    if n < GLB_EARLY_MIN_BYTES:
+        bad.append(f"ready press: the GLB is {n} bytes")
+    got.clear()
+
+    # A rebuild for another config turns the buttons off at once, and a press
+    # made as it starts saves nothing.
+    page.evaluate("""() => {
+      const b = document.querySelector('#glx button[data-fmt="glb"]');
+      window.__offs = 0;
+      new MutationObserver(() => { if (b.disabled) window.__offs++; })
+        .observe(b, {attributes: true, attributeFilter: ['disabled']});
+      const sel = document.querySelector('#cfg');
+      sel.value = 'ac';
+      sel.dispatchEvent(new Event('change', {bubbles: true}));
+      b.click();
+    }""")
+    page.wait_for_timeout(1500)
+    # (the status line is not a signal here: after a config change it holds the
+    # drawing's own note, "2 bays")
+    if not until(f"() => !document.querySelector('{glb}').disabled", "the rebuild for config ac"):
+        return bad
+    page.wait_for_timeout(500)
+    if not page.evaluate("() => window.__offs"):
+        bad.append("rebuild: the Download buttons stayed on while the scene rebuilt for another config")
+    if got:
+        bad.append(f"rebuild: a press as the rebuild started saved a file - {sizes()}")
+    got.clear()
+
+    # An export with no meshes is a failure in the status line, and no file.
+    page.evaluate("""() => {
+      const json = new TextEncoder().encode('{"asset":{"version":"2.0"},"scenes":[{}],"scene":0}  ');
+      const out = new Uint8Array(20 + json.length), dv = new DataView(out.buffer);
+      dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+      dv.setUint32(12, json.length, true); dv.setUint32(16, 0x4e4f534a, true); out.set(json, 20);
+      window.__viewer.exportData = async () => out.buffer;
+    }""")
+    page.click(glb)
+    until("() => document.querySelector('#glx .msg').classList.contains('bad')",
+          "the empty export to say it failed", READY_MS)
+    page.wait_for_timeout(1000)
+    if got:
+        bad.append(f"empty export: a file was saved - {sizes()}")
+    return bad
+
+
 # A LINK CANNOT ASK FOR WHAT THE BUTTON REFUSES (#93). The 3D button is disabled
 # below portrayal level 3 - the scene would be a plausible wrong box - and a
 # ?mode=3d link to such a device has to be refused the same way, with the reason,
