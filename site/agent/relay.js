@@ -61,26 +61,41 @@ export function relaySwitch({mount, tools, native, examples}) {
     }
   };
 
+  // Off means off: a switch-on still waiting on its scripts must not finish
+  // after a switch-off (run counts both), and a frame embed.js inserts late,
+  // after its fetch of widget.html, is removed while the switch is off.
+  let run = 0;
+  const reaper = new MutationObserver(() => { for (const f of document.querySelectorAll(RELAY_FRAME)) f.remove(); });
+
   async function on() {
+    const mine = ++run;
+    reaper.disconnect();
     status.textContent = 'Starting…';
     window.addEventListener('message', onMessage);
     try {
       if (!modelContext()) await loadScript(SRC.global);
+      if (run !== mine) return;
       await loadScript(SRC.embed);
+      if (run !== mine) return;
       if (!native) {
-        ac = new AbortController();
-        await registerTools(tools, {signal: ac.signal});
+        const mineAc = new AbortController();
+        ac = mineAc;
+        await registerTools(tools, {signal: mineAc.signal});
+        if (run !== mine) { mineAc.abort(); return; }
       }
       status.textContent = 'On. Start the relay on your computer, then ask your AI to use this rack.';
     } catch (e) {
+      if (run !== mine) return;
       console.warn('[portrayal] relay', e);
       status.textContent = "Couldn't start the connection. Reload the page and try again.";
     }
   }
   function off() {
+    run++;
     window.removeEventListener('message', onMessage);
     ac?.abort(); ac = null;
     for (const f of document.querySelectorAll(RELAY_FRAME)) f.remove();
+    reaper.observe(document.body, {childList: true});
     // Let a later switch-on run the embed again, since it builds the frame.
     if (loaded.delete(SRC.embed)) document.querySelector(`script[src="${SRC.embed}"]`)?.remove();
     status.textContent = loaded.has(SRC.global) ? 'Off. A reload clears the last of it.' : 'Off.';

@@ -8274,12 +8274,20 @@ def check_rack_agent_relay(page, base):
         wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
     except RuntimeError:
         bad.append("relay: switching on loaded nothing from vendor/mcp-b/")
+    try:
+        wait_fn(page, "relay: frame built", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: switching on never built the relay frame")
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     try:
         wait_fn(page, "relay: remembered after reload", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
     except RuntimeError:
         bad.append("relay: the switch was not remembered")
+    try:
+        wait_fn(page, "relay: frame built after reload", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: the remembered switch never built the relay frame")
     page.click("#agentMenu > summary")
     page.uncheck("#agentRelay")
     try:
@@ -8288,6 +8296,14 @@ def check_rack_agent_relay(page, base):
         bad.append("relay: switching off left the relay frame in the page")
     if page.evaluate("() => { try { return localStorage.getItem('portrayal.agent.relay'); } catch { return null; } }") != "off":
         bad.append("relay: switching off was not remembered")
+    # On, then straight off: nothing may come up behind the switch.
+    page.check("#agentRelay")
+    page.uncheck("#agentRelay")
+    page.wait_for_timeout(1500)
+    if page.evaluate(f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})"):
+        bad.append("relay: a quick on-then-off left the relay frame in the page")
+    if (page.text_content("#agentSlot [role=status]") or "").startswith("On."):
+        bad.append("relay: a quick on-then-off says On.")
     return bad
 
 
