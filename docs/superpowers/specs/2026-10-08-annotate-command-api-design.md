@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-08
 **Status:** implemented (plan: docs/superpowers/plans/2026-10-08-annotate-command-api.md)
-**Agent API status:** `window.portrayalAnnotate` is experimental until #146 is fixed: `setDoc` is not race-safe for back-to-back calls on the same device, a device load has no time bound, and a document naming no swaps does not clear seated ones. No Annotate agent adapter is built on it before then.
+**Agent API status:** `window.portrayalAnnotate` is stable for agent adapters since #146 (calls are serialised, every load is bounded, and a document is laid on the drawing as built).
 **Piece:** 4a of the Rack Builder kit move (see `2026-10-07-rack-command-core-design.md` §1). Piece 4b, the Explorer API, gets its own spec.
 **Builds on:** the Rack Builder command core (#132), whose generic `history.js` and `validate.js` this reuses; the rack kit move (roc-ops/Portrayal#896 and its site half), which vendors them to `vendor/rack/`.
 
@@ -81,7 +81,7 @@ History is `vendor/rack/history.js`.
 ### 2.3 The page, `annotate.html`
 
 - **One way in for edits.** Every handler that mutated `doc` in place sends a command through `edit(cmd)`: the row editor, the remove `x`, Clear all, the tree chips, the lamp swatch, the crop drag and Clear crop, the legend box. `edit` calls `ed.apply`. The editor's change listener re-renders. It does not write the hash: the page never has on an edit, only in the share handler and the `?mode=3d` writer. A static test, like the Rack Builder's one-way-in test, fails if the page assigns to `doc.*` or splices `doc.marks`.
-- **`loadDoc(doc)` (async)** is today's hash-restore block, lifted into a function: normalise, `ed.loadDoc`, retarget the shell, apply the pending swaps and fields, render. It resolves `{findings}`, which hold today's "N swap(s) do not fit this drawing" as data. Overlapping calls: the newest wins, and an overtaken call resolves `{error: 'Overtaken by a newer document.'}`.
+- **`loadDoc(doc)` (async)** is today's hash-restore block, lifted into a function: normalise, `ed.loadDoc`, retarget the shell, apply the pending swaps and fields, render. It resolves `{findings}`, which hold today's "N swap(s) do not fit this drawing" as data. Overlapping calls: the newest wins, and an overtaken call resolves `{error: 'Overtaken by a newer document.'}`. Calls run one at a time: a newer call waits for the one before it (bounded) before it compares the document with the drawing, since the shell names a new device or configuration before it has loaded it. Every load a call starts is the call's own promise, raced against a 20 s bound; one that does not finish resolves with a `drawing` finding ("... did not finish loading"), drops the document's swaps and fields, and leaves the document naming the drawing last shown. A call that stays on the same device and configuration reloads it anyway when the drawing carries swaps, written parts or turns the configuration did not build, so a document is always laid on the drawing as built and its swaps are the only ones seated.
 - **`hashchange`** calls `loadDoc(marks.decode(location.hash))`. The page's own `replaceState` fires no event, so only a pasted link or a navigation reaches it. A hash that decodes to the current document is a no-op.
 - **Undo and Redo** buttons sit in the marks panel, shown while there is a step, each described by its step's summary, with Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside inputs. This is the Rack Builder's rule.
 - **`window.portrayalAnnotate`** is set synchronously on every load (not only `?embed=1`): `{ready, settled, getDoc, setDoc: loadDoc, apply, preview, undo, redo, history, describe, on}`. `apply` and the rest are the editor's, with `origin` passed through. The WebMCP and relay adapters for Annotate are the research session's, over this object, and are not part of this spec.
@@ -117,6 +117,7 @@ An upstream test validates `normalise()` of the module's own fixtures and of a d
   - `apply` of `mark.add`/`mark.update`/`mark.remove`, then undo and redo;
   - a pasted hash (`location.hash = …`) restoring a document;
   - `describe()` flagging a selector that matches nothing.
+  - #146: back-to-back `setDoc` on one device landing on the second call's drawing, a device load and a configuration load that never finish answering with a finding, and a `setDoc` naming no swaps clearing the seated ones.
 - **Upstream:** the schema test (§3).
 
 ## 6. How it lands

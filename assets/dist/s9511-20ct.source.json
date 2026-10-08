@@ -72,6 +72,15 @@
  "format": 1,
  "gaps": [
   {
+   "note": "No held document dimensions the two grounding holes. The hardware installation guide names the screws (two M4) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; the flank figure reads 15.6 to 15.9 apart, and the pair is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a drawing that dimensions the grounding holes, or the accessory lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
    "note": "HIG section 8 tables the five system lamps (GNSS, SYNC, STAT, FAN, PWR) and the management jack, and gives no table at all for the port lamps. The Port Overview draws an up/down green pair in the web of every optical column, so which port each lamp belongs to is clear from the arrows; what its colours and behaviours mean is not. Every port lamp therefore keeps common/led-dot's off/on default rather than an invented link/activity vocabulary. Rows of the system-lamp tables are annotated 'need NOS to activate this feature', so these may be NOS-defined rather than merely undocumented - a different fix, and the reason this is vendor-silent rather than nos-dependent.",
    "reason": "vendor-silent",
    "scope": [
@@ -248,9 +257,13 @@
   "front-vertical": {
    "note": "ONE BAND, ONE PITCH - AND THE FIRST DRAFT SAID TWO. All four port blocks share the band: ganged shells at y 8.6-35.5, coloured grounds behind them at 7.0-37.4, openings centred on y 14.15 and 29.89 for a 15.74 mm belly-to-belly pitch. That figure is the mean of two readings - the guide's drawn optical cell centres at 14.34/29.92 (pitch 15.58) and the front photograph's real apertures at 13.95/29.85 (pitch 15.90) - which agree to a third of a millimetre. THE COPPER BLOCK WAS THE TRAP. Its drawn cell centres read 15.60 and 29.06, a 13.46 mm pitch, and this file first recorded that as a second, tighter pitch on the same band. It is not: an RJ45 cell is inset from its opening by different amounts top and bottom, so cell centres are not opening centres for that part. The matched-scale render settled it - at a 13.46 mm pitch the rendered contact bands fell at 13.6-21.1 and 23.2-30.8 against the photograph's 12.2-19.9 and 24.5-32.0, out by 1.4 and 1.3 mm in OPPOSITE directions, which is the signature of a pitch error rather than an offset. Putting the copper openings on the same 15.74 mm band as the optical ones reproduces the photograph to 0.25 mm. This is the same lesson as the guide's filled cells being module faces, in a second disguise: a drawn cell is not an aperture, and where the two are inset asymmetrically it will not even give you the pitch."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "ONE TWO-HOLE LANDING, NOT TWO SCREWS (#830). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws, so the point is common/ground-stud-pair-5-8-m4@1, two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. MEASURED, NOT ASSUMED: HIG Figure 15, the flank elevation section 6 draws, measured on the docling figure (900 x 457 px, near the 936 x 467 the PDF embeds): chassis bar x 49 to 895 px for the 250 mm depth, 3.38 px/mm, y 5 to 152 for 43.5. The two holes centre at 77.6 and 131.5 px, y 78.6, so the holes sit 8.5 and 24.4 mm behind the front face, 15.93 mm apart, centred 16.4 from the front and 21.8 from the top. The same accessory lug, read the same way on THREE DISTINCT DRAWINGS ACROSS SEVEN GUIDES (one 544 x 266 image shared byte for byte by the S9500-22XST, S9501-28SMT, S9510-28DC and S9510-30XC guides as Figure 22, one shared by the M3000-14XC and S9502-16SMT guides, and Figure 15 of the S9511-20CT guide alone), gives 15.6 to 15.9, against about 0.65 mm per pixel of the embedded art: the 5/8 in. two-hole pattern. AXIS: x = 0 is the FRONT on a right view, and the front is the left end of the figure, as on ufispace/s9501-18smt. Formerly two common/ground-lug@1 placements, ground-1 and ground-2, at x 40 and 51 at y 15 (studs 11.0 apart, centred 45.5 from the front)."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws, the pair. The accessory lug is one two-hole lug held by both screws."
   },
   "jack-orientation": {
    "note": "std/rj45-ganged draws the latch keyway DOWN with its gold contacts at the TOP, and on a real jack the integrated lamps sit at the contact end. On the 2x2 copper block the upper row's lamps are at the TOP corners and the lower row's at the BOTTOM, so the upper row is unrotated and the lower carries rotate: 180. BITS (upper of its pair) has the keyway up and is turned; ToD below it is not. The management RJ45 at the top of its stack is turned; the console at the bottom is not. That sense was got backwards on the S9500-22XST and caught by the matched-scale render; it is applied the corrected way round here and re-checked the same way."
@@ -294,7 +307,7 @@
    "title": "UfiSpace S9511-20CT Hardware Installation Guide"
   }
  ],
- "version": "2.0.4",
+ "version": "3.0.0",
  "views": {
   "bottom": {
    "components": {
@@ -2090,29 +2103,16 @@
      },
      {
       "at": [
-       40,
-       15
+       4.4625,
+       17.8
       ],
       "attrs": {
        "stud-size": "M4"
       },
       "group": "grounding",
-      "id": "ground-1",
-      "ref": "common/ground-lug@1",
+      "id": "ground-screws",
+      "ref": "common/ground-stud-pair-5-8-m4@1",
       "rel-pos": 2
-     },
-     {
-      "at": [
-       51,
-       15
-      ],
-      "attrs": {
-       "stud-size": "M4"
-      },
-      "group": "grounding",
-      "id": "ground-2",
-      "ref": "common/ground-lug@1",
-      "rel-pos": 3
      }
     ]
    },
@@ -2120,11 +2120,11 @@
     {
      "anchor": "middle",
      "at": [
-      46,
+      16.4,
       12.0
      ],
      "font-size": 2.4,
-     "for": "ground-1",
+     "for": "ground-screws",
      "text": "GND"
     }
    ],

@@ -2148,20 +2148,20 @@
      "generic/ring-lug@1"
     ],
     "at": [
-     12.0,
-     15.0
+     6.5,
+     8.9
     ],
     "bores": [],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground",
+    "id": "ground-1",
     "interface": "terminal-stud",
     "kind": "connector",
     "lift": 4.7,
     "mate": [
-     15.5,
-     24.8
+     9.3,
+     11.7
     ],
     "media": null,
     "mirror": false,
@@ -2171,6 +2171,42 @@
      "data-group-role": "service"
     },
     "rel-pos": 1,
+    "rotate": null,
+    "turns": [
+     0,
+     90,
+     180,
+     270
+    ]
+   },
+   {
+    "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     6.5,
+     25.1
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-2",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 4.7,
+    "mate": [
+     9.3,
+     27.9
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "grounding",
+     "data-group-role": "service"
+    },
+    "rel-pos": 2,
     "rotate": null,
     "turns": [
      0,
@@ -2227,6 +2263,18 @@
  "default": "base",
  "device": "eps203",
  "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The grounding plate carries two screws for one lug, but no held document dimensions them: the datasheet rear and the rear photograph read the two holes 15.8 to 16.4 apart, and neither document names the screw or a lug. A two-hole lug lands on a pair host built at a lug pattern and a screw size, so both screws stay nominal and unsized, at the reading, until a source gives the size and the spacing.",
+   "scope": [
+    "ground-1",
+    "ground-2"
+   ],
+   "wanted": "the grounding screw size and hole spacing, or the part number of the kit lug",
+   "what": "ground-pair-pitch"
+  },
   {
    "because": "sources-disagree",
    "blocks": [],
@@ -2312,6 +2360,10 @@
    "confidence": "measured",
    "note": "THIS IS THE ONLY EPS20x FIGURE THAT IS DRAWN STRAIGHT, and finding that out is what decided which of the three to model first. NONE OF THE THREE QUICK START GUIDES CONTAINS A SQUARE-ON ELEVATION - their Overview figures are three-quarter renders with the lid visible - so the only candidates for absolute geometry are the datasheets' Interfaces pages, embedded at about 1000 px across a 438 mm face. That is 2.29 px/mm, one pixel to 0.44 mm, and less than half the instrument the EPS112 had. SO EACH CANDIDATE WAS TESTED FOR ORTHOGRAPHY RATHER THAN JUST FOR ASPECT. Fitting the twenty-four RJ-45 column positions with `first + pitch*i + gutter*(i//6)`, over every row and four thresholds in each figure: this one's best fit has an **rms of 0.121 mm** and adding a quadratic term in i buys nothing (it implies a local-pitch change of -0.7% across the row, which is noise at this scale). The EPS201's best fit over 114 candidate rows is **rms 0.674 mm** and its quadratic implies **-5.0%**; the EPS202's is **rms 0.675 mm** at **+3.8%**. Those two figures are photographed at an angle, and a linear fit on them returns a pitch that is simply wrong - 13.65 mm on the EPS201 against this figure's 14.07 for the same jack. THE ASPECT AGREES with the published dimensions once the figure is known to be straight: the body reads 1002 x 100 px, ratio 10.020 against 438/44 = 9.955, which is +0.66% - within the one pixel that a 100-px-tall figure can resolve. Every measurement in this file uses 2.2877 px/mm with the panel origin at (1, 2). THE CROSS-CHECK THAT MATTERS: the fitted pitch of 14.0706 agrees with the EPS112's 14.0198 and the EPS121's 14.0158 - two other Edgecore access switches, measured on different documents at different scales - to five hundredths of a millimetre. That is the same RJ-45 jack, and it is an independent confirmation that this figure's scale is right."
   },
+  "ground-pair": {
+   "confidence": "photo-measured",
+   "note": "TWO HOLES ON ONE PLATE, ONE ABOVE THE OTHER, AND ONE EARTH SYMBOL TO THEIR RIGHT (#830). The grounding point (datasheet callout 11) is a plate at the far left of the rear with two holes, one above the other. Read on the datasheet rear (fig-0010, body x 131 to 1568 px for 438 and y 516 to 660 px for 44, 3.28 and 3.27 px/mm) the holes centre at x 159 to 161 px and y 554.0 and 607.5 px: x 8.8, y 11.6 and 28.0, 16.4 apart. On the rear photograph (photos 4-EPS203-B, 489 x 357, 1.11 px/mm) at x 12 px and y 166.5 and 184.5 px: x 9.9, y 11.9 and 27.7, 15.8 to 16.2 apart. Drawn at x 9.3, y 11.7 and 27.9, 16.2 apart. The two screws are both common/ground-screw@1, the nominal unsized screw without an earth symbol, and the symbol the chassis prints is silkscreen where it prints it. THE SYMBOL is a circled IEC earth printed to the RIGHT of the holes, midway between them: its ring centres at (196.1, 581.9) px on the datasheet rear, (19.9, 20.1), and at about (24, 175) px on the photograph, (20.7, 19.7), about 11.7 across on both. Drawn at (20.2, 20.1), ring radius 5.6. NO SIZE IS CLAIMED: neither document names the screw or a lug, so no pair host is placed. Formerly one common/ground-lug@1, ground, whose stud sat between the holes and to their right, at (15.5, 24.8)."
+  },
   "power": {
    "confidence": "datasheet",
    "note": "THE SUPPLY IS 1200 W AND THE DRAWING SAYS OTHERWISE. Three published statements agree: the Power section's \"2pcs 1+1 redundant, load-sharing, hot-swappable 1200 W AC (80 PLUS Platinum compliant)\", the Interfaces callouts \"9. PSU 2: 1200 Watts\" and \"10. PSU 1: 1200 Watts\", and the ordering table's \"YPEB1200AM-1A03P10 ... 1200 W AC Power Supply (3Y)\". The rear elevation prints \"2kV 920W\" on each supply's fan hub, legible at 12x, and three published statements outrank one silkscreen on a render, so 1200 is carried and the hub text is recorded. WHAT THE HUB TEXT IS was worked out afterwards, on `edgecore/eps202`, and this note is corrected rather than left as it was. That machine takes the SAME supply - the ordering table names both chassis - and its rear elevation prints \"2kV 1200W\" on the same hub. So the label tracks the supply's output, not the fan, and this figure's \"920W\" is an inconsistency between two renders of one part rather than a different quantity. The conclusion here was right; the first explanation of it was not. THE MACHINE'S FIGURES: maximum power consumption \"Low-line: 2000 Watts High-line: 2400 Watts\"; input \"Low-line: 15A for 90VAC-136VAC (1000 Watts) High-line: 8.A for 180VAC -264VAC (1200 Watts)\", the high-line current printed with a missing digit in the source; PoE budget with a 30 W guard band \"Low-line: 700 W for 1 PSU/1700 W for 2 PSU, High-line: 900 W for 1 PSU/2100 W for 2 PSU\"."
@@ -2334,7 +2386,7 @@
   },
   "the-rear": {
    "confidence": "measured",
-   "note": "MEASURED ON THIS MODEL'S OWN REAR ELEVATION at 2.2785 px/mm - 998 px across 438 mm - and it is the weaker of the two figures: its aspect reads -2.66% against 438 x 44, and the three fan-tray handles measure 38.18, 37.74 and 37.30 wide, a 2% spread in one direction. So the rear carries about a millimetre of slack where the front carries a tenth, and every figure below is stated at that accuracy. THE BAY NUMBERS ARE OBSERVED AND NOT DRAWN. The elevation prints a small fan glyph and a numeral - 1, 2, 3 - on the chassis web beside each tray, at about x 88, 137 and 186. At 2.28 px/mm that web is one millimetre wide, which is two pixels and less than the figure's own gradient, so any placement would either sit on the tray - where a seated module hides it, which is the thing lint's overlap rule exists to catch - or be invented. The marks are recorded here instead of drawn. THREE FAN TRAY BAYS at x 46.1, 94.1 and 142.4 on a pitch of 48.15, each 39.5 wide and running y 2.5 to 42.0. THE WIDTH IS NOT THE PITCH: there is an 8.6 mm chassis web between trays, which a first pass through this figure missed by reading each seam as the end of the tray before it rather than the start of the tray after. The EPS201's rear, measured the same way, gives all six edges - 47.4-86.4, 95.1-134.2, 143.6-182.6 - and the handle settles it, because a 38-to-40 mm bar cannot be bolted to a 47.5 mm tray and leave the seams where they are. A BLANK PLATE from about x 192 to 268 with a single screw. TWO SUPPLY BAYS at x 270.0 and 354.0, 72.0 wide on a pitch of 84.0, and the chassis prints PS2 and PS1 on the web to the right of each. THE GROUNDING POINT is a plate at the far left, x 4 to 44, with two holes and an IEC earth symbol - the datasheet's callout 11."
+   "note": "MEASURED ON THIS MODEL'S OWN REAR ELEVATION at 2.2785 px/mm - 998 px across 438 mm - and it is the weaker of the two figures: its aspect reads -2.66% against 438 x 44, and the three fan-tray handles measure 38.18, 37.74 and 37.30 wide, a 2% spread in one direction. So the rear carries about a millimetre of slack where the front carries a tenth, and every figure below is stated at that accuracy. THE BAY NUMBERS ARE OBSERVED AND NOT DRAWN. The elevation prints a small fan glyph and a numeral - 1, 2, 3 - on the chassis web beside each tray, at about x 88, 137 and 186. At 2.28 px/mm that web is one millimetre wide, which is two pixels and less than the figure's own gradient, so any placement would either sit on the tray - where a seated module hides it, which is the thing lint's overlap rule exists to catch - or be invented. The marks are recorded here instead of drawn. THREE FAN TRAY BAYS at x 46.1, 94.1 and 142.4 on a pitch of 48.15, each 39.5 wide and running y 2.5 to 42.0. THE WIDTH IS NOT THE PITCH: there is an 8.6 mm chassis web between trays, which a first pass through this figure missed by reading each seam as the end of the tray before it rather than the start of the tray after. The EPS201's rear, measured the same way, gives all six edges - 47.4-86.4, 95.1-134.2, 143.6-182.6 - and the handle settles it, because a 38-to-40 mm bar cannot be bolted to a 47.5 mm tray and leave the seams where they are. A BLANK PLATE from about x 192 to 268 with a single screw. TWO SUPPLY BAYS at x 270.0 and 354.0, 72.0 wide on a pitch of 84.0, and the chassis prints PS2 and PS1 on the web to the right of each. THE GROUNDING POINT is a plate at the far left, x 4 to 44, with two holes one above the other at x 9.3 and an IEC earth symbol in a circle to their right, midway between them at (20.2, 20.1) - the datasheet's callout 11 (provenance ground-pair)."
   },
   "the-status-lamps-and-buttons": {
    "confidence": "measured",
@@ -2355,7 +2407,10 @@
  },
  "seat-turns": {
   "rear": {
-   "ground": {
+   "ground-1": {
+    "generic/ring-lug@1": 90
+   },
+   "ground-2": {
     "generic/ring-lug@1": 0
    }
   }

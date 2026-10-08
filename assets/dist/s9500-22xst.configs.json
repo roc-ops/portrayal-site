@@ -1358,23 +1358,26 @@
   "right": [
    {
     "accepts": [
-     "generic/ring-lug@1"
+     "generic/two-hole-lug-5-8@1"
     ],
     "at": [
-     40,
-     15
+     4.2625,
+     18
     ],
-    "bores": [],
+    "bores": [
+     "1",
+     "2"
+    ],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground-1",
-    "interface": "terminal-stud",
+    "id": "ground-screws",
+    "interface": "stud-pair-5-8",
     "kind": "connector",
-    "lift": 4.7,
+    "lift": 3.1,
     "mate": [
-     43.5,
-     24.8
+     16.2,
+     22.0
     ],
     "media": null,
     "mirror": false,
@@ -1384,48 +1387,10 @@
      "data-group-role": "furniture"
     },
     "rel-pos": 1,
-    "rotate": null,
+    "rotate": 0,
     "turns": [
      0,
-     90,
-     180,
-     270
-    ]
-   },
-   {
-    "accepts": [
-     "generic/ring-lug@1"
-    ],
-    "at": [
-     51,
-     15
-    ],
-    "bores": [],
-    "default": null,
-    "group": "grounding",
-    "group-states": false,
-    "id": "ground-2",
-    "interface": "terminal-stud",
-    "kind": "connector",
-    "lift": 4.7,
-    "mate": [
-     54.5,
-     24.8
-    ],
-    "media": null,
-    "mirror": false,
-    "occupant": null,
-    "occupant-attrs": {
-     "data-group": "grounding",
-     "data-group-role": "furniture"
-    },
-    "rel-pos": 2,
-    "rotate": null,
-    "turns": [
-     0,
-     90,
-     180,
-     270
+     180
     ]
    }
   ],
@@ -1499,6 +1464,28 @@
  "default": "dc",
  "device": "s9500-22xst",
  "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "HIG section 8 says 'there are two locations on the case in which the grounding lug may be fixed', and Figure 22 draws both on one unlabelled flank: Location-1 just behind the front face, drawn here as one M4 pair, and Location-2 about 194 and 209 mm behind it, which is not drawn yet. Which flank the figure shows is not stated; the right is taken from the Figure 5 inset.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a photograph of the real unit flanks, or a figure captioned with the side",
+   "what": "second-grounding-location"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "No held document dimensions the two grounding holes. The hardware installation guide names the screws (two M4) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; the flank figure reads 15.6 to 15.9 apart, and the pair is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a drawing that dimensions the grounding holes, or the accessory lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
   {
    "because": "vendor-silent",
    "blocks": [],
@@ -1631,9 +1618,13 @@
   "front-vertical": {
    "note": "THE FIGURE AND THE PHOTOGRAPH DISAGREE HERE AND THE PHOTOGRAPH WINS. All four port blocks share one vertical band. Figure 9 draws the ganged shells spanning y 9.4-34.9 (25.5 mm), which leaves room for two 10.4 mm SFP openings only on a 12.7 mm belly-to-belly pitch - a 2.3 mm web, which no stacked SFP cage has. The front photograph, whose apertures are real holes rather than drawn module faces, shows the silver web between the rows spanning 5.1 mm and the openings centred 14.6 mm apart; 5.1 mm of web with 10.4 mm openings IS the standard 15.0 mm pitch that std/sfp-ganged's own contract records as measured from a TE 2007562-6 cage. So the rows are modelled at a 15.0 mm pitch and the shells are 27.6 mm tall - 2.1 mm taller than Figure 9 draws them, which is the same 2 percent the aspect gate already caught, in the same direction. The other three blocks are centred on the same two row centres because the photograph shows one continuous silver band across all four. THE WHOLE BAND WAS THEN MOVED DOWN 0.8 mm by the matched-scale comparison: rendered at the photograph's own 8 px/mm, the first draft's apertures sat 0.5, 0.95 and 1.0 mm high on the RJ45, SFP+ and QSFP28 blocks respectively - three independent blocks, all the same direction - so 0.8 mm was taken off the whole band rather than any one block. Final openings: SFP rows at y 10.35 and 25.25, the 1G jacks at 10.05 and 24.95, the QSFP28 pair at 10.48 and 25.38, shells 9.2-36.8. The residual is about 0.85 mm, which is one pixel of the photograph and the honest limit of this face's vertical placement."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "ONE TWO-HOLE LANDING, NOT TWO SCREWS (#830). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws, so the point is common/ground-stud-pair-5-8-m4@1, two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. MEASURED, NOT ASSUMED: HIG Figure 22, the flank elevation section 8 draws for this chassis, measured on the docling figure (910 x 446 px, an upsample of the 544 x 266 px image the PDF embeds): chassis bar x 76.5 to 843 px for the 302 mm depth, 2.54 px/mm, and 111 px for the 43.5 mm height. The two M4 holes of Location-1 centre at 97.6 and 137.6 px, y 121 px, so the holes sit 8.3 and 24.1 mm behind the front face, 15.76 mm apart, centred 16.2 from the front and 22 from the top. The same accessory lug, read the same way on THREE DISTINCT DRAWINGS ACROSS SEVEN GUIDES (one 544 x 266 image shared byte for byte by the S9500-22XST, S9501-28SMT, S9510-28DC and S9510-30XC guides as Figure 22, one shared by the M3000-14XC and S9502-16SMT guides, and Figure 15 of the S9511-20CT guide alone), gives 15.6 to 15.9, against about 0.65 mm per pixel of the embedded art: the 5/8 in. two-hole pattern. AXIS: x = 0 is the FRONT on a right view, and the front is the left end of the figure, as on ufispace/s9501-18smt. Formerly two common/ground-lug@1 placements, ground-1 and ground-2, at x 40 and 51 at y 15 (studs 11.0 apart, centred 45.5 from the front)."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 and ground-2. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws, the pair. The accessory lug is one two-hole lug held by both screws."
   },
   "jack-orientation": {
    "note": "THE FIRST DRAFT HAD THIS BACKWARDS ON THE 1G BLOCK AND THE MATCHED-SCALE RENDER CAUGHT IT, so both readings are recorded. std/rj45-ganged draws the latch keyway DOWN and its gold contacts at the TOP, and on a real jack the integrated lamps sit at the contact end, opposite the latch. The four 100M/1G jacks show their lamps at the TOP corners on the upper row and the BOTTOM corners on the lower, so the UPPER row is unrotated and the LOWER carries rotate: 180 - the reverse of what this file first said, which had reasoned from common/rj45-port@4 (a different part, which composes std/rj45 already turned 180) and got the sense inverted. What settled it was measuring the rendered contact band against the photograph's at 8 px/mm: the vendor's upper jacks have their contacts high and the lower jacks low, and the first draft rendered the opposite. The two stacked TIMING jacks were read directly from the silhouette at 7x and are genuinely mirrored the other way - BITS above with its latch notch UP (rotate: 180), ToD below with it down - as is the management stack, whose top out-of-band RJ45 is keyway-up with its green lamp at the top right and whose bottom console RJ45 is keyway-down."
@@ -1689,10 +1680,13 @@
  },
  "seat-turns": {
   "right": {
-   "ground-1": {
+   "ground-screws": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-screws/1": {
     "generic/ring-lug@1": 0
    },
-   "ground-2": {
+   "ground-screws/2": {
     "generic/ring-lug@1": 0
    }
   }
