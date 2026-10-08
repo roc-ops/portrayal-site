@@ -6588,6 +6588,18 @@ def check_annotate_api(page, base):
             f"() => {api}.getDoc().marks.length === 1 && {api}.getDoc().marks[0].label === 'from a link'")
     if page.evaluate(f"() => {api}.history().canUndo"):
         bad.append("annotate api: a pasted document kept the history of the one before it")
+    # a document naming a device that is not here is said, as a finding, and its
+    # swaps are not laid on the drawing that is
+    res = page.evaluate(f"""() => {api}.setDoc({{device: 'bogus', swaps: {{'port-0': 'generic/qsfp-cable@1'}},
+        marks: [{{select: '.x'}}]}})""")
+    notes = [f.get("text", "") for f in res.get("findings", []) if f.get("kind") == "note"]
+    if not any("bogus" in t for t in notes) or not any("none were applied" in t for t in notes):
+        bad.append(f"annotate api: setDoc with an unknown device answered {res}")
+    got = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, Object.keys(d.swaps).length, d.marks.length]; }}")
+    if got[0] in ("", "bogus") or got[2] != 1:
+        bad.append(f"annotate api: after an unknown device the document reads {got}")
+    if page.evaluate(f"() => {api}.ready.then(r => JSON.stringify(r))") != "{}":
+        bad.append("annotate api: ready did not resolve to {} on a clean start")
     return bad
 
 

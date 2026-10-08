@@ -88,3 +88,36 @@ test('a throwing listener does not stop the edit or the other listeners', () => 
   } finally { console.error = err; }
   assert.deepEqual([ed.getDoc().marks.length, seen], [1, ['apply']]);
 });
+
+test('the documents handed out are frozen, so editing one in place cannot rewrite a step', () => {
+  const {ed} = fresh();
+  const r = ed.apply({op: 'mark.add', select: '#x'});
+  const d = ed.getDoc();
+  assert.equal(r.doc, d);
+  assert.ok(Object.isFrozen(d) && Object.isFrozen(d.marks) && Object.isFrozen(d.marks[0]));
+  assert.throws(() => { d.marks[0].select = '#y'; }, TypeError);
+  assert.throws(() => { d.marks.push({}); }, TypeError);
+  ed.undo(); ed.redo();
+  assert.equal(ed.getDoc().marks[0].select, '#x');
+  // the shell's own objects are copied, not frozen under it
+  const swaps = {p: 'x/y@1'};
+  ed.retarget({swaps});
+  assert.ok(!Object.isFrozen(swaps));
+  assert.ok(Object.isFrozen(ed.getDoc().swaps));
+});
+
+test('undo across a change of drawing keeps the crop the shell re-cut for it', () => {
+  const ed = createMarksEditor({doc: {device: 'a', view: 'front'}});
+  ed.apply({op: 'crop', rect: {x: 0, y: 0, w: 10, h: 5}});
+  ed.apply({op: 'mark.add', select: '#x'});
+  ed.retarget({view: 'rear', crop: {x: 0, y: 0, w: 8, h: 5}});
+  ed.undo();                                 // the mark, a step taken on the front
+  assert.deepEqual([ed.getDoc().marks.length, ed.getDoc().crop], [0, {x: 0, y: 0, w: 8, h: 5}]);
+  ed.undo();                                 // the crop itself, also from the front
+  assert.deepEqual(ed.getDoc().crop, {x: 0, y: 0, w: 8, h: 5});
+  // on the same drawing a crop step undoes as any other
+  const same = createMarksEditor({doc: {device: 'a', view: 'front'}});
+  same.apply({op: 'crop', rect: {x: 0, y: 0, w: 10, h: 5}});
+  same.undo();
+  assert.equal(same.getDoc().crop, null);
+});

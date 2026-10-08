@@ -36,7 +36,7 @@ Pure functions over a normalised marks document, plus a `COMMANDS` table and an 
 
 - one function per command, `(doc, args) -> {doc, summary, findings, created?} | {error}`;
 - a command that changes nothing returns the same document object;
-- `apply(doc, cmd | cmd[])` validates arguments against each command's schema (with `vendor/rack/validate.js`), runs a batch all-or-nothing, and supports `as` / `@name` in id positions (`mark`). It returns `{doc, summary, findings, created: {[name]: id, ids}, noop, step}` or `{error, index}`;
+- `apply(doc, cmd | cmd[])` validates arguments against each command's schema (with `vendor/rack/validate.js`), runs a batch all-or-nothing, and supports `as` / `@name` in id positions (`mark`). A name binds to the id the mark was given, so a later command in the same batch that renames the mark (`mark.update` with `id`) leaves `@name` pointing at an id no mark has, and that use is refused as gone. It returns `{doc, summary, findings, created: {[name]: id, ids}, noop, step}` or `{error, index}`;
 - every command takes no `rack` argument (this is one document), and every argument property has a description under about 150 characters, for agents.
 
 | Command | Arguments | Effect | Refusals |
@@ -79,7 +79,7 @@ History is `vendor/rack/history.js`.
 
 ### 2.3 The page, `annotate.html`
 
-- **One way in for edits.** Every handler that mutated `doc` in place sends a command through `edit(cmd)`: the row editor, the remove `x`, Clear all, the tree chips, the lamp swatch, the crop drag and Clear crop, the legend box. `edit` calls `ed.apply`. The editor's change listener writes the hash (`replaceState`, as today) and re-renders. A static test, like the Rack Builder's one-way-in test, fails if the page assigns to `doc.*` or splices `doc.marks`.
+- **One way in for edits.** Every handler that mutated `doc` in place sends a command through `edit(cmd)`: the row editor, the remove `x`, Clear all, the tree chips, the lamp swatch, the crop drag and Clear crop, the legend box. `edit` calls `ed.apply`. The editor's change listener re-renders. It does not write the hash: the page never has on an edit, only in the share handler and the `?mode=3d` writer. A static test, like the Rack Builder's one-way-in test, fails if the page assigns to `doc.*` or splices `doc.marks`.
 - **`loadDoc(doc)` (async)** is today's hash-restore block, lifted into a function: normalise, `ed.loadDoc`, retarget the shell, apply the pending swaps and fields, render. It resolves `{findings}`, which hold today's "N swap(s) do not fit this drawing" as data. Overlapping calls: the newest wins, and an overtaken call resolves `{error: 'Overtaken by a newer document.'}`.
 - **`hashchange`** calls `loadDoc(marks.decode(location.hash))`. The page's own `replaceState` fires no event, so only a pasted link or a navigation reaches it. A hash that decodes to the current document is a no-op.
 - **Undo and Redo** buttons sit in the marks panel, shown while there is a step, each described by its step's summary, with Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside inputs. This is the Rack Builder's rule.

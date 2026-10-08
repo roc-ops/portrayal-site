@@ -407,7 +407,8 @@ let hadLegend = false;
 // THE PAGE'S API, for agents (spec §2.3), set before anything is awaited so a
 // script that loads with the page finds it at once. `ready` resolves once the
 // drawing is up and any document in the URL has been laid on it, so a setDoc
-// sent after it is never overtaken by the page's own restore.
+// sent after it is never overtaken by the page's own restore. It resolves to
+// {} or, when the page could not start or restore its link, {error}.
 let settled = false, markReady;
 const ready = new Promise(resolve => { markReady = resolve; });
 window.portrayalAnnotate = Object.freeze({
@@ -610,32 +611,39 @@ async function applyPendingSwaps() {
   return {swaps: Object.keys(ignored || {}).length, fields: lost};
 }
 
-/** @returns true if the shell is reloading, in which case its 'load' re-enters. */
+// Moves the shell to the drawing a document names. `moving` is true when the
+// shell is reloading, in which case its 'load' re-enters; `refused` lists, as
+// sentences, what the document asked for that this library cannot show. The
+// reader is told in the message box, and a caller gets them to pass on - an
+// agent that named a device that is not here must not hear that it worked.
 async function retarget(d) {
   if (d.device && d.device !== state.device) {
     if (!shell.devices().some(x => x.name === d.device)) {
       say('#expmsg', `no such device: ${d.device}`, 'bad');
-      return false;
+      return {moving: false, refused: [`There is no device called ${d.device}; the document was laid on ${state.device} instead.`]};
     }
     await shell.loadDevice(d.device);
     // loadDevice resets config and view to the device's defaults, so the rest of
     // the target has to be replayed against the device we have just arrived at
-    return await retarget({...d, device: ''}) || true;
+    const rest = await retarget({...d, device: ''});
+    return {moving: true, refused: rest.refused};
   }
+  const refused = [];
   for (const [key, sel] of [['config', shell.el.cfg], ['view', shell.el.view]]) {
     const want = d[key];
     if (!want || want === sel.value) continue;
     if (![...sel.options].some(o => o.value === want)) {
       say('#expmsg', `this device has no ${key} '${want}'`, 'bad');
+      refused.push(`${state.device} has no ${key} called ${want}.`);
       continue;
     }
     sel.value = want;
     // the shell's own handler owns the reload: it also re-reads the config's bay
     // occupancy, which setting state.cfg by hand would skip
     sel.dispatchEvent(new Event('change'));
-    return true;
+    return {moving: true, refused};
   }
-  return false;
+  return {moving: false, refused};
 }
 
 function addMark(m) {
@@ -1573,7 +1581,14 @@ async function restore(input) {
   pendingSwaps = Object.keys(next.swaps).length ? {...next.swaps} : null;
   pendingFields = Object.keys(next.fields).length ? {...next.fields} : null;
   ed.loadDoc(next);
-  const moving = await retarget(next);
+  const {moving, refused} = await retarget(next);
+  // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON. When the shell
+  // could not reach it, they are not laid on whatever it shows instead.
+  let dropped = 0;
+  if (refused.length) {
+    dropped = Object.keys(next.swaps).length + Object.keys(next.fields).length;
+    pendingSwaps = pendingFields = null;
+  }
   if ((pendingSwaps || pendingFields) && moving && !atTarget(want))
     // bounded, so a link naming a configuration this device lacks still
     // applies what it can rather than waiting forever for a load that is not coming
@@ -1582,19 +1597,23 @@ async function restore(input) {
   const left = await applyPendingSwaps() || {};
   if (mine !== loads) return OVERTAKEN;
   if (!moving) { writeTarget(); render({fit: true}); }
-  return {left};
+  return {left, refused, dropped};
 }
-// What an agent gets back: what did not fit this drawing, as findings.
+// What an agent gets back: what could not be shown, as findings in the rack
+// editor's shape.
 async function loadDoc(input) {
   const r = await restore(input);
   if (r.error) return r;
-  const findings = [r.left.swaps && `${r.left.swaps} swap(s) do not fit this drawing and were left out`,
-                    r.left.fields && `${r.left.fields} written part(s) do not fit this drawing and were left out`]
-    .filter(Boolean);
-  return {findings};
+  const texts = [...r.refused,
+    r.dropped && `${r.dropped} swap(s) and written part(s) were for that drawing, so none were applied.`,
+    r.left.swaps && `${r.left.swaps} swap(s) do not fit this drawing and were left out.`,
+    r.left.fields && `${r.left.fields} written part(s) do not fit this drawing and were left out.`];
+  return {findings: texts.filter(Boolean).map(text => ({kind: 'note', text}))};
 }
 // What the reader is told when a link restores, in the one message box.
-function sayRestored({left}) {
+function sayRestored({left, refused}) {
+  // the refusal is already in the box, and is the thing to read
+  if (refused.length) return;
   const n = Object.keys(doc.swaps).length;
   const f = Object.keys(doc.fields).length;
   const got = [`${doc.marks.length} mark(s)`, n && `${n} swap(s)`,
@@ -1606,24 +1625,47 @@ function sayRestored({left}) {
       out ? 'bad' : 'good');
 }
 
-await shell.ready;
-
-const fromHash = marks.decode(location.hash);
-if (fromHash) {
-  const r = await restore(fromHash);
-  if (!r.error) sayRestored(r);
+// A link that cannot be restored is said, never thrown past the page: the
+// reader sees why, and the hashchange listener and `ready` below still happen.
+async function restoreLink(d) {
+  try {
+    const r = await restore(d);
+    if (!r.error) sayRestored(r);
+    return r;
+  } catch (err) {
+    console.error('[portrayal] restoring a link failed', err);
+    say('#expmsg', `could not restore the link: ${err.message || err}`, 'bad');
+    return {error: `The link could not be restored: ${err.message || err}`};
+  }
 }
-// A LINK PASTED INTO AN OPEN TAB is a document arriving, as at boot. The page's
-// own replaceState fires no hashchange, so only a paste or a navigation gets
-// here, and a hash that is the document already on screen is let be.
-addEventListener('hashchange', async () => {
-  const d = marks.decode(location.hash);
-  if (!d || marks.encode(d) === marks.encode(ed.getDoc())) return;
-  const r = await restore(d);
-  if (!r.error) sayRestored(r);
-});
-settled = true;
-markReady();
+
+// `ready` ALWAYS RESOLVES, with {error} when the page could not start or its
+// link could not be restored, and the listener is always attached: a page that
+// failed once must still take the next link pasted into it.
+let boot = {};
+try {
+  await shell.ready;
+  const fromHash = marks.decode(location.hash);
+  if (fromHash) {
+    const r = await restoreLink(fromHash);
+    if (r.error) boot = {error: r.error};
+  }
+} catch (err) {
+  console.error('[portrayal] Annotate could not start', err);
+  boot = {error: `Annotate could not start: ${err.message || err}`};
+} finally {
+  // A LINK PASTED INTO AN OPEN TAB is a document arriving, as at boot. The
+  // page's own replaceState fires no hashchange, so only a paste or a
+  // navigation gets here, and a hash that is the document already on screen is
+  // let be.
+  addEventListener('hashchange', () => {
+    const d = marks.decode(location.hash);
+    if (!d || marks.encode(d) === marks.encode(ed.getDoc())) return;
+    restoreLink(d);
+  });
+  settled = true;
+  markReady(boot);
+}
 
 // A LINK OPENS IN ITS MODE: ?mode=3d beside the document, as the share button writes it.
 if (new URLSearchParams(location.search).get('mode') === '3d') m3d.setMode('3d');

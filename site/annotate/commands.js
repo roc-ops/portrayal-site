@@ -6,7 +6,7 @@
 // back the very document it was given. The device, configuration, view, swaps
 // and fields are the shell's to change, not these commands' (editor.js).
 
-import {validate, same} from '../rack/validate.js';
+import {validate, same} from '../../vendor/rack/validate.js';
 
 // kit/marks.js keeps this private; the schema states the same rule.
 const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -206,6 +206,9 @@ export function apply(doc, cmds) {
     const bad = validate(def.args, given)[0];
     if (bad) return {error: sentence(op, bad), index};
     // Only the `mark` position is a name: a label that reads "@a" is a label.
+    // A NAME IS BOUND TO THE ID THE MARK WAS GIVEN, not to the mark: a later
+    // command in the same batch that renames it (mark.update with id) leaves
+    // "@name" pointing at an id no mark has, and that use is refused as gone.
     if (typeof given.mark === 'string' && given.mark.startsWith('@')) {
       const n = given.mark.slice(1);
       if (!bound.has(n)) return {error: `Nothing earlier in this batch is called ${n}.`, index};

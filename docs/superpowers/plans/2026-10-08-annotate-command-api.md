@@ -4,7 +4,7 @@
 
 **Goal:** Annotate's document gets the Rack Builder's command layer. That means named, pure, validated commands through one `apply`, undo/redo, change events, a live `getDoc`/`setDoc` (including pasted share links), and `window.portrayalAnnotate` for agents. The marks document also gets a JSON Schema, published upstream.
 
-**Architecture:** Three new pure site modules: `site/annotate/commands.js` (commands, `COMMANDS`, `apply`), `site/annotate/describe.js` (an agent-sized reading of the document and the last render's report) and `site/annotate/editor.js` (document + history + events). They reuse the rack core's generic `history.js` and `validate.js` from `vendor/rack/`. `annotate.html` stops mutating `doc` in place: every edit goes through `edit(cmd)`, and the editor's change listener redraws and writes the hash. The schema is a separate upstream PR to roc-ops/Portrayal.
+**Architecture:** Three new pure site modules: `site/annotate/commands.js` (commands, `COMMANDS`, `apply`), `site/annotate/describe.js` (an agent-sized reading of the document and the last render's report) and `site/annotate/editor.js` (document + history + events). They reuse the rack core's generic `history.js` and `validate.js` from `vendor/rack/`. `annotate.html` stops mutating `doc` in place: every edit goes through `edit(cmd)`, and the editor's change listener redraws. The schema is a separate upstream PR to roc-ops/Portrayal.
 
 **Tech Stack:** Plain ES modules, no build step, no new dependencies. Site: `node --test tests/*/*.test.mjs`, `python3 check-contract.py`, `python3 check-browser.py`. Upstream: `python3 -m pytest spec/tests`, node scripts under `spec/tests/js/`, `jsonschema` (already an upstream test dependency).
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - **Sequencing.** Task 1 (upstream) can start at once. Tasks 2-4 import `vendor/rack/history.js` and `vendor/rack/validate.js`, so they **start only once the rack kit move's site half has landed on `origin/main`**, meaning `vendor/rack/validate.js` exists there. The 0RU session ("0RU device support and cable management") messages the Refactor agent when it lands. Rebase `claude/annotate-command-api` onto `origin/main` first.
-- **Plan change (agreed before Tasks 2-4 started):** the rack kit move's site half (#136) had not landed, so `vendor/rack/` did not exist on the site. Tasks 2-4 import `site/rack/history.js` and `site/rack/validate.js` instead; #136 repoints those imports in `site/annotate/` along with the rest. Read `vendor/rack/` below as `site/rack/` until then.
+- **Plan change (agreed before Tasks 2-4 started):** the rack kit move's site half (#136) had not landed, so Tasks 2-4 first imported `site/rack/history.js` and `site/rack/validate.js`. Once #136 landed (#140), they were repointed to `vendor/rack/` and those two re-exports were deleted.
 - **Pure means pure.** `site/annotate/commands.js`, `describe.js` and `editor.js` have no DOM, no `fetch` and no `localStorage`. They import only `../../vendor/marks.js` (for `normalise`), `../../vendor/rack/validate.js`, `../../vendor/rack/history.js` and each other.
 - **Spelling.** Comments in `site/annotate/*.js` use British spelling (they become kit code later). Page copy, refusal sentences, tests, checks and commit messages use American spelling. Upstream (roc-ops/Portrayal) is British throughout: its schema descriptions, tests, changelog and PR.
 - **Sentences.** Every refusal is a plain-English sentence. `lamp.state`'s and `lamp.color`'s effects match today's `setState`, `setLamp` and `clearLamp` in `annotate.html` exactly.
@@ -21,7 +21,7 @@
 - **Comment style.** Match the surrounding files: a SHOUTED lead phrase for a rule, prose saying why, no JSDoc.
 - **Site commits** end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. **Upstream commits** are signed off (`git commit -s`, giving `Signed-off-by: Jason Patterson <...>` as upstream's history has) and carry the same Co-Authored-By line.
 - **Never `git push --no-verify`.** At high load, push with `nohup sh ~/.claude/merge-agent/portrayal-site/when-calm.sh git push -u origin <branch> &` as a background task. Site PRs go to the "Portrayal-site merge agent". Upstream PRs follow upstream's own process, and you do not merge them.
-- **Upstream work** happens in a new worktree of `/Volumes/External/Network-Device-Visualization` (`git -C /Volumes/External/Network-Device-Visualization worktree add ../Network-Device-Visualization/.claude/worktrees/marks-schema -b claude/marks-schema origin/main`). Never edit the live checkout there.
+- **Upstream work** happens in a new worktree of the Portrayal checkout, on a branch `claude/marks-schema` from `origin/main`. Never edit the live checkout there.
 
 ## Review Focus
 
@@ -61,8 +61,9 @@
 - [ ] **Step 1: Make the worktree and read upstream's rules**
 
 ```bash
-git -C /Volumes/External/Network-Device-Visualization fetch -q origin
-git -C /Volumes/External/Network-Device-Visualization worktree add .claude/worktrees/marks-schema -b claude/marks-schema origin/main
+# in the Portrayal checkout
+git fetch -q origin
+git worktree add .claude/worktrees/marks-schema -b claude/marks-schema origin/main
 ```
 
 Read `CONTRIBUTING.md` §"The changelog entry" and `changelog.d/README.md`, and one existing `spec/tests/test_*_js.py` with its `spec/tests/js/*.mjs` (e.g. `test_accept_swaps_js.py` and `js/accept-swaps.mjs`). Copy their shape. Read `spec/tests/test_schema_hygiene.py`: it sweeps every `spec/schemas/*.schema.json`, so the new file must pass it too.
