@@ -46,6 +46,7 @@ test('Accept: text/markdown gets the copy as text/markdown, with a token count a
   assert.equal(r.headers.get('Content-Type'), 'text/markdown; charset=utf-8');
   assert.equal(await r.text(), FILES['/index.md'][0]);
   assert.match(r.headers.get('x-markdown-tokens'), /^\d+$/);
+  assert.equal(r.headers.get('Content-Signal'), 'ai-train=no, search=yes, ai-input=yes');
   assert.equal(r.headers.get('Vary'), 'Accept');
   assert.equal(r.headers.get('ETag'), null, 'the HTML ETag must not label the Markdown');
   assert.equal(r.headers.get('X-Content-Type-Options'), 'nosniff');

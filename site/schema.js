@@ -29,6 +29,10 @@ const SOURCES = {
   // A LAB: placements in a rack, rack-face parts on a host (Portrayal #852, lab.schema.json).
   lab:       {url: 'assets/schemas/lab.schema.json',       label: 'a lab of devices placed in a rack'},
   overlay:   {url: 'assets/schemas/overlay.schema.json',   label: "an operating system's naming"},
+  // The Rack Builder's own file. Site-owned until the rack core moves to the
+  // kit (piece 2 of docs/superpowers/specs/2026-10-07-rack-command-core-design.md),
+  // so it is not in assets/schemas/, which every sync replaces.
+  rack:      {url: 'site/rack/rack.schema.json',            label: 'a rack built in the Rack Builder'},
 };
 
 const KNOWN = new Set([
@@ -383,7 +387,7 @@ async function show(key) {
 const listed = await fetch('assets/schemas/index.json').then(r => (r.ok ? r.json() : null))
   .then(d => (d && Array.isArray(d.schemas) ? new Set(d.schemas) : null)).catch(() => null);
 const have = Object.fromEntries(Object.entries(SOURCES).map(([k, {url}]) =>
-  [k, !listed || listed.has(url.split('/').pop())]));
+  [k, !url.startsWith('assets/schemas/') || !listed || listed.has(url.split('/').pop())]));
 document.querySelectorAll('.show-tabs button').forEach(b => {
   b.hidden = !have[b.dataset.schema];
   b.onclick = () => { show(b.dataset.schema); };

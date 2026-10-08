@@ -1,5 +1,8 @@
 /* The Rack Builder: two faces side by side, one scroll, and a side panel. */
-.rk { background: var(--pt-ground); color: var(--pt-ink); }
+/* The font goes on .rk, not body.tool: the Explorer and Annotator get theirs from
+   shell.js's body rule, which body.tool would override. Nothing else on this
+   page sets one, so without it the tool falls back to the browser's serif. */
+.rk { background: var(--pt-ground); color: var(--pt-ink); font-family: var(--pt-font-body); }
 .rk-bar { display: flex; gap: 0.6rem; align-items: center; padding: 0.5rem 1rem;
           border-bottom: 1px solid var(--pt-line); background: var(--pt-surface); }
 .rk-bar button, .rk-side button, .rk-lens button { background: var(--pt-surface-2); color: var(--pt-ink);
@@ -142,3 +145,26 @@
    and a waypoint whose pathway is gone. */
 .rk-side .rk-route li.rk-selected { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 .rk-side .rk-route li.rk-gone { color: var(--pt-warn); text-decoration: line-through; }
+
+/* An agent's edit, outlined for a moment (rack-page.js paintAgentMark). SVG has
+   no outline, so the brass is a tight double drop shadow. */
+svg .rk-agent-touched {
+  filter: drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 1.5px var(--accent));
+}
+
+/* CONNECT YOUR AI: the panel under the toolbar's AI menu. */
+.rk-agent { width: min(30rem, calc(100vw - 2rem)); display: grid; gap: .5rem; }
+.rk-agent-switch { display: flex; gap: .5rem; align-items: center; }
+.rk-agent-copy { display: grid; grid-template-columns: 1fr auto; gap: .25rem .5rem; align-items: start; }
+.rk-agent-copy > span { grid-column: 1 / -1; }
+.rk-agent-copy code { white-space: pre-wrap; word-break: break-all; font-size: .8rem; }
+/* At phone width the toolbar wraps, the button shortens to AI, and the panel
+   spans the screen instead of hanging from wherever the button landed. */
+@media (max-width: 30rem) {
+  .rk-bar { flex-wrap: wrap; position: relative; }
+  #agentMenu { position: static; }
+  #agentMenu > .rk-agent { left: 1rem; right: 1rem; width: auto; }
+  #agentMenu > summary { font-size: 0; white-space: nowrap; }
+  #agentMenu > summary::before { content: 'AI'; font-size: 1rem; }
+  #agentMenu > summary::after { font-size: 1rem; }
+}

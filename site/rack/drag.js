@@ -1,7 +1,8 @@
 // DRAG A DEVICE TO MOVE IT (feedback round 2 §1). The controller here owns
 // the pointer lifecycle; rack-page.js only wires it to the two panes and
-// supplies the callbacks that touch the document (patchItem) or the DOM
-// (svgFor, setStatus). The pure half - a pointer's y to a U - is uAtY in
+// supplies the callbacks that touch the document (patchItem, which sends the
+// drop as one move command: one undo step) or the DOM (svgFor, setStatus).
+// The previews along the way are moveItem's answers, never edits. The pure half - a pointer's y to a U - is uAtY in
 // elevation.js, so this stays about gesture handling, not layout math.
 
 import {RU, OPENING} from './rails.js';
@@ -62,7 +63,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     const pointerU = uAtY(r.frame, y);
     const maxRu = Math.max(1, r.frame.heightRU - d.ruH + 1);
     const ru = Math.min(maxRu, Math.max(1, pointerU - d.grabOffsetU));
-    // The same call the drop makes (patchItem -> moveItem), so the preview agrees with it.
+    // What the drop's move command calls (managers.js moveItem), so the preview agrees with it.
     const f = moveItem(r, d.id, {ru, face}, chassisOf);
     d.target = {face, ru, ok: f.ok};
     drawPreview(svg, r.frame, ru, d.ruH, f.ok);
@@ -111,7 +112,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     justDragged = true;
     if (commitMove && target) {
       const res = patchItem(id, {ru: target.ru, face: target.face});
-      if (res.ok) return; // patchItem already committed and re-rendered
+      if (res.ok) return; // the move command went through: the page redraws
       onEnd(res.reason); // refused: the page must show why and restore the panel
     } else {
       onEnd(null); // cancelled: nothing changed, just restore the panel

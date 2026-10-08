@@ -837,6 +837,7 @@ import schemawalk
 SJS = (HERE / "site" / "schema.js").read_text()
 SHTML = (HERE / "schema.html").read_text()
 docs = schemawalk.documents()
+alldocs = schemawalk.all_documents()
 sources = set(re.findall(r"url:\s*'assets/schemas/([^']+)'", SJS))
 # One of the pair may be staged ahead of the sync that brings it: Portrayal #677
 # replaces overlay.schema.json with listing.schema.json, and the page hides the
@@ -853,12 +854,16 @@ check(keys == tabs, "schema.html has one tab per SOURCES entry",
       f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
 WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
 n_word = re.search(r"\b(Two|Three|Four|Five|Six) documents:", SHTML)
-check(bool(n_word) and n_word.group(1) == WORDS.get(len(docs)),
-      f"schema.html's intro counts {len(docs)} documents",
+check(bool(n_word) and n_word.group(1) == WORDS.get(len(alldocs)),
+      f"schema.html's intro counts {len(alldocs)} documents",
       f"it says {n_word.group(1) if n_word else 'nothing'}")
+site_urls = set(re.findall(r"url:\s*'(site/[^']+)'", SJS))
+check({f"site/rack/{n}" for n in schemawalk.site_documents()} <= site_urls,
+      "schema.js renders every site-owned schema",
+      f"site-owned {sorted(schemawalk.site_documents())}, SOURCES names {sorted(site_urls)}")
 kn = re.search(r"const KNOWN = new Set\(\[([\s\S]*?)\]\)", SJS)
 known = set(re.findall(r"'([^']+)'", kn.group(1))) if kn else set()
-for name, doc in docs.items():
+for name, doc in alldocs.items():
     unknown = {k: at for k, at in schemawalk.keywords(doc).items() if k not in known}
     check(bool(known) and not unknown,
           f"schema.js renders every keyword {name} uses",
@@ -1331,6 +1336,14 @@ check(re.search(r"^User-agent:\s*\S", _rb, re.M | re.I) is not None
       and re.search(r"^Disallow:\s*/\s*$", _rb, re.M | re.I) is None,
       "/robots.txt is served with a User-agent group that allows the site",
       "publish/robots.txt missing, not built, has no User-agent/Allow line, or disallows /")
+# CONTENT SIGNALS (contentsignals.org) in the User-agent: * group, all three
+# declared; the Worker sends the same on each Markdown copy.
+_cs = re.search(r"^User-agent:\s*\*\s*\n(?:(?!User-agent:).*\n)*?Content-Signal:\s*(.+?)\s*$", _rb, re.M | re.I)
+_cw = re.search(r'CONTENT_SIGNAL = "([^"]+)"', (HERE / "worker" / "index.mjs").read_text())
+check(bool(_cs) and {k.split("=")[0].strip() for k in _cs.group(1).split(",")} == {"ai-train", "search", "ai-input"}
+      and bool(_cw) and _cw.group(1) == _cs.group(1),
+      "robots.txt declares Content Signals for ai-train, search and ai-input, and the Worker sends the same",
+      f"robots.txt: {_cs.group(1) if _cs else None!r}, worker: {_cw.group(1) if _cw else None!r}")
 check("sitemap.xml" not in _srv or re.search(r"^Sitemap:\s*https://portrayal\.dev/sitemap\.xml\s*$", _rb, re.M | re.I),
       "robots.txt names the sitemap the site serves", "add Sitemap: https://portrayal.dev/sitemap.xml to publish/robots.txt")
 # SITEMAP.XML (sitemaps.org): build-public.py generates it from PAGES, so it
@@ -1446,6 +1459,83 @@ check(_pub.exists() and _pubtwice(False)[0] != 0 and _pubtwice(False)[1] == "obj
 check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(_bad)[0] != 0,
       "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
       f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
+
+# ── ORIGIN-TRIAL TOKENS (roc-ops/portrayal-site#134) ─────────────────────
+# A page opts into a Chrome origin trial with <meta http-equiv="origin-trial">.
+# The token carries its own expiry, and when that passes Chrome silently stops
+# honoring it: the feature just goes away on the live site and no check fails.
+# So each token on a published page is decoded here and failed 30 days ahead.
+# The layout is a 1-byte version, a 64-byte signature, a 4-byte big-endian
+# payload length, then the JSON payload.
+import base64 as _b64, struct as _struct, time as _time
+_OT_ORIGINS = ("https://portrayal.dev", "https://portrayal.dev:443")
+_OT_WARN = 30 * 86400
+
+
+def origin_trial_problems(page, content, now):
+    """What is wrong with one origin-trial token on `page`, as of Unix time
+    `now`: [] for a token that is ours, names a feature and has more than 30
+    days left."""
+    try:
+        raw = _b64.b64decode(content, validate=True)
+        n = _struct.unpack(">I", raw[65:69])[0]
+        d = json.loads(raw[69:69 + n])
+    except Exception as e:
+        return [f"{page}: an origin-trial token does not decode ({e})"]
+    feature = d.get("feature") or ""
+    out = []
+    if not feature.strip():
+        out.append(f"{page}: an origin-trial token names no feature")
+    if d.get("origin") not in _OT_ORIGINS:
+        out.append(f"{page}: the {feature or '?'} origin-trial token is for {d.get('origin')!r}, not https://portrayal.dev")
+    exp = d.get("expiry")
+    if not isinstance(exp, int) or exp - now <= _OT_WARN:
+        when = _time.strftime("%Y-%m-%d", _time.gmtime(exp)) if isinstance(exp, int) else repr(exp)
+        state = "expired" if isinstance(exp, int) and exp <= now else "expires"
+        out.append(f"{page}: the {feature or '?'} origin-trial token {state} {when} - renew it at "
+                   f"developer.chrome.com/origintrials, or remove the tag if {feature or 'the feature'} "
+                   f"has shipped in stable Chrome")
+    return out
+
+
+_OT_META = re.compile(r"""<meta\b(?=[^>]*\bhttp-equiv=["']?origin-trial\b)[^>]*\bcontent=(["'])(.*?)\1""", re.I)
+_now = int(_time.time())
+_ot_seen = []
+for _d in _bp_pages:
+    _f = _srv.get(_d) or HERE / _d
+    for _q, _c in _OT_META.findall(_f.read_text() if _f.is_file() else ""):
+        _ot_seen.append(_d)
+        _bad = origin_trial_problems(_d, _c, _now)
+        check(not _bad, f"{_d}: its origin-trial token is for portrayal.dev, names a feature, "
+                        f"and has more than 30 days left", "; ".join(_bad))
+if not _ot_seen:
+    check(True, "no published page carries an origin-trial token, so none can expire")
+
+
+# The check itself, against tokens made here: one that expires tomorrow, one
+# already expired, one for another origin, one naming no feature, and one that
+# is fine. A check that could not fail would pass every one of these.
+def _ot_token(**payload):
+    body = json.dumps(payload).encode()
+    return _b64.b64encode(b"\x02" + b"\x00" * 64 + _struct.pack(">I", len(body)) + body).decode()
+_ot_ok = dict(origin="https://portrayal.dev:443", feature="WebMCP", expiry=_now + 90 * 86400, isSubdomain=True)
+_ot_cases = {
+    "expires tomorrow": (dict(_ot_ok, expiry=_now + 86400), "expires"),
+    "expired": (dict(_ot_ok, expiry=_now - 86400), "expired"),
+    "another origin": (dict(_ot_ok, origin="https://example.com"), "not https://portrayal.dev"),
+    "no feature": (dict(_ot_ok, feature=""), "names no feature"),
+}
+_ot_bad = [f"{name}: {origin_trial_problems('x.html', _ot_token(**p), _now)}"
+           for name, (p, want) in _ot_cases.items()
+           if not any(want in s for s in origin_trial_problems("x.html", _ot_token(**p), _now))]
+_ot_bad += [f"fine token: {s}" for s in origin_trial_problems("x.html", _ot_token(**_ot_ok), _now)]
+_ot_bad += [f"without :443: {s}" for s in
+            origin_trial_problems("x.html", _ot_token(**dict(_ot_ok, origin="https://portrayal.dev")), _now)]
+_ot_bad += [] if origin_trial_problems("x.html", "not a token", _now) else ["garbage decoded as a token"]
+check(not _ot_bad,
+      "the origin-trial check fails a token that expires within 30 days, has expired, is for another origin "
+      "or names no feature, and passes a good one",
+      "; ".join(_ot_bad))
 
 # ── the browser pass, in shards ──────────────────────────────────────────
 # CI runs check-browser.py as a matrix of `--shard i/n` jobs. That is only as

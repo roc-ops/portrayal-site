@@ -2221,7 +2221,7 @@ def check_schema_coverage(page, base):
     """
     import schemawalk
     bad = []
-    for fname, doc in schemawalk.documents().items():
+    for fname, doc in schemawalk.all_documents().items():
         key = fname.split(".")[0]
         page.goto(f"{base}/schema.html?doc={key}", wait_until="load")
         try:
@@ -2614,6 +2614,9 @@ def check_schema_nos_tab(page, base):
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
     have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
     other = "overlay" if have == "listing" else "listing"
+    # Extract site-owned schemas (those not vendored in assets/schemas/) from site/schema.js
+    schema_js = (HERE / "site" / "schema.js").read_text()
+    site_owned = re.findall(r"^\s*(\w+):\s*\{url:\s*'(?!assets/schemas/)", schema_js, re.M)
     # as vendored - and without asking for a schema the site does not carry
     misses = []
     page.on("response", lambda r: misses.append(r.url) if r.status == 404 else None)
@@ -2623,7 +2626,8 @@ def check_schema_nos_tab(page, base):
     got = page.evaluate(tabs)
     # the lab schema (Portrayal #852) is a tab of its own when the snapshot carries it
     lab = ["lab"] if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "lab.schema.json").exists() else []
-    if got != ["device", "component", have] + lab:
+    # site-owned schemas (the rack file) are always tabs, since they are not vendored
+    if got != ["device", "component", have] + lab + site_owned:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")
     # the other side of #677: this snapshot's NOS schema gone, the other one served
@@ -2638,7 +2642,8 @@ def check_schema_nos_tab(page, base):
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
     order = ["device", "component", "listing"] if other == "listing" else ["device", "component", "overlay"]
-    if got != order:
+    # site-owned schemas (the rack file) are always tabs, since they are not vendored
+    if got != order + site_owned:
         bad.append(f"schema: with only {other}.schema.json the tabs are {got}")
     if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
         bad.append(f"schema: ?doc={other} did not render the {other} schema")
@@ -7999,7 +8004,9 @@ def check_rack_cable_undo(page, base):
     page.evaluate("w => window.__rack.replaceRack(w)", whole)
     wait_fn(page, "undo: the rack is whole for the Undo test", "() => window.__rack.doc().racks[0].cables.length === 3")
 
-    # Only one Undo is pending: a later change retires it.
+    # Every edit is a step now: a later change does not retire Undo, it is what
+    # Undo now describes. (Before every edit had an Undo, this checked that the
+    # one pending Undo was retired by the next change.)
     page.evaluate("() => document.activeElement?.blur()")
     page.keyboard.press("Escape")               # the device is still selected: back to the list
     wait_sel(page, "undo: the cable list", '#cableList [data-cable-row="c2"]')
@@ -8010,7 +8017,344 @@ def check_rack_cable_undo(page, base):
     select_item(page, "front", "i2")
     page.keyboard.press("ArrowUp")
     wait_fn(page, "undo: leaf-1 moved", "() => window.__rack.doc().racks[0].items[1].ru === 15")
-    undo_gone("an Undo outlived the next change")
+    try:
+        wait_fn(page, "undo: Undo describes the later change",
+                "() => (document.getElementById('undoWhat')?.textContent || '').startsWith('Moved leaf-1 ')")
+    except RuntimeError:
+        bad.append(f"undo: after a later change, Undo describes {page.text_content('#undoWhat') if page.query_selector('#undoWhat') else None!r}")
+    return bad
+
+
+@extra("rack.html: Undo and Redo walk back and forth through several edits, by button and by keyboard; a new edit clears Redo; DCIM settings survive Undo")
+def check_rack_history(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # New rack is async (it saves the old one first): wait for the new document, not just any empty rack.
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "history: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0 && !window.__rack.history().canUndo")
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.ref, i.ru, i.face])")
+    pick(page, "front", 10, "R740", "r740xd")
+    wait_fn(page, "history: placed", "() => window.__rack.doc().racks[0].items.length === 1")
+    page.evaluate("() => window.__rack.apply({op: 'move', id: 'i1', ru: 20})")
+    page.evaluate("() => window.__rack.apply({op: 'dcim', site: 'dc1'})")
+    wait_sel(page, "history: Undo offered", "#undoShrink")
+    what = page.text_content("#undoWhat") or ""
+    if not what.startswith("Moved "):
+        bad.append(f"history: Undo describes {what!r}, expected the move")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the move undone", "() => window.__rack.doc().racks[0].items[0].ru === 10")
+    if page.evaluate("() => window.__rack.doc().racks[0].dcim") != {"site": "dc1"}:
+        bad.append("history: Undo took the DCIM settings back")
+    wait_sel(page, "history: Redo offered", "#redoStep")
+    page.keyboard.press("Meta+Shift+z" if sys.platform == "darwin" else "Control+Shift+z")
+    wait_fn(page, "history: redone by keyboard", "() => window.__rack.doc().racks[0].items[0].ru === 20")
+    page.keyboard.press("Meta+z" if sys.platform == "darwin" else "Control+z")
+    page.keyboard.press("Meta+z" if sys.platform == "darwin" else "Control+z")
+    wait_fn(page, "history: back to empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    try:
+        wait_fn(page, "history: Undo gone with nothing left to undo", "() => !document.getElementById('undoShrink')")
+    except RuntimeError:
+        bad.append("history: Undo is still offered with nothing left to undo")
+    page.evaluate("() => window.__rack.apply({op: 'rename', name: 'Fresh'})")
+    wait_fn(page, "history: a new edit", "() => window.__rack.doc().racks[0].name === 'Fresh'")
+    if page.evaluate("() => window.__rack.history().canRedo"):
+        bad.append("history: a new edit left Redo offered")
+    # A shrink, undone: every position comes back.
+    page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 40},
+                                              {op: 'place', ref: 'as7726-32x', face: 'front', ru: 1}])""")
+    before = items()
+    page.evaluate("() => window.__rack.apply({op: 'frame', heightRU: 2})")
+    wait_fn(page, "history: shrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 2")
+    wait_sel(page, "history: Undo after the shrink", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "history: unshrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 42")
+    if items() != before:
+        bad.append(f"history: Undo after a shrink left {items()}, expected {before}")
+    # A cable added between two placed devices is a step: Undo takes it back, Redo runs it again.
+    ids = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => i.id)")
+    ends = []
+    for i in ids[:2]:
+        ports = page.evaluate(f"() => window.__rack.query.freePorts({json.dumps(i)})") or []
+        if not ports:
+            bad.append(f"history: freePorts({i!r}) found no port to cable")
+            return bad
+        ends.append({"item": i, "path": ports[0]["path"], "view": ports[0]["view"]})
+    res = page.evaluate("([a, b]) => window.__rack.apply({op: 'cable.add', a, b})", ends)
+    if res.get("error"):
+        bad.append(f"history: cable.add refused: {res['error']}")
+        return bad
+    wait_fn(page, "history: cable added", "() => window.__rack.doc().racks[0].cables.length === 1")
+    wait_fn(page, "history: Undo describes the cable",
+            "() => (document.getElementById('undoWhat')?.textContent || '').startsWith('Added cable ')")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the cable undone", "() => window.__rack.doc().racks[0].cables.length === 0")
+    if len(items()) != len(ids):
+        bad.append(f"history: undoing the cable changed the devices: {items()}")
+    wait_sel(page, "history: Redo after undoing the cable", "#redoStep")
+    page.click("#redoStep")
+    wait_fn(page, "history: the cable redone", "() => window.__rack.doc().racks[0].cables.length === 1")
+    # Two steps with one summary, the second undone: the notice reads "Undid: <summary>",
+    # which holds the summary Undo now takes back, but Undo is described by that step,
+    # not by the notice.
+    page.evaluate("() => window.__rack.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 30, label: 'twin'})")
+    wait_fn(page, "history: twin placed", "() => window.__rack.doc().racks[0].items.some(i => i.label === 'twin')")
+    tid = page.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.label === 'twin').id")
+    page.evaluate(f"() => window.__rack.apply({{op: 'patch', id: {json.dumps(tid)}, turned: true}})")
+    page.evaluate(f"() => window.__rack.apply({{op: 'patch', id: {json.dumps(tid)}, turned: false}})")
+    wait_fn(page, "history: two same-summary steps",
+            f"() => window.__rack.doc().racks[0].items.find(i => i.id === {json.dumps(tid)}).turned === false")
+    wait_sel(page, "history: Undo after two same-summary steps", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "history: the second step undone",
+            f"() => window.__rack.doc().racks[0].items.find(i => i.id === {json.dumps(tid)}).turned === true")
+    try:
+        wait_fn(page, "history: Undo described by its step, not by the Undid notice",
+                "() => document.getElementById('undoWhat')?.textContent === 'Changed twin.'")
+    except RuntimeError:
+        what = page.text_content("#undoWhat") if page.query_selector("#undoWhat") else None
+        bad.append(f"history: after an Undo of a repeated step, Undo describes {what!r}, expected 'Changed twin.'")
+    return bad
+
+
+@extra("rack.html: __rack.apply refuses a bad batch whole, shows why, and the queries answer")
+def check_rack_commands(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # New rack is async (it saves the old one first): wait for the new document, not just any empty rack.
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "commands: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0")
+    res = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10},
+                                                    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}])""")
+    if res.get("index") != 1 or "Taken by" not in (res.get("error") or ""):
+        bad.append(f"commands: the batch answered {res}")
+    if page.evaluate("() => window.__rack.doc().racks[0].items.length") != 0:
+        bad.append("commands: a refused batch left items in the rack")
+    try:
+        wait_fn(page, "commands: the refusal is shown",
+                "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('Taken by')")
+    except RuntimeError:
+        bad.append("commands: the page did not show why the batch was refused")
+    page.evaluate("() => window.__rack.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10, as: 'leaf'})")
+    text = page.evaluate("() => window.__rack.query.describe()")
+    if "i1 AS7726-32X U10 front" not in text:
+        bad.append(f"commands: describe() reads {text!r}")
+    ports = page.evaluate("() => window.__rack.query.freePorts('i1')")
+    if not isinstance(ports, list) or not ports or not all(p.get("path") and p.get("view") for p in ports):
+        bad.append(f"commands: freePorts('i1') answered {str(ports)[:200]}")
+    return bad
+
+
+# A stand-in for the browser's WebMCP: records what the page registers, so the
+# tools can be called as an agent would, with no relay and no flag.
+STAND_IN_MODEL_CONTEXT = """
+window.__tools = {};
+const mc = {registerTool(t, o) {
+  window.__tools[t.name] = t;
+  o?.signal?.addEventListener('abort', () => delete window.__tools[t.name]);
+  return Promise.resolve();
+}};
+Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
+"""
+RELAY_FRAME = "iframe[data-webmcp-relay]"
+AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "list_free_ports", "redo", "undo"]
+
+
+def agent_call(page, name, args):
+    return page.evaluate("([n, a]) => window.__tools[n].execute(a)", [name, args])
+
+
+@extra("rack.html: agent tools - registered on load, an agent's edit shown and undone, a dry run, an export, a busy export, a removed panel")
+def check_rack_agent_tools(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    was = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, "agent: empty rack", f"() => window.__rack.doc().id !== {json.dumps(was)} && window.__rack.doc().racks[0].items.length === 0")
+    wait_fn(page, "agent: tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    if sorted(page.evaluate("() => Object.keys(window.__tools)")) != AGENT_TOOLS:
+        bad.append(f"agent: registered {page.evaluate('() => Object.keys(window.__tools)')}")
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.length")
+    # An edit, as an agent sends it
+    res = agent_call(page, "edit_rack", {"commands": [
+        {"op": "place", "ref": "as7726-32x", "face": "front", "ru": 40, "as": "a"},
+        {"op": "place", "ref": "as7726-32x", "face": "front", "ru": 38, "as": "b"}]})
+    if res.get("isError") or "Placed" not in res["content"][0]["text"]:
+        bad.append(f"agent: edit_rack answered {res}")
+    try:
+        wait_fn(page, "agent: the notice names the assistant",
+                "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('Your assistant: Placed')")
+    except RuntimeError:
+        bad.append("agent: no 'Your assistant:' notice after an agent edit")
+    # The notice is Undo's description: no second line repeats the summary.
+    if page.evaluate("() => document.querySelectorAll('.rk-side .rk-undo-what').length") != 0 or \
+            "Your assistant:" not in (page.text_content("#undoWhat") or ""):
+        bad.append("agent: the side panel repeats the summary in a separate undo line")
+    try:
+        wait_fn(page, "agent: highlighted", "() => document.querySelectorAll('svg .rk-agent-touched').length >= 2")
+        wait_fn(page, "agent: highlight fades", "() => !document.querySelector('.rk-agent-touched')", timeout=8000)
+    except RuntimeError as e:
+        bad.append(f"agent: highlight - {e}")
+    # Undo by the page's own button, then redo by the agent
+    page.click("#undoShrink")
+    wait_fn(page, "agent: undone by button", "() => window.__rack.doc().racks[0].items.length === 0")
+    if agent_call(page, "redo", {})["content"][0]["text"].split(":")[0] != "Redid":
+        bad.append("agent: redo did not say Redid")
+    wait_fn(page, "agent: redone", "() => window.__rack.doc().racks[0].items.length === 2")
+    # A dry run changes nothing
+    dry = agent_call(page, "edit_rack", {"commands": [{"op": "remove", "id": "i1", "cables": "keep"}], "dry_run": True})
+    if "Would:" not in dry["content"][0]["text"] or items() != 2:
+        bad.append(f"agent: dry run answered {dry} with {items()} items")
+    # The page's own command is refused
+    if not agent_call(page, "edit_rack", {"commands": [{"op": "lengths.routed"}]}).get("isError"):
+        bad.append("agent: lengths.routed was accepted")
+    # describe_rack sees the edit
+    if "i1" not in agent_call(page, "describe_rack", {})["content"][0]["text"]:
+        bad.append("agent: describe_rack does not list i1")
+    # An export arrives as a download, named as the tool said
+    page.evaluate("() => window.__rack.apply({op: 'dcim', site: 'dc1', role: 'leaf'})")
+    with page.expect_download(timeout=READY_MS) as dl:
+        out = agent_call(page, "export_rack", {"kind": "netbox import"})
+    said = out["content"][0]["text"]
+    if out.get("isError") or dl.value.suggested_filename not in said:
+        bad.append(f"agent: export said {said!r}, downloaded {dl.value.suggested_filename!r}")
+    # Two exports at once: the second is told to wait, not left hanging
+    both = page.evaluate("""async () => {
+        const t = window.__tools.export_rack;
+        const [a, b] = await Promise.all([t.execute({kind: 'netbox import'}), t.execute({kind: 'bill of materials'})]);
+        return [a, b]; }""")
+    if not any(r.get("isError") and "still running" in r["content"][0]["text"] for r in both):
+        bad.append(f"agent: two exports at once answered {both}")
+    # The user has i1's panel open when the agent removes it
+    page.click('svg [data-item-id="i1"]')
+    wait_fn(page, "agent: i1's panel open", "() => (document.querySelector('.rk-side')?.textContent || '').includes('AS7726-32X')")
+    agent_call(page, "edit_rack", {"commands": [{"op": "remove", "id": "i1", "cables": "remove"}]})
+    wait_fn(page, "agent: i1 gone", "() => window.__rack.doc().racks[0].items.length === 1")
+    page.wait_for_timeout(300)
+    if page.evaluate("() => !!document.querySelector('.rk-side [data-item-id=\"i1\"], .rk-side #iRemove')"):
+        bad.append("agent: the side panel still shows the removed device")
+    if mcpb:
+        bad.append(f"agent: MCP-B loaded with the switch off: {mcpb[:2]}")
+    return bad
+
+
+def relay_connect_asserts(page):
+    """The embed never scans on its own; Connect asks the relay frame to (no real relay in CI)."""
+    bad = []
+    if page.evaluate("() => document.querySelector('script[src*=\"vendor/mcp-b/embed.js\"]')?.getAttribute('data-auto-connect')") != "false":
+        bad.append("relay: the embed script does not carry data-auto-connect=false")
+    btn = "#agentSlot button:text-is('Connect')"
+    if not page.is_visible(btn):
+        bad.append("relay: no Connect button while the switch is on")
+    status = lambda: page.text_content("#agentSlot [role=status]") or ""
+    try:
+        wait_fn(page, "relay: on", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('On.')")
+    except RuntimeError:
+        pass
+    if status() != "On. Start the relay on your computer first, then press Connect.":
+        bad.append(f"relay: the status after switch-on is {status()!r}")
+    # Record what the frame is sent.
+    page.evaluate(f"""() => {{
+      const w = document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow;
+      w.__got = []; w.addEventListener('message', e => w.__got.push(e.data));
+    }}""")
+    page.click(btn)
+    try:
+        wait_fn(page, "relay: connect posted", f"() => (document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow.__got || []).some(m => m && m.type === 'webmcp.connect')")
+    except RuntimeError:
+        bad.append("relay: Connect did not post webmcp.connect to the relay frame")
+    # What the widget says, posted from the frame's own window.
+    from_frame = lambda msg: page.evaluate(f"""() => {{
+      const w = document.querySelector({json.dumps(RELAY_FRAME)}).contentWindow;
+      new w.Function("parent.postMessage(" + {json.dumps(json.dumps(msg))} + ", '*')")();
+    }}""")
+    from_frame({"type": "webmcp.tools.list.request", "requestId": "x"})
+    try:
+        wait_fn(page, "relay: found", "() => document.querySelector('#agentSlot [role=status]').textContent === 'Found your relay.'")
+    except RuntimeError:
+        bad.append(f"relay: a tools list request did not say 'Found your relay.' (status {status()!r})")
+    from_frame({"type": "webmcp.relay.rejected"})
+    try:
+        wait_fn(page, "relay: rejected", "() => document.querySelector('#agentSlot [role=status]').textContent.startsWith('Your relay refused this page.')")
+    except RuntimeError:
+        bad.append(f"relay: a rejection did not overwrite the status (status {status()!r})")
+    return bad
+
+
+@extra("rack.html: Connect your AI - nothing loads until it is on, it remembers, it turns off, and it fits at 375px")
+def check_rack_agent_relay(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("() => { try { localStorage.removeItem('portrayal.agent.relay'); } catch {} }")
+    if mcpb:
+        bad.append(f"relay: loaded before it was switched on: {mcpb[:2]}")
+    box = page.locator("#agentMenu > summary").bounding_box()
+    if not box or box["x"] + box["width"] > 375:
+        bad.append(f"relay: the Connect your AI button is off screen at 375px: {box}")
+    page.click("#agentMenu > summary")
+    panel = page.text_content("#agentSlot") or ""
+    for want in ["--widget-origin https://portrayal.dev", "Your AI runs on your computer and talks to this page directly.",
+                 "Export this rack for NetBox."]:
+        if want not in panel:
+            bad.append(f"relay: the panel does not say {want!r}")
+    page.check("#agentRelay")
+    try:
+        wait_fn(page, "relay: embed loaded", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
+    except RuntimeError:
+        bad.append("relay: switching on loaded nothing from vendor/mcp-b/")
+    try:
+        wait_fn(page, "relay: frame built", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: switching on never built the relay frame")
+    else:
+        bad += relay_connect_asserts(page)
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    try:
+        wait_fn(page, "relay: remembered after reload", "() => !!document.querySelector('script[src*=\"vendor/mcp-b/\"]')")
+    except RuntimeError:
+        bad.append("relay: the switch was not remembered")
+    try:
+        wait_fn(page, "relay: frame built after reload", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: the remembered switch never built the relay frame")
+    page.click("#agentMenu > summary")
+    page.uncheck("#agentRelay")
+    try:
+        wait_fn(page, "relay: the relay frame removed", f"() => !document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("relay: switching off left the relay frame in the page")
+    if page.is_visible("#agentSlot button:text-is('Connect')"):
+        bad.append("relay: the Connect button shows while the switch is off")
+    if page.evaluate("() => { try { return localStorage.getItem('portrayal.agent.relay'); } catch { return null; } }") != "off":
+        bad.append("relay: switching off was not remembered")
+    # On, then straight off: nothing may come up behind the switch.
+    page.check("#agentRelay")
+    page.uncheck("#agentRelay")
+    page.wait_for_timeout(1500)
+    if page.evaluate(f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})"):
+        bad.append("relay: a quick on-then-off left the relay frame in the page")
+    if (page.text_content("#agentSlot [role=status]") or "").startswith("On."):
+        bad.append("relay: a quick on-then-off says On.")
     return bad
 
 
@@ -8686,8 +9030,14 @@ def check_rack_cable_polish(page, base):
         bad.append(f"polish: after selecting something else, Undo is {said()} - it no longer says what it undoes")
     page.click("#undoShrink")
     wait_fn(page, "polish: c1 is back", "() => window.__rack.doc().racks[0].cables.length === 3")
+    # The rack was put back with replaceRack above, which is a step of its own
+    # (every change is one now): Undo stays, and its sentence goes with it,
+    # describing that earlier step instead of the delete just undone.
     wait_fn(page, "polish: Undo and its sentence go together",
-            "() => !document.getElementById('undoShrink') && !document.getElementById('undoWhat')")
+            """() => { const b = document.getElementById('undoShrink');
+                       const d = b && document.getElementById(b.getAttribute('aria-describedby') || '');
+                       return !!d && d.id === 'undoWhat' && d.textContent === 'Changed the rack.'
+                              && document.querySelectorAll('#undoWhat').length === 1; }""")
 
     # M3. The remove panel takes the keyboard at its first button; Cancel and Esc hand it back to Remove.
     select_item(page, "rear", "i3")

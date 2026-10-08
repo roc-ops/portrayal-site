@@ -70,7 +70,7 @@ export function autosaver(lib, delay = 500) {
   return {saveSoon(doc) { pending = doc; clearTimeout(timer); timer = setTimeout(flush, delay); }, flush};
 }
 
-const fileName = doc => `${fileStem(doc.racks[0]?.name)}.rack.json`;
+export const fileName = doc => `${fileStem(doc.racks[0]?.name)}.rack.json`;
 
 export function downloadDoc(doc) {
   const url = URL.createObjectURL(new Blob([serialize(doc)], {type: 'application/json'}));

@@ -1,13 +1,14 @@
-// THE RACK BUILDER PAGE: wiring only. The rack lives in S.doc; every change
-// goes through commit(), which autosaves and redraws. What the side panel
-// shows follows S.sel.
+// THE RACK BUILDER PAGE: wiring only. The rack lives in the headless editor
+// (rack/editor.js); every change is a command sent through edit(), and the
+// editor's change event autosaves and redraws. What the side panel shows
+// follows S.sel.
 
-import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem, dcimOf, withDcim, detached} from './rack/model.js';
-import {placement, moveItem, settleManagers, hostAt, managersOf} from './rack/managers.js';
+import {newDoc, nextRackName, positionOf, dcimOf} from './rack/model.js';
+import {hostAt, managersOf} from './rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
-import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
+import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf, shrinkRack} from './rack/fit.js';
+import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
@@ -22,34 +23,45 @@ import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableSchedul
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, fillNotes} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
-import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
-        cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
+import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from './rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {routeFacts} from './rack/route-context.js';
-import {withRoutedLengths, LANE_GAP, routeText} from './rack/route.js';
+import {LANE_GAP, routeText} from './rack/route.js';
+import {createRackEditor} from './rack/editor.js';
+import {GONE, NOT_ADDED} from './rack/commands.js';
+import * as Q from './rack/queries.js';
+import {configuredFace} from './rack/face.js';
+import {rackTools} from './rack/agent-tools.js';
+import {registerTools} from './agent/webmcp.js';
+import {relaySwitch, prefs} from './agent/relay.js';
+import {touchedIds, markTouched} from './rack/agent-mark.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
+const AGENT_MARK_MS = 3000;
+// The highlight preference lives with the Connect your AI switch.
+const agentHighlightOn = () => prefs.highlight;
 const CABLES_3D = 'Cables are added in 2D. Switch to 2D to add one.';
 function loadMode() {
   try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
   catch { return '2d'; }
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
-const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  dcimDraft: null, zoom: loadZoom(), svgs: [], undo: null, undoText: '', focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
+  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   routes: null,
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
+  saidStep: null,    // the summary of the step the notice says, which Undo may take as its description
   // Cable mode: on or off, and the A end picked and waiting for its B.
   cable: {on: false, a: null},
   // The cable list's filter: the viewer's, not the document's.
@@ -60,9 +72,10 @@ let chassisOf = () => null;
 // positionOf), and that needs its height. Reads chassisOf as it is when asked.
 const uOf = item => heightOf(chassisOf)(item);
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
+let ed = null;   // the rack editor (rack/editor.js), made in bootInner: the document and its history
 
 // ── 3D ──────────────────────────────────────────────────────────────────
-// Rebuilt after every commit while in 3D (debounced) and whenever the frame
+// Rebuilt after every edit while in 3D (debounced) and whenever the frame
 // changes; the old scene's camera is saved and restored on the new one, so a
 // rebuild triggered by, say, a swap does not snap the view back to the
 // opening one. `epoch` drops a rebuild that was overtaken by a mode switch
@@ -86,7 +99,7 @@ function disposeScene3d() {
 }
 // The waypoints the 3D scene hangs its routed cables by, as one string: the
 // scene is rebuilt when this changes (routes are resolved by render(), later
-// than the commit that changed them, so sameCables3d alone cannot see them).
+// than the edit that changed them, so sameCables3d alone cannot see them).
 // Does the rack have a routed cable (a resolved route with waypoints)? Only then are the
 // gutters widened (spec 7); a cable with no route draws as before.
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
@@ -108,7 +121,7 @@ async function rebuild3d() {
   S.scene3d = built;
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
   S.scene3dRoutes = sig;
-  // Routes are resolved by render(), after a commit: if they settled while
+  // Routes are resolved by render(), after an edit: if they settled while
   // this was building, the scene was hung by the old ones.
   if (routesSig(S.routes) !== sig) scheduleRebuild3d();
   // A scene built without its cables' faces has no plugs and marks no loose
@@ -179,7 +192,8 @@ function setMode(m) {
   // what makes the panes come back to life rather than blank.
   render();
 }
-const rack = () => S.doc.racks[0];
+const rack = () => ed.rack();
+const theDoc = () => ed.getDoc();
 const itemById = id => rack().items.find(i => i.id === id) || null;
 
 // What removing a host leaves behind (spec section 5): its managers stay on
@@ -189,15 +203,11 @@ function managersStay(r, hostId) {
   return ms.length ? ` Its cable manager${ms.length === 1 ? '' : 's'} ${ms.map(m => m.label).join(', ')} stay${ms.length === 1 ? 's' : ''} on the rack.` : '';
 }
 
-// Bolt an unhosted manager over the device now at its U, undoably. It acts on
-// the manager as it is now, or just redraws if it is gone.
+// Bolt an unhosted manager over the device now at its U. It acts on the
+// manager as it is now, or says it is gone.
 function attachManager(id) {
-  const cur = itemById(id);
-  if (!cur) { S.notice = {text: GONE, kind: 'error'}; render(); return; }
-  const m = moveItem(rack(), id, {ru: cur.ru, face: cur.face}, chassisOf);
-  if (!m.ok) { S.notice = {text: m.reason, kind: 'error'}; render(); return; }
-  const hostId = m.rack.items.find(i => i.id === id)?.on, host = m.rack.items.find(i => i.id === hostId);
-  commit(m.rack, {text: `Attached ${cur.label} to ${host?.label ?? 'the device'}.`});
+  if (!itemById(id)) { S.notice = {text: GONE, kind: 'error'}; render(); return; }
+  edit({op: 'attach', id}, {say: true});
 }
 
 // The readout is a percentage of Fit's own factor (recomputed every time,
@@ -217,47 +227,29 @@ async function getDoc(id) {
 }
 
 // The picker judged the fit against the rack it was built for, and its Place
-// button can outlive that rack (a redraw still on its way): the fit is judged
-// again here, against the rack as it is now.
+// button can outlive that rack (a redraw still on its way): the place command
+// judges it again, against the rack as it is now.
 function place(entry, cfg, face, ru) {
-  const at = isRackFace(chassisOf(entry.name)) ? placement(rack(), {face, ru}, chassisOf) : {face, ru};
-  const f = fits(rack(), {ref: entry.name, ...at}, chassisOf);
-  if (!f.ok) { S.notice = {text: f.reason, kind: 'error'}; render(); return; }
-  const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ...at, label: entry.model || entry.name});
-  S.sel = {kind: 'item', id: item.id};
-  commit(next);
+  const res = edit({op: 'place', ref: entry.name, cfg, face, ru, label: entry.model || entry.name});
+  if (!res.error) S.sel = {kind: 'item', id: res.created.ids[0]};
 }
 
-// A change to a placed item, checked against the rules before it is made.
-// A configuration change is a delta against the OLD configuration, so a
-// changed cfg that leaves an item with no swaps/fields to carry forward
-// says so - one shot, through S.notice, since the panel showing this patch
-// is about to be replaced by the redraw it triggers.
-const GONE = 'That device is no longer in the rack.';
+// A change to a placed item: a move (ru, face) or a patch (the rest). The
+// command checks it against the rules and says no with the reason, which the
+// caller shows its own way (the inspector beside its control, a drag in the
+// notice). The cleared-Explorer-changes note arrives as a finding.
+const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
 function patchItem(id, patch) {
-  const r = rack(), it = itemById(id);
   // A control of a panel built for an earlier rack (the redraw that replaces
-  // it is still on its way): the device may be gone. Nothing is committed.
-  if (!it) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
-  const next = {...it, ...patch};
+  // it is still on its way): the device may be gone. Nothing is sent.
+  if (!itemById(id)) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
   if (['ru', 'face'].some(k => k in patch)) {
-    // Through managers.js: a manager is re-hosted by where it lands, and a
-    // host takes its managers with it (spec §5).
-    const m = moveItem(r, id, patch, chassisOf);
-    if (!m.ok) return m;
-    commit(m.rack);
-    return {ok: true};
+    const res = edit({op: 'move', id, ...defined({ru: patch.ru, face: patch.face})}, {report: false});
+    return res.error ? {ok: false, reason: res.error} : {ok: true};
   }
-  if ('cfg' in patch && patch.cfg !== it.cfg &&
-      (Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length) &&
-      !Object.keys(next.swaps ?? {}).length && !Object.keys(next.fields ?? {}).length)
-    S.notice = {text: 'Your Explorer changes were for the old configuration, so they were cleared.', kind: 'note'};
-  commit(updateItem(r, id, patch));
-  return {ok: true};
+  const res = edit({op: 'patch', id, ...defined(patch)});
+  return res.error ? {ok: false, reason: res.error} : {ok: true};
 }
-
-// Detach: the manager keeps its U and loses its host (spec §7).
-const detachedRack = (r, id) => ({...r, items: r.items.map(i => (i.id === id ? detached(i) : i))});
 
 // The lens is awaited across a render gap: the rack it opened for can be
 // gone (another rack switched in) or the item removed by the time it
@@ -266,56 +258,96 @@ const detachedRack = (r, id) => ({...r, items: r.items.map(i => (i.id === id ? d
 async function explore(id) {
   const it = itemById(id);
   if (!it) { render(); return; }               // a stale panel's button: the device is gone
-  const docId = S.doc.id, ref = it.ref;
+  const docId = theDoc().id, ref = it.ref;
   const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
-  if (res && S.doc.id === docId && itemById(id)?.ref === ref)
+  if (res && theDoc().id === docId && itemById(id)?.ref === ref)
     patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
 }
 
-// `undoable` ({text}) makes this change the one pending Undo: the rack as it
-// was is kept whole in S.undo and the notice says what happened. Any other
-// change retires it, so only one Undo is ever pending.
-function commit(nextRack, undoable = null) {
-  // The 3D view draws the cables: a commit that adds or removes one, or
+// THE ONE WAY AN EDIT REACHES THE RACK: a command, through the editor (spec
+// §3.1). The editor's change listener (onChange) saves, redraws and keeps or
+// rebuilds the 3D scene; this only reports a refusal. `say` puts the step's
+// summary in the notice, where an edit with an Undo said what it did before
+// every edit had one. `report: false` leaves the refusal to the caller (a drag,
+// the arrow keys, the inspector), which says it its own way. An edit that changes nothing
+// still redraws, as the caller may have changed the selection, unless `quiet`:
+// the frame form's echoed change event (see onFrame) must not redraw, or it
+// would wipe the notice the first pass just showed.
+function edit(cmds, {say = false, report = true, quiet = false} = {}) {
+  const res = ed.apply(cmds, {origin: 'ui'});
+  // A refusal the caller reports is its to redraw too: the inspector shows it
+  // beside the control it snaps back, and a redraw would take that away.
+  if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
+  if (say && !res.noop && res.summary) { addNotice(res.summary, 'note'); S.saidStep = res.summary; }
+  if (res.noop && !quiet) renderSoon();
+  return res;
+}
+// A redraw queued for the end of this task: whatever the caller sets after an
+// edit (the selection, where the keyboard goes) is set before render() reads it.
+let renderQueued = false;
+function renderSoon() {
+  if (renderQueued) return;
+  renderQueued = true;
+  queueMicrotask(() => { renderQueued = false; render(); });
+}
+// An agent's edit is outlined for a moment (spec §5). Each render redraws the
+// SVG, so the mark is put back on until it runs out, then taken off.
+function paintAgentMark() {
+  const m = S.agentMark;
+  if (!m) return;
+  const on = Date.now() < m.until;
+  markTouched(document, m.ids, on);
+  if (!on) { S.agentMark = null; return; }
+  clearTimeout(S.agentMarkTimer);
+  S.agentMarkTimer = setTimeout(paintAgentMark, m.until - Date.now() + 20);
+}
+function onChange(ev) {
+  if (ev.cause === 'load') { if (ev.findings.length) S.save.saveSoon(theDoc()); return; }
+  if (ev.cause === 'apply' && ev.origin === 'agent') {
+    if (ev.summary) addNotice(`Your assistant: ${ev.summary}`, 'note');
+    if (agentHighlightOn()) S.agentMark = {ids: touchedIds(ev), until: Date.now() + AGENT_MARK_MS};
+  }
+  for (const f of ev.findings) addNotice(f.text, f.kind);
+  // The notice says this step only when the step raised it: a finding that is
+  // its summary (a shrink), or edit()'s `say`, which runs after this. "Undid: X"
+  // is not step X, even when the step Undo now takes back is also called X.
+  S.saidStep = ev.cause === 'apply' && ev.summary && ev.findings.some(f => f.text.includes(ev.summary)) ? ev.summary : null;
+  // An agent's step is said by its "Your assistant:" notice, which serves as Undo's description.
+  if (ev.cause === 'apply' && ev.origin === 'agent' && ev.summary) S.saidStep = ev.summary;
+  if (ev.cause === 'undo' || ev.cause === 'redo')
+    addNotice(`${ev.cause === 'undo' ? 'Undid' : 'Redid'}: ${ev.summary}`, 'note');
+  S.save.saveSoon(theDoc());
+  // The 3D view draws the cables: a change that adds or removes one, or
   // changes a cable's ends or media, changes the tubes and the plugs seated
-  // for them, and goes the same debounced rebuild a device edit does. A commit
+  // for them, and goes the same debounced rebuild a device edit does. A change
   // the scene reads nothing of (a cable's label, purpose or length, the rack's
-  // name) has nothing to rebuild there: the scene is kept and re-pointed at
-  // the new rack, but only if it was current. One that an earlier edit already
-  // made stale (its rebuild still pending) stays stale, so an export still
-  // rebuilds it first. An export already running holds the old rack and is
-  // discarded by modelExport's guard, as for any commit.
-  const prev = rack();
-  const kept = sameScene(prev, nextRack);
-  S.undo = undoable ? prev : null;
-  S.undoText = undoable ? undoable.text : '';
-  if (undoable) addNotice(undoable.text, 'note');
-  S.doc = {...S.doc, racks: [nextRack]};
-  S.save.saveSoon(S.doc);
-  render();
-  if (!kept) scheduleRebuild3d();
-  else keepScene(prev, nextRack);
+  // name, the DCIM settings) keeps it, re-pointed at the new rack, but only if
+  // it was current. An export already running holds the old rack and is
+  // discarded by modelExport's guard, as for any change.
+  if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
+  else scheduleRebuild3d();
+  // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
+  // (flushDcimDraft) and the routed lengths during one, so redrawing for them
+  // would loop. Neither changes what the page shows.
+  if (ev.step) renderSoon();
 }
 // A change the scene reads nothing of swaps the rack object under it. The scene
 // is kept and re-pointed at the new rack, but only if it was current for the
 // old one: a scene an earlier edit already made stale stays stale. The ONE
-// place this is decided, for commit() and for the import settings (putDcim).
+// place this is decided, for every change the editor reports (onChange).
 function keepScene(prev, next) {
   if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = next;
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
-  const notes = [];
-  doc = {...doc, racks: doc.racks.map(r => { const s = settleManagers(r, chassisOf); notes.push(...s.notices); return s.rack; })};
-  S.doc = doc;
-  if (notes.length) S.save.saveSoon(doc);   // the repair is saved like an edit, with no Undo
-  S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
+  const {findings} = ed.loadDoc(doc);   // settles managers; clears history; saves a repair (onChange)
+  S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
-  for (const n of notes) addNotice(n, 'note');
+  for (const f of findings) addNotice(f.text, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
-  try { localStorage.setItem(LAST, doc.id); } catch { /* a convenience, not state */ }
+  try { localStorage.setItem(LAST, theDoc().id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
   if (S.mode === '3d') rebuild3d();
@@ -343,7 +375,6 @@ function setCableMode(on) {
 // device is gone is closed with a sentence. Run at the top of every render.
 // One sentence for the page and the files (export-data.js): both say the same thing happened.
 const UNCHECKED_TEXT = UNCHECKED_NOTE;
-const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
 function addNotice(text, kind = 'error') {
   const old = S.notice && (typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice);
   // Overlapping redraws can raise the same sentence twice before either shows it.
@@ -405,18 +436,19 @@ function cableFormPanel(sel) {
       // The rack as it is NOW: it may have changed while the form was open (Undo).
       const now = rack();
       if (cable) {
-        // The cable may be gone: then there is nothing to save, and nothing is committed.
-        if (!now.cables.some(c => c.id === cable.id)) { S.sel = null; render(); return; }
+        // The cable may be gone: then there is nothing to save, and nothing is sent.
+        const cur = now.cables.find(c => c.id === cable.id);
+        if (!cur) { S.sel = null; render(); return; }
         S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null;
-        commit(updateCable(now, cable.id, fields));
+        // A media from a file this page does not know stays as itself: left
+        // alone, it is not sent, so the command's list of media never refuses it.
+        const {media, ...rest} = fields;
+        edit({op: 'cable.update', id: cable.id, ...rest, ...(media === (cur.media ?? '') ? {} : {media})});
         return;
       }
-      if (!itemById(a.item) || !itemById(b.item)) { S.sel = null; addNotice(NOT_ADDED); render(); return; }
-      const ok = canCable(now, a, b, {uOf});
-      if (!ok.ok) { S.sel = null; S.notice = {text: ok.reason, kind: 'error'}; render(); return; }
-      const made = withCable(now, {a, b, ...fields});
-      S.sel = {kind: 'cable', id: made.cable.id};
-      commit(made.rack);
+      // The command's refusals are NOT_ADDED (a device is gone) and canCable's sentence.
+      const res = edit({op: 'cable.add', a, b, ...fields});
+      S.sel = res.error ? null : {kind: 'cable', id: res.created.ids[0]};
     },
     onCancel: () => { S.cableDraft = null; select(cable ? {kind: 'cable', id: cable.id} : null); }});
   if (!cable) return form;
@@ -438,15 +470,18 @@ function cableFormPanel(sel) {
   return wrap;
 }
 
-// Every route edit stores the whole list and is one Undo (spec §6). Guarded
-// like the managers' actions: the panel may be stale (Undo, another edit).
-function editRoute(cableId, list, text, patch = {route: list, routeEdited: true}) {
+// Every route edit stores the whole list and is one Undo step (spec §6), named
+// by what was done: `text` is the notice and the Undo's description. A null
+// list resets the cable to its own route. Guarded like the managers' actions:
+// the panel may be stale (Undo, another edit).
+function editRoute(cableId, list, text) {
   const now = rack();
   if (!now.cables.some(x => x.id === cableId) || S.sel?.kind !== 'cable-form' || S.sel.id !== cableId) {
     S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
   }
   S.focusNext = 'routeAdd';
-  commit(updateCable(now, cableId, patch), {text});
+  edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
+            : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
@@ -475,7 +510,7 @@ function routePanel(cable) {
       onUp: i => swap(i, i - 1), onDown: i => swap(i, i + 1),
       onRemove: i => { S.routeSel = null; editRoute(id, list.filter((_, k) => k !== i), 'Waypoint removed.'); },
       onAdd: () => { S.routePick = {cableId: id, at: sel === null ? list.length : sel + 1}; S.focusNext = 'routeAdd'; render(); },
-      onReset: () => { S.routeSel = null; editRoute(id, [], 'Route reset to automatic.', {route: [], routeEdited: undefined}); }}),
+      onReset: () => { S.routeSel = null; editRoute(id, null, 'Route reset to automatic.'); }}),
     ...(picking ? [el('p', {id: 'routePickHelp', class: 'rk-muted', role: 'status',
       text: 'Click a ring, duct, brush or the gutter beside a rail. Esc stops.'})] : [])]);
 }
@@ -534,7 +569,7 @@ function cableListPanel() {
       if (!c) { render(); return; }            // a stale row's button: the cable is already gone
       S.sel = null;
       S.focusNext = 'undoShrink';              // Delete is gone with its row: the keyboard goes to Undo
-      commit(withoutCable(rack(), id), {text: `Deleted cable ${cableName(c)}.`});
+      edit({op: 'cable.remove', id}, {say: true});
     }});
 }
 // What the side panel shows with nothing selected, or with a cable selected:
@@ -546,69 +581,17 @@ const homePanel = () => el('div', {}, [
   S.mode === '3d' ? el('p', {id: 'cable3dNote', class: 'rk-muted', role: 'status', text: CABLES_3D}) : null,
   cableListPanel()].filter(Boolean));
 
-// A frame change goes through commit() as usual, unless the height drops and
-// some device no longer fits: shrinkRack (fit.js) compacts, then trims from
-// the bottom, and the previous rack is kept whole in S.undo (not just the
-// frame) so Undo restores items and positions exactly, not only the height.
-//
-// A field whose new value already matches the committed frame is a no-op:
-// removing a still-focused, edited <input> from the DOM (this panel is
-// rebuilt on every commit) makes some browsers re-fire 'change' on it as it
-// loses focus, echoing the same edit a second time. Applying that echo would
-// otherwise re-run this at the now-already-shrunk height and wipe the notice
-// and Undo the first pass just set.
-function commitFrame(patch) {
-  const r = rack();
-  // The form names only the part of `holes` it changed; the rest is the
-  // frame's as it is now, not as it was when the form was built.
-  if (patch.holes) patch = {...patch, holes: {...r.frame.holes, ...patch.holes}};
-  if ('heightRU' in patch && patch.heightRU < r.frame.heightRU) {
-    const {rack: next, moved, removed} = shrinkRack(r, patch.heightRU, chassisOf);
-    if (moved.length || removed.length) {
-      S.undo = r;
-      const dn = n => `device${n === 1 ? '' : 's'}`;
-      const removedNames = () => removed.map(i => i.label).join(', ');
-      const text = moved.length && removed.length
-        ? `Moved ${moved.length} ${dn(moved.length)} down and removed ${removed.length} from the bottom to fit ${patch.heightRU}U: ${removedNames()}.`
-        : moved.length
-        ? `Moved ${moved.length} ${dn(moved.length)} down to fit ${patch.heightRU}U.`
-        : `Removed ${removed.length} ${dn(removed.length)} from the bottom to fit ${patch.heightRU}U: ${removedNames()}.`;
-      // A trimmed device's cables are kept (spec §9.3: never silently
-      // deleted); each becomes a loose end, and Undo brings its device back.
-      const cut = new Set(removed.flatMap(i => cablesOf(r, i.id).map(c => c.id))).size;
-      const kept = cut ? ` ${cut} ${cut === 1 ? 'cable is kept as a loose end' : 'cables are kept as loose ends'}.` : '';
-      S.notice = {text: text + kept, kind: 'note'};
-      S.undoText = text + kept;
-    } else {
-      S.undo = null;
-    }
-    S.doc = {...S.doc, racks: [next]};
-    S.save.saveSoon(S.doc);
-    render();
-    scheduleRebuild3d();
-    return;
-  }
-  const next = withFrame(r, patch);
-  if (JSON.stringify(next.frame) === JSON.stringify(r.frame)) return; // the echoed duplicate above
-  commit(next);
-}
-
-function undoShrink() {
-  if (!S.undo) return;
-  S.doc = {...S.doc, racks: [S.undo]};
-  S.undo = null;
-  S.notice = null;
-  S.save.saveSoon(S.doc);
-  render();
-  scheduleRebuild3d();
-}
+// Undo and Redo walk the editor's history (spec §3.3); onChange says what was
+// undone or redone, saves and redraws.
+function undoStep() { ed.undo(); }
+function redoStep() { ed.redo(); }
 
 // ── Export (spec §8) ────────────────────────────────────────────────────
-// Every export is built from S.doc by exports.js, never from the panes. A
+// Every export is built from the rack by exports.js, never from the panes. A
 // builder resolves to {name, data, type, notes}, or {error: sentence}; the
 // notes travel inside the file, and the status line only counts them - and
 // says which ones the file had no place for (`left`, see exportStatus).
-// A rebuild follows a commit 300 ms later (scheduleRebuild3d), so an export
+// A rebuild follows an edit 300 ms later (scheduleRebuild3d), so an export
 // taken sooner would read the rack before the edit. The scene remembers which
 // rack object it was built from; any other one is rebuilt first.
 async function sceneForExport() {
@@ -626,7 +609,7 @@ async function sceneForExport() {
 const NO_SCENE = {error: "3D isn't available in this browser, so there's no model to export."};
 const OVERTAKEN = {error: 'The 3D view changed before the model was ready. Try the export again.'};
 // modelFile awaits the relief pass and the exporter while the page stays
-// live: a commit (and its rebuild 300 ms later), a switch to 2D or another
+// live: an edit (and its rebuild 300 ms later), a switch to 2D or another
 // rack can dispose or replace the scene under it. What comes back is only
 // good if it is still the scene on screen, built from the rack as it is now;
 // otherwise nothing is saved, whether the exporter threw or returned.
@@ -683,10 +666,11 @@ async function runExport(kind) {
   // What is typed in the settings form, Done not pressed, is part of the rack
   // the export builds from: store it before any builder reads rack().
   storeDcimDraft();
-  if (kind === 'json') { downloadDoc(S.doc); return; }
-  if (kind === 'to-3d') { setMode('3d'); return; }
-  if (kind === 'dcim-settings') { openDcimSettings(); return; }
-  if (exporting || !BUILD[kind]) return;
+  if (kind === 'json') { const doc = theDoc(); downloadDoc(doc); return {name: fileName(doc), notes: ''}; }
+  if (kind === 'to-3d') { setMode('3d'); return {name: '', notes: ''}; }
+  if (kind === 'dcim-settings') { openDcimSettings(); return {name: '', notes: ''}; }
+  if (exporting) return {error: 'Another export is still running. Try again in a moment.'};
+  if (!BUILD[kind]) return {error: `There is no export called ${kind}.`};
   exporting = true;
   // The line is one row and cuts a long sentence short (.rk-export-status),
   // so the whole of it is the element's title too.
@@ -694,12 +678,15 @@ async function runExport(kind) {
   say('Preparing…');
   try {
     const out = await BUILD[kind]();
-    if (out.error) { say(out.error); return; }
+    if (out.error) { say(out.error); return {error: out.error}; }
     save(out.data, out.name, out.type);
-    say(exportStatus(out));
+    const notes = exportStatus(out);
+    say(notes);
+    return {name: out.name, notes};
   } catch (err) {
     console.warn('[portrayal] export', kind, err);
     say("That export didn't work. Try again.");
+    return {error: "That export didn't work. Try again."};
   } finally {
     exporting = false;
   }
@@ -744,26 +731,15 @@ function renderExports() {
 // draft, which the open form still shows.
 function storeDcimDraft() { return !!S.dcimDraft && putDcim(S.dcimDraft); }
 // THE ONE WAY THE IMPORT SETTINGS REACH THE RACK, from Done and from a stored
-// draft alike. Settings are not an edit of what the rack holds, so this is not
-// commit():
-//   - A pending Undo is about something else (a shrink, a cable deleted, a
-//     device removed), so it is neither retired nor allowed to take the
-//     settings back: the rack it would restore gets the same settings. Undo
-//     then brings the devices back and the settings stay.
-//   - The 3D scene reads nothing of them, so a current scene stays current
-//     (keepScene, as commit()'s kept path): the next GLB is not a rebuild.
-// Returns whether the rack changed.
+// draft alike: the dcim command, which is not an undo step (spec §3.3). Undo
+// never takes the settings back (the editor keeps them across an undo), and
+// the 3D scene reads nothing of them, so a current scene stays current
+// (onChange's keepScene): the next GLB is not a rebuild. `quiet`, because this
+// runs inside render() (flushDcimDraft): settings that change nothing must not
+// redraw. Returns whether the rack changed.
 function putDcim(patch) {
-  const now = rack(), next = withDcim(now, patch);
-  if (JSON.stringify(next.dcim) === JSON.stringify(now.dcim)) return false;
-  if (S.undo) {
-    const {dcim: _was, ...bare} = S.undo;
-    S.undo = 'dcim' in next ? {...bare, dcim: next.dcim} : bare;
-  }
-  S.doc = {...S.doc, racks: [next]};
-  S.save.saveSoon(S.doc);
-  keepScene(now, next);
-  return true;
+  const res = edit({op: 'dcim', ...patch}, {quiet: true});
+  return !res.error && !res.noop;
 }
 // If the form is gone and a draft is left, the user went elsewhere: save it.
 function flushDcimDraft() {
@@ -808,24 +784,23 @@ async function render() {
       });
     if (facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
     // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
-    // length is the document's, so when one changes it is saved, without an
-    // Undo - it is the page's measurement, not an edit. No render is triggered
-    // from here: the side panel and cable list below read S.routes.
+    // length is the document's, so when one changes it is stored by the
+    // lengths.routed command, which is not an undo step - it is the page's
+    // measurement, not an edit - and so triggers no render (onChange): the side
+    // panel and cable list below read S.routes.
     if (r.cables.length) {
-      const at = S.doc;
+      const at = theDoc();
       const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
-      else if (S.doc === at) {
+      else if (theDoc() === at) {
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
         // Not from facts with a face missing: a port not found there is not a port that is loose.
-        const next = rf.complete ? withRoutedLengths(r, rf.ctx) : r;
-        if (next !== r) {
-          S.doc = {...S.doc, racks: S.doc.racks.map(x => (x.id === next.id ? next : x))};
-          S.save.saveSoon(S.doc);
-          keepScene(r, next);
-          r = next;               // the drawing below shows the length just kept
+        if (rf.complete) {
+          // onChange saves it and keeps the scene; the drawing below shows the length just kept.
+          const res = ed.apply({op: 'lengths.routed', routeCtx: rf.ctx}, {origin: 'system'});
+          if (!res.error && !res.noop) r = rack();
         }
       }
     } else {
@@ -882,6 +857,7 @@ async function render() {
     }
   }
   renderSide();
+  paintAgentMark();
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -924,8 +900,15 @@ function renderSide() {
   else if (sel.kind === 'cable-form') body = cableFormPanel(sel);
   else if (sel.kind === 'frame') body = frameForm({rack: r,
     // The rack as it is when the field changes, not as it was when the form was built.
-    onName: name => { if (name !== rack().name) commit(renamed(rack(), name)); },
-    onFrame: patch => commitFrame(patch)});
+    onName: name => edit({op: 'rename', name}, {quiet: true}),
+    // A shrink packs devices down and trims from the bottom, and says so (a
+    // finding); Undo puts every device back where it was. A field whose new
+    // value already matches the frame changes nothing: removing a
+    // still-focused, edited <input> from the DOM (this panel is rebuilt on
+    // every edit) makes some browsers re-fire 'change' on it as it loses focus,
+    // echoing the same edit a second time. The command makes that echo a no-op,
+    // and `quiet` keeps it from redrawing away the notice the first pass showed.
+    onFrame: patch => edit({op: 'frame', ...patch}, {quiet: true})});
   else if (sel.kind === 'dcim') body = dcimForm({rack: r, draft: S.dcimDraft,
     // Typing only keeps a draft. Done saves it once, against the rack as it is
     // when Done is clicked, not as it was when the form was built.
@@ -944,22 +927,16 @@ function renderSide() {
       // awaiting the cables' faces leaves them clickable): a click acts on the
       // rack as it is now, and does nothing once the device is gone or the
       // panel is no longer this device's.
-      const act = fn => () => {
-        const now = rack(), cur = now.items.find(i => i.id === it.id);
+      // The command words the sentence from the rack at click time: with no
+      // cable left, neither mentions any.
+      const act = cables => () => {
+        const cur = rack().items.find(i => i.id === it.id);
         if (S.sel?.kind !== 'remove' || S.sel.id !== it.id || !cur) { render(); return; }
-        const k = cablesOf(now, it.id).length, cables = `${k} cable${k === 1 ? '' : 's'}`;
         S.sel = null;
         S.focusNext = 'undoShrink';            // the panel's buttons go: the keyboard goes to Undo
-        fn(now, cur, k, cables);
+        edit({op: 'remove', id: cur.id, cables}, {say: true});
       };
-      body = removePanel({item: it, count: n,
-        onBoth: act((now, cur, k, cables) =>
-          commit(withoutCablesOf(withoutItem(now, cur.id), cur.id),
-            {text: (k ? `Removed ${cur.label} and its ${cables}.` : `Removed ${cur.label}.`) + managersStay(now, cur.id)})),
-        // The count is the one at click time: with no cable left, neither sentence mentions any.
-        onKeep: act((now, cur, k, cables) => commit(withoutItem(now, cur.id),
-          {text: (k ? `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`
-                    : `Removed ${cur.label}.`) + managersStay(now, cur.id)})),
+      body = removePanel({item: it, count: n, onBoth: act('remove'), onKeep: act('keep'),
         onCancel: () => { S.focusNext = 'iRemove'; select({kind: 'item', id: it.id}); }});
     }
   }
@@ -985,10 +962,10 @@ function renderSide() {
       body = managerInspector({item: it, rack: r, chassis: chassisOf(it.ref), host, hostHere,
         onPatch: patch => patchItem(it.id, patch),
         onSelectHost: () => select({kind: 'item', id: host.id}),
-        onDetach: () => live(cur => commit(detachedRack(rack(), cur.id), {text: `Detached ${cur.label}.`})),
+        onDetach: () => live(cur => edit({op: 'detach', id: cur.id}, {say: true})),
         onAttach: () => live(cur => attachManager(cur.id)),
         onMove: () => select({kind: 'move', id: it.id}),
-        onRemove: () => live(cur => { S.sel = null; commit(withoutItem(rack(), cur.id), {text: `Removed ${cur.label}.`}); }),
+        onRemove: () => live(cur => { S.sel = null; edit({op: 'remove', id: cur.id}, {say: true}); }),
         onExplore: () => explore(it.id)});
     } else body = el('div', {}, [inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
@@ -1009,8 +986,8 @@ function renderSide() {
         }
         if (confirm(`Remove ${cur.label} from the rack?`)) {
           S.sel = null;
-          const stay = managersStay(now, cur.id);
-          commit(withoutItem(now, cur.id), stay ? {text: `Removed ${cur.label}.${stay}`} : null);
+          // Said only when its managers stay behind: a plain removal is its own Undo's description.
+          edit({op: 'remove', id: cur.id}, {say: !!managersStay(now, cur.id)});
         }
       },
       onExplore: () => explore(it.id)}),
@@ -1022,27 +999,28 @@ function renderSide() {
         onRemove: id => {
           const m = itemById(id);
           if (!m) { render(); return; }
-          commit(withoutItem(rack(), id), {text: `Removed ${m.label}.`});
+          edit({op: 'remove', id}, {say: true});
         }})]);
   }
   const kids = [body];
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
-  // The shrink notice and Undo can stay past the render that shows them -
-  // they are cleared by the next commit (commit()/undoShrink()) or a
-  // document switch (setDoc()), not by this redraw.
-  if (S.undo) {
-    // The notice is shown once; the button stays until the next change. So
-    // that it is never a bare "Undo", the sentence saying what it would undo
-    // stays beside it: the notice itself while it shows, then a line of its
-    // own. Either way it is the button's description.
-    if (notice && S.undoText && notice.textContent.includes(S.undoText)) notice.id = 'undoWhat';
-    else if (S.undoText) kids.push(el('p', {id: 'undoWhat', class: 'rk-undo-what rk-muted', text: S.undoText}));
-    const undo = el('button', {type: 'button', id: 'undoShrink', text: 'Undo',
-                               ...(S.undoText ? {'aria-describedby': 'undoWhat'} : {})});
-    undo.addEventListener('click', undoShrink);
-    kids.push(undo);
-  }
+  // Undo and Redo, each while there is a step to take, each saying what it would
+  // take back or do again (spec §3.3). With nothing to undo the button is
+  // absent, not disabled: a disabled button with no description is noise. The
+  // notice is shown once; the sentence beside the button stays: the notice
+  // itself while it shows, then a line of its own. Either way it is the
+  // button's description.
+  const stepButton = (id, text, whatId, what, fn) => {
+    if (notice && what && S.saidStep === what && notice.textContent.includes(what) && id === 'undoShrink') notice.id = whatId;
+    else if (what) kids.push(el('p', {id: whatId, class: 'rk-undo-what rk-muted', text: what}));
+    const b = el('button', {type: 'button', id, text, ...(what ? {'aria-describedby': whatId} : {})});
+    b.addEventListener('click', fn);
+    kids.push(b);
+  };
+  if (ed.canUndo) stepButton('undoShrink', 'Undo', 'undoWhat', ed.undoSummary, undoStep);
+  if (ed.canRedo) stepButton('redoStep', 'Redo', 'redoWhat', ed.redoSummary, redoStep);
+  if (notice) S.saidStep = null;     // shown once, like the notice
   $('side').replaceChildren(...kids);
   const back = focusId ? document.getElementById(focusId) : null;
   const row = S.focusRow ? document.getElementById(`cableRow-${S.focusRow}`) : null;
@@ -1144,7 +1122,7 @@ function onPaneClick(ev) {
 async function offerDownloadIfNoLibrary() {
   if (S.lib.available) return;
   if (confirm("This browser isn't keeping a library, so this rack will be lost. Save it as .json first?"))
-    downloadDoc(S.doc);
+    downloadDoc(theDoc());
 }
 
 let libDraws = 0;
@@ -1166,13 +1144,13 @@ async function renderLibrary() {
     act('Duplicate', async () => {
       // The copy is of the rack as stored: what is typed in an open settings
       // form is a draft for the original, and goes into the original only.
-      const copy = structuredClone(S.doc);
+      const copy = structuredClone(theDoc());
       storeDcimDraft();
       await S.save.flush();
       const d = {...copy, id: newDoc().id};
       d.racks[0].name = `${rack().name} copy`; await S.lib.put(d); setDoc(d);
     }),
-    act('Rename…', () => { const n = prompt('Rack name', rack().name); if (n && n.trim()) commit(renamed(rack(), n.trim())); }),
+    act('Rename…', () => { const n = prompt('Rack name', rack().name); if (n && n.trim()) edit({op: 'rename', name: n.trim()}); }),
     act('Delete…', async () => {
       if (!confirm(`Delete ${rack().name} from this browser? This can't be undone.`)) return;
       await offerDownloadIfNoLibrary();
@@ -1182,7 +1160,7 @@ async function renderLibrary() {
       // then deleted with the rest) or is already clear, so it never queues
       // a put() for a document that's already gone.
       await S.save.flush();
-      await S.lib.remove(S.doc.id);
+      await S.lib.remove(theDoc().id);
       const next = (await S.lib.list())[0];
       let doc = next ? await getDoc(next.id) : null;
       if (next && !doc) S.notice = CANT_OPEN;
@@ -1190,7 +1168,7 @@ async function renderLibrary() {
       setDoc(doc);
     }),
     el('hr'),
-    act('Save as .json', () => downloadDoc(S.doc)),
+    act('Save as .json', () => downloadDoc(theDoc())),
     act('Open .json…', () => $('openFile').click()),
   ];
   // The actions at once, so they are never rebuilt under a click; the list of
@@ -1200,14 +1178,14 @@ async function renderLibrary() {
   if (mine !== libDraws || !list.length) return;
   items.append(el('hr'), ...list.map(d => {
     // The open rack by its live name: the stored one trails an edit by the autosave delay.
-    const b = act(d.id === S.doc.id ? rack().name : d.name, async () => {
+    const b = act(d.id === theDoc().id ? rack().name : d.name, async () => {
       storeDcimDraft();
       await S.save.flush();
       const doc = await getDoc(d.id);
       if (!doc) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_OPEN})); return; }
       setDoc(doc);
     });
-    if (d.id === S.doc.id) b.classList.add('rk-current');
+    if (d.id === theDoc().id) b.classList.add('rk-current');
     return b;
   }));
 }
@@ -1332,6 +1310,11 @@ async function bootInner() {
     if (ev.key === 'Escape' && S.routePick) { ev.preventDefault(); S.routePick = null; render(); return; }
     if (ev.key === 'Escape' && ev.target.closest?.('#cableForm')) { ev.preventDefault(); $('cCancel')?.click(); return; }
     if (ev.target.closest?.('input, select, textarea')) return;
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'z') {
+      ev.preventDefault();
+      if (ev.shiftKey) redoStep(); else undoStep();
+      return;
+    }
     // In Cable mode Esc backs out one step: the open form, then the picked
     // end, then the mode itself.
     if (ev.key === 'Escape' && S.cable.on) {
@@ -1357,14 +1340,55 @@ async function bootInner() {
   });
   paintMode();
   showMode();
+  ed = createRackEditor({doc, chassisOf});
+  ed.on('change', onChange);
+  // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
+  // Registered now for a browser that has WebMCP; the Connect your AI switch
+  // (site/agent/relay.js) registers them for one that doesn't.
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport});
+  S.agentAbort = new AbortController();
+  S.agentNative = false;
   setDoc(doc);
+  // Registration runs behind the first draw: a failure only logs. The switch
+  // asks lazily (and waits for this) whether the browser took the tools.
+  S.agentReg = registerTools(S.agentTools, {signal: S.agentAbort.signal})
+    .then(r => { S.agentNative = r.registered > 0; })
+    .catch(e => console.warn('[portrayal] WebMCP registration', e));
+  relaySwitch({mount: $('agentSlot'), tools: S.agentTools, native: async () => { await S.agentReg; return S.agentNative; }, examples: [
+    'Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel.',
+    'What in this rack has loose cable ends, and why?',
+    'Export this rack for NetBox.']});
 }
+
+// The queries, bound to this page's readers: the probe hook and the agent tools
+// ask the same questions the same way.
+const facePorts = async (item, view) =>
+  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+const boundQueries = () => ({
+  describe: r => Q.describe(r, {chassisOf}),
+  catalog: filter => Q.catalog(S.devices, filter),
+  fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
+  freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
+  freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
+  looseEnds: r => Q.looseEnds(r, {cableFacts}),
+});
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
-  window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d,
-    // Probe only: put a rack in through commit(), as any edit that changes the rack under the page does.
-    replaceRack: (next, undoable) => commit(next, undoable),
+  window.__rack = {ready, doc: () => ed.getDoc(), flush: () => S.save.flush(), scene: () => S.scene3d,
+    // Probe only: put a rack in as one undo step, as any edit that changes the rack under the page does.
+    replaceRack: (next, undoable) => {
+      if (undoable) addNotice(undoable.text, 'note');
+      ed.replaceRack(next, undoable?.text ?? 'Changed the rack.');
+      if (undoable) S.saidStep = undoable.text;
+    },
+    apply: cmds => edit(cmds),
+    undo: () => undoStep(),
+    redo: () => redoStep(),
+    history: () => ({canUndo: ed.canUndo, canRedo: ed.canRedo, undoSummary: ed.undoSummary, redoSummary: ed.redoSummary}),
+    query: (() => { const q = boundQueries(); return {
+      describe: () => q.describe(rack()), catalog: f => q.catalog(f), fitsAt: s => q.fitsAt(rack(), s),
+      freePorts: id => q.freePorts(rack(), id), looseEnds: () => q.looseEnds(rack())}; })(),
     // Probe only: a notice raised earlier in the same action.
     addNotice: text => addNotice(text, 'note'),
     // Probe only: make the exports' own reading of the cables fail, or one sheet pane's cables (see exports.js).
