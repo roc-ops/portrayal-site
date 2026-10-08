@@ -1450,6 +1450,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // item, and each cabled end's loose-end reason (null when it lands).
     // The routes the page resolved, as plain data: [[cable id, waypoints], ...], or null.
     routes: () => (S.routes ? [...S.routes.routes].map(([id, r]) => [id, r.waypoints]) : null),
+    // The pathway fill the page resolved (route.js fill, and the ducts beside the rack), as plain data.
+    fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f})), over: S.routes.over.map(o => ({...o}))} : null),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

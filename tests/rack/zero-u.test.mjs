@@ -246,3 +246,24 @@ test('fitsSided judges the whole span of a tall narrow part', () => {
   assert.deepEqual(fitsSided(r, {ref: BRACKET, face: 'front', ru: 9, side: 'left'}, chassisOf), {ok: true});
   assert.equal(RU, 44.45);
 });
+
+test('a duct over its fill is named in the notes as any pathway is, and where each part stands is a note of its own', async () => {
+  const {fillNotes} = await import('../../vendor/rack/export-data.js');
+  const {zeroUNotes, zeroUComment, zeroUEntries, withoutZeroU} = await import('../../site/rack/zero-u.js');
+  let r = run(rackOf('two-post', 45), {op: 'zerou.place', ref: DUCT, at: 'right', ru: 1, label: 'vcm-1', between: true}).rack;
+  r = {...r, cables: [{id: 'c1', media: 'cat6a'}]};
+  const routes = new Map([['c1', {waypoints: [{lane: 'right', ru: 4}], gone: []}]]);
+  const z = zeroUFill(r, routes, chassisOf, () => ({w: 2, h: 2}));
+  const nameOf = id => zeroUOf(r).find(x => x.id === id)?.label ?? id;
+  assert.deepEqual(fillNotes(r, {...z, routes}, nameOf), [`duct on vcm-1: 1 cables, ${z.fill[0].percent}% of a 40% fill.`]);
+  assert.deepEqual(zeroUNotes(r, chassisOf),
+    ['vcm-1: FS.com CMV-SFD45U5W, 0U, between racks at right, U1-U45; it serves the next rack too, which this file does not hold.']);
+  assert.equal(zeroUComment(r, zeroUEntries(r, chassisOf)[0], chassisOf, 'NetBox'),
+    '0U, a vertical cable manager between racks at right, U1-U45, serving the next rack too; NetBox has no field for that.');
+  assert.deepEqual(zeroUEntries(r, chassisOf)[0],
+    {id: 'z1', ref: DUCT, cfg: 'base', label: 'vcm-1', at: 'right', between: true, ru: 1, u: 45, w: 138.8, h: 2108, mount: 'rack-side'});
+  assert.deepEqual(withoutZeroU(r).zeroU, []);
+  // An entry this page cannot place is said, not drawn.
+  const odd = {...r, zeroU: [...r.zeroU, {id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']};
+  assert.match(zeroUNotes(odd, chassisOf).at(-1), /^2 zero-U entries are not a part this page can place/);
+});
