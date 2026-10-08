@@ -9,7 +9,7 @@ import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
 import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
-import {loadCatalog} from '../vendor/rack/catalog.js';
+import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -33,7 +33,7 @@ import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
 import * as Q from '../vendor/rack/queries.js';
-import {configuredFace} from './rack/face.js';
+import {configuredFace, DIST} from './rack/face.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
 import {relaySwitch, prefs} from './agent/relay.js';
@@ -1390,7 +1390,7 @@ async function bootInner() {
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS,
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext,
                             besides: r => zeroULines(r, chassisOf)});
   S.agentAbort = new AbortController();
   S.agentNative = false;
@@ -1417,7 +1417,22 @@ const boundQueries = () => ({
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
+  selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
 });
+
+// THE KIT'S PER-CALL CONTEXT for an agent's call (spec 2026-10-08 D5): the
+// parts lists of everything in the rack and of `refs` (a batch's new devices,
+// a catalog device inspected), the cabled ends' facts, and, for a cable's
+// routed length or a hand route's waypoints, the routing context, whose
+// guidesOf is each device's configured face (ruling K8). loadSlots memoizes
+// through the dist fetch, so a warm call fetches nothing.
+async function agentContext(r, refs = [], {route = false} = {}) {
+  const {slotsOf, compByRef} = await loadSlots(DIST, [...new Set([...r.items.map(i => i.ref), ...refs])]);
+  const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
+  if (!route) return ctx;
+  const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
+  return rf ? {...ctx, route: rf.ctx, guidesOf: rf.ctx.guidesOf} : ctx;
+}
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {

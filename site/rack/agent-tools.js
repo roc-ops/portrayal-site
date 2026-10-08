@@ -5,32 +5,10 @@
 // registered by the page (site/agent/webmcp.js).
 
 import {COMMANDS} from '../../vendor/rack/commands.js';
+import {LIMIT, fit, ranges} from './agent-text.js';
+import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
 
-// Chrome's WebMCP guidance: tool output of about 1.5K characters at most.
-export const LIMIT = 1500;
-
-// Cut at the last whole line that fits, and say how many lines were left out.
-export function fit(text, limit = LIMIT) {
-  if (text.length <= limit) return text;
-  const lines = text.split('\n');
-  for (let keep = lines.length - 1; keep >= 1; keep--) {
-    const left = lines.length - keep;
-    const out = [...lines.slice(0, keep), `(${left} more line${left === 1 ? '' : 's'} left out.)`].join('\n');
-    if (out.length <= limit) return out;
-  }
-  return `${text.slice(0, limit - 1)}…`;
-}
-
-export function ranges(ns) {
-  const s = [...new Set(ns)].sort((a, b) => a - b), out = [];
-  for (let i = 0; i < s.length; i++) {
-    let j = i;
-    while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++;
-    out.push(i === j ? `U${s[i]}` : `U${s[i]}-U${s[j]}`);
-    i = j;
-  }
-  return out.join(', ');
-}
+export {LIMIT, fit, ranges};
 
 // What an agent may send: every command but the page's own (system) and the
 // DCIM settings, which stay the user's (spec §7 D).
@@ -40,13 +18,17 @@ export const agentMay = (op, commands = COMMANDS) =>
 // edit_rack's argument schema, generated from the command table, so a command
 // added there is offered here with no other change. A guide for the agent:
 // apply() checks every argument again, strictly, and says what is wrong.
+const SELECT = {type: 'object', description: 'In place of id: {item}, {item, path, view}, {loose: true}, {purpose} or {media}. Reads the rack as it was before this batch.'};
 export function editSchema(commands = COMMANDS) {
   const oneOf = Object.keys(commands).filter(op => agentMay(op, commands)).map(op => {
     const a = commands[op].args ?? {type: 'object', properties: {}};
+    const props = {...(a.properties ?? {})};
+    let required = a.required ?? [];
+    if (SELECTABLE.has(op)) { props.select = SELECT; required = required.filter(r => r !== 'id'); }
     return {
       type: 'object', description: commands[op].description,
-      required: ['op', ...(a.required ?? [])],
-      properties: {op: {const: op}, ...(a.properties ?? {})},
+      required: ['op', ...required],
+      properties: {op: {const: op}, ...props},
       ...('additionalProperties' in a ? {additionalProperties: a.additionalProperties} : {}),
     };
   });
@@ -82,7 +64,12 @@ const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
 
 // `commands` is the table the editor runs (the page adds its own, zero-u.js);
 // `besides(rack)` lists what describe() leaves out: the parts beside the rack.
-export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS, besides = () => []}) {
+// `context(rack, refs, {route})` is the kit's per-call context, read by the
+// page: the parts lists of `refs` and of everything in the rack (loadSlots),
+// the cabled ends' facts, and, with route, the routing context. `library` is
+// the page's New path (new_rack).
+export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS, besides = () => [],
+                           context = async () => ({}), library = null}) {
   const table = commands;
   const tool = (name, title, description, properties, required, annotations, run) => ({
     name, title, description, annotations,
@@ -167,25 +154,25 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const at = i => `Command ${i + 1} of ${n} (${commands[i]?.op})`;
         const banned = commands.findIndex(c => typeof c?.op === 'string' && Object.hasOwn(table, c.op) && !agentMay(c.op, table));
         if (banned >= 0) return refuse(`${at(banned)} is not for agents: the page sends it itself, or the user sets it. Nothing was changed.`);
-        const res = dry_run ? ed.preview(commands) : ed.apply(commands, {origin: 'agent'});
-        if (res.error) return refuse(`${at(res.index ?? 0)} was refused: ${res.error} Nothing was changed.`);
-        if (res.noop) return say('Nothing changed: the rack already looks like that.');
-        const named = Object.entries(res.created ?? {}).filter(([k]) => k !== 'ids').map(([k, v]) => `${k} = ${v}`);
-        // What the next call needs comes first, so a long batch can lose only
-        // the tail of its summary and its notes, never ids or the undo line.
-        const head = [...(named.length ? [named.join(', ')] : []),
-          ...(res.created?.ids?.length ? [`Created: ${res.created.ids.join(', ')}`] : []),
-          dry_run ? 'Nothing was changed.' : 'Undo takes all of this back in one step.'];
-        const notes = res.findings.map(f => `${f.kind === 'error' ? 'Problem' : 'Note'}: ${f.text}`);
-        const sum = `${dry_run ? 'Would: ' : ''}${res.summary}`;
-        const room = LIMIT - head.join('\n').length - 1;
-        const cut = sum.length <= room ? sum : `${sum.slice(0, Math.max(0, room - 1))}…`;
-        const lines = [...head, cut];
-        for (const n of notes) {
-          if ([...lines, n].join('\n').length > LIMIT) break;
-          lines.push(n);
+        // The lists load across an await, and the user can edit meanwhile: they
+        // are loaded again for the rack as it is, so a device the user just
+        // placed has its list too. Three tries; apply checks the rack it has.
+        // Selectors read the same rack the lists were loaded for.
+        let ctx, x;
+        for (let tries = 0; tries < 3; tries++) {
+          const rack = ed.rack();
+          ctx = await context(rack, refsFor(rack, commands), {route: routes(commands)});
+          x = await expandSelectors(rack, commands, (r, sel) => queries.selectCables(r, sel, ctx));
+          if (ed.rack() === rack) break;
         }
-        return say(lines.join('\n'));
+        if (x.error) return refuse(`${at(x.index)} was refused: ${x.error} Nothing was changed.`);
+        const res = dry_run ? ed.preview(x.commands, {ctx}) : ed.apply(x.commands, {origin: 'agent', ctx});
+        if (res.error) return refuse(`${at(x.from[res.index ?? 0] ?? 0)} was refused: ${res.error} Nothing was changed.`);
+        if (res.noop) return say('Nothing changed: the rack already looks like that.');
+        const verb = {'cable.remove': dry_run ? 'Would remove' : 'Removed', 'cable.update': dry_run ? 'Would update' : 'Updated'};
+        const echoed = x.selected.map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
+        const notes = x.unchecked ? ['Note: some ports could not be checked, so a loose cable may have been missed.'] : [];
+        return say(editResult(res, {dryRun: !!dry_run, echoed, notes}));
       }),
     tool('undo', 'Undo', 'Take back the last edit to the rack, whoever made it, and say what it was.', {}, [], {readOnlyHint: false},
       async () => { const s = ed.undo(); return say(s ? `Undid: ${s.summary}` : 'Nothing to undo.'); }),

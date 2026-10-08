@@ -6,6 +6,7 @@ import * as M from '../../vendor/rack/model.js';
 import * as Q from '../../vendor/rack/queries.js';
 import {createRackEditor} from '../../vendor/rack/editor.js';
 import {endKey} from '../../vendor/rack/cable-rules.js';
+import {SIZES, chassisOf, slotsOf, compByRef} from './fixtures/kit-slots.mjs';
 
 test('fit leaves short text alone and cuts long text at a whole line, saying how much', () => {
   assert.equal(fit('a\nb'), 'a\nb');
@@ -31,7 +32,8 @@ test('the edit_rack schema has one branch per command an agent may send', () => 
   assert.ok(!ops.includes('lengths.routed') && !ops.includes('dcim'));
   for (const b of s.properties.commands.items.oneOf) {
     assert.equal(b.required[0], 'op');
-    for (const r of COMMANDS[b.properties.op.const].args.required ?? []) assert.ok(b.required.includes(r));
+    for (const r of COMMANDS[b.properties.op.const].args.required ?? [])
+      if (!(r === 'id' && ['cable.remove', 'cable.update'].includes(b.properties.op.const))) assert.ok(b.required.includes(r));
   }
   assert.deepEqual(s.required, ['commands']);
   assert.equal(s.properties.commands.maxItems, 50);
@@ -53,23 +55,27 @@ test('every export kind maps to a page export key', () => {
     'bill of materials': 'bom', 'cable schedule': 'cables', 'rack file': 'json'});
 });
 
-const SIZES = {'as7726-32x': {ru: 1, h: 43.5, d: 515, model: 'AS7726-32X', manufacturer: 'Accton', configs: ['ac-f2b'], default: 'ac-f2b', family: null},
-               'r740xd': {ru: 2, h: 86.8, d: 737.5, model: 'R740xd', manufacturer: 'Dell', configs: ['a', 'b'], default: 'a', family: 'poweredge'}};
-const chassisOf = ref => SIZES[ref] || null;
 const PORTS = [{path: 'port-1', cls: 'port', speed: '100G', media: 'qsfp28'}, {path: 'port-2', cls: 'port', speed: '100G', media: 'qsfp28'}];
-const setup = ({doc = M.newDoc(), ports = PORTS, facts = {ends: new Map()}} = {}) => {
+const setup = ({doc = M.newDoc(), ports = PORTS, facts = {ends: new Map()}, devices = SIZES, library = null, context = null} = {}) => {
   const ed = createRackEditor({doc, chassisOf});
-  const ctx = {chassisOf};
+  // Every per-call context the tools ask for, so a test can see what was loaded.
+  const contexts = [];
+  const ctxFor = async (rack, refs = [], opts = {}) => {
+    contexts.push({rack, refs, opts});
+    return {chassisOf, slotsOf, compByRef, cableFacts: async () => facts};
+  };
   const queries = {
-    describe: r => Q.describe(r, ctx), catalog: f => Q.catalog(SIZES, f),
-    fitsAt: (r, s) => Q.fitsAt(r, s, ctx), freeUs: (r, s) => Q.freeUs(r, s, ctx),
+    describe: (r, win) => Q.describe(r, {chassisOf}, win), catalog: f => Q.catalog(devices, f),
+    fitsAt: (r, s) => Q.fitsAt(r, s, {chassisOf}), freeUs: (r, s) => Q.freeUs(r, s, {chassisOf}),
     freePorts: (r, id) => Q.freePorts(r, id, {portsOf: async () => ports}),
     looseEnds: r => Q.looseEnds(r, {cableFacts: async () => facts}),
+    inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
+    selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
   };
   const exported = [];
   const runExport = async key => { exported.push(key); return {name: `rack.${key}`, notes: 'Exported 1 device.'}; };
-  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries, runExport}).map(t => [t.name, t]));
-  return {ed, tools, exported, run: (name, args = {}) => tools[name].execute(args)};
+  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries, runExport, context: context ?? ctxFor, library}).map(t => [t.name, t]));
+  return {ed, tools, exported, contexts, run: (name, args = {}) => tools[name].execute(args)};
 };
 const text = r => r.content[0].text;
 
@@ -275,4 +281,155 @@ test('edit_rack: a 30-command batch keeps its ids and undo line, and cuts only t
   assert.match(out, /^d1 = i1, d2 = i2, /);
   assert.match(out, /\nCreated: i1, i2, /);
   assert.match(out, /\nUndo takes all of this back in one step\./);
+});
+
+// ── round 2: the parts lists, the per-call context and findings (plan Task 2) ──
+test('edit_rack loads the parts lists of the rack and the batch, and hands them to the editor', async () => {
+  const {ed, run, contexts} = setup();
+  ed.apply({op: 'place', ref: 'r740xd', face: 'front', ru: 1});
+  const seen = [];
+  const spy = Object.assign(Object.create(ed), {
+    apply: (c, o) => { seen.push(['apply', o]); return ed.apply(c, o); },
+    preview: (c, o) => { seen.push(['preview', o]); return ed.preview(c, o); },
+  });
+  const tools = Object.fromEntries(rackTools({ed: spy, chassisOf, queries: {}, runExport: async () => ({}),
+    context: async (r, refs) => { contexts.push({refs}); return {slotsOf, compByRef, chassisOf}; }}).map(t => [t.name, t]));
+  await tools.edit_rack.execute({commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}], dry_run: true});
+  await tools.edit_rack.execute({commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 10}]});
+  assert.deepEqual(contexts.at(-1).refs.sort(), ['as7726-32x', 'r740xd']);
+  assert.equal(seen[0][0], 'preview');
+  assert.equal(seen[0][1].ctx.slotsOf, slotsOf);
+  assert.deepEqual([seen[1][0], seen[1][1].origin, seen[1][1].ctx.slotsOf], ['apply', 'agent', slotsOf]);
+  assert.ok(run);
+});
+
+test('edit_rack passes the kit\'s fit and field refusals through, and nothing changes', async () => {
+  const {ed, run} = setup();
+  await run('edit_rack', {commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 40}]});
+  const before = ed.rack();
+  const wrong = await run('edit_rack', {commands: [{op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/sfp-lr@1'}]});
+  assert.equal(wrong.isError, true);
+  assert.match(text(wrong), /^Command 1 of 1 \(fit\) was refused: port-1 does not take generic\/sfp-lr@1\. It takes: generic\/qsfp-lc@2, generic\/qsfp-dac@1.* Nothing was changed\.$/s);
+  const nowhere = await run('edit_rack', {commands: [{op: 'fit', id: 'i1', path: 'port-99', ref: 'generic/qsfp-lc@2'}]});
+  assert.match(text(nowhere), /port-99 is not a bay or cage on/);
+  await run('edit_rack', {commands: [{op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/qsfp-lc@2'}]});
+  const path = (await Q.inspect(ed.rack(), 'i1', {chassisOf, slotsOf, compByRef})).fields.find(f => f.key === 'latch-color').path;
+  const key = await run('edit_rack', {commands: [{op: 'field', id: 'i1', path, key: 'colour', value: '#fff'}]});
+  assert.equal(key.isError, true);
+  assert.match(text(key), /latch-color/);
+  assert.equal(ed.rack().items[0].swaps['port-1'], 'generic/qsfp-lc@2');
+  assert.notEqual(ed.rack(), before);
+});
+
+test('a finding survives a long summary: notes keep room of their own', async () => {
+  const {ed, tools} = setup();
+  const finding = {kind: 'note', text: 'Kept the cables on bay-1/lc12 as loose ends (c1): these ports are not on FHD 6 SC.'};
+  const spy = Object.assign(Object.create(ed), {apply: (c, o) => { const r = ed.apply(c, o); return r.error ? r : {...r, findings: [...r.findings, finding]}; }});
+  const t = Object.fromEntries(rackTools({ed: spy, chassisOf, queries: {}, runExport: async () => ({}),
+    context: async () => ({slotsOf, compByRef})}).map(x => [x.name, x]));
+  const commands = Array.from({length: 40}, (_, i) => ({op: 'place', ref: 'as7726-32x', face: 'front', ru: i + 1, label: `switch-with-a-long-name-${i}`}));
+  const out = text(await t.edit_rack.execute({commands}));
+  assert.ok(out.length <= LIMIT, `${out.length}`);
+  assert.match(out, /\nNote: Kept the cables on bay-1\/lc12/);
+  assert.match(out, /\nUndo takes all of this back in one step\./);
+  assert.ok(tools);
+});
+
+test('the user edits the rack while the parts lists load: they are loaded again for the rack as it is', async () => {
+  const {ed} = setup();
+  const asked = [];
+  let once = false;
+  const context = async (r, refs) => {
+    asked.push([...refs].sort());
+    if (!once) { once = true; ed.apply({op: 'place', ref: 'r740xd', face: 'front', ru: 1}); }   // the user, mid-call
+    return {chassisOf, slotsOf: ref => (refs.includes(ref) ? slotsOf(ref) : null), compByRef};
+  };
+  const t = Object.fromEntries(rackTools({ed, chassisOf, queries: {}, runExport: async () => ({}), context}).map(x => [x.name, x]));
+  const res = await t.edit_rack.execute({commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 20}]});
+  assert.equal(res.isError, undefined, text(res));
+  assert.deepEqual(asked, [['as7726-32x'], ['as7726-32x', 'r740xd']]);
+});
+
+// ── round 2: selectors (plan Task 3) ──
+const twoCabled = async run => run('edit_rack', {commands: [
+  {op: 'place', ref: 'as7726-32x', face: 'front', ru: 40, as: 'a'},
+  {op: 'place', ref: 'as7726-32x', face: 'front', ru: 38, as: 'b'},
+  {op: 'place', ref: 'as7726-32x', face: 'front', ru: 36, as: 'c'},
+  {op: 'cable.add', a: {item: '@a', path: 'port-1', view: 'front'}, b: {item: '@b', path: 'port-1', view: 'front'}, purpose: 'uplink'},
+  {op: 'cable.add', a: {item: '@a', path: 'port-2', view: 'front'}, b: {item: '@c', path: 'port-1', view: 'front'}},
+  {op: 'cable.add', a: {item: '@b', path: 'port-2', view: 'front'}, b: {item: '@c', path: 'port-2', view: 'front'}}]});
+
+test('edit_rack: a selector becomes one command per cable, and the result echoes the ids', async () => {
+  const {ed, run} = setup();
+  await twoCabled(run);
+  const res = await run('edit_rack', {commands: [{op: 'cable.remove', select: {item: 'i1'}}]});
+  assert.equal(res.isError, undefined, text(res));
+  assert.match(text(res), /^Removed: c1, c2\.\nUndo takes all of this back in one step\./);
+  assert.deepEqual(ed.rack().cables.map(c => c.id), ['c3']);
+  const upd = await run('edit_rack', {commands: [{op: 'cable.update', select: {item: 'i2', path: 'port-2'}, label: 'x'}], dry_run: true});
+  assert.match(text(upd), /^Would update: c3\.\nNothing was changed\./);
+});
+
+test('edit_rack: an empty selection is refused with the spec sentence, and nothing changes', async () => {
+  const {ed, run} = setup();
+  await twoCabled(run);
+  const before = ed.rack();
+  const res = await run('edit_rack', {commands: [{op: 'rename', name: 'X'}, {op: 'cable.remove', select: {item: 'i3', path: 'port-9'}}]});
+  assert.equal(res.isError, true);
+  assert.equal(text(res), 'Command 2 of 2 (cable.remove) was refused: No cable matches {item: i3, path: port-9}. Nothing was changed.');
+  assert.equal(ed.rack(), before);
+});
+
+test('edit_rack: {loose: true} reaches the loose cables through the cable facts', async () => {
+  const facts = {ends: new Map()};
+  const {ed, run} = setup({facts});
+  await twoCabled(run);
+  facts.ends.set(endKey(ed.rack().cables[1].b), {reason: 'the port is not on that device'});
+  const res = await run('edit_rack', {commands: [{op: 'cable.remove', select: {loose: true}}]});
+  assert.match(text(res), /^Removed: c2\./);
+});
+
+test('edit_rack: a refusal after expansion names the command as sent', async () => {
+  const {run} = setup();
+  await twoCabled(run);
+  const res = await run('edit_rack', {commands: [{op: 'cable.remove', select: {item: 'i1'}}, {op: 'move', id: 'i9', ru: 3}]});
+  assert.match(text(res), /^Command 2 of 2 \(move\) was refused: /);
+});
+
+test('edit_rack: select with an @name from the batch is refused with the reason', async () => {
+  const {ed, run} = setup();
+  const before = ed.rack();
+  const res = await run('edit_rack', {commands: [
+    {op: 'place', ref: 'as7726-32x', face: 'front', ru: 40, as: 'sw'},
+    {op: 'cable.remove', select: {item: '@sw'}}]});
+  assert.equal(res.isError, true);
+  assert.match(text(res), /^Command 2 of 2 \(cable\.remove\) was refused: select reads the rack as it was before this batch, so it can't use an @name from it\. Nothing was changed\.$/);
+  assert.equal(ed.rack(), before);
+});
+
+test('edit_rack: two selectors that reach the same cable remove it once', async () => {
+  const {ed, run} = setup();
+  await twoCabled(run);
+  const res = await run('edit_rack', {commands: [
+    {op: 'cable.remove', select: {item: 'i1'}}, {op: 'cable.remove', select: {item: 'i2'}}, {op: 'cable.remove', id: 'c3'}]});
+  assert.equal(res.isError, undefined, text(res));
+  assert.equal(ed.rack().cables.length, 0);
+});
+
+test('edit_rack: select on another command, id and select together, and neither, are refused', async () => {
+  const {run} = setup();
+  await twoCabled(run);
+  assert.match(text(await run('edit_rack', {commands: [{op: 'remove', select: {item: 'i1'}}]})), /Only cable\.remove and cable\.update take select\./);
+  assert.match(text(await run('edit_rack', {commands: [{op: 'cable.remove', id: 'c1', select: {item: 'i1'}}]})), /Send id or select, not both\./);
+  assert.match(text(await run('edit_rack', {commands: [{op: 'cable.update', label: 'x'}]})), /Send id or select\./);
+});
+
+test('the schema offers select in place of id on cable.remove and cable.update only', () => {
+  const branches = Object.fromEntries(editSchema().properties.commands.items.oneOf.map(b => [b.properties.op.const, b]));
+  for (const op of ['cable.remove', 'cable.update']) {
+    assert.ok(branches[op].properties.select, op);
+    assert.ok(!branches[op].required.includes('id'), op);
+  }
+  assert.ok(!branches.remove.properties.select);
+  assert.ok(branches.remove.required.includes('id'));
 });
