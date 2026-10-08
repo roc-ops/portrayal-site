@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="37.9mm" height="12.5mm" viewBox="0 0 37.9 12.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ground-stud-pair-1-1-4" data-path="ground-stud-pair-1-1-4" data-class="ground" data-behaviour="mounts" data-ref="common/ground-stud-pair-1-1-4@1:1.0.0" data-connector="stud-pair-1" transform="translate(0,0)">
+    <title>ground-stud-pair-1-1-4</title>
+    <g id="ground-stud-pair-1-1-4--pair" />
+    <g id="ground-stud-pair-1-1-4--1" data-path="ground-stud-pair-1-1-4/1" data-class="ground" data-ref="common/ground-screw-1-4@1:1.0.0" data-connector="terminal-stud" transform="translate(0,0)">
+      <title>ground-stud-pair-1-1-4--1</title>
+      <g id="ground-stud-pair-1-1-4--1--head" data-z-cyl="3.66" data-z-color="#b9bec4">
+        <circle cx="6.25" cy="6.25" r="6.15" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 3.5 6.25 H 9 M 6.25 3.5 V 9" fill="none" stroke="#4e5359" stroke-width="0.75" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.25 6.25" data-cp-dir="front" data-cp-on="ground-stud-pair-1-1-4--1--head" />
+    </g>
+    <g id="ground-stud-pair-1-1-4--2" data-path="ground-stud-pair-1-1-4/2" data-class="ground" data-ref="common/ground-screw-1-4@1:1.0.0" data-connector="terminal-stud" transform="translate(25.4,0)">
+      <title>ground-stud-pair-1-1-4--2</title>
+      <g id="ground-stud-pair-1-1-4--2--head" data-z-cyl="3.66" data-z-color="#b9bec4">
+        <circle cx="6.25" cy="6.25" r="6.15" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 3.5 6.25 H 9 M 6.25 3.5 V 9" fill="none" stroke="#4e5359" stroke-width="0.75" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.25 6.25" data-cp-dir="front" data-cp-on="ground-stud-pair-1-1-4--2--head" />
+    </g>
+    <g data-cp="mate" data-cp-at="18.95 6.25" data-cp-dir="front" />
+  </g>
+</svg>

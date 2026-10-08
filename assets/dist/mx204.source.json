@@ -154,6 +154,12 @@
    ],
    "term": "LED"
   },
+  "esd": {
+   "description": "the wrist-strap ESD points, front left and rear (guide Figure 5, ESD Points)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
   "fan-leds": {
    "description": "Table 9 - bicolor fan status LED on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, red steady = faulty",
    "index-origin": 0,
@@ -181,6 +187,12 @@
    "role": "service",
    "term": "Fan"
   },
+  "furniture": {
+   "description": "the front laser-safety label",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Item"
+  },
   "gm-ptp-leds": {
    "description": "Two stacked lamps right of the GM/PTP cage; undocumented in the guide (same searches as the port lamps)",
    "index-origin": 0,
@@ -188,6 +200,7 @@
    "term": "LED"
   },
   "grounding": {
+   "description": "the rear protective-earthing plate, two screws on 3/4 in. centres (guide Figure 17)",
    "index-origin": 0,
    "role": "furniture",
    "term": "Point"
@@ -277,6 +290,18 @@
    "confidence": "drawing",
    "note": "drawing + photo - a recessed socket at 31.1, 28.9 with the ESD symbol below; the guide's \"ESD Points\" figure (g009865, Figure 5) marks this same location. The guide art draws it as a hex-nut stud; the photograph shows a plain recessed socket - photo carried"
   },
+  "ground-plate": {
+   "confidence": "datasheet",
+   "note": "the hardware guide, twice: the grounding points are spaced at 0.75-in. (19.1-mm) centres, 3/4 in., 19.05 (Ground the MX204 Router; Grounding Points on the Router, Figure 17). The plate is juniper/mx204-ground-plate@2, which composes two 10-32 screws at exactly 19.05 and presents `stud-pair-3-4`, so one two-hole lug (generic/two-hole-lug-3-4@1) lands across the pair and the ring lug still lands on either screw, `ground-plate/1` and `/2`. @1 drew the holes 16.0 apart off the g009862 render (x 38.6 and 54.6 of the rack face); they moved symmetrically about the same centre, x 23.95, inside the plate, and the plate, its cutout and the earth symbol did not move. The guide also says M5 once where it says 10-32 twice; the `stud-size` is 10-32 and the plate's provenance.thread records the disagreement"
+  },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the hardware guide, Grounding Points on the Router: the grounding points are studs sized for 10-32 screws, and two threaded holes fit 10-32 screws: the `stud-size` of the plate's pair. The guide says M5 once elsewhere (provenance.ground-plate)"
+  },
+  "laser-warning": {
+   "confidence": "drawing",
+   "note": "the front laser-safety label is not an earthing point: it moved from `grounding` (rel-pos 4) to its own `furniture` group at rel-pos 0 (#414). The empty silkscreen mark that named it (text '', font-size 0.1) printed nothing and is gone. Where the label sits is the front drawing's reading (provenance.scale), unchanged"
+  },
   "lifecycle": {
    "note": "announced - Juniper lists MX204-HW-BASE end-of-sale 2027-06-15 and end-of-support 2032-06-30 (support.juniper.net M/MX hardware milestones, mirrored by Park Place and router-switch EOL trackers, searched 2026-08-26)"
   },
@@ -343,7 +368,7 @@
    "title": "Juniper MX204 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "3.0.1",
+ "version": "4.0.1",
  "views": {
   "bottom": {
    "panel": {
@@ -390,7 +415,7 @@
        25.9
       ],
       "for": "chassis",
-      "group": "grounding",
+      "group": "esd",
       "id": "esd-front-jack",
       "ref": "common/esd-jack@1",
       "rel-pos": 0
@@ -476,10 +501,10 @@
        121.15,
        25.6
       ],
-      "group": "grounding",
+      "group": "furniture",
       "id": "laser-warning",
       "ref": "common/laser-warning@1",
-      "rel-pos": 4
+      "rel-pos": 0
      },
      {
       "at": [
@@ -1607,15 +1632,6 @@
     },
     {
      "at": [
-      123.85,
-      31.0
-     ],
-     "font-size": 0.1,
-     "for": "laser-warning",
-     "text": ""
-    },
-    {
-     "at": [
       130.55,
       22.85
      ],
@@ -2087,19 +2103,22 @@
        14.2
       ],
       "for": "chassis",
-      "group": "grounding",
+      "group": "esd",
       "id": "esd-rear-jack",
       "ref": "common/esd-jack@1",
-      "rel-pos": 0
+      "rel-pos": 1
      },
      {
       "at": [
        5.95,
        10.0
       ],
+      "attrs": {
+       "stud-size": "10-32"
+      },
       "group": "grounding",
       "id": "ground-plate",
-      "ref": "juniper/mx204-ground-plate@1",
+      "ref": "juniper/mx204-ground-plate@2",
       "rel-pos": 0
      },
      {

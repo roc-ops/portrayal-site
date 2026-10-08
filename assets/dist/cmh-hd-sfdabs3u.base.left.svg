@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="112mm" height="132.5mm" viewBox="0 0 112 132.5" data-device="cmh-hd-sfdabs3u" data-view="left" data-shell="sheet" data-material="ABS" data-color="Black" data-mounting-hardware="M6*15mm Screw x4 and M6 Nut x4" data-cable-capacity="144" data-cable-capacity-basis="Cat6 24AWG, a theoretical value - FS CMH-HD-SFDABS3U datasheet specification table, which states no fill basis" data-operating-temp="-10 to 60°C (14 to 140°F)" data-operating-humidity="95% Relative Humidity (max.), Non-condensing" data-environment="Indoor" data-flammability="UL 94V-0 (finger ducts)" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMH-HD-SFDABS3U","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"1cc4eb362a50a3593d04e1794bff31776ed01405e2755215461b2a2f2542feb6","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMH-HD-SFDABS3U" x="0" y="0" width="112" height="132.5" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate" data-kind="base" x="0" y="0" width="2.6" height="132.5" rx="0.6" fill="#232527" data-groove="0.05" />
+    <rect id="wall-upper" data-kind="finger-wall" x="2.6" y="5.2" width="105.7" height="9.8" rx="0.6" fill="#2a2c2e" />
+    <rect id="wall-lower" data-kind="finger-wall" x="2.6" y="117.5" width="105.7" height="9.8" rx="0.6" fill="#2a2c2e" />
+    <rect id="hinge-upper" data-kind="cover" x="108.3" y="5.2" width="1.7" height="9.8" rx="0.6" fill="#333639" />
+    <rect id="hinge-lower" data-kind="cover" x="108.3" y="117.5" width="1.7" height="9.8" rx="0.6" fill="#333639" />
+    <rect id="cover-face" data-kind="cover" x="110" y="1.9" width="2" height="128.7" rx="0.6" fill="#333639" />
+  </g>
+</svg>

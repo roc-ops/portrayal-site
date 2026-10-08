@@ -99,7 +99,7 @@
    "power": "dc"
   }
  },
- "description": "Celestica DS6000 - 3U, 64-port 1.6TbE OSFP224 data centre switch on a Broadcom Tomahawk 6 (102.4 Tbps) with an Intel Xeon-D COM Express CPU and a RunBMC/OpenBMC service processor. The front is a black perforated bezel carrying sixteen columns of OSFP224 cages, each column two belly-to-belly stacked pairs numbered top to bottom, with a management and timing cluster across the top right: two RJ45 consoles (CON0, CON1), two 50GbE SFP56 management ports, an RJ45 GbE MGMT port, an RJ45 ToD port, 1PPS and 10 MHz SMA jacks, a USB 3.0 Type-A, a USB-C console, a reset pinhole and four system lamps. The rear carries five fan modules (4+1, dual-rotor) across the top and four 3200 W supplies (2+2) across the bottom between two legend panels, the left one with the grounding point. No installation guide exists for this model; it is drawn from the datasheet and from vendor renders.",
+ "description": "Celestica DS6000 - 3U, 64-port 1.6TbE OSFP224 data centre switch on a Broadcom Tomahawk 6 (102.4 Tbps) with an Intel Xeon-D COM Express CPU and a RunBMC/OpenBMC service processor. The front is a black perforated bezel carrying sixteen columns of OSFP224 cages, each column two stacked pairs numbered top to bottom, with a management and timing cluster across the top right: two RJ45 consoles (CON0, CON1), two 50GbE SFP56 management ports, an RJ45 GbE MGMT port, an RJ45 ToD port, 1PPS and 10 MHz SMA jacks, a USB 3.0 Type-A, a USB-C console, a reset pinhole and four system lamps. The rear carries five fan modules (4+1, dual-rotor) across the top and four 3200 W supplies (2+2) across the bottom between two legend panels, the left one with the grounding point. No installation guide exists for this model; it is drawn from the datasheet and from vendor renders.",
  "format": 1,
  "gaps": [
   {
@@ -174,6 +174,14 @@
    ],
    "wanted": "A dimensioned drawing, or a photograph with a known dimension in frame, to say whether the renders or the 129.8 mm figure (which may include feet or a lid lip) is the face height.",
    "what": "render-height"
+  },
+  {
+   "reason": "needs-drawing",
+   "scope": [
+    "front"
+   ],
+   "wanted": "Which way each OSFP block faces. The render shows a riding heat sink inside every block, so both ports of a block face the same way, and the lower block's latch marks sit at its bottom where the upper block's sit at its top - 0/0 over 180/180 - but no orthographic elevation of this face is held. An installation-guide elevation or a square-on photograph settles it; until then every pair is held in stack-exceptions.",
+   "what": "stacked-osfp-orientation"
   }
  ],
  "groups": {
@@ -299,7 +307,7 @@
   },
   "the-osfp-wall": {
    "confidence": "photo-measured",
-   "note": "SIXTEEN COLUMNS OF TWO STACKED PAIRS, NUMBERED DOWN EACH COLUMN. Each column holds two blocks, each block a 2x1 stacked OSFP cage: a bright metal shell 24.3 mm wide and 35.0 tall with a white perforated band 7.5 mm tall between its two apertures. The three- quarter render ds6000-A shows the band and the two openings clearly at 3.6k px; on the square-on render the band reads as the lighter strip mid-block. Shell frames fit x = 7.15 + 26.616 i (i = 0..15), so column centres are 19.3 + 26.616 i, symmetric about the face centre to 0.2 mm; blocks span y 35.4-70.4 and 78.1-113.1. The OSFP apertures are std/osfp@1's 23.1 x 13.5 centred in each shell half, which the 35.0 block height carries with 0.25 mm to spare at each end. ORDER, from the legend printed between the blocks and legible on ds6000-A: `1 (bar-triangle-up) 2 (up)(down) 3 (down-triangle-bar) 4` - port 1 is the top aperture of the upper block, 2 its bottom, 3 the top of the lower block, 4 its bottom; column 2 is 5-8, and so on to 61-64. STACKS are upper 0 / lower 180 per block, following the library precedent for OSFP pairs (edgecore/ais800-64o); L108 does not check OSFP, and no tab reading was possible at 2 px/mm."
+   "note": "SIXTEEN COLUMNS OF TWO STACKED PAIRS, NUMBERED DOWN EACH COLUMN. Each column holds two blocks, each block a 2x1 stacked OSFP cage: a bright metal shell 24.3 mm wide and 35.0 tall with a white perforated band 7.5 mm tall between its two apertures. The three- quarter render ds6000-A shows the band and the two openings clearly at 3.6k px; on the square-on render the band reads as the lighter strip mid-block. Shell frames fit x = 7.15 + 26.616 i (i = 0..15), so column centres are 19.3 + 26.616 i, symmetric about the face centre to 0.2 mm; blocks span y 35.4-70.4 and 78.1-113.1. The OSFP apertures are std/osfp@1's 23.1 x 13.5 centred in each shell half, which the 35.0 block height carries with 0.25 mm to spare at each end. ORDER, from the legend printed between the blocks and legible on ds6000-A: `1 (bar-triangle-up) 2 (up)(down) 3 (down-triangle-bar) 4` - port 1 is the top aperture of the upper block, 2 its bottom, 3 the top of the lower block, 4 its bottom; column 2 is 5-8, and so on to 61-64. STACKS are drawn upper 0 / lower 180 per block, and that turn is HELD, NOT SETTLED (#799). The white band is a riding heat sink - the OSFP MSA rev 5.22's riding-heatsink stacked cage, which seats both ports of a block the same way up (section 7.1, Table 7-1) - and on ds6000-A-3 the lower block's two light marks sit at the bottom of its lower port where the upper block's sit at the top of its upper port, which reads as 0/0 over 180/180. No orthographic elevation of this face is held, so the turn is left as drawn, every pair is named in stack-exceptions, and the gap stacked-osfp-orientation says what settles it."
   },
   "the-port-lamps": {
    "confidence": "photo-measured",
@@ -332,7 +340,142 @@
    "url": "https://stordis.com/product/celestica-ds6000/"
   }
  ],
- "version": "0.1.0",
+ "stack-exceptions": [
+  {
+   "pairs": [
+    [
+     "port-1",
+     "port-2"
+    ],
+    [
+     "port-5",
+     "port-6"
+    ],
+    [
+     "port-9",
+     "port-10"
+    ],
+    [
+     "port-13",
+     "port-14"
+    ],
+    [
+     "port-17",
+     "port-18"
+    ],
+    [
+     "port-21",
+     "port-22"
+    ],
+    [
+     "port-25",
+     "port-26"
+    ],
+    [
+     "port-29",
+     "port-30"
+    ],
+    [
+     "port-33",
+     "port-34"
+    ],
+    [
+     "port-37",
+     "port-38"
+    ],
+    [
+     "port-41",
+     "port-42"
+    ],
+    [
+     "port-45",
+     "port-46"
+    ],
+    [
+     "port-49",
+     "port-50"
+    ],
+    [
+     "port-53",
+     "port-54"
+    ],
+    [
+     "port-57",
+     "port-58"
+    ],
+    [
+     "port-61",
+     "port-62"
+    ],
+    [
+     "port-3",
+     "port-4"
+    ],
+    [
+     "port-7",
+     "port-8"
+    ],
+    [
+     "port-11",
+     "port-12"
+    ],
+    [
+     "port-15",
+     "port-16"
+    ],
+    [
+     "port-19",
+     "port-20"
+    ],
+    [
+     "port-23",
+     "port-24"
+    ],
+    [
+     "port-27",
+     "port-28"
+    ],
+    [
+     "port-31",
+     "port-32"
+    ],
+    [
+     "port-35",
+     "port-36"
+    ],
+    [
+     "port-39",
+     "port-40"
+    ],
+    [
+     "port-43",
+     "port-44"
+    ],
+    [
+     "port-47",
+     "port-48"
+    ],
+    [
+     "port-51",
+     "port-52"
+    ],
+    [
+     "port-55",
+     "port-56"
+    ],
+    [
+     "port-59",
+     "port-60"
+    ],
+    [
+     "port-63",
+     "port-64"
+    ]
+   ],
+   "reason": "HELD AS DRAWN, NOT A READING OF THIS TURN (#799). The product render ds6000-A-3.png shows a riding heat sink, the white finned band, between the two ports of every 2x1 block - the OSFP MSA rev 5.22's riding-heatsink stacked cage, which seats both ports the same way up (section 7.1, Table 7-1) - so neither block is the 0/180 drawn here. And the lower block's openings carry their two light marks at the BOTTOM of the lower port where the upper block's sit at the TOP of the upper port, so the lower block looks like the upper turned over: 0/0 over 180/180, as on the DS5000's elevation. No elevation of this face is held to confirm it, so the geometry is held until it is decided; the gap stacked-osfp-orientation says what settles it."
+  }
+ ],
+ "version": "0.1.1",
  "views": {
   "bottom": {
    "empty": "Not shown by any held source; no render or document views the underside.",

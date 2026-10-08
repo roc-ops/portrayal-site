@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="84.0mm" height="222.0mm" viewBox="0 0 84.0 222.0" data-device="cmv-5u3w" data-view="left" data-shell="sheet" data-weight-kg="0.54" data-material="ABS" data-color="Black" data-mounting-hardware="M6*15mm Screw x4 and M6 Nut x4" data-cable-capacity="188" data-cable-capacity-basis="Cat6 24AWG, 6.1 mm - a theoretical value for reference (FS Vertical Cable Managers with Finger Ducts datasheet), which states no fill" data-flammability="UL 94V-0 (product page)" data-rohs="RoHS Compliant" data-iso="ISO9001 Certificate">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com CMV-5U3W","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"6c51a4dd17712617e50afa8c9e1d2aafa5f2caba72844c58b3028de097049945","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMV-5U3W" x="0" y="0" width="84" height="222" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="flange" data-kind="base" x="0" y="0" width="4.8" height="222" rx="0.6" fill="#232527" data-groove="0.05" />
+    <rect id="spine" data-kind="spine" x="4.8" y="0" width="8.1" height="222" rx="0.6" fill="#202224" />
+    <rect id="finger-1" data-kind="finger" x="12.9" y="0" width="67.4" height="17.1" rx="0.6" fill="#26282a" />
+    <rect id="cap-1" data-kind="finger" x="80.3" y="0" width="3.7" height="22.7" rx="0.6" fill="#2a2c2e" />
+    <rect id="finger-2" data-kind="finger" x="12.9" y="33.1" width="67.4" height="21.6" rx="0.6" fill="#26282a" />
+    <rect id="cap-2" data-kind="finger" x="80.3" y="28.4" width="3.7" height="35.2" rx="0.6" fill="#2a2c2e" />
+    <rect id="finger-3" data-kind="finger" x="12.9" y="77.3" width="67.4" height="21.7" rx="0.6" fill="#26282a" />
+    <rect id="cap-3" data-kind="finger" x="80.3" y="69.2" width="3.7" height="38.6" rx="0.6" fill="#2a2c2e" />
+    <rect id="finger-4" data-kind="finger" x="12.9" y="121.8" width="67.4" height="21.5" rx="0.6" fill="#26282a" />
+    <rect id="cap-4" data-kind="finger" x="80.3" y="113.5" width="3.7" height="38.8" rx="0.6" fill="#2a2c2e" />
+    <rect id="finger-5" data-kind="finger" x="12.9" y="166.1" width="67.4" height="21.6" rx="0.6" fill="#26282a" />
+    <rect id="cap-5" data-kind="finger" x="80.3" y="157.8" width="3.7" height="35.2" rx="0.6" fill="#2a2c2e" />
+    <rect id="finger-6" data-kind="finger" x="12.9" y="203.7" width="67.4" height="18.3" rx="0.6" fill="#26282a" />
+    <rect id="cap-6" data-kind="finger" x="80.3" y="198.7" width="3.7" height="23.3" rx="0.6" fill="#2a2c2e" />
+  </g>
+</svg>

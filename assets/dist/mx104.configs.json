@@ -10,6 +10,12 @@
   },
   "physical": {
    "weight": "9 kg bare; 14.5 kg with power supplies, fan tray and MICs"
+  },
+  "power": {
+   "power-envelope": "fully-configured",
+   "power-max-ac-w": 600,
+   "power-max-dc-w": 625,
+   "power-max-scope": "INPUT side, measured from the power source - redundant supplies and Routing Engines, fan tray, fully loaded with MICs (guide Table 6, which calls both figures typical; the datasheet calls them fully loaded max)"
   }
  },
  "bays": {
@@ -249,7 +255,8 @@
      "data-speed": "10g"
     },
     "rel-pos": 0,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -288,7 +295,8 @@
      "data-speed": "10g"
     },
     "rel-pos": 1,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -327,7 +335,8 @@
      "data-speed": "10g"
     },
     "rel-pos": 2,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -366,7 +375,8 @@
      "data-speed": "10g"
     },
     "rel-pos": 3,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -396,7 +406,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 0,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -426,7 +437,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 1,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -456,7 +468,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 2,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -486,7 +499,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 3,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -516,7 +530,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 4,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -546,29 +561,33 @@
      "data-group-role": "management"
     },
     "rel-pos": 5,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    }
   ],
   "left": [],
   "rear": [
    {
     "accepts": [
-     "generic/ring-lug@1"
+     "generic/two-hole-lug-5-8@1"
     ],
     "at": [
-     193.5,
+     193.5625,
      132.5
     ],
-    "bores": [],
+    "bores": [
+     "1",
+     "2"
+    ],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground-stud-0",
-    "interface": "terminal-stud",
+    "id": "ground-studs",
+    "interface": "stud-pair-5-8",
     "kind": "connector",
     "lift": 8.0,
     "mate": [
-     197.0,
+     205.0,
      136.0
     ],
     "media": null,
@@ -580,38 +599,11 @@
      "data-group-role": "furniture"
     },
     "rel-pos": 0,
-    "rotate": null
-   },
-   {
-    "accepts": [
-     "generic/ring-lug@1"
-    ],
-    "at": [
-     209.5,
-     132.5
-    ],
-    "bores": [],
-    "default": null,
-    "group": "grounding",
-    "group-states": false,
-    "id": "ground-stud-1",
-    "interface": "terminal-stud",
-    "kind": "connector",
-    "lift": 8.0,
-    "mate": [
-     213.0,
-     136.0
-    ],
-    "media": null,
-    "mirror": false,
-    "occupant": null,
-    "occupant-attrs": {
-     "data-description": "the protective-earthing stud pair under the rear earth symbol",
-     "data-group": "grounding",
-     "data-group-role": "furniture"
-    },
-    "rel-pos": 1,
-    "rotate": null
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
    }
   ],
   "right": [],
@@ -686,13 +678,12 @@
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
+   "note": "The MX104 guide publishes chassis totals only (Table 6) and no per-module table; the MICs and supplies carry figures on their own contracts. No document in the intake rates the RE-S-MX104, which is the module L29 reports.",
    "scope": [
-    "mics",
-    "res",
-    "psus"
+    "res"
    ],
-   "wanted": "the remaining per-module wattage rows - only the 20x1GE MIC's 26 W was inside this extraction's text layer.",
-   "what": "per-module-power"
+   "wanted": "a power figure for the RE-S-MX104 Routing Engine.",
+   "what": "routing-engine-power"
   },
   {
    "because": "needs-drawing",
@@ -726,7 +717,7 @@
     "specified"
    ],
    "kind": "derived",
-   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
   },
   {
@@ -755,6 +746,10 @@
   "fixed-panel": {
    "note": "photo - ALARM DB-15 at the left, four fixed XE SFP+ cages at centres 97.8-140.6 silkscreened 2/0/0-2/0/3, SYS OK lamp and ONLINE/OFFLINE button, EXT REF CLOCK and ToD RJ45s at 269.9/285.5, the 1PPS / 10 MHz IN-OUT SMB quad inline at 311.5-334.2, and the junos badge"
   },
+  "ground-stud-pitch": {
+   "confidence": "datasheet",
+   "note": "the hardware guide, grounding points specifications: 0.625-in. (15.86-mm) centres, which is 5/8 in., 15.875; the guide rounds the conversion. `ground-studs` is one placement of juniper/mx-ground-stud-pair-5-8@1, which composes juniper/mx-ground-stud@1 twice at exactly 15.875 (L116) and presents `stud-pair-5-8`, so one two-hole lug (generic/two-hole-lug-5-8@1) lands across the pair and the ring lug still lands on either stud, `ground-studs/1` and `/2`. The two studs were drawn 16.0 apart; they moved symmetrically about the midpoint the photograph placed, (205.0, 136.0), side by side, so a lug's wire leaves to the right, and their cutouts with them."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
    "note": "the hardware guide, grounding points specifications: two threaded holes that fit SAE 10-32 screws, spaced at 0.625 in. (15.86 mm) centres, for one two-hole cable lug: the `stud-size` of both studs."
@@ -769,7 +764,8 @@
    "note": "photo - slot 1/0 and 0/1 carry MIC-3D-20GE-SFP, slot 1/1 the MIC-3D-4CHOC3-1OC12-CE, slot 0/0 the MIC-3D-2XGE-XFP; both RE bays carry the slim MX104 RE and both PSU bays the DC supply. Defaults reproduce that configuration"
   },
   "power": {
-   "note": "guide power table - the 20x1GE MIC row (26 W) was captured; the chassis-level and remaining per-module rows fell outside this extraction's text layer and their L27 warnings stand. Max thermal and draw figures not carried rather than guessed"
+   "confidence": "datasheet",
+   "note": "guide power consumption topic, Table 6 - 600 W for the AC router and 625 W for the DC router, measured from the power source (INPUT side) on a system with redundant supplies, redundant Routing Engines and the fan tray, fully loaded with MICs; 325 W AC and 350 W DC without MICs. The guide labels all four rows typical; the MX104 datasheet labels the loaded pair fully loaded (max) and the no-MIC pair typical. Carried as power-max-ac-w and power-max-dc-w with that disagreement in power-max-scope; the no-MIC rows stay here and are not carried. The guide has no per-module power table: the MIC and supply contracts carry their own figures, and the Routing Engine has none (see gaps)"
   },
   "rear": {
    "note": "photo - a plain panel with the two-hole earthing plate at the bottom centre; nothing else. The fan tray and air filter are SIDE-mounted per the guide (Figure 7/8) and appear on the left face as an estimated band"
@@ -779,6 +775,19 @@
   },
   "sources": {
    "note": "MX104 Hardware Guide, the MX104 datasheet, and the image-library photographs mx104-front-high and mx104-rear-high. No mechanical drawing was available"
+  }
+ },
+ "seat-turns": {
+  "rear": {
+   "ground-studs": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-studs/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-studs/2": {
+    "generic/ring-lug@1": 0
+   }
   }
  },
  "views": [

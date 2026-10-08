@@ -245,7 +245,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 0,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -275,7 +276,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 1,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -305,7 +307,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 2,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -335,7 +338,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 3,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -365,7 +369,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 4,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -395,7 +400,8 @@
      "data-group-role": "management"
     },
     "rel-pos": 5,
-    "rotate": null
+    "rotate": null,
+    "turns": null
    },
    {
     "accepts": [
@@ -431,7 +437,46 @@
      "data-group-role": "management"
     },
     "rel-pos": 6,
-    "rotate": 90
+    "rotate": 90,
+    "turns": null
+   },
+   {
+    "accepts": [
+     "generic/two-hole-lug-5-8@1"
+    ],
+    "at": [
+     422.4,
+     24.5
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-plate",
+    "interface": "stud-pair-5-8",
+    "kind": "connector",
+    "lift": 4.6,
+    "mate": [
+     430.4,
+     42.5
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the rear protective-earthing plate, two M6 screws on 5/8 in. centres (guide Figure 28)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 90,
+    "turns": [
+     0,
+     180
+    ]
    }
   ],
   "right": [],
@@ -672,8 +717,16 @@
   "front-cover": {
    "note": "not modelled - the optional front cover with air filter (JNP-FLTRDR-2RU + JNP-AIRFLTR-2RU, Table 22) bolts over the entire front face; the guide documents replacement procedures for both. Modelled configuration is the bare front as photographed; see gaps"
   },
+  "ground-stud-pitch": {
+   "confidence": "datasheet",
+   "note": "the guide's \"0.63-in. (16-mm) centers\" is the 5/8 in. pattern, 15.875: 0.63 in. is how two-hole lug tables print 5/8 in. (Panduit LCD6-10A-L, a 5/8 in. lug, is listed at 0.63 hole spacing) and 16 mm is the metric rounding of 15.875. A literal 16.0 would be 0.125 off the pitch of every 5/8 in. lug. @1 drew the holes 16.0 apart; they moved symmetrically about the same centre inside the plate, and the plate, its cutout and the earth symbol did not move (#828)"
+  },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "the guide: two threaded holes on the rear side fit M6 pan head screws, and the grounding lug is secured with M6 pan head screws: the `stud-size` of the plate's pair. The guide also calls the terminal \"sized for M6 hex screws\""
+  },
   "grounding": {
-   "note": "guide grounding specifications + photo - two threaded holes for M6 pan-head screws on 16 mm centres at the rear right, under the earth symbol; the protective earthing terminal bracket attaches here. Modelled as juniper/mx304-ground-plate"
+   "note": "guide grounding specifications + photo - two threaded holes for M6 pan-head screws at the rear right, under the earth symbol; the protective earthing terminal bracket attaches here. Modelled as juniper/mx304-ground-plate@2, which presents `stud-pair-5-8`, so one two-hole lug (generic/two-hole-lug-5-8@1) lands across the pair and the ring lug still lands on either screw, `ground-plate/1` and `/2`; a lug's wire leaves downward"
   },
   "lifecycle": {
    "note": "none-announced - searched \"Juniper MX304 end of life end of sale\" 2026-08-26; the third-party EOL trackers list no dates and the 2022 NANOG thread names the MX304 as the successor replacing the MX204 and MX10003. Absence of the announcement is the finding"
@@ -699,6 +752,19 @@
   },
   "timing": {
    "note": "photo + guide timing topic - SMB quad at x 98.6/107.1, y 11.6/22.2 (rows 10 MHz above 1PPS, columns OUT left / IN right per the rotated legends), BITS RJ45 centred at 101.9, 35.6, ToD at 101.3, 55.4, and the GM/PTP SFP cage VERTICAL at 100.1, 74.9 with its link lamp to the left. The guide NOTE says BITS and GM/PTP are currently unsupported and reserved for future use - carried in attrs. GM/PTP supports 1-GbE and 10-GbE optics per the same topic"
+  }
+ },
+ "seat-turns": {
+  "rear": {
+   "ground-plate": {
+    "generic/two-hole-lug-5-8@1": 0
+   },
+   "ground-plate/1": {
+    "generic/ring-lug@1": 270
+   },
+   "ground-plate/2": {
+    "generic/ring-lug@1": 0
+   }
   }
  },
  "views": [
