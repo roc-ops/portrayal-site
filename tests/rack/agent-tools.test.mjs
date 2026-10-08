@@ -225,8 +225,12 @@ test('undo and redo, with and without a step', async () => {
 
 test('export_rack: a word picks the page export, and only its name and notes come back', async () => {
   const {run, exported} = setup();
-  assert.equal(text(await run('export_rack', {kind: 'netbox import'})), 'Saved rack.netbox-import. Exported 1 device.');
+  // An import kit leaves out a cable with an unconnected end; the agent can't read the zip,
+  // so the result says where that is written and who should read it (stumble in the first real run).
+  assert.equal(text(await run('export_rack', {kind: 'netbox import'})),
+    'Saved rack.netbox-import. Exported 1 device. The kit\'s README.txt lists anything left out, such as a cable whose end is not connected: do not say every cable is in the file, and tell the user to read it.');
   assert.deepEqual(exported, ['netbox-import']);
+  assert.equal(text(await run('export_rack', {kind: 'bill of materials'})), 'Saved rack.bom. Exported 1 device.');
   const bad = await run('export_rack', {kind: 'pdf'});
   assert.equal(bad.isError, true);
   assert.match(text(bad), /^There is no export called pdf\. Choose one of: sheet svg, /);

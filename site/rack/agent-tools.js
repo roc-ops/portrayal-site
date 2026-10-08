@@ -191,7 +191,10 @@ export function rackTools({ed, chassisOf, queries, runExport}) {
         if (!key) return refuse(`There is no export called ${kind}. Choose one of: ${kinds.join(', ')}.`);
         const out = await runExport(key);
         if (!out || out.error) return refuse(out?.error ?? "That export didn't work. Try again.");
-        return say(`Saved ${out.name}.${out.notes ? ` ${out.notes}` : ''}`);
+        // The agent can't open the zip, so it is told where an import kit's omissions are written.
+        const kit = key === 'netbox-import' || key === 'nautobot-import'
+          ? " The kit's README.txt lists anything left out, such as a cable whose end is not connected: do not say every cable is in the file, and tell the user to read it." : '';
+        return say(`Saved ${out.name}.${out.notes ? ` ${out.notes}` : ''}${kit}`);
       }),
   );
   return tools;
