@@ -5,7 +5,8 @@
 
 export function touchedIds(ev) {
   const ids = new Set(ev.commands.map(c => c?.id).filter(v => typeof v === 'string' && !v.startsWith('@')));
-  const all = r => [...(r?.items ?? []), ...(r?.cables ?? [])];
+  // A part beside the rack (zero-u.js) is touched as an item is.
+  const all = r => [...(r?.items ?? []), ...(r?.cables ?? []), ...(Array.isArray(r?.zeroU) ? r.zeroU : []).filter(z => z && typeof z.id === 'string')];
   const had = new Set(all(ev.before).map(x => x.id));
   for (const x of all(ev.after)) if (!had.has(x.id)) ids.add(x.id);
   return [...ids];
@@ -16,7 +17,7 @@ export function touchedIds(ev) {
 export function markTouched(root, ids, on) {
   for (const id of ids) {
     const q = CSS.escape(id);
-    for (const n of root.querySelectorAll(`svg [data-item-id="${q}"], svg [data-cable-id="${q}"]`))
+    for (const n of root.querySelectorAll(`svg [data-item-id="${q}"], svg [data-cable-id="${q}"], svg [data-zerou-id="${q}"]`))
       n.classList.toggle('rk-agent-touched', on);
   }
 }

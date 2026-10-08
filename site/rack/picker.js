@@ -15,6 +15,8 @@ import {fits} from '../../vendor/rack/fit.js';
 import {placement, hostAt} from '../../vendor/rack/managers.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {mountPick} from '../../vendor/rack/export-data.js';
+import {attachPoints} from '../../vendor/rack/fit.js';
+import {isRackSide, isNarrowFace, fitsZeroUSide, fitsSided} from './zero-u.js';
 
 const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
@@ -25,13 +27,34 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
   const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount));
-  const fitOf = new Map(live.map(e => [e.name, fits(rack, {ref: e.name, ...(e.mount === 'rack-face'
-    ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf)]));
+  // A RACK-SIDE PART (zero-u.js) stands beside an upright, its bottom level with
+  // this U, and takes none; a NARROW RAIL PART goes on one rail. Each is judged
+  // where it would go - the upright, the rail - as chosen below (state.at, state.side).
+  const points = attachPoints(rack.frame.kind);
+  const fitCache = new Map();
+  // `choice` is the upright or the rail; null means the one chosen now.
+  const fitFor = (e, choice = null) => {
+    const at = choice ?? state.at, side = choice ?? state.side;
+    const key = isRackSide(e) ? `${e.name}|${at}` : isNarrowFace(e) ? `${e.name}|${side}` : e.name;
+    if (!fitCache.has(key)) fitCache.set(key, isRackSide(e) ? fitsZeroUSide(rack, {ref: e.name, at, ru}, chassisOf)
+      : isNarrowFace(e) ? fitsSided(rack, {ref: e.name, face, ru, side}, chassisOf)
+      : fits(rack, {ref: e.name, ...(e.mount === 'rack-face' ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf));
+    return fitCache.get(key);
+  };
+  // In the list, a part with a choice fits when ANY choice does (the line below
+  // the list says whether the chosen one does): a bracket whose left rail is
+  // taken here still goes on the right one.
+  const choices = e => (isRackSide(e) ? points : isNarrowFace(e) ? ['left', 'right'] : [null]);
+  const fitOf = {get: name => { const e = byRefOf(name), all = choices(e).map(c => fitFor(e, c));
+    return all.find(f => f.ok) ?? fitFor(e); }};
   // A U a rack device spans on this face is not empty: a rack-face part would attach to it.
   const host = hostAt(rack, face, ru, chassisOf);
   const byRef = new Map(live.map(e => [e.name, e]));
+  const byRefOf = name => byRef.get(name);
 
   let state = {query: '', vendor: ALL, fitsOnly: true, device: null, cfgByRef: {}, ...pick};
+  if (!points.includes(state.at)) state.at = points.includes(`left-${face}`) ? `left-${face}` : points[0];
+  if (state.side !== 'right') state.side = 'left';
   const setState = patch => { state = {...state, ...patch}; onState(patch); };
 
   const afterQuery = () => { const ws = wordsOf(state.query); return live.filter(e => ws.every(w => hay(e).includes(w))); };
@@ -47,6 +70,14 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   const fitLine = el('p', {id: 'catFit'});
   const empty = el('p', {class: 'rk-muted'});
   const place = el('button', {type: 'button', id: 'catPlace', text: 'Place'});
+  const at = el('select', {id: 'catAt', 'aria-label': 'Upright'},
+    points.map(p => el('option', {value: p, text: p, ...(p === state.at ? {selected: ''} : {})})));
+  const between = el('input', {id: 'catBetween', type: 'checkbox', ...(state.between ? {checked: ''} : {})});
+  const side = el('select', {id: 'catSide', 'aria-label': 'Rail'},
+    ['left', 'right'].map(p => el('option', {value: p, text: `${p} rail`, ...(p === state.side ? {selected: ''} : {})})));
+  const atRow = el('label', {}, ['Beside the upright', at]);
+  const betweenRow = el('label', {class: 'rk-check'}, [between, ' Between racks (serves the next rack too)']);
+  const sideRow = el('label', {}, ['Rail', side]);
 
   function renderVendorOptions(fitted) {
     const counts = new Map();
@@ -64,7 +95,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
       const f = fitOf.get(e.name);
       const prefix = state.vendor === ALL ? `${e.manufacturer ?? ''} ${e.model}`.trim() : e.model;
       const mp = mountPick(e.mount);
-      const text = `${prefix} · ${e.mount === 'rack-face' ? 0 : e.ru}U · ${Math.round(e.d ?? 0)} mm${mp ? ` · ${mp.tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
+      const tag = isRackSide(e) ? 'zero-U, stands beside the rack' : mp?.tag;
+      const text = `${prefix} · ${e.mount === 'rack-face' || isRackSide(e) ? 0 : e.ru}U · ${Math.round(e.d ?? 0)} mm${tag ? ` · ${tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
       return el('option', {value: e.name, text, 'data-fits': f.ok ? 'true' : 'false'});
     }));
     if (!list.some(e => e.name === state.device)) setState({device: list[0]?.name ?? null});
@@ -73,6 +105,10 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
 
   function renderCfgAndFit() {
     const entry = state.device ? byRef.get(state.device) : null;
+    // `hidden` alone loses to the panel's own label display rule: the style says it too.
+    const show = (n, on) => { n.hidden = !on; n.style.display = on ? '' : 'none'; };
+    show(atRow, !!entry && isRackSide(entry)); show(betweenRow, !!entry && isRackSide(entry));
+    show(sideRow, !!entry && isNarrowFace(entry));
     if (!entry) {
       cfg.replaceChildren();
       cfg.disabled = true;
@@ -84,8 +120,10 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const configs = entry.configs?.length ? entry.configs : [entry.default ?? ''];
     const chosen = state.cfgByRef[entry.name] ?? entry.default ?? configs[0];
     cfg.replaceChildren(...configs.map(c => el('option', {value: c, text: c, ...(c === chosen ? {selected: ''} : {})})));
-    const f = fitOf.get(entry.name);
+    const f = fitFor(entry);
     fitLine.textContent = !f.ok ? f.reason
+      : isRackSide(entry) ? `Fits here: it stands beside the rack at ${state.at}, its bottom level with U${uLabel(rack.frame, ru)}, and takes no U.`
+      : isNarrowFace(entry) ? `Fits here: it mounts on the ${state.side} rail's face and takes no U of its own.`
       : entry.mount === 'rack-face' && host ? `Fits here: it mounts on the rail face over ${host.label}, and takes no U of its own.`
       : (mountPick(entry.mount)?.fit ?? 'Fits here.');
     fitLine.className = f.ok ? 'rk-muted' : 'rk-error';
@@ -114,11 +152,12 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   function doPlace() {
     const entry = state.device ? byRef.get(state.device) : null;
     if (!entry) return;
-    const f = fitOf.get(entry.name);
+    const f = fitFor(entry);
     if (!f.ok) { fitLine.textContent = f.reason; fitLine.className = 'rk-error'; return; }
     const chosenCfg = cfg.value || entry.default || entry.configs?.[0] || '';
     setState({cfgByRef: {...state.cfgByRef, [entry.name]: chosenCfg}});
-    onPlace(entry, chosenCfg);
+    onPlace(entry, chosenCfg, isRackSide(entry) ? {at: state.at, between: !!state.between}
+      : isNarrowFace(entry) ? {side: state.side} : {});
   }
 
   query.addEventListener('input', () => { setState({query: query.value}); redraw(); });
@@ -129,6 +168,10 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   device.addEventListener('dblclick', doPlace);
   cfg.addEventListener('change', () => setState({cfgByRef: {...state.cfgByRef, [state.device]: cfg.value}}));
   place.addEventListener('click', doPlace);
+  // The upright and the rail change what fits: the lists follow.
+  at.addEventListener('change', () => { setState({at: at.value}); redraw(); });
+  between.addEventListener('change', () => setState({between: between.checked}));
+  side.addEventListener('change', () => { setState({side: side.value}); redraw(); });
 
   redraw();
   queueMicrotask(() => query.focus());
@@ -141,6 +184,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     el('label', {}, ['Device', device]),
     empty,
     el('label', {}, ['Configuration', cfg]),
+    atRow, betweenRow, sideRow,
     fitLine,
     el('div', {class: 'rk-actions'}, [place]),
   ]);

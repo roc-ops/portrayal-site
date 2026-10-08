@@ -9,6 +9,11 @@
 
 import {parseDoc, serialize} from '../../vendor/rack/model.js';
 import {fileStem} from '../../vendor/rack/export-data.js';
+import {keepSiteFields} from './zero-u.js';
+
+// The kit's reader, with what it does not keep put back (zero-u.js): a
+// narrow part's `side`, and an id for a zero-U part written without one.
+export const readDoc = input => keepSiteFields(input, parseDoc(input));
 
 const DB = 'portrayal-racks', STORE = 'docs';
 const done = req => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
@@ -43,7 +48,7 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
     async get(id) {
       if (!db) return null;
       const d = await done(store('readonly').get(id));
-      return d ? parseDoc(d) : null;
+      return d ? readDoc(d) : null;
     },
     async put(doc) {
       if (!db) return;
@@ -79,4 +84,4 @@ export function downloadDoc(doc) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export const readDocFile = async file => parseDoc(await file.text());
+export const readDocFile = async file => readDoc(await file.text());
