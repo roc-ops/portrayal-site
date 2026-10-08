@@ -1460,6 +1460,83 @@ check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(
       "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
       f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
 
+# ── ORIGIN-TRIAL TOKENS (roc-ops/portrayal-site#134) ─────────────────────
+# A page opts into a Chrome origin trial with <meta http-equiv="origin-trial">.
+# The token carries its own expiry, and when that passes Chrome silently stops
+# honoring it: the feature just goes away on the live site and no check fails.
+# So each token on a published page is decoded here and failed 30 days ahead.
+# The layout is a 1-byte version, a 64-byte signature, a 4-byte big-endian
+# payload length, then the JSON payload.
+import base64 as _b64, struct as _struct, time as _time
+_OT_ORIGINS = ("https://portrayal.dev", "https://portrayal.dev:443")
+_OT_WARN = 30 * 86400
+
+
+def origin_trial_problems(page, content, now):
+    """What is wrong with one origin-trial token on `page`, as of Unix time
+    `now`: [] for a token that is ours, names a feature and has more than 30
+    days left."""
+    try:
+        raw = _b64.b64decode(content, validate=True)
+        n = _struct.unpack(">I", raw[65:69])[0]
+        d = json.loads(raw[69:69 + n])
+    except Exception as e:
+        return [f"{page}: an origin-trial token does not decode ({e})"]
+    feature = d.get("feature") or ""
+    out = []
+    if not feature.strip():
+        out.append(f"{page}: an origin-trial token names no feature")
+    if d.get("origin") not in _OT_ORIGINS:
+        out.append(f"{page}: the {feature or '?'} origin-trial token is for {d.get('origin')!r}, not https://portrayal.dev")
+    exp = d.get("expiry")
+    if not isinstance(exp, int) or exp - now <= _OT_WARN:
+        when = _time.strftime("%Y-%m-%d", _time.gmtime(exp)) if isinstance(exp, int) else repr(exp)
+        state = "expired" if isinstance(exp, int) and exp <= now else "expires"
+        out.append(f"{page}: the {feature or '?'} origin-trial token {state} {when} - renew it at "
+                   f"developer.chrome.com/origintrials, or remove the tag if {feature or 'the feature'} "
+                   f"has shipped in stable Chrome")
+    return out
+
+
+_OT_META = re.compile(r'<meta\b(?=[^>]*\bhttp-equiv="origin-trial")[^>]*\bcontent="([^"]*)"', re.I)
+_now = int(_time.time())
+_ot_seen = []
+for _d in _bp_pages:
+    _f = _srv.get(_d) or HERE / _d
+    for _c in _OT_META.findall(_f.read_text() if _f.is_file() else ""):
+        _ot_seen.append(_d)
+        _bad = origin_trial_problems(_d, _c, _now)
+        check(not _bad, f"{_d}: its origin-trial token is for portrayal.dev, names a feature, "
+                        f"and has more than 30 days left", "; ".join(_bad))
+if not _ot_seen:
+    check(True, "no published page carries an origin-trial token, so none can expire")
+
+
+# The check itself, against tokens made here: one that expires tomorrow, one
+# already expired, one for another origin, one naming no feature, and one that
+# is fine. A check that could not fail would pass every one of these.
+def _ot_token(**payload):
+    body = json.dumps(payload).encode()
+    return _b64.b64encode(b"\x02" + b"\x00" * 64 + _struct.pack(">I", len(body)) + body).decode()
+_ot_ok = dict(origin="https://portrayal.dev:443", feature="WebMCP", expiry=_now + 90 * 86400, isSubdomain=True)
+_ot_cases = {
+    "expires tomorrow": (dict(_ot_ok, expiry=_now + 86400), "expires"),
+    "expired": (dict(_ot_ok, expiry=_now - 86400), "expired"),
+    "another origin": (dict(_ot_ok, origin="https://example.com"), "not https://portrayal.dev"),
+    "no feature": (dict(_ot_ok, feature=""), "names no feature"),
+}
+_ot_bad = [f"{name}: {origin_trial_problems('x.html', _ot_token(**p), _now)}"
+           for name, (p, want) in _ot_cases.items()
+           if not any(want in s for s in origin_trial_problems("x.html", _ot_token(**p), _now))]
+_ot_bad += [f"fine token: {s}" for s in origin_trial_problems("x.html", _ot_token(**_ot_ok), _now)]
+_ot_bad += [f"without :443: {s}" for s in
+            origin_trial_problems("x.html", _ot_token(**dict(_ot_ok, origin="https://portrayal.dev")), _now)]
+_ot_bad += [] if origin_trial_problems("x.html", "not a token", _now) else ["garbage decoded as a token"]
+check(not _ot_bad,
+      "the origin-trial check fails a token that expires within 30 days, has expired, is for another origin "
+      "or names no feature, and passes a good one",
+      "; ".join(_ot_bad))
+
 # ── the browser pass, in shards ──────────────────────────────────────────
 # CI runs check-browser.py as a matrix of `--shard i/n` jobs. That is only as
 # good as two things nobody would notice breaking: that the n shards between
