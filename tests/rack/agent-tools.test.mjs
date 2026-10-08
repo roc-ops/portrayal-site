@@ -175,12 +175,28 @@ test('describe_rack: a big rack keeps its loose ends, and the undo line is cut s
   assert.ok(out.split('\n')[1].startsWith('Undo would take back: '));
 });
 
-test('find_devices: one line per device, at most 20, and a nudge when there are more', async () => {
+test('find_devices: the header first, then one line per device with its kind', async () => {
   const {run} = setup();
-  assert.match(text(await run('find_devices', {text: 'dell'})), /^r740xd \| Dell R740xd \| 2U \| configs: a, b \(default a\)$/);
-  assert.match(text(await run('find_devices', {text: 'zzz'})), /^No devices match/);
+  assert.equal(text(await run('find_devices', {text: 'dell'})),
+    '1 match, showing 1-1.\nr740xd | Dell R740xd | 2U | server | configs: a, b (default a)');
+  assert.match(text(await run('find_devices', {text: 'zzz'})), /^0 matches\./);
 });
 
+test('find_devices: "patch panel" finds one, by text and by kind', async () => {
+  const {run} = setup();
+  for (const args of [{text: 'patch panel'}, {kind: 'patch panel'}])
+    assert.match(text(await run('find_devices', args)), /^1 match, showing 1-1\.\nfhd-1ufce \| FS\.com FHD-1UFCE \| 1U \| patch panel \| /);
+});
+
+test('find_devices: offset pages, and the header says what comes next', async () => {
+  const devices = Object.fromEntries(Array.from({length: 45}, (_, k) =>
+    [`dev-${String(k).padStart(2, '0')}`, {ru: 1, h: 43.5, d: 500, model: `M${k}`, manufacturer: 'Many', configs: ['base'], default: 'base', family: null, kind: 'server'}]));
+  const {run} = setup({devices});
+  assert.match(text(await run('find_devices', {text: 'many'})), /^45 matches, showing 1-20\. Next: offset 20\.\n/);
+  const last = text(await run('find_devices', {text: 'many', offset: 40}));
+  assert.match(last, /^45 matches, showing 41-45\.\n/);
+  assert.equal(last.split('\n').length, 6);
+});
 test('check_fit with and without a U, and for an unknown device', async () => {
   const {ed, run} = setup();
   ed.apply({op: 'place', ref: 'r740xd', face: 'front', ru: 10, label: 'srv'});
@@ -217,16 +233,45 @@ test('on a top-down rack, both reads say ru counts from the bottom', async () =>
   assert.doesNotMatch(text(await up.run('describe_rack')), /count top-down/);
 });
 
-test('list_free_ports: grouped by view, and a gone device is an error', async () => {
+test('list_free_ports: runs, empty cages marked, the total first', async () => {
   const {ed, run} = setup();
   ed.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10});
-  const out = text(await run('list_free_ports', {item: 'i1'}));
-  assert.match(out, /^Front:\nport-1: port 1, 100G, qsfp28\nport-2: port 2, 100G, qsfp28\nRear:\n/);
-  const gone = await run('list_free_ports', {item: 'i9'});
-  assert.equal(gone.isError, true);
-  assert.match(text(gone), /no longer in the rack/);
+  assert.equal(text(await run('list_free_ports', {id: 'i1'})),
+    'i1 (AS7726-32X): 4 free ports front and rear, in 2 runs.\nport-1..2, front: 100G qsfp28 cage, empty\nport-1..2, rear: 100G qsfp28');
+  await run('edit_rack', {commands: [{op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/qsfp-lc@2'}]});
+  assert.match(text(await run('list_free_ports', {id: 'i1', view: 'front'})),
+    /^i1 \(AS7726-32X\): 2 free ports on the front, in 2 runs\.\nport-1, front: 100G qsfp28 cage, holds generic\/qsfp-lc@2\nport-2, front: 100G qsfp28 cage, empty$/);
 });
 
+test('list_free_ports: item is still read as id, and a gone device is an error', async () => {
+  const {ed, run} = setup();
+  ed.apply({op: 'place', ref: 'as7726-32x', face: 'front', ru: 10});
+  assert.match(text(await run('list_free_ports', {item: 'i1'})), /^i1 \(AS7726-32X\): 4 free ports/);
+  const gone = await run('list_free_ports', {id: 'i9'});
+  assert.equal(gone.isError, true);
+  assert.match(text(gone), /no longer in the rack/);
+  assert.equal(text(await run('list_free_ports', {})), 'Send id: the device id from describe_rack, e.g. i3.');
+});
+
+test('list_free_ports: a long list pages, and every run is reached once', async () => {
+  const ports = Array.from({length: 200}, (_, k) => ({path: `port-${k + 1}`, cls: 'port', speed: k % 2 ? '10G' : '25G', media: 'sfp28'}));
+  const {ed, run} = setup({ports});
+  ed.apply({op: 'place', ref: 'leaf-56', face: 'front', ru: 10});
+  const seen = [];
+  let args = {id: 'i1', view: 'rear'};
+  for (let page = 0; page < 40; page++) {
+    const out = text(await run('list_free_ports', args));
+    assert.ok(out.length <= LIMIT, `${out.length}`);
+    const [first, ...rest] = out.split('\n');
+    assert.match(first, /^i1 \(LEAF-56\): 200 free ports on the rear, in 200 runs\./);
+    seen.push(...rest);
+    const m = /Next: (\{.*?\})\.$/.exec(first);
+    if (!m) break;
+    args = JSON.parse(m[1]);
+  }
+  assert.equal(seen.length, 200);
+  assert.equal(new Set(seen).size, 200);
+});
 test('edit_rack: a batch is one agent step, with created ids and the undo line', async () => {
   const {ed, run} = setup();
   const res = await run('edit_rack', {commands: [

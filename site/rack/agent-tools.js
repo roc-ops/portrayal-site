@@ -7,7 +7,8 @@
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
 import {newRack, withItem, dcimOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
-import {LIMIT, fit, ranges, clip, cutList, inspectText, cableText, SECTIONS} from './agent-text.js';
+import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, SECTIONS} from './agent-text.js';
+import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -169,19 +170,26 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         return say(o.kind === 'cable' ? cableText(o) : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',
-      'Search the devices that can be put in a rack, by words in the manufacturer, model or id, by height in U, by family or by mount. Each result gives the ref and configs that edit_rack\'s place command takes.',
+      'Search the devices that can be put in a rack: by words in the manufacturer, model, ref or kind (e.g. "patch panel"), or by kind, height in U, family or mount. Each result gives the ref and configs that edit_rack\'s place command takes; inspect with ref reads one in full. The first line counts the matches; offset pages them.',
       {text: {type: 'string', description: 'Words to look for, e.g. "dell r740" or "patch panel".'},
+       kind: {type: 'string', description: 'Only this kind of device, e.g. switch, router, server, patch panel, cable manager, pdu.'},
        ru: {type: 'integer', minimum: 1, description: 'Only devices this many U tall.'},
        family: {type: 'string', description: 'Only this product family.'},
-       mount: {type: 'string', enum: ['rack', 'rack-face', 'rack-side'], description: 'rack for devices, rack-face for cable managers, rack-side for vertical cable managers that stand beside the rack (placed with zerou.place).'}},
+       mount: {type: 'string', enum: ['rack', 'rack-face', 'rack-side'], description: 'rack for devices, rack-face for cable managers, rack-side for vertical cable managers that stand beside the rack (placed with zerou.place).'},
+       offset: {type: 'integer', minimum: 0, description: 'Skip this many matches; 0 when left out.'}},
       [], READ,
-      async ({text, ru, family, mount}) => {
-        const all = queries.catalog({text, ru, family, mount});
-        if (!all.length) return say('No devices match. Try fewer words, or none.');
-        const line = e => `${e.ref} | ${[e.manufacturer, e.model].filter(Boolean).join(' ')} | ${e.ru}U${e.mount !== 'rack' ? ` ${e.mount}` : ''} | configs: ${e.configs.join(', ')}${e.default ? ` (default ${e.default})` : ''}`;
-        const shown = all.slice(0, 20).map(line);
-        if (all.length > 20) shown.push(`and ${all.length - 20} more: narrow the search.`);
-        return say(shown.join('\n'));
+      async ({text, kind, ru, family, mount, offset}) => {
+        const all = queries.catalog({text, kind, ru, family, mount});
+        if (!all.length) return say('0 matches. Try fewer words, or none, or another kind.');
+        const line = e => clip(`${e.ref} | ${[e.manufacturer, e.model].filter(Boolean).join(' ')} | ${e.ru}U${e.mount !== 'rack' ? ` ${e.mount}` : ''}` +
+          `${e.kind ? ` | ${e.kind}` : ''} | configs: ${e.configs.join(', ')}${e.default ? ` (default ${e.default})` : ''}`, 300);
+        const start = offset ?? 0;
+        const n = all.length, word = `${n} match${n === 1 ? '' : 'es'}`;
+        if (start >= n) return say(`${word}; nothing past ${n}.`);
+        // The header is written first and counts what the page holds, so a cut never loses it.
+        const page = windowLines(all.slice(start, start + 20).map(line), 0, LIMIT - 120);
+        const end = start + page.length;
+        return say([`${word}, showing ${start + 1}-${end}.${end < n ? ` Next: offset ${end}.` : ''}`, ...page].join('\n'));
       }),
     tool('check_fit', 'Check where a device fits',
       'Ask whether a device fits at a U on a face, and why not if it does not. Leave out ru to list every U it fits at, in the same numbers place takes.',
@@ -200,19 +208,44 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         return say(us.length ? `${ref} fits on the ${face} at ${ranges(us)}${note}.` : `${ref} fits nowhere on the ${face} of this rack.`);
       }),
     tool('list_free_ports', 'List free ports',
-      'List the ports of one device that have no cable, front and rear, with speed and media. cable.add takes a port as {item, path, view}.',
-      {item: {type: 'string', description: 'The device id, as describe_rack gives it (e.g. i3).'}},
-      ['item'], UNTRUSTED,
-      async ({item}) => {
-        const ports = await queries.freePorts(ed.rack(), item);
+      'List the ports of one device that have no cable, grouped into runs, with speed and media. An empty cage is marked: a fiber cable needs an optic fitted there first (edit_rack fit). cable.add takes a port as {item, path, view}. The first line gives the total; a long list comes in pages, and the first line says what to send next.',
+      {id: {type: 'string', description: 'The device id from describe_rack, e.g. i3.'},
+       item: {type: 'string', description: 'Old name for id; id is preferred.'},
+       view: {type: 'string', enum: ['front', 'rear'], description: "Only the ports on the device's front or rear panel. Both when left out."},
+       offset: {type: 'integer', minimum: 0, description: 'Skip this many runs; 0 when left out.'}},
+      [], UNTRUSTED,
+      async ({id, item, view, offset}) => {
+        const which = id ?? item;
+        if (!which) return refuse('Send id: the device id from describe_rack, e.g. i3.');
+        const rack = ed.rack();
+        const ports = await queries.freePorts(rack, which);
         if (ports.error) return refuse(ports.error);
-        const lines = [];
-        for (const view of ['front', 'rear']) {
-          const here = ports.filter(p => p.view === view);
-          lines.push(`${view === 'front' ? 'Front' : 'Rear'}:`,
-                     ...(here.length ? here.map(p => `${p.path}: ${[p.label, p.speed, p.media].filter(Boolean).join(', ')}`) : ['no free ports']));
-        }
-        return say(lines.join('\n'));
+        // What each cage holds, from inspect: a port in a cage is free whether
+        // or not an optic is seated, and an agent has to know which.
+        const o = await Promise.resolve(context(rack, [])).then(ctx => queries.inspect(rack, which, ctx)).catch(() => ({}));
+        const holds = new Map((o.cages ?? []).map(c => [`${c.view}|${c.path}`, c.holds ?? null]));
+        const order = new Intl.Collator('en', {numeric: true});
+        const shown = ports.filter(p => !view || p.view === view)
+          .sort((a, b) => (a.view === b.view ? order.compare(a.path, b.path) : a.view === 'front' ? -1 : 1))
+          .map(p => {
+            const k = `${p.view}|${portPathOf(p.path)}`;
+            return {...p, cage: holds.has(k) ? (holds.get(k) ? `cage, holds ${holds.get(k)}` : 'cage, empty') : null};
+          });
+        const lines = runs(shown, p => JSON.stringify([p.view, p.speed, p.media, p.cage]))
+          .map(p => `${p.path}, ${p.view}: ${[p.speed, p.media, p.cage].filter(Boolean).join(' ') || 'port'}`);
+        const where = view ? `on the ${view}` : 'front and rear';
+        const name = `${which}${o.label ? ` (${clip(o.label, 40)})` : ''}`;
+        if (!lines.length) return say(`${name}: no free ports ${where}.`);
+        const s = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+        const total = `${name}: ${s(shown.length, 'free port')} ${where}, in ${s(lines.length, 'run')}.`;
+        const start = offset ?? 0;
+        if (start >= lines.length) return say(`${total} Nothing past run ${lines.length}.`);
+        const page = windowLines(lines, start, LIMIT - 250);
+        const end = start + page.length;
+        const more = end < lines.length
+          ? ` Showing runs ${start + 1}-${end}. Next: ${JSON.stringify({id: which, ...(view ? {view} : {}), offset: end})}.`
+          : start ? ` Showing runs ${start + 1}-${end}.` : '';
+        return say([total + more, ...page].join('\n'));
       }),
   ];
   const kinds = Object.keys(EXPORT_KINDS);
