@@ -1498,12 +1498,12 @@ def origin_trial_problems(page, content, now):
     return out
 
 
-_OT_META = re.compile(r'<meta\b(?=[^>]*\bhttp-equiv="origin-trial")[^>]*\bcontent="([^"]*)"', re.I)
+_OT_META = re.compile(r"""<meta\b(?=[^>]*\bhttp-equiv=["']?origin-trial\b)[^>]*\bcontent=(["'])(.*?)\1""", re.I)
 _now = int(_time.time())
 _ot_seen = []
 for _d in _bp_pages:
     _f = _srv.get(_d) or HERE / _d
-    for _c in _OT_META.findall(_f.read_text() if _f.is_file() else ""):
+    for _q, _c in _OT_META.findall(_f.read_text() if _f.is_file() else ""):
         _ot_seen.append(_d)
         _bad = origin_trial_problems(_d, _c, _now)
         check(not _bad, f"{_d}: its origin-trial token is for portrayal.dev, names a feature, "
