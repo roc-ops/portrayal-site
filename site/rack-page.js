@@ -21,6 +21,8 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
+import {mountStage, loadStage, stageTone} from './rack/stage.js';
+import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE} from '../vendor/rack/export-data.js';
@@ -60,7 +62,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   routes: null,
@@ -119,14 +121,17 @@ async function rebuild3d() {
   const forRack = rack();
   const sig = routesSig(S.routes);
   disposeScene3d();
+  const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes)});
+    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes), stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
   // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
+  // A swatch picked while this was building found no scene to tell.
+  if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
   S.scene3dRoutes = sig;
   // Routes are resolved by render(), after an edit: if they settled while
@@ -150,9 +155,23 @@ function scheduleRebuild3d() {
   clearTimeout(rebuild3dTimer);
   rebuild3dTimer = setTimeout(rebuild3d, 300);
 }
+// The Explorer's switch (mode3d.js): `on` is how it looks, aria-pressed what it says.
 function paintMode() {
-  for (const b of document.querySelectorAll('#rkMode [data-mode]'))
+  for (const b of document.querySelectorAll('#mode [data-mode]')) {
+    b.classList.toggle('on', b.dataset.mode === S.mode);
     b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
+  }
+}
+// THE STAGE IS THE READER'S, as in the Explorer and Annotate: picked from the
+// swatches, remembered (stage.js), and the ground in both views. In 2D it is
+// the panes' background, with the site's light or dark palette laid over them
+// so the rails, U numbers and tags read on it (rack.css, [data-stage]); in 3D
+// it is handed to the scene on screen and to every one built after it.
+function setStage(c) {
+  S.stage = c;
+  $('panes').style.setProperty('--rk-stage', c);
+  $('panes').dataset.stage = stageTone(c);
+  S.scene3d?.setStage?.(c);
 }
 // Which container is shown. Both the `hidden` property AND an explicit
 // inline `display` are set on the one being hidden: `.rk-panes` sets its own
@@ -1389,7 +1408,9 @@ async function bootInner() {
     if (S.cable.on) { S.cable = {on: false, a: null}; paintCableMode(); }
     select(S.sel?.kind === 'frame' ? null : {kind: 'frame'});
   });
-  $('rkMode').addEventListener('click', ev => {
+  document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
+  setStage(mountStage($('stagebg'), setStage).get());
+  $('mode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
   });
