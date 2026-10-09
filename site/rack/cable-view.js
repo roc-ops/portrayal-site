@@ -18,7 +18,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {routed2d} from '../../vendor/rack/route-path.js';
 import {combOffset, trunkMarks, trunkMembers, strapAt, drawableRuns, bundleSummary, STRAP_DRAWN, bendViolations,
-        trunkIndexOf} from './bundle-view.js';
+        trunkIndexOf, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
 import {paneMarks} from './route-context.js';
@@ -311,7 +311,7 @@ function drawBundles2d(svg, rack, routes, pane, place) {
     const pts = L.trunk.map(w => place(w, f.id));
     const runs = drawableRuns(pts);
     if (!runs.length) continue;
-    const D = Math.max(f.diameter ?? 0, WIDTH * 2);
+    const D = drawnDiameter(f.diameter, WIDTH);
     const marks = paneMarks(trunkMarks(L.trunk, trunkMembers(f, routes.routes, routes.marks, routes.places)), pane);
     const g = svgEl('g', {'data-bundle-id': f.id, 'data-diameter': String(Math.round(D * 10) / 10)});
     const title = svgEl('title', {});

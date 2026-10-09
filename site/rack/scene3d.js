@@ -11,7 +11,7 @@ import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf, packOffset} from './bundle-view.js';
+import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf, packOffset, drawnDiameter} from './bundle-view.js';
 import {laneX} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
@@ -140,7 +140,7 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
       const off = bases.get(`${f.id}|${key}`);
       pts.push(a && off ? a.add(off) : a);
     }
-    const D = Math.max(f.diameter ?? 0, WIDTH * 2);
+    const D = drawnDiameter(f.diameter, WIDTH);
     const marks = trunkMarks(L.trunk, trunkMembers(f, facts.routes, facts.marks, facts.places));
     const g = new THREE.Group(); g.name = `bundle-${f.id}`;
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,

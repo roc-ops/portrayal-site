@@ -80,13 +80,18 @@ export function memberPlaces(rack, routes, bundles) {
   return out;
 }
 
+// HOW WIDE A BUNDLE IS DRAWN (mm), in 2D and 3D alike: the kit's diameter,
+// never less than two cables' width (a bundle not yet measured, or a thin one).
+// Every view and the members' packing use this one figure.
+export const drawnDiameter = (diameter, width) => Math.max(diameter ?? 0, width * 2);
+
 // HOW FAR A MEMBER SITS FROM ITS BUNDLE'S CENTRE LINE, across the run (mm):
 // the members side by side in combing order, their centres spread over the
 // bundle's diameter less one cable's width, never further apart than `width`
 // (a stroke or a tube's width), so they stay inside the band.
 export function combOffset(place, width) {
   if (!place || place.n < 2) return 0;
-  const room = Math.max(0, (place.diameter ?? width * place.n) - width);
+  const room = Math.max(0, drawnDiameter(place.diameter, width) - width);
   const pitch = Math.min(width, room / (place.n - 1));
   return (place.index - (place.n - 1) / 2) * pitch;
 }
@@ -94,11 +99,13 @@ export function combOffset(place, width) {
 // WHERE A MEMBER SITS IN ITS BUNDLE'S CROSS-SECTION (3D), [across, across]
 // from the bundle's centre (mm): the members on a sunflower (golden-angle
 // spiral) in the circle the bundle's diameter leaves for a cable's centre,
-// so each is inside the tube, on the diagonals too and past any count.
+// so each is inside the tube, on the diagonals too and past any count. In a
+// thin bundle the tubes overlap a little: the kit packs at 0.8 of the circle,
+// tighter than round tubes can sit, so that is the geometry, not a fault.
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 export function packOffset(place, width) {
   if (!place || place.n < 2) return [0, 0];
-  const R = Math.max(0, ((place.diameter ?? width * place.n) - width) / 2);
+  const R = Math.max(0, (drawnDiameter(place.diameter, width) - width) / 2);
   const r = R * Math.sqrt((place.index + 0.5) / place.n), a = place.index * GOLDEN;
   return [r * Math.cos(a), r * Math.sin(a)];
 }
@@ -231,8 +238,12 @@ export function peelText(rack, bundle, cableId) {
 }
 
 // THE SHEET'S NOTES (design section 7): one per bundle, then its warnings.
+// The kit's notes come too, as in the list: a size that is an estimate, a
+// member that does not meet the route, a stale peel point, and (kit 0.8.0)
+// members whose bend is unchecked - without them a bend radius would read as
+// a pass.
 export function bundleNotes(rack, bundles) {
   if (!bundles) return [];
   return [...bundles.values()].flatMap(f => [`${f.name} (${f.id}): ${bundleSummary(f)}.`,
-    ...(f.check?.warnings ?? []), ...[bendLine(f.check)].filter(Boolean)]);
+    ...(f.check?.warnings ?? []), ...[bendLine(f.check)].filter(Boolean), ...(f.check?.notes ?? [])]);
 }

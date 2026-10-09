@@ -4456,6 +4456,8 @@ def check_rack_bundle_2d_rear(page, base):
         bad.append(f"2D: the rear band hooks back {geo['back']} mm along x at guide-1 (pane flip lost?)")
     if geo["straps"] != f["count"]:
         bad.append(f"2D: {geo['straps']} straps on the rear pane, the kit counts {f['count']}")
+    if f["diameter"] <= 6 or abs(geo["width"] - f["diameter"]) > 0.05:
+        bad.append(f"2D: the rear band is {geo['width']} wide, not the bundle's {f['diameter']} mm (above the 6 mm floor)")
     return bad
 
 
@@ -4482,12 +4484,18 @@ def check_rack_bundle_3d(page, base):
       const off = straps.map(o => Math.min(...line.map(p => p.distanceTo(o.position))));
       // the members' tubes stay inside the bundle where they ride the lane (U22-U28)
       const lo = 21.5 * 44.45, hi = 27.5 * 44.45, inside = [];
+      // and each member's offset across the lane at U25 (x, z), to show they are spread, not stacked
+      const spread = [];
       for (const t of s.rackCables.tubes) {
         const main = t.mesh?.children?.[0]?.geometry?.parameters?.path;
-        for (const p of main ? main.getSpacedPoints(800) : []) if (p.y > lo && p.y < hi && Math.abs(p.x + 271) < 30)
+        let at = null;
+        for (const p of main ? main.getSpacedPoints(800) : []) if (p.y > lo && p.y < hi && Math.abs(p.x + 271) < 30) {
           inside.push(Math.min(...line.map(q => q.distanceTo(p))));
+          if (!at || Math.abs(p.y - 24.5 * 44.45) < Math.abs(at.y - 24.5 * 44.45)) at = p;
+        }
+        if (at) spread.push([at.x, at.z]);
       }
-      return {radius: trunk.geometry.parameters.radius, straps: straps.length, off: Math.max(0, ...off),
+      return {radius: trunk.geometry.parameters.radius, straps: straps.length, off: Math.max(0, ...off), spread,
               memberOff: inside.length ? Math.max(...inside) : null, n: inside.length,
               ys: [Math.min(...line.map(p => p.y)), Math.max(...line.map(p => p.y))]};
     }""")
@@ -4507,6 +4515,12 @@ def check_rack_bundle_3d(page, base):
     # A member's centre line is within the radius less half a 3 mm tube, so the whole tube is inside.
     if got["memberOff"] is None or got["memberOff"] > want_r - 1.5 + 0.5:
         bad.append(f"3D: a member's tube reaches {got['memberOff']} mm from the bundle's centre on the lane ({got['n']} points; radius {want_r})")
+    # ...and spread across it: three members at three places, at least a millimetre apart.
+    pts = got["spread"]
+    close = [(i, j) for i in range(len(pts)) for j in range(i + 1, len(pts))
+             if ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5 < 1]
+    if len(pts) != 3 or close:
+        bad.append(f"3D: the members are not spread inside the bundle at U25: {pts}")
     return bad
 
 

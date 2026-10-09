@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset,
+import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
         trunkIndexOf, bundleSummary, bundleFacts, bundleNotes} from '../../site/rack/bundle-view.js';
 
 const ring = (via) => ({item: 'i2', via});
@@ -22,7 +22,9 @@ test('combOffset spreads members symmetrically inside the diameter, never furthe
   const at = index => combOffset({index, n: 3, diameter: 9}, 3);
   assert.deepEqual([0, 1, 2].map(at), [-3, 0, 3]);
   // a tight bundle: centres spread over the diameter less one width
-  assert.deepEqual([0, 1].map(index => combOffset({index, n: 2, diameter: 5}, 3)), [-1, 1]);
+  assert.deepEqual([0, 1, 2].map(index => combOffset({index, n: 3, diameter: 7}, 3)), [-2, 0, 2]);
+  // under two widths, the drawn diameter (drawnDiameter) is the band's: 6 for a 3 mm stroke
+  assert.deepEqual([0, 1].map(index => combOffset({index, n: 2, diameter: 5}, 3)), [-1.5, 1.5]);
   assert.equal(combOffset({index: 0, n: 1, diameter: 9}, 3), 0);
 });
 
@@ -95,4 +97,28 @@ test('packOffset keeps every member inside the bundle, on the diagonals and past
     assert.equal(spots.size, n, `${n} members share a spot`);
   }
   assert.deepEqual(packOffset({index: 0, n: 1, diameter: 9}, 3), [0, 0]);
+});
+
+test('bundleNotes carries the kit\'s notes, so an unchecked bend never reads as a pass on the sheet', () => {
+  const f = {id: 'b1', name: 'Bundle 1', members: ['c1', 'c2'], drawn: true, every: {value: 12, unit: 'in'}, diameter: 9,
+    straps: {every: {value: 12, unit: 'in'}, count: 2, straps: []},
+    check: {checked: true, warnings: ['Bundle 1 turns at left-front U10 with room for a 24.5 mm bend; c2 (om4) needs 25 mm, 0.5 mm short.'],
+            notes: ["Bundle 1's bend is not checked for c5, which has no cable type."],
+            bend: {radius_mm: 25, by: 'c2', unchecked: ['c5']}, size: {max_mm: 9}}};
+  assert.deepEqual(bundleNotes({}, new Map([['b1', f]])), [
+    'Bundle 1 (b1): 2 cables (c1-c2), about 9 mm, 2 straps every 12 in.',
+    'Bundle 1 turns at left-front U10 with room for a 24.5 mm bend; c2 (om4) needs 25 mm, 0.5 mm short.',
+    'Bend radius 25 mm, set by c2.',
+    "Bundle 1's bend is not checked for c5, which has no cable type."]);
+});
+
+test('one drawn diameter for every view: the kit\'s, never under two cable widths', () => {
+  assert.equal(drawnDiameter(14.5, 3), 14.5);
+  assert.equal(drawnDiameter(4, 3), 6);
+  assert.equal(drawnDiameter(null, 3), 6);
+  // a bundle not yet measured packs its members in that same width
+  for (let index = 0; index < 5; index++) {
+    const [u, v] = packOffset({index, n: 5, diameter: null}, 3);
+    assert.ok(Math.hypot(u, v) <= (6 - 3) / 2 + 1e-9);
+  }
 });
