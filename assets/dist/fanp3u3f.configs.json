@@ -1,0 +1,213 @@
+{
+ "aliases": [
+  "173817"
+ ],
+ "attrs": {
+  "environmental": {
+   "operating-humidity": "20% to 80% (non-condensing)",
+   "operating-temp": "-20 to 80 C"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "airflow-cfm": 240
+  },
+  "physical": {
+   "blade-material": "Thermoplastic PBT",
+   "frame-material": "Die-Cast Aluminum Painted"
+  },
+  "power": {
+   "input-voltage": "110~120 V, 50 Hz",
+   "power-max-w": 15
+  },
+  "thermal": {
+   "bearing": "Sleeve",
+   "fan-speed": "2300 +/-10% RPM",
+   "noise": "56.9 dB(A)"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": "front-to-back",
+  "d": 44.0,
+  "h": 130.0,
+  "mount": "rack",
+  "power": "ac",
+  "ru": 3,
+  "w": 483.0
+ },
+ "configs": [
+  {
+   "airflow": "front-to-back",
+   "bays": {},
+   "description": "The fan panel as FS ships SKU 173817, with its cord.",
+   "files": {
+    "bottom": "fanp3u3f.base.bottom.svg",
+    "front": "fanp3u3f.base.front.svg",
+    "left": "fanp3u3f.base.left.svg",
+    "rear": "fanp3u3f.base.rear.svg",
+    "right": "fanp3u3f.base.right.svg",
+    "top": "fanp3u3f.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "fanp3u3f",
+ "gaps": [
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the three rear finger guards are wire rings crossed by an X (g5); the library has no wire-guard part, so they are drawn as a ringed vent field.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a wire fan-guard part",
+   "what": "rear-guards"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "FANP3U3F",
+ "options": {
+  "airflow": [
+   "front-to-back"
+  ],
+  "power": [
+   "ac"
+  ]
+ },
+ "pdu-class": null,
+ "provenance": {
+  "airflow": {
+   "confidence": "datasheet",
+   "note": "the product page: \"Air Flow 240CFM, Front-to-Back\" and \"The fans move hot air out of the rack at 240 CFM from the front to the rear\"."
+  },
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "the FS Cooling Fan datasheet (portal 6624), one table for FANS1U2F, FANS1U4F and FANP3U3F, and the FANP3U3F product page. The datasheet prints every model's dimensions as \"HxWxD 483x170x44\" and the like, its axes scrambled. The 15 W is \"Input Power 15W\" with no qualifier, filed as the maximum."
+  },
+  "chassis": {
+   "confidence": "datasheet",
+   "note": "130 x 483 x 44, the product page's HxWxD (the datasheet prints 483x130x44 under the same heading, axes scrambled). THE FACE IS ONE DIE-CAST PLATE WITH ITS EARS IN IT: the slots at the four corners are in the same sheet as the grilles (g1, x3), so the face is drawn at its full 483 (the owner's rule of 2026-10-09; lint L43 stands down for a body this wide). The 44 is the fans' depth behind the plate; the 3D body is one 483 x 130 x 44 box, where the real fans are three 120 mm boxes behind the plate."
+  },
+  "color": {
+   "confidence": "photo-measured",
+   "note": "black painted die-cast aluminium, as every render shows."
+  },
+  "cord": {
+   "confidence": "drawing",
+   "note": "the quick start guide draws the power cord leaving the back of the panel at its switch end and ending in a two-blade grounded US plug (fs/fan-cord-5-15p@1, NEMA 5-15P); the rear render g5 shows it leaving a white terminal block at that end. Its position on the back is estimated."
+  },
+  "eia": {
+   "confidence": "registry",
+   "note": "EIA-310 hole positions: the rail holes of each rack unit stand 6.35, 22.225 and 38.1 mm up from its bottom, and the two rails' holes are 465.1 mm apart across the rack. The part is taken as centred in the rack units it fills."
+  },
+  "grilles": {
+   "confidence": "photo-measured",
+   "note": "three stamped grilles 114 across, centred 85.9, 221.8 and 357.9 in from the left end on the plate's middle (g1 at 2.888 px/mm, each centre the midpoint of a pair of opposite spokes; pitch 136.0), each drawn as fs/fan-grille-120@1; the fans' four screws 105 apart each way around each."
+  },
+  "height": {
+   "confidence": "photo-measured",
+   "note": "130: the product page and the dimensioned render x2 print 5.12 in (130 mm), and the straight-on render g1 agrees - its plate runs 613.5 to 988 px down at 2.884 px/mm, 129.9 mm; the grey band below it is the plate's shadow, not metal. A 3U opening is 133.35."
+  },
+  "lifecycle": {
+   "confidence": "estimated",
+   "note": "checked 2026-10-09 against what the intake holds: the FS documentation portal's Accessories tree, read on 2026-10-08, carries no end-of-sale notice for this part. The product page (SKU 173817) was live on 2026-10-08. No web search beyond FS's own pages was made."
+  },
+  "mark": {
+   "confidence": "drawing",
+   "note": "FS prints its mark beside the switch; it is a logo and is not drawn."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "the FS Cooling Fan datasheet (portal 6624) and the product page (SKU 173817) for every figure; the straight-on gallery renders g1 (front) and g5 (rear) for the layout; the quick start guide V1.0 (portal 5035) for the cord, the plug and the screw kit. FS publishes no drawing of the part and no Visio stencil."
+  },
+  "rear": {
+   "confidence": "photo-measured",
+   "note": "the rear render g5 (2.88 px/mm): the plate's back, three fans in square frames with wire finger guards, the terminal block 21.9 to 48.6 across and 26.4 to 45.8 down, and the cord at the switch end. Drawn seen from behind, so the switch end is at the left. The guards are wire rings with an X; they are drawn as a ringed vent field, as no library part draws a wire guard (see gaps)."
+  },
+  "sides": {
+   "confidence": "estimated",
+   "note": "the plate's edge and the end fan's body behind it; no image shows a side square-on."
+  },
+  "slots": {
+   "confidence": "photo-measured",
+   "note": "four slots 10.4 x 6.6, 8.9 in from each end and centred 5.55 below the top and 5.7 above the bottom (g1 at 2.884 px/mm) - near-symmetric, and within a millimetre of EIA-310's top hole of the upper unit and bottom hole of the lower unit on a 130 mm plate centred in its 3U."
+  },
+  "switch": {
+   "confidence": "photo-measured",
+   "note": "a red rocker switch (common/rocker-switch@1, turned 90 so its I end is at the top as the close-up x5 shows) in a black bezel 18.8 x 23.2, centred 446.0 in and 94.5 down (g1, scaled to the 130 mm height). The QSG's last step draws the same switch."
+  },
+  "switch-colour": {
+   "confidence": "photo-measured",
+   "note": "the rocker is red on every render (g1, x5): its `rocker-color` is #cd2b2a, the median of the 1712 red pixels on the close-up x5."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

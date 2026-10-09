@@ -180,6 +180,15 @@ export function cableText(c) {
   const ways = Object.entries(c.passes ?? {}).filter(([, ids]) => ids.length).map(([it, ids]) => `{item: ${it}, via: ${cutList(ids, 6)}}`);
   if (c.lanes?.length) ways.push(`{lane, ru} with lane ${cutList(c.lanes.map(l => l.id ?? l), 6)}`);
   if (ways.length) lines.push(`Waypoints it can take: ${ways.join('; ')}`);
+  // Each solid body the route still passes through after its detours (kit
+  // 0.11.0, #949: inspect's route.crosses): what, between which two stops,
+  // and where it enters, in mm. A warning, never a refusal.
+  for (const x of c.route?.crosses ?? []) {
+    const stop = w => (w?.end ? `its ${w.end} end` : wayText(w) ?? 'a waypoint');
+    const [a, b] = x.between ?? [];
+    lines.push(`Crosses a body: ${x.item}${x.part && x.part !== 'envelope' ? ` (${clip(x.part, 60)})` : ''}` +
+      ` between ${stop(a)} and ${stop(b)}${Array.isArray(x.at) ? `, entering at ${x.at.join(', ')} mm` : ''}.`);
+  }
   if (c.unchecked || c.loose == null) lines.push('Its ends could not be checked, so whether they land is not known.');
   for (const l of c.loose ?? []) lines.push(`Loose: the ${l.end} end: ${l.reason}`);
   for (const m of c.mismatch ?? []) lines.push(`Mismatch: ${m}`);

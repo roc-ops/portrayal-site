@@ -283,10 +283,17 @@ function tubeEnds(THREE, mesh) {
 // what the showcase needs. The Rack Builder passes its own (scene3d.js),
 // which finds a mount by item id. A link that carries an `id` names its group
 // `cable-<id>`; one without (the showcase's) keeps `cable-<index>`.
-export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null} = {}) {
+// `boxes`, when given, are the bodies to keep a hanging cable out of
+// ([{ref, box}], world THREE.Box3): the Rack Builder passes the kit's solid
+// bodies (scene3d.js solidBoxes); without them, the scene's device boxes.
+// `clear(points)`, when given, takes a routed tube's drawn polyline (its two
+// lead points and its waypoints, world Vector3s) and returns the points to add
+// round a body, [{after, points}], `after` an index into the waypoints (-1:
+// after the first lead point).
+export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null, clear = null} = {}) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
-  const boxes = scene.deviceBoxes();
+  boxes ??= scene.deviceBoxes();
   const refOf = id => (plan.devices || []).find(d => d.id === id)?.ref || id;
   const find = anchor || ((dev, path, view) => scene.cableAnchor({ref: refOf(dev)}, path, {view}));
   const group = new THREE.Group(); group.name = 'patch-cables';
@@ -319,8 +326,29 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     if (!live()) return null;
     const wps = Array.isArray(got) ? got : got?.points ?? [];
     const marks = Array.isArray(got) ? null : got?.marks?.length === wps.length ? got.marks : null;
-    const pts = clearOf(dangling ? danglePoints3d(THREE, landed[0])
-      : wps.length ? routePoints3d(THREE, ends[0], ends[1], wps, 30, marks) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
+    // A ROUTED cable follows the kit's path, which already goes round every
+    // solid body (kit 0.11.0, #949), so nothing pushes it about: clearOf is
+    // for the hangs and the unplugged leads only, and a routed tube that
+    // still meets metal is a drawing fault the browser check finds.
+    const routed = !dangling && wps.length > 0;
+    let pts;
+    if (routed) {
+      // THE DRAWING'S OWN LEGS. The kit measures from each port on its panel;
+      // the tube leaves its plug and reaches out of the face first (`reach`),
+      // so a leg from there to the first ring is not the leg the kit cleared,
+      // and can rise through a tray floor in front of the panel. `clear`
+      // (scene3d.js) takes each drawn leg round the same bodies by the kit's
+      // own rules (solids.js detour).
+      pts = routePoints3d(THREE, ends[0], ends[1], wps, 30, marks);
+      const more = clear ? clear([pts[1], ...wps, pts[pts.length - 2]]) : [];
+      if (more.length) {
+        const w = [], m = [];
+        const add = k => { for (const d of more) if (d.after === k) for (const q of d.points) { w.push(q); m.push(null); } };
+        add(-1);
+        wps.forEach((q, k) => { w.push(q); m.push(marks ? marks[k] : null); add(k); });
+        pts = routePoints3d(THREE, ends[0], ends[1], w, 30, marks ? m : null);
+      }
+    } else pts = clearOf(dangling ? danglePoints3d(THREE, landed[0]) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
     const main = new THREE.Mesh(new THREE.TubeGeometry(
@@ -340,7 +368,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // Where each connector's run begins, measured off the drawn geometry: a
     // strand's first ring, or the main tube's first or last.
     const starts = [...tubeEnds(THREE, main), ...strands.map(s => tubeEnds(THREE, s)[0])];
-    tubes.push({link, i, mesh: g, loose, points: pts, starts, dangling});
+    tubes.push({link, i, mesh: g, loose, points: pts, starts, dangling, routed});
   }
   world.add(group);
   return {tubes, anchors, boxes, group};

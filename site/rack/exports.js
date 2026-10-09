@@ -30,7 +30,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeFacts, routeNotes} from './route-context.js';
-import {LANE_GAP} from '../../vendor/rack/route.js';
+import {LANE_GAP, bodyFindings} from '../../vendor/rack/route.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
@@ -777,9 +777,13 @@ export async function cableScheduleCsv(rack, chassisOf) {
   // THE BUNDLES (Portrayal #923): each one's line, warnings and notes, from
   // the kit, measured with this render's routes, cable types and bend radii.
   // Without the routes the kit reads them unmeasured and says so.
+  // THE BODIES A ROUTE STILL CROSSES (Portrayal #949, kit 0.11.0): each
+  // finding's sentence goes in its own cable's notes, so the file's notes
+  // leave them out rather than say each twice.
   const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes,
-                                                   {bundles: rf?.bundleRecords ?? null});
-  notes.push(...routeNotes(rack, rf, labelOf(rack)));
+                                                   {bundles: rf?.bundleRecords ?? null,
+                                                    bodies: rf?.ctx ? bodyFindings(rack, rf.ctx, labelOf(rack)) : null});
+  notes.push(...routeNotes(rack, rf, labelOf(rack), {bodies: false}));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
 }

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="484.0mm" height="87.5mm" viewBox="0 0 484.0 87.5" data-device="dinrail2u" data-view="front" data-shell="sheet" data-material="SPCC" data-color="Black" data-mounting-hardware="M6 screws, cage nuts and washers; M5 screws and nuts for the side brackets" data-din-profile="ts35x7.5" data-din-rail-count="1" data-din-rail-length-mm="400" data-din-rail-centre-from-top-mm="43.75" data-din-rail-setback-mm="161.2" data-din-rail-setback-min-mm="51.2" data-din-rail-setback-max-mm="271.2" data-usable-width-mm="421.2" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com DINRAIL2U","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/din-rail-ts35-400@1":"1.0.0","fs/dinrail2u-ear@1":"1.0.0","fs/dinrail2u-panel@1":"1.0.0"},"source-sha256":"5a74e1ca0a9a62db9138b4e5b0b40f372b4d2ba41cb0543fc417af12b97a95c6","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DINRAIL2U" x="0" y="0" width="484" height="87.5" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="side-left-edge" data-kind="side-bracket" x="29.9" y="0" width="1.5" height="87.5" rx="0.6" fill="#1b1d20" />
+    <rect id="side-right-edge" data-kind="side-bracket" x="452.6" y="0" width="1.5" height="87.5" rx="0.6" fill="#1b1d20" />
+  </g>
+  <g id="rail-panel" data-path="rail-panel" data-class="bracket" data-ref="fs/dinrail2u-panel@1:1.0.0" data-depth="161.2" data-wall="#1b1d20" data-rel-pos="1" transform="translate(42.0,0.0)" data-group="frame" data-group-role="furniture" data-description="the rail panel and the two side brackets">
+    <title>rail-panel</title>
+    <path id="rail-panel--panel" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H400.0 V87.5 H0 Z M14.30,14.20 h73.70 v7.70 h-73.70 Z M114.10,14.20 h73.70 v7.70 h-73.70 Z M214.00,14.20 h73.70 v7.70 h-73.70 Z M313.90,14.20 h73.70 v7.70 h-73.70 Z M14.30,65.60 h73.70 v7.70 h-73.70 Z M114.10,65.60 h73.70 v7.70 h-73.70 Z M214.00,65.60 h73.70 v7.70 h-73.70 Z M313.90,65.60 h73.70 v7.70 h-73.70 Z" data-path="rail-panel/panel" data-class="bezel" />
+  </g>
+  <g id="rail" data-path="rail" data-class="mount" data-behaviour="mounts" data-ref="fs/din-rail-ts35-400@1:1.0.0" data-din-profile="ts35x7.5" data-rail-length-mm="400.0" data-rel-pos="1" transform="translate(42.0,26.25)" data-group="rails" data-group-role="furniture" data-description="the TS35 DIN rail that devices clip onto" data-z-lift="-161.2" data-in="rail-panel">
+    <title>rail</title>
+    <g id="rail--rail" data-path="rail/rail" data-class="bezel" data-z-out="-153.7" data-z-color="#8e9399">
+      <rect x="0" y="0" width="400.0" height="35.0" fill="#8e9399" />
+      <rect x="0" y="4" width="400.0" height="27" fill="#b9bdc2" />
+      <rect x="3.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="28.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="53.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="78.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="103.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="128.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="153.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="178.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="203.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="228.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="253.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="278.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="303.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="328.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="353.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+      <rect x="378.50" y="14.35" width="18" height="6.3" rx="3.15" fill="#0a0b0c" />
+    </g>
+  </g>
+  <g id="ear-left" data-path="ear-left" data-class="ear" data-behaviour="mounts" data-ref="fs/dinrail2u-ear@1:1.0.0" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="ears" data-group-role="furniture" data-description="the two mounting ears, the side brackets folded out">
+    <title>ear-left</title>
+    <path id="ear-left--plate" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H29.9 V87.5 H0 Z M6.05,5.65 a3.2,3.2 0 1 0 6.4,0 a3.2,3.2 0 1 0 -6.4,0 Z M6.05,81.85 a3.2,3.2 0 1 0 6.4,0 a3.2,3.2 0 1 0 -6.4,0 Z" data-path="ear-left/plate" data-class="bezel" data-z-out="1.5" data-z-color="#1b1d20" />
+  </g>
+  <g id="ear-right" data-path="ear-right" data-class="ear" data-behaviour="mounts" data-ref="fs/dinrail2u-ear@1:1.0.0" data-rel-pos="2" transform="translate(454.1,0.0)" data-group="ears" data-group-role="furniture" data-description="the two mounting ears, the side brackets folded out">
+    <title>ear-right</title>
+    <path id="ear-right--plate" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H29.9 V87.5 H0 Z M17.45,5.65 a3.2,3.2 0 1 0 6.4,0 a3.2,3.2 0 1 0 -6.4,0 Z M17.45,81.85 a3.2,3.2 0 1 0 6.4,0 a3.2,3.2 0 1 0 -6.4,0 Z" data-path="ear-right/plate" data-class="bezel" data-z-out="1.5" data-z-color="#1b1d20" />
+  </g>
+</svg>
