@@ -2651,6 +2651,67 @@ def check_schema_nos_tab(page, base):
         bad.append(f"schema: ?doc={other} did not render the {other} schema")
     return bad
 
+# THE SCHEMA PAGE READS A CONDITION THE WAY THE VALIDATOR DOES. Three
+# misreadings the if/then rendering (#153) shipped with: a property whose
+# schema is `false` (the `otherwise` taking a key away) printed as a plain key;
+# a branch's `required` was only visible on keys the branch also described, so
+# `class` and `size` - required by the otherwise, described nowhere in it -
+# were missing; and a key in `if.required` was badged REQUIRED when it is only
+# tested for. Expectations are read from component.schema.json itself.
+@extra("schema.html marks false properties not allowed, lists a branch's required keys, and badges if-keys tested")
+def check_schema_conditions(page, base):
+    import schemawalk
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"schema: uncaught {e}"))
+    doc = schemawalk.all_documents().get("component.schema.json")
+    if not doc or not isinstance(doc.get("if"), dict):
+        return ["component.schema.json has no root if/then/else to check against"]
+    # Every false property under any then/else, and every then/else required list.
+    forbidden, branches, tested = [], {}, []
+    for ptr, node in schemawalk.walk(doc):
+        tail = ptr.rsplit("/", 1)[-1]
+        if tail in ("then", "else") and node.get("required"):
+            branches[ptr] = list(node["required"])
+        if "/then" in ptr or "/else" in ptr:
+            forbidden += [f"{ptr}/properties/{schemawalk.seg(k)}"
+                          for k, v in (node.get("properties") or {}).items() if v is False]
+        if tail == "if":
+            tested += [f"{ptr}/properties/{schemawalk.seg(k)}" for k in node.get("required") or []
+                       if k in (node.get("properties") or {})]
+    # Not vacuous: the cases the review named are in the file.
+    for p in ("/else/properties/motion", "/else/properties/parts/items/properties/count"):
+        if p not in forbidden: bad.append(f"component.schema.json no longer forbids {p} - re-read the review cases")
+    if branches.get("/else") != ["class", "size"] or "/then" not in branches:
+        bad.append(f"component.schema.json's root branch requirements changed: {branches}")
+    if "/if/properties/kind" not in tested:
+        bad.append("component.schema.json's root if no longer tests kind")
+    page.goto(f"{base}/schema.html?doc=component", wait_until="load")
+    page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
+    if not page.query_selector('#schema-body .sc-cond[data-conditional="/"]'):
+        bad.append("schema: the component root's condition block is not rendered")
+    rows = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#schema-body .sc-prop[data-ptr]')]
+        .map(r => [r.dataset.ptr, {forbidden: 'forbidden' in r.dataset,
+                                   badges: [...r.querySelector('.sc-prop-head').querySelectorAll('.sc-req')].map(b => b.textContent.trim().toLowerCase())}]))""")
+    for p in forbidden:
+        r = rows.get(p)
+        if not r: bad.append(f"schema: {p} (schema false) has no row"); continue
+        if not r["forbidden"] or "not allowed" not in r["badges"]:
+            bad.append(f"schema: {p} has schema false but is not marked not allowed (badges {r['badges']})")
+        if "required" in r["badges"]:
+            bad.append(f"schema: {p} has schema false and is badged required")
+    lines = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#schema-body .sc-branch[data-at]')]
+        .map(b => [b.dataset.at, [...b.querySelectorAll(':scope > .sc-branch-req [data-key]')].map(k => k.textContent)]))""")
+    for p, want in branches.items():
+        got = lines.get(p)
+        if got != want:
+            bad.append(f"schema: the {p} branch lists required keys {got}, the file requires {want}")
+    for p in tested:
+        r = rows.get(p) or {"badges": []}
+        if "required" in r["badges"] or not any(b.startswith("tested") for b in r["badges"]):
+            bad.append(f"schema: {p} is tested by an if but badged {r['badges']}")
+    return bad
+
+
 @extra("every face resolves through configs[].files (Portrayal #670)")
 def check_faces_after_670(page, base):
     bad = []

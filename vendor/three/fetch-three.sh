@@ -42,4 +42,10 @@ while queue:
             raise SystemExit(f'unexpected bare specifier {spec!r} in {rel}')
 print(f'addons: {len(seen)} files')
 PY
+# USDZExporter imports fflate, which three ships under addons/libs/ with only a
+# one-line "Licensed under MIT" header. MIT asks for the full notice, so it is
+# fetched from the fflate release that header names, beside the file.
+fflate=$(sed -n 's/^version \([0-9.]*\)$/\1/p' addons/libs/fflate.module.js | head -1)
+[ -n "$fflate" ] || { echo "fetch-three: no version line in addons/libs/fflate.module.js" >&2; exit 1; }
+curl -sSfL "https://unpkg.com/fflate@${fflate}/LICENSE" -o addons/libs/fflate.LICENSE
 echo "three ${VERSION} vendored -> $(du -sh . | cut -f1)"
