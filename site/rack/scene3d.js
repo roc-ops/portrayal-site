@@ -11,7 +11,7 @@ import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf} from './bundle-view.js';
+import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf, packOffset} from './bundle-view.js';
 import {laneX} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
@@ -72,8 +72,9 @@ const across = run => (run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x
 // A BUNDLE'S MEMBERS (portrayal-site#142): where a member rides its trunk
 // (`places`, bundle-view.js memberPlaces), the bundle takes ONE slot of the
 // grid at each waypoint, as one cable would, and its members are packed
-// inside the bundle's diameter around that slot's centre, in the same 3x3
-// grid at a pitch that keeps them in (bundle-view.js combOffset's rule).
+// inside the bundle's diameter around that slot's centre (bundle-view.js
+// packOffset: a sunflower in the circle, so every member is inside it,
+// however many there are).
 // `bases` collects each bundle's slot offset from the waypoint's anchor, per
 // lane or pathway, Map(`bundle|key` -> Vector3), for its tube (hangBundles).
 function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0]), marksOf = new Map(),
@@ -106,9 +107,8 @@ function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.sp
       p[u] += off(k % 3); p[v] += off(Math.floor(k / 3) % 3);
       if (inBundle) {
         if (!bases.has(own)) bases.set(own, p.clone().sub(anchor));
-        const pitch = Math.min(SPREAD, Math.max(0, (place.diameter ?? WIDTH * 3) - WIDTH) / 2);
-        const j = place.index;
-        p[u] += ((j + 1) % 3 - 1) * pitch; p[v] += ((Math.floor(j / 3) + 1) % 3 - 1) * pitch;
+        const [du, dv] = packOffset(place, WIDTH);
+        p[u] += du; p[v] += dv;
       }
       out.push(p);
       marks.push(mark);

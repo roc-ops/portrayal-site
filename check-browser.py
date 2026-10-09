@@ -4270,21 +4270,22 @@ def check_rack_ring_rear_pane(page, base):
     return bad
 
 
-# CABLE BUNDLES (portrayal-site#142). Three cables from one switch through one
-# ring of its lacer, up the left-front lane to a panel: the kit works their
-# trunk out as mgr ring 1 > left-front U20-U30. `face` puts the whole set on
-# the front or the rear face.
+# CABLE BUNDLES (portrayal-site#142). Three Cat6A cables from one copper
+# switch through one ring of its lacer, up the left-front lane to a second
+# switch: the kit works their trunk out as mgr-1 ring 1 > left-front U20-U30,
+# and sizes it from the cable types' Cat6A diameter, well above the drawing's
+# two-stroke floor, so the band and tube widths test the real figure. `face`
+# puts the whole set on the front or the rear face.
 def bundle_fixture(page, face="front"):
     return page.evaluate("""async face => {
       const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
       let r = M.newRack({name: 'Bundles'});
-      const optic = {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2', 'port-3': 'generic/qsfp-lc@2'};
-      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, face, label: 'leaf-1', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 20, face, label: 'sw-1'}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face, label: 'mgr-1', on: 'i1', unit: 1}));
-      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, face, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
-      for (const [p, lc] of [['port-1', 'lc1'], ['port-2', 'lc2'], ['port-3', 'lc3']])
-        ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: 'bay-1/module/' + lc, view: 'front'}, media: 'os2'}));
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 30, face, label: 'sw-2'}));
+      for (const p of ['port-1', 'port-2', 'port-3'])
+        ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: p, view: 'front'}, media: 'cat6a'}));
       return r;
     }""", face)
 
@@ -4373,11 +4374,13 @@ def check_rack_bundle_2d_front(page, base):
     f = facts[0] if facts else None
     if not f or not f["checked"] or not f["diameter"]:
         return bad + [f"facts: the bundle was not checked for size: {facts}"]
+    if f["diameter"] <= 6:
+        return bad + [f"facts: three Cat6A come to {f['diameter']} mm, not above the 6 mm drawing floor - are the cable types loaded?"]
     geo = page.evaluate(BAND_GEO, ["paneFront", "b1"])
     if not geo:
         return bad + ["2D: no band for b1 on the front pane"]
-    # The band is the bundle's diameter wide (a floor of two strokes).
-    if abs(geo["width"] - max(f["diameter"], 6)) > 0.05:
+    # The band is the bundle's diameter wide.
+    if abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
     if not (geo["laneX"] < -26) or geo["span"] < 400:
         bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
@@ -4490,7 +4493,9 @@ def check_rack_bundle_3d(page, base):
     }""")
     if not got:
         return bad + ["3D: no bundle-b1-trunk tube in the scene"]
-    want_r = max(f["diameter"], 6) / 2
+    want_r = f["diameter"] / 2
+    if want_r <= 3:
+        return bad + [f"3D: the bundle is {f['diameter']} mm, not above the 6 mm drawing floor"]
     if abs(got["radius"] - want_r) > 0.01:
         bad.append(f"3D: the tube's radius is {got['radius']}, not half the bundle's {f['diameter']} mm")
     if got["ys"][1] - got["ys"][0] < 400:
@@ -4499,8 +4504,9 @@ def check_rack_bundle_3d(page, base):
         bad.append(f"3D: {got['straps']} strap bands, the kit counts {f['count']}")
     if got["off"] > 3:
         bad.append(f"3D: a strap band sits {got['off']:.1f} mm off the tube's centre line")
-    if got["memberOff"] is None or got["memberOff"] > want_r + 0.5:
-        bad.append(f"3D: a member's tube leaves the bundle on the lane by {got['memberOff']} mm ({got['n']} points; radius {want_r})")
+    # A member's centre line is within the radius less half a 3 mm tube, so the whole tube is inside.
+    if got["memberOff"] is None or got["memberOff"] > want_r - 1.5 + 0.5:
+        bad.append(f"3D: a member's tube reaches {got['memberOff']} mm from the bundle's centre on the lane ({got['n']} points; radius {want_r})")
     return bad
 
 

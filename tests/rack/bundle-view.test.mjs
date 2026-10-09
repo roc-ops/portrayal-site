@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendUnchecked, bendViolations,
+import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset,
         trunkIndexOf, bundleSummary, bundleFacts, bundleNotes} from '../../site/rack/bundle-view.js';
 
 const ring = (via) => ({item: 'i2', via});
@@ -55,18 +55,17 @@ test('drawableRuns cuts the trunk where a view cannot place a waypoint', () => {
 test('the bend hook says nothing before kit 0.8.0', () => {
   for (const check of [null, {}, {bend: null}]) {
     assert.equal(bendLine(check), null);
-    assert.deepEqual(bendUnchecked(check), []);
     assert.deepEqual(bendViolations(check), []);
   }
 });
 
-test('the bend hook reads kit 0.8.0\'s result: the radius, unchecked points and violations', () => {
+test('the bend hook reads kit 0.8.0\'s result: the radius and the violations', () => {
   const tight = {kind: 'corner', at: 'left-front U10', waypoint: lane(10), room_mm: 24.5, need_mm: 25, by: 'c2',
                  members: ['c1', 'c2'], unchecked: [], ok: false, short_mm: 0.5};
   const open = {kind: 'corner', at: 'pp-1 ring 1', waypoint: ring('guide-1'), ok: null, unchecked: ['c5']};
   const check = {bend: {radius_mm: 25, by: 'c2', unchecked: ['c5'], points: [tight, open], violations: [tight]}};
-  assert.equal(bendLine(check), 'Bend radius 25 mm, set by c2. Bend not checked for c5: no cable type.');
-  assert.deepEqual(bendUnchecked(check), ['Bend not checked at pp-1 ring 1: c5 has no cable type.']);
+  // the radius only: what was left unchecked is the kit's own notes, shown beside it, not said twice
+  assert.equal(bendLine(check), 'Bend radius 25 mm, set by c2.');
   assert.deepEqual(bendViolations(check), [{waypoint: lane(10), at: 'left-front U10', need_mm: 25, room_mm: 24.5, short_mm: 0.5}]);
   // with points and no violations list, the points with ok false are the violations
   assert.equal(bendViolations({bend: {points: [tight, open]}}).length, 1);
@@ -83,4 +82,17 @@ test('bundleFacts without the routes is not checked, and the summary and notes s
   assert.equal(f.straps, null);
   assert.equal(bundleSummary(f), '2 cables (c1-c2), not checked, straps every 12 in');
   assert.deepEqual(bundleNotes(rack, new Map([['b1', f]])), ['Bundle 1 (b1): 2 cables (c1-c2), not checked, straps every 12 in.']);
+});
+
+test('packOffset keeps every member inside the bundle, on the diagonals and past nine members', () => {
+  for (const n of [2, 3, 9, 10, 24, 61]) {
+    const D = 20, W = 3;
+    for (let index = 0; index < n; index++) {
+      const [u, v] = packOffset({index, n, diameter: D}, W);
+      assert.ok(Math.hypot(u, v) + W / 2 <= D / 2 + 1e-9, `member ${index} of ${n} is outside`);
+    }
+    const spots = new Set(Array.from({length: n}, (_, index) => packOffset({index, n, diameter: D}, W).map(x => x.toFixed(3)).join()));
+    assert.equal(spots.size, n, `${n} members share a spot`);
+  }
+  assert.deepEqual(packOffset({index: 0, n: 1, diameter: 9}, 3), [0, 0]);
 });

@@ -7,7 +7,7 @@
 import {el} from './dom.js';
 import {endName} from '../../vendor/rack/cable-rules.js';
 import {bundleOfCable, waypointText} from '../../vendor/rack/bundles.js';
-import {bundleSummary, sizeLine, bendLine, bendUnchecked, peelText} from './bundle-view.js';
+import {bundleSummary, sizeLine, bendLine, peelText} from './bundle-view.js';
 
 const button = (id, text, fn, extra = {}) => {
   const b = el('button', {type: 'button', id, text, ...extra});
@@ -18,8 +18,8 @@ const field = (label, control) => el('label', {}, [label, control]);
 
 // WHAT IS SAID OF A BUNDLE, wherever it is listed: its size, its warnings
 // (size now; bend too once kit 0.8.0, Portrayal #922, adds its violations to
-// the same list), the bend result itself and its unchecked points
-// (bundle-view.js bendLine, bendUnchecked: #922's hook), and the kit's notes. `fact` is
+// the same list), the radius the bend check found (bundle-view.js bendLine:
+// #922's hook), and the kit's notes, which name what it left unchecked. `fact` is
 // bundle-view.js bundleFacts' entry; null before the routes are known.
 export function bundleFindings(fact) {
   if (!fact) return [el('span', {class: 'rk-muted', 'data-bundle-note': 'true', text: 'Not checked: the routes are not known yet.'})];
@@ -29,7 +29,6 @@ export function bundleFindings(fact) {
   for (const w of fact.check.warnings) out.push(el('span', {class: 'rk-warn', 'data-bundle-warning': fact.id, text: w}));
   const bend = bendLine(fact.check);
   if (bend) out.push(el('span', {class: 'rk-muted', 'data-bundle-bend': fact.id, text: bend}));
-  for (const u of bendUnchecked(fact.check)) out.push(el('span', {class: 'rk-muted', 'data-bundle-bend-unchecked': fact.id, text: u}));
   for (const n of fact.check.notes) out.push(el('span', {class: 'rk-muted', 'data-bundle-note': fact.id, text: n}));
   return out;
 }

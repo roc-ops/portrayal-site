@@ -91,6 +91,18 @@ export function combOffset(place, width) {
   return (place.index - (place.n - 1) / 2) * pitch;
 }
 
+// WHERE A MEMBER SITS IN ITS BUNDLE'S CROSS-SECTION (3D), [across, across]
+// from the bundle's centre (mm): the members on a sunflower (golden-angle
+// spiral) in the circle the bundle's diameter leaves for a cable's centre,
+// so each is inside the tube, on the diagonals too and past any count.
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+export function packOffset(place, width) {
+  if (!place || place.n < 2) return [0, 0];
+  const R = Math.max(0, ((place.diameter ?? width * place.n) - width) / 2);
+  const r = R * Math.sqrt((place.index + 0.5) / place.n), a = place.index * GOLDEN;
+  return [r * Math.cos(a), r * Math.sin(a)];
+}
+
 // THE TRUNK'S RING MARKS, one per trunk waypoint (the kit's layout.trunk), in
 // the rack's axes: null for a lane, a duct or a pass, and for a ring the mark
 // of a member riding through it there (route.js ringMarks), with its sense
@@ -189,24 +201,14 @@ export function sizeLine(fact) {
 // each point {kind: 'corner' | 'pathway', at (text), waypoint, angle_deg?,
 // legs_mm?, room_mm, source, estimated, need_mm, by, members, unchecked,
 // ok: true | false | null, short_mm}, `violations` the points with ok false.
-// A violation's sentence is already in the check's `warnings`, which the list
-// shows with the size warnings; these say the rest: the radius the bundle
-// needs, and each point that could not be checked (ok null). Null-safe: with
-// no bend result they say nothing. The ONE place that reads `bend`.
+// A violation's sentence is already in the check's `warnings`, and a member
+// or point left unchecked (ok null) is in its `notes`; the list shows both, so
+// this adds only the radius the bundle needs, and the views mark the
+// violations (bendViolations). Null-safe: with no bend result they say
+// nothing. The only place that reads `bend`.
 export function bendLine(check) {
   const b = check?.bend;
-  if (!b) return null;
-  const parts = [];
-  if (b.radius_mm > 0) parts.push(`Bend radius ${mmText(b.radius_mm)}${b.by ? `, set by ${b.by}` : ''}.`);
-  const un = Array.isArray(b.unchecked) ? b.unchecked : [];
-  if (un.length) parts.push(`Bend not checked for ${membersText(un)}: no cable type.`);
-  return parts.length ? parts.join(' ') : null;
-}
-// The points of the bend check that are unchecked (ok null), in words.
-export function bendUnchecked(check) {
-  const pts = Array.isArray(check?.bend?.points) ? check.bend.points : [];
-  return pts.filter(p => p && p.ok === null).map(p => `Bend not checked at ${p.at ?? 'a corner'}${
-    Array.isArray(p.unchecked) && p.unchecked.length ? `: ${membersText(p.unchecked)} ${p.unchecked.length === 1 ? 'has' : 'have'} no cable type` : ''}.`);
+  return b?.radius_mm > 0 ? `Bend radius ${mmText(b.radius_mm)}${b.by ? `, set by ${b.by}` : ''}.` : null;
 }
 // The trunk waypoints where the bend is too tight (ok false), for the views
 // to mark: [{waypoint, at, need_mm, room_mm, short_mm}]. Empty before #922.
@@ -232,5 +234,5 @@ export function peelText(rack, bundle, cableId) {
 export function bundleNotes(rack, bundles) {
   if (!bundles) return [];
   return [...bundles.values()].flatMap(f => [`${f.name} (${f.id}): ${bundleSummary(f)}.`,
-    ...(f.check?.warnings ?? []), ...[bendLine(f.check)].filter(Boolean), ...bendUnchecked(f.check)]);
+    ...(f.check?.warnings ?? []), ...[bendLine(f.check)].filter(Boolean)]);
 }
