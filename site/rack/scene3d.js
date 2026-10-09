@@ -302,10 +302,6 @@ function placeSided(scene, items, chassisOf) {
   }
 }
 
-// Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
-// `facts` the cables were hung by (an export's notes read those, so they
-// describe this scene and not a later reading), or {failed: true} when the
-// cables could not be drawn: the rack still stands, and an export of it says so.
 // THE BEND RADIUS EACH TUBE IS ROUNDED TO (portrayal-site#164): a cable's
 // installed radius from the cable types (`bendOf`, the kit's cable-types.js
 // bendLookup), and, while it rides a bundle, the bundle's radius when that is
@@ -337,6 +333,11 @@ function cornerWhere(rack, link, pts, c, faceZ) {
   return `at U${ru}, ${Math.abs(dz)} mm ${dz >= 0 ? 'in front of' : 'behind'} the front rails`;
 }
 
+// Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
+// `facts` the cables were hung by (an export's notes read those, so they
+// describe this scene and not a later reading), or {failed: true} when the
+// cables could not be drawn: the rack still stands, and an export of it says so.
+// `tight` lists every corner drawn tighter than its radius, as sentences.
 async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null, detours = null, bendOf = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const laneAt = (lane, ru) => laneXAt(rack, lane, ru, chassisOf);
