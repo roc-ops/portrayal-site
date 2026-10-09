@@ -2446,6 +2446,15 @@ KIT_EXPECT = {
     "04-seat": lambda r: r.get("seated", 0) >= 3 and r.get("refused") == [] and r.get("url", "").startswith("port-4~"),
     "06-marks": lambda r: r.get("marks") == 3 and r.get("svgBytes", 0) > 1000 and len(r.get("share", "")) > 10,
     "07-shell": lambda r: r.get("shell") is True and r.get("device") == "s9600-72xc",
+    # the rack core (#156): a batch placed, a refusal with its reason, an undo
+    # that put agg-1 back at U20, and a cable measured by the plain context
+    "08-rack": lambda r: r.get("items") == 2 and r.get("zeroU") == 1 and r.get("cables") == 2
+               and "agg-1" in (r.get("refused") or "") and r.get("aggAt") == 20
+               and r.get("routed", 0) > 0 and r.get("heard") == 3,
+    # two cables bundled, checked against the cable types: os2 3.0 mm and
+    # cat6a 7.5 mm make sqrt((9 + 56.25) / 0.8) = 9.0 mm, under 63.5 mm
+    "09-bundles": lambda r: r.get("members") == 2 and r.get("checked") is True and r.get("size") == 9
+                  and r.get("limit") == 63.5 and r.get("warnings") == [] and r.get("straps", 0) >= 1,
 }
 
 @extra("kit.html: every recipe runs and returns what its section promises")

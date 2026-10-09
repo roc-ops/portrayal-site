@@ -1043,7 +1043,7 @@ for _stem in _exfiles:
           "a ./vendor or ./site path import")
     check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
           f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
-    for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w-]+)'", _src):
+    for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'", _src):
         _want = {n.split(" as ")[0].strip() for n in _names.split(",") if n.strip()}
         _have = _exports(_mod) if _mod in _kitmods else set()
         check(_mod in _kitmods and _want <= _have,
@@ -1079,7 +1079,7 @@ if _snip:
     except ValueError: _snipmap = {}
 _used = set()
 for _stem in _exfiles:
-    _used |= set(re.findall(r"from\s*'(@portrayal/kit/[\w-]+)'", (_exdir / f"{_stem}.js").read_text()))
+    _used |= set(re.findall(r"from\s*'(@portrayal/kit/[\w/-]+)'", (_exdir / f"{_stem}.js").read_text()))
 check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in _used),
       "the 'Getting the files' import map resolves every @portrayal/kit module the recipes import, to a .js file",
       f"recipes use {sorted(_used)}; snippet maps {_snipmap}")
@@ -1087,6 +1087,102 @@ check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in
 _kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s in _exfiles)
 _brit = sorted(set(re.findall(r"\b(\w*(?:utilis|behaviour|colour|centre|favourite|recognis|organis)\w*)\b", _kit_prose, re.I)))
 check(not _brit, "the kit page, its runner and its recipes are in American English", f"{_brit}")
+
+# THE PAGE KEEPS UP WITH THE KIT (#156). The schema page cannot drift - the
+# schema files are copied on every refresh and the browser check renders every
+# property - but kit.html is written by hand, and it sat at 0.1.0 documenting
+# the viewer modules while the site vendored 0.7.0 and the whole rack core.
+# refresh-assets.sh copies the kit's package.json to vendor/kit-package.json;
+# the page must state its version, and every module in its `exports` must be
+# named by a section (data-modules="...") or listed below with the reason it
+# is not on the page yet. A kit that adds a module therefore cannot be
+# refreshed in without one or the other.
+KIT_NOT_DOCUMENTED_YET = {
+    "relief": "viewer3d raises parts with it; no recipe calls it on its own",
+    "bevel": "viewer3d builds the bevelled chassis with it; no recipe calls it on its own",
+    "states": "the recipes set lamp states through the drawing's classes and viewer.setStates, not this module's own API",
+    "fields": "the 3D section names viewer.setFields; the module's form helpers (fieldRows, fieldAccepts, encodeFields) have no recipe",
+    "share": "the 3D recipe exports GLB and USDZ through viewer.download, which uses it; its own functions have no recipe",
+    "gif": "marks.toGif loads it; the annotate section names toGif, but the module's own API has no recipe",
+    "devsel": "the shell's device picker uses it; no recipe filters devices on its own",
+    "nosnames": "a NOS listing's port names; no recipe yet",
+    "optical": "a fibre path's far end; no recipe yet",
+    "zones": "the ports and bays of a face in mm, for the diagram exports; no recipe yet",
+    "drawio": "draw.io export; the draw.io page (drawio.html) is where the site shows it, with no kit recipe yet",
+    "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
+}
+_kpkg_f = VENDOR / "kit-package.json"
+try:
+    _kpkg = json.loads(_kpkg_f.read_text())
+except Exception as _e:
+    _kpkg = {}
+    check(False, "vendor/kit-package.json is readable", f"{_e} - run ./refresh-assets.sh")
+_kver = _kpkg.get("version") if isinstance(_kpkg.get("version"), str) else ""
+_kexp = sorted(k[2:] for k in (_kpkg.get("exports") or {}) if isinstance(k, str) and k.startswith("./"))
+# NOT VACUOUS: no exports read, or no sections found, is a failure - an empty
+# list is documented by an empty page.
+check(_kpkg.get("name") == "@portrayal/kit" and bool(re.fullmatch(r"\d+\.\d+\.\d+(?:-[\w.]+)?", _kver or "")),
+      "vendor/kit-package.json is @portrayal/kit's package.json, with a version",
+      f"name {_kpkg.get('name')!r}, version {_kver!r} - run ./refresh-assets.sh")
+check(len(_kexp) >= 10 and "marks" in _kexp and "rack/editor" in _kexp,
+      f"vendor/kit-package.json lists the kit's exports ({len(_kexp)} read)",
+      f"read {_kexp}")
+_said = re.findall(r'data-kit-version="([^"]*)"', _kit_html)
+_cdn = re.findall(r"@portrayal/kit@([^/\"'\s]+)/", _kit_html)
+check(len(_said) == 1, "kit.html states the kit's version once (data-kit-version)",
+      f"found data-kit-version {_said}")
+check(bool(_cdn), "kit.html's CDN import map pins @portrayal/kit to a version",
+      "no @portrayal/kit@<version>/ URL on the page")
+_off = sorted({v for v in _said + _cdn if v != _kver})
+check(bool(_kver) and bool(_said) and not _off,
+      f"kit.html states the vendored kit's version ({_kver})",
+      f"the page also says {_off}; vendor/kit-package.json says {_kver!r} - "
+      "update kit.html (data-kit-version and the CDN map) to the vendored kit")
+
+# WHAT NPM HAS. The vendored kit can be ahead of the last release: 0.7.0 was
+# vendored while npm's latest was 0.2.0, which has no rack/* at all, so the
+# page's `npm install` and CDN map could not deliver what it documents. While
+# that is so, #files must carry a note that says it (data-kit-unpublished,
+# naming the npm version in data-kit-npm); once the vendored version is
+# published, the note must go. Update KIT_NPM_LATEST when a kit release is
+# published (`npm view @portrayal/kit version`).
+KIT_NPM_LATEST = "0.2.0"
+_vt = lambda v: tuple(int(x) for x in re.findall(r"\d+", (v or "").split("-")[0])[:3]) or (0,)
+_files_m = re.search(r'<section\s+class="kit-sec"[^>]*\bid="files"[^>]*>(.*?)</section>', _kit_html, re.S)
+_files = _files_m.group(1) if _files_m else ""
+check(bool(_files_m), "kit.html has its Getting the files section (#files)")
+_notes = re.findall(r'<p class="kit-note" data-kit-unpublished>(.*?)</p>', _files, re.S)
+_npm_said = re.findall(r'data-kit-npm="([^"]*)"', _kit_html)
+if _kver and _vt(_kver) > _vt(KIT_NPM_LATEST):
+    check(len(_notes) == 1 and _npm_said == [KIT_NPM_LATEST] and _kver in _notes[0],
+          f"kit.html's #files says the documented kit {_kver} is not on npm (npm's latest is {KIT_NPM_LATEST})",
+          f"{len(_notes)} data-kit-unpublished notes, data-kit-npm {_npm_said} - add the note to #files, "
+          "naming both versions, or update KIT_NPM_LATEST if the kit has been published")
+else:
+    check(not _notes and not _npm_said,
+          f"kit {_kver} is on npm, so kit.html carries no not-on-npm note",
+          "remove the data-kit-unpublished note from #files")
+_secs = re.findall(r'<section\s+class="kit-sec"[^>]*\bid="([^"]+)"[^>]*>', _kit_html)
+_docd = {}
+for _tag in re.findall(r'<section\s+class="kit-sec"[^>]*>', _kit_html):
+    _mm = re.search(r'\bdata-modules="([^"]*)"', _tag)
+    for _mod in (_mm.group(1).split() if _mm else []):
+        _docd.setdefault(_mod, []).append(re.search(r'\bid="([^"]+)"', _tag).group(1))
+check(len(_secs) >= 8 and len(_docd) >= 5,
+      f"kit.html's sections name the modules they document ({len(_secs)} sections, {len(_docd)} modules named)",
+      f"sections {_secs}, modules {sorted(_docd)}")
+_undoc = [m for m in _kexp if m not in _docd and m not in KIT_NOT_DOCUMENTED_YET]
+check(not _undoc,
+      "every module the vendored kit exports is documented on kit.html or listed in KIT_NOT_DOCUMENTED_YET",
+      f"{_undoc} - document each in a section of kit.html (data-modules) or list it with a reason")
+_both = sorted(set(_docd) & set(KIT_NOT_DOCUMENTED_YET))
+check(not _both, "no module is both documented on kit.html and listed as not documented yet",
+      f"{_both} - take it off KIT_NOT_DOCUMENTED_YET")
+_stale = sorted((set(_docd) | set(KIT_NOT_DOCUMENTED_YET)) - set(_kexp)) if _kexp else []
+check(not _stale, "kit.html and KIT_NOT_DOCUMENTED_YET name only modules the vendored kit exports",
+      f"{_stale} - the kit no longer exports them")
+check(all(isinstance(v, str) and len(v) > 10 for v in KIT_NOT_DOCUMENTED_YET.values()),
+      "every KIT_NOT_DOCUMENTED_YET entry gives its reason")
 
 # THE DOCS MENU: Schema and Using the kit, one menu, on every page with a nav.
 _DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
@@ -1283,6 +1379,13 @@ else:
           f"vendor/rack/ holds exactly the kit's rack/*.js at {_src_sha[:12]}",
           f"only vendored {sorted(set(_vrack) - set(_want))}, only in kit {sorted(set(_want) - set(_vrack))}, "
           f"contents differ {_diff} - run ./refresh-assets.sh")
+# vendor/kit-package.json is the kit's package.json at the same commit, so the
+# version and exports kit.html is held to are the ones that were vendored.
+if (_upstream / ".git").exists() and _src_sha and _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode == 0:
+    _pk = _git("show", f"{_src_sha}:kit/package.json")
+    check(_pk.returncode == 0 and (VENDOR / "kit-package.json").is_file()
+          and _pk.stdout == (VENDOR / "kit-package.json").read_bytes(),
+          f"vendor/kit-package.json is kit/package.json at {_src_sha[:12]}", "run ./refresh-assets.sh")
 for _m in ("rails", "model", "fit", "managers", "cable-rules", "route-path", "route", "export-data",
            "dcim-rules", "cable-geometry", "catalog", "validate", "commands", "history", "editor", "queries"):
     check(f"{_m}.js" in _vrack, f"vendor/rack/{_m}.js is vendored", "run ./refresh-assets.sh")

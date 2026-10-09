@@ -97,6 +97,35 @@ because the renderer once stopped at the first map (`views`,
 `configurations`, `groups`), and 146 of the device schema's 230 properties were
 missing from a page that said it could not drift.
 
+The kit page is covered too, since #156. A refresh copies the kit's
+`package.json` to `vendor/kit-package.json`, and the contract fails when:
+
+- the version `kit.html` states (`data-kit-version`, and every
+  `@portrayal/kit@<version>` in its CDN import map) is not that package's
+  `version`; or
+- a module in that package's `exports` is neither named by a section of
+  `kit.html` (`data-modules="…"` on its `section.kit-sec`) nor listed in
+  `KIT_NOT_DOCUMENTED_YET` in `check-contract.py`, with the reason.
+
+When it fails after a refresh, the kit moved on and the page did not. Bump the
+version on `kit.html`, then for each new module either document it (add it to
+a section's `data-modules`, with prose or a recipe in `site/kit-examples/` that
+shows it) or add it to `KIT_NOT_DOCUMENTED_YET` with a reason. A module that
+leaves the kit has to leave the page and the list as well; the check fails on
+a name in either that the kit no longer exports.
+
+A version bump is also a cue to re-read the prose, not only the module lists:
+a section can name every module and still describe what that version no longer
+does. The bundles section says `inspect` gives `bend: null`, for example,
+which stops being true when 0.8.0 adds the bend check. Re-read each section
+whose modules changed in the release.
+
+While the vendored kit is newer than the last npm release (`KIT_NPM_LATEST`
+in `check-contract.py`), `#files` must carry the `data-kit-unpublished` note
+saying so, since its `npm install` and CDN map cannot deliver the documented
+modules. When a release is published, update `KIT_NPM_LATEST`; the check then
+asks for the note to be removed.
+
 Then the half that needs a browser:
 
 ```sh
