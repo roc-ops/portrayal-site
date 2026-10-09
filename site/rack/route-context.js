@@ -154,7 +154,6 @@ function aperturesOf(root) {
   return out;
 }
 
-// A face that could not be read is null, and `failed.n` counts it: the facts are then incomplete.
 // A ring component's run (Portrayal #930): `data-guide-run` on the element
 // that carries data-guide="ring" - on the top view, where aperturesOf reads,
 // and on an elevation that draws the ring's own component (a CMH-6DR1U's
@@ -167,6 +166,7 @@ export function guideRunsOf(roots) {
   return out;
 }
 
+// A face that could not be read is null, and `failed.n` counts it: the facts are then incomplete.
 const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
   .catch(() => { failed.n++; return null; });
 
