@@ -9,7 +9,9 @@
 import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
-import {drawCables3d} from './cables.js';
+import {drawCables3d, WIDTH} from './cables.js';
+import {throughRings} from '../../vendor/rack/route-path.js';
+import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf} from './bundle-view.js';
 import {laneX} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
@@ -38,55 +40,158 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // before cables.js routePoints3d expands it to its entry and exit.
 // Returns {points, marks} per link.
 const SPREAD = 6;   // mm between cables sharing a waypoint
-function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0]), marksOf = new Map()) {
-  const used = new Map(), slot = new Map();
+// A waypoint's point in the room, unspread, and the run a cable takes there.
+async function anchorOf(scene, THREE, w, laneAt) {
   const m = scene.metrics();
+  let p = null, run = 'x';
+  if (w.lane) {
+    const [, face = 'front'] = w.lane.split('-');
+    // Through a zero-U duct where one stands on this lane (route.js laneXAt).
+    p = new THREE.Vector3(laneAt(w.lane, w.ru), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
+    run = 'y';
+  } else {
+    // A ring: x and z from its top-view component, y from the center of
+    // its end rect, so the point is the center of the OPENING. A duct runs
+    // along x like a ring; a pass crosses the face, along z.
+    const [top, end] = await Promise.all([w.via, `${w.via}-end`].map(id => scene.guideAnchor({id: w.item}, id)));
+    if (top || end) {
+      p = (top || end).position.clone();
+      if (top && end) p.y = end.position.y;
+    } else {
+      const duct = await scene.guideAnchor({id: w.item}, `guide--${w.via}`);
+      const pass = duct ? null : await scene.guideAnchor({id: w.item}, `pass--${w.via}`);
+      if (duct || pass) p = (duct || pass).position.clone();
+      if (pass) run = 'z';
+    }
+  }
+  return p ? {p, run} : null;
+}
+// The two axes across a run.
+const across = run => (run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x', 'y']);
+// A BUNDLE'S MEMBERS (portrayal-site#142): where a member rides its trunk
+// (`places`, bundle-view.js memberPlaces), the bundle takes ONE slot of the
+// grid at each waypoint, as one cable would, and its members are packed
+// inside the bundle's diameter around that slot's centre, in the same 3x3
+// grid at a pitch that keeps them in (bundle-view.js combOffset's rule).
+// `bases` collects each bundle's slot offset from the waypoint's anchor, per
+// lane or pathway, Map(`bundle|key` -> Vector3), for its tube (hangBundles).
+function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0]), marksOf = new Map(),
+                      places = null, bases = new Map()) {
+  const used = new Map(), slot = new Map();
   return async link => {
     const r = routes?.get(link.id);
     if (!r) return {points: [], marks: null};
     const all = marksOf.get(link.id);
     const given = all?.length === r.waypoints.length ? all : null;
+    const place = places?.get(link.id) ?? null;
     const out = [], marks = [];
     for (const [i, w] of r.waypoints.entries()) {
-      let p = null, run = 'x';
-      if (w.lane) {
-        const [, face = 'front'] = w.lane.split('-');
-        // Through a zero-U duct where one stands on this lane (route.js laneXAt).
-        p = new THREE.Vector3(laneAt(w.lane, w.ru), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
-        run = 'y';
-      } else {
-        // A ring: x and z from its top-view component, y from the center of
-        // its end rect, so the point is the center of the OPENING. A duct runs
-        // along x like a ring; a pass crosses the face, along z.
-        const [top, end] = await Promise.all([w.via, `${w.via}-end`].map(id => scene.guideAnchor({id: w.item}, id)));
-        if (top || end) {
-          p = (top || end).position.clone();
-          if (top && end) p.y = end.position.y;
-        } else {
-          const duct = await scene.guideAnchor({id: w.item}, `guide--${w.via}`);
-          const pass = duct ? null : await scene.guideAnchor({id: w.item}, `pass--${w.via}`);
-          if (duct || pass) p = (duct || pass).position.clone();
-          if (pass) run = 'z';
-        }
-      }
-      if (!p) continue;
+      const got = await anchorOf(scene, THREE, w, laneAt);
+      if (!got) continue;
+      const {p} = got, anchor = p.clone();
+      let {run} = got;
       const mark = given?.[i] ?? null;
       if (mark?.run) run = mark.run;
       // Spread across the run: the first cable at 0, then +-1 steps, on a 3x3
       // grid (it wraps after 9 cables sharing a waypoint).
       // A lane takes one slot per cable per lane, so the cable's run along it is
       // straight (vertical), as cable-view.js draws it; a ring or duct takes one per cable.
-      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`, own = `${link.id}|${key}`;
+      const inBundle = place && i >= place.stretch[0] && i <= place.stretch[1];
+      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`, own = inBundle ? `${place.bundle}|${key}` : `${link.id}|${key}`;
       if (!slot.has(own)) { slot.set(own, used.get(key) || 0); used.set(key, (used.get(key) || 0) + 1); }
       const k = slot.get(own);
       const off = n => ((n + 1) % 3 - 1) * SPREAD;   // 0, +1, -1, 0, ...
-      const [u, v] = run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x', 'y'];
+      const [u, v] = across(run);
       p[u] += off(k % 3); p[v] += off(Math.floor(k / 3) % 3);
+      if (inBundle) {
+        if (!bases.has(own)) bases.set(own, p.clone().sub(anchor));
+        const pitch = Math.min(SPREAD, Math.max(0, (place.diameter ?? WIDTH * 3) - WIDTH) / 2);
+        const j = place.index;
+        p[u] += ((j + 1) % 3 - 1) * pitch; p[v] += ((Math.floor(j / 3) + 1) % 3 - 1) * pitch;
+      }
       out.push(p);
       marks.push(mark);
     }
     return {points: out, marks: given ? marks : null};
   };
+}
+
+// THE BUNDLES AS TUBES (portrayal-site#142; design section 6): each drawn
+// bundle's trunk as a tube of its diameter (the kit's size check), see-through
+// so its members show packed inside, through the same points its members take
+// (each waypoint's anchor moved by the bundle's slot offset there), passing
+// each ring the way its members do (bundle-view.js trunkMarks; the scene is in
+// the rack's axes, so they pass unturned); and each strap a band round it at
+// the kit's position along its trunk segment. Returns {group, bundles: [{id,
+// diameter, points, straps: [Vector3]}]}.
+const STRAP_BAND = 12;   // mm along the run: a strap as drawn
+async function hangBundles(scene, rack, facts, laneAt, bases) {
+  const {THREE, scene: world} = scene.three;
+  const group = new THREE.Group(); group.name = 'cable-bundles';
+  const out = [];
+  for (const f of facts.bundles.values()) {
+    const L = f.check?.layout;
+    if (!f.drawn || !L?.trunk?.length) continue;
+    const pts = [];
+    for (const w of L.trunk) {
+      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`;
+      const a = (await anchorOf(scene, THREE, w, laneAt))?.p ?? null;
+      const off = bases.get(`${f.id}|${key}`);
+      pts.push(a && off ? a.add(off) : a);
+    }
+    const D = Math.max(f.diameter ?? 0, WIDTH * 2);
+    const marks = trunkMarks(L.trunk, trunkMembers(f, facts.routes, facts.marks, facts.places));
+    const g = new THREE.Group(); g.name = `bundle-${f.id}`;
+    const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
+                                                   depthWrite: false});
+    const strapMat = new THREE.MeshStandardMaterial({color: 0x24282d, roughness: 0.8});
+    for (const run of drawableRuns(pts)) {
+      const rings = marks.slice(run.from, run.from + run.points.length);
+      const path = rings.some(Boolean) ? throughRings(run.points, rings, {lead: 30}).points : run.points;
+      const smooth = [path[0]];
+      for (let k = 1; k < path.length - 1; k++) {
+        const [p, q, s] = [path[k - 1], path[k], path[k + 1]];
+        const ease = (from, to) => { const d = to.distanceTo(from); return to.clone().lerp(from, Math.min(30, d / 2) / (d || 1)); };
+        smooth.push(ease(p, q), q.clone(), ease(s, q));
+      }
+      smooth.push(path.at(-1));
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(smooth, false, 'centripetal'),
+        Math.max(40, smooth.length * 12), D / 2, 16, false), jacket);
+      tube.name = `bundle-${f.id}-trunk`;
+      tube.renderOrder = 1;
+      g.add(tube);
+    }
+    const at = [];
+    const vec = pts.map(p => (p ? [p.x, p.y, p.z] : null));
+    (f.straps?.straps ?? []).forEach((s, k) => {
+      const hit = strapAt(vec, s);
+      if (!hit) return;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(D / 2 + 1.5, D / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
+      band.position.set(...hit.at);
+      band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...hit.dir));
+      band.name = `bundle-${f.id}-strap-${k}`;
+      band.userData.strap = {bundle: f.id, along_mm: s.along_mm};
+      g.add(band);
+      at.push(band.position.clone());
+    });
+    // A corner too tight for its bend radius (kit 0.8.0, Portrayal #922): a
+    // warning ring round the tube there. Nothing before 0.8.0.
+    const tight = [];
+    for (const v of bendViolations(f.check)) {
+      const p = pts[trunkIndexOf(L.trunk, v.waypoint)];
+      if (!p) continue;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(D / 2 + 8, 1.5, 8, 32),
+        new THREE.MeshBasicMaterial({color: 0xd9822b}));
+      ring.position.copy(p);
+      ring.name = `bundle-${f.id}-bend-${tight.length}`;
+      g.add(ring);
+      tight.push(p.clone());
+    }
+    group.add(g);
+    out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight});
+  }
+  world.add(group);
+  return {group, bundles: out};
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
@@ -128,8 +233,10 @@ function placeSided(scene, items, chassisOf) {
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null) {
+async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
+  const laneAt = (lane, ru) => laneXAt(rack, lane, ru, chassisOf);
+  const bases = new Map();
   try {
     const drawn = await drawCables3d(scene, cablePlan3d(rack), {anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
@@ -137,8 +244,14 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, (lane, ru) => laneXAt(rack, lane, ru, chassisOf), marks ?? new Map())});
-    return {...drawn, checked: !facts.unchecked, facts};
+    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, laneAt, marks ?? new Map(), bundles?.places ?? null, bases)});
+    // The bundles over the cables they hold; one failing costs only the bundles.
+    let hung = null;
+    if (bundles?.bundles?.size) {
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases); }
+      catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
+    }
+    return {...drawn, checked: !facts.unchecked, facts, bundles: hung};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
     return {failed: true};
@@ -149,7 +262,9 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
 // by the page just before it disposes the old scene, so a rebuild (a commit,
 // or a frame change) restores the orbit instead of snapping back to the
 // opening view.
-export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null}) {
+// `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null,
+                                              bundles = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -204,7 +319,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

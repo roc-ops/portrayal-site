@@ -30,6 +30,8 @@ import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCa
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
+import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
+import {paintBundles} from './rack/cable-view.js';
 import {routeFacts, routeNotes} from './rack/route-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -108,7 +110,8 @@ function disposeScene3d() {
 // gutters widened (spec 7); a cable with no route draws as before.
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
 // The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
-const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null])) : '');
+const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null]))
+  + bundlesSig(rf) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
@@ -117,7 +120,7 @@ async function rebuild3d() {
   const sig = routesSig(S.routes);
   disposeScene3d();
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null});
+    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes)});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -303,10 +306,11 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
 // 3.1): the last render's routing context and the cable types' diameters, so
 // the kit works a trunk out from its cables and checks its size. Without them
 // a bundle is still made, with a route given, and is reported not checked.
-// No control on this page sends one yet (portrayal-site#142 draws bundles);
+// The bundle panels send them (bundlePanel, bundleFormPanel, portrayal-site#142);
 // the agent's edit_rack sends them with its own context (agentContext).
 const bundling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => typeof c?.op === 'string' && c.op.startsWith('bundle.'));
-const bundleCtx = () => ({...(S.routes?.ctx ? {route: S.routes.ctx} : {}), ...(cableTypes ? {diameterOf: cableTypes.diameterOf} : {})});
+const bundleCtx = () => ({...(S.routes?.ctx ? {route: S.routes.ctx} : {}),
+  ...(cableTypes ? {diameterOf: cableTypes.diameterOf, bendOf: cableTypes.bendOf} : {})});
 // The published cable types (cable-types.json), loaded once; null until then,
 // or when they cannot be read (a bundle's size then counts each cable by its
 // media, as fill does, and says it is an estimate).
@@ -590,6 +594,7 @@ function cableListPanel() {
   // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
   const notes = S.routes ? routeNotes(r, S.routes, nameOfId) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    ...bundleListHooks(),
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
@@ -608,6 +613,46 @@ function cableListPanel() {
 }
 // What the side panel shows with nothing selected, or with a cable selected:
 // the summary (or Cable mode's help), then the cable list.
+// ── Bundles (portrayal-site#142) ─────────────────────────────────────────
+// A bundle is selected from its header row in the cable list ({kind:
+// 'bundle', id}) and edited in the side panel; a new one is made from the
+// cables ticked in a form ({kind: 'bundle-form', picked}). Every change is one
+// of the kit's bundle.* commands, sent through edit() with the last render's
+// routing context (bundleCtx). The drawings, the list and the 3D scene read
+// routeFacts' `bundles` (bundle-view.js bundleFacts).
+const selectedBundle = () => (S.sel?.kind === 'bundle' ? S.sel.id : null);
+const bundleListHooks = () => ({bundles: S.routes?.bundles ?? null, selectedBundle: selectedBundle(),
+  onBundleSelect: id => select(selectedBundle() === id ? null : {kind: 'bundle', id}),
+  onBundleNew: id => select({kind: 'bundle-form', picked: [id]})});
+// A bundle command from a panel: a refusal is shown beside the control, not as a notice.
+const bundleEdit = cmd => { const res = edit(cmd, {say: true, report: false}); return res.error ? {error: res.error} : null; };
+function bundleFormPanel(sel) {
+  return bundleForm({rack: rack(), picked: sel.picked || [], uOf,
+    onCreate: ({cables, label}) => {
+      const res = edit({op: 'bundle.create', cables, ...(label ? {label} : {})}, {say: true, report: false});
+      if (res.error) return {error: res.error};
+      const id = res.created?.id ?? res.created?.ids?.[0];
+      select(id ? {kind: 'bundle', id} : null);
+      return null;
+    },
+    onCancel: () => select(null)});
+}
+function bundlePanel(sel) {
+  const r = rack(), b = (r.bundles || []).find(x => x.id === sel.id);
+  if (!b) { S.sel = null; return homePanel(); }
+  return bundleInspector({rack: r, bundle: b, fact: S.routes?.bundles?.get(b.id) ?? null, uOf,
+    onLabel: label => bundleEdit({op: 'bundle.update', id: b.id, label}),
+    onStraps: straps => bundleEdit({op: 'bundle.update', id: b.id, straps}),
+    onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
+    onPeel: (cable, at) => bundleEdit({op: 'bundle.peel', id: b.id, cable, ...(at ? {at} : {})}),
+    onRemove: () => { S.sel = null; edit({op: 'bundle.remove', id: b.id}, {say: true}); },
+    onClose: () => select(null)});
+}
+// What the 3D scene reads of the bundles, and its rebuild signature's share.
+const bundles3d = rf => (rf?.bundles?.size ? {bundles: rf.bundles, places: rf.places} : null);
+const bundlesSig = rf => (rf?.bundles?.size ? JSON.stringify([...rf.bundles.values()].map(f =>
+  [f.id, f.diameter, f.straps?.straps ?? null, f.check?.layout?.trunk ?? null])) : '');
+
 const homePanel = () => el('div', {}, [
   S.cable.on ? cableModePanel() : summary(),
   // In 3D the cables are drawn and the list still selects, edits and deletes;
@@ -883,6 +928,7 @@ async function render() {
       // applied again to the taller boxes.
       if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
       paintCables(S.svgs, r, {selectedId: selectedCable(), on: S.cableFilter});
+      paintBundles(S.svgs, selectedBundle());
     }
     if (S.routePick) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
@@ -939,6 +985,8 @@ function renderSide() {
   const sel = S.sel;
   let body;
   if (!sel || sel.kind === 'cable') body = homePanel();
+  else if (sel.kind === 'bundle') body = bundlePanel(sel);
+  else if (sel.kind === 'bundle-form') body = bundleFormPanel(sel);
   else if (sel.kind === 'cable-form') body = cableFormPanel(sel);
   else if (sel.kind === 'frame') body = frameForm({rack: r,
     // The rack as it is when the field changes, not as it was when the form was built.
@@ -1518,6 +1566,10 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // rings a route would enter and leave by one face (route.js ringFindings), as plain data.
     rings: () => (S.routes ? {marks: [...S.routes.marks].map(([id, m]) => [id, m.map(x => (x ? {...x} : null))]),
                               findings: S.routes.ringFindings.map(f => ({...f}))} : null),
+    // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
+    bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
+      diameter: f.diameter, count: f.straps?.count ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
+      warnings: [...f.check.warnings], checked: f.check.checked})) : null),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }
