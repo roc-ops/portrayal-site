@@ -20,7 +20,7 @@ import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {laneXAt, lanesOf} from '../../vendor/rack/route.js';
 import {solidsOf, detour} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
-import {roundedCurve, tightText} from './bend3d.js';
+import {clearCurve, tightText, insideOf} from './bend3d.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -179,7 +179,7 @@ export function solidBoxes(THREE, rack, chassisOf, faceZ) {
 // the kit's position along its trunk segment. Returns {group, bundles: [{id,
 // diameter, points, straps: [Vector3]}]}.
 const STRAP_BAND = 12;   // mm along the run: a strap as drawn
-async function hangBundles(scene, rack, facts, laneAt, bases) {
+async function hangBundles(scene, rack, facts, laneAt, bases, inside = null) {
   const {THREE, scene: world} = scene.three;
   const group = new THREE.Group(); group.name = 'cable-bundles';
   const out = [], drawnTight = [];
@@ -209,7 +209,7 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
       const rings = marks.slice(run.from, run.from + run.points.length);
       const path = rings.some(Boolean) ? throughRings(run.points, rings, {lead: R != null ? Math.max(30, R) : 30}).points : run.points;
       let curve;
-      if (R != null) curve = roundedCurve(THREE, path, R);
+      if (R != null) curve = clearCurve(THREE, path, R, inside);
       else {
         const smooth = [path[0]];
         for (let k = 1; k < path.length - 1; k++) {
@@ -256,9 +256,11 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
     // A trunk corner drawn tighter than the bundle's radius, in the kit's words.
     const name = f.name ?? f.id;
     for (const curve of runs) for (const c of (curve.corners ?? []).filter(c => c.short_mm > 0)) {
-      const by = f.check.bend.by, cable = (rack.cables || []).find(x => x.id === by), kind = cable?.type || cable?.media;
-      drawnTight.push({bundle: f.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm,
-        text: tightText(`${name} in 3D`, kind ? `${by} (${kind})` : by, cornerWhere(rack, {from: [], to: []}, [], c, scene.metrics().faceZ), c)});
+      // the member that sets the radius, or the bundle itself when the kit names none
+      const by = f.check.bend.by ?? null, cable = by ? (rack.cables || []).find(x => x.id === by) : null;
+      const kind = cable?.type || cable?.media, who = !by ? name : kind ? `${by} (${kind})` : by;
+      drawnTight.push({bundle: f.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, t: c.t, room_t: c.room_t, hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null,
+        text: tightText(`${name} in 3D`, who, cornerWhere(rack, {from: [], to: []}, [], c, scene.metrics().faceZ), c)});
     }
     group.add(g);
     out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight, radius_mm: R, curves: runs});
@@ -360,13 +362,15 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
       const cable = byId.get(t.link.id), kind = cable?.type || cable?.media;
-      return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm,
+      const lead = [t.points[1], t.points[t.points.length - 2]].some(q => q && c.at.distanceTo(q) < 1e-3);
+      return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, lead, t: c.t, room_t: c.room_t,
+              hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null,
               text: tightText(`${t.link.id} in 3D`, kind ? `${t.link.id} (${kind})` : t.link.id, cornerWhere(rack, t.link, t.points, c, faceZ), c)};
     }));
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases);
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases, insideOf(drawn.boxes));
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }

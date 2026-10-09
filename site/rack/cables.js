@@ -30,25 +30,13 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {svgEl} from './dom.js';
 import {OPENING} from '../../vendor/rack/rails.js';
-import {routed2d, throughRings} from '../../vendor/rack/route-path.js';
+import {routed2d} from '../../vendor/rack/route-path.js';
 import {reverseMarks} from '../../vendor/rack/route.js';
-import {colorOf, WIDTH, TAG_H, sag2d, LEAD, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
+import {colorOf, WIDTH, TAG_H, sag2d, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
         danglePoints3d, reaches, clearOf} from '../../vendor/rack/cable-geometry.js';
-import {clearCurve} from './bend3d.js';
+import {routeLine3d, roundRoute, insideOf} from './bend3d.js';
+export {routeLine3d} from './bend3d.js';
 
-// A ROUTED RUN AS A POLYLINE: routePoints3d's own points - each end's plug,
-// its lead straight out of the face, then the waypoints with each ring passed
-// along its run (throughRings, `lead` mm outside each face) - with no easing,
-// so bend3d.js can round every corner to the cable's radius. Nothing is added
-// to the kit's geometry here: only routePoints3d's ease points are left out.
-const startOf3d = (THREE, e) => (e.points.length > 1 ? mergeOf(THREE, e) : e.points[0].clone());
-export function routeLine3d(THREE, A, B, wps, lead = 30, rings = null) {
-  const a = startOf3d(THREE, A), b = startOf3d(THREE, B);
-  const outA = a.clone().addScaledVector(A.normal, A.reach ?? LEAD);
-  const outB = b.clone().addScaledVector(B.normal, B.reach ?? LEAD);
-  const path = rings ? throughRings([outA, ...wps, outB], [null, ...rings, null], {lead}).points : [outA, ...wps, outB];
-  return [a, ...path, b];
-}
 
 export {COLORS, colorOf, JACKETS, colorOfJacket, PLUGS, plugColorOf, WIDTH, TAG_H, sag2d,
         LEAD_DROP, LEAD, routePoints3d, hangPoints3d, danglePoints3d, clearOf} from '../../vendor/rack/cable-geometry.js';
@@ -311,6 +299,10 @@ function tubeEnds(THREE, mesh) {
 // is the polyline - lead, detours, ring passes, waypoints - with each corner
 // a true arc of that radius, and its `tight` lists the corners whose legs
 // could not hold one (bend3d.js fitCorners). Without it, as before.
+// A ring round each corner drawn tighter than its bend radius. One switch, so
+// the scene can keep its flags (`tight`) without drawing them.
+const BEND_RINGS = true;
+
 export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null, clear = null,
                                                  bendOf = null} = {}) {
   const {THREE, scene: world} = scene.three;
@@ -377,27 +369,8 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
         if (!marks) m = null;
         pts = line(THREE, ends[0], ends[1], w, lead, m);
       }
-      // A point strictly inside a solid body: an arc must not cut through one.
-      const inside = q => boxes.some(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05 && q.y > box.min.y + 0.05
-        && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05);
-      if (R != null) {
-        bent = clearCurve(THREE, pts, R, inside);
-        // A RING TOO THIN FOR THE TURN. A ring passed along its run has the
-        // cable turn at its faces, and when its depth (a few mm of wire) is
-        // all the leg a corner has, no bend of the cable's radius fits there.
-        // A real cord bends THROUGH the ring: such a ring is drawn as its
-        // centre, one corner, rounded across it (as the kit's bundle bend
-        // check measures a corner at a trunk waypoint). A ring the route
-        // doubles back at (`back`) stays as the kit decided it.
-        if (m && bent.corners.some(c => c.short_mm > 0)) {
-          const thin = m.map((g, k) => !!g && g.back !== true && g.depth > 0 && bent.corners.some(c => c.short_mm > 0
-            && c.at.distanceTo(w[k]) <= lead + g.depth / 2 + 1e-3));
-          if (thin.some(Boolean)) {
-            pts = line(THREE, ends[0], ends[1], w, lead, m.map((g, k) => (thin[k] ? null : g)));
-            bent = clearCurve(THREE, pts, R, inside);
-          }
-        }
-      }
+      // An arc must not cut through a solid body (bend3d.js clearCurve).
+      if (R != null) ({pts, bent} = roundRoute(THREE, ends[0], ends[1], w, m, R, lead, insideOf(boxes)));
     } else pts = clearOf(dangling ? danglePoints3d(THREE, landed[0]) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
@@ -423,7 +396,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // The corners drawn tighter than the radius (bend3d.js), and a warning
     // ring round the tube at each, as a bundle's too-tight corner has one.
     const tight = bent ? bent.corners.filter(c => c.short_mm > 0) : [];
-    for (const [k, c] of tight.entries()) {
+    if (BEND_RINGS) for (const [k, c] of tight.entries()) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: 0xd9822b}));
       ring.position.copy(c.at);
       ring.name = `cable-${link.id ?? i}-bend-${k}`;

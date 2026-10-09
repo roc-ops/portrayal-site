@@ -23,13 +23,20 @@
 //
 // No DOM and no three.js import: THREE is passed in, as cable-geometry.js does.
 
+import {throughRings} from '../../vendor/rack/route-path.js';
+import {LEAD, mergeOf} from '../../vendor/rack/cable-geometry.js';
+
 const EPS = 1e-6;
 const STRAIGHT = 0.25 * Math.PI / 180;   // a turn under a quarter degree is straight
 const round1 = v => Math.round(v * 10) / 10;
 
 // The corners of `pts` (Vector3s) with radius `R` (mm, or null): returns
 // {points, corners}, the points with repeats dropped, and per interior
-// point that turns, {k, theta, need_t, t, need_mm, drawn_mm, short_mm, at}.
+// point that turns, {k, theta, need_t, t, room_t, need_mm, drawn_mm,
+// short_mm, why, at}: `room_t` is what its legs allow, and `why` says what
+// made a short corner short - 'legs' (no room between its neighbours), 'body'
+// (`cap`: clearCurve drew it tighter to keep its arc out of a body) or 'back'
+// (it doubles back); null for a corner at its full radius.
 export function fitCorners(pts, R, {cap = null} = {}) {
   const P = [];
   for (const p of pts) if (!P.length || P[P.length - 1].distanceTo(p) > EPS) P.push(p.clone());
@@ -48,12 +55,15 @@ export function fitCorners(pts, R, {cap = null} = {}) {
   for (let k = 1; k < P.length - 1; k++) {
     if (turn[k] < STRAIGHT) continue;
     const left = share(k - 1, k - 1), right = share(k, k + 1);
-    const t = known ? Math.min(want[k], left, right, cap?.get(k) ?? Infinity) : 0;
+    const room = Math.min(left, right), capped = cap?.get(k) ?? Infinity;
+    const t = known ? Math.min(want[k], room, capped) : 0;
     const tan = Math.tan(turn[k] / 2);
     const drawn = !known ? null : want[k] === Infinity ? 0 : t / tan;
-    corners.push({k, theta: turn[k], need_t: want[k], t: want[k] === Infinity ? 0 : t,
+    const short = known && drawn < R - 0.05 ? round1(R - drawn) : 0;
+    const why = !short ? null : want[k] === Infinity ? 'back' : capped < Math.min(want[k], room) ? 'body' : 'legs';
+    corners.push({k, theta: turn[k], need_t: want[k], t: want[k] === Infinity ? 0 : t, room_t: room,
                   need_mm: known ? R : null, drawn_mm: drawn == null ? null : round1(drawn),
-                  short_mm: known && drawn < R - 0.05 ? round1(R - drawn) : 0, at: P[k].clone()});
+                  short_mm: short, why, at: P[k].clone()});
   }
   return {points: P, corners};
 }
@@ -118,30 +128,45 @@ export function roundedCurve(THREE, pts, R, {cap = null} = {}) {
   return curve;
 }
 
+// A point strictly inside one of the solid bodies, as tubes_inside reads them: 0.05 mm in from a face ([{box}], world Box3s).
+export const insideOf = boxes => q => (boxes ?? []).some(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05
+  && q.y > box.min.y + 0.05 && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05);
+
 // A CORNER KEPT OUT OF THE METAL. An arc lies inside its corner, so a corner
 // the route takes round a solid body (a detour round a PDU, a tray's edge)
 // would cut through that body at the full radius. `inside(point)` says
 // whether a point is in a body; each corner whose arc meets one is drawn
 // tighter, halving its share of the legs until it clears (or is the polyline
-// itself), and so is flagged as short like any corner without room.
+// itself), and so is flagged as short like any corner without room, with
+// `why: 'body'` and `hit`, the first point where its arc met the body.
+// Only the ARC is sampled: a straight leg inside a body (a lead leaving a
+// plug recessed in its own device) is no bend fault, and tubes_inside's to
+// find, not this.
 export function clearCurve(THREE, pts, R, inside, {tries = 10, step = 1} = {}) {
   let curve = roundedCurve(THREE, pts, R);
   if (typeof inside !== 'function') return curve;
-  const cap = new Map();
+  const cap = new Map(), hits = new Map();
   for (let n = 0; n < tries; n++) {
     let moved = false;
     for (const c of curve.corners) {
-      if (!(c.t > 1e-6)) continue;
-      // the arc lies within t of its corner: sample that stretch of the curve
-      const L = curve.getLength(), at = curve.lengthTo(c.k);
-      const from = Math.max(0, at - c.t * 1.6), to = Math.min(L, at + c.t * 1.6);
-      let hit = false;
-      for (let d = from; d <= to && !hit; d += step) hit = inside(curve.getPointAt(L ? d / L : 0));
-      if (hit) { cap.set(c.k, c.t / 2 < 0.5 ? 0 : c.t / 2); moved = true; }
+      if (!(c.t > 1e-6) || !(c.drawn_mm > 0)) continue;
+      // the arc itself: r theta long, centred on lengthTo(k)
+      const L = curve.getLength(), at = curve.lengthTo(c.k), half = (c.t / Math.tan(c.theta / 2)) * c.theta / 2;
+      const from = Math.max(0, at - half), to = Math.min(L, at + half);
+      let hit = null;
+      for (let d = from; d <= to + 1e-9 && !hit; d += Math.min(step, (to - from) / 2 || step)) {
+        const q = curve.getPointAt(L ? Math.min(1, d / L) : 0);
+        if (inside(q)) hit = q;
+      }
+      if (hit) {
+        if (!hits.has(c.k)) hits.set(c.k, hit.clone());
+        cap.set(c.k, c.t / 2 < 0.5 ? 0 : c.t / 2); moved = true;
+      }
     }
     if (!moved) break;
     curve = roundedCurve(THREE, pts, R, {cap});
   }
+  for (const c of curve.corners) if (c.why === 'body') c.hit = hits.get(c.k) ?? null;
   return curve;
 }
 
@@ -155,4 +180,67 @@ export function tightText(name, who, where, c) {
   if (!(c.drawn_mm > 0)) return `${name} turns ${where} with no room for a bend; ${needs}.`;
   const room = String(c.drawn_mm);
   return `${name} turns ${where} with room for ${an(room)} ${room} mm bend; ${needs}, ${c.short_mm} mm short.`;
+}
+
+// A ROUTED RUN AS A POLYLINE: routePoints3d's own points - each end's plug,
+// its lead straight out of the face, then the waypoints with each ring passed
+// along its run (throughRings, `lead` mm outside each face) - with no easing,
+// so every corner can be rounded to the cable's radius (roundRoute). Nothing is added
+// to the kit's geometry here: only routePoints3d's ease points are left out.
+const startOf3d = (THREE, e) => (e.points.length > 1 ? mergeOf(THREE, e) : e.points[0].clone());
+export function routeLine3d(THREE, A, B, wps, lead = 30, rings = null) {
+  const a = startOf3d(THREE, A), b = startOf3d(THREE, B);
+  const outA = a.clone().addScaledVector(A.normal, A.reach ?? LEAD);
+  const outB = b.clone().addScaledVector(B.normal, B.reach ?? LEAD);
+  const path = rings ? throughRings([outA, ...wps, outB], [null, ...rings, null], {lead}).points : [outA, ...wps, outB];
+  return [a, ...path, b];
+}
+
+// A ROUTED RUN, ROUNDED: routeLine3d's polyline through waypoints `w` (with
+// ring marks `m`, or null), each corner an arc of radius R kept out of the
+// bodies (clearCurve, `inside`). Returns {pts, bent}.
+// A RING TOO THIN FOR THE TURN. A ring passed along its run has the cable
+// turn at its faces, and when its depth (a few mm of wire) is all the leg a
+// corner has, no bend of the cable's radius fits there. A real cord bends
+// THROUGH the ring: such a ring is drawn as its centre, one corner, rounded
+// across it (as the kit's bundle bend check measures a corner at a trunk
+// waypoint). A ring the route doubles back at (`back`) stays as the kit
+// decided it.
+// A LEAD LONG ENOUGH TO TURN. A plug sits recessed in its device, and the
+// lead runs straight out of the face before it turns; when the turn's arc
+// would start inside the device (its envelope reaches past the plug), the
+// cable cannot bend there. The lead is drawn longer instead - the end's
+// `reach`, as reaches() sets it - by what the arc lacked, so the cable leaves
+// the device straight and turns once clear, at its full radius. So is a lead
+// shorter than its own turn needs. A lead is never drawn bending through its
+// own device, and never flagged for it.
+// `thin: false` keeps every ring face to face (a test's control).
+export function roundRoute(THREE, A, B, w, m, R, lead, inside, {thin: thinRule = true, tries = 4} = {}) {
+  let ends = [A, B], pts, bent, rings = m;
+  const draw = () => { pts = routeLine3d(THREE, ends[0], ends[1], w, lead, rings); bent = clearCurve(THREE, pts, R, inside); };
+  const reach = e => e.reach ?? LEAD;
+  const longer = () => {
+    let moved = false;
+    ends = ends.map((e, j) => {
+      const q = j === 0 ? pts[1] : pts[pts.length - 2], plug = j === 0 ? pts[0] : pts[pts.length - 1];
+      // short for the device, or because the lead itself is shorter than the turn needs
+      const c = bent.corners.find(x => x.at.distanceTo(q) < 1e-6 && (x.why === 'body' || (x.why === 'legs' && q.distanceTo(plug) < x.need_t)));
+      if (!c || !(c.need_t < Infinity)) return e;
+      moved = true;
+      return {...e, reach: reach(e) + (c.need_t - c.t) + 1};
+    });
+    return moved;
+  };
+  draw();
+  for (let n = 0; n < tries && longer(); n++) draw();
+  if (thinRule && m && bent.corners.some(c => c.short_mm > 0)) {
+    const thin = m.map((g, k) => !!g && g.back !== true && g.depth > 0 && bent.corners.some(c => c.short_mm > 0
+      && c.at.distanceTo(w[k]) <= lead + g.depth / 2 + 1e-3));
+    if (thin.some(Boolean)) {
+      rings = m.map((g, k) => (thin[k] ? null : g));
+      draw();
+      for (let n = 0; n < tries && longer(); n++) draw();
+    }
+  }
+  return {pts, bent};
 }
