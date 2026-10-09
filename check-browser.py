@@ -4645,7 +4645,8 @@ def check_rack_bundle_2d_rear(page, base):
 # THE RACK BUILDER'S EARS ARE ON (Portrayal #909): a device modelled between
 # its ear folds is drawn with a silver L-bracket over each rail, in 2D and 3D,
 # and a blanking panel - whose ears are its own face, 482.6 mm wide - gets no
-# second pair over the ones it draws.
+# second pair over the ones it draws. Both keep their screw heads, two per
+# ear per U on the rail holes: 8 for the 2U switch and 8 for the 2U blank.
 @extra("rack.html: rack ears are on - silver generic ears on a switch, none over a blank's built-in ears, in 2D and 3D (Portrayal #909)")
 def check_rack_ears_default(page, base):
     bad = []
@@ -4671,14 +4672,20 @@ def check_rack_ears_default(page, base):
       const e1 = p.querySelector('[data-ears-for="i1"]'), e2 = p.querySelector('[data-ears-for="i2"]');
       return {switch: !!e1, color: e1?.getAttribute('data-ear-color') ?? null,
               fills: e1 ? [...new Set([...e1.querySelectorAll('rect')].map(r => r.getAttribute('fill')))] : [],
-              blank: !!e2};
+              screws: e1 ? e1.querySelectorAll('circle').length : 0,
+              blank: e2 ? e2.querySelectorAll('rect').length : null,
+              blankScrews: e2 ? e2.querySelectorAll('circle').length : 0};
     }""")
     if not got["switch"]:
         bad.append(f"2D: the S9600-72XC has no rack ears in the Rack Builder: {got}")
     elif got["fills"] != ["#c8cacc"]:
         bad.append(f"2D: the S9600-72XC's ears are {got['fills']}, not silver #c8cacc")
+    if got["screws"] != 8:
+        bad.append(f"2D: the 2U S9600-72XC's ears carry {got['screws']} screws, expected 8 (2 per ear per U)")
     if got["blank"]:
         bad.append("2D: the FHU-BPS-2U blank, whose ears are built into its face, got a second pair drawn over them")
+    if got["blankScrews"] != 8:
+        bad.append(f"2D: the 2U FHU-BPS-2U blank is held by {got['blankScrews']} screws, expected 8 (2 per ear per U)")
     if webgl_trouble(page):
         print("[check_rack_ears_default] no WebGL here - checked the 2D half only")
         return bad
@@ -4691,17 +4698,23 @@ def check_rack_ears_default(page, base):
         await new Promise(r => setTimeout(r, 200)); w = s.three.scene;
       }
       const e1 = w.getObjectByName('ears-i1'), e2 = w.getObjectByName('ears-i2');
-      const mats = [];
+      const mats = [], kinds = o => { const k = {box: 0, screw: 0};
+        o?.traverse(m => { if (m.isMesh) k[m.geometry?.type === 'BoxGeometry' ? 'box' : 'screw']++; }); return k; };
       e1?.traverse(o => { if (o.isMesh && o.geometry?.type === 'BoxGeometry') mats.push(o.material.color.getHexString()); });
+      const k1 = kinds(e1), k2 = kinds(e2);
       return {devices: !!(w.getObjectByName('device-i1') && w.getObjectByName('device-i2')),
-              switch: e1 ? e1.children.length : 0, colors: [...new Set(mats)], blank: !!e2 && e2.children.length > 0};
+              switch: k1.box, screws: k1.screw, colors: [...new Set(mats)], blank: k2.box, blankScrews: k2.screw};
     }""")
     if not g3["devices"]:
         return bad + [f"3D: the two devices never stood up: {g3}"]
     if not g3["switch"] or g3["colors"] != ["c8cacc"]:
         bad.append(f"3D: the S9600-72XC's ears are missing or not silver: {g3}")
+    if g3["screws"] != 8:
+        bad.append(f"3D: the 2U S9600-72XC's ears carry {g3['screws']} screws, expected 8")
     if g3["blank"]:
         bad.append("3D: the FHU-BPS-2U blank got generic ears over its built-in ones")
+    if g3["blankScrews"] != 8:
+        bad.append(f"3D: the 2U FHU-BPS-2U blank is held by {g3['blankScrews']} screws, expected 8")
     return bad
 
 

@@ -475,12 +475,16 @@ export function createRackScene(container, opts = {}) {
       // rail geometry lives only in rails.js.
       const holeX = SIDES.find(s => s.side === (side < 0 ? 'left' : 'right')).hole;
       const earX = side * (halfW + 12);
-      const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
-      flange.position.set(earX, yBase + ruHeight * RU / 2, mountZ + dir * 1.5);
-      g.add(flange);
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(3, h, legLen), earMat);
-      leg.position.set(side * (halfW + 1.5), yBase + ruHeight * RU / 2, mountZ - dir * legLen / 2);
-      g.add(leg);
+      // no bracket where the ears are the device's own (earMat null): its
+      // face draws them, and only the screws holding it to the rail are added
+      if (earMat) {
+        const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
+        flange.position.set(earX, yBase + ruHeight * RU / 2, mountZ + dir * 1.5);
+        g.add(flange);
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(3, h, legLen), earMat);
+        leg.position.set(side * (halfW + 1.5), yBase + ruHeight * RU / 2, mountZ - dir * legLen / 2);
+        g.add(leg);
+      }
       for (let u = 0; u < ruHeight; u++) {
         for (const dy of [6.35, 38.10]) {
           const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
@@ -704,12 +708,13 @@ export function createRackScene(container, opts = {}) {
     // blanking panel, a shelf, a full-width patch panel - and its own face
     // draws them; a sheet body, or ears stated `behind`, get none either.
     // Judged on the front's declared width, as the 2D elevation judges it.
+    // Such a device still gets the screw heads that hold it to the rail.
     const frontW = await svgSource(f('front'), relief).then(frontWidthOfText).catch(() => null);
-    const plan = (!!entry.mount && entry.mount !== 'rack') ? null
-      : earPlan(entry.index || {chassis: entry.chassis}, frontW);
-    const noEars = !plan;
+    const noEars = !!entry.mount && entry.mount !== 'rack';
+    const plan = noEars ? null : earPlan(entry.index || {chassis: entry.chassis}, frontW);
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, earMatOf(plan.color));
+      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null);
+    ears.userData.ears = noEars ? null : plan ? 'generic' : 'built-in';
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
 
