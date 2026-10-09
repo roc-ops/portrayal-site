@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.3mm" height="18.55mm" viewBox="0 0 25.3 18.55">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='f'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='b'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='g'] { opacity: 0; }</style>
+  <g id="tripplite-ammeter" data-path="tripplite-ammeter" data-class="display" data-ref="eaton/tripplite-ammeter@1:1.0.0" transform="translate(0,0)">
+    <title>tripplite-ammeter</title>
+    <rect id="tripplite-ammeter--bezel" x="0.15" y="0.15" width="25.0" height="18.25" rx="0.4" fill="#0b0b0b" stroke="#4b4a47" stroke-width="0.3" />
+    <rect id="tripplite-ammeter--window" x="0.6" y="0.55" width="24.0" height="17.5" fill="#070707" data-path="tripplite-ammeter/window" data-class="display" data-characters="2" data-description="the readout window, two seven-segment cells showing the total output load in whole amps; each cell's glyph set is on its digit." />
+    <g id="tripplite-ammeter--ghost" fill="#15190f">
+      <rect x="4.10" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect x="2.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="10.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="4.10" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect x="2.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="10.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="4.10" y="15.35" width="6.80" height="1.60" rx="0.5" />
+      <rect x="15.20" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect x="13.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="21.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="15.20" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect x="13.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="21.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="15.20" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+    <g id="tripplite-ammeter--digit-1" fill="#63bc46" data-path="tripplite-ammeter/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="4.10" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="f" opacity="0" x="2.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="b" opacity="0" x="10.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="g" opacity="0" x="4.10" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="e" opacity="0" x="2.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="c" opacity="0" x="10.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="d" opacity="0" x="4.10" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+    <g id="tripplite-ammeter--digit-2" fill="#63bc46" data-path="tripplite-ammeter/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="15.20" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="f" opacity="0" x="13.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="b" opacity="0" x="21.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="g" opacity="0" x="15.20" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="e" opacity="0" x="13.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="c" opacity="0" x="21.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="d" opacity="0" x="15.20" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+  </g>
+</svg>

@@ -7774,7 +7774,7 @@
    "portfolio": {},
    "profile": "optical",
    "search": "rack-face-width-mm 482.6 weight-kg 7.0 weight-note ch3000c, with top and bottom covers; the ch3000n without covers is 4.5 kg slots-full-depth 16 slots-half-depth 32 (16 front, rear) power-bus 12 vdc mid-plane bus, fed by ps3006 / ps3248 controller-supply operating-temperature -20 to +65 c storage-temperature -40 +85 humidity 5% 95% non-condensing mid-plane-bus rs-485, polled power-supply controller; snmp through a cx3002 cx3003c cx3033n eol none-announced psus slot slots inlet-plates back-plates ab32s1g ab32s1t ar3002e ar3044h ar3044l bd31a8-h10f bp-a10 bp-a5 bp-f2-al bp-f2 bp-f4 bp-p1 bp-p2 bp3400c ca3008 dr3450n dr3600n fa3514d fa3514s fa3517d fa3517f fa3517g fa3517s fa3519f fa3520s fa3521f fa3521h fa3521j fa3521s fa3524s np33f01 np34b10s np34c01 np34f01d np34m05 np34m08 np34s04 np35c0x np35d04 np35d08 np35f01 np35f04s np35m04 np35m08 op31m2d op33f1x op34d5x op34f1d op34m10c op34m5x op34m8c op34s4s op35d4x op35d8cf op35f1 op35f1d op35f4s os32m2b ps3006d ps3006n ps3248d ps3248n",
-   "version": "3.2.3"
+   "version": "3.2.4"
   },
   {
    "aliases": [],
@@ -8305,6 +8305,135 @@
    "profile": "power",
    "search": "length-mm 1730 weight-kg 8.3 construction aluminium chassis, black input-ac 120/208 v three-phase wye, 3w+n+pe (drawing 100-127/173-240 v), 24 a, 50/60 hz input-plug nema-l21-30p input-cord fixed input-phase three input-wiring wye input-voltage-v 208 input-current-a plug-rating-a 30 capacity-kw 8.6 capacity-scope the load pdu can hand on (24 a at phase), from sku title and brochure table; it is not what draws itself, which no document held states output-voltage 173-240 v, line to output-rating 10 per c13, 16 c39, section, phase breakers 20 two-pole, ul listed frequency operating-temp 0 60 c (32 140 f) metering-scope branch outlet-switching false metering current, power energy for input; current each network-module g4 enmc, dual gigabit ethernet with network cascading emc fcc part 15 class ices-003 safety 62368-1; ctuvus drawing cybersecurity 2900-1 regulatory-model emif-pdxj-e27k eol none-announced outlets outlet section-labels label breaker slot grounding ground power-input input mounting button evmi2130x ground-screw-m6 c39-outlet g4-breaker-20a-2p g4-cord-l21-30p g4-enmc g4-mounting-button g4-outlet-labels c13-outlet",
    "version": "0.2.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "sha256": "5116b08000b92e9e699442ff0d6b24e5f6fbd69da9c30595f888d2590d97a626",
+    "title": "Tripp Lite PDUMH20NET spec sheet (1.9kW Single-Phase Switched PDU - LX Interface, 120V Outlets)",
+    "url": "https://assets.tripplite.com/product-pdfs/en/pdumh20net.pdf"
+   },
+   "decor-confidence": {},
+   "description": "Eaton Tripp Lite series switched PDU, 1U horizontal: a 444 mm black metal box that hands a single-phase 120 V feed (a fixed 12 ft cord ending in a NEMA L5-20P, 16 A continuous, 1.92 kW) on to 16 individually switched NEMA 5-15/20R outlets, eight on the front and eight on the rear, each with a lamp. On the front, a pre-installed WEBCARDLX network card (10/100 Ethernet, a micro-USB console, USB-A for sensors, a reset button and a status lamp) and a two-digit meter of the total load in amps; on the rear, the cord, a ground screw and a DE-9 port reserved for the factory. Bolt-on mounting brackets, reversible for front- or rear-facing installation.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "THE SOURCE IS CLEAR AND THE LIBRARY IS SHORT: BK at 4x shows the rear's Config. Port as a female DE-9 (nine socket holes in a grey insert), and the vendor is not silent about it. What is missing is a part - the library has only the male half (std/db9@1, composed by common/db9-receptacle@1) - so it is drawn male. Its place, size and standoffs are right; its gender is not. The reason is the nearest the vocabulary has; none names a missing library part.",
+     "scope": [
+      "config-port"
+     ],
+     "wanted": "a female DE-9 receptacle part (sockets in a flush insert, as std/vga@1 draws its own), to replace the male one here.",
+     "what": "female-de9"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "the owner's manual says each outlet LED illuminates when its outlet is live and names no colour; the spec sheet says \"power on-off status\" and names none; every photograph shows the lamps unlit. The `on` state is declared with no colour, so the kit paints its default lit colour.",
+     "scope": [
+      "outlet-leds"
+     ],
+     "wanted": "a photograph of a powered PDUMH20NET, or Tripp Lite's word on the lamp colour.",
+     "what": "outlet-lamp-colour"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "the sides carry the tapped holes the mounting brackets screw to (three #6-32 screws a bracket, at more than one depth: owner's manual 1-1 and Features), and _C and DT02 show some of them, but only at a steep angle; no straight view or drawing of a side exists, so the sides are drawn bare.",
+     "scope": [
+      "left",
+      "right"
+     ],
+     "wanted": "a straight-on photograph of a side with a scale, or a dimensioned drawing.",
+     "what": "bracket-holes"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "no source shows the top or the bottom straight on: the spec sheet and the owner's manual have no such view, _C and DT02 see the lid only at a steep angle (a plain black lid with small screws near its edges), and nothing shows the underside. Both faces are drawn bare.",
+     "scope": [
+      "top",
+      "bottom"
+     ],
+     "wanted": "straight-on photographs of the top and the bottom with a scale.",
+     "what": "top-and-bottom"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "no photograph or drawing shows the PDU with the WEBCARDLX out, so the slot's hole is not measured. The bay states the plate's main body, 67.3 by 29.1, as its opening: the largest hole the plate covers, an upper bound.",
+     "scope": [
+      "card"
+     ],
+     "wanted": "a photograph of the PDU with the card removed, or the slot's dimensions from Tripp Lite.",
+     "what": "card-opening"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "no held source dimensions the WEBCARDLX behind its faceplate or the slot it sits in (the WEBCARDLX manual gives none), so the card states no depth.",
+     "scope": [
+      "card"
+     ],
+     "wanted": "the WEBCARDLX's dimensions from Tripp Lite.",
+     "what": "card-depth"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `power` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 1 bay (front 1) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Eaton",
+   "model": "PDUMH20NET",
+   "name": "pdumh20net",
+   "ns": "eaton",
+   "options": {
+    "airflow": [
+     "passive"
+    ],
+    "power": []
+   },
+   "pdu-class": "switched-metered-input",
+   "portfolio": {},
+   "profile": "power",
+   "search": "weight-kg 5.67 construction metal input-ac 120 v single-phase, 16 a continuous (agency de-rated; for 20 circuit), 50/60 hz input-plug nema-l5-20p input-cord fixed input-phase single input-voltage-v input-current-a plug-rating-a capacity-kw 1.92 capacity-scope the load pdu can hand on, kw at v, in all (spec sheet); it is not what draws itself, which no document held states output-voltage output-rating total; max per outlet frequency operating-temp 0 to 40 c (32 104 f) storage-temp -30 50 (-22 122 humidity 5 95 % non-condensing altitude 3000 m (0 10000 ft) metering-scope input outlet-switching true metering total output amps on front display; voltage, and over network network-interface pre-installed webcardlx (poweralert device manager padm20), 10/100 mbps protocols http, https, poweralert management system, smtp, snmpv1, snmpv2, snmpv3, telnet, ssh, ftp, dhcp, ntp certifications csa (canada); nom (mexico); ul 60950-1 product-compliance rohs; fcc part 15 class (usa); trade agreements act (taa) eol none-announced outlets outlet-leds led meter display slot config port grounding ground power-input pdumh20net db9 factory configuration db9-receptacle ground-screw-washer led-dot tripplite-ammeter tripplite-cord-l5-20p nema-5-20r",
+   "version": "0.1.0"
   },
   {
    "aliases": [],

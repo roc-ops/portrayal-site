@@ -215,6 +215,13 @@ cp "$SRC"/dist/rack.json "$HERE/assets/dist/"
 # rack/cable-types.js loadCableTypes reads it, and the page hands its
 # diameterOf to the bundle commands' size check. A bare cp for the same reason.
 cp "$SRC"/dist/cable-types.json "$HERE/assets/dist/"
+# lint-rules.json is the linter's rule table (Portrayal #952, format 1 in
+# docs/format-stability.md): lint.html renders every rule from it, and the
+# schema page links the codes its descriptions mention to those entries. A
+# bare cp, so a build without it stops the refresh rather than shipping a page
+# with no rules; check-contract.py then checks it is not empty and that every
+# code the schema page links has an entry.
+cp "$SRC"/dist/lint-rules.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
 # vendors.json carries the alias and lineage registry - who owns a brand now,
 # which is what stops an ArcOS box being filed under the metal it runs on.
