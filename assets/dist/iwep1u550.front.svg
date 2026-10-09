@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="44.0mm" viewBox="0 0 482.6 44.0" data-device="iwep1u550" data-view="front" data-shell="sheet" data-material="SPCC" data-color="Black" data-mounting-hardware="M6x12 screw x4, M6 cage nut x4" data-rack-type="2 or 4 post" data-usable-width-mm="439.0" data-usable-depth-mm="550.0" data-load-static-kg="60" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com IWEP1U550","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/iwep1u550-ear@1":"1.0.0"},"source-sha256":"e3241f953c1c01a0991f88b126df648d3f35ba9461f07090054122fb0d0e641b","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="IWEP1U550" x="0" y="0" width="482.6" height="44" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-lip" data-kind="rear-lip" x="21.8" y="16" width="439" height="26" rx="0.6" fill="#141618" />
+    <rect id="wall-left" data-kind="wall" x="20.6" y="0" width="1.2" height="44" rx="0.6" fill="#1b1d20" />
+    <rect id="wall-right" data-kind="wall" x="460.8" y="0" width="1.2" height="44" rx="0.6" fill="#1b1d20" />
+    <rect id="floor-edge" data-kind="floor" x="20.6" y="42" width="441.4" height="2" rx="0.6" fill="#2a2d31" />
+  </g>
+  <g id="ear-left" data-path="ear-left" data-class="ear" data-behaviour="mounts" data-ref="fs/iwep1u550-ear@1:1.0.0" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="ears" data-group-role="furniture" data-description="the four mounting tabs, the side walls folded out at both ends, front pair first">
+    <title>ear-left</title>
+    <path id="ear-left--plate" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H20.6 V44 H0 Z M7.55,9.38 L10.05,9.38 A3.25,3.25 0 0 0 10.05,2.88 L7.55,2.88 A3.25,3.25 0 0 0 7.55,9.38 Z M7.55,41.12 L10.05,41.12 A3.25,3.25 0 0 0 10.05,34.62 L7.55,34.62 A3.25,3.25 0 0 0 7.55,41.12 Z" data-path="ear-left/plate" data-class="bezel" data-z-out="1.2" data-z-color="#1b1d20" />
+  </g>
+  <g id="ear-right" data-path="ear-right" data-class="ear" data-behaviour="mounts" data-ref="fs/iwep1u550-ear@1:1.0.0" data-rel-pos="2" transform="translate(462.0,0.0)" data-group="ears" data-group-role="furniture" data-description="the four mounting tabs, the side walls folded out at both ends, front pair first">
+    <title>ear-right</title>
+    <path id="ear-right--plate" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H20.6 V44 H0 Z M10.55,9.38 L13.05,9.38 A3.25,3.25 0 0 0 13.05,2.88 L10.55,2.88 A3.25,3.25 0 0 0 10.55,9.38 Z M10.55,41.12 L13.05,41.12 A3.25,3.25 0 0 0 13.05,34.62 L10.55,34.62 A3.25,3.25 0 0 0 10.55,41.12 Z" data-path="ear-right/plate" data-class="bezel" data-z-out="1.2" data-z-color="#1b1d20" />
+  </g>
+</svg>

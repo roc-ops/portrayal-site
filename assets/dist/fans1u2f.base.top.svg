@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="424.0mm" height="170.0mm" viewBox="0 0 424.0 170.0" data-device="fans1u2f" data-view="top" data-frame-material="Die-Cast Aluminum Painted" data-blade-material="Thermoplastic PBT" data-mounting-hardware="M6 screw kit x4" data-airflow-cfm="160" data-power-max-w="15" data-input-voltage="110~120 V, 50 Hz" data-fan-speed="2300 +/-10% RPM" data-noise="54.6 dB(A)" data-bearing="Sleeve" data-operating-temp="-20 to 80 C" data-operating-humidity="20% to 80% (non-condensing)" data-eol="none-announced" data-airflow="top-to-bottom" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com FANS1U2F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/fan-grille-120@1":"1.0.0"},"source-sha256":"f065edbf73b91920bfab1c74933151c97a70ebb72ac59ae9ff713de9dfe2deb6","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="FANS1U2F" x="0" y="0" width="424" height="170" rx="1.2" fill="#1b1d20" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="lid" data-kind="lid" x="0" y="0" width="424" height="170" rx="0.6" fill="#1b1d20" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="mechanical" data-ref="fs/fan-grille-120@1:1.0.0" data-rel-pos="1" transform="translate(49.0,28.0)" data-group="fans" data-group-role="service" data-description="the fans in the lid, each behind its stamped guard">
+    <title>fan-1</title>
+    <g id="fan-1--guard" data-path="fan-1/guard" data-class="bezel" data-z-vent="1.5">
+      <circle cx="57.0" cy="57.0" r="57.0" fill="#0b0c0d" />
+      <circle cx="57.0" cy="57.0" r="51.0" fill="#62676e" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M0.00,57.00 A57.00,57.00 0 1 0 114.00,57.00 A57.00,57.00 0 1 0 0.00,57.00 Z M4.50,57.00 A52.50,52.50 0 1 0 109.50,57.00 A52.50,52.50 0 1 0 4.50,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M9.50,57.00 A47.50,47.50 0 1 0 104.50,57.00 A47.50,47.50 0 1 0 9.50,57.00 Z M13.00,57.00 A44.00,44.00 0 1 0 101.00,57.00 A44.00,44.00 0 1 0 13.00,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M18.50,57.00 A38.50,38.50 0 1 0 95.50,57.00 A38.50,38.50 0 1 0 18.50,57.00 Z M22.00,57.00 A35.00,35.00 0 1 0 92.00,57.00 A35.00,35.00 0 1 0 22.00,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M27.50,57.00 A29.50,29.50 0 1 0 86.50,57.00 A29.50,29.50 0 1 0 27.50,57.00 Z M31.00,57.00 A26.00,26.00 0 1 0 83.00,57.00 A26.00,26.00 0 1 0 31.00,57.00 Z" />
+      <line x1="67.61" y1="67.61" x2="96.60" y2="96.60" stroke="#1b1d20" stroke-width="5" />
+      <line x1="46.39" y1="67.61" x2="17.40" y2="96.60" stroke="#1b1d20" stroke-width="5" />
+      <line x1="46.39" y1="46.39" x2="17.40" y2="17.40" stroke="#1b1d20" stroke-width="5" />
+      <line x1="67.61" y1="46.39" x2="96.60" y2="17.40" stroke="#1b1d20" stroke-width="5" />
+      <circle cx="57.0" cy="57.0" r="20.5" fill="#1b1d20" />
+      <circle cx="71.70" cy="57.00" r="3.7" fill="#62676e" />
+      <circle cx="64.35" cy="69.73" r="3.7" fill="#62676e" />
+      <circle cx="49.65" cy="69.73" r="3.7" fill="#62676e" />
+      <circle cx="42.30" cy="57.00" r="3.7" fill="#62676e" />
+      <circle cx="49.65" cy="44.27" r="3.7" fill="#62676e" />
+      <circle cx="64.35" cy="44.27" r="3.7" fill="#62676e" />
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="mechanical" data-ref="fs/fan-grille-120@1:1.0.0" data-rel-pos="2" transform="translate(261.0,28.0)" data-group="fans" data-group-role="service" data-description="the fans in the lid, each behind its stamped guard">
+    <title>fan-2</title>
+    <g id="fan-2--guard" data-path="fan-2/guard" data-class="bezel" data-z-vent="1.5">
+      <circle cx="57.0" cy="57.0" r="57.0" fill="#0b0c0d" />
+      <circle cx="57.0" cy="57.0" r="51.0" fill="#62676e" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M0.00,57.00 A57.00,57.00 0 1 0 114.00,57.00 A57.00,57.00 0 1 0 0.00,57.00 Z M4.50,57.00 A52.50,52.50 0 1 0 109.50,57.00 A52.50,52.50 0 1 0 4.50,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M9.50,57.00 A47.50,47.50 0 1 0 104.50,57.00 A47.50,47.50 0 1 0 9.50,57.00 Z M13.00,57.00 A44.00,44.00 0 1 0 101.00,57.00 A44.00,44.00 0 1 0 13.00,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M18.50,57.00 A38.50,38.50 0 1 0 95.50,57.00 A38.50,38.50 0 1 0 18.50,57.00 Z M22.00,57.00 A35.00,35.00 0 1 0 92.00,57.00 A35.00,35.00 0 1 0 22.00,57.00 Z" />
+      <path fill="#1b1d20" fill-rule="evenodd" d="M27.50,57.00 A29.50,29.50 0 1 0 86.50,57.00 A29.50,29.50 0 1 0 27.50,57.00 Z M31.00,57.00 A26.00,26.00 0 1 0 83.00,57.00 A26.00,26.00 0 1 0 31.00,57.00 Z" />
+      <line x1="67.61" y1="67.61" x2="96.60" y2="96.60" stroke="#1b1d20" stroke-width="5" />
+      <line x1="46.39" y1="67.61" x2="17.40" y2="96.60" stroke="#1b1d20" stroke-width="5" />
+      <line x1="46.39" y1="46.39" x2="17.40" y2="17.40" stroke="#1b1d20" stroke-width="5" />
+      <line x1="67.61" y1="46.39" x2="96.60" y2="17.40" stroke="#1b1d20" stroke-width="5" />
+      <circle cx="57.0" cy="57.0" r="20.5" fill="#1b1d20" />
+      <circle cx="71.70" cy="57.00" r="3.7" fill="#62676e" />
+      <circle cx="64.35" cy="69.73" r="3.7" fill="#62676e" />
+      <circle cx="49.65" cy="69.73" r="3.7" fill="#62676e" />
+      <circle cx="42.30" cy="57.00" r="3.7" fill="#62676e" />
+      <circle cx="49.65" cy="44.27" r="3.7" fill="#62676e" />
+      <circle cx="64.35" cy="44.27" r="3.7" fill="#62676e" />
+    </g>
+  </g>
+</svg>

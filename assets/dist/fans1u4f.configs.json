@@ -1,0 +1,211 @@
+{
+ "aliases": [],
+ "attrs": {
+  "environmental": {
+   "operating-humidity": "20% to 80% (non-condensing)",
+   "operating-temp": "-20 to 80 C"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "airflow-cfm": 320
+  },
+  "physical": {
+   "blade-material": "Thermoplastic PBT",
+   "frame-material": "Die-Cast Aluminum Painted",
+   "mounting-hardware": "M6 screw kit x8"
+  },
+  "power": {
+   "input-voltage": "110~120 V, 50 Hz",
+   "power-max-w": 15
+  },
+  "thermal": {
+   "bearing": "Sleeve",
+   "fan-speed": "2300 +/-10% RPM",
+   "noise": "59.4 dB(A)"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": "top-to-bottom",
+  "d": 330.0,
+  "ears": {
+   "positions": [
+    {
+     "default": true,
+     "name": "flush"
+    }
+   ]
+  },
+  "h": 44.0,
+  "mount": "rack",
+  "power": "ac",
+  "ru": 1,
+  "w": 424.0
+ },
+ "configs": [
+  {
+   "airflow": "top-to-bottom",
+   "bays": {},
+   "description": "The fan tray as FS ships FANS1U4F, ears and cord fitted.",
+   "files": {
+    "bottom": "fans1u4f.base.bottom.svg",
+    "front": "fans1u4f.base.front.svg",
+    "left": "fans1u4f.base.left.svg",
+    "rear": "fans1u4f.base.rear.svg",
+    "right": "fans1u4f.base.right.svg",
+    "top": "fans1u4f.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "fans1u4f",
+ "gaps": [
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "FS has no product page or render for FANS1U4F; the face is the quick start guide's line drawing, and the top, bottom, rear and sides are not drawn anywhere.",
+   "scope": [],
+   "wanted": "a photograph of the tray",
+   "what": "face-detail"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the screw kit has eight M6 screws to the 2F's four, which suggests rear brackets for the 330 mm tray; no figure shows them.",
+   "scope": [],
+   "wanted": "the 4F installation figure",
+   "what": "rear-mounting"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "FANS1U4F",
+ "options": {
+  "airflow": [
+   "top-to-bottom"
+  ],
+  "power": [
+   "ac"
+  ]
+ },
+ "pdu-class": null,
+ "provenance": {
+  "airflow": {
+   "confidence": "datasheet",
+   "note": "`top-to-bottom`: the datasheet's benefits list has the pre-installed fans pushing hot air down through the rack, which is air drawn in at the tray's top and pushed out of its bottom."
+  },
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "the FS Cooling Fan datasheet (portal 6624), one table for FANS1U2F, FANS1U4F and FANP3U3F, and the FANP3U3F product page. The datasheet prints every model's dimensions as \"HxWxD 483x170x44\" and the like, its axes scrambled. The 15 W is \"Input Power 15W\" with no qualifier, filed as the maximum."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "44 x 330: the datasheet's \"483x330x44 mm\" read as width over the ears, depth and height (its HxWxD heading is scrambled). THE EARS ARE SEPARATE BRACKETS: the guide's front view draws an L bracket with three oblong holes bolted to each end of a narrower box, so the body between them is modelled and the ears are optional (`chassis.ears`, drawn by the generic ear). On fig-0011 the tray spans 627 px over its ears for the 483 (1.298 px/mm) and the ears' inner fold lines stand 38.5 px from each end, 29.6 mm, which leaves a body of 424 (the figure's 58 px height reads 44.7 at that scale, so it is orthographic to 1.5 per cent)."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "\"Die-Cast Aluminum Painted\"; drawn black as the FANP3U3F, the one fan part FS photographs."
+  },
+  "controller": {
+   "confidence": "drawing",
+   "note": "fs/fan-temp-controller@1 at 173.4 in and 5.0 down: fig-0011's bezel spans 267.5 to 368.75 px and 10.5 to 55.5 px, measured from the body's left fold at 42.5 px and its top edge at 4 px."
+  },
+  "ears": {
+   "confidence": "drawing",
+   "note": "two L brackets with three oblong holes each, 29.6 mm wide outside the body (fig-0011); the datasheet's 483 is over them. Not drawn by default; the generic ear (#909) draws them on request."
+  },
+  "fans": {
+   "confidence": "estimated",
+   "note": "4 fans of 120 mm, blowing down (\"Pre-installed Fans Push Hot Air Down through Rack\"): fig-0003 draws the 2F's two on the lid, at about a quarter and three quarters of the width. They are drawn there, in two rows, and on the base below them; no figure dimensions them, and the base is not drawn anywhere."
+  },
+  "lifecycle": {
+   "confidence": "estimated",
+   "note": "checked 2026-10-09 against what the intake holds: the FS documentation portal's Accessories tree, read on 2026-10-08, carries no end-of-sale notice for this part. FS publishes no product page for it; fs.com search finds nothing. No web search beyond FS's own pages was made."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "the FS Cooling Fan datasheet (portal 6624) for the figures; the FANS1U2F/FANS1U4F Quick Start Guide V2.0 (portal 6672) for the face - its labelled front view (fig-0011, the 2F drawn) and its overview of both trays (fig-0003) - and the controller's user manual (portal 6761). FS has no product page for FANS1U4F and no render or photograph of it; the guide's line drawings are the only images. The FANS1U4F is portal-only and probably discontinued."
+  },
+  "rear": {
+   "confidence": "estimated",
+   "note": "the datasheet and guide put the power cord and the controller's ambient sensor lead at the back; no figure shows the back, so both are placed at the switch end, estimated."
+  },
+  "sides": {
+   "confidence": "estimated",
+   "note": "plain painted aluminium; no figure shows a side."
+  },
+  "switch": {
+   "confidence": "drawing",
+   "note": "the power switch in its square bezel, 383.3 to 409.9 in and 6.2 to 37.8 down (fig-0011), the rocker inside it drawn as common/rocker-switch@1 turned upright; the guide calls it the Power Switch. The rocker's 15 x 21 is the library part's, a little smaller than the guide's 19.3 square window."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}
