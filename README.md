@@ -201,3 +201,21 @@ rather than photographs.
 Direction 01, "Anodized". See `brand/DIRECTION.md`.
 
 Canonical domain: `portrayal.dev`. `portrayal.io` redirects.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks in the order CI runs
+them, and what makes a change a one-way door. A device drawn wrong, a missing
+device or a fault in a `vendor/` module belongs to
+[Portrayal](https://github.com/roc-ops/Portrayal) and is fixed there. Security
+reports follow [SECURITY.md](SECURITY.md), never a public issue; conduct is
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Licence
+
+Apache-2.0, as Portrayal is: see [LICENSE](LICENSE). [NOTICE](NOTICE) lists
+what is not this repository's own work: Portrayal's modules, drawings and
+exports (each set with Portrayal's NOTICE beside it), the third-party code
+bundled in `vendor/three/` and `vendor/mcp-b/` with their licences, and the
+sponsor logos in `brand/sponsor/`, which are RocNet Supply's marks and not
+under the licence.
