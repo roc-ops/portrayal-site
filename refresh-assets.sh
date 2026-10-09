@@ -18,12 +18,14 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # here lands in someone else's uncommitted work.
 #
 # The clone is a full checkout and builds its own dist, so it needs nothing
-# from over there:
+# from over there. By default it is a sibling folder, ../Portrayal; anywhere
+# else, set PORTRAYAL_UPSTREAM (check-contract.py and tools/publish-schemas.sh
+# read the same variable and the same default):
 #
-#   git clone git@github.com:roc-ops/ndv.git /Volumes/External/portrayal-upstream
-#   ./build.sh
+#   git clone https://github.com/roc-ops/Portrayal.git ../Portrayal
+#   (cd ../Portrayal && ./build.sh)
 #
-UPSTREAM="${PORTRAYAL_UPSTREAM:-/Volumes/External/portrayal-upstream}"
+UPSTREAM="${PORTRAYAL_UPSTREAM:-$HERE/../Portrayal}"
 SRC="${1:-$UPSTREAM/library}"
 # The viewer modules used to live in library/viewer. They are now portrayal-kit,
 # a published package at the repository root with its own package.json and an
@@ -38,7 +40,8 @@ KIT="${PORTRAYAL_KIT:-$(cd "$SRC/.." && pwd -P)/kit}"
 if [ ! -d "$SRC" ]; then
   echo "no library at $SRC" >&2
   echo "clone it first:" >&2
-  echo "  git clone git@github.com:roc-ops/ndv.git ${UPSTREAM}" >&2
+  echo "  git clone https://github.com/roc-ops/Portrayal.git ${UPSTREAM}" >&2
+  echo "or point PORTRAYAL_UPSTREAM at an existing clone." >&2
   echo "  (cd ${UPSTREAM} && ./build.sh)" >&2
   exit 1
 fi
