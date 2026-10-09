@@ -5,16 +5,30 @@
 // A rear-facing panel is seen mirrored, so its x is negated.
 
 import {configuredFace} from './face.js';
-import {resolveRoute, fill, capacityOver, routedLength, endPane} from '../../vendor/rack/route.js';
+import {resolveRoute, fill, capacityOver, routedLength, endPane, ringMarks, ringFindings, orientMarks} from '../../vendor/rack/route.js';
+import {fillNotes} from '../../vendor/rack/export-data.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUFill, isRackSide} from './zero-u.js';
 
 const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 
+// A PANE'S AXES against the rack's (Portrayal #930). A ring mark's sense is
+// along the rack's axes: x right as seen from the front, y up. Both panes are
+// SVG, y down; the rear pane is also seen mirrored, so its x runs the other
+// way (toRack above; cable-view.js wayPoint; elevation.js zeroUPaneX).
+export const PANE_FLIP = {front: {y: -1}, rear: {x: -1, y: -1}};
+export const paneMarks = (marks, pane) => orientMarks(marks, PANE_FLIP[pane === 'rear' ? 'rear' : 'front']);
+
 // rects: [{id, kind?, cls?, x, y, w, h}] in face coordinates; a ring END
 // (`<via>-end`, kind ring) stands for its ring; `guide--<via>` is a duct; `pass--<via>` a pass-through.
-export function guidesFromRects(rects, face, faceW, apertures = {}) {
+// A RING'S RUN AND DEPTH (Portrayal #930): `runs` is {via: 'x'|'y'|'z'}, the
+// ring component's data-guide-run (guideRunsOf); a ring with none runs along
+// x, as route.js ringOf takes it. A ring along x is seen from the side on an
+// elevation, so its `-end` rect's width is the band's thickness along the
+// run, a drawn figure (6.8 mm for the FS snap-in ring), and is its `depth`;
+// any other ring is left to the kit's estimate.
+export function guidesFromRects(rects, face, faceW, apertures = {}, runs = {}) {
   const out = [];
   for (const r of rects) {
     let via = null, kind = null;
@@ -26,7 +40,12 @@ export function guidesFromRects(rects, face, faceW, apertures = {}) {
     // taken as square on its drawn height - an estimate; a pass is its rect.
     const aperture = kind === 'ring' ? (apertures[via] ?? null)
       : kind === 'duct' ? {w: r.h, h: r.h} : {w: r.w, h: r.h};
-    out.push({via, kind, face, x: toRack(r.x + r.w / 2, face, faceW), box: {x: r.x, y: r.y, w: r.w, h: r.h}, aperture});
+    const g = {via, kind, face, x: toRack(r.x + r.w / 2, face, faceW), box: {x: r.x, y: r.y, w: r.w, h: r.h}, aperture};
+    if (kind === 'ring') {
+      g.run = runs[via] ?? 'x';
+      if (g.run === 'x' && r.w > 0) g.depth = r.w;
+    }
+    out.push(g);
   }
   return out;
 }
@@ -35,9 +54,11 @@ export function guidesFromRects(rects, face, faceW, apertures = {}) {
 // data-group="guides" data-ref=...>`, no `-end` rect) still has rings. groups:
 // [{id, x, w}] where x is the group's left edge and w its width, in face
 // coordinates (its translate plus its child rects' extent). Aperture unknown.
-export function ringGroupsFrom(groups, face, faceW) {
+// Its run from `runs` as for guidesFromRects; no depth (a group is the whole
+// ring, not its band), so the kit's estimate is taken.
+export function ringGroupsFrom(groups, face, faceW, runs = {}) {
   return groups.map(g => ({via: g.id, kind: 'ring', face, x: toRack(g.x + g.w / 2, face, faceW),
-                           box: {x: g.x, y: 0, w: g.w, h: 0}, aperture: null}));
+                           box: {x: g.x, y: 0, w: g.w, h: 0}, aperture: null, run: runs[g.id] ?? 'x'}));
 }
 
 // One guide per (via, face): a ring seen as an end rect and again as a group
@@ -133,6 +154,18 @@ function aperturesOf(root) {
   return out;
 }
 
+// A ring component's run (Portrayal #930): `data-guide-run` on the element
+// that carries data-guide="ring" - on the top view, where aperturesOf reads,
+// and on an elevation that draws the ring's own component (a CMH-6DR1U's
+// rings are on its front view only). The first view to name a ring wins.
+export function guideRunsOf(roots) {
+  const out = {};
+  for (const root of roots) if (root)
+    for (const el of root.querySelectorAll('[data-guide="ring"][data-guide-run]'))
+      if (el.id && !(el.id in out)) out[el.id] = el.getAttribute('data-guide-run');
+  return out;
+}
+
 // A face that could not be read is null, and `failed.n` counts it: the facts are then incomplete.
 const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
   .catch(() => { failed.n++; return null; });
@@ -162,16 +195,18 @@ export async function routeFacts(rack, chassisOf) {
     const c = chassisOf(it.ref) || {};
     const get = faceOf(it, failed);
     const [front, rear, top] = await Promise.all([get('front'), get('rear'), c.guides?.top ? get('top') : null]);
-    const aps = top ? aperturesOf(rootOf(top.text)) : {};
+    const roots = {front: front && rootOf(front.text), rear: rear && rootOf(rear.text), top: top && rootOf(top.text)};
+    const aps = top ? aperturesOf(roots.top) : {};
+    const runs = guideRunsOf([roots.top, roots.front, roots.rear]);
     const list = [];
     // Its outward panel is on its face; the other panel faces the other way.
     const facing = {front: it.turned ? (it.face === 'front' ? 'rear' : 'front') : it.face};
     facing.rear = facing.front === 'front' ? 'rear' : 'front';
     for (const [view, f] of [['front', front], ['rear', rear]]) {
       if (!f) continue;
-      const w = f.vb?.[2] ?? 483, root = rootOf(f.text);
-      list.push(...guidesFromRects(rectsOf(root), facing[view], w, aps),
-                ...ringGroupsFrom(ringGroupsOf(root), facing[view], w));
+      const w = f.vb?.[2] ?? 483, root = roots[view];
+      list.push(...guidesFromRects(rectsOf(root), facing[view], w, aps, runs),
+                ...ringGroupsFrom(ringGroupsOf(root), facing[view], w, runs));
       for (const p of f.ports || [])
         ports.set(`${it.id}|${view}|${p.path ?? p.id}`, {x: toRack(p.x + p.w / 2, facing[view], w), y: p.y + p.h / 2, faceH: f.vb?.[3] ?? RU});
     }
@@ -192,10 +227,29 @@ export async function routeFacts(rack, chassisOf) {
   };
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
+  // THE RINGS, DECIDED ONCE (Portrayal #930): per cable, one mark per
+  // resolved waypoint - null for a lane, a duct or a pass, and for a ring the
+  // kit's {run, depth, sense, back} in the rack's axes. The 2D panes turn them
+  // to their own axes (cable-view.js) and the 3D scene passes them as they are
+  // (scene3d.js); neither decides a ring itself.
+  const marks = new Map((rack.cables || []).map(c => [c.id, ringMarks(rack, c, ctx)]));
+  // A ring a route would enter and leave by one face: shown with fill and capacity.
+  const labelOf = id => rack.items.find(i => i.id === id)?.label ?? id;
+  const rings = ringFindings(rack, ctx, labelOf);
   // Ducts beside the rack (zero-u.js): the lanes run through them, so they fill
   // as any pathway does, and are counted against their stated capacity.
   const ducts = await zeroUApertures(rack, chassisOf);
   const side = zeroUFill(rack, routes, chassisOf, z => ducts.get(z.id) ?? null);
-  return {ctx, complete: failed.n === 0, routes, fill: [...fill(rack, ctx), ...side.fill],
-          over: [...capacityOver(rack, ctx), ...side.over], lengths, endPane: e => endPane(rack, e)};
+  return {ctx, complete: failed.n === 0, routes, marks, fill: [...fill(rack, ctx), ...side.fill],
+          over: [...capacityOver(rack, ctx), ...side.over], ringFindings: rings, lengths, endPane: e => endPane(rack, e)};
+}
+
+// WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone
+// waypoint notes (export-data.js fillNotes), then each ring a route would
+// enter and leave by one face (route.js ringFindings). The cable list and the
+// exports' notes both read this, so they say the same things.
+export function routeNotes(rack, facts, nameOf = id => id) {
+  if (!facts) return [];
+  const rings = facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
+  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text)];
 }

@@ -870,6 +870,27 @@ for name, doc in alldocs.items():
           f"schema.js renders every keyword {name} uses",
           "new upstream: " + ", ".join(f"{k} (first at {at})" for k, at in sorted(unknown.items()))
           + " - teach site/schema.js to render it, then add it to KNOWN")
+# KNOWING A KEYWORD IS NOT RENDERING WHAT IS UNDER IT. `if` was in KNOWN for
+# as long as the schemas used it, and schema.js drew an `if` as a sentence and
+# never descended into it - so when component.schema.json's `kind: kit`
+# condition (Portrayal #905) put a property under /if, the keyword check passed
+# and the page lost the property; only the browser's property count caught it.
+# Every keyword a property's pointer passes through must be one schema.js
+# builds a `${ptr}/<keyword>` pointer for.
+_through = set()
+for name, doc in alldocs.items():
+    for ptr in schemawalk.property_pointers(doc):
+        segs, i = ptr.split("/")[1:], 0
+        while i < len(segs):
+            kw = segs[i]
+            _through.add(kw)
+            i += 1 if kw in schemawalk.SINGLE else 2   # a map key or a list index follows the others
+_combined = "${ptr}/${kw}" in SJS
+_undrawn = sorted(k for k in _through & (set(schemawalk.MAPS) | set(schemawalk.LISTS) | set(schemawalk.SINGLE))
+                  if k != "$defs" and not re.search(r"\$\{ptr\}/" + re.escape(k) + r"\b", SJS)
+                  and not (_combined and k in schemawalk.LISTS and f"'{k}'" in SJS))
+check(not _undrawn, "schema.js descends into every keyword a property sits under",
+      f"no ${{ptr}}/<kw> pointer for {_undrawn} - the rows under them are not on the page")
 
 # ── the hero: a cabled switch ────────────────────────────────────────────
 # The front page's hero is the S9600 with real parts seated in it (spec

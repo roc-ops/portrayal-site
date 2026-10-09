@@ -183,10 +183,18 @@ function branch(head, node, depth, ptr) {
   return b;
 }
 
-// What an `if` asks, in words when it is the one shape these schemas use.
+// What an `if` asks, in words for the shapes these schemas use: keys that
+// are given, and keys given a const (component.schema.json's `kind: kit`).
 function condition(node) {
-  if (Object.keys(node).length === 1 && Array.isArray(node.required)) {
-    return `when ${node.required.map(k => `\`${k}\``).join(' and ')} ${node.required.length > 1 ? 'are' : 'is'} given`;
+  const keys = Object.keys(node);
+  const props = node.properties || {};
+  const consts = Object.entries(props).filter(([, v]) => isSchema(v) && v.const !== undefined && Object.keys(v).length === 1);
+  if (keys.every(k => k === 'required' || k === 'properties') && Array.isArray(node.required || [])
+      && consts.length === Object.keys(props).length) {
+    const given = (node.required || []).filter(k => !(k in props));
+    const parts = [...consts.map(([k, v]) => `\`${k}\` is ${JSON.stringify(v.const)}`),
+                   ...(given.length ? [`${given.map(k => `\`${k}\``).join(' and ')} ${given.length > 1 ? 'are' : 'is'} given`] : [])];
+    if (parts.length) return `when ${parts.join(' and ')}`;
   }
   return `when it matches ${JSON.stringify(node)}`;
 }
@@ -256,11 +264,17 @@ function renderNode(node, depth, ptr) {
     frag.append(wrap);
   }
 
+  // A CONDITION. The `if` is a schema too, and the properties it tests are
+  // properties of this node: they are shown under "condition", stamped with
+  // their /if/ pointers, as the `then` and `otherwise` branches are with theirs.
+  // Every row in the block is conditional (sc-cond) - it holds only when the
+  // condition does, or does not.
   if (isSchema(node.if)) {
-    const wrap = el('div', {class: 'sc-oneof'});
+    const wrap = el('div', {class: 'sc-oneof sc-cond', 'data-conditional': ptr || '/'});
     const when = el('p', {class: 'sc-branch-head'});
-    when.append(richText(condition(node.if)));
+    when.append(richText(`conditional: ${condition(node.if)}`));
     wrap.append(when);
+    if (node.if.properties) wrap.append(branch('condition — the keys it tests', node.if, depth + 1, `${ptr}/if`));
     if (isSchema(node.then)) wrap.append(branch('then', node.then, depth + 1, `${ptr}/then`));
     if (isSchema(node.else)) wrap.append(branch('otherwise', node.else, depth + 1, `${ptr}/else`));
     frag.append(wrap);
