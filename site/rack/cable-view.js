@@ -15,7 +15,10 @@
 // (cable-rules.js looseReason) does not land at all.
 
 import {cablePoints} from '../../vendor/relief.js';
-import {drawCables2d, plugAt} from './cables.js';
+import {drawCables2d, plugAt, WIDTH} from './cables.js';
+import {routed2d} from '../../vendor/rack/route-path.js';
+import {combOffset, trunkMarks, trunkMembers, strapAt, drawableRuns, bundleSummary, STRAP_DRAWN, bendViolations,
+        trunkIndexOf, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
 import {paneMarks} from './route-context.js';
@@ -90,7 +93,8 @@ export function wayEl(svg, w) {
 // Lanes: sides are the rack's as seen from the front, so the rear pane mirrors them.
 // A lane through a zero-U duct (the kit's zero-u.js) runs up the duct's channel: `ductX(lane,
 // ru)` is the duct's centre in rack x, or null where no duct stands.
-function wayPoint(svg, w, view, frame, k, ductX = () => null) {
+// `shift` (mm, across the run) combs a bundle's members side by side on its lane (bundle-view.js combOffset).
+function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
   if (w.lane) {
     const [side, face] = w.lane.split('-');
     if (face && face !== view) return null;
@@ -99,7 +103,7 @@ function wayPoint(svg, w, view, frame, k, ductX = () => null) {
     const xr = ductX(w.lane, w.ru);
     const x = xr != null ? (view === 'rear' ? OPENING / 2 - xr : OPENING / 2 + xr) + (paneLeft ? -off : off)
       : paneLeft ? -RAIL_W - LANE_GAP / 2 - off : OPENING + RAIL_W + LANE_GAP / 2 + off;
-    return [x, frame.heightRU * RU - (w.ru - 0.5) * RU];
+    return [x + shift, frame.heightRU * RU - (w.ru - 0.5) * RU];
   }
   const el = wayEl(svg, w);
   if (!el) return null;
@@ -164,10 +168,16 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const plan = cablePlan(rack);
   // Each link's waypoints in this pane, in order from its a end. Cables
   // sharing a lane here are offset a little apart.
+  // One lane slot per bundle and lane, taken in turn with the cables' own.
+  const used = new Map(), slots = new Map();
+  const bundleSlot = (bid, lane) => {
+    const k = `${bid}|${lane}`;
+    if (!slots.has(k)) { slots.set(k, used.get(lane) || 0); used.set(lane, slots.get(k) + 1); }
+    return slots.get(k);
+  };
+  const chassisOf = routes?.ctx?.chassisOf;
+  const ductX = (lane, ru) => { const z = chassisOf && zeroUOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
   if (routes?.routes) {
-    const used = new Map();
-    const chassisOf = routes.ctx?.chassisOf;
-    const ductX = (lane, ru) => { const z = chassisOf && zeroUOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
     // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
     // along the rack's axes, x right as seen from the front and y up. This
     // pane's y runs down, and the rear pane is seen mirrored, so its x runs
@@ -182,10 +192,16 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       // One offset per cable and lane, so its own run up the lane is vertical.
       const mine = new Map();
       const pts = [], rings = [];
+      // A BUNDLE'S MEMBER, where it rides the trunk, shares one lane slot with
+      // the rest of its bundle and is combed inside the band (drawBundles2d).
+      const place = routes.places?.get(link.id);
       ws.forEach((w, k) => {
+        const inBundle = place && k >= place.stretch[0] && k <= place.stretch[1];
         const key = w.lane ? `${w.lane}` : null;
-        if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
-        const p = wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0, ductX);
+        if (key && inBundle) mine.set(`in|${key}`, bundleSlot(place.bundle, key));
+        else if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
+        const slot = key ? mine.get(inBundle ? `in|${key}` : key) : 0;
+        const p = wayPoint(svg, w, pane, rack.frame, slot, ductX, inBundle && key ? combOffset(place, WIDTH) : 0);
         // A waypoint this pane cannot place is dropped, and its mark with it.
         if (p) { pts.push(p); rings.push(turned?.[k] ?? null); }
       });
@@ -237,6 +253,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       return pill(t, at, '✕ not connected');
     },
   });
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, (w, bid) =>
+    wayPoint(svg, w, pane, rack.frame, w.lane ? bundleSlot(bid, w.lane) : 0, ductX));
   for (const rec of recs) {
     const c = cables[rec.i];
     for (const n of [rec.g, rec.tag]) if (n) n.setAttribute('data-cable-id', c.id);
@@ -267,6 +285,73 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   return recs;
 }
 
+
+// THE BUNDLES ON THIS PANE (portrayal-site#142; design section 6). Each drawn
+// bundle's trunk is one band as wide as the bundle (the kit's size check),
+// under its members, which are combed inside it where they ride and leave it
+// at their join and leave points; its straps are bars across it at the kit's
+// positions (bundles.js straps: a trunk segment and how far along it). The
+// band passes a ring the way its members do (bundle-view.js trunkMarks), and
+// those marks are in the rack's axes, so they are turned to this pane's like
+// any cable's (paneMarks: front {y: -1}, rear {x: -1, y: -1}). A stretch of the
+// trunk on the other face is not drawn here, nor are its straps. The bands go
+// in the cables' layer, so a sheet keeps them; they take no click.
+// `place(w, bundleId)` is a trunk waypoint's point on this pane, or null.
+const BAND = '#8b939c';
+const STRAP = '#24282d';
+const BEND_WARN = '#d9822b';
+function drawBundles2d(svg, rack, routes, pane, place) {
+  const layer = svg.querySelector(':scope > [data-cables]');
+  if (!layer) return;
+  const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
+  const bars = svgEl('g', {'data-bundle-straps': pane, 'pointer-events': 'none'});
+  for (const f of routes.bundles.values()) {
+    const L = f.check?.layout;
+    if (!f.drawn || !L?.trunk?.length) continue;
+    const pts = L.trunk.map(w => place(w, f.id));
+    const runs = drawableRuns(pts);
+    if (!runs.length) continue;
+    const D = drawnDiameter(f.diameter, WIDTH);
+    const marks = paneMarks(trunkMarks(L.trunk, trunkMembers(f, routes.routes, routes.marks, routes.places)), pane);
+    const g = svgEl('g', {'data-bundle-id': f.id, 'data-diameter': String(Math.round(D * 10) / 10)});
+    const title = svgEl('title', {});
+    title.textContent = `${f.name}: ${bundleSummary(f)}`;
+    g.append(title);
+    for (const run of runs) {
+      const rings = marks.slice(run.from, run.from + run.points.length);
+      const d = routed2d(run.points, 4, rings.some(Boolean) ? rings : null);
+      g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.4, 'stroke-width': D + 1.2,
+                              'stroke-linecap': 'round', 'stroke-linejoin': 'round'}),
+               svgEl('path', {d, fill: 'none', stroke: BAND, 'stroke-opacity': 0.7, 'stroke-width': D,
+                              'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'data-bundle-trunk': f.id}));
+    }
+    // A corner too tight for the bundle's bend radius (kit 0.8.0, Portrayal
+    // #922): ringed where this pane places it. Nothing before 0.8.0.
+    for (const v of bendViolations(f.check)) {
+      const p = pts[trunkIndexOf(L.trunk, v.waypoint)];
+      if (!p) continue;
+      const ring = svgEl('circle', {cx: p[0], cy: p[1], r: D / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+                                    'data-bend-violation': f.id});
+      const t = svgEl('title', {});
+      t.textContent = `${f.name}: too tight a bend at ${v.at}${v.short_mm != null ? `, ${v.short_mm} mm short` : ''}`;
+      ring.append(t);
+      g.append(ring);
+    }
+    bands.append(g);
+    for (const s of f.straps?.straps ?? []) {
+      const at = strapAt(pts, s);
+      if (!at) continue;
+      const half = D / 2 + 2, n = [-at.dir[1], at.dir[0]];
+      bars.append(svgEl('line', {x1: at.at[0] - n[0] * half, y1: at.at[1] - n[1] * half,
+        x2: at.at[0] + n[0] * half, y2: at.at[1] + n[1] * half, stroke: STRAP, 'stroke-width': STRAP_DRAWN,
+        'data-strap': f.id, 'data-along': String(s.along_mm)}));
+    }
+  }
+  if (!bands.childElementCount) return;
+  // Under every cable, so the members show inside the band; the straps over them.
+  layer.prepend(bands);
+  layer.append(bars);
+}
 
 // WHICH PORT A CLICK IS ON, as its data-path, or null. `group` is the item's
 // panel group and `target` the element clicked inside it. The outermost
@@ -309,6 +394,13 @@ export function paintCables(svgs, rack, {selectedId = null, on = {}} = {}) {
       n.classList.toggle('ghost', n.dataset.cableId !== selectedId && out.has(n.dataset.cableId));
     }
   }
+}
+
+// WHICH BUNDLE IS LIT: the selected one's band is outlined in brass, in both
+// panes (.on on its [data-bundle-id] group). Classes only, as paintCables.
+export function paintBundles(svgs, selectedId = null) {
+  for (const svg of svgs)
+    for (const n of svg.querySelectorAll('[data-bundle-id]')) n.classList.toggle('on', n.dataset.bundleId === selectedId);
 }
 
 // WHERE A ROUTE'S NEXT WAYPOINT CAN BE CLICKED. Each target is {item, via, box}

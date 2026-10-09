@@ -35,6 +35,7 @@ import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-r
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
+import {bundleNotes} from './bundle-view.js';
 import {COLORS, colorOf} from './cables.js';
 import {zeroUEntries} from '../../vendor/rack/zero-u.js';
 
@@ -199,7 +200,9 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       }
       // A cable with no group on this sheet (a run, a lead or a tag) is said to be missing, and why.
       const drawn = new Set(panes.flatMap(pane => [...pane.querySelectorAll('[data-cable-id]')].map(n => n.getAttribute('data-cable-id'))));
-      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...routeNotes(rack, rf, labelOf(rack)));
+      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...routeNotes(rack, rf, labelOf(rack)),
+                 // a note per bundle and its warnings (portrayal-site#142); the bands and straps are drawn with the cables
+                 ...bundleNotes(rack, rf?.bundles));
       roomForCables(panes);
       for (const pane of panes) {
         pane.setAttribute('height', boxOf(pane)[3].toFixed(2));

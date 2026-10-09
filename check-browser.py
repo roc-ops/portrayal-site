@@ -4279,6 +4279,260 @@ def check_rack_ring_rear_pane(page, base):
     return bad
 
 
+# CABLE BUNDLES (portrayal-site#142). Three Cat6A cables from one copper
+# switch through one ring of its lacer, up the left-front lane to a second
+# switch: the kit works their trunk out as mgr-1 ring 1 > left-front U20-U30,
+# and sizes it from the cable types' Cat6A diameter, well above the drawing's
+# two-stroke floor, so the band and tube widths test the real figure. `face`
+# puts the whole set on the front or the rear face.
+def bundle_fixture(page, face="front"):
+    return page.evaluate("""async face => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Bundles'});
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 20, face, label: 'sw-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 30, face, label: 'sw-2'}));
+      for (const p of ['port-1', 'port-2', 'port-3'])
+        ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: p, view: 'front'}, media: 'cat6a'}));
+      return r;
+    }""", face)
+
+
+def open_bundle_rack(page, base, face="front"):
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face))
+    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)",
+                           timeout=READY_MS)
+
+
+# The band of a bundle on a pane, measured: its stroke width, the x of its
+# vertical run on the lane, how near it passes the ring's end rect centre, and
+# how far it hooks back along x near that ring; the straps drawn; and, per
+# member, its stroke's x at a height (U29) above any peel point.
+BAND_GEO = """([pane, id]) => {
+  const s = document.querySelector(`#${pane} svg`);
+  const g = s.querySelector(`[data-cables] [data-bundle-id="${id}"]`);
+  if (!g) return null;
+  const band = g.querySelector('[data-bundle-trunk]');
+  const inv = s.getScreenCTM().inverse();
+  const pts = [];
+  for (const p of g.querySelectorAll('[data-bundle-trunk]')) {
+    const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+    for (let t = 0; t <= L; t += 0.25) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+  }
+  const xs = pts.map(q => q[0]);
+  // the gutter the trunk runs up: the band's x furthest out from the rack's middle
+  const laneX = xs.reduce((a, x) => (Math.abs(x - 225.425) > Math.abs(a - 225.425) ? x : a), xs[0]);
+  const run = pts.filter(q => Math.abs(q[0] - laneX) < 0.6).map(q => q[1]);
+  const end = s.querySelector('[data-item-id="i2"] [id="guide-1-end"]');
+  let ringGap = null, back = null;
+  if (end) {
+    const eb = end.getBoundingClientRect(), c = new DOMPoint(eb.left + eb.width / 2, eb.top + eb.height / 2).matrixTransform(inv);
+    ringGap = Math.min(...pts.map(q => Math.hypot(q[0] - c.x, q[1] - c.y)));
+    const near = pts.filter(q => Math.abs(q[0] - c.x) <= 20 && Math.abs(q[1] - c.y) <= 30).map(q => q[0]);
+    if (near.length > 1) {
+      const dir = Math.sign(near.at(-1) - near[0]) || 1;
+      let best = -Infinity; back = 0;
+      for (const x of near) { best = Math.max(best, dir * x); back = Math.max(back, best - dir * x); }
+    }
+  }
+  // the y of U29's middle on this pane: the rack is 42U, U1 at the bottom
+  const y28 = 42 * 44.45 - 28.5 * 44.45;
+  const memberX = {};
+  for (const c of ['c1', 'c2', 'c3']) {
+    const cg = s.querySelector(`[data-cables] [data-cable-id="${c}"]`);
+    if (!cg) continue;
+    let best = null;
+    for (const p of cg.querySelectorAll('path')) {
+      const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+      for (let t = 0; t <= L; t += 0.5) {
+        const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m);
+        if (Math.abs(w.y - y28) < 1 && (best == null || Math.abs(w.x - laneX) < Math.abs(best - laneX))) best = w.x;
+      }
+    }
+    memberX[c] = best;
+  }
+  return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
+          ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
+          strapXs: [...s.querySelectorAll(`[data-strap="${id}"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
+}"""
+
+
+@extra("rack.html: a bundle made from the cable list is drawn on the front pane as one band its size wide, with its straps, and a peeled cable leaves it (portrayal-site#142)")
+def check_rack_bundle_2d_front(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "front")
+    # Through the page's own controls: select c1, Bundle..., tick c2 and c3, name it.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableBundle")
+    page.check("#bPick-c2")
+    page.check("#bPick-c3")
+    page.fill("#bLabel", "uplinks")
+    page.click("#bCreate")
+    page.wait_for_selector("#bundlePanel", timeout=READY_MS)
+    doc = page.evaluate("() => window.__rack.doc().racks[0].bundles")
+    if not doc or [m["cable"] for m in doc[0]["members"]] != ["c1", "c2", "c3"] or doc[0].get("label") != "uplinks":
+        return bad + [f"create: the bundle was not stored as uplinks of c1-c3: {doc}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
+    facts = page.evaluate("() => window.__rack.bundles()")
+    f = facts[0] if facts else None
+    if not f or not f["checked"] or not f["diameter"]:
+        return bad + [f"facts: the bundle was not checked for size: {facts}"]
+    if f["diameter"] <= 6:
+        return bad + [f"facts: three Cat6A come to {f['diameter']} mm, not above the 6 mm drawing floor - are the cable types loaded?"]
+    geo = page.evaluate(BAND_GEO, ["paneFront", "b1"])
+    if not geo:
+        return bad + ["2D: no band for b1 on the front pane"]
+    # The band is the bundle's diameter wide.
+    if abs(geo["width"] - f["diameter"]) > 0.05:
+        bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
+    if not (geo["laneX"] < -26) or geo["span"] < 400:
+        bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
+    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
+        bad.append(f"2D: the band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    if geo["straps"] != f["count"] or geo["straps"] < 2:
+        bad.append(f"2D: {geo['straps']} straps drawn, the kit counts {f['count']}")
+    # Combed inside the band: every member's run at U29 within the band's half width (plus a stroke).
+    for c, x in geo["memberX"].items():
+        if x is None or abs(x - geo["laneX"]) > geo["width"] / 2 + 1.5:
+            bad.append(f"2D: {c} at U29 is at x {x}, outside the band at {geo['laneX']} (half width {geo['width'] / 2})")
+    # The spacing, through the panel: 6 in gives more straps, drawn.
+    page.fill("#bEvery", "6")
+    page.press("#bEvery", "Enter")
+    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n", arg=f["count"], timeout=READY_MS)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
+                           timeout=READY_MS)
+    # Peel c3 at left-front U27 on: it leaves the band there for its b end, the nearer (sw-2 at U30).
+    opts = page.eval_on_selector_all("#bPeelAt-c3 option", "os => os.map(o => [o.value, o.textContent])")
+    at = next((v for v, t in opts if t == "from left-front U27"), None)
+    if at is None:
+        return bad + [f"peel: no 'from left-front U27' choice for c3: {opts}"]
+    page.select_option("#bPeelAt-c3", at)
+    page.click("#bPeel-c3")
+    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members[2].b?.ru === 27", timeout=READY_MS)
+    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c3')?.[1].every(w => !w.lane || w.ru <= 27)",
+                           timeout=READY_MS)
+    page.click("#bDone")
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"]')", timeout=READY_MS)
+    geo2 = page.evaluate(BAND_GEO, ["paneFront", "b1"])
+    x3 = (geo2 or {}).get("memberX", {}).get("c3")
+    if geo2 is None or (x3 is not None and abs(x3 - geo2["laneX"]) <= geo2["width"] / 2 + 1.5):
+        bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
+    # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
+    head = page.inner_text('#cableList [data-bundle-item="b1"]')
+    if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
+        bad.append(f"list: the bundle's header does not give its name, size and straps: {head!r}")
+    order = page.eval_on_selector_all("#cableList ul > li", "ls => ls.map(l => l.dataset.bundleItem ? 'B' : l.dataset.cableItem)")
+    if order[:4] != ["B", "c1", "c2", "c3"]:
+        bad.append(f"list: the members do not follow their bundle's header: {order}")
+    c3 = page.inner_text('#cableList [data-cable-item="c3"] [data-bundle-of]')
+    if "In uplinks" not in c3 or "left-front U27" not in c3:
+        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U27: {c3!r}")
+    # Dissolving: no band, no header, the cables kept.
+    page.click('#cableList [data-bundle-row="b1"]')
+    page.click("#bRemove")
+    page.wait_for_function("() => !document.querySelector('#paneFront [data-bundle-id]') && !document.querySelector('#cableList [data-bundle-item]')",
+                           timeout=READY_MS)
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 3:
+        bad.append("remove: dissolving the bundle removed cables")
+    return bad
+
+
+@extra("rack.html: a bundle on the mirrored rear pane is drawn there, through its ring with no hook, and not on the front (portrayal-site#142)")
+def check_rack_bundle_2d_rear(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "rear")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneRear [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
+    if page.evaluate("() => !!document.querySelector('#paneFront [data-bundle-id]')"):
+        bad.append("2D: a rear bundle is drawn on the front pane")
+    f = page.evaluate("() => window.__rack.bundles()[0]")
+    geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
+    # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
+    if not (geo["laneX"] < -26) or geo["span"] < 400:
+        bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
+    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
+        bad.append(f"2D: the rear band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    if geo["back"] is None or geo["back"] > 0.05:
+        bad.append(f"2D: the rear band hooks back {geo['back']} mm along x at guide-1 (pane flip lost?)")
+    if geo["straps"] != f["count"]:
+        bad.append(f"2D: {geo['straps']} straps on the rear pane, the kit counts {f['count']}")
+    if f["diameter"] <= 6 or abs(geo["width"] - f["diameter"]) > 0.05:
+        bad.append(f"2D: the rear band is {geo['width']} wide, not the bundle's {f['diameter']} mm (above the 6 mm floor)")
+    return bad
+
+
+@extra("rack.html: in 3D a bundle is a tube of its diameter along its trunk, with a strap band at each of the kit's straps (portrayal-site#142)")
+def check_rack_bundle_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "front")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
+    f = page.evaluate("() => window.__rack.bundles()[0]")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); const d = Date.now() + 30000;
+      while (!s.rackCables?.bundles && Date.now() < d) await new Promise(r => setTimeout(r, 200));
+      const world = s.three.scene, trunk = world.getObjectByName('bundle-b1-trunk');
+      if (!trunk) return null;
+      const straps = []; world.traverse(o => { if (/^bundle-b1-strap-/.test(o.name)) straps.push(o); });
+      // each strap's distance from the tube's centre line (its path's points)
+      const path = trunk.geometry.parameters.path, line = path.getSpacedPoints(400);
+      const off = straps.map(o => Math.min(...line.map(p => p.distanceTo(o.position))));
+      // the members' tubes stay inside the bundle where they ride the lane (U22-U28)
+      const lo = 21.5 * 44.45, hi = 27.5 * 44.45, inside = [];
+      // and each member's offset across the lane at U25 (x, z), to show they are spread, not stacked
+      const spread = [];
+      for (const t of s.rackCables.tubes) {
+        const main = t.mesh?.children?.[0]?.geometry?.parameters?.path;
+        let at = null;
+        for (const p of main ? main.getSpacedPoints(800) : []) if (p.y > lo && p.y < hi && Math.abs(p.x + 271) < 30) {
+          inside.push(Math.min(...line.map(q => q.distanceTo(p))));
+          if (!at || Math.abs(p.y - 24.5 * 44.45) < Math.abs(at.y - 24.5 * 44.45)) at = p;
+        }
+        if (at) spread.push([at.x, at.z]);
+      }
+      return {radius: trunk.geometry.parameters.radius, straps: straps.length, off: Math.max(0, ...off), spread,
+              memberOff: inside.length ? Math.max(...inside) : null, n: inside.length,
+              ys: [Math.min(...line.map(p => p.y)), Math.max(...line.map(p => p.y))]};
+    }""")
+    if not got:
+        return bad + ["3D: no bundle-b1-trunk tube in the scene"]
+    want_r = f["diameter"] / 2
+    if want_r <= 3:
+        return bad + [f"3D: the bundle is {f['diameter']} mm, not above the 6 mm drawing floor"]
+    if abs(got["radius"] - want_r) > 0.01:
+        bad.append(f"3D: the tube's radius is {got['radius']}, not half the bundle's {f['diameter']} mm")
+    if got["ys"][1] - got["ys"][0] < 400:
+        bad.append(f"3D: the tube does not run the 10U trunk (y {got['ys']})")
+    if got["straps"] != f["count"]:
+        bad.append(f"3D: {got['straps']} strap bands, the kit counts {f['count']}")
+    if got["off"] > 3:
+        bad.append(f"3D: a strap band sits {got['off']:.1f} mm off the tube's centre line")
+    # A member's centre line is within the radius less half a 3 mm tube, so the whole tube is inside.
+    if got["memberOff"] is None or got["memberOff"] > want_r - 1.5 + 0.5:
+        bad.append(f"3D: a member's tube reaches {got['memberOff']} mm from the bundle's centre on the lane ({got['n']} points; radius {want_r})")
+    # ...and spread across it: three members at three places, at least a millimetre apart.
+    pts = got["spread"]
+    close = [(i, j) for i in range(len(pts)) for j in range(i + 1, len(pts))
+             if ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5 < 1]
+    if len(pts) != 3 or close:
+        bad.append(f"3D: the members are not spread inside the bundle at U25: {pts}")
+    return bad
+
+
 @extra("rack.html: a route that would enter and leave a ring by one face is drawn to the face and back, in 2D and 3D, and reported (Portrayal #930)")
 def check_rack_ring_doubles_back(page, base):
     bad = []
@@ -5146,8 +5400,7 @@ def check_rack_place(page, base):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     # A fresh, empty rack, whatever an earlier check left in this browser.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "place")
 
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
@@ -5192,8 +5445,7 @@ def check_rack_inspect(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "inspect")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     item = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     page.wait_for_selector("#iLabel", timeout=READY_MS)
@@ -5204,7 +5456,14 @@ def check_rack_inspect(page, base):
     # refused. AS7726's own through panel now covers this U's hit rectangle
     # on the rear pane, so this dispatches straight to it.
     pick(page, "rear", 22, "TM-280", "tm-280", dispatch=True)
+    # The TM-280 just placed has an inspector with an #iFace of its own: the
+    # one changed has to be the AS7726's, drawn by this click's render. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "inspect: TM-280 placed",
+        "() => window.__rack.doc().racks[0].items.length === 2 && !document.getElementById('catPlace')")
+    tok = render_token(page)
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    wait_rendered(page, "inspect: AS7726 selected", tok)
     page.select_option("#iFace", "rear")
     err = page.text_content(".rk-side .rk-error") or ""
     if "Taken by" not in err or item()["face"] != "front":
@@ -5316,8 +5575,7 @@ def check_rack_picker(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "picker")
 
     device_refs = lambda: page.eval_on_selector_all("#catDevice option", "os => os.map(o => o.value)")
     fits_false = lambda: page.eval_on_selector_all(
@@ -5325,8 +5583,11 @@ def check_rack_picker(page, base):
 
     # Near the top of the rack only 3U is free, so any 4U-and-up device does
     # not fit here - unticking "Only what fits here" has to reveal some.
+    # Each U click waits for its own render: #catDevice alone is met by the
+    # picker the last click (or Place) left on screen.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="40"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U40 picker opens", tok)
     if fits_false() != 0:
         bad.append("picker: an option has data-fits=false while 'Only what fits here' is ticked")
     page.uncheck("#catFitsOnly")
@@ -5336,8 +5597,9 @@ def check_rack_picker(page, base):
 
     # Lower in the rack, where everything fits: the vendor dropdown narrows
     # the list, and its counts match what the query alone already narrowed to.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U10 picker opens", tok)
 
     # "All vendors"'s own count matches the (unfiltered) device list, and the
     # list box fills the side panel's width rather than shrinking to its
@@ -5378,9 +5640,13 @@ def check_rack_picker(page, base):
     if item["ref"] != "as7726-32x" or item["cfg"] != "dc-b2f":
         bad.append(f"picker: placed {item['ref']!r} with cfg {item['cfg']!r}, expected as7726-32x/dc-b2f")
 
-    # Clicking another empty U keeps the chosen vendor and query.
+    # Clicking another empty U keeps the chosen vendor and query. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "picker: as7726-32x placed",
+        "() => window.__rack.doc().racks[0].items.length === 1 && !document.getElementById('catPlace')")
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="30"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U30 picker opens", tok)
     if page.eval_on_selector("#catQuery", "i => i.value") != "AS77":
         bad.append("picker: the search query did not survive clicking another U")
     if page.eval_on_selector("#catVendor", "s => s.value") != "Edgecore":
@@ -5647,12 +5913,12 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
     try:
-        page.wait_for_function(expr, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout)
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -5710,8 +5976,7 @@ def check_rack_drag(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     wait_fn(page, "initial ready", "() => window.__rack && window.__rack.ready")
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "new rack: items empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "drag")
 
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "place as7726-32x on front U20",
@@ -5813,8 +6078,7 @@ def check_rack_drag(page, base):
 
     # Two-post: front and rear are the same plane, so dragging one device onto
     # the other's U (even on the other face) is refused.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "two-post setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "two-post setup")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     wait_fn(page, "two-post setup: frame kind switched", "() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -5844,8 +6108,7 @@ def check_rack_drag(page, base):
     # (its catalog panel left open) must not keep painting that U's brass
     # highlight forever - a later drag of an unrelated device has to replace
     # the selection, on both a same-pane and a cross-pane drop.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "stale-selection setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "stale-selection setup")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "stale-selection setup: place as7726-32x on front U20",
              'svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]')
@@ -5891,53 +6154,95 @@ def check_rack_drag(page, base):
     return bad
 
 
+def open_new_rack(page, label):
+    # NEW RACK IS ASYNCHRONOUS, AND THE PAGE ALREADY HOLDS AN EMPTY RACK.
+    # startNewRack (rack-page.js) flushes the autosave, lists the library and
+    # stores the new document - three IndexedDB round trips - before setDoc()
+    # swaps it in. A fresh page boots with an empty rack of its own, so a wait
+    # for "no items" is met at once, before the click has done anything; the
+    # new rack then lands in the middle of whatever the check does next and
+    # wipes it. What says the switch happened is the document's id changing,
+    # and then the new document's own render: a pane already on screen (or
+    # one painted by a render still in flight from the step before) is the
+    # last document's. So each repaint of the front pane is logged with the
+    # document it was drawn for, and the wait is for a paint of the new one -
+    # after which the panes and the side panel are this rack's, and a
+    # render_token taken next is its pane.
+    rid = page.evaluate("""() => {
+      window.__paints = [];
+      if (!window.__paintLog) {
+        window.__paintLog = new MutationObserver(() => window.__paints.push(window.__rack.doc().id));
+        window.__paintLog.observe(document.getElementById('paneFront'), {childList: true});
+      }
+      return window.__rack.doc().id;
+    }""")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, f"{label}: New rack opens a new document, drawn",
+        "(id) => { const now = window.__rack.doc().id; return now !== id"
+        " && window.__rack.doc().racks[0].items.length === 0 && window.__paints.includes(now); }", arg=rid)
+
+
 @extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
 def check_rack_shrink(page, base):
+    # Every step waits on the page's own state, never on time: the document
+    # for the edit, and the render that follows it (render() is async and
+    # paints the panes and the side panel together, last) for anything read
+    # off or clicked in the DOM. Under load the model moves well before the
+    # DOM does, and a check that reads the panel in between reads the last one.
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "shrink")
 
-    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack.
-    pick(page, "front", 5, "MX204", "mx204")
-    pick(page, "front", 20, "AS7726", "as7726-32x")
-    pick(page, "front", 30, "R740", "r740xd")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack. Each place
+    # is waited for until its render has replaced the picker: a picker still
+    # on screen when the next U is clicked is the last U's, and its Place
+    # button places there (and is refused, as that U is now taken).
+    for n, (u, query, ref) in enumerate([(5, "MX204", "mx204"), (20, "AS7726", "as7726-32x"), (30, "R740", "r740xd")], 1):
+        pick(page, "front", u, query, ref)
+        wait_fn(page, f"shrink: {ref} placed at U{u}",
+            "(n) => window.__rack.doc().racks[0].items.length === n && !document.getElementById('catPlace')", arg=n)
     sorted_items = lambda: sorted(page.evaluate("() => window.__rack.doc().racks[0].items"), key=lambda i: i["ru"])
 
+    def set_height(ru):
+        # The form is the one the last render drew, and the edit's own render
+        # draws the notice: wait for that render, not just the model.
+        tok = render_token(page)
+        page.fill("#fHeight", str(ru))
+        page.dispatch_event("#fHeight", "change")
+        wait_fn(page, f"shrink: the frame becomes {ru}U",
+            "(ru) => window.__rack.doc().racks[0].frame.heightRU === ru", arg=ru)
+        wait_rendered(page, f"shrink: the frame becomes {ru}U: DOM settle", tok)
+        notice = page.query_selector(".rk-side .rk-notice")
+        return notice.text_content() if notice else None
+
+    tok = render_token(page)
     page.click("#frameBtn")
-    page.fill("#fHeight", "12")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 12")
+    wait_rendered(page, "shrink: the frame form opens", tok)
+    note = set_height(12)
     got = [(i["ref"], i["ru"]) for i in sorted_items()]
     want = [("mx204", 1), ("as7726-32x", 2), ("r740xd", 3)]
     if got != want:
         bad.append(f"shrink: after compacting to 12U items are {got}, expected {want}")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note = (page.text_content(".rk-side .rk-notice") or "").lower()
-    if "moved" not in note:
+    if note is None or "moved" not in note.lower():
         bad.append(f"shrink: the notice does not mention moving devices ({note!r})")
 
     # Shrinking further to 3U (from the 12U-compacted state, top at U4) means
     # 1+1+2 = 4U of devices no longer fit in 3U: the bottom one (MX204) goes.
-    page.fill("#fHeight", "3")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 3")
+    note2 = set_height(3)
     refs = [i["ref"] for i in sorted_items()]
     if refs != ["as7726-32x", "r740xd"]:
         bad.append(f"shrink: shrinking to 3U left {refs}, expected the bottom device (mx204) removed")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note2 = page.text_content(".rk-side .rk-notice") or ""
-    if "MX204" not in note2:
+    if note2 is None or "MX204" not in note2:
         bad.append(f"shrink: the removal notice does not name MX204 ({note2!r})")
 
     # Undo restores the rack from just before this shrink - the 12U-compacted
-    # state, frame included - exactly.
+    # state, frame included - exactly. The Undo clicked is the 3U render's.
     page.click("#undoShrink")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    wait_fn(page, "shrink: Undo puts the rack back",
+        "() => window.__rack.doc().racks[0].items.length === 3")
     got2 = [(i["ref"], i["ru"]) for i in sorted_items()]
     if got2 != want:
         bad.append(f"shrink: Undo did not restore the pre-shrink positions, got {got2}")
@@ -5953,8 +6258,7 @@ def check_rack_faces(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces")
 
     # MX204 (short of a four-post's rear rail) at front U10, TM-280 at rear
     # U10: a four-post pair sharing a U.
@@ -6003,9 +6307,11 @@ def check_rack_faces(page, base):
     pick(page, "front", 20, "MX204", "mx204")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
     page.wait_for_selector('svg[data-pane="rear"] rect.rk-u[data-u="20"]', timeout=READY_MS)
+    wait_fn(page, "faces: second MX204 placed, drawn", "() => !document.getElementById('catPlace')")
     x20, y20 = u_center(page, "rear", 20)
+    tok = render_token(page)
     page.mouse.click(x20, y20)
-    page.wait_for_selector(".rk-side h3", timeout=READY_MS)
+    wait_rendered(page, "faces: the rear U20 click redraws", tok)
     heading = page.text_content(".rk-side h3") or ""
     if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
         bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
@@ -6017,8 +6323,7 @@ def check_rack_faces(page, base):
     # Two-post: front and rear are the same shared plane (fit.js's reaches()
     # is always true there), so a real click on a front device's rear
     # (through) panel selects the device.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: two-post")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -6034,8 +6339,7 @@ def check_rack_faces(page, base):
     # Four-post, full depth: R740xd (737.5 mm) reaches the far rail (>= 740 -
     # 50), so its through panel IS its real, present rear - a click there
     # selects it too, not the picker.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: full depth")
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
@@ -6071,8 +6375,7 @@ def check_rack_3d(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "3d")
 
     # A new rack defaults to four-post. R740xd on the front at U10, TM-280 on
     # the rear at U20 - a front and a rear mount that do not share a U, so

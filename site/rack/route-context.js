@@ -4,7 +4,9 @@
 // coordinates: mm from the rack's center line, right as seen from the front.
 // A rear-facing panel is seen mirrored, so its x is negated.
 
-import {configuredFace} from './face.js';
+import {configuredFace, DIST} from './face.js';
+import {loadCableTypes} from '../../vendor/rack/cable-types.js';
+import {bundleFacts, memberPlaces} from './bundle-view.js';
 import {resolveRoute, fill, capacityOver, routedLength, endPane, ringMarks, ringFindings, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes} from '../../vendor/rack/export-data.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
@@ -251,10 +253,18 @@ export async function routeFacts(rack, chassisOf) {
   // A ring a route would enter and leave by one face: shown with fill and capacity.
   const labelOf = id => rack.items.find(i => i.id === id)?.label ?? id;
   const rings = ringFindings(rack, ctx, labelOf);
+  // THE BUNDLES (portrayal-site#142): each one's size check and straps from the
+  // kit, with the cable types' diameters and bend radii (loaded once a page;
+  // without them the kit counts each cable by its media), and where each
+  // member rides its trunk. The 2D panes, the 3D scene, the cable list and the
+  // sheet all read these, so they agree.
+  const types = (rack.bundles || []).length ? await loadCableTypes(DIST).catch(() => null) : null;
+  const bundles = bundleFacts(rack, {route: ctx, ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})});
+  const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
   return {ctx, complete: failed.n === 0, routes, marks, fill: fill(rack, ctx),
-          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e)};
+          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e), bundles, places};
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone
