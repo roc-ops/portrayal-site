@@ -56,8 +56,8 @@ TWO INJECTIONS THAT LOOK RIGHT AND PROVE NOTHING, learned the hard way:
 
 Load matters more than anything here. At a 1-minute load average of 150 these
 runs took 529 s and died at `Locator.bounding_box: Timeout 30000ms exceeded`,
-measuring a canvas; the same work at load 10-50 is clean in 10-50 s. Gate on
-~/.claude/merge-agent/portrayal-site/when-calm.sh, or read the load first.
+measuring a canvas; the same work at load 10-50 is clean in 10-50 s. Read the
+load average first, and wait for a quiet machine before trusting a run.
 
 WHAT THIS EXPECTS OF THE TREE. `lateZoom` is the regression test for the polled
 waits, so it FAILS - with "after a click, the wheel did not zoom (689 -> 689)" -
