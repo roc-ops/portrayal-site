@@ -1,6 +1,6 @@
 # Using the kit: an embedder's guide on portrayal.dev
 
-Date: 2026-09-26. Status: approved in conversation, pending written-spec review.
+Date: 2026-09-26. Status: approved 2026-09-26, pending written-spec review.
 
 ## 1. Why
 

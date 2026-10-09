@@ -16,7 +16,7 @@ Feedback round 5, on stage 4 (Cable) and stage 5 (Filter):
 
 **Portrayal already models connectors, so the cables should land on them.** Its connector parts (`generic/lc-plug@2`, `generic/lc-duplex-plug@2`, `common/lc-boot@1`, `generic/rj45-plug@1`, `common/rj45-boot@1`) seat through the same cage and occupant mechanism as optics. `vendor/relief.js`'s `cablePoints(svg)` returns one point per seated connector: the end of the boot, with its depth. That point is where a cable leaves.
 
-## 2. Decisions made while brainstorming
+## 2. Decisions made in design (2026-09-25)
 
 | # | Question | Decision |
 |---|---|---|

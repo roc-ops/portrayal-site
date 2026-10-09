@@ -1,7 +1,7 @@
 # Rack Builder: the showcase's rack, as a tool people drive
 
 **Date:** 2026-09-26
-**Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2a (cabling on the page) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2a-cabling.md); Phase 2b (cables in the exports and in 3D) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2b-cable-exports.md); Phase 2c (NetBox and Nautobot import kits: devices, modules and cables) implemented (plan: docs/superpowers/plans/2026-10-04-rack-builder-phase2c-dcim-import.md); rack-face cable managers (0RU) implemented (plan: docs/superpowers/plans/2026-10-07-rack-face-managers.md); cable routing through pathways implemented (plan: docs/superpowers/plans/2026-10-07-cable-routing-pathways.md)
+**Status:** design approved; Phase 0 implemented; Phase 1a implemented; Phase 1b implemented; Phase 2a (cabling on the page) implemented; Phase 2b (cables in the exports and in 3D) implemented; Phase 2c (NetBox and Nautobot import kits: devices, modules and cables) implemented; rack-face cable managers (0RU) implemented (`2026-10-07-rack-face-managers-design.md`); cable routing through pathways implemented (`2026-10-07-cable-routing-pathways-design.md`)
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md`, `2026-09-25-showcase-inspect-is-explorer-design.md`, `2026-09-25-showcase-patching-plan-design.md`
 **Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; landed, and in the vendored module types (§9.4)
 
@@ -21,7 +21,7 @@ Rack Builder is a new tool page, alongside Explorer, Components and Annotate, wh
 
 Most of the *drawing* exists. What is new is *authoring*: placement, collision, persistence and the cabling interaction. Plus one real gap found while designing (§4): most existing exports do not carry a device's configured state at all.
 
-## 2. Decisions made while brainstorming
+## 2. Decisions made in design (2026-09-26)
 
 | # | Question | Decision |
 |---|---|---|

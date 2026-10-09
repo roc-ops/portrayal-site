@@ -1,7 +1,7 @@
 # Annotate command API
 
 **Date:** 2026-10-08
-**Status:** implemented (plan: docs/superpowers/plans/2026-10-08-annotate-command-api.md)
+**Status:** implemented
 **Agent API status:** `window.portrayalAnnotate` is stable for agent adapters since #146 (calls are serialised, every load is bounded, and a document is laid on the drawing as built).
 **Piece:** 4a of the Rack Builder kit move (see `2026-10-07-rack-command-core-design.md` §1). Piece 4b, the Explorer API, gets its own spec.
 **Builds on:** the Rack Builder command core (#132), whose generic `history.js` and `validate.js` this reuses; the rack kit move (roc-ops/Portrayal#896 and its site half), which vendors them to `vendor/rack/`.
@@ -18,7 +18,7 @@ Annotate is closer than the Rack Builder was. Its document is already a publishe
 2. **No undo.**
 3. **No schema** an agent can read.
 
-Decided in conversation (2026-10-08):
+Decided 2026-10-08:
 
 | # | Question | Decision |
 |---|---|---|
@@ -84,7 +84,7 @@ History is `vendor/rack/history.js`.
 - **`loadDoc(doc)` (async)** is today's hash-restore block, lifted into a function: normalise, `ed.loadDoc`, retarget the shell, apply the pending swaps and fields, render. It resolves `{findings}`, which hold today's "N swap(s) do not fit this drawing" as data. Overlapping calls: the newest wins, and an overtaken call resolves `{error: 'Overtaken by a newer document.'}`. Calls run one at a time: a newer call waits for the one before it (bounded) before it compares the document with the drawing, since the shell names a new device or configuration before it has loaded it. Every load a call starts is the call's own promise, raced against a 20 s bound; one that does not finish resolves with a `drawing` finding ("... did not finish loading"), drops the document's swaps and fields, and leaves the document naming the drawing last shown. A call that stays on the same device and configuration reloads it anyway when the drawing carries swaps, written parts or turns the configuration did not build, so a document is always laid on the drawing as built and its swaps are the only ones seated.
 - **`hashchange`** calls `loadDoc(marks.decode(location.hash))`. The page's own `replaceState` fires no event, so only a pasted link or a navigation reaches it. A hash that decodes to the current document is a no-op.
 - **Undo and Redo** buttons sit in the marks panel, shown while there is a step, each described by its step's summary, with Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside inputs. This is the Rack Builder's rule.
-- **`window.portrayalAnnotate`** is set synchronously on every load (not only `?embed=1`): `{ready, settled, getDoc, setDoc: loadDoc, apply, preview, undo, redo, history, describe, on}`. `apply` and the rest are the editor's, with `origin` passed through. The WebMCP and relay adapters for Annotate are the research session's, over this object, and are not part of this spec.
+- **`window.portrayalAnnotate`** is set synchronously on every load (not only `?embed=1`): `{ready, settled, getDoc, setDoc: loadDoc, apply, preview, undo, redo, history, describe, on}`. `apply` and the rest are the editor's, with `origin` passed through. The WebMCP and relay adapters for Annotate are separate site work, over this object, and are not part of this spec.
 - **`describe()`** is page-level, because it reads the last render's per-mark report. It returns the target (device, config, view); legend and crop; then one line per mark with its id (or index), `select`, `state`, `color`, `label`, `lamp` and **how many elements it matched**, with 0 flagged as "matches nothing". That is how an agent learns its selector missed. It stays under about 1.5K characters by dropping labels first, then the tail, and saying so.
 
 ## 3. The marks schema (upstream, D2)
@@ -123,14 +123,14 @@ An upstream test validates `normalise()` of the module's own fixtures and of a d
 ## 6. How it lands
 
 1. **Upstream PR:** `spec/schemas/marks.schema.json` and its test. Independent; it can open now.
-2. **Site PR:** `site/annotate/{commands,editor}.js`, the page rewire, and the tests. It imports `vendor/rack/history.js` and `vendor/rack/validate.js`, so it **starts after the rack kit move's site half lands** (the 0RU session will say when).
+2. **Site PR:** `site/annotate/{commands,editor}.js`, the page rewire, and the tests. It imports `vendor/rack/history.js` and `vendor/rack/validate.js`, so it **starts after the rack kit move's site half lands**.
 3. **The next sync** brings the schema and its Marks tab.
 
-A follow-up upstream PR may move `history.js` and `validate.js` out of `kit/rack/` to a general place, with `kit/rack/` re-exporting them (agreed with the 0RU session). It is not needed for this spec.
+A follow-up upstream PR may move `history.js` and `validate.js` out of `kit/rack/` to a general place, with `kit/rack/` re-exporting them (agreed 2026-10-08). It is not needed for this spec.
 
 ## 7. Out of scope
 
 - Explorer's API (piece 4b).
-- The WebMCP and relay adapters for Annotate (the research session's).
+- The WebMCP and relay adapters for Annotate (separate site work).
 - Persisting undo across reloads.
 - A `selector` builder for agents beyond `lamp.state`/`lamp.color`'s path form.
