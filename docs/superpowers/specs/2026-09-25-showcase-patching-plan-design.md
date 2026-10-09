@@ -1,7 +1,7 @@
 # Showcase stages 4–5: patch the rack we built, with cables that hang
 
 **Date:** 2026-09-25
-**Status:** design approved, ready for an implementation plan
+**Status:** design approved
 **Builds on:** `2026-09-25-showcase-inspect-is-explorer-design.md` (roc-ops/portrayal-site#24), stage 2 dropdowns (#26)
 **Upstream:** roc-ops/Portrayal#610 (RJ45 jacks accept no plug), filed from this design
 
@@ -16,7 +16,7 @@ Feedback round 5, on stage 4 (Cable) and stage 5 (Filter):
 
 **Portrayal already models connectors, so the cables should land on them.** Its connector parts (`generic/lc-plug@2`, `generic/lc-duplex-plug@2`, `common/lc-boot@1`, `generic/rj45-plug@1`, `common/rj45-boot@1`) seat through the same cage and occupant mechanism as optics. `vendor/relief.js`'s `cablePoints(svg)` returns one point per seated connector: the end of the boot, with its depth. That point is where a cable leaves.
 
-## 2. Decisions made while brainstorming
+## 2. Decisions made in design (2026-09-25)
 
 | # | Question | Decision |
 |---|---|---|
@@ -85,6 +85,12 @@ The implementation reads exact port paths off the seated faces. The contract (§
 - **Connectors (D6):**
   - Each optic has two cages that each accept `generic/lc-plug@2`. Each gets an LC plug, with `common/lc-boot@1` chained onto it.
   - Each FHD cassette adapter the plan uses gets `generic/lc-duplex-plug@2`, with a boot.
+
+*Amended 2026-09-25, from browser probes before the build:*
+- **Plugs only, no boots.** The kit's swap path seats a plug into an optic's cage, but it does not chain a boot onto a plug, so a boot key seats nothing. The plan seats plugs only, and `cablePoints` returns each plug's own point. Boots come back when the kit gains chained swaps. Where §4.3, §5 and §8 mention a boot, read "plug only".
+- **Seat keys are drawing paths below a bay:** `port-1-occupant/tx` for a plug in an optic, `slot-2/module/p0` for a card's cage, and `bay-1/module/lc1` for an FHD adapter (the module-less `bay-1/lc1` seats nothing).
+- **The AS4630 seats only once it is in the cast,** because the metadata loader indexes cast devices only.
+- **The 3D sag** uses a normalised catenary, `f(t) = (cosh(k(2t−1)) − cosh k)/(cosh k − 1)` with `k = 1.2`, scaled by the sag. It needs no solver.
 
 **The fill rule (D1):** a plan seat is applied only when the target holds its configuration default (a slot cover, an empty cage, or no override).
 - A slot or cage the visitor already filled is left alone.

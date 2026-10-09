@@ -1,15 +1,15 @@
 # Rack Builder agent tools, round 2
 
 **Date:** 2026-10-08
-**Status:** design approved in conversation; spec awaiting review
+**Status:** design approved 2026-10-08; spec awaiting review
 **Builds on:**
 - `2026-10-07-rack-agent-tools-design.md`: round 1, merged as #134.
 - The kit move: roc-ops/Portrayal#896, kit 0.3.0, `kit/rack/`.
-- The kit companion spec: roc-ops/Portrayal `docs/rack-agent-commands-design.md`, on branch `claude/rack-agent-commands`. It adds `inspect`, `selectCables`, `fit`, `field`, re-pointing in `cable.update`, `loadSlots`, the per-call editor context, `describe` windows and `catalog` by kind.
+- The kit companion spec: roc-ops/Portrayal `docs/rack-agent-commands-design.md`. It adds `inspect`, `selectCables`, `fit`, `field`, re-pointing in `cable.update`, `loadSlots`, the per-call editor context, `describe` windows and `catalog` by kind.
 
 **Order:**
 1. #896 merges.
-2. The site re-vendors `kit/rack/` (the ZeroRU session's follow-up).
+2. The site re-vendors `kit/rack/` (the 0RU managers follow-up).
 3. The kit companion lands.
 4. The site re-vendors again.
 5. This spec is built.
@@ -20,7 +20,7 @@ Work can start against the companion's intended shape and be checked when it mer
 
 ## 1. Why
 
-Jason ran the round-1 tools twice on 2026-10-08:
+The round-1 tools were run twice on 2026-10-08:
 - once through Claude in Chrome clicking the page;
 - once through Claude in Chrome calling the tools with `document.modelContext.executeTool(tool, args)`.
 
@@ -107,7 +107,7 @@ There is also a one-line visually hidden paragraph saying the same. The tool lis
   - swap a cassette, then the orphaned-cable finding, then re-point with `cable.update {a}`;
   - remove the cables on a device by selector;
   - the page hint lists the registered tools.
-- **End to end:** Jason's two prompts again, through Claude in Chrome with `executeTool`, including the latch-color and 0.5 m questions. Done means no "open the Explorer" and no "look at the code".
+- **End to end:** the same two prompts again, through Claude in Chrome with `executeTool`, including the latch-color and 0.5 m questions. Done means no "open the Explorer" and no "look at the code".
 
 ## 8. Out of scope
 

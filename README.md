@@ -42,8 +42,12 @@ applied state into the 3D scene. That part is ours.
 python3 serve.py 8932
 ```
 
-Then open http://localhost:8932/. It must be served over HTTP — the showcase
+Then open http://127.0.0.1:8932/. It must be served over HTTP — the showcase
 fetches compiled SVGs, so opening `index.html` from disk will not work.
+
+It listens on this machine only. To open it from another machine on your
+network, opt in with `PORTRAYAL_SERVE_HOST=0.0.0.0 python3 serve.py 8932` (or
+`--bind 0.0.0.0`).
 
 ## Refreshing the drawings
 
@@ -53,6 +57,30 @@ schemas are at v0 and the drawings change, so after a `./build.sh` over there:
 ```sh
 ./refresh-assets.sh
 ```
+
+**Where Portrayal is.** `refresh-assets.sh`, `check-contract.py` and
+`tools/publish-schemas.sh` all read the same upstream checkout:
+`$PORTRAYAL_UPSTREAM` if it is set, otherwise a sibling folder `../Portrayal`
+next to this repository. Use a clone of its own, not a tree you are working in:
+Portrayal's `./build.sh` rebuilds `library/dist` in place, and a refresh that
+reads it mid-build vendors a tree with holes in it.
+
+```sh
+git clone https://github.com/roc-ops/Portrayal.git ../Portrayal
+(cd ../Portrayal && ./build.sh)
+./refresh-assets.sh
+```
+
+Anywhere else, set the variable for every one of the three:
+
+```sh
+export PORTRAYAL_UPSTREAM=/path/to/your/Portrayal-clone
+```
+
+A git worktree of this repository is not next to `../Portrayal`, so from a
+worktree set `PORTRAYAL_UPSTREAM` explicitly. Without an upstream,
+`check-contract.py` still runs, and reports the check that compares
+`vendor/rack/` with the kit's source as SKIPPED.
 
 That ends by running `check-contract.py`, which asserts what this site reads
 from Portrayal — including that every module a vendored module imports was
@@ -201,3 +229,21 @@ rather than photographs.
 Direction 01, "Anodized". See `brand/DIRECTION.md`.
 
 Canonical domain: `portrayal.dev`. `portrayal.io` redirects.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks in the order CI runs
+them, and what makes a change a one-way door. A device drawn wrong, a missing
+device or a fault in a `vendor/` module belongs to
+[Portrayal](https://github.com/roc-ops/Portrayal) and is fixed there. Security
+reports follow [SECURITY.md](SECURITY.md), never a public issue; conduct is
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Licence
+
+Apache-2.0, as Portrayal is: see [LICENSE](LICENSE). [NOTICE](NOTICE) lists
+what is not this repository's own work: Portrayal's modules, drawings and
+exports (each set with Portrayal's NOTICE beside it), the third-party code
+bundled in `vendor/three/` and `vendor/mcp-b/` with their licences, and the
+sponsor logos in `brand/sponsor/`, which are RocNet Supply's marks and not
+under the licence.

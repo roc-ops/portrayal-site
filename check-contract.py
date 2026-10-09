@@ -1242,7 +1242,7 @@ _rack = json.loads(_rj.read_text()) if _rj.is_file() else {}
 check(_rack.get("format") == 1 and bool(_rack.get("devices")),
       "assets/dist/rack.json is the rack catalogue, format 1",
       f"format {_rack.get('format')!r}, {len(_rack.get('devices') or {})} devices - "
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 _devs = json.loads((HERE / "assets" / "dist" / "devices.json").read_text()).get("devices") or []
 check({d["name"] for d in _devs} <= set(_rack.get("devices") or {}),
       "every device in devices.json is in rack.json",
@@ -1261,7 +1261,9 @@ _src_sha = next((ln.strip() for ln in (_srcf.read_text().splitlines() if _srcf.i
 check(bool(re.fullmatch(r"[0-9a-f]{40}", _src_sha)),
       "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from",
       f"got {_src_sha!r} - run ./refresh-assets.sh")
-_upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or "/Volumes/External/portrayal-upstream")
+# $PORTRAYAL_UPSTREAM, else ../Portrayal beside this repository: the same default
+# as refresh-assets.sh and tools/publish-schemas.sh (README, "Where Portrayal is").
+_upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or (HERE.parent / "Portrayal"))
 # Without the caller's GIT_* variables: under a git hook GIT_DIR names THIS
 # repository and would override -C, so every upstream commit looked missing.
 _git_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
@@ -1319,7 +1321,7 @@ _cat = _rack.get("devices") or {}
 _mgr = _cat.get("fhd-cmp5dr", {})
 check(_mgr.get("mount") == "rack-face" and _mgr.get("ru") == 1 and _mgr.get("shell") == "sheet",
       "fhd-cmp5dr is in the catalog as a 1U rack-face sheet part",
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 check("sheetShell" in (HERE / "vendor" / "relief.js").read_text(),
       "the vendored relief.js builds sheet bodies",
       "run ./refresh-assets.sh against an upstream main that has #827")
@@ -1330,20 +1332,20 @@ check("sheetShell" in (HERE / "vendor" / "relief.js").read_text(),
 _g = lambda n, v: (_cat.get(n, {}).get("guides") or {}).get(v, [])
 check(all(n in _cat for n in ("fhd-cmp5dr", "cmh-4drb1u", "cmh-sfd1u")),
       "the FHD-CMP5DR, CMH-4DRB1U and CMH-SFD1U are in the catalog",
-      "rebuild /Volumes/External/portrayal-upstream from main (#852) and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main (#852) and run ./refresh-assets.sh")
 check(set(_g("fhd-cmp5dr", "top")) >= {f"guide-{i}" for i in range(1, 6)}
       and set(_g("fhd-cmp5dr", "front")) >= {f"guide-{i}" for i in range(1, 6)},
       "fhd-cmp5dr's five rings are indexed on its top and front views",
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 check(bool(_g("cmh-sfd1u", "front")) and bool((_cat.get("cmh-4drb1u", {}).get("passes") or {})),
       "the duct of cmh-sfd1u and the brush pass of cmh-4drb1u are indexed",
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 check(set(_g("cmh-4drb1u", "front")) >= {f"guide-{i}" for i in range(1, 5)},
       "cmh-4drb1u's four D-rings are indexed on its front view",
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
       "fhd-cmp5dr carries its stated capacity, 30",
-      "rebuild /Volumes/External/portrayal-upstream from main and run ./refresh-assets.sh")
+      "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
 
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",

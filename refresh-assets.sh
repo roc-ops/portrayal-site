@@ -18,12 +18,14 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # here lands in someone else's uncommitted work.
 #
 # The clone is a full checkout and builds its own dist, so it needs nothing
-# from over there:
+# from over there. By default it is a sibling folder, ../Portrayal; anywhere
+# else, set PORTRAYAL_UPSTREAM (check-contract.py and tools/publish-schemas.sh
+# read the same variable and the same default):
 #
-#   git clone git@github.com:roc-ops/ndv.git /Volumes/External/portrayal-upstream
-#   ./build.sh
+#   git clone https://github.com/roc-ops/Portrayal.git ../Portrayal
+#   (cd ../Portrayal && ./build.sh)
 #
-UPSTREAM="${PORTRAYAL_UPSTREAM:-/Volumes/External/portrayal-upstream}"
+UPSTREAM="${PORTRAYAL_UPSTREAM:-$HERE/../Portrayal}"
 SRC="${1:-$UPSTREAM/library}"
 # The viewer modules used to live in library/viewer. They are now portrayal-kit,
 # a published package at the repository root with its own package.json and an
@@ -38,7 +40,8 @@ KIT="${PORTRAYAL_KIT:-$(cd "$SRC/.." && pwd -P)/kit}"
 if [ ! -d "$SRC" ]; then
   echo "no library at $SRC" >&2
   echo "clone it first:" >&2
-  echo "  git clone git@github.com:roc-ops/ndv.git ${UPSTREAM}" >&2
+  echo "  git clone https://github.com/roc-ops/Portrayal.git ${UPSTREAM}" >&2
+  echo "or point PORTRAYAL_UPSTREAM at an existing clone." >&2
   echo "  (cd ${UPSTREAM} && ./build.sh)" >&2
   exit 1
 fi
@@ -172,6 +175,27 @@ for f in LICENSE NOTICE; do
 done
 [ -f "$SRC/../LICENSE" ] && cp "$SRC/../LICENSE" "$HERE/vendor/LICENSE"
 [ -f "$SRC/../NOTICE" ] && cp "$SRC/../NOTICE" "$HERE/vendor/NOTICE"
+# ...WITH ONE LINE MADE TRUE HERE. Portrayal's NOTICE says three.js is "Not
+# bundled", which is right for the kit and wrong beside vendor/three/, where this
+# site does bundle it. The rewrite fails loudly rather than skipping, so a change
+# to that sentence upstream is seen instead of quietly shipping the old claim.
+if [ -f "$HERE/vendor/NOTICE" ]; then
+  python3 - "$HERE/vendor/NOTICE" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = ("authors. Not bundled. kit/viewer3d.js and kit/share.js import it at run time\n"
+       "as an optional peer dependency that the host page supplies.")
+new = ("authors. Portrayal's kit does not bundle it: kit/viewer3d.js and kit/share.js\n"
+       "import it at run time as an optional peer dependency that the host page\n"
+       "supplies. This site supplies it: three.js is bundled in vendor/three/, with\n"
+       "its licence and version in vendor/three/LICENSE and fetch-three.sh.")
+if old not in s:
+    sys.exit("refresh-assets: vendor/NOTICE no longer has the three.js 'Not bundled' "
+             "sentence; update the rewrite in refresh-assets.sh")
+open(p, "w").write(s.replace(old, new, 1))
+PY
+fi
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 # labs.json is the ROADM ring lab. No showcase stage draws it since stages 4-5

@@ -22,7 +22,7 @@ UNVERIFIED IN OMNIGRAFFLE - it is not installed where this was written. Several
 variants are written so one session on a Mac that has it answers the open
 questions at once; see README.md.
 """
-import copy, gzip, json, os, plistlib, shutil, subprocess, sys, zipfile
+import gzip, json, os, plistlib, shutil, subprocess, sys, zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(os.path.dirname(HERE))
@@ -198,23 +198,6 @@ def write_zip(path, data, assets, xml):
             z.write(src, 'preview.jpeg' if k == 'preview' else f'image{k}.pdf')
 
 
-def build_aws_control(ports, ext='pdf'):
-    """THE CONTROL: davidfsmith/AWS-OmniGraffle-Stencils' own working document,
-    changed only where it must be - one image graphic, cloned from theirs, now
-    pointing at our front faceplate. Top level, no group, no port shapes. If
-    this does not draw, the fault is in our PDF, not in anything we wrote."""
-    d = plistlib.loads(gzip.decompress(open(os.path.join(TPL, 'aws-data.plist.gz'), 'rb').read()))
-    sheet = d['Sheets'][0]
-    g = copy.deepcopy(sheet['GraphicsList'][0])
-    vb = ports['viewBox']
-    g.update({'ID': 1, 'ImageID': 1, 'Bounds': rect(0, 0, vb[2] * PT, vb[3] * PT),
-              'Name': 'S9510-28DC front (AWS control)', 'Notes': 'S9510-28DC front (AWS control)'})
-    sheet['GraphicsList'] = [g]
-    sheet['CanvasSize'] = '{%d, %d}' % (vb[2] * PT + 2 * GAP, vb[3] * PT + 2 * GAP)
-    d['ImageList'], d['ImageLinkBack'], d['ImageCounter'] = [f'image1.{ext}'], [{}], 2
-    return d
-
-
 def check(data, where):
     """What can be proved without OmniGraffle: every ImageID has a file behind
     it, every line end names a shape that exists, ids are unique."""
@@ -255,20 +238,16 @@ def main():
         ('S9510-28DC zipped.gstencil',      dict(zipped=True),       lambda p, d: write_zip(p, d, assets, xml=False)),
         ('S9510-28DC zipped-text.gstencil', dict(zipped=True),       lambda p, d: write_zip(p, d, assets, xml=True)),
         ('S9510-28DC cabling test.graffle', dict(cabling=True),      pkg(xml=True)),
-        # the diagnostic ladder: each changes one thing, so the one that draws names the fault
-        ('diagnostics/1 AWS control.gstencil', dict(aws=True),       pkg(xml=True, gz=True, images=(1,))),
+        # the diagnostic ladder: each changes one thing, so the one that draws names the fault.
+        # 1, 4 and 5 were controls built from a third-party AWS icon stencil; they are no
+        # longer shipped, and the numbering is kept so the README's test record still reads.
         ('diagnostics/2 ungrouped.gstencil',   dict(grouped=False),  pkg(xml=True, gz=True)),
         ('diagnostics/3 grouped gzipped.gstencil', dict(),           pkg(xml=True, gz=True)),
-        # 4 is the AWS stencil itself, unmodified - fetched, not built
-        ('diagnostics/5 AWS control PNG.gstencil', dict(aws=True, ext='png'),
-                                                      pkg(src=png, xml=True, gz=True, images=(1,), ext='png')),
         ('diagnostics/6 device PNG.gstencil',  dict(ext='png'),      pkg(src=png, xml=True, gz=True, ext='png')),
     ]
     os.makedirs(os.path.join(OUT, 'diagnostics'), exist_ok=True)
     for name, kw, writer in variants:
-        kw = dict(kw)
-        data = (build_aws_control(ports, ext=kw.get('ext', 'pdf')) if kw.pop('aws', False)
-                else build(ports, **kw))
+        data = build(ports, **kw)
         n = check(data, name)
         writer(os.path.join(OUT, name), data)
         print(f'  {name:36} {n:3} graphics')

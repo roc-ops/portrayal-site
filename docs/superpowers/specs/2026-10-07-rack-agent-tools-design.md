@@ -1,34 +1,34 @@
 # Rack Builder agent tools
 
 **Date:** 2026-10-07
-**Status:** design approved in conversation; spec awaiting review
-**Builds on:** the Refactor agent's `2026-10-07-rack-command-core-design.md` (piece 1: `commands.js`, `editor.js`, `queries.js`, `rack.schema.json`), which must be merged first
-**Research:** the "Agent integration research" session, 2026-10-07 (memory: `agent-driven-tools`)
+**Status:** design approved 2026-10-07; spec awaiting review
+**Builds on:** `2026-10-07-rack-command-core-design.md` (piece 1: `commands.js`, `editor.js`, `queries.js`, `rack.schema.json`), which must be merged first
+**Research:** agent integration research, 2026-10-07
 
 ---
 
 ## 1. Why, and where this sits
 
-Jason wants AI agents to drive the site's tools: build a rack, cable it, export it. Inference is **bring your own**: portrayal.dev hosts no model and pays for no tokens. Piece 1 of the move to the kit made every Rack Builder edit a named command, checked, applied whole or not at all, undoable and announced. This spec is the thin layer that hands those commands to agents.
+The goal is for AI agents to drive the site's tools: build a rack, cable it, export it. Inference is **bring your own**: portrayal.dev hosts no model and pays for no tokens. Piece 1 of the move to the kit made every Rack Builder edit a named command, checked, applied whole or not at all, undoable and announced. This spec is the thin layer that hands those commands to agents.
 
-Order of the wider work, as decided in conversation:
+Order of the wider work, as decided 2026-10-07:
 
 | Step | What | State |
 |---|---|---|
-| Piece 1 | The rack command core | Refactor agent; must merge before this starts |
+| Piece 1 | The rack command core | must merge before this starts |
 | **This spec** | Rack Builder agent tools: WebMCP registration, the MCP-B relay behind a switch, agent edits shown | site only |
 | Later | Read-only site-wide tools on every page (search devices, open a tool), which pass isitagentready.com's WebMCP check | site only, reuses §4.2 |
 | Later | Annotate and Explorer tools, after their piece 4 hooks | site only, reuses §4.2 |
 | Later | An in-page chat box with the user's own key (OpenRouter Connect first) | site only, reuses §3's tools |
 
-Decided in conversation (2026-10-07):
+Decided 2026-10-07:
 
 | # | Question | Decision |
 |---|---|---|
 | D1 | Audience first | **Desktop AI users** (Claude Desktop, Claude Code, Cursor) through the MCP-B relay, plus WebMCP for browsers that have it. The chat box comes later, for discovery. |
 | D2 | Tool shape | **Few, coarse tools**: read tools plus one `edit_rack` that takes a batch of commands, the shape draw.io and Excalidraw use. Not one tool per command. |
 | D3 | The relay | **Behind a "Connect your desktop AI" switch**, off by default, because it opens a socket to the visitor's machine and raises Chrome's Local Network Access prompt. |
-| D4 | WebMCP origin trial | **Join it** (Chrome 149-156): Jason registers portrayal.dev; the token is a `<meta>` tag. |
+| D4 | WebMCP origin trial | **Join it** (Chrome 149-156): the site owner registers portrayal.dev; the token is a `<meta>` tag. |
 | D5 | Agent edits on the page | **Shown**: a notice that names the assistant, and a short highlight of what it touched. |
 | D6 | Where the code lives | **The site, permanently.** The tools are portrayal.dev's choice of how agents reach the builder, not part of the drawing library. When piece 2 moves the core to `vendor/rack/`, only import paths change here. |
 
@@ -41,7 +41,7 @@ Decided in conversation (2026-10-07):
   - `embed.js` injects a hidden iframe that picks up tools registered on `document.modelContext`, including ones registered later, and forwards them over a WebSocket to `127.0.0.1:9333`.
   - The user runs `npx @mcp-b/webmcp-local-relay` as a stdio MCP server in their desktop client. `--widget-origin` restricts which origins may connect, and `data-relay-port` on the script changes the port.
   - Tools keep their names; two tabs with the same tool get a suffix.
-- **Piece 1, as built** (Refactor agent's notes, 2026-10-07):
+- **Piece 1, as built** (its PR notes, 2026-10-07):
   - `ed.apply(cmds, {origin})` and `ed.preview(cmds)`.
   - Change events carry `origin`, and undo or redo carries the origin of the step it undoes.
   - Commands marked `system: true` (`lengths.routed`) are refused unless `origin === 'system'`.
@@ -149,7 +149,7 @@ export function relaySwitch({mount, tools, examples}) -> {dispose}
   - The relay command, pinned to the vendored version, with Copy:
     `npx -y @mcp-b/webmcp-local-relay@<ver> --widget-origin https://portrayal.dev`
   - A Claude Desktop / Claude Code config snippet with the same command, with Copy.
-  - A status line: "Waiting for your desktop AI..." until the relay reports a connection, then "Connected." This line is shown only if the spike (§6, task 1) finds a status signal. Otherwise it is left out, not guessed.
+  - A status line: "Waiting for your desktop AI..." until the relay reports a connection, then "Connected." This line is shown only if the spike (§6.1) finds a status signal. Otherwise it is left out, not guessed. The spike found none, so the built line reports only a refusal.
   - Three example prompts, with Copy. They come from the page:
     - "Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel."
     - "What in this rack has loose cable ends, and why?"
@@ -158,7 +158,7 @@ export function relaySwitch({mount, tools, examples}) -> {dispose}
 
 ### 4.4 Vendored MCP-B files: `vendor/mcp-b/`
 
-`@mcp-b/global` and `@mcp-b/webmcp-local-relay`'s browser build are copied at a pinned version, beside `vendor/three/`, with their licenses and a `VERSION` file. They are loaded only by `relay.js`, and never on page load. Self-hosting keeps a third-party CDN out of a page that may later hold users' API keys (the chat-box step). If the spike finds that the relay's iframe cannot be self-hosted, the fallback is the same pinned files from jsDelivr with Subresource Integrity, recorded in the plan.
+`@mcp-b/global` and `@mcp-b/webmcp-local-relay`'s browser build are copied at a pinned version, beside `vendor/three/`, with their licenses and a `VERSION` file. They are loaded only by `relay.js`, and never on page load. Self-hosting keeps a third-party CDN out of a page that may later hold users' API keys (the chat-box step). If the spike finds that the relay's iframe cannot be self-hosted, the fallback is the same pinned files from jsDelivr with Subresource Integrity. The spike found self-hosting works, so there is no fallback and no SRI (§6.1, spike findings).
 
 ### 4.5 `rack-page.js`
 
@@ -171,7 +171,7 @@ relaySwitch({mount: $('agentSlot'), tools, examples: EXAMPLES});
 ```
 
 - **`boundQueries`** binds the queries to the page's readers: `facePorts` through `configuredFace` for `freePorts`, and `cableFacts` for `looseEnds`. The probe hook builds the same binding today; both now share one helper.
-- **The origin trial:** `rack.html` gains `<meta http-equiv="origin-trial" content="<token>">`. The token is Jason's to create (§7).
+- **The origin trial:** `rack.html` gains `<meta http-equiv="origin-trial" content="<token>">`. The token is the site owner's to create (§7).
 - **The switch's place** is the toolbar, beside the Export menu, as a small "Connect your AI" button that opens the panel as a popover. Final placement is settled in implementation against the page's layout, and must not crowd the toolbar at 375px.
 
 ## 5. Agent edits on the page (D5)
@@ -190,7 +190,7 @@ The change listener (`onChange`) already turns findings into notices. For `ev.or
 
 ## 6. Testing
 
-### 6.1 Spike first (plan task 1, throwaway)
+### 6.1 Spike first (throwaway)
 
 Before any tool code, on a local server and then on a preview deploy:
 
@@ -200,7 +200,25 @@ Before any tool code, on a local server and then on a preview deploy:
 - Is there a connection signal for the status line?
 - Does `@mcp-b/global` step aside when the browser has native `document.modelContext`?
 
-The answers are written into the plan before task 2.
+The answers are recorded below before any tool code is written.
+
+**Spike findings (2026-10-07),** against `@mcp-b/webmcp-local-relay` 5.1.0 and `@mcp-b/global` 5.1.0:
+
+- **Self-hosting works,** so there is no jsDelivr fallback and no SRI. Three files are vendored to `vendor/mcp-b/`:
+  - `global.js`, from global's `dist/index.iife.js`;
+  - `embed.js`, from the relay's `dist/browser/embed.js`;
+  - `widget.html`, from the relay's `dist/browser/widget.html`.
+- **`widget.html` must sit beside `embed.js` under that name.** `embed.js` fetches it relative to its own script URL. `widget.html` inlines its script, so `widget.js` is not needed.
+- **`embed.js` must be a classic `<script src>`,** loaded after `global.js`, because it reads `document.currentScript`. It reads these attributes:
+  - `data-relay-host` (default 127.0.0.1) and `data-relay-port` (default 9333);
+  - `data-auto-connect` (default true);
+  - `data-debug`, `data-relay-id`, `data-relay-workspace` and `data-request-timeout`.
+- **Tool names are not prefixed.** A tool registered as `ping` reaches the client as `ping`, beside the relay's own `webmcp_list_sources`, `webmcp_list_tools` and `webmcp_open_page`.
+- **`--widget-origin` sees the page's origin.** The relay's iframe is a `blob:` URL, so it inherits the page origin. On the live site the flag is `https://portrayal.dev`: scheme and host, no path. A wrong origin is refused, and the page's tools never appear.
+- **The relay frame** is `iframe[data-webmcp-relay]`. It is hidden and appended to `document.body` when `embed.js` runs.
+- **There is no "connected" signal.** No event, global or attribute is set when the relay accepts the page. The one thing the page can read is a `webmcp.relay.rejected` message from the relay frame (reason `host-origin-not-allowed`). It repeats, because the widget retries about every 0.5 s. A missing relay sends nothing. So the status line reports a refusal and never claims "connected" (§4.3).
+- **`@mcp-b/global` does not step aside for a native model context.** It installs its own server over both `document.modelContext` and `navigator.modelContext`, wrapping any native one. With no native context (the default) the relay works. Chrome 145's experimental native `navigator.modelContext` uses an older API, and the wrapper breaks the relay on it (`getTools is not a function`). A native WebMCP of another shape may behave either way, so the by-hand run (§6.4) covers it.
+- **The Local Network Access prompt** cannot be answered headlessly, so it is left to the by-hand run. `embed.js` already sets `allow="loopback-network; local-network; local-network-access"` on its iframe.
 
 ### 6.2 Node (`tests/rack/agent-tools.test.mjs`)
 
@@ -240,11 +258,11 @@ Claude Code is connected through the relay to a local server, then to the previe
 
 > "Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, cable every switch uplink to the panel, then export it for NetBox."
 
-## 7. Needs from Jason
+## 7. Needs from the site owner
 
 - **A.** Register portrayal.dev for the WebMCP origin trial at developer.chrome.com/origintrials, and give the token. Without it the build still ships: the relay path works, and native WebMCP works for anyone with the flag on.
 - **B.** Approve the copy: the switch label, the privacy line, the "Your assistant:" prefix and the three example prompts.
-- **C.** After the PR, the by-hand run on the live site with your own desktop client.
+- **C.** After the PR, the by-hand run on the live site with a desktop client.
 - **D.** Not now: whether agents should get the DCIM settings form as a command (`dcim` exists in `COMMANDS`). This spec leaves it out of `edit_rack`'s schema (§3.1) and refuses it in `execute`, so the user stays in charge of what goes into an import.
 
 ## 8. Out of scope
@@ -254,4 +272,4 @@ Claude Code is connected through the relay to a local server, then to the previe
 - The chat box with the user's own key, WebLLM, and Chrome's Prompt API.
 - Rack library tools (open, new, duplicate, delete), the 3D model exports, and selection or viewport tools.
 - `llms.txt` and Agent Skills discovery files.
-- Any MCP server card or `/.well-known` service metadata: there is no server (memory: `agent-readiness-scan`).
+- Any MCP server card or `/.well-known` service metadata: there is no server.

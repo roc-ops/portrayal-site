@@ -12,6 +12,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Third-party and actions/* steps are pinned to a full commit SHA, with the
+# release it was resolved from in a trailing comment: a tag can be moved, a
+# commit cannot. Bump by resolving the new tag's commit, not by editing the tag.
+
 concurrency:
   group: deploy
   cancel-in-progress: false   # never abandon a deploy halfway
@@ -30,7 +34,7 @@ jobs:
       # The whole tree: the build copies pages, site/, brand/, assets/ and
       # vendor/. Depth 1 - assets/dist is ~286 MB of committed build output,
       # and the build needs no history, only `git ls-files`.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
           fetch-depth: 1
 
@@ -45,7 +49,7 @@ jobs:
 
       - name: deploy to Cloudflare
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd  # v3.15.0
         with:
           # The action's default is 3.90.0, which predates wrangler.jsonc and
           # fails asking for a Worker entry point. Pinned to what deploys

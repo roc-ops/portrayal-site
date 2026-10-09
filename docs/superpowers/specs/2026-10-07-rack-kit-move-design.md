@@ -1,22 +1,22 @@
 # The rack core moves into @portrayal/kit
 
 **Date:** 2026-10-07
-**Status:** design approved in conversation; spec awaiting review
-**Builds on:** `2026-10-07-rack-face-managers-design.md` (#120), `2026-10-07-cable-routing-pathways-design.md` (#127), and the Refactor agent's `2026-10-07-rack-command-core-design.md` (its piece 1, which lands first)
-**Split:** piece 2 of four in the command-core spec §1, agreed between the two sessions and confirmed by Jason (memory: `rack-kit-split`)
+**Status:** design approved 2026-10-07; spec awaiting review
+**Builds on:** `2026-10-07-rack-face-managers-design.md` (#120), `2026-10-07-cable-routing-pathways-design.md` (#127), and `2026-10-07-rack-command-core-design.md` (its piece 1, which lands first)
+**Split:** piece 2 of four in the command-core spec §1, agreed 2026-10-07
 
 ---
 
 ## 1. Why
 
-The Rack Builder's core is site-only today. It covers the rack file, fit rules, managers, cables, routes and the export rules, and it sits in `site/rack/`. Jason wants it in `@portrayal/kit`, so anyone can build, check and export racks, not only portrayal.dev.
+The Rack Builder's core is site-only today. It covers the rack file, fit rules, managers, cables, routes and the export rules, and it sits in `site/rack/`. It belongs in `@portrayal/kit`, so anyone can build, check and export racks, not only portrayal.dev.
 
-| Piece | Owner | What |
-|---|---|---|
-| 1 | Refactor agent | The command core: `validate`, `commands`, `history`, `editor`, `queries` and `rack.schema.json`, with `rack-page.js` going through `apply()` |
-| **2 (this spec)** | this session | The pure core moves to upstream `kit/rack/`; upstream builds `rack.json`; the site vendors both |
-| 3 | Refactor agent | The builder as a kit component, with the 2D elevation and the 3D rack scene |
-| 4 | Refactor agent | Annotate and Explorer hooks upstream |
+| Piece | What |
+|---|---|
+| 1 | The command core: `validate`, `commands`, `history`, `editor`, `queries` and `rack.schema.json`, with `rack-page.js` going through `apply()` |
+| **2 (this spec)** | The pure core moves to upstream `kit/rack/`; upstream builds `rack.json`; the site vendors both |
+| 3 | The builder as a kit component, with the 2D elevation and the 3D rack scene |
+| 4 | Annotate and Explorer hooks upstream |
 
 Cable-management piece 3 (bundles and straps) is built in the kit after this lands.
 
@@ -31,7 +31,7 @@ Cable-management piece 3 (bundles and straps) is built in the kit after this lan
 | D5 | Sentences the moved modules produce | **The kit's sentence wins.** It is upstream's text, in British spelling, and the site shows it as is. A translation layer is not built. Every sentence that changes on the site is listed in the site PR. |
 | D6 | Identifiers and data keys | **Unchanged** (`colorOf`, `COLORS`, `"color"`). Only comments and prose follow British spelling. |
 | D7 | Version | Kit **0.3.0**: new exports, nothing removed. |
-| D8 | Landing | Upstream PR first, landed by Portrayal's merge agent. Then the site PR, landed by the Portrayal-site merge agent. |
+| D8 | Landing | Upstream PR first, in roc-ops/Portrayal. Then the site PR. |
 
 ## 3. What moves
 
@@ -41,7 +41,7 @@ Cable-management piece 3 (bundles and straps) is built in the kit after this lan
 | `export-data.js`, `dcim-rules.js` | same names | No DOM, so they move whole. They now import `isRackMount` from `./fit.js`. |
 | `cables.js` | `cable-geometry.js` | Only the pure parts move: `hangPoints3d`, `routePoints3d`, `danglePoints3d`, `clearOf`, `COLORS`/`colorOf`, `JACKETS`/`colorOfJacket`, `PLUGS`/`plugColorOf`, `WIDTH`, `TAG_H`, `sag2d`, `LEAD`, `LEAD_DROP`. `drawCables2d`, `drawCables3d`, `ends2d`, `looseOn` and `plugAt` stay in `site/rack/cables.js`, which imports the geometry from the kit. |
 | `chassis.js` | `catalog.js` | `loadCatalog(dist) → Promise<{chassisOf, entries, devices}>` reads `rack.json` through `dist` (`../dist.js` `jdist`). `chassisLookup` and `catalogEntries` move with it. |
-| the Refactor agent's `validate.js`, `commands.js`, `history.js`, `editor.js`, `queries.js` | same names | Pure, and written for the kit. The exact list is the one in its PR description. |
+| piece 1's `validate.js`, `commands.js`, `history.js`, `editor.js`, `queries.js` | same names | Pure, and written for the kit. The exact list is the one in its PR description. |
 | `rack.schema.json` | upstream `spec/schemas/rack.schema.json` | Published like the other schemas, at `portrayal.dev/schemas/v1/`. |
 
 **Stays in the site (piece 3):** `elevation.js`, `face.js`, `cable-view.js`, the drawing half of `cables.js`, `route-context.js`, `scene3d.js`, `rack3d.js`, `exports.js`, the panels, `drag.js`, `zoom.js`, `dom.js`, `library.js` and `rack-page.js`.
@@ -96,13 +96,13 @@ Cable-management piece 3 (bundles and straps) is built in the kit after this lan
 
 ## 7. Order
 
-1. **Wait** for the Refactor agent's command-core PR to land on the site.
-2. **Upstream PR** (roc-ops/Portrayal), landed by Portrayal's merge agent:
+1. **Wait** for the command-core PR (piece 1) to land on the site.
+2. **Upstream PR** (roc-ops/Portrayal):
    - `rack_index.py` and `rack.json`, with tests;
    - `kit/rack/*`, with the site's tests ported to `spec/tests/js/rack-*.mjs`;
    - `spec/schemas/rack.schema.json`, with its publication;
    - kit 0.3.0, the README, `format-stability.md` and `CHANGELOG.md`.
-3. **Site PR**, after upstream lands, landed by the Portrayal-site merge agent: re-pull Portrayal, vendor, rewrite imports, delete copies, update `check-contract.py` and the tests, and run every check.
+3. **Site PR**, after upstream lands: re-pull Portrayal, vendor, rewrite imports, delete copies, update `check-contract.py` and the tests, and run every check.
 
 Until step 3, the site runs on its own copies, unchanged.
 

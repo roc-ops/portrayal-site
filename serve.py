@@ -8,7 +8,7 @@ it - every one of the ~24 requests a single 3D device needs pays a fresh TCP
 handshake. Measured on one machine, same files, same server binary:
 
     http://localhost:8177        1-5 ms per file
-    http://10.22.11.75:8932    166-1113 ms per file
+    http://<LAN address>:8932  166-1113 ms per file
 
 which turned a 1.5 s first 3D load into ten seconds, and looked exactly like an
 application regression. It was not one.
@@ -20,8 +20,13 @@ drawing genuinely changed - so they are given a short cache lifetime with
 revalidation rather than no-store, which is what the viewer library asks for
 today. Not a production server; it is a dev server that does not lie to you
 about how fast the site is.
+
+THIS MACHINE ONLY, by default: binding 0.0.0.0 puts a listing of the checkout
+on the local network. PORTRAYAL_SERVE_HOST=0.0.0.0 (or --bind) opts back in,
+for opening the site from another machine - the same switch as Portrayal's
+tools/serve.py.
 """
-import argparse, functools, http.server, socketserver, sys
+import argparse, functools, http.server, os, socketserver, sys
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -57,7 +62,7 @@ class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("port", nargs="?", type=int, default=8177)
-    ap.add_argument("--bind", default="0.0.0.0")
+    ap.add_argument("--bind", default=os.environ.get("PORTRAYAL_SERVE_HOST", "127.0.0.1"))
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     VERBOSE = a.verbose

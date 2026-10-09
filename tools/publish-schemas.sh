@@ -17,7 +17,9 @@
 #              the run refuses, because v1/ is permanent
 set -eu
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-UPSTREAM="${PORTRAYAL_UPSTREAM:-/Volumes/External/portrayal-upstream}"
+# The Portrayal clone: $PORTRAYAL_UPSTREAM, else ../Portrayal beside this
+# repository - the same default as refresh-assets.sh and check-contract.py.
+UPSTREAM="${PORTRAYAL_UPSTREAM:-$HERE/../Portrayal}"
 FROM_DIR="" REF="" TO="" FORCE=""
 while [ $# -gt 0 ]; do
   case "$1" in
