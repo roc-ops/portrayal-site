@@ -3,13 +3,15 @@
 // editor's change event autosaves and redraws. What the side panel shows
 // follows S.sel.
 
-import {newDoc, nextRackName, positionOf, dcimOf} from '../vendor/rack/model.js';
+import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf} from '../vendor/rack/model.js';
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
-import {openLibrary, autosaver, downloadDoc, readDocFile, fileName} from './rack/library.js';
+import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, isRackFace, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
+import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
+import {zeroUEntries} from '../vendor/rack/zero-u.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
+import {loadCableTypes} from '../vendor/rack/cable-types.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -39,8 +41,6 @@ import {registerTools} from './agent/webmcp.js';
 import {writeHint} from './rack/agent-hint.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
-import {withZeroUEditor, zeroUEntries, zeroUById, zeroUOf, fitsItem, fitsZeroUSide, ruOfZ, isRackSide, isNarrowFace,
-        ALL_COMMANDS, zeroULines} from './rack/zero-u.js';
 import {zeroUInspector, sideControl} from './rack/zero-u-panel.js';
 
 const $ = id => document.getElementById(id);
@@ -238,15 +238,15 @@ async function getDoc(id) {
 // judges it again, against the rack as it is now.
 // A part that stands beside the rack goes in its zero-U record, at the upright
 // chosen, its bottom level with this U; a narrow rail part on the rail chosen
-// (zero-u.js). Everything else is the kit's place.
+// (the kit's zerou.place and side.place, #926). Everything else is the kit's place.
 function place(entry, cfg, face, ru, extra = {}) {
   const label = entry.model || entry.name;
-  if (isRackSide(entry)) {
+  if (isZeroUPart(entry)) {
     const res = edit({op: 'zerou.place', ref: entry.name, cfg, at: extra.at, ru, between: !!extra.between, label});
     if (!res.error) S.sel = {kind: 'zerou', id: res.created.ids[0]};
     return;
   }
-  const res = edit(isNarrowFace(entry) && extra.side ? {op: 'side.place', ref: entry.name, cfg, face, ru, side: extra.side, label}
+  const res = edit(isNarrow(entry) && extra.side ? {op: 'side.place', ref: entry.name, cfg, face, ru, side: extra.side, label}
     : {op: 'place', ref: entry.name, cfg, face, ru, label});
   if (!res.error) S.sel = {kind: 'item', id: res.created.ids[0]};
 }
@@ -291,7 +291,7 @@ async function explore(id) {
 // the frame form's echoed change event (see onFrame) must not redraw, or it
 // would wipe the notice the first pass just showed.
 function edit(cmds, {say = false, report = true, quiet = false} = {}) {
-  const res = ed.apply(cmds, {origin: 'ui'});
+  const res = ed.apply(cmds, {origin: 'ui', ...(bundling(cmds) ? {ctx: bundleCtx()} : {})});
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
@@ -299,6 +299,21 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
   if (res.noop && !quiet) renderSoon();
   return res;
 }
+// A BUNDLE COMMAND READS THE ROUTES (kit 0.7.0, docs/cable-bundles-design.md
+// 3.1): the last render's routing context and the cable types' diameters, so
+// the kit works a trunk out from its cables and checks its size. Without them
+// a bundle is still made, with a route given, and is reported not checked.
+// No control on this page sends one yet (portrayal-site#142 draws bundles);
+// the agent's edit_rack sends them with its own context (agentContext).
+const bundling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => typeof c?.op === 'string' && c.op.startsWith('bundle.'));
+const bundleCtx = () => ({...(S.routes?.ctx ? {route: S.routes.ctx} : {}), ...(cableTypes ? {diameterOf: cableTypes.diameterOf} : {})});
+// The published cable types (cable-types.json), loaded once; null until then,
+// or when they cannot be read (a bundle's size then counts each cable by its
+// media, as fill does, and says it is an estimate).
+let cableTypes = null;
+const cableTypesReady = loadCableTypes(DIST).then(t => { cableTypes = t; return t; })
+  .catch(err => { console.warn('[portrayal] cable types', err); return null; });
+
 // A redraw queued for the end of this task: whatever the caller sets after an
 // edit (the selection, where the keyboard goes) is set before render() reads it.
 let renderQueued = false;
@@ -356,8 +371,10 @@ function keepScene(prev, next) {
   if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = next;
 }
 function select(sel) { S.sel = sel; render(); }
-function setDoc(doc) {
-  const {findings} = ed.loadDoc(doc);   // settles managers; clears history; saves a repair (onChange)
+// `notes` are what parseDoc said of the bundles it repaired (library.js
+// docNotes): the editor gives them back as its first findings.
+function setDoc(doc, notes = docNotes(doc)) {
+  const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
   for (const f of findings) addNotice(f.text, 'note');
@@ -894,13 +911,13 @@ function summary() {
   const devices = r.items.filter(i => !isRackFace(chassisOf(i.ref)));
   const managers = r.items.length - devices.length;
   const used = devices.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
-  // A narrow part on one rail is judged by its side (zero-u.js fitsItem).
+  // A narrow part on one rail is judged on its rail (the kit's fits reads the item's side).
   const warnings = r.items
-    .map(i => ({i, f: fitsItem(r, i, chassisOf)}))
+    .map(i => ({i, f: fits(r, i, chassisOf, {ignoreId: i.id})}))
     .filter(x => !x.f.ok);
   // A part beside the rack can stop fitting under it: a shorter frame, or two posts instead of four.
   const side = zeroUOf(r);
-  const sideWarnings = side.map(z => ({z, f: fitsZeroUSide(r, {ref: z.ref, at: z.at, ru: ruOfZ(z)}, chassisOf, {ignoreId: z.id})}))
+  const sideWarnings = side.map(z => ({z, f: fitsZeroU(r, z, chassisOf, {ignoreId: z.id})}))
     .filter(x => !x.f.ok);
   return el('div', {}, [
     el('h3', {text: r.name}),
@@ -1003,8 +1020,8 @@ function renderSide() {
         onMove: () => select({kind: 'move', id: it.id}),
         onRemove: () => live(cur => { S.sel = null; edit({op: 'remove', id: cur.id}, {say: true}); }),
         onExplore: () => explore(it.id)});
-      // A narrow part (a finger bracket) goes on one rail (zero-u.js side.set).
-      if (isNarrowFace(chassisOf(it.ref))) body.append(sideControl({item: it, onSide: side => {
+      // A narrow part (a finger bracket) goes on one rail (the kit's side.set).
+      if (isNarrow(chassisOf(it.ref))) body.append(sideControl({item: it, onSide: side => {
         const res = edit({op: 'side.set', id: it.id, side}, {report: false});
         return res.error ? {ok: false, reason: res.error} : {ok: true};
       }}));
@@ -1137,7 +1154,7 @@ function onPaneClick(ev) {
   // not a stand-in for empty space), and the U is actually free on this
   // face. Otherwise a through panel is clicked like any other panel: it
   // selects the item.
-  // A part beside the rack (zero-u.js) is selected as itself: it is not an item.
+  // A part beside the rack (rack.zeroU) is selected as itself: it is not an item.
   const zpart = ev.target.closest('[data-zerou-id]');
   if (zpart) return select({kind: 'zerou', id: zpart.dataset.zerouId});
   const through = ev.target.closest('[data-panel="through"]');
@@ -1353,13 +1370,14 @@ async function bootInner() {
     if (!file) return;
     try {
       let d = await readDocFile(file);
+      const notes = docNotes(d);
       storeDcimDraft();
       await S.save.flush();
       // A file's own id can match one already in the library (it was saved
       // from here, or from another browser sharing the same rack) - importing
       // it must never overwrite that stored rack, so it gets a fresh id.
       if ((await S.lib.list()).some(x => x.id === d.id)) d = {...d, id: newDoc().id};
-      await S.lib.put(d); setDoc(d);
+      await S.lib.put(d); setDoc(d, notes);
     }
     catch (err) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: err.message})); }
   });
@@ -1406,15 +1424,15 @@ async function bootInner() {
   });
   paintMode();
   showMode();
-  // The kit's editor, with the site's commands for parts beside the rack and
-  // narrow parts on one rail (zero-u.js); every other batch is the kit's.
-  ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
+  // The kit's editor: its command table holds the parts beside the rack and
+  // narrow parts on one rail (zerou.*, side.*, kit 0.6.0) and the bundles
+  // (bundle.*, 0.7.0) beside every other command.
+  ed = createRackEditor({doc, chassisOf});
   ed.on('change', onChange);
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, commands: ALL_COMMANDS, context: agentContext, library: agentLibrary,
-                            besides: r => zeroULines(r, chassisOf)});
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, context: agentContext, library: agentLibrary});
   // The page hint names the tools only once they are registered (agent-hint.js).
   const toolNames = S.agentTools.map(t => t.name);
   writeHint(document, []);
@@ -1438,7 +1456,8 @@ async function bootInner() {
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
 const boundQueries = () => ({
-  describe: (r, win) => Q.describe(r, {chassisOf}, win),
+  // ctx: the routing context and diameters, for a bundle's line (agentContext with route)
+  describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
@@ -1458,8 +1477,11 @@ async function agentContext(r, refs = [], {route = false} = {}) {
   const {slotsOf, compByRef} = await loadSlots(DIST, [...new Set([...r.items.map(i => i.ref), ...refs])]);
   const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
   if (!route) return ctx;
-  const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
-  return rf ? {...ctx, route: rf.ctx, guidesOf: rf.ctx.guidesOf} : ctx;
+  const [rf, types] = await Promise.all([
+    routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; }), cableTypesReady]);
+  // A bundle's size check reads each cable's diameter from the cable types (kit 0.7.0).
+  const withTypes = types ? {...ctx, diameterOf: types.diameterOf} : ctx;
+  return rf ? {...withTypes, route: rf.ctx, guidesOf: rf.ctx.guidesOf} : withTypes;
 }
 
 const ready = boot();

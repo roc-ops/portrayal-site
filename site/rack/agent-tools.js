@@ -6,9 +6,9 @@
 // registered by the page (site/agent/webmcp.js).
 
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
-import {newRack, dcimOf} from '../../vendor/rack/model.js';
+import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
-import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, INSPECT_SECTIONS} from './agent-text.js';
+import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
@@ -32,6 +32,9 @@ const ARG_WORDS = {
   fields: 'Replaces every field: {part path: {key: value}}. To set one, use field.',
 };
 const ARG_WORDS_BY_OP = {
+  'bundle.peel': {
+    at: "A waypoint on the bundle's route where the cable leaves it: {item, via} or {lane, ru}. When left out, it leaves the bundle altogether.",
+  },
   'cable.update': {
     a: 'Moves end a to another port: {item, path, view}. The cable keeps its id, media, label and length.',
     b: 'Moves end b to another port: {item, path, view}, as for a.',
@@ -111,13 +114,13 @@ export function dcimLine(rack) {
 const READ = {readOnlyHint: true};
 const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
 
-// `commands` is the table the editor runs (the page adds its own, zero-u.js);
-// `besides(rack)` lists what describe() leaves out: the parts beside the rack.
+// `commands` is the table the editor runs: the kit's, which holds zerou.*,
+// side.* (0.6.0) and bundle.* (0.7.0) beside the rest.
 // `context(rack, refs, {route})` is the kit's per-call context, read by the
 // page: the parts lists of `refs` and of everything in the rack (loadSlots),
-// the cabled ends' facts, and, with route, the routing context. `library` is
-// the page's New path (new_rack).
-export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS, besides = () => [],
+// the cabled ends' facts, and, with route, the routing context and the cable
+// types' diameters. `library` is the page's New path (new_rack).
+export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS,
                            context = async () => ({}), library = null}) {
   const table = commands;
   const tool = (name, title, description, properties, required, annotations, run) => ({
@@ -127,18 +130,18 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
   });
   const tools = [
     tool('describe_rack', 'Describe the rack',
-      'Read the open rack: its name, id and totals first, then what Undo would take back, the DCIM import settings, the cable ends that do not land, the parts beside the rack, and its devices and cables with their ids. section, offset and limit page a long listing. Call this first; edit_rack and inspect address things by these ids.',
-      {section: {type: 'string', enum: ['items', 'cables'], description: 'List only items or only cables. Both when left out.'},
+      'Read the open rack: its name, id and totals first, then what Undo would take back, the DCIM import settings, the cable ends that do not land, and its devices, the parts beside the rack, its cables and its bundles with their ids. section, offset and limit page a long listing. Call this first; edit_rack and inspect address things by these ids.',
+      {section: {type: 'string', enum: ['items', 'zeroU', 'cables', 'bundles'], description: 'List only items, zeroU (the parts beside the rack), cables or bundles; all when left out.'},
        offset: {type: 'integer', minimum: 0, description: 'Skip this many entries of section; 0 when left out. Needs section.'},
        limit: {type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `At most this many entries, up to ${MAX_LIMIT}; 40 when left out, fewer when they would not fit.`}},
       [], UNTRUSTED,
       async ({section, offset, limit}) => {
-        if (offset != null && section == null) return refuse('Send section with offset: items or cables.');
+        if (offset != null && section == null) return refuse('Send section with offset: items, zeroU, cables or bundles.');
         const rack = ed.rack();
         // What comes between the kit's first line and its listing: the undo
-        // line (cut short), the DCIM settings, the loose ends and the parts
-        // beside the rack. The listing is what shrinks to keep the bound,
-        // never these.
+        // line (cut short), the DCIM settings and the loose ends. The listing,
+        // which holds the parts beside the rack and the bundles, is what
+        // shrinks to keep the bound, never these.
         const undo = `Undo would take back: ${ed.undoSummary}`;
         const extra = [ed.canUndo ? clip(undo, 150) : 'Nothing to undo.'];
         if (rack.frame.numbering === 'top-down')
@@ -150,17 +153,15 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           if (loose.ends.length > 10) extra.push(`and ${loose.ends.length - 10} more; edit_rack's select {loose: true} reaches them all.`);
         }
         if (loose.unchecked) extra.push('Some ports could not be checked.');
-        const side = besides(rack);
-        if (side.length) {
-          extra.push('Beside the rack (zero-U, no rack unit; edit with zerou.update and zerou.remove):', ...side.slice(0, 8).map(l => clip(l, 150)));
-          if (side.length > 8) extra.push(`and ${side.length - 8} more beside the rack.`);
-        }
+        // A bundle's line gives its size only with the routes (kit 0.7.0), so
+        // they are read for a rack that has bundles.
+        const ctx = bundlesOf(rack).length ? await context(rack, [], {route: true}) : {};
         // The kit's window names what it shows in its first line, so the limit
         // shrinks until the answer fits rather than being cut after the fact.
         // The kit's own window is unbounded in characters and capped at its
         // MAX_WINDOW lines; this tool caps limit at MAX_LIMIT too.
         for (let lim = Math.min(limit ?? 40, MAX_LIMIT); ;) {
-          const got = queries.describe(rack, {section, offset: offset ?? 0, limit: lim});
+          const got = queries.describe(rack, {section, offset: offset ?? 0, limit: lim}, ctx);
           if (got?.error) return refuse(got.error);
           const [first, ...rest] = got.split('\n');
           const out = [first, ...extra, ...rest].join('\n');
@@ -170,7 +171,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         }
       }),
     tool('inspect', 'Inspect a device or cable',
-      'Read one device or cable in full. A device: its configs, its bays and cages with what each holds and takes, its editable fields, and its cables. A cable: its ends, media, length, routed length and stock size, route, the waypoints it can take, and why an end is loose. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
+      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields and cables. A cable: its ends, media, length, routed length and stock size, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
       {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
        ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
        cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
@@ -194,7 +195,9 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         }
         const rack = ed.rack();
         const isCable = (rack.cables ?? []).some(c => c.id === id);
-        const ctx = await context(rack, [], {route: isCable});
+        // A cable and a bundle are read with the routes: a cable's length and
+        // its bundle, a bundle's trunk, size and straps (kit 0.7.0).
+        const ctx = await context(rack, [], {route: isCable || bundlesOf(rack).some(b => b.id === id)});
         // A cable's ends are read through the page's cable facts, which can
         // fail: then they are unchecked, and the rest is still answered.
         let o;
@@ -203,7 +206,8 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           o = {...await queries.inspect(rack, id, {...ctx, cableFacts: undefined}), unchecked: true};
         }
         if (o.error) return refuse(o.error);
-        return say(o.kind === 'cable' ? cableText(o) : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
+        return say(o.kind === 'cable' ? cableText(o) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
+          : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',
       'Search the devices that can be put in a rack: by words in the manufacturer, model, ref or kind (e.g. "patch panel"), or by kind, height in U, family or mount. Each result gives the ref and configs that edit_rack\'s place command takes; inspect with ref reads one in full. The first line counts the matches; offset pages them.',

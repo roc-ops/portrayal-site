@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52mm" height="53mm" viewBox="0 0 52 53" data-device="evmi2130x" data-view="bottom" data-length-mm="1730" data-weight-kg="8.3" data-construction="aluminium chassis, black" data-input-plug="NEMA L21-30P on a fixed 10 ft cord, 10 AWG 5-conductor" data-input-voltage="120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V)" data-input-current-a="24" data-plug-rating-a="30" data-capacity-kw="8.6" data-capacity-scope="the load the PDU can hand on (24 A at 208 V three phase), from the SKU title and the brochure table; it is not what the PDU draws itself, which no document held states" data-output-voltage="173-240 V, line to line" data-output-rating="10 A per C13, 16 A per C39, 16 A per section, 24 A per phase" data-breakers="three 20 A two-pole, UL listed" data-frequency="50/60 Hz" data-operating-temp="0 to 60 C (32 to 140 F)" data-metering="current, power and energy for the input; current for each branch" data-network-module="G4 eNMC, dual gigabit Ethernet with network cascading" data-emc="FCC part 15 class A, CAN ICES-003 class A" data-safety="UL 62368-1; cTUVus on the drawing" data-cybersecurity="UL 2900-1" data-regulatory-model="EMIF-PDXJ-E27K" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton EVMI2130X","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"eaton/g4-cord-l21-30p@1":"1.0.0"},"source-sha256":"244d87878e1fde53b01983c8fa114adece041f742993ce31b67b4805e1351252","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EVMI2130X" data-sku="EVMI2130X" data-part-number="" x="0" y="0" width="52" height="53" rx="1.2" fill="#2e3033" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="end-cap" data-kind="end-cap" x="0" y="0" width="52" height="53" rx="0.6" fill="#26282b" />
+  </g>
+  <g id="input" data-path="input" data-class="inlet" data-ref="eaton/g4-cord-l21-30p@1:1.0.0" data-cord-gauge="10 AWG / 5C" data-cord-length-ft="10" data-plug="nema-l21-30p" data-rel-pos="1" transform="translate(7.55,10.05)" data-group="power-input" data-group-role="service">
+    <title>input</title>
+    <circle id="input--grommet" cx="18.45" cy="18.45" r="18.45" fill="#1b1c1e" stroke="#4a4d51" stroke-width="0.25" data-path="input/grommet" data-class="inlet" />
+    <circle id="input--cord" cx="18.45" cy="21.05" r="9.1" fill="#0d0e0f" stroke="#3c3f43" stroke-width="0.3" />
+  </g>
+</svg>

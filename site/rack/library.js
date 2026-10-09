@@ -9,11 +9,22 @@
 
 import {parseDoc, serialize} from '../../vendor/rack/model.js';
 import {fileStem} from '../../vendor/rack/export-data.js';
-import {keepSiteFields} from './zero-u.js';
 
-// The kit's reader, with what it does not keep put back (zero-u.js): a
-// narrow part's `side`, and an id for a zero-U part written without one.
-export const readDoc = input => keepSiteFields(input, parseDoc(input));
+// THE KIT'S READER, AND WHAT IT SAID. parseDoc keeps a narrow part's `side`
+// and gives a zero-U entry with no id one of its own (kit 0.6.0), and migrates
+// a version 1 or 2 file to version 3 (0.7.0), which every save then writes.
+// The sentences it gives for the bundles it repaired are not kept in the
+// document: they are held here beside the document they came with, so the page
+// can hand them to the editor's loadDoc (docNotes), which makes them its first
+// findings. A document copied with a new id carries them over by hand.
+const NOTES = new WeakMap();
+export const docNotes = doc => (doc && NOTES.get(doc)) || [];
+export function readDoc(input) {
+  const notes = [];
+  const doc = parseDoc(input, {notes});
+  if (notes.length) NOTES.set(doc, notes);
+  return doc;
+}
 
 const DB = 'portrayal-racks', STORE = 'docs';
 const done = req => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });

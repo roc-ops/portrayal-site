@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.4mm" height="25.4mm" viewBox="0 0 25.4 25.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="g4-mounting-button" data-path="g4-mounting-button" data-class="mount" data-ref="eaton/g4-mounting-button@1:1.0.0" transform="translate(0,0)">
+    <title>g4-mounting-button</title>
+    <circle id="g4-mounting-button--flange" cx="12.7" cy="12.7" r="12.7" fill="#b7bcc1" stroke="#7b8187" stroke-width="0.25" data-z-cyl="3.3" data-z-color="#b7bcc1" />
+    <circle id="g4-mounting-button--head" cx="12.7" cy="12.7" r="7.5" fill="#cfd3d7" stroke="#7b8187" stroke-width="0.25" data-path="g4-mounting-button/head" data-class="mount" data-z-cyl="6.1" data-z-lift="3.3" data-z-color="#cfd3d7" />
+    <circle cx="12.7" cy="12.7" r="2.15" fill="#3a3d40" />
+    <path d="M 11.5 12.7 H 13.9 M 12.7 11.5 V 13.9" stroke="#b7bcc1" stroke-width="0.45" />
+  </g>
+</svg>

@@ -1407,13 +1407,16 @@ check(_wr["assets"].get("not_found_handling") == "404-page" and "404.html" in _s
 # THE SCHEMAS: each at the URL its own $id names, as JSON, readable
 # cross-origin. Published from a Portrayal release by tools/publish-schemas.sh.
 _hd = _srv["_headers"].read_text() if "_headers" in _srv else ""
-_sb = re.search(r"^/schemas/v1/\*\.json[ \t]*\n((?:[ \t]+.*\n?)*)", _hd, re.M)
-check(bool(_sb) and re.search(r"Content-Type:", _sb.group(1)) is None
-      and re.search(r"Access-Control-Allow-Origin:\s*\*", _sb.group(1)) is not None
-      and not re.search(r"^/schemas/\*\s*$", _hd, re.M),
-      "/schemas/v1/*.json is readable from any origin, typed by its extension - no Content-Type rule to mislabel a 404",
-      "no /schemas/v1/*.json block with Access-Control-Allow-Origin, a Content-Type override in it, or a broad /schemas/* block")
+# Every label: v1, v2 (the rack file from version 3, Portrayal #921), and any
+# label a published schema sits under.
 _schemas = sorted(d for d in _srv if d.startswith("schemas/") and d.endswith(".json"))
+for _lb in sorted({"v1", "v2"} | {d.split("/")[1] for d in _schemas}):
+    _sb = re.search(rf"^/schemas/{_lb}/\*\.json[ \t]*\n((?:[ \t]+.*\n?)*)", _hd, re.M)
+    check(bool(_sb) and re.search(r"Content-Type:", _sb.group(1)) is None
+          and re.search(r"Access-Control-Allow-Origin:\s*\*", _sb.group(1)) is not None
+          and not re.search(r"^/schemas/\*\s*$", _hd, re.M),
+          f"/schemas/{_lb}/*.json is readable from any origin, typed by its extension - no Content-Type rule to mislabel a 404",
+          f"no /schemas/{_lb}/*.json block with Access-Control-Allow-Origin, a Content-Type override in it, or a broad /schemas/* block")
 check({"schemas/v1/device.schema.json", "schemas/v1/component.schema.json"} <= set(_schemas),
       "the device and component schemas are served under /schemas/v1/", f"{_schemas}")
 for _rel in _schemas:
@@ -1552,6 +1555,22 @@ check(_pub.exists() and _pubtwice(False)[0] != 0 and _pubtwice(False)[1] == "obj
 check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(_bad)[0] != 0,
       "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
       f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
+# EACH SCHEMA UNDER ITS OWN LABEL (Portrayal #921): the rack schema's $id is
+# /schemas/v2/, so it goes there, beside a v1 one already published, which stays.
+def _publabels():
+    with _tf.TemporaryDirectory() as _src, _tf.TemporaryDirectory() as _dst:
+        (Path(_dst) / "v1").mkdir()
+        (Path(_dst) / "v1" / "rack.schema.json").write_text('{"$id": "https://portrayal.dev/schemas/v1/rack.schema.json"}')
+        for _n, _id in {"device.schema.json": _ok["device.schema.json"],
+                        "rack.schema.json": "https://portrayal.dev/schemas/v2/rack.schema.json"}.items():
+            (Path(_src) / _n).write_text(json.dumps({"$id": _id, "type": "object"}))
+        _r = _sp.run(["sh", str(_pub), "--from-dir", _src, "--to", _dst], capture_output=True, text=True)
+        return (_r.returncode, sorted(str(p.relative_to(_dst)) for p in Path(_dst).rglob("*.json")),
+                json.loads((Path(_dst) / "v1" / "rack.schema.json").read_text())["$id"])
+check(_pub.exists() and _publabels() == (0, ["v1/device.schema.json", "v1/rack.schema.json", "v2/rack.schema.json"],
+                                         "https://portrayal.dev/schemas/v1/rack.schema.json"),
+      "tools/publish-schemas.sh puts each schema under the label its own $id names, and keeps a v1 one already published",
+      f"{_publabels() if _pub.exists() else 'no tools/publish-schemas.sh'}")
 
 # ── ORIGIN-TRIAL TOKENS (roc-ops/portrayal-site#134) ─────────────────────
 # A page opts into a Chrome origin trial with <meta http-equiv="origin-trial">.
@@ -1740,9 +1759,14 @@ check(_ksr is not None and _ksr.returncode == 0,
       "tools/dcim-verify/kits.py passes its self-test against a mock NetBox and Nautobot",
       (_ksr.stderr[-600:] if _ksr else "no tools/dcim-verify/selftest.py"))
 
-# ── zeroU stays empty in every shipped rack fixture ──────────────────────
-# Cable managers are items with `on`, never 0U records: `zeroU` is reserved for
-# a later phase, so no fixture we ship may put anything in it.
+# ── zeroU in every shipped rack fixture has the kit's shape ─────────────
+# zeroU was reserved until kit 0.6.0 (Portrayal #926) gave it its parts: an
+# entry is {id, ref, cfg, label, at, offsetMm, between?}, read and placed by
+# the kit (model.js zeroUOf, fit.js fitsZeroU). A fixture we ship that puts
+# something else there tests a file no page writes. (Rack-face cable managers
+# are still items with `on`, never zero-U entries.) The browser checks build
+# their zero-U racks through the page, or write one in an older page's own
+# shape on purpose (check_rack_v2_migrates), so only the JSON files are read.
 _fx = []
 for _p in sorted((HERE / "tools").rglob("*.json")) + sorted((HERE / "site").rglob("*.json")) + sorted((HERE / "tests").rglob("*.json")):
     try:
@@ -1752,12 +1776,12 @@ for _p in sorted((HERE / "tools").rglob("*.json")) + sorted((HERE / "site").rglo
     for _r in (_d.get("racks") if isinstance(_d, dict) and isinstance(_d.get("racks"), list) else []):
         if isinstance(_r, dict) and "zeroU" in _r:
             _fx.append((str(_p.relative_to(HERE)), _r["zeroU"]))
-_cb = (HERE / "check-browser.py").read_text()
-for _m in re.finditer(r'"zeroU":\s*([^\n,]*)', _cb):
-    _fx.append((f"check-browser.py fixture #{len(_fx)}", [] if _m.group(1).strip() == "[]" else _m.group(1)))
-check(_fx and all(z == [] for _, z in _fx),
-      f"zeroU stays empty in every shipped rack fixture ({len(_fx)} found: tools/dcim-verify/acceptance.rack.json and the check-browser.py fixtures)",
-      "; ".join(f"{n}: {z!r}" for n, z in _fx if z != []))
+_zbad = [(n, z) for n, z in _fx if not isinstance(z, list) or not all(
+    isinstance(e, dict) and all(isinstance(e.get(k), str) and e.get(k) for k in ("ref", "at"))
+    and isinstance(e.get("offsetMm", 0), (int, float)) for e in z)]
+check(_fx and not _zbad,
+      f"every shipped rack fixture's zeroU holds the kit's zero-U entries ({len(_fx)} found, tools/dcim-verify/acceptance.rack.json among them)",
+      "; ".join(f"{n}: {z!r}" for n, z in _zbad) or "no shipped rack fixture has a zeroU record")
 
 # ── report ───────────────────────────────────────────────────────────────
 # ── THE COMPONENT CATALOG (components/catalog.html) ─────────────────────

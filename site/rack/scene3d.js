@@ -12,7 +12,10 @@ import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js'
 import {drawCables3d} from './cables.js';
 import {laneX} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
-import {zeroUOf, isRackSide, isNarrowFace, ruOfZ, faceOfAt, zeroUX, laneXAt} from './zero-u.js';
+import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
+import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
+import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
+import {laneXAt} from '../../vendor/rack/route.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -48,7 +51,7 @@ function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.sp
       let p = null, run = 'x';
       if (w.lane) {
         const [, face = 'front'] = w.lane.split('-');
-        // Through a zero-U duct where one stands on this lane (zero-u.js laneXAt).
+        // Through a zero-U duct where one stands on this lane (route.js laneXAt).
         p = new THREE.Vector3(laneAt(w.lane, w.ru), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
         run = 'y';
       } else {
@@ -86,8 +89,8 @@ function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.sp
   };
 }
 
-// A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (zero-u.js
-// zeroUX, against the upright's outer face); along the rack, centred on the
+// A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
+// zero-u.js zeroUX, against the upright's outer face); along the rack, centred on the
 // upright's depth (a 34 mm post box behind its mounting face). Its height is
 // rack3d.js's own, from its bottom U. Every anchor (guideAnchor, portAnchor)
 // reads the group's world matrix, so moving the group moves them too.
@@ -105,13 +108,13 @@ function placeZeroU(scene, parts, chassisOf) {
   }
 }
 
-// A NARROW PART ON ONE RAIL (zero-u.js, `side`) stands over that rail's hole
+// A NARROW PART ON ONE RAIL (the kit's fit.js railOf, `side`) stands over that rail's hole
 // line, as elevation.js draws it, and is turned end over end on the right rail.
 // `side` is as seen from its own face; a rear part's group is already turned
 // round, so its left is the rack's right as seen from the front.
 function placeSided(scene, items, chassisOf) {
   for (const it of items) {
-    if (!(it.side === 'left' || it.side === 'right') || !isNarrowFace(chassisOf(it.ref))) continue;
+    if (!(it.side === 'left' || it.side === 'right') || !isNarrow(chassisOf(it.ref))) continue;
     const g = scene.three.scene.getObjectByName(`device-${it.id}`);
     if (!g) continue;
     const left = (it.side === 'left') === (it.face !== 'rear');
@@ -174,12 +177,12 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
   }));
-  // ZERO-U PARTS stand beside an upright (zero-u.js): built as any device is,
+  // ZERO-U PARTS stand beside an upright (the kit's zero-u.js): built as any device is,
   // then stood in place once built (placeZeroU). A four-post's rear upright
   // carries its part facing rearward, as a rear device faces.
-  const sideParts = chassisOf ? zeroUOf(rack).filter(z => isRackSide(chassisOf(z.ref))) : [];
+  const sideParts = chassisOf ? zeroUOf(rack).filter(z => isZeroUPart(chassisOf(z.ref))) : [];
   for (const z of sideParts) {
-    stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: ruOfZ(z), label: z.label,
+    stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), label: z.label,
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: {},
                 chassis: chassisOf(z.ref), mount: 'rack-side'});
   }

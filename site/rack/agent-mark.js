@@ -5,7 +5,7 @@
 
 export function touchedIds(ev) {
   const ids = new Set(ev.commands.map(c => c?.id).filter(v => typeof v === 'string' && !v.startsWith('@')));
-  // A part beside the rack (zero-u.js) is touched as an item is.
+  // A part beside the rack (rack.zeroU) is touched as an item is.
   const all = r => [...(r?.items ?? []), ...(r?.cables ?? []), ...(Array.isArray(r?.zeroU) ? r.zeroU : []).filter(z => z && typeof z.id === 'string')];
   const had = new Set(all(ev.before).map(x => x.id));
   for (const x of all(ev.after)) if (!had.has(x.id)) ids.add(x.id);
