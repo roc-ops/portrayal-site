@@ -173,13 +173,29 @@ function unknownKeys(node) {
 
 // A labelled sub-schema: a map's value, a branch of a oneOf, the `then` of a
 // condition. Its description and constraints first, then whatever it contains.
-function branch(head, node, depth, ptr) {
-  const b = el('div', {class: 'sc-branch'});
+//
+// ctx says what the rows inside mean. {test: true} is an `if`: a key in its
+// `required` is a key whose PRESENCE is tested, not one the author must give.
+// {outcome: true} is a `then` or an `otherwise`: its `required` adds to the
+// keys the author must give, so it is listed in full - a branch can require a
+// key it says nothing else about (component.schema.json's otherwise requires
+// `class` and `size` and has no entry for either).
+function branch(head, node, depth, ptr, ctx = {}) {
+  const b = el('div', {class: 'sc-branch', 'data-at': ptr});
   b.append(el('p', {class: 'sc-branch-head', text: head}));
   if (node.description) b.append(descP(node.description));
   const cons = constraints(node);
   if (cons.length) b.append(el('div', {class: 'sc-meta'}, cons));
-  b.append(renderNode(node, depth, ptr));
+  if (ctx.outcome && Array.isArray(node.required) && node.required.length) {
+    const own = node.properties || {};
+    const line = el('div', {class: 'sc-meta sc-branch-req', 'data-required': node.required.join(' ')}, [
+      el('span', {class: 'sc-req', text: 'also required'}),
+      ...node.required.map(k => el('code', {class: 'sc-enum', 'data-key': k, text: k,
+        title: k in own ? `${k} - see its row below` : `${k} - defined above; this branch only requires it`})),
+    ]);
+    b.append(line);
+  }
+  b.append(renderNode(node, depth, ptr, ctx));
   return b;
 }
 
@@ -209,7 +225,7 @@ const COMBINERS = [
 // ptr is the node's JSON pointer, and it is what every property row is stamped
 // with - check-browser.py walks the file the same way and fails on a property
 // this function never reached.
-function renderNode(node, depth, ptr) {
+function renderNode(node, depth, ptr, ctx = {}) {
   const frag = document.createDocumentFragment();
   if (!isSchema(node)) return frag;
 
@@ -229,16 +245,16 @@ function renderNode(node, depth, ptr) {
     frag.append(p);
   }
 
-  if (node.properties) frag.append(propertyList(node, depth, ptr));
+  if (node.properties) frag.append(propertyList(node, depth, ptr, ctx));
 
   for (const [pat, sub] of Object.entries(node.patternProperties || {})) {
     frag.append(branch(`each key matching ${pat}`, sub, depth + 1,
-                       `${ptr}/patternProperties/${seg(pat)}`));
+                       `${ptr}/patternProperties/${seg(pat)}`, ctx));
   }
 
   if (isSchema(node.additionalProperties)) {
     frag.append(branch(node.properties ? 'each other key' : 'each key',
-                       node.additionalProperties, depth + 1, `${ptr}/additionalProperties`));
+                       node.additionalProperties, depth + 1, `${ptr}/additionalProperties`, ctx));
   }
 
   // An array's shape lives on its items. Rendered in place rather than as a
@@ -248,7 +264,7 @@ function renderNode(node, depth, ptr) {
     if (it.description) frag.append(descP(it.description));
     const inner = constraints(it);
     if (inner.length) frag.append(el('div', {class: 'sc-meta'}, inner));
-    frag.append(renderNode(it, depth, `${ptr}/items`));
+    frag.append(renderNode(it, depth, `${ptr}/items`, ctx));
   }
 
   // Last, because each of these refines the shape above it: a oneOf picks
@@ -259,7 +275,7 @@ function renderNode(node, depth, ptr) {
     const wrap = el('div', {class: 'sc-oneof'});
     node[kw].forEach((b, i) => {
       wrap.append(branch(`${label} — option ${i + 1}${typeLabel(b) ? ` — ${typeLabel(b)}` : ''}`,
-                         b, depth + 1, `${ptr}/${kw}/${i}`));
+                         b, depth + 1, `${ptr}/${kw}/${i}`, ctx));
     });
     frag.append(wrap);
   }
@@ -267,16 +283,16 @@ function renderNode(node, depth, ptr) {
   // A CONDITION. The `if` is a schema too, and the properties it tests are
   // properties of this node: they are shown under "condition", stamped with
   // their /if/ pointers, as the `then` and `otherwise` branches are with theirs.
-  // Every row in the block is conditional (sc-cond) - it holds only when the
-  // condition does, or does not.
+  // The block is set apart by a rule down its left (sc-cond) and carries the
+  // pointer of the node it conditions in data-conditional.
   if (isSchema(node.if)) {
     const wrap = el('div', {class: 'sc-oneof sc-cond', 'data-conditional': ptr || '/'});
     const when = el('p', {class: 'sc-branch-head'});
     when.append(richText(`conditional: ${condition(node.if)}`));
     wrap.append(when);
-    if (node.if.properties) wrap.append(branch('condition — the keys it tests', node.if, depth + 1, `${ptr}/if`));
-    if (isSchema(node.then)) wrap.append(branch('then', node.then, depth + 1, `${ptr}/then`));
-    if (isSchema(node.else)) wrap.append(branch('otherwise', node.else, depth + 1, `${ptr}/else`));
+    if (node.if.properties) wrap.append(branch('condition — the keys it tests', node.if, depth + 1, `${ptr}/if`, {test: true}));
+    if (isSchema(node.then)) wrap.append(branch('then', node.then, depth + 1, `${ptr}/then`, {outcome: true}));
+    if (isSchema(node.else)) wrap.append(branch('otherwise', node.else, depth + 1, `${ptr}/else`, {outcome: true}));
     frag.append(wrap);
   }
 
@@ -294,17 +310,29 @@ function countProps(node, seen = 0) {
   return seen;
 }
 
-function propertyList(schema, depth, ptr) {
+// A property whose schema is `false` matches nothing: the key may not appear.
+// It is how an `otherwise` takes keys away (component.schema.json's root
+// forbids `motion`, `travel` and the rest unless `kind` is "kit"), and printed
+// as a plain key it read as the opposite.
+function propertyList(schema, depth, ptr, ctx = {}) {
   const req = new Set(schema.required || []);
   const list = el('div', {class: 'sc-props'});
   for (const [name, prop] of Object.entries(schema.properties || {})) {
     const here = `${ptr}/properties/${seg(name)}`;
-    const required = req.has(name);
-    const row = el('div', {class: 'sc-prop', 'data-ptr': here});
+    const forbidden = prop === false;
+    // Inside an `if`, `required` asks whether the key is there: tested, not demanded.
+    const tested = ctx.test && req.has(name);
+    const required = !ctx.test && !forbidden && req.has(name);
+    const row = el('div', {class: `sc-prop${forbidden ? ' is-forbidden' : ''}`, 'data-ptr': here});
+    if (forbidden) row.dataset.forbidden = '';
     const head = el('div', {class: 'sc-prop-head'}, [
       el('code', {class: `sc-name${required ? ' is-req' : ''}`, text: name}),
       typeLabel(prop) ? el('span', {class: 'sc-type', text: typeLabel(prop)}) : null,
       required ? el('span', {class: 'sc-req', text: 'required'}) : null,
+      tested ? el('span', {class: 'sc-req sc-tested', text: 'tested: present',
+                           title: 'the condition holds only when this key is given'}) : null,
+      forbidden ? el('span', {class: 'sc-req sc-forbidden', text: 'not allowed',
+                              title: 'its schema is false: this key may not appear here'}) : null,
     ]);
     row.append(head);
     if (!isSchema(prop)) { list.append(row); continue; }
@@ -312,7 +340,7 @@ function propertyList(schema, depth, ptr) {
     const cons = constraints(prop);
     if (cons.length) row.append(el('div', {class: 'sc-meta'}, cons));
 
-    const nested = renderNode(prop, depth + 1, here);
+    const nested = renderNode(prop, depth + 1, here, ctx);
     const n = countProps(prop);
     if (n) {
       // Collapsible below the top level: a device manifest nests six deep and
