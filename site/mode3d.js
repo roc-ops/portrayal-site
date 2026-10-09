@@ -93,6 +93,11 @@ export function createMode3d(shell, opts = {}) {
     // where a selection is an action - Annotate's click adds a mark - that
     // re-selection must not count as one, so the page can say how to make it.
     reselect = p => shell.select(p, true),
+    // The generic rack ears (#909) as the page has them when the viewer is
+    // made: site/ears.js's preference. The page's toggle tells the viewer of
+    // every change after that (viewer.setEars), and the viewer keeps them
+    // across loads.
+    ears = () => false,
   } = opts;
   const listeners = {mode: []};
 
@@ -126,7 +131,7 @@ export function createMode3d(shell, opts = {}) {
       const {createViewer} = await import('../vendor/viewer3d.js');
       // THE BACKGROUND IS THE READER'S. The shell owns the swatches and the 2D
       // stage; the scene is told the colour it starts with and every change after.
-      const v = createViewer(host3d, {dist: 'assets/dist/', background: shell.stage()});
+      const v = createViewer(host3d, {dist: 'assets/dist/', background: shell.stage(), ears: !!ears()});
       shell.on('stage', c => v.setBackground(c));
       // WHAT IS WRITTEN ON A PART reaches the scene as well as the drawing.
       shell.on('fields', ({all}) => v.setFields(all));

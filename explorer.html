@@ -162,13 +162,14 @@
 
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
-import { statesOfEl } from './vendor/states.js';
+import { statesOfEl, boundLamps, offIsSet } from './vendor/states.js';
 import { encodeSwaps, searchWith, rawParam } from './vendor/swap.js';
 import { swapsNow, fieldsNow, encodeFields, decodeFields,
          installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { configuredFace } from './site/rack/face.js';
 import { rasterize } from './site/raster.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
+import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 
 const shell = createShell({
   title: 'Explorer',
@@ -192,9 +193,27 @@ document.body.classList.toggle('embed', EMBED);
 // different splits: this copy broke on whitespace only, so a contract that wrote
 // "off, on" got a chip called "on," here and the right two chips there. One
 // function, one answer, and this page gains the comma handling it was missing.
-// Ported from demo/interactive.html: click a chip to set state-<name>, click it
-// again to clear, and `off` always clears - "off" is the absence of a state, not
-// a state of its own.
+// Click a chip to set state-<name> on the live element, click it again to
+// clear it.
+//
+// `off` (Portrayal #934, kit 0.10.0, docs/pdu-model-design.md section 3.2) is
+// a state that can be lit: an Eaton G4 outlet lamp is red when its outlet is
+// off. So the `off` chip sets `state-off` where states.js offIsSet says so -
+// on an outlet (it has a lamp bound to it, or it is a power outlet with none,
+// which the stylesheet dims) and on an element that declares a colour for off
+// - and clears only a lamp or a plain element with no declared off colour, as
+// it always did. As the kit's own Explorer (kit/index.html) does.
+//
+// AN OUTLET'S STATE IS SHOWN ON ITS LAMP. A chip on a switched outlet writes
+// the same class on every lamp `for:` binds to it (states.js boundLamps, the
+// rule marks.js and the 3D scene apply too), so liveStates below reads the
+// lamps' paths off the drawing and 2D and 3D agree.
+const CHIPS = new WeakMap();          // element -> its row's chip span
+function syncChips(el) {
+  const span = CHIPS.get(el);
+  if (span) for (const c of span.querySelectorAll('.chip'))
+    c.classList.toggle('on', el.classList.contains('state-' + c.textContent));
+}
 function chips(el) {
   const states = statesOfEl(el);
   if (!states.length) return null;
@@ -207,13 +226,19 @@ function chips(el) {
     chip.onclick = ev => {
       ev.stopPropagation(); ev.preventDefault();
       const was = el.classList.contains('state-' + st);
-      [...el.classList].filter(c => c.startsWith('state-')).forEach(c => el.classList.remove(c));
-      span.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
-      if (st !== 'off' && !was) { el.classList.add('state-' + st); chip.classList.add('on'); }
+      const path = el.getAttribute('data-path');
+      const lamps = (path && state.svg && boundLamps(state.svg).get(path)) || [];
+      const set = !was && (st !== 'off' || offIsSet(el, lamps));
+      for (const t of [el, ...lamps]) {
+        [...t.classList].filter(c => c.startsWith('state-')).forEach(c => t.classList.remove(c));
+        if (set) t.classList.add('state-' + st);
+        syncChips(t);
+      }
       pushStates();
     };
     span.appendChild(chip);
   }
+  CHIPS.set(el, span);
   return span;
 }
 
@@ -480,7 +505,10 @@ shell.on('inspect', ({path, box}) => {
 // page, same tree, same inspector, no iframe and no message protocol. It is
 // imported on first use: it drags in three.js and a WebGL context, and someone
 // who never presses 3D should pay for neither.
+// The generic rack ears' toggle (site/ears.js), made once the 3D switch is.
+let earsCtl = null;
 const m3d = createMode3d(shell, {
+  ears: () => (earsCtl ? earsCtl.on() : earsPreference()),
   states: liveStates,
   pulled: livePulled,
   overrides: () => swapsNow(shell),
@@ -508,6 +536,12 @@ const m3d = createMode3d(shell, {
   },
 });
 const setMode = m => m3d.setMode(m);
+
+// ---------------------------------------------------------------- rack ears
+// OFF HERE UNTIL THE READER TURNS THEM ON (Portrayal #909): a generic
+// L-bracket over a device modelled between its ear folds, in 2D and 3D. Ears
+// built into a face are the drawing's own and always shown. site/ears.js.
+earsCtl = installEars(shell, {viewer: () => m3d.viewer()});
 
 // `READY` MEANS FIELDS TOO. A link's `fields=` is applied by applyPendingFields
 // below, one tick after shell.ready - so a caller who awaited shell.ready alone
@@ -692,6 +726,7 @@ function applyPendingFields() {
 installOpticFields(shell);
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: OPTIC_CSS}));
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
+document.head.appendChild(Object.assign(document.createElement('style'), {textContent: EARS_CSS}));
 
 await shell.ready;
 applyPendingFields();

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="65mm" height="1829mm" viewBox="0 0 65 1829" data-device="evma8365x" data-view="left" data-length-mm="1829" data-weight-kg="12.8" data-construction="aluminium chassis, black" data-input-ac="200-240 V three-phase delta, 3W+PE, 40 A, 50/60 Hz" data-input-plug="cs8365c" data-input-cord="fixed" data-input-phase="three" data-input-wiring="delta" data-input-voltage-v="208" data-input-current-a="40" data-plug-rating-a="50" data-capacity-kw="14.4" data-capacity-scope="the load the PDU can hand on (40 A at 208 V three phase), from the SKU title; it is not what the PDU draws itself, which no document held states" data-output-voltage="200-240 V, line to line" data-output-rating="10 A per C13, 16 A per C39, 16 A per section, 40 A per phase" data-breakers="six 20 A two-pole, listed" data-frequency="50/60 Hz" data-operating-temp="0 to 60 C (32 to 140 F)" data-metering-scope="outlet" data-outlet-switching="true" data-metering="current, power and energy for the input and each outlet; current for each branch" data-network-module="G4 eNMC, dual gigabit Ethernet with network cascading" data-emc="FCC part 15 class A, CAN ICES-003 class A" data-safety="UL 62368-1; cTUVus on the drawing" data-cybersecurity="UL 2900-1, IEC 62443-4-2" data-regulatory-model="EMAF-PHXJ-G28K" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton EVMA8365X","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"7d1f2d5a2ca0616a9234247d1c999f5fe13232be8977dfbcd34a4c07ce0c0420","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EVMA8365X" data-sku="EVMA8365X" data-part-number="" x="0" y="0" width="65" height="1829" rx="1.2" fill="#2e3033" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="seam" data-kind="seam" x="50.2" y="0" width="1.6" height="1829" rx="0.6" fill="#232528" />
+    <rect id="end-cap-top" data-kind="end-cap" x="0" y="0" width="65" height="2" rx="0.6" fill="#26282b" />
+    <rect id="end-cap-cord" data-kind="end-cap" x="0" y="1827" width="65" height="2" rx="0.6" fill="#26282b" />
+    <rect id="insert-1" data-kind="threaded-insert" x="41.7" y="1701.7" width="6.6" height="6.6" rx="3.3" fill="#8d9298" />
+    <rect id="insert-2" data-kind="threaded-insert" x="41.7" y="1645.9" width="6.6" height="6.6" rx="3.3" fill="#8d9298" />
+    <rect id="insert-3" data-kind="threaded-insert" x="41.7" y="145.9" width="6.6" height="6.6" rx="3.3" fill="#8d9298" />
+    <rect id="insert-4" data-kind="threaded-insert" x="41.7" y="90.1" width="6.6" height="6.6" rx="3.3" fill="#8d9298" />
+    <rect id="screw-torx-1" data-kind="screw-head" x="42" y="1794" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-torx-2" data-kind="screw-head" x="42" y="1441" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-torx-3" data-kind="screw-head" x="42" y="1098" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-torx-4" data-kind="screw-head" x="42" y="735" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-torx-5" data-kind="screw-head" x="42" y="377" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-torx-6" data-kind="screw-head" x="42" y="29" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-cap-cord-end" data-kind="screw-head" x="23.5" y="1819" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-cap-far-end" data-kind="screw-head" x="23.5" y="4" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-module-1" data-kind="screw-head" x="54.6" y="940.15" width="6.8" height="6.8" rx="3.4" fill="#565b60" />
+    <rect id="screw-module-2" data-kind="screw-head" x="54.6" y="775.7" width="6.8" height="6.8" rx="3.4" fill="#565b60" />
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 // CABLE BUNDLES ON THE PAGE (portrayal-site#142; Portrayal
 // docs/cable-bundles-design.md sections 6 and 7). The kit (vendor/rack/
-// bundles.js, 0.7.0) owns the bundle: its trunk, which members ride it and
+// bundles.js, since 0.7.0) owns the bundle: its trunk, which members ride it and
 // where each joins and leaves, its size check and where its straps go. This
 // module reads those once per render (bundleFacts, from route-context.js
 // routeFacts) and turns them into what the views draw and the list says:
@@ -202,8 +202,8 @@ export function sizeLine(fact) {
 }
 
 // THE BEND RESULT, WHEREVER A BUNDLE'S WARNINGS ARE LISTED (Portrayal #922,
-// kit 0.8.0). The vendored kit (0.7.0) gives `bend: null`; from 0.8.0 the
-// check's `bend` is
+// kit 0.8.0, vendored since 0.10.0). With the cable types' bend radii
+// (`ctx.bendOf`) and the routes, the check's `bend` is
 //   {radius_mm, by, unchecked: [ids], points: [point], violations: [point]}
 // each point {kind: 'corner' | 'pathway', at (text), waypoint, angle_deg?,
 // legs_mm?, room_mm, source, estimated, need_mm, by, members, unchecked,
@@ -211,14 +211,15 @@ export function sizeLine(fact) {
 // A violation's sentence is already in the check's `warnings`, and a member
 // or point left unchecked (ok null) is in its `notes`; the list shows both, so
 // this adds only the radius the bundle needs, and the views mark the
-// violations (bendViolations). Null-safe: with no bend result they say
-// nothing. The only place that reads `bend`.
+// violations (bendViolations). Null-safe: without the routes, or with no
+// bundle to bend, `bend` is null and they say nothing. The only place on the
+// page that reads `bend` (the exports read the kit's bundleExports).
 export function bendLine(check) {
   const b = check?.bend;
   return b?.radius_mm > 0 ? `Bend radius ${mmText(b.radius_mm)}${b.by ? `, set by ${b.by}` : ''}.` : null;
 }
 // The trunk waypoints where the bend is too tight (ok false), for the views
-// to mark: [{waypoint, at, need_mm, room_mm, short_mm}]. Empty before #922.
+// to mark: [{waypoint, at, need_mm, room_mm, short_mm}]. Empty when it passes.
 export function bendViolations(check) {
   const b = check?.bend;
   const list = Array.isArray(b?.violations) ? b.violations : Array.isArray(b?.points) ? b.points.filter(p => p?.ok === false) : [];
@@ -241,8 +242,9 @@ export function peelText(rack, bundle, cableId) {
 // The kit's notes come too, as in the list: a size that is an estimate, a
 // member that does not meet the route, a stale peel point, and (kit 0.8.0)
 // members whose bend is unchecked - without them a bend radius would read as
-// a pass.
-export function bundleNotes(rack, bundles) {
+// a pass. The cable schedule lists the bundles in the kit's own words
+// (export-data.js bundleNotes, Portrayal #923); the sheet keeps these.
+export function sheetBundleNotes(rack, bundles) {
   if (!bundles) return [];
   return [...bundles.values()].flatMap(f => [`${f.name} (${f.id}): ${bundleSummary(f)}.`,
     ...(f.check?.warnings ?? []), ...[bendLine(f.check)].filter(Boolean), ...(f.check?.notes ?? [])]);

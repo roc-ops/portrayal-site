@@ -176,7 +176,7 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
       at.push(band.position.clone());
     });
     // A corner too tight for its bend radius (kit 0.8.0, Portrayal #922): a
-    // warning ring round the tube there. Nothing before 0.8.0.
+    // warning ring round the tube there.
     const tight = [];
     for (const v of bendViolations(f.check)) {
       const p = pts[trunkIndexOf(L.trunk, v.waypoint)];

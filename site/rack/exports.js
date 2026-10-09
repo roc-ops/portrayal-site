@@ -27,7 +27,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows,
-        zeroUNotes, zeroUImportItems} from '../../vendor/rack/export-data.js';
+        zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeFacts, routeNotes} from './route-context.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
@@ -35,7 +35,7 @@ import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-r
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
-import {bundleNotes} from './bundle-view.js';
+import {sheetBundleNotes} from './bundle-view.js';
 import {COLORS, colorOf} from './cables.js';
 import {zeroUEntries} from '../../vendor/rack/zero-u.js';
 
@@ -202,7 +202,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       const drawn = new Set(panes.flatMap(pane => [...pane.querySelectorAll('[data-cable-id]')].map(n => n.getAttribute('data-cable-id'))));
       notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...routeNotes(rack, rf, labelOf(rack)),
                  // a note per bundle and its warnings (portrayal-site#142); the bands and straps are drawn with the cables
-                 ...bundleNotes(rack, rf?.bundles));
+                 ...sheetBundleNotes(rack, rf?.bundles));
       roomForCables(panes);
       for (const pane of panes) {
         pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
@@ -719,7 +719,12 @@ export async function bomCsv(rack, chassisOf) {
     if (h) notes.push(`${m.label} shares ${h.label}'s rail screws; with two ears stacked, longer screws may be needed.`);
   }
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
-  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...routeNotes(rack, await routesOf(rack, chassisOf), labelOf(rack)));
+  // THE STRAPS (Portrayal #923): one hook-and-loop line, every bundle's straps
+  // summed, and a note for a bundle whose straps cannot be counted.
+  const rf = cabled ? await routesOf(rack, chassisOf) : null;
+  const bundles = (rack.bundles || []).length ? (rf?.bundleRecords ?? bundleExports(rack)) : [];
+  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...routeNotes(rack, rf, labelOf(rack)));
+  notes.push(...strapBomNotes(bundles));
   if (!items.length && !sides.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = [...items, ...sides].map(it => ({ref: it.ref, cfg: it.cfg,
@@ -736,7 +741,7 @@ export async function bomCsv(rack, chassisOf) {
   if (railUs.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
   const all = uniq(notes);
   const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs}),
-                ...cableBomRows(rack, facts.ends)];
+                ...cableBomRows(rack, facts.ends), ...strapBomRows(bundles)];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
 }
@@ -769,7 +774,11 @@ export const cableEnds = rack => (probeFail.facts ? Promise.reject(new Error('pr
 export async function cableScheduleCsv(rack, chassisOf) {
   const facts = await cableEnds(rack);
   const rf = await routesOf(rack, chassisOf);
-  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes);
+  // THE BUNDLES (Portrayal #923): each one's line, warnings and notes, from
+  // the kit, measured with this render's routes, cable types and bend radii.
+  // Without the routes the kit reads them unmeasured and says so.
+  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes,
+                                                   {bundles: rf?.bundleRecords ?? null});
   notes.push(...routeNotes(rack, rf, labelOf(rack)));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
