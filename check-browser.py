@@ -4279,6 +4279,260 @@ def check_rack_ring_rear_pane(page, base):
     return bad
 
 
+# CABLE BUNDLES (portrayal-site#142). Three Cat6A cables from one copper
+# switch through one ring of its lacer, up the left-front lane to a second
+# switch: the kit works their trunk out as mgr-1 ring 1 > left-front U20-U30,
+# and sizes it from the cable types' Cat6A diameter, well above the drawing's
+# two-stroke floor, so the band and tube widths test the real figure. `face`
+# puts the whole set on the front or the rear face.
+def bundle_fixture(page, face="front"):
+    return page.evaluate("""async face => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Bundles'});
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 20, face, label: 'sw-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 30, face, label: 'sw-2'}));
+      for (const p of ['port-1', 'port-2', 'port-3'])
+        ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: p, view: 'front'}, media: 'cat6a'}));
+      return r;
+    }""", face)
+
+
+def open_bundle_rack(page, base, face="front"):
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face))
+    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)",
+                           timeout=READY_MS)
+
+
+# The band of a bundle on a pane, measured: its stroke width, the x of its
+# vertical run on the lane, how near it passes the ring's end rect centre, and
+# how far it hooks back along x near that ring; the straps drawn; and, per
+# member, its stroke's x at a height (U29) above any peel point.
+BAND_GEO = """([pane, id]) => {
+  const s = document.querySelector(`#${pane} svg`);
+  const g = s.querySelector(`[data-cables] [data-bundle-id="${id}"]`);
+  if (!g) return null;
+  const band = g.querySelector('[data-bundle-trunk]');
+  const inv = s.getScreenCTM().inverse();
+  const pts = [];
+  for (const p of g.querySelectorAll('[data-bundle-trunk]')) {
+    const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+    for (let t = 0; t <= L; t += 0.25) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+  }
+  const xs = pts.map(q => q[0]);
+  // the gutter the trunk runs up: the band's x furthest out from the rack's middle
+  const laneX = xs.reduce((a, x) => (Math.abs(x - 225.425) > Math.abs(a - 225.425) ? x : a), xs[0]);
+  const run = pts.filter(q => Math.abs(q[0] - laneX) < 0.6).map(q => q[1]);
+  const end = s.querySelector('[data-item-id="i2"] [id="guide-1-end"]');
+  let ringGap = null, back = null;
+  if (end) {
+    const eb = end.getBoundingClientRect(), c = new DOMPoint(eb.left + eb.width / 2, eb.top + eb.height / 2).matrixTransform(inv);
+    ringGap = Math.min(...pts.map(q => Math.hypot(q[0] - c.x, q[1] - c.y)));
+    const near = pts.filter(q => Math.abs(q[0] - c.x) <= 20 && Math.abs(q[1] - c.y) <= 30).map(q => q[0]);
+    if (near.length > 1) {
+      const dir = Math.sign(near.at(-1) - near[0]) || 1;
+      let best = -Infinity; back = 0;
+      for (const x of near) { best = Math.max(best, dir * x); back = Math.max(back, best - dir * x); }
+    }
+  }
+  // the y of U29's middle on this pane: the rack is 42U, U1 at the bottom
+  const y28 = 42 * 44.45 - 28.5 * 44.45;
+  const memberX = {};
+  for (const c of ['c1', 'c2', 'c3']) {
+    const cg = s.querySelector(`[data-cables] [data-cable-id="${c}"]`);
+    if (!cg) continue;
+    let best = null;
+    for (const p of cg.querySelectorAll('path')) {
+      const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+      for (let t = 0; t <= L; t += 0.5) {
+        const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m);
+        if (Math.abs(w.y - y28) < 1 && (best == null || Math.abs(w.x - laneX) < Math.abs(best - laneX))) best = w.x;
+      }
+    }
+    memberX[c] = best;
+  }
+  return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
+          ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
+          strapXs: [...s.querySelectorAll(`[data-strap="${id}"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
+}"""
+
+
+@extra("rack.html: a bundle made from the cable list is drawn on the front pane as one band its size wide, with its straps, and a peeled cable leaves it (portrayal-site#142)")
+def check_rack_bundle_2d_front(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "front")
+    # Through the page's own controls: select c1, Bundle..., tick c2 and c3, name it.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableBundle")
+    page.check("#bPick-c2")
+    page.check("#bPick-c3")
+    page.fill("#bLabel", "uplinks")
+    page.click("#bCreate")
+    page.wait_for_selector("#bundlePanel", timeout=READY_MS)
+    doc = page.evaluate("() => window.__rack.doc().racks[0].bundles")
+    if not doc or [m["cable"] for m in doc[0]["members"]] != ["c1", "c2", "c3"] or doc[0].get("label") != "uplinks":
+        return bad + [f"create: the bundle was not stored as uplinks of c1-c3: {doc}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
+    facts = page.evaluate("() => window.__rack.bundles()")
+    f = facts[0] if facts else None
+    if not f or not f["checked"] or not f["diameter"]:
+        return bad + [f"facts: the bundle was not checked for size: {facts}"]
+    if f["diameter"] <= 6:
+        return bad + [f"facts: three Cat6A come to {f['diameter']} mm, not above the 6 mm drawing floor - are the cable types loaded?"]
+    geo = page.evaluate(BAND_GEO, ["paneFront", "b1"])
+    if not geo:
+        return bad + ["2D: no band for b1 on the front pane"]
+    # The band is the bundle's diameter wide.
+    if abs(geo["width"] - f["diameter"]) > 0.05:
+        bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
+    if not (geo["laneX"] < -26) or geo["span"] < 400:
+        bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
+    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
+        bad.append(f"2D: the band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    if geo["straps"] != f["count"] or geo["straps"] < 2:
+        bad.append(f"2D: {geo['straps']} straps drawn, the kit counts {f['count']}")
+    # Combed inside the band: every member's run at U29 within the band's half width (plus a stroke).
+    for c, x in geo["memberX"].items():
+        if x is None or abs(x - geo["laneX"]) > geo["width"] / 2 + 1.5:
+            bad.append(f"2D: {c} at U29 is at x {x}, outside the band at {geo['laneX']} (half width {geo['width'] / 2})")
+    # The spacing, through the panel: 6 in gives more straps, drawn.
+    page.fill("#bEvery", "6")
+    page.press("#bEvery", "Enter")
+    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n", arg=f["count"], timeout=READY_MS)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
+                           timeout=READY_MS)
+    # Peel c3 at left-front U27 on: it leaves the band there for its b end, the nearer (sw-2 at U30).
+    opts = page.eval_on_selector_all("#bPeelAt-c3 option", "os => os.map(o => [o.value, o.textContent])")
+    at = next((v for v, t in opts if t == "from left-front U27"), None)
+    if at is None:
+        return bad + [f"peel: no 'from left-front U27' choice for c3: {opts}"]
+    page.select_option("#bPeelAt-c3", at)
+    page.click("#bPeel-c3")
+    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members[2].b?.ru === 27", timeout=READY_MS)
+    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c3')?.[1].every(w => !w.lane || w.ru <= 27)",
+                           timeout=READY_MS)
+    page.click("#bDone")
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"]')", timeout=READY_MS)
+    geo2 = page.evaluate(BAND_GEO, ["paneFront", "b1"])
+    x3 = (geo2 or {}).get("memberX", {}).get("c3")
+    if geo2 is None or (x3 is not None and abs(x3 - geo2["laneX"]) <= geo2["width"] / 2 + 1.5):
+        bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
+    # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
+    head = page.inner_text('#cableList [data-bundle-item="b1"]')
+    if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
+        bad.append(f"list: the bundle's header does not give its name, size and straps: {head!r}")
+    order = page.eval_on_selector_all("#cableList ul > li", "ls => ls.map(l => l.dataset.bundleItem ? 'B' : l.dataset.cableItem)")
+    if order[:4] != ["B", "c1", "c2", "c3"]:
+        bad.append(f"list: the members do not follow their bundle's header: {order}")
+    c3 = page.inner_text('#cableList [data-cable-item="c3"] [data-bundle-of]')
+    if "In uplinks" not in c3 or "left-front U27" not in c3:
+        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U27: {c3!r}")
+    # Dissolving: no band, no header, the cables kept.
+    page.click('#cableList [data-bundle-row="b1"]')
+    page.click("#bRemove")
+    page.wait_for_function("() => !document.querySelector('#paneFront [data-bundle-id]') && !document.querySelector('#cableList [data-bundle-item]')",
+                           timeout=READY_MS)
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 3:
+        bad.append("remove: dissolving the bundle removed cables")
+    return bad
+
+
+@extra("rack.html: a bundle on the mirrored rear pane is drawn there, through its ring with no hook, and not on the front (portrayal-site#142)")
+def check_rack_bundle_2d_rear(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "rear")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneRear [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
+    if page.evaluate("() => !!document.querySelector('#paneFront [data-bundle-id]')"):
+        bad.append("2D: a rear bundle is drawn on the front pane")
+    f = page.evaluate("() => window.__rack.bundles()[0]")
+    geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
+    # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
+    if not (geo["laneX"] < -26) or geo["span"] < 400:
+        bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
+    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
+        bad.append(f"2D: the rear band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    if geo["back"] is None or geo["back"] > 0.05:
+        bad.append(f"2D: the rear band hooks back {geo['back']} mm along x at guide-1 (pane flip lost?)")
+    if geo["straps"] != f["count"]:
+        bad.append(f"2D: {geo['straps']} straps on the rear pane, the kit counts {f['count']}")
+    if f["diameter"] <= 6 or abs(geo["width"] - f["diameter"]) > 0.05:
+        bad.append(f"2D: the rear band is {geo['width']} wide, not the bundle's {f['diameter']} mm (above the 6 mm floor)")
+    return bad
+
+
+@extra("rack.html: in 3D a bundle is a tube of its diameter along its trunk, with a strap band at each of the kit's straps (portrayal-site#142)")
+def check_rack_bundle_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "front")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
+    f = page.evaluate("() => window.__rack.bundles()[0]")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); const d = Date.now() + 30000;
+      while (!s.rackCables?.bundles && Date.now() < d) await new Promise(r => setTimeout(r, 200));
+      const world = s.three.scene, trunk = world.getObjectByName('bundle-b1-trunk');
+      if (!trunk) return null;
+      const straps = []; world.traverse(o => { if (/^bundle-b1-strap-/.test(o.name)) straps.push(o); });
+      // each strap's distance from the tube's centre line (its path's points)
+      const path = trunk.geometry.parameters.path, line = path.getSpacedPoints(400);
+      const off = straps.map(o => Math.min(...line.map(p => p.distanceTo(o.position))));
+      // the members' tubes stay inside the bundle where they ride the lane (U22-U28)
+      const lo = 21.5 * 44.45, hi = 27.5 * 44.45, inside = [];
+      // and each member's offset across the lane at U25 (x, z), to show they are spread, not stacked
+      const spread = [];
+      for (const t of s.rackCables.tubes) {
+        const main = t.mesh?.children?.[0]?.geometry?.parameters?.path;
+        let at = null;
+        for (const p of main ? main.getSpacedPoints(800) : []) if (p.y > lo && p.y < hi && Math.abs(p.x + 271) < 30) {
+          inside.push(Math.min(...line.map(q => q.distanceTo(p))));
+          if (!at || Math.abs(p.y - 24.5 * 44.45) < Math.abs(at.y - 24.5 * 44.45)) at = p;
+        }
+        if (at) spread.push([at.x, at.z]);
+      }
+      return {radius: trunk.geometry.parameters.radius, straps: straps.length, off: Math.max(0, ...off), spread,
+              memberOff: inside.length ? Math.max(...inside) : null, n: inside.length,
+              ys: [Math.min(...line.map(p => p.y)), Math.max(...line.map(p => p.y))]};
+    }""")
+    if not got:
+        return bad + ["3D: no bundle-b1-trunk tube in the scene"]
+    want_r = f["diameter"] / 2
+    if want_r <= 3:
+        return bad + [f"3D: the bundle is {f['diameter']} mm, not above the 6 mm drawing floor"]
+    if abs(got["radius"] - want_r) > 0.01:
+        bad.append(f"3D: the tube's radius is {got['radius']}, not half the bundle's {f['diameter']} mm")
+    if got["ys"][1] - got["ys"][0] < 400:
+        bad.append(f"3D: the tube does not run the 10U trunk (y {got['ys']})")
+    if got["straps"] != f["count"]:
+        bad.append(f"3D: {got['straps']} strap bands, the kit counts {f['count']}")
+    if got["off"] > 3:
+        bad.append(f"3D: a strap band sits {got['off']:.1f} mm off the tube's centre line")
+    # A member's centre line is within the radius less half a 3 mm tube, so the whole tube is inside.
+    if got["memberOff"] is None or got["memberOff"] > want_r - 1.5 + 0.5:
+        bad.append(f"3D: a member's tube reaches {got['memberOff']} mm from the bundle's centre on the lane ({got['n']} points; radius {want_r})")
+    # ...and spread across it: three members at three places, at least a millimetre apart.
+    pts = got["spread"]
+    close = [(i, j) for i in range(len(pts)) for j in range(i + 1, len(pts))
+             if ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5 < 1]
+    if len(pts) != 3 or close:
+        bad.append(f"3D: the members are not spread inside the bundle at U25: {pts}")
+    return bad
+
+
 @extra("rack.html: a route that would enter and leave a ring by one face is drawn to the face and back, in 2D and 3D, and reported (Portrayal #930)")
 def check_rack_ring_doubles_back(page, base):
     bad = []

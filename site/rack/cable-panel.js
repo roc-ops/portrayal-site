@@ -7,6 +7,8 @@
 import {el} from './dom.js';
 import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, endKey, countsBy,
         matches} from '../../vendor/rack/cable-rules.js';
+import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
+import {bundleHeader, memberLine} from './bundle-panel.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -106,7 +108,14 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // mismatch as a warning. A row the filter leaves out is hidden; the count
 // line says how many match. `uOf` is endName's: how tall a device is, for
 // the U a row names it with.
-export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
+// BUNDLES (portrayal-site#142): with any, the cables are grouped by bundle,
+// each group under its bundle's header row (bundle-panel.js bundleHeader:
+// name, members, size, warnings), and the rest follow. `bundles` is
+// bundle-view.js bundleFacts' Map, or null before the routes are known. A
+// selected cable gets a Bundle button (onBundleNew) or, in a bundle, one that
+// opens it (onBundleSelect). A rack with no bundles lists exactly as before.
+export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete,
+                           bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -127,7 +136,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
       return b;
     })]);
 
-  const rows = cables.map(c => {
+  const rowOf = c => {
     const picked = c.id === selectedId;
     const row = el('button', {type: 'button', id: `cableRow-${c.id}`, 'data-cable-row': c.id,
       'aria-pressed': String(picked), text: `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}`});
@@ -142,13 +151,25 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     // The selected cable stays on the list even when the filter leaves it out; say so.
     if (picked && !matches(c, on))
       kids.push(el('span', {class: 'rk-muted', 'data-off-filter': 'true', text: 'Not in this filter.'}));
+    const inB = bundleOfCable(rack, c.id);
+    if (inB) kids.push(memberLine(rack, inB, bundles?.get(inB.id) ?? null, c.id));
+    const bundleBtn = !picked || !onBundleNew ? null
+      : inB ? button('cableBundleOpen', `Open ${bundles?.get(inB.id)?.name ?? inB.id}`, () => onBundleSelect(inB.id))
+        : cables.length >= 2 ? button('cableBundle', 'Bundle…', () => onBundleNew(c.id)) : null;
     if (picked) kids.push(el('div', {class: 'rk-actions'}, [
       button('cableEdit', 'Edit', () => onEdit(c.id)),
-      button('cableDelete', 'Delete', () => onDelete(c.id))]));
-    const li = el('li', {'data-cable-item': c.id}, kids);
+      button('cableDelete', 'Delete', () => onDelete(c.id)), bundleBtn].filter(Boolean)));
+    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {})}, kids);
     li.hidden = !picked && !matches(c, on);
     return li;
-  });
+  };
+  // Each bundle's header, then its members in combing order; then the cables in no bundle.
+  const groups = bundlesOf(rack);
+  const inAny = new Set(groups.flatMap(b => b.members.map(m => m.cable)));
+  const rows = [
+    ...groups.flatMap(b => [bundleHeader({bundle: b, fact: bundles?.get(b.id) ?? null, selected: selectedBundle === b.id, onSelect: onBundleSelect}),
+      ...b.members.map(m => cables.find(c => c.id === m.cable)).filter(Boolean).map(rowOf)]),
+    ...cables.filter(c => !inAny.has(c.id)).map(rowOf)];
 
   return el('div', {id: 'cableList', class: 'rk-cables'}, [
     el('h3', {text: 'Cables'}),
