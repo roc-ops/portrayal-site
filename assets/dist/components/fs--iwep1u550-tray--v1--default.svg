@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.4mm" height="550.0mm" viewBox="0 0 441.4 550.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="iwep1u550-tray" data-path="iwep1u550-tray" data-class="mechanical" data-ref="fs/iwep1u550-tray@1:1.0.0" data-depth="42" data-wall="#1b1d20" transform="translate(0,0)">
+    <title>iwep1u550-tray</title>
+    <path id="iwep1u550-tray--floor" fill="#1b1d20" fill-rule="evenodd" d="M0,0 H441.4 V550.0 H0 Z M64.48,101.26 L92.76,72.98 A3.00,3.00 0 0 0 88.52,68.74 L60.24,97.02 A3.00,3.00 0 0 0 64.48,101.26 Z M136.58,101.26 L164.86,72.98 A3.00,3.00 0 0 0 160.62,68.74 L132.34,97.02 A3.00,3.00 0 0 0 136.58,101.26 Z M208.68,101.26 L236.96,72.98 A3.00,3.00 0 0 0 232.72,68.74 L204.44,97.02 A3.00,3.00 0 0 0 208.68,101.26 Z M280.78,101.26 L309.06,72.98 A3.00,3.00 0 0 0 304.82,68.74 L276.54,97.02 A3.00,3.00 0 0 0 280.78,101.26 Z M352.88,101.26 L381.16,72.98 A3.00,3.00 0 0 0 376.92,68.74 L348.64,97.02 A3.00,3.00 0 0 0 352.88,101.26 Z M64.48,196.26 L92.76,167.98 A3.00,3.00 0 0 0 88.52,163.74 L60.24,192.02 A3.00,3.00 0 0 0 64.48,196.26 Z M136.58,196.26 L164.86,167.98 A3.00,3.00 0 0 0 160.62,163.74 L132.34,192.02 A3.00,3.00 0 0 0 136.58,196.26 Z M208.68,196.26 L236.96,167.98 A3.00,3.00 0 0 0 232.72,163.74 L204.44,192.02 A3.00,3.00 0 0 0 208.68,196.26 Z M280.78,196.26 L309.06,167.98 A3.00,3.00 0 0 0 304.82,163.74 L276.54,192.02 A3.00,3.00 0 0 0 280.78,196.26 Z M352.88,196.26 L381.16,167.98 A3.00,3.00 0 0 0 376.92,163.74 L348.64,192.02 A3.00,3.00 0 0 0 352.88,196.26 Z M64.48,291.26 L92.76,262.98 A3.00,3.00 0 0 0 88.52,258.74 L60.24,287.02 A3.00,3.00 0 0 0 64.48,291.26 Z M136.58,291.26 L164.86,262.98 A3.00,3.00 0 0 0 160.62,258.74 L132.34,287.02 A3.00,3.00 0 0 0 136.58,291.26 Z M208.68,291.26 L236.96,262.98 A3.00,3.00 0 0 0 232.72,258.74 L204.44,287.02 A3.00,3.00 0 0 0 208.68,291.26 Z M280.78,291.26 L309.06,262.98 A3.00,3.00 0 0 0 304.82,258.74 L276.54,287.02 A3.00,3.00 0 0 0 280.78,291.26 Z M352.88,291.26 L381.16,262.98 A3.00,3.00 0 0 0 376.92,258.74 L348.64,287.02 A3.00,3.00 0 0 0 352.88,291.26 Z M64.48,386.26 L92.76,357.98 A3.00,3.00 0 0 0 88.52,353.74 L60.24,382.02 A3.00,3.00 0 0 0 64.48,386.26 Z M136.58,386.26 L164.86,357.98 A3.00,3.00 0 0 0 160.62,353.74 L132.34,382.02 A3.00,3.00 0 0 0 136.58,386.26 Z M208.68,386.26 L236.96,357.98 A3.00,3.00 0 0 0 232.72,353.74 L204.44,382.02 A3.00,3.00 0 0 0 208.68,386.26 Z M280.78,386.26 L309.06,357.98 A3.00,3.00 0 0 0 304.82,353.74 L276.54,382.02 A3.00,3.00 0 0 0 280.78,386.26 Z M352.88,386.26 L381.16,357.98 A3.00,3.00 0 0 0 376.92,353.74 L348.64,382.02 A3.00,3.00 0 0 0 352.88,386.26 Z M64.48,481.26 L92.76,452.98 A3.00,3.00 0 0 0 88.52,448.74 L60.24,477.02 A3.00,3.00 0 0 0 64.48,481.26 Z M136.58,481.26 L164.86,452.98 A3.00,3.00 0 0 0 160.62,448.74 L132.34,477.02 A3.00,3.00 0 0 0 136.58,481.26 Z M208.68,481.26 L236.96,452.98 A3.00,3.00 0 0 0 232.72,448.74 L204.44,477.02 A3.00,3.00 0 0 0 208.68,481.26 Z M280.78,481.26 L309.06,452.98 A3.00,3.00 0 0 0 304.82,448.74 L276.54,477.02 A3.00,3.00 0 0 0 280.78,481.26 Z M352.88,481.26 L381.16,452.98 A3.00,3.00 0 0 0 376.92,448.74 L348.64,477.02 A3.00,3.00 0 0 0 352.88,481.26 Z" data-path="iwep1u550-tray/floor" data-class="bezel" />
+  </g>
+</svg>

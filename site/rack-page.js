@@ -112,7 +112,9 @@ function disposeScene3d() {
 // gutters widened (spec 7); a cable with no route draws as before.
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
 // The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
-const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null]))
+// And the detours (kit 0.11.0, #949): a body moved can take a cable round it with no waypoint changing.
+const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null,
+  rf.detours?.get(id) ?? null]))
   + bundlesSig(rf) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
@@ -123,7 +125,8 @@ async function rebuild3d() {
   disposeScene3d();
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes), stage});
+    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes),
+    detours: S.routes?.detours ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -1587,6 +1590,16 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // rings a route would enter and leave by one face (route.js ringFindings), as plain data.
     rings: () => (S.routes ? {marks: [...S.routes.marks].map(([id, m]) => [id, m.map(x => (x ? {...x} : null))]),
                               findings: S.routes.ringFindings.map(f => ({...f}))} : null),
+    // Each cable's measured path (route.js routePath, kit 0.12.0) as plain data:
+    // its routed length, the rings it passes (`held` where a ring holds a cord
+    // reaching just into it past its port), the detours and the bodies it still
+    // crosses; and the page's crosses-body findings (route.js bodyFindings).
+    paths: () => (S.routes ? Object.fromEntries([...S.routes.paths].map(([id, p]) => [id, p && {
+      measured: S.routes.lengths.get(id)?.measured ?? null, value: S.routes.lengths.get(id)?.value ?? null,
+      rings: p.rings.map(g => ({item: g.item, via: g.via, passed: g.passed, held: g.held === true})),
+      detours: p.detours.map(d => ({between: d.between, points: d.points.map(q => ({...q}))})),
+      crossings: p.crossings.map(f => ({...f}))}])) : null),
+    bodies: () => (S.routes ? S.routes.bodyFindings.map(f => ({...f})) : null),
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),

@@ -1,0 +1,535 @@
+{
+ "attrs": {
+  "environmental": {
+   "operating-humidity": "20% to 80% (non-condensing)",
+   "operating-temp": "-20 to 80 C"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "airflow-cfm": 320
+  },
+  "physical": {
+   "blade-material": "Thermoplastic PBT",
+   "frame-material": "Die-Cast Aluminum Painted",
+   "mounting-hardware": "M6 screw kit x8"
+  },
+  "power": {
+   "input-voltage": "110~120 V, 50 Hz",
+   "power-max-w": 15
+  },
+  "thermal": {
+   "bearing": "Sleeve",
+   "fan-speed": "2300 +/-10% RPM",
+   "noise": "59.4 dB(A)"
+  }
+ },
+ "chassis": {
+  "airflow": "top-to-bottom",
+  "color": "#1b1d20",
+  "depth": 330.0,
+  "ears": {
+   "positions": [
+    {
+     "default": true,
+     "name": "flush"
+    }
+   ]
+  },
+  "full-depth": false,
+  "height": 44.0,
+  "power": "ac",
+  "ru": 1,
+  "weight-kg": 5.5,
+  "width": 424.0
+ },
+ "configurations": {
+  "base": {
+   "default": true,
+   "description": "The fan tray as FS ships FANS1U4F, ears and cord fitted.",
+   "kind": "base"
+  }
+ },
+ "datasheet": {
+  "sha256": "62203e3a791cc86c35ac6913aa86843978af622e4f8f08b0b65f62cc63290b60",
+  "title": "FS Cooling Fan Datasheet (FANS1U2F, FANS1U4F, FANP3U3F)"
+ },
+ "description": "1U 19in rack fan tray, FS FANS1U4F: a black aluminium box 330 mm deep with 4 120 mm fans that blow down through the rack, a temperature controller with a two-digit display, LOAD and SET lamps and four keys on the front, a power switch, and a fixed mains cord out of the back; 110-120 V, 15 W, 320 CFM. Mounting ears bolt to each end.",
+ "format": 1,
+ "gaps": [
+  {
+   "note": "FS has no product page or render for FANS1U4F; the face is the quick start guide's line drawing, and the top, bottom, rear and sides are not drawn anywhere.",
+   "reason": "needs-photo",
+   "wanted": "a photograph of the tray",
+   "what": "face-detail"
+  },
+  {
+   "note": "the screw kit has eight M6 screws to the 2F's four, which suggests rear brackets for the 330 mm tray; no figure shows them.",
+   "reason": "vendor-silent",
+   "wanted": "the 4F installation figure",
+   "what": "rear-mounting"
+  }
+ ],
+ "groups": {
+  "controller": {
+   "description": "the temperature controller that switches the fans",
+   "index-origin": 1,
+   "role": "management",
+   "term": "Controller"
+  },
+  "fans": {
+   "description": "the fans in the lid, each behind its stamped guard",
+   "index-origin": 1,
+   "role": "service",
+   "term": "Fan"
+  },
+  "power": {
+   "description": "the fixed mains cord, NEMA 5-15P",
+   "index-origin": 1,
+   "role": "service",
+   "term": "Cord"
+  },
+  "power-switch": {
+   "description": "the power switch beside the controller",
+   "index-origin": 1,
+   "role": "service",
+   "term": "Switch"
+  }
+ },
+ "kind": "device",
+ "manufacturer": "FS.com",
+ "maturity": "modelled",
+ "model": "FANS1U4F",
+ "name": "fans1u4f",
+ "profile": "passive",
+ "provenance": {
+  "airflow": {
+   "confidence": "datasheet",
+   "note": "`top-to-bottom`: the datasheet's benefits list has the pre-installed fans pushing hot air down through the rack, which is air drawn in at the tray's top and pushed out of its bottom."
+  },
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "the FS Cooling Fan datasheet (portal 6624), one table for FANS1U2F, FANS1U4F and FANP3U3F, and the FANP3U3F product page. The datasheet prints every model's dimensions as \"HxWxD 483x170x44\" and the like, its axes scrambled. The 15 W is \"Input Power 15W\" with no qualifier, filed as the maximum."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "44 x 330: the datasheet's \"483x330x44 mm\" read as width over the ears, depth and height (its HxWxD heading is scrambled). THE EARS ARE SEPARATE BRACKETS: the guide's front view draws an L bracket with three oblong holes bolted to each end of a narrower box, so the body between them is modelled and the ears are optional (`chassis.ears`, drawn by the generic ear). On fig-0011 the tray spans 627 px over its ears for the 483 (1.298 px/mm) and the ears' inner fold lines stand 38.5 px from each end, 29.6 mm, which leaves a body of 424 (the figure's 58 px height reads 44.7 at that scale, so it is orthographic to 1.5 per cent)."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "\"Die-Cast Aluminum Painted\"; drawn black as the FANP3U3F, the one fan part FS photographs."
+  },
+  "controller": {
+   "confidence": "drawing",
+   "note": "fs/fan-temp-controller@1 at 173.4 in and 5.0 down: fig-0011's bezel spans 267.5 to 368.75 px and 10.5 to 55.5 px, measured from the body's left fold at 42.5 px and its top edge at 4 px."
+  },
+  "ears": {
+   "confidence": "drawing",
+   "note": "two L brackets with three oblong holes each, 29.6 mm wide outside the body (fig-0011); the datasheet's 483 is over them. Not drawn by default; the generic ear (#909) draws them on request."
+  },
+  "fans": {
+   "confidence": "estimated",
+   "note": "4 fans of 120 mm, blowing down (\"Pre-installed Fans Push Hot Air Down through Rack\"): fig-0003 draws the 2F's two on the lid, at about a quarter and three quarters of the width. They are drawn there, in two rows, and on the base below them; no figure dimensions them, and the base is not drawn anywhere."
+  },
+  "lifecycle": {
+   "confidence": "estimated",
+   "note": "checked 2026-10-09 against what the intake holds: the FS documentation portal's Accessories tree, read on 2026-10-08, carries no end-of-sale notice for this part. FS publishes no product page for it; fs.com search finds nothing. No web search beyond FS's own pages was made."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "the FS Cooling Fan datasheet (portal 6624) for the figures; the FANS1U2F/FANS1U4F Quick Start Guide V2.0 (portal 6672) for the face - its labelled front view (fig-0011, the 2F drawn) and its overview of both trays (fig-0003) - and the controller's user manual (portal 6761). FS has no product page for FANS1U4F and no render or photograph of it; the guide's line drawings are the only images. The FANS1U4F is portal-only and probably discontinued."
+  },
+  "rear": {
+   "confidence": "estimated",
+   "note": "the datasheet and guide put the power cord and the controller's ambient sensor lead at the back; no figure shows the back, so both are placed at the switch end, estimated."
+  },
+  "sides": {
+   "confidence": "estimated",
+   "note": "plain painted aluminium; no figure shows a side."
+  },
+  "switch": {
+   "confidence": "drawing",
+   "note": "the power switch in its square bezel, 383.3 to 409.9 in and 6.2 to 37.8 down (fig-0011), the rocker inside it drawn as common/rocker-switch@1 turned upright; the guide calls it the Power Switch. The rocker's 15 x 21 is the library part's, a little smaller than the guide's 19.3 square window."
+  }
+ },
+ "references": [
+  {
+   "sha256": "3426d839c716499093aa6b4fcf7db40a2d46fc29a9271f7f2424671dde6aff9b",
+   "title": "FS FANS1U2F/FANS1U4F Quick Start Guide V2.0 (portal 6672)"
+  },
+  {
+   "sha256": "803097381ca8397b3bfa15585cd70239e7981d296f412d59e2554142f70d27ee",
+   "title": "FS FANS1U2F/FANS1U4F temperature controller user manual (portal 6761)"
+  }
+ ],
+ "version": "0.1.0",
+ "views": {
+  "bottom": {
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "base",
+      "kind": "base",
+      "size": [
+       424.0,
+       330.0
+      ]
+     },
+     {
+      "at": [
+       261.0,
+       190.5
+      ],
+      "fill": "#0a0b0c",
+      "id": "guard-1-back",
+      "kind": "fan-opening",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ]
+     },
+     {
+      "at": [
+       261.0,
+       190.5
+      ],
+      "id": "guard-1",
+      "kind": "finger-guard",
+      "pattern": "grille",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ],
+      "vent": 1.5
+     },
+     {
+      "at": [
+       49.0,
+       190.5
+      ],
+      "fill": "#0a0b0c",
+      "id": "guard-2-back",
+      "kind": "fan-opening",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ]
+     },
+     {
+      "at": [
+       49.0,
+       190.5
+      ],
+      "id": "guard-2",
+      "kind": "finger-guard",
+      "pattern": "grille",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ],
+      "vent": 1.5
+     },
+     {
+      "at": [
+       261.0,
+       25.5
+      ],
+      "fill": "#0a0b0c",
+      "id": "guard-3-back",
+      "kind": "fan-opening",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ]
+     },
+     {
+      "at": [
+       261.0,
+       25.5
+      ],
+      "id": "guard-3",
+      "kind": "finger-guard",
+      "pattern": "grille",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ],
+      "vent": 1.5
+     },
+     {
+      "at": [
+       49.0,
+       25.5
+      ],
+      "fill": "#0a0b0c",
+      "id": "guard-4-back",
+      "kind": "fan-opening",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ]
+     },
+     {
+      "at": [
+       49.0,
+       25.5
+      ],
+      "id": "guard-4",
+      "kind": "finger-guard",
+      "pattern": "grille",
+      "rx": 57.0,
+      "size": [
+       114.0,
+       114.0
+      ],
+      "vent": 1.5
+     }
+    ]
+   },
+   "size": {
+    "h": 330.0,
+    "w": 424.0
+   }
+  },
+  "front": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       173.4,
+       5.0
+      ],
+      "group": "controller",
+      "id": "controller",
+      "ref": "fs/fan-temp-controller@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       386.1,
+       14.5
+      ],
+      "for": "chassis",
+      "group": "power-switch",
+      "id": "power-switch",
+      "ref": "common/rocker-switch@1",
+      "rel-pos": 1,
+      "rotate": 90
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "plate",
+      "kind": "plate",
+      "size": [
+       424.0,
+       44.0
+      ]
+     },
+     {
+      "at": [
+       383.3,
+       6.2
+      ],
+      "fill": "#2b2e31",
+      "id": "switch-bezel",
+      "kind": "switch-bezel",
+      "rx": 1.0,
+      "size": [
+       26.6,
+       31.6
+      ]
+     }
+    ]
+   },
+   "size": {
+    "h": 44.0,
+    "w": 424.0
+   }
+  },
+  "left": {
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "side",
+      "kind": "side",
+      "size": [
+       330.0,
+       44.0
+      ]
+     }
+    ]
+   },
+   "size": {
+    "h": 44.0,
+    "w": 330.0
+   }
+  },
+  "rear": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       384.0,
+       16.0
+      ],
+      "group": "power",
+      "id": "power-cord",
+      "ref": "fs/fan-cord-5-15p@1",
+      "rel-pos": 1
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "plate",
+      "kind": "plate",
+      "size": [
+       424.0,
+       44.0
+      ]
+     },
+     {
+      "at": [
+       362.0,
+       18.0
+      ],
+      "fill": "#16181a",
+      "id": "sensor-grommet",
+      "kind": "sensor-lead",
+      "shape": "circle",
+      "size": [
+       8.0,
+       8.0
+      ]
+     }
+    ]
+   },
+   "size": {
+    "h": 44.0,
+    "w": 424.0
+   }
+  },
+  "right": {
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "side",
+      "kind": "side",
+      "size": [
+       330.0,
+       44.0
+      ]
+     }
+    ]
+   },
+   "size": {
+    "h": 44.0,
+    "w": 330.0
+   }
+  },
+  "top": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       49.0,
+       25.5
+      ],
+      "group": "fans",
+      "id": "fan-1",
+      "ref": "fs/fan-grille-120@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       261.0,
+       25.5
+      ],
+      "group": "fans",
+      "id": "fan-2",
+      "ref": "fs/fan-grille-120@1",
+      "rel-pos": 2
+     },
+     {
+      "at": [
+       49.0,
+       190.5
+      ],
+      "group": "fans",
+      "id": "fan-3",
+      "ref": "fs/fan-grille-120@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       261.0,
+       190.5
+      ],
+      "group": "fans",
+      "id": "fan-4",
+      "ref": "fs/fan-grille-120@1",
+      "rel-pos": 4
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1b1d20",
+      "id": "lid",
+      "kind": "lid",
+      "size": [
+       424.0,
+       330.0
+      ]
+     }
+    ]
+   },
+   "size": {
+    "h": 330.0,
+    "w": 424.0
+   }
+  }
+ }
+}

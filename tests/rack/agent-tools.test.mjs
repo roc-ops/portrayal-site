@@ -870,9 +870,15 @@ test('bundles: edit_rack asks for the routes, describe_rack lists them, inspect 
   assert.match(b, /\nroute: left-front U36-U40\n/);
   assert.match(b, /\nNot checked: the routes are not known here\./);
   assert.match(text(await run('inspect', {id: 'c1'})), /\nIn bundle b1; inspect b1 for the bundle\./);
-  // A rack with no bundle is described without reading the routes.
+  // A rack with cables and no bundle is still described with the routes: the
+  // kit's "Findings:" line (kit 0.11.0, #949) reads them.
   ed.apply({op: 'bundle.remove', id: 'b1'});
   const m = contexts.length;
   await run('describe_rack');
-  assert.equal(contexts.length, m);
+  assert.deepEqual(contexts.slice(m).map(c => c.opts), [{route: true}]);
+  // A rack with neither is described without reading them.
+  ed.apply((ed.rack().cables ?? []).map(c => ({op: 'cable.remove', id: c.id})));
+  const k = contexts.length;
+  await run('describe_rack');
+  assert.equal(contexts.length, k);
 });

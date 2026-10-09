@@ -1,0 +1,190 @@
+{
+ "aliases": [
+  "178163"
+ ],
+ "attrs": {
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "physical": {
+   "color": "Black",
+   "din-profile": "ts35x7.5",
+   "din-rail-centre-from-top-mm": 43.75,
+   "din-rail-count": 1,
+   "din-rail-length-mm": 400,
+   "din-rail-setback-max-mm": 271.2,
+   "din-rail-setback-min-mm": 51.2,
+   "din-rail-setback-mm": 161.2,
+   "material": "SPCC",
+   "mounting-hardware": "M6 screws, cage nuts and washers; M5 screws and nuts for the side brackets",
+   "usable-width-mm": 421.2
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 360.0,
+  "h": 87.5,
+  "mount": "rack",
+  "power": null,
+  "ru": 2,
+  "shell": "sheet",
+  "thickness": 1.5,
+  "w": 424.2
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The bracket as FS ships DINRAIL2U, assembled, with its rail.",
+   "files": {
+    "bottom": "dinrail2u.base.bottom.svg",
+    "front": "dinrail2u.base.front.svg",
+    "left": "dinrail2u.base.left.svg",
+    "rear": "dinrail2u.base.rear.svg",
+    "right": "dinrail2u.base.right.svg",
+    "top": "dinrail2u.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "dinrail2u",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "no FS document states what the DINRAIL2U or its rail may carry.",
+   "scope": [],
+   "wanted": "a load rating from FS",
+   "what": "load-rating"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "FS does not name the rail's profile; TS35 x 7.5 is read off the close-up render.",
+   "scope": [],
+   "wanted": "the profile from FS or a ruler on the rail",
+   "what": "din-profile"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the rail panel's face can stand from 51.2 to 271.2 mm behind the ears; it is drawn at 161.2, the middle, and no configuration offers the other positions, because the format has no way to move a part along a slot per configuration.",
+   "scope": [],
+   "wanted": "a setback field or configuration key for adjustable parts",
+   "what": "setback"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "DINRAIL2U",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "pdu-class": null,
+ "provenance": {
+  "chassis": {
+   "confidence": "datasheet",
+   "note": "87.5 x 484 x 360 (HxWxD) over the ears, which is the part. THE EARS ARE BUILT IN: each is the front end of a side bracket folded out flat, one piece with the bracket that forms the frame's side (the datasheet's front and isometric views; renders g1 and g2 of SKU 178163), so under the owner's rule of 2026-10-09 they are part of the face and always drawn, 29.9 each side: the front is the 484 face, and the chassis is the 424.2 between the side brackets, which is what the other five faces and the side brackets in 3D are (as the FHD-1UFMT-N draws its plate). On the 300 dpi front view the outer edges stand 484 apart at 1.37 px/mm and the folds 29.9 in from each."
+  },
+  "color": {
+   "confidence": "photo-measured",
+   "note": "black steel and a silver zinc-plated rail, as every render shows."
+  },
+  "eia": {
+   "confidence": "registry",
+   "note": "EIA-310 hole positions: the rail holes of each rack unit stand 6.35, 22.225 and 38.1 mm up from its bottom, and the two rails' holes are 465.1 mm apart across the rack. The part is taken as centred in the rack units it fills."
+  },
+  "hosting": {
+   "confidence": "datasheet",
+   "note": "for #935: one TS35 x 7.5 rail, 400 mm long, centred 43.75 mm below the top of the 87.5 mm face, its panel's face 51.2 to 271.2 behind the ears; the width between the side brackets is 421.2; the space available behind the rail runs to the 360 mm depth. FS states no load rating. Recorded in `attrs.physical`."
+  },
+  "lifecycle": {
+   "confidence": "estimated",
+   "note": "checked 2026-10-09 against what the intake holds: the FS documentation portal's Accessories tree, read on 2026-10-08, carries no end-of-sale notice for this part. The product page (SKU 178163) was live on 2026-10-08. No web search beyond FS's own pages was made."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "the FS 2/4U DIN Rail Bracket datasheet (portal 9718), its DINRAIL2U front, top, side and isometric views in mm, rendered at 300 dpi; the gallery renders of SKU 178163; the DINRAIL2U quick start guide (portal 5940) for the assembly and the hardware; the FS DIN Visio stencil (master DINRAIL2U)."
+  },
+  "rail": {
+   "confidence": "drawing",
+   "note": "a TS35 x 7.5 rail 400 long (fs/din-rail-ts35-400@1) centred on the panel's height, its centre line 43.75 below the top: the datasheet's front views draw it across the whole 400 panel at mid-height (the 4U's measures 82.2 down on the 300 dpi render, the 165.1 face's middle being 82.55)."
+  },
+  "setback": {
+   "confidence": "drawing",
+   "note": "the rail panel's front face can stand from 51.2 to 271.2 mm behind the ears, and is drawn at 161.2, the middle of that travel; the rail's face stands 7.5 in front of the panel's. The panel slides along the two long slots in each 360 mm side bracket (\"the adjustable rails can be easily set back\"; QSG: adjust the rail panel's position to suit the device). On the datasheet's side view (p2, vector, read at 600 dpi, 3.342 px/mm along the 360) the slots run 64.4 to 292 and are about 5.2 wide, so a screw's centre travels from 69.4 to 289.4; the panel's tab spans 51.2 to 87.1 with its screw at 69.4, so the panel face stands 18.2 in front of the screw. The face travel is the screw travel less that. The gallery renders show it at both ends of that travel: g4 about 85 and g3 about 227 behind the ears, each read along the near side bracket as a fraction of its 360 (a three-quarter render, so to perhaps 10 per cent). With no single photographed position, the middle of the travel is the default; the range is in attrs and the format cannot offer the other positions (see gaps)."
+  },
+  "sheet": {
+   "confidence": "estimated",
+   "note": "`shell: sheet`, 1.5: an open frame of bent steel - two side brackets, a rail panel and a rail - which a solid box would hide. In 3D the side brackets are built from the side views, standing their thickness off them. The panel is a well on the front view whose floor is the plate at its setback, black with its cut-outs open, and the rail stands 7.5 off that floor with its face art - flanges, crown, slots - on its front. The six views are elevations."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

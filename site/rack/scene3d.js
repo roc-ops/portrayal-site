@@ -17,7 +17,8 @@ import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
-import {laneXAt} from '../../vendor/rack/route.js';
+import {laneXAt, lanesOf} from '../../vendor/rack/route.js';
+import {solidsOf, detour} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
@@ -77,9 +78,14 @@ const across = run => (run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x
 // however many there are).
 // `bases` collects each bundle's slot offset from the waypoint's anchor, per
 // lane or pathway, Map(`bundle|key` -> Vector3), for its tube (hangBundles).
+// THE DETOURS (kit 0.11.0, #949): `detoursOf` is cable id -> route-context.js
+// detourStops, the points the kit added round a solid body, in rack mm, each
+// after the waypoint its leg starts from. The scene is in the rack's axes with
+// the front rail plane at metrics().faceZ, so a point is (x, y, faceZ + z).
 function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0]), marksOf = new Map(),
-                      places = null, bases = new Map()) {
+                      places = null, bases = new Map(), detoursOf = new Map()) {
   const used = new Map(), slot = new Map();
+  const faceZ = scene.metrics().faceZ;
   return async link => {
     const r = routes?.get(link.id);
     if (!r) return {points: [], marks: null};
@@ -87,6 +93,12 @@ function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.sp
     const given = all?.length === r.waypoints.length ? all : null;
     const place = places?.get(link.id) ?? null;
     const out = [], marks = [];
+    const ds = detoursOf?.get(link.id) ?? [];
+    const after = k => { for (const d of ds) if (d.after === k) for (const q of d.points) {
+      out.push(new THREE.Vector3(q.x, q.y, faceZ + q.z));
+      marks.push(null);
+    } };
+    after(-1);
     for (const [i, w] of r.waypoints.entries()) {
       const got = await anchorOf(scene, THREE, w, laneAt);
       if (!got) continue;
@@ -112,9 +124,49 @@ function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.sp
       }
       out.push(p);
       marks.push(mark);
+      after(i);
     }
     return {points: out, marks: given ? marks : null};
   };
+}
+
+// THE DRAWN LEGS, ROUND THE SAME BODIES (cables.js drawCables3d `clear`). A
+// tube leaves its plug and reaches out of the face before it turns, where the
+// kit measures from the port on the panel, so a drawn leg from there to a
+// ring can rise through a tray floor the kit's leg passed behind. Each drawn
+// leg is taken round by the kit's own rules (solids.js detour: the tray's
+// front edge first), in rack mm, with the drawn tube's width as its diameter.
+// Returns [{after, points}] as cables.js wants them; a leg the rules cannot
+// clear is left, and the browser check finds it.
+function clearLegs(THREE, rack, chassisOf, faceZ) {
+  if (typeof chassisOf !== 'function') return null;
+  const solids = solidsOf(rack, {chassisOf});
+  if (!solids.length) return null;
+  const lanes = y => {
+    const ru = Math.max(1, Math.min(rack.frame.heightRU, Math.floor(y / RU) + 1));
+    return [...new Set(lanesOf(rack.frame).map(l => laneXAt(rack, l, ru, chassisOf)))];
+  };
+  const toRack = v => ({x: v.x, y: v.y, z: v.z - faceZ});
+  return pts => {
+    const out = [];
+    for (let k = 1; k < pts.length; k++) {
+      const extra = detour(toRack(pts[k - 1]), toRack(pts[k]), solids, {diameter: WIDTH, lanes});
+      if (extra?.length) out.push({after: k - 2, points: extra.map(q => new THREE.Vector3(q.x, q.y, faceZ + q.z))});
+    }
+    return out;
+  };
+}
+
+// THE SOLID BODIES OF THE RACK (kit 0.11.0, #949: solids.js solidsOf) as
+// world boxes, [{ref, part, box}]: a box device's envelope, a sheet part's
+// plates (a lacer's tray floor), a duct's walls and a PDU, each where the kit
+// measures it. A hanging cable is kept out of them (cables.js clearOf), and
+// the browser check samples every routed tube against them.
+export function solidBoxes(THREE, rack, chassisOf, faceZ) {
+  if (typeof chassisOf !== 'function') return [];
+  return solidsOf(rack, {chassisOf}).map(s => ({ref: s.item, part: s.part,
+    box: new THREE.Box3(new THREE.Vector3(s.box.x0, s.box.y0, faceZ + s.box.z0),
+                        new THREE.Vector3(s.box.x1, s.box.y1, faceZ + s.box.z1))}));
 }
 
 // THE BUNDLES AS TUBES (portrayal-site#142; design section 6): each drawn
@@ -234,18 +286,23 @@ function placeSided(scene, items, chassisOf) {
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null) {
+async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null, detours = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const laneAt = (lane, ru) => laneXAt(rack, lane, ru, chassisOf);
   const bases = new Map();
   try {
-    const drawn = await drawCables3d(scene, cablePlan3d(rack), {anchor: async (item, path, view) => {
+    // The bodies are the kit's (solidsOf), not the scene's meshes: a sheet
+    // part's plates are solid as well, and a hang is kept out of them.
+    const boxes = solidBoxes(scene.three.THREE, rack, chassisOf, scene.metrics().faceZ);
+    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes,
+      clear: clearLegs(scene.three.THREE, rack, chassisOf, scene.metrics().faceZ), anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
       const got = await scene.cableAnchor({id: item}, path, {view});
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, laneAt, marks ?? new Map(), bundles?.places ?? null, bases)});
+    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, laneAt, marks ?? new Map(), bundles?.places ?? null, bases,
+                               detours ?? new Map())});
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
@@ -265,8 +322,9 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
 // opening view. `stage` is the background colour the reader picked (stage.js);
 // the page changes it on a built scene with setStage below.
 // `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
+// `detours` is routeFacts' cable id -> detourStops (kit 0.11.0), or null.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null,
-                                              bundles = null, stage = '#101214'}) {
+                                              bundles = null, detours = null, stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -323,7 +381,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles, detours) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

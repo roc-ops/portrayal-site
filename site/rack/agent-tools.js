@@ -153,9 +153,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           if (loose.ends.length > 10) extra.push(`and ${loose.ends.length - 10} more; edit_rack's select {loose: true} reaches them all.`);
         }
         if (loose.unchecked) extra.push('Some ports could not be checked.');
-        // A bundle's line gives its size only with the routes (kit 0.7.0), so
-        // they are read for a rack that has bundles.
-        const ctx = bundlesOf(rack).length ? await context(rack, [], {route: true}) : {};
+        // A bundle's line gives its size only with the routes (kit 0.7.0), and
+        // the kit's "Findings:" line, the cables that still pass through a
+        // body (kit 0.11.0, #949), needs them too, so they are read for a rack
+        // that has cables or bundles.
+        const ctx = bundlesOf(rack).length || (rack.cables ?? []).length ? await context(rack, [], {route: true}) : {};
         // The kit's window names what it shows in its first line, so the limit
         // shrinks until the answer fits rather than being cut after the fact.
         // The kit's own window is unbounded in characters and capped at its

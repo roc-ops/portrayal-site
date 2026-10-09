@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="483.0mm" height="130.0mm" viewBox="0 0 483.0 130.0" data-device="fanp3u3f" data-view="rear" data-frame-material="Die-Cast Aluminum Painted" data-blade-material="Thermoplastic PBT" data-airflow-cfm="240" data-power-max-w="15" data-input-voltage="110~120 V, 50 Hz" data-fan-speed="2300 +/-10% RPM" data-noise="56.9 dB(A)" data-bearing="Sleeve" data-operating-temp="-20 to 80 C" data-operating-humidity="20% to 80% (non-condensing)" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"FS.com FANP3U3F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"fs/fan-cord-5-15p@1":"1.0.0"},"source-sha256":"e99f89763e9010b811befb6f96f1fddca41e7e0b5eb6216870beb40ce21d252e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="FANP3U3F" x="0" y="0" width="483" height="130" rx="1.2" fill="#1b1d20" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-grille" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="plate" data-kind="plate" x="0" y="0" width="483" height="130" rx="0.6" fill="#1b1d20" />
+    <rect id="slot-l1" data-kind="vent-field" data-aperture="air" x="468.9" y="2.25" width="10.4" height="6.6" rx="3.3" fill="#0a0b0c" data-vent="1.5" />
+    <rect id="slot-l2" data-kind="vent-field" data-aperture="air" x="468.9" y="121" width="10.4" height="6.6" rx="3.3" fill="#0a0b0c" data-vent="1.5" />
+    <rect id="slot-r1" data-kind="vent-field" data-aperture="air" x="3.7" y="2.25" width="10.4" height="6.6" rx="3.3" fill="#0a0b0c" data-vent="1.5" />
+    <rect id="slot-r2" data-kind="vent-field" data-aperture="air" x="3.7" y="121" width="10.4" height="6.6" rx="3.3" fill="#0a0b0c" data-vent="1.5" />
+    <rect id="fan-1-frame" data-kind="fan-frame" x="337.1" y="5" width="120" height="120" rx="4" fill="#151719" />
+    <rect id="fan-1-guard-back" data-kind="fan-opening" x="340.1" y="8" width="114" height="114" rx="57" fill="#0a0b0c" />
+    <rect id="fan-1-guard" data-kind="vent-field" data-aperture="air" x="340.1" y="8" width="114" height="114" rx="57" fill="url(#portrayal-grille)" data-vent="1.5" />
+    <rect id="fan-2-frame" data-kind="fan-frame" x="201.2" y="5" width="120" height="120" rx="4" fill="#151719" />
+    <rect id="fan-2-guard-back" data-kind="fan-opening" x="204.2" y="8" width="114" height="114" rx="57" fill="#0a0b0c" />
+    <rect id="fan-2-guard" data-kind="vent-field" data-aperture="air" x="204.2" y="8" width="114" height="114" rx="57" fill="url(#portrayal-grille)" data-vent="1.5" />
+    <rect id="fan-3-frame" data-kind="fan-frame" x="65.1" y="5" width="120" height="120" rx="4" fill="#151719" />
+    <rect id="fan-3-guard-back" data-kind="fan-opening" x="68.1" y="8" width="114" height="114" rx="57" fill="#0a0b0c" />
+    <rect id="fan-3-guard" data-kind="vent-field" data-aperture="air" x="68.1" y="8" width="114" height="114" rx="57" fill="url(#portrayal-grille)" data-vent="1.5" />
+    <rect id="terminal-block" data-kind="terminal-block" x="21.9" y="26.4" width="26.7" height="19.4" rx="0.6" fill="#d6d6d2" />
+  </g>
+  <g id="power-cord" data-path="power-cord" data-class="inlet" data-ref="fs/fan-cord-5-15p@1:1.0.0" data-plug="nema-5-15p" data-rel-pos="1" transform="translate(14.0,60.0)" data-group="power" data-group-role="service" data-description="the fixed mains cord, NEMA 5-15P">
+    <title>power-cord</title>
+    <g id="power-cord--grommet" data-path="power-cord/grommet" data-class="inlet">
+      <circle cx="6" cy="6" r="5.8" fill="#16181a" stroke="#0b0c0d" stroke-width="0.3" />
+      <circle cx="6" cy="6" r="3.6" fill="#0f1011" />
+      <circle cx="6" cy="6" r="2.9" fill="#26292c" />
+    </g>
+  </g>
+</svg>

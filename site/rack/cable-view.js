@@ -20,9 +20,8 @@ import {routed2d} from '../../vendor/rack/route-path.js';
 import {combOffset, trunkMarks, trunkMembers, strapAt, drawableRuns, bundleSummary, STRAP_DRAWN, bendViolations,
         trunkIndexOf, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
-import {LANE_GAP} from '../../vendor/rack/route.js';
+import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {paneMarks} from './route-context.js';
-import {zeroUOnLane, zeroUX} from '../../vendor/rack/zero-u.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -176,7 +175,14 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     return slots.get(k);
   };
   const chassisOf = routes?.ctx?.chassisOf;
-  const ductX = (lane, ru) => { const z = chassisOf && zeroUOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
+  // WHERE A LANE RUNS ACROSS THE RACK at a U, as the kit measures it (route.js
+  // laneXAt): through a zero-U duct standing there (#926), outboard of a
+  // zero-U part that stands in the gutter and carries no lane (a PDU, #949),
+  // else the middle of the gutter.
+  const ductX = (lane, ru) => (chassisOf ? laneXAt(rack, lane, ru, chassisOf) : null);
+  // A DETOUR POINT on this pane (kit 0.11.0, #949): rack mm to the pane's
+  // user space, as wayPoint places a lane (x mirrored on the rear pane, y down).
+  const detourAt = p => [pane === 'rear' ? OPENING / 2 - p.x : OPENING / 2 + p.x, rack.frame.heightRU * RU - p.y];
   if (routes?.routes) {
     // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
     // along the rack's axes, x right as seen from the front and y up. This
@@ -186,7 +192,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     // drawn as a hook (route-context.js paneMarks).
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
-      if (!ws?.length) continue;
+      // A cable with no waypoints is still drawn round a body it would cross.
+      if (!ws || (!ws.length && !routes.detours?.get(link.id)?.length)) continue;
       const marks = routes.marks?.get(link.id);
       const turned = marks?.length === ws.length ? paneMarks(marks, pane) : null;
       // One offset per cable and lane, so its own run up the lane is vertical.
@@ -195,15 +202,28 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       // A BUNDLE'S MEMBER, where it rides the trunk, shares one lane slot with
       // the rest of its bundle and is combed inside the band (drawBundles2d).
       const place = routes.places?.get(link.id);
-      ws.forEach((w, k) => {
+      const at = ws.map((w, k) => {
         const inBundle = place && k >= place.stretch[0] && k <= place.stretch[1];
         const key = w.lane ? `${w.lane}` : null;
         if (key && inBundle) mine.set(`in|${key}`, bundleSlot(place.bundle, key));
         else if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
         const slot = key ? mine.get(inBundle ? `in|${key}` : key) : 0;
-        const p = wayPoint(svg, w, pane, rack.frame, slot, ductX, inBundle && key ? combOffset(place, WIDTH) : 0);
+        return wayPoint(svg, w, pane, rack.frame, slot, ductX, inBundle && key ? combOffset(place, WIDTH) : 0);
+      });
+      // THE DETOURS (kit 0.11.0, #949: route-context.js detourStops), each
+      // after the waypoint its leg starts from, so the drawn cable goes round
+      // a body as the length was measured. A detour is drawn on this pane when
+      // the stops on both sides of its leg are here: the end on this pane, or
+      // a waypoint this pane places. A ring's mark is null there.
+      const detours = routes.detours?.get(link.id) ?? [];
+      const here = k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : at[k] != null);
+      const after = k => { for (const d of detours) if (d.after === k && here(k) && here(k + 1))
+        for (const q of d.points) { pts.push(detourAt(q)); rings.push(null); } };
+      after(-1);
+      at.forEach((p, k) => {
         // A waypoint this pane cannot place is dropped, and its mark with it.
         if (p) { pts.push(p); rings.push(turned?.[k] ?? null); }
+        after(k);
       });
       if (pts.length) {
         link.via2d = {[pane]: pts};
