@@ -1,7 +1,7 @@
 # Showcase redesign — one rack, built up in stages
 
 **Date:** 2026-09-24
-**Status:** design approved, ready for an implementation plan
+**Status:** design approved
 **Supersedes:** the seven-tab showcase in `index.html` + `site/showcase.js`
 
 ---
@@ -364,10 +364,9 @@ shipping.
 
 ---
 
-## 9. Next step
+## 9. Build order
 
-`superpowers:writing-plans` — turn this into a staged implementation plan. The
-decomposition in §3.2 is the natural task boundary:
+The decomposition in §3.2 is the natural task boundary:
 
 1. **Rail + artifact module**, with the Runbook dropped and the four lenses
    re-homed as spokes (§3.2, §3.4, §7 — one task, because they are all the same

@@ -1,7 +1,7 @@
 # The front-page hero: a cabled switch, in 2D and in 3D
 
 **Date:** 2026-09-26
-**Status:** design approved, ready for an implementation plan
+**Status:** design approved
 **Depends on:** the Portrayal sync to `e9fb842e` or later, which carries roc-ops/Portrayal#621 (cable ends: DAC, ACC, AEC, AOC)
 **Reuses:** `site/showcase/cables.js` (sag, colors, higher-ports-in-front), the kit's seat code (`vendor/swap.js`), `vendor/relief.js` `cablePoints`, and `site/rack3d.js`
 
@@ -72,7 +72,7 @@ Each row also gains:
   - The cable hangs with the showcase's sag rule. It then sweeps toward the nearer side and runs past the frame edge, under a horizontal fade mask, so it fades out at the edges.
   - Duplex strands merge as in the showcase. Cables are painted in the showcase's order, **higher ports in front**, and their colors come from `cables.js`'s table by `jacket`.
   - The cable layer is drawing. Hover state is UI.
-- **Amendment (2026-09-26, plan finding F1):** the S9600's port lamps declare only `off on`, so a lamp cannot show amber. Up links light `on`, the degraded 100G link lights 3 of its 4 lane lamps, and "wants a look" (the rising CRC errors) is carried in the caption only. The "Lamps" item below is superseded where it says amber.
+- **Amendment (2026-09-26, from a browser probe before the build):** the S9600's port lamps declare only `off on`, so a lamp cannot show amber. Up links light `on`, the degraded 100G link lights 3 of its 4 lane lamps, and "wants a look" (the rising CRC errors) is carried in the caption only. The "Lamps" item below is superseded where it says amber.
 - **Lamps:**
   - `up` rows light their port lamps green;
   - `attention` rows light them amber;

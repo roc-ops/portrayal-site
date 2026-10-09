@@ -1,15 +1,15 @@
 # Rack Builder command core
 
 **Date:** 2026-10-07
-**Status:** implemented (plan: docs/superpowers/plans/2026-10-07-rack-command-core.md)
+**Status:** implemented
 **Builds on:** `2026-09-26-rack-builder-design.md` (§5 the rack file, §9 cables), `2026-10-07-rack-face-managers-design.md`
-**Asked for by:** the "Agent integration research" session (agents with bring-your-own inference will drive the Rack Builder next)
+**Why now:** agents with bring-your-own inference will drive the Rack Builder next (agent integration research, 2026-10-07)
 
 ---
 
 ## 1. Why, and where this sits
 
-Two things are planned for the Rack Builder: it moves into `@portrayal/kit` (upstream `kit/`) so the site and Portrayal stop drifting, and AI agents drive it. Jason chose to do the move first, and to build the agent command layer in the kit on top of it. So the builder's API must be command-based: every edit a named command that is checked, applied whole or not at all, undoable step by step, and announced. Then the agent layer (WebMCP, the MCP-B relay, a chat box, all site-side and later) is mostly wrapping.
+Two things are planned for the Rack Builder: it moves into `@portrayal/kit` (upstream `kit/`) so the site and Portrayal stop drifting, and AI agents drive it. On 2026-10-07 the decision was to do the move first, and to build the agent command layer in the kit on top of it. So the builder's API must be command-based: every edit a named command that is checked, applied whole or not at all, undoable step by step, and announced. Then the agent layer (WebMCP, the MCP-B relay, a chat box, all site-side and later) is mostly wrapping.
 
 Today the edits are trapped in closures in `site/rack-page.js` (`place`, `patchItem`, `attachManager`, `commitFrame`, `putDcim`, the cable form's save, the remove panel's buttons), each re-checking the rack by hand, and all funnelled through `commit(nextRack, undoable)` with a single level of Undo in `S.undo`.
 
@@ -22,7 +22,7 @@ The work is split into four pieces, each with its own spec, plan and PRs:
 | 3 | The builder as a kit component: `mount`, `getDoc`/`loadDoc`, `apply`, `on('change')`, selection get/set, `export(kind)` returning `{name, data, type, notes}`. Needs elevation, `face.js` and the exports untangled from site paths. | upstream, then site |
 | 4 | Annotate and Explorer hooks: Annotate's `doc` gets a live get/set; `shell.js`'s `createShell` gets a supported way out; Explorer's lamp states become state, not DOM classes; a marks JSON Schema. | upstream; independent of 1-3 |
 
-Decided in conversation (2026-10-07):
+Decided 2026-10-07:
 
 | # | Question | Decision |
 |---|---|---|
@@ -69,12 +69,12 @@ GONE is today's `'That device is no longer in the rack.'`. The sentences move fr
 
 `dcim` is a command so that agents and the API have one way in, but it is **not** recorded in history (§3.3).
 
-The `cable.route*` and `lengths.routed` rows come from cable-management piece 2 (pathways and routes, branch `claude/cable-routing-pathways`), which lands before this work starts (§6). Route editing and reset are ordinary undoable edits, as piece 2 makes them. `lengths.routed` is the page re-measuring the routed lengths after a render's route facts: a derived update the page saves without an Undo step today, and it stays that way. Two flags in `COMMANDS` say this:
+The `cable.route*` and `lengths.routed` rows come from cable-management piece 2 (pathways and routes, `2026-10-07-cable-routing-pathways-design.md`), which lands before this work starts (§6). Route editing and reset are ordinary undoable edits, as piece 2 makes them. `lengths.routed` is the page re-measuring the routed lengths after a render's route facts: a derived update the page saves without an Undo step today, and it stays that way. Two flags in `COMMANDS` say this:
 
 - `step: false` (`dcim`, `lengths.routed`): applied and saved, never recorded in history; an undo or redo restores its snapshot with the current values of what these commands own (`dcim`; the routed lengths are re-measured by the next render anyway);
 - `system: true` (`lengths.routed`): the agent adapters do not offer it, and the page sends it with `origin: 'system'`.
 
-If piece 2's final shape differs from this when it lands (its PR is not open at the time of writing), the plan follows what landed: the commands wrap whatever `route.js` and `rack-page.js` do then.
+If piece 2's final shape differs from this when it lands (its PR is not open at the time of writing), the build follows what landed: the commands wrap whatever `route.js` and `rack-page.js` do then.
 
 Every command's `summary` is one line for the history and change events: "Placed Nexus 93180YC-EX at U12.", "Moved ... to U20 on the rear.", "Added cable c3.", "Renamed the rack to Core A.". Commands whose edit today raises an Undo notice (`remove`, `detach`, `cable.remove`, a shrinking `frame`) use today's undo text as their summary.
 
@@ -256,8 +256,8 @@ One branch and one PR, in reviewable commits:
 4. `rack-page.js` (and `drag.js`) onto the editor: `edit()`, the change listener, Undo/Redo UI and keys, the probe hook, the one-way-in test, the browser checks.
 5. `rack.schema.json`, its `SOURCES` entry and tab, the schema test.
 
-Then code review, push, the PR, and a message to the "Portrayal-site merge agent".
+Then code review, push and the PR.
 
 ## 7. Out of scope
 
-Selection in the API, `export(kind)` returning data, `mount()`, the kit move, Annotate, Explorer, a marks schema (pieces 2-4). WebMCP registration, the MCP-B relay and any chat box (site adapters, after the refactor). Persisting history across reloads. `zeroU` commands: `zeroU` is reserved for side-mounted gear (upstream's future `rack-side`), and none is being added. The 0RU work in progress adds rack-face managers, which are items and are covered by `place`, `move`, `attach` and `detach` (confirmed with the "0RU device support and cable management" session, 2026-10-07).
+Selection in the API, `export(kind)` returning data, `mount()`, the kit move, Annotate, Explorer, a marks schema (pieces 2-4). WebMCP registration, the MCP-B relay and any chat box (site adapters, after the refactor). Persisting history across reloads. `zeroU` commands: `zeroU` is reserved for side-mounted gear (upstream's future `rack-side`), and none is being added. The 0RU work in progress adds rack-face managers, which are items and are covered by `place`, `move`, `attach` and `detach` (confirmed with the 0RU device support and cable management work, 2026-10-07).
