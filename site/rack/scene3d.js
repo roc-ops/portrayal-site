@@ -20,6 +20,7 @@ import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {laneXAt, lanesOf} from '../../vendor/rack/route.js';
 import {solidsOf, detour} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
+import {roundedCurve, tightText} from './bend3d.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -181,7 +182,7 @@ const STRAP_BAND = 12;   // mm along the run: a strap as drawn
 async function hangBundles(scene, rack, facts, laneAt, bases) {
   const {THREE, scene: world} = scene.three;
   const group = new THREE.Group(); group.name = 'cable-bundles';
-  const out = [];
+  const out = [], drawnTight = [];
   for (const f of facts.bundles.values()) {
     const L = f.check?.layout;
     if (!f.drawn || !L?.trunk?.length) continue;
@@ -198,18 +199,30 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
                                                    depthWrite: false});
     const strapMat = new THREE.MeshStandardMaterial({color: 0x24282d, roughness: 0.8});
+    // THE TRUNK'S CORNERS AT THE BUNDLE'S RADIUS (portrayal-site#164): the
+    // kit's bundle radius (bundleCheck `bend.radius_mm`, its largest member's)
+    // rounds each corner by a true arc (bend3d.js); with none known the
+    // corners are eased as before.
+    const R = f.check?.bend?.radius_mm > 0 ? f.check.bend.radius_mm : null;
+    const runs = [];
     for (const run of drawableRuns(pts)) {
       const rings = marks.slice(run.from, run.from + run.points.length);
-      const path = rings.some(Boolean) ? throughRings(run.points, rings, {lead: 30}).points : run.points;
-      const smooth = [path[0]];
-      for (let k = 1; k < path.length - 1; k++) {
-        const [p, q, s] = [path[k - 1], path[k], path[k + 1]];
-        const ease = (from, to) => { const d = to.distanceTo(from); return to.clone().lerp(from, Math.min(30, d / 2) / (d || 1)); };
-        smooth.push(ease(p, q), q.clone(), ease(s, q));
+      const path = rings.some(Boolean) ? throughRings(run.points, rings, {lead: R != null ? Math.max(30, R) : 30}).points : run.points;
+      let curve;
+      if (R != null) curve = roundedCurve(THREE, path, R);
+      else {
+        const smooth = [path[0]];
+        for (let k = 1; k < path.length - 1; k++) {
+          const [p, q, s] = [path[k - 1], path[k], path[k + 1]];
+          const ease = (from, to) => { const d = to.distanceTo(from); return to.clone().lerp(from, Math.min(30, d / 2) / (d || 1)); };
+          smooth.push(ease(p, q), q.clone(), ease(s, q));
+        }
+        smooth.push(path.at(-1));
+        curve = new THREE.CatmullRomCurve3(smooth, false, 'centripetal');
       }
-      smooth.push(path.at(-1));
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(smooth, false, 'centripetal'),
-        Math.max(40, smooth.length * 12), D / 2, 16, false), jacket);
+      runs.push(curve);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve,
+        R != null ? Math.max(40, Math.ceil(curve.getLength() / 3)) : Math.max(40, curve.points.length * 12), D / 2, 16, false), jacket);
       tube.name = `bundle-${f.id}-trunk`;
       tube.renderOrder = 1;
       g.add(tube);
@@ -240,11 +253,18 @@ async function hangBundles(scene, rack, facts, laneAt, bases) {
       g.add(ring);
       tight.push(p.clone());
     }
+    // A trunk corner drawn tighter than the bundle's radius, in the kit's words.
+    const name = f.name ?? f.id;
+    for (const curve of runs) for (const c of (curve.corners ?? []).filter(c => c.short_mm > 0)) {
+      const by = f.check.bend.by, cable = (rack.cables || []).find(x => x.id === by), kind = cable?.type || cable?.media;
+      drawnTight.push({bundle: f.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm,
+        text: tightText(`${name} in 3D`, kind ? `${by} (${kind})` : by, cornerWhere(rack, {from: [], to: []}, [], c, scene.metrics().faceZ), c)});
+    }
     group.add(g);
-    out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight});
+    out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight, radius_mm: R, curves: runs});
   }
   world.add(group);
-  return {group, bundles: out};
+  return {group, bundles: out, tight: drawnTight};
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
@@ -286,7 +306,38 @@ function placeSided(scene, items, chassisOf) {
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null, detours = null) {
+// THE BEND RADIUS EACH TUBE IS ROUNDED TO (portrayal-site#164): a cable's
+// installed radius from the cable types (`bendOf`, the kit's cable-types.js
+// bendLookup), and, while it rides a bundle, the bundle's radius when that is
+// larger (the kit's bundleCheck `bend.radius_mm`: the largest of its members'),
+// so a member turns with its trunk. Null when neither is known: the tube is
+// then eased as before and its corners are not checked.
+function radiusOf(rack, bendOf, bundles) {
+  const byId = new Map((rack.cables || []).map(c => [c.id, c]));
+  const ofBundle = new Map();
+  for (const f of bundles?.bundles?.values() ?? []) {
+    const r = f.check?.bend?.radius_mm;
+    if (r > 0) for (const id of f.members ?? []) ofBundle.set(id, r);
+  }
+  return link => {
+    let own = null;
+    try { own = typeof bendOf === 'function' ? bendOf(byId.get(link.id)) : null; } catch { own = null; }
+    const rs = [own, ofBundle.get(link.id)].filter(r => typeof r === 'number' && r > 0);
+    return rs.length ? Math.max(...rs) : null;
+  };
+}
+// A drawn corner's place in words: the lead out of an end, or its height and
+// depth in the rack.
+function cornerWhere(rack, link, pts, c, faceZ) {
+  const near = (q, k) => q && c.at.distanceTo(q) < 1e-3 && k;
+  const label = id => rack.items.find(i => i.id === id)?.label ?? id;
+  const end = near(pts[1], 'from') || near(pts[pts.length - 2], 'to');
+  if (end) { const [item, path] = link[end]; return `where it leaves ${label(item)} ${path}`; }
+  const ru = Math.max(1, Math.floor(c.at.y / RU) + 1), dz = Math.round(c.at.z - faceZ);
+  return `at U${ru}, ${Math.abs(dz)} mm ${dz >= 0 ? 'in front of' : 'behind'} the front rails`;
+}
+
+async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null, detours = null, bendOf = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const laneAt = (lane, ru) => laneXAt(rack, lane, ru, chassisOf);
   const bases = new Map();
@@ -302,11 +353,20 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
     }, waypoints: waypointsFor(scene, routes, scene.three.THREE, laneAt, marks ?? new Map(), bundles?.places ?? null, bases,
-                               detours ?? new Map())});
+                               detours ?? new Map()), bendOf: radiusOf(rack, bendOf, bundles)});
+    // Each corner drawn tighter than its radius, in the kit's bend-check words.
+    const faceZ = scene.metrics().faceZ;
+    const byId = new Map((rack.cables || []).map(c => [c.id, c]));
+    drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
+      const cable = byId.get(t.link.id), kind = cable?.type || cable?.media;
+      return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm,
+              text: tightText(`${t.link.id} in 3D`, kind ? `${t.link.id} (${kind})` : t.link.id, cornerWhere(rack, t.link, t.points, c, faceZ), c)};
+    }));
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases); }
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases);
+        drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
     return {...drawn, checked: !facts.unchecked, facts, bundles: hung};
@@ -323,8 +383,10 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
 // the page changes it on a built scene with setStage below.
 // `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
 // `detours` is routeFacts' cable id -> detourStops (kit 0.11.0), or null.
+// `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
+// cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null,
-                                              bundles = null, detours = null, stage = '#101214'}) {
+                                              bundles = null, detours = null, bendOf = null, stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -381,7 +443,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles, detours) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles, detours, bendOf) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

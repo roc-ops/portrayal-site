@@ -5042,6 +5042,107 @@ PDU_RACK_JS = """async () => {
 }"""
 
 
+# EVERY 3D CORNER AT THE CABLE'S BEND RADIUS (portrayal-site#164; Portrayal
+# docs/cable-lay-design.md section 3). On the two-leaf fixture rack, bundled
+# by the agent tools as an AI session does (c1-c7, c9-c12, c13-c16), each
+# bundle answers with its bend radius from the cable types, never "not
+# loaded"; then every routed tube's centre line is sampled every half
+# millimetre and the radius through each three neighbouring samples taken. A
+# sample tighter than the cable's installed radius (less BEND_TOL) must lie on
+# a corner the drawing flagged as too tight for its legs, and no tighter than
+# the radius it flagged; each flag is said in the page's notice in the kit's
+# bend-check words; and each tube's length is its polyline's less exactly
+# what rounding took off, R(2 tan(theta/2) - theta) a corner. NOT VACUOUS: it
+# fails without 16 rounded tubes at OM4's radius, without enough samples, or
+# without a corner drawn at the full radius.
+BEND_TOL = 0.01      # 1%: three samples on an arc give its radius; a line-to-arc join gives more
+BEND_STEP = 0.5      # mm between samples
+BEND_SAMPLE_JS = """async ([tol, step]) => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const deadline = Date.now() + 60000;
+  while (!(s.rackCables?.tubes ?? []).some(t => t.routed && t.mesh) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+  const circ = (a, b, c) => { const x = b.clone().sub(a).cross(c.clone().sub(a)).length();
+    return x < 1e-9 ? Infinity : a.distanceTo(b) * b.distanceTo(c) * c.distanceTo(a) / (2 * x); };
+  const tubes = (s.rackCables?.tubes ?? []).filter(t => t.routed && t.mesh);
+  const out = {tubes: tubes.length, rounded: 0, radii: [], samples: 0, full: 0, flagged: 0, bad: [], lengths: [],
+               tight: (s.rackCables?.tight ?? []).map(t => t.text)};
+  for (const t of tubes) {
+    if (!t.bend) continue;
+    out.rounded++;
+    const R = t.bend.radius_mm;
+    out.radii.push(R);
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    const curve = main.geometry.parameters.path;
+    const P = curve.getSpacedPoints(Math.ceil(curve.getLength() / step));
+    out.samples += P.length;
+    const flags = t.bend.corners.filter(c => c.short_mm > 0);
+    out.flagged += flags.length;
+    out.full += t.bend.corners.filter(c => c.short_mm === 0 && c.drawn_mm >= R).length;
+    let worst = null;
+    for (let k = 1; k < P.length - 1; k++) {
+      const r = circ(P[k - 1], P[k], P[k + 1]);
+      if (r >= R * (1 - tol)) continue;
+      const near = flags.find(c => P[k].distanceTo(c.at) <= c.t + step);
+      const why = !near ? 'not flagged' : r < near.drawn_mm * (1 - tol) ? `tighter than its flag (${near.drawn_mm} mm)` : null;
+      if (why && (!worst || r < worst.r)) worst = {r, why, at: [P[k].x, P[k].y, P[k].z].map(v => Math.round(v))};
+    }
+    if (worst) out.bad.push({cable: t.link.id, need: R, r: Math.round(worst.r * 100) / 100, why: worst.why, at: worst.at});
+    const cut = t.bend.corners.reduce((a, c) => a + (c.drawn_mm > 0 && c.t > 0 ? (c.t / Math.tan(c.theta / 2)) * (2 * Math.tan(c.theta / 2) - c.theta) : 0), 0);
+    out.lengths.push({cable: t.link.id, drawn: t.bend.length_mm, polyline: t.bend.polyline_mm, cut,
+                      measured: window.__rack.paths()?.[t.link.id]?.measured ?? null});
+  }
+  out.notice = document.querySelector('.rk-side .rk-notice')?.textContent ?? '';
+  return out;
+}"""
+
+
+@extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged and said where its legs cannot hold one")
+def check_rack_bend_radius_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "bend: agent tools registered", "() => window.__tools && window.__tools.edit_rack && window.__tools.inspect")
+    groups = [[f"c{i}" for i in range(1, 8)], [f"c{i}" for i in range(9, 13)], [f"c{i}" for i in range(13, 17)]]
+    for g in groups:
+        said = agent_call(page, "edit_rack", {"commands": [{"op": "bundle.create", "cables": g}]})["content"][0]["text"]
+        if "not loaded" in said or "not checked" in said:
+            bad.append(f"agent: bundling {g[0]}-{g[-1]} answered {said!r}")
+    for bid in ("b1", "b2", "b3"):
+        said = agent_call(page, "inspect", {"id": bid})["content"][0]["text"]
+        if "\nbend: radius 25 mm" not in said or "not loaded" in said:
+            bad.append(f"agent: inspect {bid} does not give OM4's 25 mm bend radius: {said!r}")
+    said = agent_call(page, "describe_rack", {"section": "bundles"})["content"][0]["text"]
+    if "not loaded" in said:
+        bad.append(f"agent: describe_rack says the cable types are not loaded: {said!r}")
+    wait_fn(page, "bend: the page has the bundles", "() => (window.__rack.bundles() || []).length === 3")
+    page_bundles = page.evaluate("() => window.__rack.bundles()")
+    if any(any("not loaded" in w for w in b["warnings"]) for b in page_bundles):
+        bad.append(f"page: a bundle's warnings say the cable types are not loaded: {page_bundles}")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+    got = page.evaluate(BEND_SAMPLE_JS, [BEND_TOL, BEND_STEP])
+    if got["tubes"] != 16 or got["rounded"] != 16 or set(got["radii"]) != {25}:
+        bad.append(f"3D: {got['rounded']} of {got['tubes']} routed tubes rounded, at radii {sorted(set(got['radii']))}; expected 16 at OM4's 25 mm")
+    if got["samples"] < 16 * 200 or not got["full"]:
+        bad.append(f"3D: sampled {got['samples']} points, {got['full']} corners at the full radius: too few to have measured anything")
+    for b in got["bad"][:16]:
+        bad.append(f"3D: {b['cable']}'s tube bends at {b['r']} mm near {b['at']}, under its {b['need']} mm radius: {b['why']}")
+    if got["flagged"] != len(got["tight"]):
+        bad.append(f"3D: {got['flagged']} corners flagged but {len(got['tight'])} said")
+    if got["tight"] and got["tight"][0] not in got["notice"]:
+        bad.append(f"3D: the first tight corner is not in the notice: {got['tight'][0]!r} vs {got['notice']!r}")
+    for t in got["tight"]:
+        if not re.search(r"^c\d+ in 3D (turns .* with room for an? [\d.]+ mm bend; c\d+ \(om4\) needs 25 mm, [\d.]+ mm short|doubles back .*no room for a bend; c\d+ \(om4\) needs 25 mm)\.$", t):
+            bad.append(f"3D: a tight corner is not in the kit's bend-check words: {t!r}")
+    # The drawn tube is its polyline less exactly what rounding took off.
+    for L in got["lengths"]:
+        if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
+            bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
+    return bad
+
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
 def check_rack_cable_lay_pdu(page, base):
     bad = []

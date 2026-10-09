@@ -34,7 +34,8 @@ import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
-import {routeFacts, routeNotes} from './rack/route-context.js';
+import {routeFacts, routeNotes, withCableTypes} from './rack/route-context.js';
+import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
@@ -126,7 +127,7 @@ async function rebuild3d() {
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes),
-    detours: S.routes?.detours ?? null, stage});
+    detours: S.routes?.detours ?? null, bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -145,6 +146,14 @@ async function rebuild3d() {
   if (built.rackCables && built.rackCables.checked === false) {
     if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
   } else if (built.rackCables) S.unchecked3dSaid = false;
+  // A corner the drawing could not round to its cable's bend radius
+  // (portrayal-site#164, scene3d.js): said once per set of such corners.
+  const tight = (built?.rackCables?.tight ?? []).map(t => t.text);
+  const said = tight.join('\n');
+  if (said !== (S.tight3dSaid ?? '')) {
+    S.tight3dSaid = said;
+    if (tight.length) { addNotice(tight.length > 3 ? `${tight.slice(0, 3).join(' ')} And ${tight.length - 3} more.` : tight.join(' '), 'note'); render(); }
+  }
 }
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on
@@ -331,8 +340,9 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
 // The bundle panels send them (bundlePanel, bundleFormPanel, portrayal-site#142);
 // the agent's edit_rack sends them with its own context (agentContext).
 const bundling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => typeof c?.op === 'string' && c.op.startsWith('bundle.'));
-const bundleCtx = () => ({...(S.routes?.ctx ? {route: S.routes.ctx} : {}),
-  ...(cableTypes ? {diameterOf: cableTypes.diameterOf, bendOf: cableTypes.bendOf} : {})});
+// The cable types come from the page's own load, or from the routes' when the
+// page's has not finished (route-context.js withCableTypes, portrayal-site#164).
+const bundleCtx = () => withCableTypes(S.routes?.ctx ? {route: S.routes.ctx} : {}, cableTypes ?? S.routes?.types ?? null);
 // The published cable types (cable-types.json), loaded once; null until then,
 // or when they cannot be read (a bundle's size then counts each cable by its
 // media, as fill does, and says it is an estimate).
@@ -1528,7 +1538,7 @@ async function bootInner() {
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
 const boundQueries = () => ({
-  // ctx: the routing context and diameters, for a bundle's line (agentContext with route)
+  // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
   describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
@@ -1539,22 +1549,13 @@ const boundQueries = () => ({
   inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
 });
 
-// THE KIT'S PER-CALL CONTEXT for an agent's call (spec 2026-10-08 D5): the
-// parts lists of everything in the rack and of `refs` (a batch's new devices,
-// a catalog device inspected), the cabled ends' facts, and, for a cable's
-// routed length or a hand route's waypoints, the routing context, whose
-// guidesOf is each device's configured face (ruling K8). loadSlots memoizes
-// through the dist fetch, so a warm call fetches nothing.
-async function agentContext(r, refs = [], {route = false} = {}) {
-  const {slotsOf, compByRef} = await loadSlots(DIST, [...new Set([...r.items.map(i => i.ref), ...refs])]);
-  const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
-  if (!route) return ctx;
-  const [rf, types] = await Promise.all([
-    routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; }), cableTypesReady]);
-  // A bundle's size check reads each cable's diameter from the cable types (kit 0.7.0).
-  const withTypes = types ? {...ctx, diameterOf: types.diameterOf} : ctx;
-  return rf ? {...withTypes, route: rf.ctx, guidesOf: rf.ctx.guidesOf} : withTypes;
-}
+// THE KIT'S PER-CALL CONTEXT for an agent's call (agent-context.js): the
+// parts lists, the cabled ends' facts and, with route, the routing context and
+// the cable types, diameters and bend radii both (portrayal-site#164).
+// loadSlots memoizes through the dist fetch, so a warm call fetches nothing.
+const agentContext = agentContextFor({
+  loadSlots: refs => loadSlots(DIST, refs), chassisOf, cableFacts,
+  routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
