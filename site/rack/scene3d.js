@@ -16,6 +16,7 @@ import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {laneXAt} from '../../vendor/rack/route.js';
+import {labelsFor} from './stage.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -148,8 +149,10 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
 // `camera`, when given, is `{position, target}` from a previous build - saved
 // by the page just before it disposes the old scene, so a rebuild (a commit,
 // or a frame change) restores the orbit instead of snapping back to the
-// opening view.
-export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null}) {
+// opening view. `stage` is the background colour the reader picked (stage.js);
+// the page changes it on a built scene with setStage below.
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null,
+                                              stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -198,7 +201,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     const built = createRackScene(container, {
       stack, heightRU: frame.heightRU,
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
+      background: stage, ...labelsFor(stage),
     });
+    built.setStage = c => { built.setBackground(c); built.setLabelColors(labelsFor(c)); };
     await built.build();
     placeZeroU(built, sideParts, chassisOf);
     placeSided(built, rack.items, chassisOf);

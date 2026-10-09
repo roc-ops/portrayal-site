@@ -3523,7 +3523,7 @@ def check_rack_export_3d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     open_fixture(page, base)
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     page.click("#exportMenu > summary")
     page.wait_for_selector('#exportItems [data-export="to-3d"]', timeout=READY_MS)
     if page.query_selector('#exportItems [data-export="glb"]'):
@@ -3558,7 +3558,7 @@ def check_rack_export_3d(page, base):
     # a frame of the rack otherwise); the view must be drawing again after.
     if not page.evaluate("() => window.__rack.scene().running()"):
         bad.append("3D export: the render loop was left paused after an export")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 
@@ -3904,7 +3904,7 @@ def check_rack_face_managers(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     built = page.evaluate("""async () => {
       const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
@@ -3965,7 +3965,7 @@ def check_rack_face_managers(page, base):
     items = page.evaluate("() => window.__rack.doc().racks[0].items.filter(i => i.id !== 'i3').map(i => [i.id, i.ru, i.on ?? null])")
     if items != [["i1", 24, None], ["i2", 24, "i1"]]:
         bad.append(f"move: the manager did not follow its host: {items}")
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     got = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
@@ -4012,7 +4012,7 @@ def check_rack_cable_routes(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     # The cables must land: optics at both ends' ports, a splice cassette in the
     # panel, and fiber between them (cat6 into these ports leaves ends loose).
     built = page.evaluate("""async () => {
@@ -4128,7 +4128,7 @@ def check_rack_cable_routes(page, base):
     # 3D: a lone cable's tube passes through its ring's opening and up its lane, outside the switch.
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     res = page.evaluate("""async () => {
       const R = await import('/vendor/rack/route.js');
@@ -4200,7 +4200,7 @@ def check_rack_ring_rear_pane(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     # A REAR-facing switch with the manager on it, a rear-facing panel above
     # (c1, c2: both ends on the rear pane, automatic routes through guide-1
     # and guide-5), and a front-facing panel whose cable c3 runs from the
@@ -4277,7 +4277,7 @@ def check_rack_ring_doubles_back(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     # leaf-1 port-1 is at the left of the switch; its route is edited to go
     # to guide-5, at the manager's right end, and back to the left lane one U
     # up: both neighbours stand on the ring's left, so it is not passed.
@@ -4327,7 +4327,7 @@ def check_rack_ring_doubles_back(page, base):
     face2d = geo["cx"] - half
     if not (face2d - 4 <= geo["maxX"] <= face2d + 0.5):
         bad.append(f"2D: the doubled-back cable reaches x {geo['maxX']:.2f}, not guide-5's left face at {face2d:.2f} (centre {geo['cx']:.2f})")
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     res = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
@@ -4351,7 +4351,7 @@ def check_rack_zero_u(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     # A 45U two-post (the FS ducts' own rack is the APC AR201, a 45U two-post), a
     # switch at U10 with an optic, a splice panel at U30, one fiber between them.
     built = page.evaluate("""async () => {
@@ -4459,7 +4459,7 @@ def check_rack_zero_u(page, base):
     if not any(n.endswith("CMV-SFD45U5W.yaml") for n in kit["names"]):
         bad.append("NetBox: the duct's device type (u_height 0) is not in the kit")
     # 3D: stood beside the upright, and the tube runs up its channel.
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     res = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
@@ -4768,7 +4768,7 @@ def check_rack_export_overtaken(page, base):
     downloads = []
     page.on("download", lambda d: downloads.append(d.suggested_filename))
     open_fixture(page, base)
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     # save() clicks a download link; counting those is the page's own account
     # of what it offered, with no wait for a download that must not come.
@@ -4785,7 +4785,7 @@ def check_rack_export_overtaken(page, base):
     page.click("#exportMenu > summary")
     page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
     page.evaluate("""() => { document.querySelector('#exportItems [data-export="glb"]').click();
-      document.querySelector('#rkMode [data-mode="2d"]').click(); }""")
+      document.querySelector('#mode [data-mode="2d"]').click(); }""")
     status = export_status(page)
     if status != overtaken:
         bad.append(f"overtaken by 2D: the status reads {status!r}")
@@ -4797,7 +4797,7 @@ def check_rack_export_overtaken(page, base):
 
     # 2. An edit committed in the same task as the click: the scene on screen
     #    is no longer this rack's, and is rebuilt (disposed) 300 ms later.
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     page.click("#frameBtn")
     page.wait_for_selector("#fNumbering", timeout=READY_MS)
@@ -4824,7 +4824,7 @@ def check_rack_export_overtaken(page, base):
                    f"{page.inner_text('#exportStatus')!r}")
     if downloads != ["Export-test.glb"]:
         bad.append(f"overtaken: downloads were {downloads}, expected only the undisturbed one")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 
@@ -6080,7 +6080,7 @@ def check_rack_3d(page, base):
     no_webgl = webgl_trouble(page)
     print(f"[check_rack_3d] WebGL path: {'unavailable - checking the fallback sentence' if no_webgl else 'available - running the full 3D checks'}")
 
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
 
     if no_webgl:
         page.wait_for_function(
@@ -6142,7 +6142,7 @@ def check_rack_3d(page, base):
     # and NOT stuck at height 0 (round 1 fix #1: render() applied zoom against
     # a #panes that was still `hidden`, measuring a 0 column and leaving every
     # SVG at height:0 once the panes came back).
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
     if not page.is_visible("#panes"):
         bad.append("rack 3D: #panes is not visible after switching back to 2D")
@@ -6156,16 +6156,16 @@ def check_rack_3d(page, base):
 
     # Reload while in 3D (the mode is remembered) and switch back to 2D: the
     # same blank-pane bug, from the reload direction rather than the toggle.
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
     page.evaluate("async () => { await window.__rack.scene().complete(); }")
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    if page.get_attribute('#rkMode [data-mode="3d"]', "aria-pressed") != "true":
+    if page.get_attribute('#mode [data-mode="3d"]', "aria-pressed") != "true":
         bad.append("rack 3D: the 3D mode was not remembered across a reload")
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
     h2 = page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect().height")
     if not (h2 > 100):
@@ -6175,7 +6175,7 @@ def check_rack_3d(page, base):
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    if page.get_attribute('#rkMode [data-mode="2d"]', "aria-pressed") != "true":
+    if page.get_attribute('#mode [data-mode="2d"]', "aria-pressed") != "true":
         bad.append("rack 3D: the 2D mode was not remembered across a reload")
     if not page.is_visible("#panes"):
         bad.append("rack 3D: after reload in the remembered 2D mode, #panes is not visible")
@@ -6189,19 +6189,98 @@ def check_rack_mode_toggle_stable(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    x = lambda: page.evaluate("() => Math.round(document.getElementById('rkMode').getBoundingClientRect().left)")
-    page.click('#rkMode [data-mode="2d"]')
+    x = lambda: page.evaluate("() => Math.round(document.getElementById('mode').getBoundingClientRect().left)")
+    page.click('#mode [data-mode="2d"]')
     before = x()
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     in3d = x()
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     after = x()
     if not (before == in3d == after):
         bad.append(f"mode switch: the toggle moved (2D {before}px, 3D {in3d}px, back {after}px)")
     if page.is_visible("#zoomIn"):
-        page.click('#rkMode [data-mode="3d"]')
+        page.click('#mode [data-mode="3d"]')
         if page.is_visible("#zoomIn"):
             bad.append("mode switch: the zoom controls are still visible in 3D")
+    return bad
+
+
+@extra("rack.html: the Explorer's 2D/3D switch and stage swatches; the stage is the ground in 2D and 3D")
+def check_rack_stage(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    # THE SWITCH IS THE EXPLORER'S: the same computed look, read off both pages.
+    look = """() => { const out = {};
+      for (const sel of ['#mode button.on', '#mode button:not(.on)']) {
+        const b = document.querySelector(sel), c = b && getComputedStyle(b);
+        out[sel] = c && [c.backgroundColor, c.borderTopColor, c.color, c.fontSize, c.paddingTop, c.paddingLeft,
+                         c.borderTopLeftRadius, c.borderTopRightRadius];
+      }
+      const sw = document.querySelector('#stagebg .sw'), w = sw && getComputedStyle(sw);
+      out.sw = w && [w.width, w.height, w.borderTopLeftRadius];
+      return out; }"""
+    page.goto(f"{base}/explorer.html", wait_until="load")
+    page.wait_for_selector("#mode button.on", timeout=READY_MS)
+    page.wait_for_selector("#stagebg .sw", timeout=READY_MS)
+    explorer = page.evaluate(look)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.evaluate("() => { localStorage.removeItem('portrayal.stage'); localStorage.removeItem('portrayal.rack.mode'); }")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    rack = page.evaluate(look)
+    if rack != explorer:
+        bad.append(f"switch: the Rack Builder's #mode and swatches do not look like the Explorer's: {rack} vs {explorer}")
+    if page.get_attribute('#mode [data-mode="2d"]', "aria-pressed") != "true":
+        bad.append("switch: 2D is not aria-pressed")
+    page.evaluate("() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 3}])")
+    # 2D: as in the Explorer, the swatches show and the stage is the ground.
+    pane = """() => { const p = document.getElementById('panes');
+      return {bg: getComputedStyle(p).backgroundColor, tone: p.dataset.stage,
+              head: getComputedStyle(document.getElementById('headFront')).color}; }"""
+    if not page.is_visible('#stagebg .sw[data-c="#ffffff"]'):
+        bad.append("stage: the swatches are not shown in 2D, as the Explorer shows them")
+    got = page.evaluate(pane)
+    if got != {"bg": "rgb(16, 18, 20)", "tone": "dark", "head": "rgb(154, 161, 168)"}:
+        bad.append(f"stage 2D: a reader who never chose is not on the shell's black, in the dark palette: {got}")
+    page.click('#stagebg .sw[data-c="#ffffff"]')
+    got = page.evaluate(pane)
+    if got != {"bg": "rgb(255, 255, 255)", "tone": "light", "head": "rgb(86, 94, 103)"}:
+        bad.append(f"stage 2D: white did not reach the panes and their ink: {got}")
+    page.click('#mode [data-mode="3d"]')
+    if page.get_attribute('#mode [data-mode="3d"]', "class") != "on" or \
+       page.get_attribute('#mode [data-mode="3d"]', "aria-pressed") != "true":
+        bad.append("switch: 3D pressed is not marked `on` and aria-pressed")
+    if webgl_trouble(page):
+        print("[check_rack_stage] WebGL unavailable - the 3D half is not checked")
+        return bad
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    tones = lambda: page.evaluate("""() => {
+      const s = window.__rack.scene(), t = {};
+      s.three.scene.traverse(x => { if (x.isSprite && x.userData.labelTone) t[x.userData.labelTone] = x.material.color.getHexString('srgb'); });
+      return {bg: s.three.scene.background.getHexString('srgb'), ...t}; }""")
+    light = tones()
+    if light != {"bg": "ffffff", "tag": "2b3035", "unit": "5a6168", "emph": "101214"}:
+        bad.append(f"stage 3D: a scene built on white did not take it and its labels: {light}")
+    # Changed on a built scene, in place.
+    page.click('#stagebg .sw[data-c="#3b3f45"]')
+    grey = tones()
+    if grey != {"bg": "3b3f45", "tag": "d7dbdf", "unit": "9aa1a8", "emph": "e4e7ea"}:
+        bad.append(f"stage 3D: dark grey did not reach the built scene: {grey}")
+    page.click('#stagebg .sw[data-c="#ffffff"]')
+    # Remembered, under the Explorer's key, and given to the next scene built.
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    if tones() != light:
+        bad.append(f"stage 3D: after a reload the scene is {tones()}, not the white it was left on")
+    if page.evaluate("() => localStorage.getItem('portrayal.stage')") != "#ffffff":
+        bad.append("stage: the choice is not kept under portrayal.stage, the Explorer's key")
+    page.click('#stagebg .sw[data-c="#101214"]')
+    if tones() != {"bg": "101214", "tag": "d7dbdf", "unit": "6b727a", "emph": "e4e7ea"}:
+        bad.append(f"stage 3D: black is not the scene's own label tones again: {tones()}")
+    page.evaluate("() => { localStorage.removeItem('portrayal.stage'); localStorage.removeItem('portrayal.rack.mode'); }")
     return bad
 
 
@@ -8175,7 +8254,7 @@ def check_rack_cable_mode(page, base):
         bad.append("cable mode: a device could be dragged while cabling")
 
     # 3D has no ports to click: switching leaves Cable mode.
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     if pressed() != "false":
         bad.append("cable mode: still on after switching to 3D")
     return bad
@@ -9394,7 +9473,7 @@ def check_rack_cables_3d(page, base):
     page.click("#cableBtn")
     wait_fn(page, "cables 3D: Cable mode on in 2D",
             "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'true'")
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     btn = page.eval_on_selector("#cableBtn", "b => ({disabled: b.disabled, pressed: b.getAttribute('aria-pressed'), title: b.title})")
     if btn != {"disabled": True, "pressed": "false", "title": CABLES_3D}:
         bad.append(f"cables 3D: in 3D the Cable button is {btn}")
@@ -9478,7 +9557,7 @@ def check_rack_cables_3d(page, base):
         return bad + [str(e)]
 
     # Back in 2D: the button works again and what is left is drawn.
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     wait_sel(page, "cables 3D: cables back in 2D", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
     if page.query_selector("#cable3dNote") or page.eval_on_selector("#cableBtn", "b => b.disabled || !!b.title"):
         bad.append("cables 3D: back in 2D the note is still shown or the button is still off")
@@ -9487,7 +9566,7 @@ def check_rack_cables_3d(page, base):
 
     # With no cable left, the empty state tells the truth of the mode it is in:
     # in 3D there is no Cable mode to use, so it says only that there are none.
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     for cid in [c["id"] for c in cables()]:
         wait_sel(page, f"cables 3D: row {cid}", f'#cableList [data-cable-row="{cid}"]')
         page.click(f'#cableList [data-cable-row="{cid}"]')
@@ -9498,7 +9577,7 @@ def check_rack_cables_3d(page, base):
     wait_sel(page, "cables 3D: the empty state", "#cableEmpty")
     if (page.text_content("#cableEmpty") or "") != "No cables yet.":
         bad.append(f"cables 3D: in 3D the empty state reads {page.text_content('#cableEmpty')!r}")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     wait_fn(page, "cables 3D: the 2D empty state",
             "() => document.getElementById('cableEmpty')?.textContent.includes('Use Cable mode')")
     if (page.text_content("#cableEmpty") or "") != "No cables yet. Use Cable mode and click a port at each end.":
@@ -9874,7 +9953,7 @@ def check_rack_export_after_cable_edit(page, base):
     if webgl_trouble(page):
         print("[check_rack_export_after_cable_edit] WebGL unavailable - not exercised")
         return bad
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     page.click("#exportMenu > summary")
     page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
@@ -9906,7 +9985,7 @@ def check_rack_export_after_cable_edit(page, base):
     missing = [i for i in ("i1", "i2", "i3", "i4", "i5") if f'"device-{i}"'.encode() not in glb]
     if missing:
         bad.append(f"export after a cable edit: the GLB has no node for {missing} - it was made from the scene before the device edit")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 
@@ -10279,7 +10358,7 @@ def check_rack_export_cable_failures(page, base):
         if webgl_trouble(page):
             print("[check_rack_export_cable_failures] WebGL unavailable - GLB not exercised")
             return bad
-        page.click('#rkMode [data-mode="3d"]')
+        page.click('#mode [data-mode="3d"]')
         page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
         page.evaluate("window.__rack.failExport({facts: true})")
         dl = export_file(page, "glb", timeout=READY_3D_MS)
@@ -10824,7 +10903,7 @@ def check_rack_cables_3d_scene(page, base):
     if webgl_trouble(page):
         print("[check_rack_cables_3d_scene] WebGL unavailable - not exercised")
         return bad
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     wait_fn(page, "3D cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
     got = page.evaluate(CABLES_3D_JS)
     if got["rc"] != "drawn" or not got.get("checked"):
@@ -10866,9 +10945,9 @@ def check_rack_cables_3d_scene(page, base):
         bad.append(f"3D cables: plugs were written into item.swaps: {swaps}")
 
     # No cables: nothing is added to the scene, and the mounts' overrides are the items' swaps.
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     open_fixture(page, base)
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     wait_fn(page, "3D cables: the scene of a rack with no cables", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
     got = page.evaluate(CABLES_3D_JS)
     if got["rc"] is not None or got["groups"] or \
@@ -10876,7 +10955,7 @@ def check_rack_cables_3d_scene(page, base):
         bad.append(f"3D cables: a rack with no cables has {got}")
     if page.evaluate("() => !!window.__rack.scene().three.scene.getObjectByName('patch-cables')"):
         bad.append("3D cables: a rack with no cables has a cable group in its scene")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 
@@ -10945,7 +11024,7 @@ def check_rack_export_3d_cables(page, base):
     if webgl_trouble(page):
         print("[check_rack_export_3d_cables] WebGL unavailable - the files were not exercised")
         return bad
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     wait_fn(page, "3D export cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     status = export_status(page)
@@ -10977,13 +11056,13 @@ def check_rack_export_3d_cables(page, base):
         bad.append(f"3D export cables: {dl.suggested_filename!r} is not a USDZ")
     if status != "Downloaded. USDZ carries no notes; the GLB does.":
         bad.append(f"3D export cables: the USDZ's status reads {status!r}")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
 
     # The scene's own read of the faces fails (the page's does not): 3D says so
     # once, and the GLB's notes say the ends were not checked, with no
     # "not connected" finding the model would contradict.
     page.evaluate("() => window.__rack.failSceneFacts(true)")
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     wait_fn(page, "3D export cables: the unchecked scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
     wait_fn(page, "3D export cables: the 3D notice",
             "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')")
@@ -11003,7 +11082,7 @@ def check_rack_export_3d_cables(page, base):
     if page.query_selector(".rk-side .rk-notice"):
         bad.append("3D export cables: the unchecked notice is shown again on a rebuild")
     page.evaluate("() => window.__rack.failSceneFacts(false)")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 
@@ -11099,7 +11178,7 @@ def check_rack_unchecked_3d_each_rack(page, base):
     said = "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')"
     page.evaluate("() => window.__rack.failSceneFacts(true)")
     try:
-        page.click('#rkMode [data-mode="3d"]')
+        page.click('#mode [data-mode="3d"]')
         wait_fn(page, "unchecked 3D: the first rack's scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
         wait_fn(page, "unchecked 3D: the first rack's notice", said)
         # Another rack, opened while still in 3D: its scene is unchecked as well, and it has not been told.
@@ -11559,7 +11638,7 @@ def check_rack_dcim_settings_scene(page, base):
     if webgl_trouble(page):
         print("[check_rack_dcim_settings_scene] WebGL unavailable - not exercised")
         return bad
-    page.click('#rkMode [data-mode="3d"]')
+    page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
 
     def draft(label, site):
@@ -11606,7 +11685,7 @@ def check_rack_dcim_settings_scene(page, base):
     export_file(page, "glb", timeout=READY_3D_MS)
     if page.evaluate("() => window.__rack.scene() === window.__scene"):
         bad.append("a device edit left the old scene in place: the check's own comparison proves nothing")
-    page.click('#rkMode [data-mode="2d"]')
+    page.click('#mode [data-mode="2d"]')
     return bad
 
 

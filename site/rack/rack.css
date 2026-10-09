@@ -12,16 +12,23 @@
 .rk-zoom { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
 .rk-zoom button { min-width: 2rem; }
 #zoomLevel { color: var(--pt-ink-muted); font-size: 0.85rem; min-width: 3.2rem; text-align: center; }
-/* The 2D/3D switch, in the showcase's own #stageMode style (site/site.css's
-   .stage-mode) - the two toggles should read as the same control even though
-   they live on different pages. */
-.rk-mode { display: inline-flex; border: 1px solid var(--pt-line); border-radius: 6px; overflow: hidden; }
-.rk-mode button { background: none; border: none; color: var(--pt-ink-muted); cursor: pointer;
-  font: inherit; font-size: 0.85rem; padding: 0.3rem 0.7rem; }
-.rk-mode button + button { border-left: 1px solid var(--pt-line); }
-.rk-mode button:hover { color: var(--pt-ink); }
-.rk-mode button[aria-pressed="true"] { color: var(--pt-ink); background: var(--pt-surface-2); }
-.rk-mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
+/* The 2D/3D switch and the stage swatches are the Explorer's and Annotate's:
+   their shape is site/mode3d.js's MODE3D_CSS, which this page injects too, and
+   these are the shell's button and swatch rules (vendor/shell.js), which this
+   page does not otherwise load. The variables are the shell's, mapped onto the
+   site's by site/tool-theme.css. #mode outranks .rk-bar button, so this page's
+   own bar buttons do not reach it. */
+#mode button { font: inherit; font-size: 0.78rem; background: var(--control); color: var(--ink);
+  border: 1px solid var(--control-line); padding: 0.26rem 0.5rem; cursor: pointer; }
+#mode button:hover { background: var(--control-hover); border-color: var(--control-line); }
+#mode button.on { background: var(--on-bg); border-color: var(--accent); color: var(--on-ink); }
+#mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+#stagebg { display: flex; align-items: center; gap: 0.25rem; }
+#stagebg .sw { width: 0.95rem; height: 0.95rem; border-radius: 3px; cursor: pointer; padding: 0;
+  min-width: 0; border: 1px solid var(--control-line); }
+#stagebg .sw:hover { border-color: var(--control-line); }
+#stagebg .sw.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+#stagebg .sw:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 /* THE PAGE IS NOT FINISHED, and says so: a brass pill that opens a short note
    on what works and what is coming. Brass, the site's accent - not a marking
    color, which the drawings reserve for what a person marks. */
@@ -49,6 +56,25 @@
 .rk-menu-items .rk-current { color: var(--pt-brass); }
 .rk-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 20rem; }
 .rk-panes { overflow: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1rem 1.5rem; }
+/* THE STAGE IN 2D. The reader's stage colour (site/rack/stage.js, the Explorer's
+   swatches) is the panes' ground, as it is the Explorer's #stage. What is drawn
+   on it in the site's tokens - rails, U numbers, tags, outlines, the headings -
+   takes the site's dark or light palette by the stage's lightness, whatever the
+   page's own theme: the values are brand/tokens.css's two sets, for the ground,
+   the inks and the brass. Device faces are their own drawing and do not turn. */
+.rk-panes[data-stage] { background: var(--rk-stage); }
+.rk-panes[data-stage="dark"] {
+  --pt-brass: #C79350; --pt-brass-wash: rgba(199, 147, 80, 0.13); --pt-warn: #F5A623;
+  --pt-void: #0A0C0E; --pt-ground: #0E1013; --pt-surface: #16181B; --pt-surface-2: #1C1F23;
+  --pt-line: #2C3137; --pt-line-soft: #21252A;
+  --pt-ink: #E4E7EA; --pt-ink-muted: #9AA1A8; --pt-ink-faint: #8A9199;
+}
+.rk-panes[data-stage="light"] {
+  --pt-brass: #8A6426; --pt-brass-wash: rgba(142, 103, 41, 0.10); --pt-warn: #8F4E05;
+  --pt-void: #DDE1E6; --pt-ground: #EDEFF2; --pt-surface: #FFFFFF; --pt-surface-2: #F4F6F8;
+  --pt-line: #D2D8DE; --pt-line-soft: #E4E8ED;
+  --pt-ink: #13171B; --pt-ink-muted: #565E67; --pt-ink-faint: #5F666E;
+}
 .rk-pane h2 { margin: 0 0 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--pt-ink-muted);
   text-transform: uppercase; letter-spacing: 0.06em; }
 .rk-pane svg { width: 100%; height: auto; display: block; }
