@@ -5135,7 +5135,7 @@ def check_rack_bend_radius_3d(page, base):
     if got["tight"] and got["tight"][0] not in got["notice"]:
         bad.append(f"3D: the first tight corner is not in the notice: {got['tight'][0]!r} vs {got['notice']!r}")
     for t in got["tight"]:
-        if not re.search(r"^c\d+ in 3D (turns .* with room for an? [\d.]+ mm bend; c\d+ \(om4\) needs 25 mm, [\d.]+ mm short|doubles back .*no room for a bend; c\d+ \(om4\) needs 25 mm)\.$", t):
+        if not re.search(r"^c\d+ in 3D (turns .* with room for an? [\d.]+ mm bend; c\d+ \(om4\) needs 25 mm, [\d.]+ mm short|(turns|doubles back) .*no room for a bend; c\d+ \(om4\) needs 25 mm)\.$", t):
             bad.append(f"3D: a tight corner is not in the kit's bend-check words: {t!r}")
     # The drawn tube is its polyline less exactly what rounding took off.
     for L in got["lengths"]:
