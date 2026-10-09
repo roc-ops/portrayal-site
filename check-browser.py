@@ -4203,9 +4203,12 @@ def check_rack_cable_routes(page, base):
       const optic = {'port-1': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
       ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
-      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      // c2's panel end is bay 4, on its own (right) side: since kit 0.12.0 a
+      // cable whose ends stand on opposite sides takes the shorter gutter.
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1',
+        swaps: {'bay-1': 'fs/fhd-splice-12-lc@3', 'bay-4': 'fs/fhd-splice-12-lc@3'}}));
       ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
-      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc2', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-4/module/lc2', view: 'front'}, media: 'os2'}));
       return r;
     }""")
     page.evaluate("r => window.__rack.replaceRack(r)", built)
@@ -4391,13 +4394,15 @@ def check_rack_ring_rear_pane(page, base):
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
       let r = M.newRack({name: 'Rear rings'});
       const optic = {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
-      const splice = {'bay-1': 'fs/fhd-splice-12-lc@3'};
+      // c2's panel end is bay 4, on its own side (kit 0.12.0: ends on opposite
+      // sides take the shorter gutter)
+      const splice = {'bay-1': 'fs/fhd-splice-12-lc@3', 'bay-4': 'fs/fhd-splice-12-lc@3'};
       ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, face: 'rear', label: 'leaf-r', swaps: optic}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face: 'rear', label: 'mgr-r', on: 'i1', unit: 1}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, face: 'rear', label: 'pp-r', swaps: splice}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 34, label: 'pp-f', swaps: splice}));
       ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
-      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc2', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-4/module/lc2', view: 'front'}, media: 'os2'}));
       ({rack: r} = K.withCable(r, {a: {item: 'i4', path: 'bay-1/module/lc1', view: 'front'}, b: {item: 'i1', path: 'port-2', view: 'front'}, media: 'os2'}));
       return r;
     }""")
