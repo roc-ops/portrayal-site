@@ -4089,7 +4089,24 @@ def check_rack_cable_routes(page, base):
       for (const p of pts) lane = Math.min(lane, Math.abs(p.x - lx));
       const inside = [];
       for (const {ref, box} of s.deviceBoxes()) for (const p of pts) if (box.containsPoint(p)) inside.push(ref);
-      return {ring, lane, laneX: lx, tubes: tubes.length, npts: pts.length, inside};
+      // THROUGH THE RING ALONG ITS RUN (Portrayal #930): the kit's mark for
+      // guide-1, and the tube's points from where it enters to where it
+      // leaves, which must share the ring centre's y and z.
+      const r = window.__rack.rings();
+      const ws = new Map(window.__rack.routes()).get('c1') || [];
+      const k = ws.findIndex(w => w.item === 'i2' && w.via === 'guide-1');
+      const mark = k >= 0 ? new Map(r?.marks || []).get('c1')?.[k] : null;
+      let through = null;
+      if (mark && mark.sense) {
+        const half = mark.depth / 2;
+        const near = (p, x) => Math.abs(p.x - x) < 0.05 && Math.abs(p.y - target.y) < 0.05 && Math.abs(p.z - target.z) < 0.05;
+        const i = pts.findIndex(p => near(p, target.x - mark.sense * half));
+        const j = pts.findIndex(p => near(p, target.x + mark.sense * half));
+        const between = i >= 0 && j > i ? pts.slice(i, j + 1) : [];
+        through = {mark, i, j, n: between.length,
+                   off: Math.max(0, ...between.map(p => Math.max(Math.abs(p.y - target.y), Math.abs(p.z - target.z))))};
+      }
+      return {ring, lane, laneX: lx, tubes: tubes.length, npts: pts.length, inside, through};
     }""")
     if res["npts"] == 0:
         bad.append(f"3D: the lone cable has no tube points ({res})")
@@ -4100,6 +4117,169 @@ def check_rack_cable_routes(page, base):
             bad.append(f"3D: the tube never reaches the lane at x = {res['laneX']} (closest {res['lane']} mm)")
         if res["inside"]:
             bad.append(f"3D: tube points lie inside a device box: {res['inside']}")
+        t = res["through"]
+        if not t:
+            bad.append(f"3D: no ring mark for c1 at guide-1 (window.__rack.rings() {res})")
+        elif t["i"] < 0 or t["j"] <= t["i"]:
+            bad.append(f"3D: the tube has no entry and exit {t['mark']['depth']} mm apart along x at guide-1's centre: {t}")
+        elif t["off"] > 0.05:
+            bad.append(f"3D: between guide-1's entry and exit the tube leaves the run by {t['off']} mm: {t}")
+    return bad
+
+
+@extra("rack.html: on the mirrored rear pane a cable passes its ring with no hook, and so does a cross-face cable drawn from its far end (Portrayal #930)")
+def check_rack_ring_rear_pane(page, base):
+    """The two call sites the ring marks hang on: cable-view.js turns the
+    kit's marks to the rear pane's mirrored axes (paneMarks), and cables.js
+    reverses them for a cross-face cable whose 'to' end lands on the pane
+    (reverseMarks). Unturned or unreversed, the ring is entered by its far
+    face and the stroke goes past the ring and back along x: a hook."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#rkMode [data-mode="2d"]')
+    # A REAR-facing switch with the manager on it, a rear-facing panel above
+    # (c1, c2: both ends on the rear pane, automatic routes through guide-1
+    # and guide-5), and a front-facing panel whose cable c3 runs from the
+    # front to the switch: on the rear pane only its 'to' end lands.
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Rear rings'});
+      const optic = {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
+      const splice = {'bay-1': 'fs/fhd-splice-12-lc@3'};
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, face: 'rear', label: 'leaf-r', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face: 'rear', label: 'mgr-r', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, face: 'rear', label: 'pp-r', swaps: splice}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 34, label: 'pp-f', swaps: splice}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc2', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i4', path: 'bay-1/module/lc1', view: 'front'}, b: {item: 'i1', path: 'port-2', view: 'front'}, media: 'os2'}));
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneRear svg [data-cables] [data-cable-id]').length === 3", timeout=READY_MS)
+    page.wait_for_function("() => (window.__rack.rings()?.marks || []).length === 3", timeout=READY_MS)
+    routes = dict(page.evaluate("() => window.__rack.routes()"))
+    rings_of = lambda cid: [w["via"] for w in routes.get(cid, []) if w.get("item") == "i2"]
+    want = {"c1": "guide-1", "c2": "guide-5"}
+    for cid, via in want.items():
+        if via not in rings_of(cid):
+            bad.append(f"routes: {cid} does not go through {via}: {routes.get(cid)}")
+    if not rings_of("c3"):
+        return bad + [f"routes: the cross-face cable c3 goes through no ring on the manager: {routes.get('c3')}"]
+    want["c3"] = rings_of("c3")[0]
+    # The furthest each stroke goes back along x against its own travel,
+    # within 20 mm (along x) and 30 mm (along y) of the ring's end rect centre.
+    got = page.evaluate("""want => {
+      const s = document.querySelector('#paneRear svg'), inv = s.getScreenCTM().inverse(), out = {};
+      for (const [id, via] of Object.entries(want)) {
+        const g = s.querySelector(`[data-cables] [data-cable-id="${id}"]`);
+        const end = s.querySelector(`[data-item-id="i2"] [id="${via}-end"]`);
+        if (!g || !end) { out[id] = {missing: !g ? 'cable' : 'ring'}; continue; }
+        const eb = end.getBoundingClientRect();
+        const c = new DOMPoint(eb.left + eb.width / 2, eb.top + eb.height / 2).matrixTransform(inv);
+        // Each path on its own (a cable is drawn as more than one, the
+        // strands at its ends among them), in the order it is drawn.
+        let back = 0, near = 0;
+        for (const p of g.querySelectorAll('path')) {
+          if (p.dataset.leader) continue;
+          const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength(), pts = [];
+          for (let t = 0; t <= L; t += 0.1) {
+            const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m);
+            if (Math.abs(w.x - c.x) <= 20 && Math.abs(w.y - c.y) <= 30) pts.push(w.x);
+          }
+          if (pts.length < 2) continue;
+          near += pts.length;
+          const dir = Math.sign(pts[pts.length - 1] - pts[0]) || 1;
+          let best = -Infinity;
+          for (const x of pts) { best = Math.max(best, dir * x); back = Math.max(back, best - dir * x); }
+        }
+        out[id] = near ? {back, near} : {near};
+      }
+      return out;
+    }""", want)
+    for cid, r in got.items():
+        if "back" not in r:
+            bad.append(f"rear pane: {cid} could not be measured at {want[cid]} ({r})")
+        elif r["back"] > 0.05:
+            bad.append(f"rear pane: {cid} hooks back {r['back']:.2f} mm along x at {want[cid]}")
+    return bad
+
+
+@extra("rack.html: a route that would enter and leave a ring by one face is drawn to the face and back, in 2D and 3D, and reported (Portrayal #930)")
+def check_rack_ring_doubles_back(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#rkMode [data-mode="2d"]')
+    # leaf-1 port-1 is at the left of the switch; its route is edited to go
+    # to guide-5, at the manager's right end, and back to the left lane one U
+    # up: both neighbours stand on the ring's left, so it is not passed.
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Doubles back'});
+      const optic = {'port-1': 'generic/qsfp-lc@2'};
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      r = {...r, cables: r.cables.map(c => ({...c, route: [{item: 'i2', via: 'guide-5'}, {lane: 'left-front', ru: 21}], routeEdited: true}))};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length === 1", timeout=READY_MS)
+    page.wait_for_function("() => (window.__rack.rings()?.marks || []).length === 1", timeout=READY_MS)
+    rings = page.evaluate("() => window.__rack.rings()")
+    mark = dict(rings["marks"]).get("c1", [None])[0]
+    if not mark or mark.get("back") is not True or mark.get("sense") != 1:
+        return bad + [f"route: guide-5 is not marked as doubled back from the left (sense 1): {rings}"]
+    if [(f["cable"], f["item"], f["via"]) for f in rings["findings"]] != [("c1", "i2", "guide-5")]:
+        bad.append(f"findings: not one doubles-back finding for c1 at guide-5: {rings['findings']}")
+    warn = page.evaluate("() => [...document.querySelectorAll('[data-route-warning]')].map(p => p.textContent)")
+    if not any("ring 5" in w and "same face" in w for w in warn):
+        bad.append(f"cable list: the doubled-back ring is not among the warnings: {warn}")
+    half = mark["depth"] / 2
+    # 2D: the path reaches guide-5's left face and goes no further right.
+    geo = page.evaluate("""() => {
+      const s = document.querySelector('#paneFront svg');
+      const g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      const end = s.querySelector('[data-item-id="i2"] [id="guide-5-end"]');
+      const inv = s.getScreenCTM().inverse();
+      const eb = end.getBoundingClientRect();
+      const c = new DOMPoint(eb.left + eb.width / 2, eb.top + eb.height / 2).matrixTransform(inv);
+      let maxX = -Infinity;
+      for (const p of g.querySelectorAll('path')) {
+        if (p.dataset.leader) continue;
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 0.25) maxX = Math.max(maxX, new DOMPoint(p.getPointAtLength(t).x, p.getPointAtLength(t).y).matrixTransform(m).x);
+      }
+      return {cx: c.x, maxX};
+    }""")
+    # Up to the face, never past it; routed2d rounds the turn back by its
+    # corner radius (4), so the stroke stops short of the vertex by up to that.
+    face2d = geo["cx"] - half
+    if not (face2d - 4 <= geo["maxX"] <= face2d + 0.5):
+        bad.append(f"2D: the doubled-back cable reaches x {geo['maxX']:.2f}, not guide-5's left face at {face2d:.2f} (centre {geo['cx']:.2f})")
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    res = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const deadline = Date.now() + 20000;
+      while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+      const top = await s.guideAnchor({id: 'i2'}, 'guide-5');
+      const pts = s.rackCables.tubes.flatMap(t => t.points);
+      return {cx: top.position.x, maxX: Math.max(...pts.map(p => p.x)), n: pts.length};
+    }""")
+    if not res["n"]:
+        bad.append(f"3D: the cable has no tube points ({res})")
+    elif abs(res["maxX"] - (res["cx"] - half)) > 0.05:
+        bad.append(f"3D: the doubled-back tube reaches x {res['maxX']:.2f}, not guide-5's left face at {res['cx'] - half:.2f}")
     return bad
 
 

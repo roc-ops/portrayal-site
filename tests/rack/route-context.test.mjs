@@ -40,3 +40,14 @@ test('pathBox reads an absolute obround path, bulges included, and refuses relat
   const g = guidesFromRects([{id: 'pass--window-1', cls: 'pass', x: b.x, y: b.y, w: b.w, h: b.h}], 'front', 483);
   assert.equal(g[0].via, 'window-1');
 });
+
+test('a ring guide carries its run, and a ring along x its -end rect width as its depth (Portrayal #930)', () => {
+  const rects = [{id: 'guide-1-end', kind: 'ring', x: 32.3, y: 0, w: 6.8, h: 41},
+                 {id: 'end-ring-left-end', kind: 'ring', x: 0, y: 0, w: 12, h: 41},
+                 {id: 'guide--duct', cls: 'guide', x: 20, y: 5, w: 443, h: 30}];
+  const g = guidesFromRects(rects, 'front', 483, {}, {'end-ring-left': 'y'});
+  assert.deepEqual(g.map(x => [x.via, x.run, x.depth]),
+    [['guide-1', 'x', 6.8], ['end-ring-left', 'y', undefined], ['duct', undefined, undefined]]);
+  assert.deepEqual(ringGroupsFrom([{id: 'end-ring-left', x: 0, w: 20}], 'front', 483, {'end-ring-left': 'y'})
+    .map(x => [x.run, x.depth]), [['y', undefined]]);
+});
