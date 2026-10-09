@@ -5638,12 +5638,12 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
     try:
-        page.wait_for_function(expr, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout)
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -5882,53 +5882,81 @@ def check_rack_drag(page, base):
     return bad
 
 
+def open_new_rack(page, label):
+    # NEW RACK IS ASYNCHRONOUS, AND THE PAGE ALREADY HOLDS AN EMPTY RACK.
+    # startNewRack (rack-page.js) flushes the autosave, lists the library and
+    # stores the new document - three IndexedDB round trips - before setDoc()
+    # swaps it in. A fresh page boots with an empty rack of its own, so a wait
+    # for "no items" is met at once, before the click has done anything; the
+    # new rack then lands in the middle of whatever the check does next and
+    # wipes it. What says the switch happened is the document's id changing.
+    rid = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, f"{label}: New rack opens a new document",
+        "(id) => window.__rack.doc().id !== id && window.__rack.doc().racks[0].items.length === 0", arg=rid)
+
+
 @extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
 def check_rack_shrink(page, base):
+    # Every step waits on the page's own state, never on time: the document
+    # for the edit, and the render that follows it (render() is async and
+    # paints the panes and the side panel together, last) for anything read
+    # off or clicked in the DOM. Under load the model moves well before the
+    # DOM does, and a check that reads the panel in between reads the last one.
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "shrink")
 
-    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack.
-    pick(page, "front", 5, "MX204", "mx204")
-    pick(page, "front", 20, "AS7726", "as7726-32x")
-    pick(page, "front", 30, "R740", "r740xd")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack. Each place
+    # is waited for until its render has replaced the picker: a picker still
+    # on screen when the next U is clicked is the last U's, and its Place
+    # button places there (and is refused, as that U is now taken).
+    for n, (u, query, ref) in enumerate([(5, "MX204", "mx204"), (20, "AS7726", "as7726-32x"), (30, "R740", "r740xd")], 1):
+        pick(page, "front", u, query, ref)
+        wait_fn(page, f"shrink: {ref} placed at U{u}",
+            "(n) => window.__rack.doc().racks[0].items.length === n && !document.getElementById('catPlace')", arg=n)
     sorted_items = lambda: sorted(page.evaluate("() => window.__rack.doc().racks[0].items"), key=lambda i: i["ru"])
 
+    def set_height(ru):
+        # The form is the one the last render drew, and the edit's own render
+        # draws the notice: wait for that render, not just the model.
+        tok = render_token(page)
+        page.fill("#fHeight", str(ru))
+        page.dispatch_event("#fHeight", "change")
+        wait_fn(page, f"shrink: the frame becomes {ru}U",
+            "(ru) => window.__rack.doc().racks[0].frame.heightRU === ru", arg=ru)
+        wait_rendered(page, f"shrink: the frame becomes {ru}U: DOM settle", tok)
+        notice = page.query_selector(".rk-side .rk-notice")
+        return notice.text_content() if notice else None
+
+    tok = render_token(page)
     page.click("#frameBtn")
-    page.fill("#fHeight", "12")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 12")
+    wait_rendered(page, "shrink: the frame form opens", tok)
+    note = set_height(12)
     got = [(i["ref"], i["ru"]) for i in sorted_items()]
     want = [("mx204", 1), ("as7726-32x", 2), ("r740xd", 3)]
     if got != want:
         bad.append(f"shrink: after compacting to 12U items are {got}, expected {want}")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note = (page.text_content(".rk-side .rk-notice") or "").lower()
-    if "moved" not in note:
+    if note is None or "moved" not in note.lower():
         bad.append(f"shrink: the notice does not mention moving devices ({note!r})")
 
     # Shrinking further to 3U (from the 12U-compacted state, top at U4) means
     # 1+1+2 = 4U of devices no longer fit in 3U: the bottom one (MX204) goes.
-    page.fill("#fHeight", "3")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 3")
+    note2 = set_height(3)
     refs = [i["ref"] for i in sorted_items()]
     if refs != ["as7726-32x", "r740xd"]:
         bad.append(f"shrink: shrinking to 3U left {refs}, expected the bottom device (mx204) removed")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note2 = page.text_content(".rk-side .rk-notice") or ""
-    if "MX204" not in note2:
+    if note2 is None or "MX204" not in note2:
         bad.append(f"shrink: the removal notice does not name MX204 ({note2!r})")
 
     # Undo restores the rack from just before this shrink - the 12U-compacted
-    # state, frame included - exactly.
+    # state, frame included - exactly. The Undo clicked is the 3U render's.
     page.click("#undoShrink")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    wait_fn(page, "shrink: Undo puts the rack back",
+        "() => window.__rack.doc().racks[0].items.length === 3")
     got2 = [(i["ref"], i["ru"]) for i in sorted_items()]
     if got2 != want:
         bad.append(f"shrink: Undo did not restore the pre-shrink positions, got {got2}")
