@@ -12,7 +12,7 @@
 // Every device goes through configuredFace, with its own swaps and fields.
 
 import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
-import {configuredFace} from './face.js';
+import {configuredFace, earPlanFor} from './face.js';
 import {svgEl} from './dom.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
@@ -102,7 +102,7 @@ function outline(top, ruH, text, attrs, C = OUTLINE) {
 const EAR_OVERHANG = 3; // mm the flange runs past the hole centre, so the screw head sits inside it
 const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 
-function drawEars(out, item, topOf, ruH, C = THEMED) {
+function drawEars(out, item, topOf, ruH, C = THEMED, color = null) {
   const X = x => x + OPENING / 2;
   const top = topOf(ruH), bottom = topOf(0);
   // Two screws per ear in EVERY U the ear covers - the first and last hole of
@@ -115,13 +115,13 @@ function drawEars(out, item, topOf, ruH, C = THEMED) {
     screwYs.push(uBottom - HOLE_DY[0], uBottom - HOLE_DY[HOLE_DY.length - 1]);
   }
   const g = svgEl('g', {class: 'rk-ears', 'data-ears-for': item.id, 'data-item-id': item.id,
-                        'pointer-events': 'all'});
+                        ...(color ? {'data-ear-color': color} : {}), 'pointer-events': 'all'});
   for (const s of SIDES) {
     const holeX = X(s.hole);
     const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : OPENING;
     const x1 = s.side === 'left' ? 0 : holeX + EAR_OVERHANG;
     g.append(svgEl('rect', {x: x0, y: top, width: x1 - x0, height: bottom - top,
-      fill: C.ear, 'fill-opacity': C.earOpacity, stroke: C.earLine, 'stroke-width': 1}));
+      fill: color || C.ear, 'fill-opacity': C.earOpacity, stroke: C.earLine, 'stroke-width': 1}));
     for (const cy of screwYs) {
       g.append(svgEl('circle', {cx: holeX, cy, r: HOLE_ROUND / 2,
         fill: C.screw, stroke: C.screwLine, 'stroke-width': 0.6}));
@@ -312,7 +312,15 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // its own group, so they overlap its edges like a real ear.
     // (a desktop, wall or DIN-rail device has none: the Rack Builder marks it
     // with `mount`, which the showcase's items never carry)
-    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C);
+    // GENERIC EARS ONLY WHERE THE KIT'S PLAN GIVES ONE (Portrayal #909): a
+    // face as wide as the rack face has its ears built in and draws them
+    // itself (a blanking panel, a shelf, a full-width patch panel), so a
+    // second pair over them would hide the real ones. In the plan's colour,
+    // silver unless the device states `chassis.ears.color`.
+    if (!through && ears && isRackMount(it)) {
+      const plan = await earPlanFor(it.ref, it.cfg);
+      if (plan) drawEars(out, it, topOf, ruH, C, plan.color);
+    }
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
   // A U carrying a manager says so in the gutter: the manager itself is mostly

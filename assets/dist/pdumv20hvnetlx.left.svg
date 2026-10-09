@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="44mm" height="1776.44mm" viewBox="0 0 44 1776.44" data-device="pdumv20hvnetlx" data-view="left" data-length-mm="1776.44" data-weight-kg="3.86" data-construction="metal" data-input-ac="208/230 V single-phase (200-240 V), 16 A continuous (agency de-rated), 50/60 Hz" data-input-plug="iec-60320-c20" data-input-cord="detachable" data-input-phase="single" data-input-voltage-v="230" data-input-current-a="16" data-plug-rating-a="20" data-capacity-kw="3.68" data-capacity-scope="the load the PDU can hand on, 3.68 kW at 230 V and 3.33 kW at 208 V, 16 A in all (spec sheet); it is not what the PDU draws itself, which no document held states" data-output-voltage="208/230 V" data-output-rating="16 A total; 16 A per C19; 12 A (10 A CE) per C13" data-breakers="two, one per load bank; rating and position not stated" data-frequency="50/60 Hz" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-30 to 60 C (-22 to 140 F)" data-humidity="5 to 95 % non-condensing" data-altitude="0 to 3000 m (0 to 10000 ft)" data-metering-scope="branch" data-outlet-switching="true" data-metering="load current in amps, total and per bank, on the digital ammeter and over the network" data-network-interface="built-in LX Platform interface (pre-installed WEBCARDLX, PowerAlert Device Manager PADM20), 10/100 Mbps" data-protocols="HTTP, HTTPS, SMTP, SNMPv1, SNMPv2, SNMPv3, telnet, SSH, FTP, DHCP, NTP" data-certifications="EN 55022; EN 55024; CAN/CSA-C22.2 No. 60950-1 (Canada); IEC 60950-1; NOM (Mexico); UL 60950-1" data-product-compliance="RoHS; FCC Part 15 Class A (USA); Trade Agreements Act (TAA)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton PDUMV20HVNETLX","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"b6083b820088af9817ee8240988bdb4b361e1702b0128a39674b5a1e53d7bcb0","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PDUMV20HVNETLX" data-sku="PDUMV20HVNETLX" data-part-number="" x="0" y="0" width="44" height="1776.44" rx="1.2" fill="#2e2f31" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-slots" width="8" height="14" patternUnits="userSpaceOnUse">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-15_83-s0_2-1_46643" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 15.83) scale(0.2 1.46643)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-30_23-s0_2-1_46643" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 30.23) scale(0.2 1.46643)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-545_98-s0_2-2_88857" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 545.98) scale(0.2 2.88857)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-573_18-s0_2-2_88857" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 573.18) scale(0.2 2.88857)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-1244_66-s0_2-2_89429" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 1244.66) scale(0.2 2.89429)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-1271_91-s0_2-2_89429" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 1271.91) scale(0.2 2.89429)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-1545_71-s0_2-2_87786" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 1545.71) scale(0.2 2.87786)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-o10_77-1572_81-s0_2-2_87786" width="8" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(10.77 1572.81) scale(0.2 2.87786)">
+      <rect x="2.9" y="2.5" width="2.2" height="9" rx="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-1-frame" data-kind="vent-frame" x="9.8" y="18.3" width="22.3" height="30" rx="4" fill="#6f7173" />
+    <rect id="vent-1-1" data-kind="vent-field" data-aperture="air" x="10.8" y="19.5" width="20.3" height="13.2" rx="0.6" fill="url(#portrayal-slots-o10_77-15_83-s0_2-1_46643)" data-vent="1" />
+    <rect id="vent-1-2" data-kind="vent-field" data-aperture="air" x="10.8" y="33.9" width="20.3" height="13.2" rx="0.6" fill="url(#portrayal-slots-o10_77-30_23-s0_2-1_46643)" data-vent="1" />
+    <rect id="vent-1-screw-1" data-kind="screw-head" x="18.75" y="13.5" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-1-screw-2" data-kind="screw-head" x="18.75" y="48.7" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-2-frame" data-kind="vent-frame" x="9.8" y="552" width="22.3" height="55.6" rx="4" fill="#6f7173" />
+    <rect id="vent-2-1" data-kind="vent-field" data-aperture="air" x="10.8" y="553.2" width="20.3" height="26" rx="0.6" fill="url(#portrayal-slots-o10_77-545_98-s0_2-2_88857)" data-vent="1" />
+    <rect id="vent-2-2" data-kind="vent-field" data-aperture="air" x="10.8" y="580.4" width="20.3" height="26" rx="0.6" fill="url(#portrayal-slots-o10_77-573_18-s0_2-2_88857)" data-vent="1" />
+    <rect id="vent-2-screw-1" data-kind="screw-head" x="18.75" y="547.2" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-2-screw-2" data-kind="screw-head" x="18.75" y="608" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-3-frame" data-kind="vent-frame" x="9.8" y="1250.7" width="22.3" height="55.7" rx="4" fill="#6f7173" />
+    <rect id="vent-3-1" data-kind="vent-field" data-aperture="air" x="10.8" y="1251.9" width="20.3" height="26.05" rx="0.6" fill="url(#portrayal-slots-o10_77-1244_66-s0_2-2_89429)" data-vent="1" />
+    <rect id="vent-3-2" data-kind="vent-field" data-aperture="air" x="10.8" y="1279.15" width="20.3" height="26.05" rx="0.6" fill="url(#portrayal-slots-o10_77-1271_91-s0_2-2_89429)" data-vent="1" />
+    <rect id="vent-3-screw-1" data-kind="screw-head" x="18.75" y="1245.9" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-3-screw-2" data-kind="screw-head" x="18.75" y="1306.8" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-4-frame" data-kind="vent-frame" x="9.8" y="1551.7" width="22.3" height="55.4" rx="4" fill="#6f7173" />
+    <rect id="vent-4-1" data-kind="vent-field" data-aperture="air" x="10.8" y="1552.9" width="20.3" height="25.9" rx="0.6" fill="url(#portrayal-slots-o10_77-1545_71-s0_2-2_87786)" data-vent="1" />
+    <rect id="vent-4-2" data-kind="vent-field" data-aperture="air" x="10.8" y="1580" width="20.3" height="25.9" rx="0.6" fill="url(#portrayal-slots-o10_77-1572_81-s0_2-2_87786)" data-vent="1" />
+    <rect id="vent-4-screw-1" data-kind="screw-head" x="18.75" y="1546.9" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="vent-4-screw-2" data-kind="screw-head" x="18.75" y="1607.5" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-1" data-kind="screw-head" x="36.4" y="12.1" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-2" data-kind="screw-head" x="36.4" y="200.7" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-3" data-kind="screw-head" x="36.4" y="512.6" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-4" data-kind="screw-head" x="36.4" y="824.4" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-5" data-kind="screw-head" x="36.4" y="1136.3" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-6" data-kind="screw-head" x="36.4" y="1448.1" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="screw-7" data-kind="screw-head" x="36.4" y="1760" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="end-screw-1" data-kind="screw-head" x="28.4" y="4.5" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="end-screw-2" data-kind="screw-head" x="28.4" y="1767.7" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+  </g>
+</svg>

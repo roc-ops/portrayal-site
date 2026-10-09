@@ -1100,7 +1100,6 @@ check(not _brit, "the kit page, its runner and its recipes are in American Engli
 KIT_NOT_DOCUMENTED_YET = {
     "relief": "viewer3d raises parts with it; no recipe calls it on its own",
     "bevel": "viewer3d builds the bevelled chassis with it; no recipe calls it on its own",
-    "states": "the recipes set lamp states through the drawing's classes and viewer.setStates, not this module's own API",
     "fields": "the 3D section names viewer.setFields; the module's form helpers (fieldRows, fieldAccepts, encodeFields) have no recipe",
     "share": "the 3D recipe exports GLB and USDZ through viewer.download, which uses it; its own functions have no recipe",
     "gif": "marks.toGif loads it; the annotate section names toGif, but the module's own API has no recipe",

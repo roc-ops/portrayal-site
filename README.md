@@ -116,9 +116,9 @@ a name in either that the kit no longer exports.
 
 A version bump is also a cue to re-read the prose, not only the module lists:
 a section can name every module and still describe what that version no longer
-does. The bundles section says `inspect` gives `bend: null`, for example,
-which stops being true when 0.8.0 adds the bend check. Re-read each section
-whose modules changed in the release.
+does. The bundles section said `inspect` gives `bend: null` until the
+re-vendor to 0.10.0, for example, which stopped being true when 0.8.0 added
+the bend check. Re-read each section whose modules changed in the release.
 
 While the vendored kit is newer than the last npm release (`KIT_NPM_LATEST`
 in `check-contract.py`), `#files` must carry the `data-kit-unpublished` note

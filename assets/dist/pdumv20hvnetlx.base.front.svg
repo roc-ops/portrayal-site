@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="56mm" height="1776.44mm" viewBox="0 0 56 1776.44" data-device="pdumv20hvnetlx" data-view="front" data-length-mm="1776.44" data-weight-kg="3.86" data-construction="metal" data-input-ac="208/230 V single-phase (200-240 V), 16 A continuous (agency de-rated), 50/60 Hz" data-input-plug="iec-60320-c20" data-input-cord="detachable" data-input-phase="single" data-input-voltage-v="230" data-input-current-a="16" data-plug-rating-a="20" data-capacity-kw="3.68" data-capacity-scope="the load the PDU can hand on, 3.68 kW at 230 V and 3.33 kW at 208 V, 16 A in all (spec sheet); it is not what the PDU draws itself, which no document held states" data-output-voltage="208/230 V" data-output-rating="16 A total; 16 A per C19; 12 A (10 A CE) per C13" data-breakers="two, one per load bank; rating and position not stated" data-frequency="50/60 Hz" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-30 to 60 C (-22 to 140 F)" data-humidity="5 to 95 % non-condensing" data-altitude="0 to 3000 m (0 to 10000 ft)" data-metering-scope="branch" data-outlet-switching="true" data-metering="load current in amps, total and per bank, on the digital ammeter and over the network" data-network-interface="built-in LX Platform interface (pre-installed WEBCARDLX, PowerAlert Device Manager PADM20), 10/100 Mbps" data-protocols="HTTP, HTTPS, SMTP, SNMPv1, SNMPv2, SNMPv3, telnet, SSH, FTP, DHCP, NTP" data-certifications="EN 55022; EN 55024; CAN/CSA-C22.2 No. 60950-1 (Canada); IEC 60950-1; NOM (Mexico); UL 60950-1" data-product-compliance="RoHS; FCC Part 15 Class A (USA); Trade Agreements Act (TAA)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='f'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-0 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-1 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='g'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-2 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='g'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-3 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='g'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-4 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='g'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-5 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='g'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-6 [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-7 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-8 [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-9 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-blank [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='dp'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-off [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='dp'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='a'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='b'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='c'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='d'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='e'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='f'] ,g[data-ref^='eaton/tripplite-load-meter@'] .state-on [data-seg='g'] { opacity: 0; }
+    #lan--led-b.state-activity { --led-color: #22c55e; }
+    #lan--led-b.state-activity { animation: portrayal-blink 1s linear infinite; }
+    #status-led.state-alternating, #status-led .state-alternating { --led-color: #f97316; }
+    #status-led.state-alternating [data-class='led'], #status-led .state-alternating { animation: portrayal-blink 1s linear infinite; }
+    #status-led.state-on, #status-led .state-on { --led-color: #22c55e; }
+    #lan--led-a.state-speed-100m { --led-color: #facc15; }
+</style>
+  <metadata>{"device":"Eaton PDUMV20HVNETLX","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","common/usb-symbol@1":"1.0.0","eaton/tripplite-led@1":"1.0.0","eaton/tripplite-load-meter@1":"1.0.0","std/c13-outlet@1":"1.0.0","std/c19-outlet@1":"1.0.1","std/c20-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"b6083b820088af9817ee8240988bdb4b361e1702b0128a39674b5a1e53d7bcb0","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PDUMV20HVNETLX" data-sku="PDUMV20HVNETLX" data-part-number="" x="0" y="0" width="56" height="1776.44" rx="1.2" fill="#2e2f31" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="c19-moulding-1" data-kind="outlet-moulding" x="17" y="17.95" width="34.4" height="42.65" rx="1.2" fill="#262729" />
+    <rect id="c19-moulding-2" data-kind="outlet-moulding" x="17" y="62.7" width="34.4" height="42.45" rx="1.2" fill="#262729" />
+    <rect id="c13-moulding-1" data-kind="outlet-moulding" x="17" y="155.9" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-2" data-kind="outlet-moulding" x="17" y="191.52" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-3" data-kind="outlet-moulding" x="17" y="227.13" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-4" data-kind="outlet-moulding" x="17" y="262.75" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-5" data-kind="outlet-moulding" x="17" y="298.36" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-6" data-kind="outlet-moulding" x="17" y="333.98" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-7" data-kind="outlet-moulding" x="17" y="369.6" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-8" data-kind="outlet-moulding" x="17" y="405.21" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-9" data-kind="outlet-moulding" x="17" y="440.83" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-10" data-kind="outlet-moulding" x="17" y="476.44" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c19-moulding-3" data-kind="outlet-moulding" x="17" y="736.35" width="34.4" height="42.65" rx="1.2" fill="#262729" />
+    <rect id="c19-moulding-4" data-kind="outlet-moulding" x="17" y="781.1" width="34.4" height="42.45" rx="1.2" fill="#262729" />
+    <rect id="c13-moulding-11" data-kind="outlet-moulding" x="17" y="874.3" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-12" data-kind="outlet-moulding" x="17" y="909.92" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-13" data-kind="outlet-moulding" x="17" y="945.53" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-14" data-kind="outlet-moulding" x="17" y="981.15" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-15" data-kind="outlet-moulding" x="17" y="1016.76" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-16" data-kind="outlet-moulding" x="17" y="1052.38" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-17" data-kind="outlet-moulding" x="17" y="1088" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-18" data-kind="outlet-moulding" x="17" y="1123.61" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-19" data-kind="outlet-moulding" x="17" y="1159.23" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="c13-moulding-20" data-kind="outlet-moulding" x="17" y="1194.84" width="35.2" height="28.4" rx="1" fill="#262729" />
+    <rect id="screw-1" data-kind="screw-head" x="7.4" y="7.03" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-2" data-kind="screw-head" x="43.98" y="7.03" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-3" data-kind="screw-head" x="9" y="59.07" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-4" data-kind="screw-head" x="43.46" y="130.79" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-5" data-kind="screw-head" x="26.2" y="327.2" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-6" data-kind="screw-head" x="26.2" y="469.4" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-7" data-kind="screw-head" x="7.42" y="509.7" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-8" data-kind="screw-head" x="43.88" y="509.8" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-9" data-kind="screw-head" x="8.8" y="521.55" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-10" data-kind="screw-head" x="7.08" y="576.97" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-11" data-kind="screw-head" x="43.78" y="576.97" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-12" data-kind="screw-head" x="25.41" y="611.39" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-13" data-kind="screw-head" x="7.08" y="710.82" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-14" data-kind="screw-head" x="43.78" y="710.82" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-15" data-kind="screw-head" x="7.4" y="725.43" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-16" data-kind="screw-head" x="43.98" y="725.43" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-17" data-kind="screw-head" x="9" y="777.47" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-18" data-kind="screw-head" x="43.46" y="849.19" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-19" data-kind="screw-head" x="26.2" y="1045.6" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-20" data-kind="screw-head" x="26.2" y="1187.8" width="5.2" height="5.2" rx="2.6" fill="#1f2022" />
+    <rect id="screw-21" data-kind="screw-head" x="7.42" y="1228.1" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-22" data-kind="screw-head" x="43.88" y="1228.2" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="screw-23" data-kind="screw-head" x="41.5" y="1258.51" width="5.4" height="5.4" rx="2.7" fill="#1f2022" />
+    <rect id="screw-24" data-kind="screw-head" x="8.52" y="1304.59" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-25" data-kind="screw-head" x="42.1" y="1304.59" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-26" data-kind="screw-head" x="25.17" y="1478.39" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-27" data-kind="screw-head" x="8.52" y="1579.09" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-28" data-kind="screw-head" x="42.1" y="1579.09" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="screw-29" data-kind="screw-head" x="25.17" y="1697.82" width="5.6" height="5.6" rx="2.8" fill="#1f2022" />
+    <rect id="inlet-flange" data-kind="inlet-flange" x="14.3" y="1725.3" width="27.9" height="36.3" rx="2" fill="#1d1e20" />
+    <rect id="inlet-bracket-screw-1" data-kind="screw-head" x="26.1" y="1716.6" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="inlet-bracket-screw-2" data-kind="screw-head" x="26.1" y="1765" width="4.4" height="4.4" rx="2.2" fill="#1f2022" />
+    <rect id="boss" data-kind="boss" x="3.85" y="1763" width="10.2" height="10.2" rx="5.1" fill="#8a8d90" />
+  </g>
+  <rect id="region--bank-1" data-path="region:bank-1" data-class="region" data-members="outlet-1 outlet-2 outlet-3 outlet-4 outlet-5 outlet-6 outlet-7 outlet-8 outlet-9 outlet-10 outlet-11 outlet-12 led-1 led-2 led-3 led-4 led-5 led-6 led-7 led-8 led-9 led-10 led-11 led-12" x="8.6" y="25.78" width="43.35" height="476.2" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="15" y="676" width="13" height="47" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--bank-2" data-path="region:bank-2" data-class="region" data-members="outlet-13 outlet-14 outlet-15 outlet-16 outlet-17 outlet-18 outlet-19 outlet-20 outlet-21 outlet-22 outlet-23 outlet-24 led-13 led-14 led-15 led-16 led-17 led-18 led-19 led-20 led-21 led-22 led-23 led-24" x="8.6" y="744.18" width="43.35" height="476.2" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="6.3" y="39.63" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 6.3 39.63)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-1">1</text>
+    <text x="6.3" y="83.72" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 6.3 83.72)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-2">2</text>
+    <text x="36.2" y="151.72" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 151.72)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-3">3</text>
+    <text x="36.2" y="187.34" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 187.34)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-4">4</text>
+    <text x="36.2" y="222.95" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 222.95)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-5">5</text>
+    <text x="36.2" y="258.57" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 258.57)" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-6">6</text>
+    <text x="36.2" y="294.18" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 294.18)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-7">7</text>
+    <text x="36.2" y="329.8" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 329.8)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-8">8</text>
+    <text x="36.2" y="365.42" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 365.42)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-9">9</text>
+    <text x="36.2" y="401.03" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 401.03)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-10">10</text>
+    <text x="36.2" y="436.65" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 436.65)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-11">11</text>
+    <text x="36.2" y="472.26" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 472.26)" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-12">12</text>
+    <text x="6.3" y="758.03" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 6.3 758.03)" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-13">13</text>
+    <text x="6.3" y="802.12" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 6.3 802.12)" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-14">14</text>
+    <text x="36.2" y="870.12" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 870.12)" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-15">15</text>
+    <text x="36.2" y="905.74" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 905.74)" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-16">16</text>
+    <text x="36.2" y="941.35" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 941.35)" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-17">17</text>
+    <text x="36.2" y="976.97" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 976.97)" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-18">18</text>
+    <text x="36.2" y="1012.58" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1012.58)" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-19">19</text>
+    <text x="36.2" y="1048.2" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1048.2)" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-20">20</text>
+    <text x="36.2" y="1083.82" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1083.82)" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-21">21</text>
+    <text x="36.2" y="1119.43" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1119.43)" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-22">22</text>
+    <text x="36.2" y="1155.05" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1155.05)" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-23">23</text>
+    <text x="36.2" y="1190.66" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 36.2 1190.66)" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-24">24</text>
+    <text x="23.01" y="609" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 23.01 609)" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="config">CONFIG</text>
+    <text x="33" y="588.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 33 588.4)" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan">LINK</text>
+    <text x="52" y="588.7" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 52 588.7)" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan">STATUS</text>
+    <text x="22.83" y="571.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" transform="rotate(270 22.83 571.6)" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <path d="M 2.8 0 H 5.8 V 3.0 H 2.8 Z M 2.8 5.6 H 5.8 V 8.6 H 2.8 Z M 0 2.8 H 2.0 V 5.8 H 0 Z M 2.0 4.3 H 2.4 V 1.5 H 2.8 M 2.4 4.3 V 7.1 H 2.8" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(37.4 605.4)" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan" />
+  </g>
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="std/c19-outlet@1:1.0.1" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c19" data-rating-a="16" data-rel-pos="1" transform="translate(16.35,25.78) rotate(270 17.8 13.85)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-1</title>
+    <rect id="outlet-1--well" x="0" y="0" width="35.6" height="27.7" fill="#1e1f21" />
+    <path id="outlet-1--recess" fill-rule="evenodd" d="M 5 0 H 30.6 A 5 5 0 0 1 35.6 5 V 22.7 A 5 5 0 0 1 30.6 27.7 H 5 A 5 5 0 0 1 0 22.7 V 5 A 5 5 0 0 1 5 0 Z M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-1/recess" data-class="inlet" />
+    <g id="outlet-1--nose">
+      <path d="M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect id="outlet-1--slot-earth" x="14.2" y="8.5" width="7.2" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-1--slot-line" x="8.2" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-1--slot-neutral" x="21.15" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="17.8 13.85" data-cp-dir="front" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="std/c19-outlet@1:1.0.1" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c19" data-rating-a="16" data-rel-pos="2" transform="translate(16.35,69.87) rotate(270 17.8 13.85)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-2</title>
+    <rect id="outlet-2--well" x="0" y="0" width="35.6" height="27.7" fill="#1e1f21" />
+    <path id="outlet-2--recess" fill-rule="evenodd" d="M 5 0 H 30.6 A 5 5 0 0 1 35.6 5 V 22.7 A 5 5 0 0 1 30.6 27.7 H 5 A 5 5 0 0 1 0 22.7 V 5 A 5 5 0 0 1 5 0 Z M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-2/recess" data-class="inlet" />
+    <g id="outlet-2--nose">
+      <path d="M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect id="outlet-2--slot-earth" x="14.2" y="8.5" width="7.2" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-2--slot-line" x="8.2" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-2--slot-neutral" x="21.15" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="17.8 13.85" data-cp-dir="front" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="3" transform="translate(19.42,159.44) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-3</title>
+    <rect id="outlet-3--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-3--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-3/recess" data-class="inlet" />
+    <g id="outlet-3--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="4" transform="translate(19.42,195.06) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-4</title>
+    <rect id="outlet-4--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-4--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-4/recess" data-class="inlet" />
+    <g id="outlet-4--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="5" transform="translate(19.42,230.67) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-5</title>
+    <rect id="outlet-5--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-5--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-5/recess" data-class="inlet" />
+    <g id="outlet-5--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="6" transform="translate(19.42,266.29) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-6</title>
+    <rect id="outlet-6--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-6--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-6/recess" data-class="inlet" />
+    <g id="outlet-6--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="7" transform="translate(19.42,301.9) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-7</title>
+    <rect id="outlet-7--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-7--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-7/recess" data-class="inlet" />
+    <g id="outlet-7--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="8" transform="translate(19.42,337.52) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-8</title>
+    <rect id="outlet-8--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-8--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-8/recess" data-class="inlet" />
+    <g id="outlet-8--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-9" data-path="outlet-9" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="9" transform="translate(19.42,373.14) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-9</title>
+    <rect id="outlet-9--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-9--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-9/recess" data-class="inlet" />
+    <g id="outlet-9--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-10" data-path="outlet-10" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="10" transform="translate(19.42,408.75) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-10</title>
+    <rect id="outlet-10--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-10--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-10/recess" data-class="inlet" />
+    <g id="outlet-10--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-11" data-path="outlet-11" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="11" transform="translate(19.42,444.37) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-11</title>
+    <rect id="outlet-11--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-11--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-11/recess" data-class="inlet" />
+    <g id="outlet-11--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-12" data-path="outlet-12" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="12" transform="translate(19.42,479.98) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-12</title>
+    <rect id="outlet-12--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-12--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-12/recess" data-class="inlet" />
+    <g id="outlet-12--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-13" data-path="outlet-13" data-class="inlet" data-ref="std/c19-outlet@1:1.0.1" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c19" data-rating-a="16" data-rel-pos="13" transform="translate(16.35,744.18) rotate(270 17.8 13.85)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-13</title>
+    <rect id="outlet-13--well" x="0" y="0" width="35.6" height="27.7" fill="#1e1f21" />
+    <path id="outlet-13--recess" fill-rule="evenodd" d="M 5 0 H 30.6 A 5 5 0 0 1 35.6 5 V 22.7 A 5 5 0 0 1 30.6 27.7 H 5 A 5 5 0 0 1 0 22.7 V 5 A 5 5 0 0 1 5 0 Z M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-13/recess" data-class="inlet" />
+    <g id="outlet-13--nose">
+      <path d="M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect id="outlet-13--slot-earth" x="14.2" y="8.5" width="7.2" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-13--slot-line" x="8.2" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-13--slot-neutral" x="21.15" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="17.8 13.85" data-cp-dir="front" />
+  </g>
+  <g id="outlet-14" data-path="outlet-14" data-class="inlet" data-ref="std/c19-outlet@1:1.0.1" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c19" data-rating-a="16" data-rel-pos="14" transform="translate(16.35,788.27) rotate(270 17.8 13.85)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-14</title>
+    <rect id="outlet-14--well" x="0" y="0" width="35.6" height="27.7" fill="#1e1f21" />
+    <path id="outlet-14--recess" fill-rule="evenodd" d="M 5 0 H 30.6 A 5 5 0 0 1 35.6 5 V 22.7 A 5 5 0 0 1 30.6 27.7 H 5 A 5 5 0 0 1 0 22.7 V 5 A 5 5 0 0 1 5 0 Z M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-14/recess" data-class="inlet" />
+    <g id="outlet-14--nose">
+      <path d="M 8.5 3.45 H 27.1 A 4.7 4.7 0 0 1 31.8 8.15 V 19.55 A 4.7 4.7 0 0 1 27.1 24.25 H 8.5 A 4.7 4.7 0 0 1 3.8 19.55 V 8.15 A 4.7 4.7 0 0 1 8.5 3.45 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect id="outlet-14--slot-earth" x="14.2" y="8.5" width="7.2" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-14--slot-line" x="8.2" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+      <rect id="outlet-14--slot-neutral" x="21.15" y="16.5" width="6.25" height="2.65" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="17.8 13.85" data-cp-dir="front" />
+  </g>
+  <g id="outlet-15" data-path="outlet-15" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="15" transform="translate(19.42,877.84) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-15</title>
+    <rect id="outlet-15--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-15--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-15/recess" data-class="inlet" />
+    <g id="outlet-15--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-16" data-path="outlet-16" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="16" transform="translate(19.42,913.46) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-16</title>
+    <rect id="outlet-16--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-16--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-16/recess" data-class="inlet" />
+    <g id="outlet-16--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-17" data-path="outlet-17" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="17" transform="translate(19.42,949.07) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-17</title>
+    <rect id="outlet-17--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-17--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-17/recess" data-class="inlet" />
+    <g id="outlet-17--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-18" data-path="outlet-18" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="18" transform="translate(19.42,984.69) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-18</title>
+    <rect id="outlet-18--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-18--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-18/recess" data-class="inlet" />
+    <g id="outlet-18--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-19" data-path="outlet-19" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="19" transform="translate(19.42,1020.3) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-19</title>
+    <rect id="outlet-19--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-19--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-19/recess" data-class="inlet" />
+    <g id="outlet-19--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-20" data-path="outlet-20" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="20" transform="translate(19.42,1055.92) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-20</title>
+    <rect id="outlet-20--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-20--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-20/recess" data-class="inlet" />
+    <g id="outlet-20--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-21" data-path="outlet-21" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="21" transform="translate(19.42,1091.54) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-21</title>
+    <rect id="outlet-21--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-21--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-21/recess" data-class="inlet" />
+    <g id="outlet-21--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-22" data-path="outlet-22" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="22" transform="translate(19.42,1127.15) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-22</title>
+    <rect id="outlet-22--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-22--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-22/recess" data-class="inlet" />
+    <g id="outlet-22--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-23" data-path="outlet-23" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="23" transform="translate(19.42,1162.77) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-23</title>
+    <rect id="outlet-23--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-23--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-23/recess" data-class="inlet" />
+    <g id="outlet-23--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-24" data-path="outlet-24" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="24" transform="translate(19.42,1198.38) rotate(180 15.2 11.0)" data-group="outlets" data-group-role="traffic" data-states="on off" data-lamped="true">
+    <title>outlet-24</title>
+    <rect id="outlet-24--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-24--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-24/recess" data-class="inlet" />
+    <g id="outlet-24--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="led-1" data-path="led-1" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="1" transform="translate(8.6,36.63)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-1">
+    <title>led-1</title>
+    <circle id="led-1--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-1/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-2" data-path="led-2" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="2" transform="translate(8.6,80.72)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-2">
+    <title>led-2</title>
+    <circle id="led-2--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-2/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-3" data-path="led-3" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="3" transform="translate(38.83,148.72)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-3">
+    <title>led-3</title>
+    <circle id="led-3--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-3/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-4" data-path="led-4" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="4" transform="translate(38.83,184.34)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-4">
+    <title>led-4</title>
+    <circle id="led-4--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-4/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-5" data-path="led-5" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="5" transform="translate(38.83,219.95)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-5">
+    <title>led-5</title>
+    <circle id="led-5--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-5/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-6" data-path="led-6" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="6" transform="translate(38.83,255.57)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-6">
+    <title>led-6</title>
+    <circle id="led-6--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-6/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-7" data-path="led-7" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="7" transform="translate(38.83,291.18)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-7">
+    <title>led-7</title>
+    <circle id="led-7--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-7/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-8" data-path="led-8" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="8" transform="translate(38.83,326.8)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-8">
+    <title>led-8</title>
+    <circle id="led-8--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-8/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-9" data-path="led-9" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="9" transform="translate(38.83,362.42)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-9">
+    <title>led-9</title>
+    <circle id="led-9--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-9/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-10" data-path="led-10" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="10" transform="translate(38.83,398.03)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-10">
+    <title>led-10</title>
+    <circle id="led-10--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-10/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-11" data-path="led-11" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="11" transform="translate(38.83,433.65)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-11">
+    <title>led-11</title>
+    <circle id="led-11--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-11/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-12" data-path="led-12" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="12" transform="translate(38.83,469.26)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-12">
+    <title>led-12</title>
+    <circle id="led-12--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-12/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-13" data-path="led-13" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="13" transform="translate(8.6,755.03)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-13">
+    <title>led-13</title>
+    <circle id="led-13--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-13/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-14" data-path="led-14" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="14" transform="translate(8.6,799.12)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-14">
+    <title>led-14</title>
+    <circle id="led-14--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-14/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-15" data-path="led-15" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="15" transform="translate(38.83,867.12)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-15">
+    <title>led-15</title>
+    <circle id="led-15--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-15/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-16" data-path="led-16" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="16" transform="translate(38.83,902.74)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-16">
+    <title>led-16</title>
+    <circle id="led-16--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-16/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-17" data-path="led-17" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="17" transform="translate(38.83,938.35)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-17">
+    <title>led-17</title>
+    <circle id="led-17--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-17/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-18" data-path="led-18" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="18" transform="translate(38.83,973.97)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-18">
+    <title>led-18</title>
+    <circle id="led-18--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-18/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-19" data-path="led-19" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="19" transform="translate(38.83,1009.58)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-19">
+    <title>led-19</title>
+    <circle id="led-19--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-19/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-20" data-path="led-20" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="20" transform="translate(38.83,1045.2)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-20">
+    <title>led-20</title>
+    <circle id="led-20--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-20/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-21" data-path="led-21" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="21" transform="translate(38.83,1080.82)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-21">
+    <title>led-21</title>
+    <circle id="led-21--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-21/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-22" data-path="led-22" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="22" transform="translate(38.83,1116.43)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-22">
+    <title>led-22</title>
+    <circle id="led-22--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-22/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-23" data-path="led-23" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="23" transform="translate(38.83,1152.05)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-23">
+    <title>led-23</title>
+    <circle id="led-23--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-23/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="led-24" data-path="led-24" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="24" transform="translate(38.83,1187.66)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933666 rev B); its colour is not stated" data-states="on off" data-for="outlet-24">
+    <title>led-24</title>
+    <circle id="led-24--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="led-24/lamp" data-class="led" data-states="on off" />
+  </g>
+  <g id="meter" data-path="meter" data-class="display" data-ref="eaton/tripplite-load-meter@1:1.0.0" data-rel-pos="1" transform="translate(3.9,533.6)" data-group="meter" data-group-role="indicator" data-for="chassis">
+    <title>meter</title>
+    <rect id="meter--outline" x="0.15" y="0.15" width="47.9" height="30.0" rx="0.6" fill="#2c2d2f" stroke="#3d3f42" stroke-width="0.3" />
+    <rect id="meter--window" x="13.7" y="3.1" width="20.6" height="16.9" rx="0.4" fill="#0e0f10" stroke="#3a3c3f" stroke-width="0.25" data-path="meter/window" data-class="display" data-characters="2" data-description="the readout window, two seven-segment cells. It shows the load in amps, total or per bank, or the IP address two characters at a time; each cell's glyph set is on its digit." />
+    <g id="meter--ghost" fill="#1d211c">
+      <rect x="17.10" y="5.80" width="4.80" height="1.10" rx="0.25" />
+      <rect x="16.00" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect x="21.90" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect x="17.10" y="11.00" width="4.80" height="1.10" rx="0.25" />
+      <rect x="16.00" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect x="21.90" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect x="17.10" y="16.20" width="4.80" height="1.10" rx="0.25" />
+      <rect x="26.10" y="5.80" width="4.80" height="1.10" rx="0.25" />
+      <rect x="25.00" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect x="30.90" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect x="26.10" y="11.00" width="4.80" height="1.10" rx="0.25" />
+      <rect x="25.00" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect x="30.90" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect x="26.10" y="16.20" width="4.80" height="1.10" rx="0.25" />
+    </g>
+    <g id="meter--digit-1" fill="#70be44" data-path="meter/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="17.10" y="5.80" width="4.80" height="1.10" rx="0.25" />
+      <rect data-seg="f" opacity="0" x="16.00" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="b" opacity="0" x="21.90" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="g" opacity="0" x="17.10" y="11.00" width="4.80" height="1.10" rx="0.25" />
+      <rect data-seg="e" opacity="0" x="16.00" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="c" opacity="0" x="21.90" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="d" opacity="0" x="17.10" y="16.20" width="4.80" height="1.10" rx="0.25" />
+    </g>
+    <g id="meter--digit-2" fill="#70be44" data-path="meter/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="26.10" y="5.80" width="4.80" height="1.10" rx="0.25" />
+      <rect data-seg="f" opacity="0" x="25.00" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="b" opacity="0" x="30.90" y="6.90" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="g" opacity="0" x="26.10" y="11.00" width="4.80" height="1.10" rx="0.25" />
+      <rect data-seg="e" opacity="0" x="25.00" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="c" opacity="0" x="30.90" y="12.10" width="1.10" height="4.10" rx="0.25" />
+      <rect data-seg="d" opacity="0" x="26.10" y="16.20" width="4.80" height="1.10" rx="0.25" />
+    </g>
+    <g id="meter--point-1" fill="#70be44" data-path="meter/point-1" data-class="display" data-states="on off" data-characters="1" data-description="the left digit's decimal point, driven separately from the digit.">
+      <rect data-seg="dp" x="23.3" y="16.4" width="0.9" height="0.9" rx="0.45" opacity="0" />
+    </g>
+    <g id="meter--point-2" fill="#70be44" data-path="meter/point-2" data-class="display" data-states="on off" data-characters="1" data-description="the right digit's decimal point, driven separately from the digit.">
+      <rect data-seg="dp" x="32.3" y="16.4" width="0.9" height="0.9" rx="0.45" opacity="0" />
+    </g>
+    <g id="meter--select-rotate" data-path="meter/select-rotate" data-class="button" data-description="the Select / Rotate push button: pressed one second it scrolls the IP address, two seconds it turns the readout over (owner's manual 933666 rev B, Features).">
+      <circle cx="40.7" cy="20.5" r="5.5" fill="#141517" stroke="#4a4d51" stroke-width="0.25" />
+    </g>
+    <g id="meter--silkscreen" fill="#e8e8e6" font-family="Helvetica, Arial, sans-serif">
+      <text x="24.0" y="25.6" font-size="2.3" text-anchor="middle">LOAD (AMPS)</text>
+      <text x="24.0" y="0.75" font-size="1.9" text-anchor="middle" transform="rotate(180 24.0 0.75)" dy="-0.0">LOAD (AMPS)</text>
+      <text x="40.1" y="20.5" font-size="1.25" text-anchor="middle" fill="#b9bcc0" transform="rotate(270 40.1 20.5)">Select /</text>
+      <text x="41.8" y="20.5" font-size="1.25" text-anchor="middle" fill="#b9bcc0" transform="rotate(270 41.8 20.5)">Rotate</text>
+    </g>
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="1" transform="translate(20.15,576.65)" data-group="buttons" data-group-role="service" data-for="lan">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="status-led" data-path="status-led" data-class="led" data-ref="eaton/tripplite-led@1:1.0.0" data-rel-pos="1" transform="translate(29.53,575.65)" data-group="status-leds" data-group-role="indicator" data-states="off on alternating" data-description="the LX Platform interface status lamp (E): green steady in normal operation, a single flash at power-up, green and orange alternating while firmware updates (about once a second) or defaults restore (about twice a second)" data-for="chassis">
+    <title>status-led</title>
+    <circle id="status-led--lamp" cx="3" cy="3" r="2.95" fill="var(--led-color, #3a3b3d)" stroke="#262729" stroke-width="0.1" data-path="status-led/lamp" data-class="led" data-states="off on alternating" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="3" transform="translate(1.92,591.79) rotate(270 6.0 2.25)" data-group="mgmt" data-group-role="management" data-description="USB-A for EnviroSense2 environmental modules (E2MT, E2MTDO, E2MTDI, E2MTHDI); not for a keyboard or mouse">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-mark" data-path="usb-mark" data-class="silkscreen" data-ref="common/usb-symbol@1:1.0.0" data-rel-pos="1" transform="translate(4.72,603.5) rotate(270 3.2 2.0)" data-group="marks" data-group-role="furniture" data-for="usb">
+    <title>usb-mark</title>
+    <g id="usb-mark--symbol" stroke="#c7ccd1" fill="#c7ccd1" stroke-linecap="round" data-path="usb-mark/symbol" data-class="silkscreen">
+      <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+      <circle cx="0.75" cy="2" r="0.55" />
+      <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+      <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+      <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+      <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+      <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+    </g>
+  </g>
+  <g id="config" data-path="config" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(14.3,587.16) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management" data-description="CONFIG, the RJ45 configuration port: a terminal on the included RJ45 to DB9 cable (73-1243) at 115.2 kbps, 8N1">
+    <title>config</title>
+    <path id="config--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="config--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="config--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="config/opening" data-class="cutout" />
+    <g id="config--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="lan" data-path="lan" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="100m" data-rel-pos="1" transform="translate(34.21,587.16) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management" data-description="the LX Platform 10/100 Ethernet port">
+    <title>lan</title>
+    <g id="lan--jack" data-path="lan/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>lan--jack</title>
+      <path id="lan--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan/jack/opening" data-class="cutout" />
+      <g id="lan--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="lan--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="lan--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan/led-a" data-class="led" data-states="off speed-100m" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="lan--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="input" data-path="input" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(12.0,1731.5) rotate(270 16.2 12.2)" data-group="power-input" data-group-role="service" data-description="the C20 power inlet; the detachable 10 ft NEMA L6-20P cord in the box plugs into it">
+    <title>input</title>
+    <rect id="input--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="input/opening" data-class="cutout" />
+    <rect id="input--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="input--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="input--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="input--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+</svg>

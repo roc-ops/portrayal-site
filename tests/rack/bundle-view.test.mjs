@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
-        trunkIndexOf, bundleSummary, bundleFacts, bundleNotes} from '../../site/rack/bundle-view.js';
+        trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes} from '../../site/rack/bundle-view.js';
 
 const ring = (via) => ({item: 'i2', via});
 const lane = (ru) => ({lane: 'left-front', ru});
@@ -83,7 +83,7 @@ test('bundleFacts without the routes is not checked, and the summary and notes s
   assert.equal(f.check.checked, false);
   assert.equal(f.straps, null);
   assert.equal(bundleSummary(f), '2 cables (c1-c2), not checked, straps every 12 in');
-  assert.deepEqual(bundleNotes(rack, new Map([['b1', f]])), ['Bundle 1 (b1): 2 cables (c1-c2), not checked, straps every 12 in.']);
+  assert.deepEqual(sheetBundleNotes(rack, new Map([['b1', f]])), ['Bundle 1 (b1): 2 cables (c1-c2), not checked, straps every 12 in.']);
 });
 
 test('packOffset keeps every member inside the bundle, on the diagonals and past nine members', () => {
@@ -99,13 +99,13 @@ test('packOffset keeps every member inside the bundle, on the diagonals and past
   assert.deepEqual(packOffset({index: 0, n: 1, diameter: 9}, 3), [0, 0]);
 });
 
-test('bundleNotes carries the kit\'s notes, so an unchecked bend never reads as a pass on the sheet', () => {
+test('sheetBundleNotes carries the kit\'s notes, so an unchecked bend never reads as a pass on the sheet', () => {
   const f = {id: 'b1', name: 'Bundle 1', members: ['c1', 'c2'], drawn: true, every: {value: 12, unit: 'in'}, diameter: 9,
     straps: {every: {value: 12, unit: 'in'}, count: 2, straps: []},
     check: {checked: true, warnings: ['Bundle 1 turns at left-front U10 with room for a 24.5 mm bend; c2 (om4) needs 25 mm, 0.5 mm short.'],
             notes: ["Bundle 1's bend is not checked for c5, which has no cable type."],
             bend: {radius_mm: 25, by: 'c2', unchecked: ['c5']}, size: {max_mm: 9}}};
-  assert.deepEqual(bundleNotes({}, new Map([['b1', f]])), [
+  assert.deepEqual(sheetBundleNotes({}, new Map([['b1', f]])), [
     'Bundle 1 (b1): 2 cables (c1-c2), about 9 mm, 2 straps every 12 in.',
     'Bundle 1 turns at left-front U10 with room for a 24.5 mm bend; c2 (om4) needs 25 mm, 0.5 mm short.',
     'Bend radius 25 mm, set by c2.',
