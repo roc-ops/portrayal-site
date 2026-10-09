@@ -175,6 +175,27 @@ for f in LICENSE NOTICE; do
 done
 [ -f "$SRC/../LICENSE" ] && cp "$SRC/../LICENSE" "$HERE/vendor/LICENSE"
 [ -f "$SRC/../NOTICE" ] && cp "$SRC/../NOTICE" "$HERE/vendor/NOTICE"
+# ...WITH ONE LINE MADE TRUE HERE. Portrayal's NOTICE says three.js is "Not
+# bundled", which is right for the kit and wrong beside vendor/three/, where this
+# site does bundle it. The rewrite fails loudly rather than skipping, so a change
+# to that sentence upstream is seen instead of quietly shipping the old claim.
+if [ -f "$HERE/vendor/NOTICE" ]; then
+  python3 - "$HERE/vendor/NOTICE" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = ("authors. Not bundled. kit/viewer3d.js and kit/share.js import it at run time\n"
+       "as an optional peer dependency that the host page supplies.")
+new = ("authors. Portrayal's kit does not bundle it: kit/viewer3d.js and kit/share.js\n"
+       "import it at run time as an optional peer dependency that the host page\n"
+       "supplies. This site supplies it: three.js is bundled in vendor/three/, with\n"
+       "its licence and version in vendor/three/LICENSE and fetch-three.sh.")
+if old not in s:
+    sys.exit("refresh-assets: vendor/NOTICE no longer has the three.js 'Not bundled' "
+             "sentence; update the rewrite in refresh-assets.sh")
+open(p, "w").write(s.replace(old, new, 1))
+PY
+fi
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 # labs.json is the ROADM ring lab. No showcase stage draws it since stages 4-5

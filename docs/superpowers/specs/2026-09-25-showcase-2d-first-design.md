@@ -1,7 +1,7 @@
 # Showcase, 2D first — one rail, a 2D/3D switch, a reachable "Look closer", and the ring in 2D
 
 **Date:** 2026-09-25
-**Status:** design approved, ready for an implementation plan
+**Status:** design approved
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md` (the staged rack, merged in roc-ops/portrayal-site#22)
 
 ---

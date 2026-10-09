@@ -19,6 +19,8 @@ VERSION=0.161.0
 cd "$(dirname "$0")"
 base="https://unpkg.com/three@${VERSION}"
 curl -sSfL "$base/build/three.module.js" -o three.module.js
+# MIT asks that the notice travel with the copy; the addons carry no header of their own.
+curl -sSfL "$base/LICENSE" -o LICENSE
 python3 - "$base" <<'PY'
 import os, re, sys, posixpath, urllib.request
 base = sys.argv[1] + '/examples/jsm/'

@@ -37,6 +37,13 @@ faceplate PDF correctly.
 
 ## Third test: the diagnostic ladder
 
+> **Diagnostics 1, 4 and 5 are no longer in the tree.** They were controls
+> built from a third-party AWS icon stencil (davidfsmith/AWS-OmniGraffle-Stencils),
+> whose artwork is AWS Architecture Icons under AWS's own terms. The record of
+> what they showed stays below; the files and the builder's control path were
+> removed, and the remaining diagnostics keep their numbers so the record
+> still reads.
+
 Open these in order and note which ones show the faceplate on the canvas.
 
 | file | what it changes | if it draws |

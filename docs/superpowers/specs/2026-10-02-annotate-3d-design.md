@@ -1,6 +1,6 @@
 # Annotate in 3D
 
-Date: 2026-10-02. Status: approved in conversation, pending written-spec review.
+Date: 2026-10-02. Status: approved 2026-10-02, pending written-spec review.
 Issue: #46. Kit prerequisite: roc-ops/Portrayal#664, merged in roc-ops/Portrayal#667 and already vendored.
 
 ## 1. Why
@@ -167,7 +167,7 @@ The share URL carries `?mode=3d` beside the `#…` document, and a page opened w
 **Gates for every PR:**
 - the site's `check-contract.py` and the full `check-browser.py`;
 - the push through the real pre-push hook with an SSH keepalive, with no `--no-verify`;
-- our code review, then the merge agent.
+- code review before merge.
 
 ## 5. Out of scope
 
