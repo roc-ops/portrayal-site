@@ -35,6 +35,13 @@
     "@portrayal/kit/viewer3d": "./vendor/viewer3d.js",
     "@portrayal/kit/marks": "./vendor/marks.js",
     "@portrayal/kit/shell": "./vendor/shell.js",
+    "@portrayal/kit/rack/catalog": "./vendor/rack/catalog.js",
+    "@portrayal/kit/rack/model": "./vendor/rack/model.js",
+    "@portrayal/kit/rack/editor": "./vendor/rack/editor.js",
+    "@portrayal/kit/rack/queries": "./vendor/rack/queries.js",
+    "@portrayal/kit/rack/route": "./vendor/rack/route.js",
+    "@portrayal/kit/rack/bundles": "./vendor/rack/bundles.js",
+    "@portrayal/kit/rack/cable-types": "./vendor/rack/cable-types.js",
     "three": "./vendor/three/three.module.js",
     "three/addons/": "./vendor/three/addons/"
 } }
@@ -92,7 +99,8 @@
         <p class="sub">
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
-          code beside each result is the file that just ran it.
+          code beside each result is the file that just ran it. This page documents
+          <code>@portrayal/kit</code> <span data-kit-version="0.7.0">0.7.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -105,6 +113,8 @@
           <a href="#three-d">In 3D</a>
           <a href="#annotate">Annotate and export</a>
           <a href="#shell">The Explorer shell</a>
+          <a href="#rack">A rack, by commands</a>
+          <a href="#bundles">Bundles</a>
           <a href="#files">Getting the files</a>
         </nav>
         <div class="kit-body">
@@ -153,7 +163,7 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="metadata">
+          <section class="kit-sec" id="metadata" data-modules="dist">
             <h2>Read the device from the drawing</h2>
             <p>Each device publishes its source manifest once, as
               <code>&lt;device&gt;.source.json</code>: the device, its chassis in
@@ -168,7 +178,7 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="seat">
+          <section class="kit-sec" id="seat" data-modules="swap">
             <h2>Seat an optic or a cable end</h2>
             <p>A cage is empty until you say what's in it. Name the part for the
               cage, and for an optic its two LC bores; the kit draws each part's
@@ -180,7 +190,7 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="three-d">
+          <section class="kit-sec" id="three-d" data-modules="viewer3d">
             <h2>In 3D</h2>
             <p>The same files, as a model you can turn over. The viewer takes the same
               paths and lamp states as the drawing (<code>setStates</code>), the same
@@ -194,7 +204,7 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="annotate">
+          <section class="kit-sec" id="annotate" data-modules="marks">
             <h2>Annotate and export</h2>
             <p>Describe what to mark, not how to draw it: a document of selectors,
               colors, lamp states and labels. The same document previews on the page,
@@ -208,13 +218,123 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="shell">
+          <section class="kit-sec" id="shell" data-modules="shell">
             <h2>The Explorer shell</h2>
             <p>If you want the whole explorer rather than parts of it, mount the
               shell. It styles the page it lands in, so it runs here in a frame of
               its own. <a href="explorer.html">The Explorer</a> is the full example,
               with 3D.</p>
             <figure class="kit-ex" data-example="07-shell" data-run="frame">
+              <pre><code></code></pre>
+              <div class="kit-result" aria-live="polite"></div>
+              <div class="kit-bar"><button type="button" data-act="run">Run again</button>
+                <button type="button" data-act="copy">Copy</button></div>
+            </figure>
+          </section>
+          <section class="kit-sec" id="rack" data-modules="rack/catalog rack/model rack/rails rack/fit rack/zero-u rack/managers rack/cable-rules rack/route rack/route-path rack/cable-geometry rack/export-data rack/dcim-rules rack/validate rack/commands rack/history rack/editor rack/queries">
+            <h2>A rack, by commands</h2>
+            <p>The <code>rack/</code> modules are the <a href="rack.html">Rack Builder</a>'s
+              rules without its page. They read no DOM and fetch nothing but the
+              rack catalog (<code>rack.json</code>) and the cable types, so a rack
+              is checked the same way in a browser, in node and by an agent. Each is
+              imported on its own, as <code>@portrayal/kit/rack/&lt;module&gt;</code>.</p>
+            <p><code>createRackEditor({doc, chassisOf})</code> holds a rack document and
+              takes every edit as a named command through <code>apply</code>:
+              <code>place</code>, <code>move</code>, <code>patch</code>, <code>remove</code>,
+              <code>attach</code>, <code>detach</code>, <code>frame</code>, <code>rename</code>,
+              <code>dcim</code>, <code>fit</code>, <code>field</code>, the <code>side.*</code>,
+              <code>zerou.*</code>, <code>cable.*</code> and <code>bundle.*</code> commands. A batch
+              lands whole or is refused with the reason; each batch is one step for
+              <code>undo</code> and <code>redo</code>, and <code>on('change')</code> hears every
+              one. <code>COMMANDS</code> in <code>rack/commands</code> names each command's
+              arguments as JSON Schema, which is what an agent reads.
+              <code>preview</code> answers what a batch would do without doing it.</p>
+            <p>To read a rack back, <code>describe(rack, ctx)</code> is the whole rack as
+              text (or one stretch of a long one, with <code>{section, offset, limit}</code>),
+              and <code>inspect(rack, id, ctx)</code> is one device, cable, part beside
+              the rack or bundle as data. <code>selectCables</code>, <code>freeUs</code>,
+              <code>fitsAt</code> and <code>catalog</code> answer what a command needs to know first.</p>
+            <figure class="kit-ex" data-example="08-rack" data-run="view">
+              <pre><code></code></pre>
+              <div class="kit-result" aria-live="polite"></div>
+              <div class="kit-bar"><button type="button" data-act="run">Run again</button>
+                <button type="button" data-act="copy">Copy</button></div>
+            </figure>
+            <h3>Beside the rack</h3>
+            <p>A part that stands beside the rack and takes no rack unit, such as a
+              vertical cable manager, is an entry of <code>rack.zeroU</code>, not an item:
+              <code>zerou.place {ref, at, ru}</code> stands it at an upright (<code>left</code> or
+              <code>right</code> on a two-post, <code>left-front</code> to <code>right-rear</code> on a
+              four-post), and <code>zerou.update</code> and <code>zerou.remove</code> move and remove
+              it. The gutter beside that upright then runs through it, so a routed
+              length is measured through the duct. A finger bracket narrower than the
+              opening can stand on one rail: <code>side.place</code> and <code>side.set</code>.</p>
+            <h3>Routes and ring marks</h3>
+            <p><code>resolveRoute</code> gives the waypoints a cable follows;
+              <code>routePath(rack, cable, ctx)</code> is that route in millimeters, each
+              D-ring expanded to where the cable enters and leaves it, and it is what
+              <code>routedLength</code>, fill and the capacity checks measure. Each ring is
+              decided once, there. <code>ringMarks(rack, cable, ctx)</code> hands those
+              decisions to a drawing, one per waypoint, so the drawing passes through
+              each ring the way it was measured. A mark's sense is along the rack's
+              axes (x right as seen from the front, y up); a drawing whose axis runs
+              the other way turns it with <code>orientMarks</code>, and a path drawn from
+              its other end with <code>reverseMarks</code>:</p>
+            <pre class="kit-snippet"><code>import {resolveRoute, ringMarks, orientMarks, reverseMarks} from '@portrayal/kit/rack/route';
+import {routed2d} from '@portrayal/kit/rack/route-path';
+
+const marks = ringMarks(rack, cable, ctx);        // parallel to resolveRoute(...).waypoints
+const front = orientMarks(marks, {y: -1});        // an SVG front elevation: y runs down
+const rear = orientMarks(marks, {x: -1, y: -1});  // the rear, seen mirrored
+const back = reverseMarks(front);                 // the same path, drawn from end b
+const d = routed2d(points, 4, front);             // an SVG path through each ring, straight</code></pre>
+            <p>The <code>ctx</code> comes from the drawings: <code>guidesOf(itemId)</code>, the
+              rings, ducts and pass-throughs on a part, and <code>portX(end)</code>, a port's
+              x in millimeters from the rack's center line. The recipe above uses a
+              plain one, which routes by the gutters alone.</p>
+            <h3>The rack modules</h3>
+            <table class="kit-mods">
+              <thead><tr><th>module</th><th>what it does</th></tr></thead>
+              <tbody>
+                <tr><td><code>rack/catalog</code></td><td><code>loadCatalog(dist)</code>: the rack catalog and the <code>chassisOf(ref)</code> lookup everything else takes; <code>loadSlots(dist, refs)</code>: the bays, cages and parts <code>fit</code> and <code>field</code> check against.</td></tr>
+                <tr><td><code>rack/model</code></td><td>The rack file: <code>newDoc</code>, <code>parseDoc</code>, <code>serialize</code>, and edits that return a new rack (<code>withItem</code>, <code>withFrame</code>, ...). Files are version 3 since 0.7.0; older ones are read as they were.</td></tr>
+                <tr><td><code>rack/editor</code></td><td><code>createRackEditor</code>: a rack document edited by commands, with undo, redo and change events.</td></tr>
+                <tr><td><code>rack/commands</code></td><td>Every edit as a named, validated command (<code>COMMANDS</code>), and <code>apply</code> for a batch.</td></tr>
+                <tr><td><code>rack/history</code></td><td>Undo and redo as snapshots, as the editor keeps them.</td></tr>
+                <tr><td><code>rack/queries</code></td><td>Reading a rack: <code>describe</code>, <code>inspect</code>, <code>selectCables</code>, <code>fitsAt</code>, <code>freeUs</code>, <code>catalog</code>, <code>freePorts</code>, <code>suggestMedia</code>, <code>looseEnds</code>.</td></tr>
+                <tr><td><code>rack/rails</code></td><td>The rails: the rack unit (44.45 mm), the opening, and where a device sits between them.</td></tr>
+                <tr><td><code>rack/fit</code></td><td>Whether a device fits at a unit, on a face and on one rail; whether a zero-U part fits beside the rack (<code>fitsZeroU</code>); how a shrink trims a rack.</td></tr>
+                <tr><td><code>rack/zero-u</code></td><td>The parts beside the rack: where each stands, as words (<code>whereText</code>) and as x (<code>zeroUX</code>), and each placeable entry (<code>zeroUEntries</code>).</td></tr>
+                <tr><td><code>rack/managers</code></td><td>Cable managers: the <code>placement</code> of one onto the device behind it, and moving one.</td></tr>
+                <tr><td><code>rack/cable-rules</code></td><td>Which two ports may be joined, <code>withCable</code>, media and lengths.</td></tr>
+                <tr><td><code>rack/route</code></td><td><code>resolveRoute</code>, <code>routePath</code>, <code>routedLength</code>, <code>ringMarks</code>, <code>orientMarks</code>, <code>reverseMarks</code>, pathway <code>fill</code> and <code>ringFindings</code>.</td></tr>
+                <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>).</td></tr>
+                <tr><td><code>rack/cable-geometry</code></td><td>The 3D path (<code>routePoints3d</code>), cable and plug colors, and the lead and sag figures the drawings share.</td></tr>
+                <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code>, and the device-import data.</td></tr>
+                <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows, and the import kit's README.</td></tr>
+                <tr><td><code>rack/validate</code></td><td><code>validate(schema, value)</code>, the small JSON Schema validator the commands use, and <code>same</code>.</td></tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="kit-sec" id="bundles" data-modules="rack/bundles rack/bundle-route rack/cable-types">
+            <h2>Bundles</h2>
+            <p>Cables that share part of their route can be combed into a bundle and
+              held with hook-and-loop straps. <code>bundle.create</code>, <code>bundle.add</code>,
+              <code>bundle.peel</code>, <code>bundle.update</code> and <code>bundle.remove</code> make
+              and change them, each one undo step. Given the routing context
+              (<code>{ctx: {route}}</code>), <code>bundle.create</code> works the trunk out from
+              where its cables run together (<code>deriveTrunk</code>), refusing a fork, a
+              loop or groups that share nothing, by name; a member's own route then
+              follows the trunk (<code>followTrunk</code>).</p>
+            <p><code>bundleCheck</code> is the size check: the bundle's diameter,
+              <code>sqrt(sum(d²) / 0.8)</code>, against the smaller of 63.5 mm and each
+              pathway's opening. It warns and never refuses. Each cable's diameter
+              comes from its type: <code>loadCableTypes(dist)</code> reads
+              <code>cable-types.json</code> and returns <code>diameterOf</code>, <code>bendOf</code> (the
+              installed minimum bend radius) and <code>typeOf</code>. <code>straps</code> places the
+              straps along the trunk, kept off rings. A bundle's bend is not checked yet
+              in this version: <code>inspect</code> gives <code>bend: null</code>.</p>
+            <figure class="kit-ex" data-example="09-bundles" data-run="view">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>
               <div class="kit-bar"><button type="button" data-act="run">Run again</button>
@@ -235,11 +355,18 @@
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/shell.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/shell.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/catalog.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/route.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/bundles.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }

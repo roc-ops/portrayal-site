@@ -97,6 +97,23 @@ because the renderer once stopped at the first map (`views`,
 `configurations`, `groups`), and 146 of the device schema's 230 properties were
 missing from a page that said it could not drift.
 
+The kit page is covered too, since #156. A refresh copies the kit's
+`package.json` to `vendor/kit-package.json`, and the contract fails when:
+
+- the version `kit.html` states (`data-kit-version`, and every
+  `@portrayal/kit@<version>` in its CDN import map) is not that package's
+  `version`; or
+- a module in that package's `exports` is neither named by a section of
+  `kit.html` (`data-modules="…"` on its `section.kit-sec`) nor listed in
+  `KIT_NOT_DOCUMENTED_YET` in `check-contract.py`, with the reason.
+
+When it fails after a refresh, the kit moved on and the page did not. Bump the
+version on `kit.html`, then for each new module either document it (add it to
+a section's `data-modules`, with prose or a recipe in `site/kit-examples/` that
+shows it) or add it to `KIT_NOT_DOCUMENTED_YET` with a reason. A module that
+leaves the kit has to leave the page and the list as well; the check fails on
+a name in either that the kit no longer exports.
+
 Then the half that needs a browser:
 
 ```sh

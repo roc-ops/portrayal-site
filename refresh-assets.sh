@@ -138,6 +138,12 @@ if [ -n "$(git -C "$KIT" status --porcelain -- rack 2>/dev/null)" ]; then
 fi
 printf '# The Portrayal commit vendor/rack/ was copied from (kit/rack/). Written by refresh-assets.sh.\n%s\n' \
   "$kit_sha" > "$HERE/vendor/rack/SOURCE"
+# The kit's own package.json, from the same commit: its `version` is the one
+# kit.html must state, and its `exports` are the modules kit.html must
+# document or list as not documented yet (check-contract.py, #156). Named
+# kit-package.json, not package.json, so it never becomes vendor/'s package
+# scope for node or a bundler.
+cp "$KIT/package.json" "$HERE/vendor/kit-package.json"
 
 # Every device, because the Explorer offers the whole library and a picker with
 # holes in it looks broken.
