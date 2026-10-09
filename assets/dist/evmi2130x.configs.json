@@ -15,7 +15,9 @@
   },
   "management": {
    "metering": "current, power and energy for the input; current for each branch",
-   "network-module": "G4 eNMC, dual gigabit Ethernet with network cascading"
+   "metering-scope": "branch",
+   "network-module": "G4 eNMC, dual gigabit Ethernet with network cascading",
+   "outlet-switching": false
   },
   "physical": {
    "construction": "aluminium chassis, black",
@@ -27,9 +29,13 @@
    "capacity-kw": 8.6,
    "capacity-scope": "the load the PDU can hand on (24 A at 208 V three phase), from the SKU title and the brochure table; it is not what the PDU draws itself, which no document held states",
    "frequency": "50/60 Hz",
+   "input-ac": "120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V), 24 A, 50/60 Hz",
+   "input-cord": "fixed",
    "input-current-a": 24,
-   "input-plug": "NEMA L21-30P on a fixed 10 ft cord, 10 AWG 5-conductor",
-   "input-voltage": "120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V)",
+   "input-phase": "three",
+   "input-plug": "nema-l21-30p",
+   "input-voltage-v": 208,
+   "input-wiring": "wye",
    "output-rating": "10 A per C13, 16 A per C39, 16 A per section, 24 A per phase",
    "output-voltage": "173-240 V, line to line",
    "plug-rating-a": 30
@@ -883,6 +889,16 @@
     "top": "evmi2130x.base.top.svg"
    },
    "kind": "base",
+   "mount-points": [
+    {
+     "at": 72.0,
+     "mates": "pdu-button"
+    },
+    {
+     "at": 1627.8,
+     "mates": "pdu-button"
+    }
+   ],
    "name": "base",
    "occupants": {},
    "part-numbers": {
@@ -942,7 +958,7 @@
     "specified"
    ],
    "kind": "derived",
-   "wanted": "one of `input-dc`, `input-ac` in `attrs.power`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `power` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `power` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
   },
   {
@@ -962,7 +978,12 @@
   ],
   "power": []
  },
+ "pdu-class": "metered-branch",
  "provenance": {
+  "capability": {
+   "confidence": "datasheet",
+   "note": "datasheet - the G4 installation and setup guide P-164001156 rev 3, section 1.1 and Table 1, sells this as metered input (MI): input and branch metering, no outlet metering, no outlet switching. So `metering-scope: branch` and `outlet-switching: false`, the published class `metered-branch` (docs/pdu-model-design.md section 2.2); the vendor's name stays in the description."
+  },
   "chassis": {
    "confidence": "drawing",
    "note": "drawing - 9001-22301 MECHANICAL: 68.11 in (1730 mm) length, 2.05 in (52 mm) width, 2.09 in (53 mm) depth, aluminium chassis, black. The 53 is the body from the face to the back (523.86 to 583.95 pt on the side view); the outlet mouldings stand 3.96 off the face, the breaker plates 7.5, the network module about 9 and its keys 11.0, and the buttons 9.4 off the back, none of it in the 53. The SKU page's PRODUCT HEIGHT 53 mm and WIDTH 52 mm say the same with the axes renamed; the brochure's 68.1 x 2.1 x 2.1 in agrees. Weight 8.3 kg is the SKU page's."
@@ -973,7 +994,7 @@
   },
   "dcim": {
    "confidence": "datasheet",
-   "note": "the input is one NEMA L21-30P power port and each outlet a power outlet fed by it, `iec-60320-c13` or `eaton-c39` (both types in NetBox and Nautobot, dcim/choices.py). NO feed_leg IS WRITTEN: every outlet is line to line (A on L1-L2, B on L2-L3, C on L3-L1, from the one-line diagram) and a DCIM outlet's feed_leg names one leg. NO `through` IS WRITTEN: it names a bay, and the breakers are fixed parts; each breaker's description names its two sections, and the six section regions name their breaker. THE OUTLETS ARE NAMED AS THE UNIT PRINTS THEM, A1 to C42 (the maintainer's decision, 2026-10-08): an id cannot spell A1, so the `interfaces:` rules map each `outlet-<letter><n>` to its printed label, and the export names the power outlet by it. The labels are read off the EVMI2130X outlet close-ups and the drawing."
+   "note": "the input is one NEMA L21-30P power port and each outlet a power outlet fed by it, `iec-60320-c13` or `eaton-c39` (both types in NetBox and Nautobot, dcim/choices.py). EACH OUTLET RUNS `through` ITS SECTION'S BREAKER, a fixed part (docs/pdu-model-design.md section 5.3), and each breaker states the `lines` it is across - A on L1-L2, B on L2-L3, C on L3-L1, from the one-line diagram - so the export writes \"Through breaker A, lines L1-L2\" on each outlet. NO feed_leg IS WRITTEN: every outlet is line to line, and a DCIM outlet's feed_leg names one leg (section 5.2). The input power port carries the rating as its description. THE OUTLETS ARE NAMED AS THE UNIT PRINTS THEM, A1 to C42 (the maintainer's decision, 2026-10-08): an id cannot spell A1, so the `interfaces:` rules map each `outlet-<letter><n>` to its printed label, and the export names the power outlet by it. The labels are read off the EVMI2130X outlet close-ups and the drawing."
   },
   "ends": {
    "confidence": "drawing",
@@ -982,6 +1003,10 @@
   "front": {
    "confidence": "drawing",
    "note": "drawing - the front view of 9001-22301, read in drawing mm (x from the cord end, y from the edge drawn at the top). Six outlet mouldings 181.29 long by 36.1 (y 6.0 to 42.1) start at x 195.1, 457.3, 719.6, 1130.7, 1333.7 and 1536.6; each carries seven outlets at a 25.4 pitch (a C13 recess starting 3.24, 54.04, 104.84 and 155.64 into the moulding, a C39 26.54, 77.34 and 128.14) and a printed strip at y 45.5 to 49.5. The breaker plates (60 by 48) start at 131.0, 393.2 and 655.5, the network module's faceplate spans 918.85 to 1106.75 and y 1.45 to 50.6. At the cord end, an M6 ground screw (12.5 across at 52.05, 38.05), a screw 6.0 across at 14.0, 26.0 and a round boss 8.2 across at 92.0, 36.0; a second 6.0 screw at 1723.0, 26.0. End caps 2 thick at both ends."
+  },
+  "input": {
+   "confidence": "drawing",
+   "note": "drawing and datasheet - a NEMA L21-30P plug on a fixed 10 ft cord, 10 AWG and five conductors, as the model first recorded it in `input-plug` prose; since #934 `input-plug` is the slug the cord part exports (`nema-l21-30p`) and `input-cord: fixed` says it is not detachable. 9001-22301 gives the input as 120/208 V three-phase wye, 3W+N+PE (rated 100-127/173-240 V), so `input-phase: three`, `input-wiring: wye` and `input-voltage-v: 208`, line to line; 24 A is the drawing's derated input and 30 A the plug the SKU title names."
   },
   "lamps-and-module": {
    "confidence": "drawing",

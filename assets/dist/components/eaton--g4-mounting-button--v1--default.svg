@@ -12,6 +12,12 @@
     .state-fail  { --led-color: #ef4444; }
     .state-locate { --led-color: #3b82f6; }
     .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
     /* A state is a colour AND a behaviour. Solid and blinking of the same colour
        are different facts on real hardware: on the S9510-28DC a solid green PWR
        is "system power good" and a blinking green PWR is "power good but BMC
@@ -34,11 +40,12 @@
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
 </style>
-  <g id="g4-mounting-button" data-path="g4-mounting-button" data-class="mount" data-ref="eaton/g4-mounting-button@1:1.0.0" transform="translate(0,0)">
+  <g id="g4-mounting-button" data-path="g4-mounting-button" data-class="mount" data-ref="eaton/g4-mounting-button@1:1.1.0" transform="translate(0,0)">
     <title>g4-mounting-button</title>
     <circle id="g4-mounting-button--flange" cx="12.7" cy="12.7" r="12.7" fill="#b7bcc1" stroke="#7b8187" stroke-width="0.25" data-z-cyl="3.3" data-z-color="#b7bcc1" />
     <circle id="g4-mounting-button--head" cx="12.7" cy="12.7" r="7.5" fill="#cfd3d7" stroke="#7b8187" stroke-width="0.25" data-path="g4-mounting-button/head" data-class="mount" data-z-cyl="6.1" data-z-lift="3.3" data-z-color="#cfd3d7" />
     <circle cx="12.7" cy="12.7" r="2.15" fill="#3a3d40" />
     <path d="M 11.5 12.7 H 13.9 M 12.7 11.5 V 13.9" stroke="#b7bcc1" stroke-width="0.45" />
+    <g data-cp="mate" data-cp-at="12.7 12.7" data-cp-dir="front" />
   </g>
 </svg>

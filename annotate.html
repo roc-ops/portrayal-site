@@ -272,6 +272,7 @@ import { toDrawio } from './vendor/drawio.js';
 import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
+import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 import { docToScene, legendItems } from './site/annotate3d.js';
 import { createMarksEditor } from './site/annotate/editor.js';
 import { describe as describeMarks } from './site/annotate/describe.js';
@@ -293,6 +294,7 @@ const state = shell.state;
 installOpticFields(shell);
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: OPTIC_CSS}));
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
+document.head.appendChild(Object.assign(document.createElement('style'), {textContent: EARS_CSS}));
 
 // THE DOCUMENT IN 3D (#46). Every face the shell holds, the mounted one
 // included, because a mark is written against the hardware and the scene shows
@@ -301,7 +303,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), {textCo
 const facesNow = () => ({...(state.faces || {}), [state.view]: state.svg});
 let lastScene = null;
 const scene3d = () => lastScene;
+// The generic rack ears' toggle (site/ears.js), made once the 3D switch is.
+let earsCtl = null;
 const m3d = createMode3d(shell, {
+  ears: () => (earsCtl ? earsCtl.on() : earsPreference()),
   states: () => (lastScene = docToScene(doc, facesNow())).states,
   overrides: () => swapsNow(shell),
   afterSync: async v => {
@@ -322,6 +327,18 @@ const m3d = createMode3d(shell, {
   // is announced once the build has drawn them, and the rows repaint on it.
   extras: v => v.on('marks', () => { if (state.svg) paintRows(); }),
 });
+// THE GENERIC RACK EARS, OFF HERE UNTIL THE READER TURNS THEM ON (Portrayal
+// #909), as in the Explorer: an overlay with no data-path, so no mark can be
+// made on it, and an export of the live drawing carries it as picture. Ears
+// built into a face are the drawing's own and always shown. site/ears.js.
+// The legend grows the viewBox too (marks.js), so the marks come off while
+// the ears change and go back on after: each restores the box it found.
+earsCtl = installEars(shell, {viewer: () => m3d.viewer(), around: draw => {
+  if (!state.svg) return draw();
+  marks.clear(state.svg);
+  draw();
+  restage();
+}});
 // THE LEGEND IN 3D IS A PANEL, NOT A STRIP IN THE SCENE: the same rows as the
 // 2D strip, readable at any camera angle, and shown or hidden by the same box.
 const legend3d = document.createElement('div');

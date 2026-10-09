@@ -17,9 +17,9 @@ const button = (id, text, fn, extra = {}) => {
 const field = (label, control) => el('label', {}, [label, control]);
 
 // WHAT IS SAID OF A BUNDLE, wherever it is listed: its size, its warnings
-// (size now; bend too once kit 0.8.0, Portrayal #922, adds its violations to
-// the same list), the radius the bend check found (bundle-view.js bendLine:
-// #922's hook), and the kit's notes, which name what it left unchecked. `fact` is
+// (size, and since kit 0.8.0, Portrayal #922, each place the bend is too
+// tight), the radius the bend check found (bundle-view.js bendLine), and the
+// kit's notes, which name the members whose bend it left unchecked. `fact` is
 // bundle-view.js bundleFacts' entry; null before the routes are known.
 export function bundleFindings(fact) {
   if (!fact) return [el('span', {class: 'rk-muted', 'data-bundle-note': 'true', text: 'Not checked: the routes are not known yet.'})];

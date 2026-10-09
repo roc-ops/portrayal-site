@@ -35,12 +35,15 @@
     "@portrayal/kit/viewer3d": "./vendor/viewer3d.js",
     "@portrayal/kit/marks": "./vendor/marks.js",
     "@portrayal/kit/shell": "./vendor/shell.js",
+    "@portrayal/kit/ears2d": "./vendor/ears2d.js",
+    "@portrayal/kit/states": "./vendor/states.js",
     "@portrayal/kit/rack/catalog": "./vendor/rack/catalog.js",
     "@portrayal/kit/rack/model": "./vendor/rack/model.js",
     "@portrayal/kit/rack/editor": "./vendor/rack/editor.js",
     "@portrayal/kit/rack/queries": "./vendor/rack/queries.js",
     "@portrayal/kit/rack/route": "./vendor/rack/route.js",
     "@portrayal/kit/rack/bundles": "./vendor/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "./vendor/rack/export-data.js",
     "@portrayal/kit/rack/cable-types": "./vendor/rack/cable-types.js",
     "three": "./vendor/three/three.module.js",
     "three/addons/": "./vendor/three/addons/"
@@ -100,7 +103,7 @@
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
           code beside each result is the file that just ran it. This page documents
-          <code>@portrayal/kit</code> <span data-kit-version="0.7.0">0.7.0</span>.
+          <code>@portrayal/kit</code> <span data-kit-version="0.10.0">0.10.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -111,6 +114,8 @@
           <a href="#metadata">Read the device from the drawing</a>
           <a href="#seat">Seat an optic</a>
           <a href="#three-d">In 3D</a>
+          <a href="#ears">Rack ears</a>
+          <a href="#outlets">An outlet and its lamp</a>
           <a href="#annotate">Annotate and export</a>
           <a href="#shell">The Explorer shell</a>
           <a href="#rack">A rack, by commands</a>
@@ -193,11 +198,60 @@
           <section class="kit-sec" id="three-d" data-modules="viewer3d">
             <h2>In 3D</h2>
             <p>The same files, as a model you can turn over. The viewer takes the same
-              paths and lamp states as the drawing (<code>setStates</code>), the same
+              paths and lamp states as the drawing (<code>setStates</code>; a state on a
+              switched outlet reaches the lamp bound to it, as it does in 2D), the same
               text on parts (<code>setFields</code>), and exports GLB and USDZ
-              (<code>download</code>). It needs three.js; the page's import map says
+              (<code>download</code>). <code>createViewer(el, {ears: true})</code> or
+              <code>setEars(true)</code> adds the generic rack ears described below, and a
+              GLB taken then carries them. It needs three.js; the page's import map says
               where that lives.</p>
             <figure class="kit-ex" data-example="05-viewer3d" data-run="click">
+              <pre><code></code></pre>
+              <div class="kit-result" aria-live="polite"></div>
+              <div class="kit-bar"><button type="button" data-act="run">Run again</button>
+                <button type="button" data-act="copy">Copy</button></div>
+            </figure>
+          </section>
+          <section class="kit-sec" id="ears" data-modules="ears2d">
+            <h2>Rack ears</h2>
+            <p>A published face has no rack ears: a device is drawn between its ear
+              folds. <code>@portrayal/kit/ears2d</code> draws the generic L-bracket over the
+              face you already hold, so a page can offer the ears as a choice: off by
+              default in a device view, on in a rack. <code>earPlan(configs, frontWidth)</code>
+              is the plan the 3D viewer builds from, and it is <code>null</code> where the device
+              gets none: a front as wide as the rack (482.6 mm), whose ears are built into
+              the face and drawn already, such as a blanking panel; a device that is not
+              rack-mounted; or ears stated <code>behind</code>. The ear is silver
+              (<code>#c8cacc</code>) unless the device states <code>chassis.ears.color</code>.
+              <code>drawEars(svg, plan, view)</code> grows the viewBox to hold them and
+              <code>clearEars</code> puts it back. The overlay is a picture, not a part: it has
+              no <code>data-path</code> and takes no clicks, and an export of the live drawing
+              carries it.</p>
+            <figure class="kit-ex" data-example="10-ears" data-run="view">
+              <pre><code></code></pre>
+              <div class="kit-result" aria-live="polite"></div>
+              <div class="kit-bar"><button type="button" data-act="run">Run again</button>
+                <button type="button" data-act="copy">Copy</button></div>
+            </figure>
+          </section>
+          <section class="kit-sec" id="outlets" data-modules="states">
+            <h2>An outlet and its lamp</h2>
+            <p>A switched PDU's outlet declares the states <code>on</code> and
+              <code>off</code>, and the lamp that shows them is a part beside it, bound to
+              the outlet with <code>for:</code>. Set a state on the outlet's path and it is
+              shown on its lamp. <code>@portrayal/kit/states</code> has the one rule every
+              place that applies a state uses: <code>boundLamps(svg)</code> maps each outlet's
+              path to its lamps, and <code>expandStates(map, bindings)</code> turns a map keyed
+              by outlets into one that reaches their lamps too (a lamp stated in the map
+              itself keeps its own). A marks document, the Explorer's state chips and
+              <code>viewer.setStates</code> all apply it, so 2D and 3D agree.</p>
+            <p><code>off</code> can be lit: <code>offIsSet(el, lamps)</code> says whether an
+              <code>off</code> chip sets <code>state-off</code> (an outlet, so its lamp shows the
+              color its device declares for off, or a power outlet with no lamp, which
+              is dimmed) or clears the element, as it does on a plain lamp. The module
+              also reads a lamp's vocabulary (<code>statesOfEl</code>) and whether a state
+              paints anything (<code>paints</code>).</p>
+            <figure class="kit-ex" data-example="11-outlets" data-run="view">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>
               <div class="kit-bar"><button type="button" data-act="run">Run again</button>
@@ -207,7 +261,8 @@
           <section class="kit-sec" id="annotate" data-modules="marks">
             <h2>Annotate and export</h2>
             <p>Describe what to mark, not how to draw it: a document of selectors,
-              colors, lamp states and labels. The same document previews on the page,
+              colors, lamp states and labels. A state on a switched outlet lights the
+              lamp bound to it as well. The same document previews on the page,
               exports as an SVG you can drop into Word (<code>toSvg</code>), or as a PNG
               or GIF (<code>toPng</code>, <code>toGif</code>), and fits in a share URL
               (<code>encode</code>).</p>
@@ -310,8 +365,8 @@ const d = routed2d(points, 4, front);             // an SVG path through each ri
                 <tr><td><code>rack/route</code></td><td><code>resolveRoute</code>, <code>routePath</code>, <code>routedLength</code>, <code>ringMarks</code>, <code>orientMarks</code>, <code>reverseMarks</code>, pathway <code>fill</code> and <code>ringFindings</code>.</td></tr>
                 <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>).</td></tr>
                 <tr><td><code>rack/cable-geometry</code></td><td>The 3D path (<code>routePoints3d</code>), cable and plug colors, and the lead and sag figures the drawings share.</td></tr>
-                <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code>, and the device-import data.</td></tr>
-                <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows, and the import kit's README.</td></tr>
+                <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), and the device-import data.</td></tr>
+                <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README.</td></tr>
                 <tr><td><code>rack/validate</code></td><td><code>validate(schema, value)</code>, the small JSON Schema validator the commands use, and <code>same</code>.</td></tr>
               </tbody>
             </table>
@@ -332,8 +387,25 @@ const d = routed2d(points, 4, front);             // an SVG path through each ri
               comes from its type: <code>loadCableTypes(dist)</code> reads
               <code>cable-types.json</code> and returns <code>diameterOf</code>, <code>bendOf</code> (the
               installed minimum bend radius) and <code>typeOf</code>. <code>straps</code> places the
-              straps along the trunk, kept off rings. A bundle's bend is not checked yet
-              in this version: <code>inspect</code> gives <code>bend: null</code>.</p>
+              straps along the trunk, kept off rings.</p>
+            <p>Given <code>bendOf</code> as well, the check also looks at the bend: at each
+              corner of the trunk, and at each pathway that states a radius, against the
+              largest bend radius among the members there, so one fiber makes a bundle as
+              strict as fiber. A corner's room is worked out from its legs and marked
+              estimated. A miss is a warning, never a refusal. A member with no radius is
+              listed as unchecked in the check's notes, never passed. <code>inspect</code>
+              gives a bundle's <code>bend</code> as <code>{radius_mm, by, unchecked, points,
+              violations}</code>; it is <code>null</code> only without the routes.
+              <code>cornersOf</code> and <code>bendCheck</code> are exported for a page that
+              draws them.</p>
+            <p>For the exports, <code>bundleExports(rack, ctx)</code> in
+              <code>rack/export-data</code> measures every bundle once: its members, length,
+              strap count, size and bend. Pass it to the cable schedule as
+              <code>cableScheduleRows(rack, ends, items, routes, {bundles})</code>, whose notes
+              then carry a line per bundle (<code>bundleNotes</code>); its <code>bundle</code>
+              column names each cable's bundle. <code>strapBomRows(bundles)</code> is the bill
+              of materials' one hook-and-loop strap line, every bundle's straps summed, and
+              <code>strapBomNotes</code> says which bundles' straps could not be counted.</p>
             <figure class="kit-ex" data-example="09-bundles" data-run="view">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>
@@ -348,11 +420,11 @@ const d = routed2d(points, 4, front);             // an SVG path through each ri
               <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
               three.js is a peer dependency, needed only for 3D:</p>
             <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
-            <p class="kit-note" data-kit-unpublished>This page documents kit 0.7.0, which is
+            <p class="kit-note" data-kit-unpublished>This page documents kit 0.10.0, which is
               not on npm yet: npm's latest is <span data-kit-npm="0.2.0">0.2.0</span>.
               The rack and bundle modules, and everything else added since 0.2.0, are
               in the unpublished version only, so <code>npm install</code> gets a kit
-              without them, and the CDN map below returns 404s. Until 0.7.0 is
+              without them, and the CDN map below returns 404s. Until 0.10.0 is
               published, use the files from a
               <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> checkout's
               <code>kit/</code> folder, or this site's own vendored copy
@@ -365,19 +437,22 @@ const d = routed2d(points, 4, front);             // an SVG path through each ri
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/shell.js",
-    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/catalog.js",
-    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/model.js",
-    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/editor.js",
-    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/queries.js",
-    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/route.js",
-    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/route-path.js",
-    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/bundles.js",
-    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.7.0/rack/cable-types.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/shell.js",
+    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/ears2d.js",
+    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/states.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/catalog.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/route.js",
+    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/route-path.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/export-data.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.10.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }
