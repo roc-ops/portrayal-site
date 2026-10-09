@@ -4303,7 +4303,7 @@ def open_bundle_rack(page, base, face="front"):
 # The band of a bundle on a pane, measured: its stroke width, the x of its
 # vertical run on the lane, how near it passes the ring's end rect centre, and
 # how far it hooks back along x near that ring; the straps drawn; and, per
-# member, its stroke's x at a height (U28) above any peel point.
+# member, its stroke's x at a height (U29) above any peel point.
 BAND_GEO = """([pane, id]) => {
   const s = document.querySelector(`#${pane} svg`);
   const g = s.querySelector(`[data-cables] [data-bundle-id="${id}"]`);
@@ -4331,8 +4331,8 @@ BAND_GEO = """([pane, id]) => {
       for (const x of near) { best = Math.max(best, dir * x); back = Math.max(back, best - dir * x); }
     }
   }
-  // the y of U28's middle on this pane: the rack is 42U, U1 at the bottom
-  const y28 = 42 * 44.45 - 27.5 * 44.45;
+  // the y of U29's middle on this pane: the rack is 42U, U1 at the bottom
+  const y28 = 42 * 44.45 - 28.5 * 44.45;
   const memberX = {};
   for (const c of ['c1', 'c2', 'c3']) {
     const cg = s.querySelector(`[data-cables] [data-cable-id="${c}"]`);
@@ -4388,32 +4388,32 @@ def check_rack_bundle_2d_front(page, base):
         bad.append(f"2D: the band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
     if geo["straps"] != f["count"] or geo["straps"] < 2:
         bad.append(f"2D: {geo['straps']} straps drawn, the kit counts {f['count']}")
-    # Combed inside the band: every member's run at U28 within the band's half width (plus a stroke).
+    # Combed inside the band: every member's run at U29 within the band's half width (plus a stroke).
     for c, x in geo["memberX"].items():
         if x is None or abs(x - geo["laneX"]) > geo["width"] / 2 + 1.5:
-            bad.append(f"2D: {c} at U28 is at x {x}, outside the band at {geo['laneX']} (half width {geo['width'] / 2})")
+            bad.append(f"2D: {c} at U29 is at x {x}, outside the band at {geo['laneX']} (half width {geo['width'] / 2})")
     # The spacing, through the panel: 6 in gives more straps, drawn.
     page.fill("#bEvery", "6")
     page.press("#bEvery", "Enter")
     page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n", arg=f["count"], timeout=READY_MS)
     page.wait_for_function("() => document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
                            timeout=READY_MS)
-    # Peel c3 at left-front U25 on: it leaves the band there for its b end, the nearer.
+    # Peel c3 at left-front U27 on: it leaves the band there for its b end, the nearer (sw-2 at U30).
     opts = page.eval_on_selector_all("#bPeelAt-c3 option", "os => os.map(o => [o.value, o.textContent])")
-    at = next((v for v, t in opts if t == "from left-front U25"), None)
+    at = next((v for v, t in opts if t == "from left-front U27"), None)
     if at is None:
-        return bad + [f"peel: no 'from left-front U25' choice for c3: {opts}"]
+        return bad + [f"peel: no 'from left-front U27' choice for c3: {opts}"]
     page.select_option("#bPeelAt-c3", at)
     page.click("#bPeel-c3")
-    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members[2].b?.ru === 25", timeout=READY_MS)
-    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c3')?.[1].every(w => !w.lane || w.ru <= 25)",
+    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members[2].b?.ru === 27", timeout=READY_MS)
+    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c3')?.[1].every(w => !w.lane || w.ru <= 27)",
                            timeout=READY_MS)
     page.click("#bDone")
     page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"]')", timeout=READY_MS)
     geo2 = page.evaluate(BAND_GEO, ["paneFront", "b1"])
     x3 = (geo2 or {}).get("memberX", {}).get("c3")
     if geo2 is None or (x3 is not None and abs(x3 - geo2["laneX"]) <= geo2["width"] / 2 + 1.5):
-        bad.append(f"peel: c3 still rides the band at U28 after leaving at U25 ({geo2 and geo2['memberX']})")
+        bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
     # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
     head = page.inner_text('#cableList [data-bundle-item="b1"]')
     if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
@@ -4422,8 +4422,8 @@ def check_rack_bundle_2d_front(page, base):
     if order[:4] != ["B", "c1", "c2", "c3"]:
         bad.append(f"list: the members do not follow their bundle's header: {order}")
     c3 = page.inner_text('#cableList [data-cable-item="c3"] [data-bundle-of]')
-    if "In uplinks" not in c3 or "left-front U25" not in c3:
-        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U25: {c3!r}")
+    if "In uplinks" not in c3 or "left-front U27" not in c3:
+        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U27: {c3!r}")
     # Dissolving: no band, no header, the cables kept.
     page.click('#cableList [data-bundle-row="b1"]')
     page.click("#bRemove")
