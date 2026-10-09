@@ -128,9 +128,12 @@ export function roundedCurve(THREE, pts, R, {cap = null} = {}) {
   return curve;
 }
 
-// A point strictly inside one of the solid bodies, as tubes_inside reads them: 0.05 mm in from a face ([{box}], world Box3s).
-export const insideOf = boxes => q => (boxes ?? []).some(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05
-  && q.y > box.min.y + 0.05 && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05);
+// The solid body a point is strictly inside, as tubes_inside reads them:
+// 0.05 mm in from a face. `boxes` is [{ref, part, box}] (world Box3s); the
+// answer is the entry it is inside, so a caller can tell whose body it is,
+// or null.
+export const insideOf = boxes => q => (boxes ?? []).find(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05
+  && q.y > box.min.y + 0.05 && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05) ?? null;
 
 // A CORNER KEPT OUT OF THE METAL. An arc lies inside its corner, so a corner
 // the route takes round a solid body (a detour round a PDU, a tray's edge)
@@ -138,7 +141,8 @@ export const insideOf = boxes => q => (boxes ?? []).some(({box}) => q.x > box.mi
 // whether a point is in a body; each corner whose arc meets one is drawn
 // tighter, halving its share of the legs until it clears (or is the polyline
 // itself), and so is flagged as short like any corner without room, with
-// `why: 'body'` and `hit`, the first point where its arc met the body.
+// `why: 'body'`, `hit`, the first point where its arc met the body, and
+// `hitRef`, that body's item (when `inside` answers the box, as insideOf does).
 // Only the ARC is sampled: a straight leg inside a body (a lead leaving a
 // plug recessed in its own device) is no bend fault, and tubes_inside's to
 // find, not this.
@@ -153,20 +157,21 @@ export function clearCurve(THREE, pts, R, inside, {tries = 10, step = 1} = {}) {
       // the arc itself: r theta long, centred on lengthTo(k)
       const L = curve.getLength(), at = curve.lengthTo(c.k), half = (c.t / Math.tan(c.theta / 2)) * c.theta / 2;
       const from = Math.max(0, at - half), to = Math.min(L, at + half);
-      let hit = null;
+      let hit = null, body = null;
       for (let d = from; d <= to + 1e-9 && !hit; d += Math.min(step, (to - from) / 2 || step)) {
         const q = curve.getPointAt(L ? Math.min(1, d / L) : 0);
-        if (inside(q)) hit = q;
+        body = inside(q);
+        if (body) hit = q;
       }
       if (hit) {
-        if (!hits.has(c.k)) hits.set(c.k, hit.clone());
+        if (!hits.has(c.k)) hits.set(c.k, {at: hit.clone(), ref: body?.ref ?? null});
         cap.set(c.k, c.t / 2 < 0.5 ? 0 : c.t / 2); moved = true;
       }
     }
     if (!moved) break;
     curve = roundedCurve(THREE, pts, R, {cap});
   }
-  for (const c of curve.corners) if (c.why === 'body') c.hit = hits.get(c.k) ?? null;
+  for (const c of curve.corners) if (c.why === 'body') { c.hit = hits.get(c.k)?.at ?? null; c.hitRef = hits.get(c.k)?.ref ?? null; }
   return curve;
 }
 
@@ -198,7 +203,7 @@ export function routeLine3d(THREE, A, B, wps, lead = 30, rings = null) {
 
 // A ROUTED RUN, ROUNDED: routeLine3d's polyline through waypoints `w` (with
 // ring marks `m`, or null), each corner an arc of radius R kept out of the
-// bodies (clearCurve, `inside`). Returns {pts, bent}.
+// bodies (clearCurve, `inside`), with two rules.
 // A RING TOO THIN FOR THE TURN. A ring passed along its run has the cable
 // turn at its faces, and when its depth (a few mm of wire) is all the leg a
 // corner has, no bend of the cable's radius fits there. A real cord bends
@@ -212,22 +217,32 @@ export function routeLine3d(THREE, A, B, wps, lead = 30, rings = null) {
 // cable cannot bend there. The lead is drawn longer instead - the end's
 // `reach`, as reaches() sets it - by what the arc lacked, so the cable leaves
 // the device straight and turns once clear, at its full radius. So is a lead
-// shorter than its own turn needs. A lead is never drawn bending through its
-// own device, and never flagged for it.
-// `thin: false` keeps every ring face to face (a test's control).
+// shorter than its own turn needs. Only its OWN device: an arc that meets
+// another body in front of the port (a tray, a manager) is flagged, never
+// answered by pushing the lead through that body. And by at most
+// MAX_EXTEND_R radii in all, an end: past that the corner is flagged.
+// Returns {pts, bent, extended_mm: [end a, end b]}, how much longer each
+// lead was drawn. `thin: false` keeps every ring face to face (a test's
+// control). An end's `item` is its device's id, as the solid boxes' `ref`.
+export const MAX_EXTEND_R = 2;
 export function roundRoute(THREE, A, B, w, m, R, lead, inside, {thin: thinRule = true, tries = 4} = {}) {
   let ends = [A, B], pts, bent, rings = m;
+  const extended = [0, 0], most = MAX_EXTEND_R * R;
   const draw = () => { pts = routeLine3d(THREE, ends[0], ends[1], w, lead, rings); bent = clearCurve(THREE, pts, R, inside); };
   const reach = e => e.reach ?? LEAD;
   const longer = () => {
     let moved = false;
     ends = ends.map((e, j) => {
       const q = j === 0 ? pts[1] : pts[pts.length - 2], plug = j === 0 ? pts[0] : pts[pts.length - 1];
-      // short for the device, or because the lead itself is shorter than the turn needs
-      const c = bent.corners.find(x => x.at.distanceTo(q) < 1e-6 && (x.why === 'body' || (x.why === 'legs' && q.distanceTo(plug) < x.need_t)));
+      // short for its own device, or because the lead itself is shorter than the turn needs
+      const own = x => x.why === 'body' && x.hitRef != null && x.hitRef === e.item;
+      const c = bent.corners.find(x => x.at.distanceTo(q) < 1e-6 && (own(x) || (x.why === 'legs' && q.distanceTo(plug) < x.need_t)));
       if (!c || !(c.need_t < Infinity)) return e;
+      const more = Math.min((c.need_t - c.t) + 1, most - extended[j]);
+      if (!(more > 1e-6)) return e;
+      extended[j] += more;
       moved = true;
-      return {...e, reach: reach(e) + (c.need_t - c.t) + 1};
+      return {...e, reach: reach(e) + more};
     });
     return moved;
   };
@@ -242,5 +257,5 @@ export function roundRoute(THREE, A, B, w, m, R, lead, inside, {thin: thinRule =
       for (let n = 0; n < tries && longer(); n++) draw();
     }
   }
-  return {pts, bent};
+  return {pts, bent, extended_mm: extended};
 }

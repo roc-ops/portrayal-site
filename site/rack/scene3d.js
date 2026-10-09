@@ -259,7 +259,7 @@ async function hangBundles(scene, rack, facts, laneAt, bases, inside = null) {
       // the member that sets the radius, or the bundle itself when the kit names none
       const by = f.check.bend.by ?? null, cable = by ? (rack.cables || []).find(x => x.id === by) : null;
       const kind = cable?.type || cable?.media, who = !by ? name : kind ? `${by} (${kind})` : by;
-      drawnTight.push({bundle: f.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, t: c.t, room_t: c.room_t, hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null,
+      drawnTight.push({bundle: f.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, t: c.t, room_t: c.room_t, hitRef: c.hitRef ?? null, hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null,
         text: tightText(`${name} in 3D`, who, cornerWhere(rack, {from: [], to: []}, [], c, scene.metrics().faceZ), c)});
     }
     group.add(g);
@@ -362,9 +362,12 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
       const cable = byId.get(t.link.id), kind = cable?.type || cable?.media;
-      const lead = [t.points[1], t.points[t.points.length - 2]].some(q => q && c.at.distanceTo(q) < 1e-3);
-      return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, lead, t: c.t, room_t: c.room_t,
-              hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null,
+      // a lead out of a port: which end, and that end's device
+      const end = [t.points[1], t.points[t.points.length - 2]].findIndex(q => q && c.at.distanceTo(q) < 1e-3);
+      const lead = end >= 0, leadItem = lead ? (end === 0 ? t.link.from : t.link.to)[0] : null;
+      return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, lead, leadItem, t: c.t, room_t: c.room_t,
+              extended_mm: lead ? t.bend.extended_mm?.[end] ?? 0 : 0, radius_mm: t.bend.radius_mm,
+              hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null, hitRef: c.hitRef ?? null,
               text: tightText(`${t.link.id} in 3D`, kind ? `${t.link.id} (${kind})` : t.link.id, cornerWhere(rack, t.link, t.points, c, faceZ), c)};
     }));
     // The bundles over the cables they hold; one failing costs only the bundles.

@@ -5061,32 +5061,72 @@ BEND_FLAG_RE = re.compile(r"(c\d+|Bundle \d+|[^.]+?) in 3D (turns .*? with room 
                           r"|(turns|doubles back) .*? no room for a bend; \S+( \([\w-]+\))? needs [\d.]+ mm)\.|And \d+ more\.")
 BEND_FLAGS_JS = """() => { const s = window.__rack.scene(); const rc = s?.rackCables;
   if (!rc) return null;
-  const inside = q => rc.boxes.some(({box}) => q[0] > box.min.x + 0.05 && q[0] < box.max.x - 0.05 && q[1] > box.min.y + 0.05
+  const inside = q => rc.boxes.find(({box}) => q[0] > box.min.x + 0.05 && q[0] < box.max.x - 0.05 && q[1] > box.min.y + 0.05
     && q[1] < box.max.y - 0.05 && q[2] > box.min.z + 0.05 && q[2] < box.max.z - 0.05);
-  return (rc.tight ?? []).map(t => ({...t, hitInside: t.hit ? inside(t.hit) : false})); }"""
+  return {flags: (rc.tight ?? []).map(t => { const b = t.hit ? inside(t.hit) : null;
+            return {...t, hitInside: !!b, hitInsideRef: b?.ref ?? null}; }),
+          extends: (rc.tubes ?? []).filter(t => t.bend).map(t => ({cable: t.link.id, radius_mm: t.bend.radius_mm,
+            extended_mm: t.bend.extended_mm ?? [0, 0]}))}; }"""
+# bend3d.js MAX_EXTEND_R: a lead is drawn at most this many radii longer.
+MAX_EXTEND_R = 2
 
 
-def bend_flags_true(page):
-    """Every flagged 3D corner is short for a reason that holds: one drawn
-    tighter for a body (why 'body') has a point of its full arc strictly
-    inside a solid box; one short of leg room (why 'legs') is drawn with all
-    the leg its neighbours leave it; and a lead out of a port is never
-    flagged: it is drawn long enough to clear its device and make its turn
-    (bend3d.js roundRoute), and its straight leg starting inside its own
-    device is no bend."""
-    flags = page.evaluate(BEND_FLAGS_JS) or []
+def bend_faults(flags, extends=()):
+    """The faults in a scene's bend flags (rackCables.tight, read by
+    BEND_FLAGS_JS) and its leads' lengthening. Every flagged corner must be
+    short for a reason that holds:
+    - 'body': a point of its full arc is strictly inside a solid box;
+    - 'legs': it is drawn with all the leg its neighbours leave it;
+    - a lead out of a port is not flagged - it is drawn long enough to clear
+      its own device and make its turn (bend3d.js roundRoute) - unless the
+      body its arc meets is another item's (a tray in front of the port,
+      which the lead is never pushed through), or its lengthening reached
+      the cap.
+    And no lead is drawn more than MAX_EXTEND_R radii longer."""
     out = []
     for f in flags:
         who = f.get("cable") or f.get("bundle")
-        if f["why"] == "body" and not f["hitInside"]:
+        if f["why"] == "body" and not f.get("hitInside"):
             out.append(f"{who}'s corner is flagged for a body its arc does not meet: {f['text']!r}")
         if f.get("lead"):
-            out.append(f"{who}'s lead out of its port is flagged ({f['why']}): {f['text']!r}")
+            other = f["why"] == "body" and f.get("hitInsideRef") and f["hitInsideRef"] != f.get("leadItem")
+            capped = (f.get("extended_mm") or 0) >= MAX_EXTEND_R * (f.get("radius_mm") or 0) - 1e-6
+            if not (other or capped):
+                out.append(f"{who}'s lead out of its port is flagged ({f['why']}): {f['text']!r}")
         if f["why"] == "legs" and f.get("t") is not None and abs(f["t"] - f["room_t"]) > 1e-6:
             out.append(f"{who}'s corner is flagged short of legs but drawn tighter than its legs allow: {f}")
         if f["why"] not in ("body", "legs", "back"):
             out.append(f"{who}'s flag has no reason: {f}")
+    for e in extends:
+        if any(x > MAX_EXTEND_R * e["radius_mm"] + 1e-6 for x in e["extended_mm"]):
+            out.append(f"{e['cable']}'s lead is drawn {e['extended_mm']} mm longer, past {MAX_EXTEND_R} radii of {e['radius_mm']} mm")
     return out
+
+
+def bend_faults_self_test():
+    """bend_faults must find a false flag of each kind, or a check that reads
+    it passes whatever the drawing does. []: it does."""
+    ok = {"cable": "c1", "text": "t", "why": "legs", "t": 5.0, "room_t": 5.0, "lead": False}
+    cases = {
+        "a body flag with no hit inside a body": {**ok, "why": "body", "hitInside": False},
+        "a flagged lead out of its own device": {**ok, "why": "body", "hitInside": True, "hitInsideRef": "i1",
+                                                 "lead": True, "leadItem": "i1", "extended_mm": 0, "radius_mm": 25},
+        "a legs flag drawn tighter than its legs": {**ok, "t": 3.0, "room_t": 5.0},
+        "a flag with no reason": {**ok, "why": None},
+    }
+    out = [f"bend_faults does not catch {name}" for name, f in cases.items() if not bend_faults([f])]
+    if bend_faults([ok]) or bend_faults([{**ok, "why": "body", "hitInside": True, "hitInsideRef": "i4", "lead": True,
+                                          "leadItem": "i1", "extended_mm": 0, "radius_mm": 25}]):
+        out.append("bend_faults faults a true flag")
+    if not bend_faults([], [{"cable": "c1", "radius_mm": 25, "extended_mm": [51, 0]}]):
+        out.append("bend_faults does not catch a lead drawn past the cap")
+    return out
+
+
+def bend_flags_true(page):
+    """bend_faults for the scene on `page` (itself self-tested first)."""
+    got = page.evaluate(BEND_FLAGS_JS) or {"flags": [], "extends": []}
+    return bend_faults_self_test() + bend_faults(got["flags"], got["extends"])
 
 
 BEND_TOL = 0.01      # 1%: three samples on an arc give its radius; a line-to-arc join gives more

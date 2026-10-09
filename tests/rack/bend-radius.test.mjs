@@ -12,7 +12,7 @@ import {createRackEditor} from '../../vendor/rack/editor.js';
 import {bendLookup, diameterLookup} from '../../vendor/rack/cable-types.js';
 import {rackTools} from '../../site/rack/agent-tools.js';
 import {agentContextFor} from '../../site/rack/agent-context.js';
-import {fitCorners, roundedCurve, clearCurve, roundRoute, insideOf, tightText} from '../../site/rack/bend3d.js';
+import {fitCorners, roundedCurve, clearCurve, roundRoute, insideOf, tightText, MAX_EXTEND_R} from '../../site/rack/bend3d.js';
 import {SIZES, chassisOf, slotsOf, compByRef} from './fixtures/kit-slots.mjs';
 
 // The cable types as the page loads them (cable-types.js loadCableTypes),
@@ -173,16 +173,45 @@ test('a lead whose turn would start inside its own device is drawn longer, not f
   // the envelope reaches 11 mm past the face; the plug is 6 mm behind it and
   // the lead 44 mm long, so a 25 mm bend through 120 degrees (43 mm of leg)
   // would start inside the device
-  const device = [{box: new THREE.Box3(V(-200, -20, -400), V(200, 20, 11))}];
-  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44}, B = {points: [V(300, -300, -6)], normal: V(0, 0, 1)};
+  const device = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-200, -20, -400), V(200, 20, 11))}];
+  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, -6)], normal: V(0, 0, 1), item: 'i9'};
   const w = [V(120, -5, 20)];
   // without the lengthening the turn is drawn tighter and flagged for the body
   const short = clearCurve(THREE, [A.points[0], V(0, 0, 38), ...w, V(300, -300, 34), B.points[0]], 25, insideOf(device));
   assert.equal(short.corners[0].why, 'body');
-  const {pts, bent} = roundRoute(THREE, A, B, w, null, 25, 30, insideOf(device));
+  assert.equal(short.corners[0].hitRef, 'i1');
+  const {pts, bent, extended_mm} = roundRoute(THREE, A, B, w, null, 25, 30, insideOf(device));
   const lead = bent.corners.find(c => c.at.distanceTo(pts[1]) < 1e-6);
   assert.ok(lead && lead.short_mm === 0 && lead.why === null, JSON.stringify(lead));
   assert.ok(pts[1].z > -6 + 44);                                   // drawn further out
+  assert.ok(extended_mm[0] > 0 && extended_mm[0] <= MAX_EXTEND_R * 25 && extended_mm[1] === 0, String(extended_mm));
+  assert.ok(Math.abs(pts[1].z - (-6 + 44 + extended_mm[0])) < 1e-6);
   // only the straight run out of the plug is inside the device
   assert.ok(bent.getSpacedPoints(2000).filter(insideOf(device)).every(q => Math.hypot(q.x, q.y) < 1e-6));
+});
+
+test('a tray in front of the port still flags: the lead is not pushed through another body (#164 round 2)', () => {
+  // the same lead and turn, with a tray's floor (item i4) just below the turn,
+  // where the arc would pass: the lead stays as long as it was, and the
+  // corner is flagged for the tray
+  const bodies = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-200, -20, -400), V(200, 20, 11))},
+                  {ref: 'i4', part: 'tray/floor', box: new THREE.Box3(V(2, -20, 14), V(200, 20, 30))}];
+  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, -6)], normal: V(0, 0, 1), item: 'i9'};
+  const {pts, bent, extended_mm} = roundRoute(THREE, A, B, [V(120, -5, 34)], null, 25, 30, insideOf(bodies));
+  const lead = bent.corners.find(c => c.at.distanceTo(pts[1]) < 1e-6);
+  assert.equal(lead.why, 'body');
+  assert.equal(lead.hitRef, 'i4');
+  assert.ok(lead.short_mm > 0);
+  assert.equal(extended_mm[0], 0);
+  assert.ok(Math.abs(pts[1].z - 38) < 1e-6);
+});
+
+test('a lead is drawn at most MAX_EXTEND_R radii longer; past that its corner is flagged', () => {
+  // a narrow device whose envelope reaches 200 mm past the plug, the turn
+  // beside it: no lead within the cap clears it
+  const deep = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-30, -20, -400), V(30, 20, 200))}];
+  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, 300)], normal: V(0, 0, -1), item: 'i9'};
+  const {bent, extended_mm} = roundRoute(THREE, A, B, [V(120, -5, 60)], null, 25, 30, insideOf(deep));
+  assert.ok(extended_mm[0] <= MAX_EXTEND_R * 25 + 1e-9, String(extended_mm));
+  assert.ok(bent.corners.some(c => c.short_mm > 0));
 });
