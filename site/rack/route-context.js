@@ -7,7 +7,7 @@
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces} from './bundle-view.js';
-import {resolveRoute, fill, capacityOver, routedLength, endPane, ringMarks, ringFindings, orientMarks} from '../../vendor/rack/route.js';
+import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
@@ -199,8 +199,44 @@ async function zeroUApertures(rack, chassisOf) {
   return out;
 }
 
+// THE DETOURS OF A PATH, by the waypoints they follow (Portrayal #949,
+// docs/cable-lay-design.md 1.3). routePath adds points where a straight leg
+// would cross a solid body; they are never stored, and each detour names the
+// two stops its leg lies between ({end: 'a'}, a waypoint, or {end: 'b'}).
+// The drawings place their own points for the waypoints, so a detour is put
+// in after the waypoint its leg starts from: [{after, points}], `after` an
+// index into `waypoints` (-1: straight after end a), `points` in rack mm.
+// A detour whose stop is not among the waypoints (one the kit could not
+// place) is dropped, never put at a guessed place.
+const sameStop = (w, s) => (s.lane ? w.lane === s.lane && w.ru === s.ru : !w.lane && w.item === s.item && w.via === s.via);
+export function detourStops(waypoints, detours) {
+  const out = [];
+  let from = -1;
+  for (const d of detours || []) {
+    const [a] = d.between || [];
+    let at;
+    if (a?.end === 'a') at = -1;
+    else if (a?.end === 'b') at = waypoints.length - 1;
+    else {
+      at = waypoints.findIndex((w, i) => i >= from && sameStop(w, a));
+      if (at < 0) continue;
+    }
+    from = Math.max(from, at);
+    out.push({after: at, points: d.points.map(p => ({x: p.x, y: p.y, z: p.z}))});
+  }
+  return out;
+}
+
+// The cable types (cable-types.json), loaded once a page: every route reads
+// a cable's diameter from them (kit 0.11.0: what a pass-through must fit and
+// a detour keeps clear by), and the bundles their bend radii. null when they
+// cannot be read: the kit then takes each cable's media's typical figure.
+let typesOnce = null;
+const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => null));
+
 export async function routeFacts(rack, chassisOf) {
   const guides = new Map(), ports = new Map(), failed = {n: 0};
+  const typesReady = cableTypes();
   // The ducts beside the rack, read from their drawings with the faces.
   const ducts = zeroUApertures(rack, chassisOf);
   await Promise.all(rack.items.map(async it => {
@@ -242,23 +278,39 @@ export async function routeFacts(rack, chassisOf) {
     // bundle's size check reads it, so the page does not count them itself.
     zeroUAperture: z => channels.get(z?.id) ?? null,
   };
+  // EACH CABLE'S DIAMETER (kit 0.11.0, #949): a pass-through must fit it and
+  // a detour keeps clear of a body by its radius, so the route context carries
+  // the cable types' lookup, as the bundles' context does.
+  const types = await typesReady;
+  if (types) ctx.diameterOf = types.diameterOf;
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
-  const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
+  // THE PATH OF EACH CABLE, measured once (route.js routePath): its length,
+  // its ring marks and its detours all come from this one reading.
+  const paths = new Map((rack.cables || []).map(c => [c.id, routePath(rack, c, ctx)]));
+  const lengths = new Map((rack.cables || []).map(c => [c.id, pathLength(paths.get(c.id))]));
   // THE RINGS, DECIDED ONCE (Portrayal #930): per cable, one mark per
   // resolved waypoint - null for a lane, a duct or a pass, and for a ring the
   // kit's {run, depth, sense, back} in the rack's axes. The 2D panes turn them
   // to their own axes (cable-view.js) and the 3D scene passes them as they are
-  // (scene3d.js); neither decides a ring itself.
-  const marks = new Map((rack.cables || []).map(c => [c.id, ringMarks(rack, c, ctx)]));
-  // A ring a route would enter and leave by one face: shown with fill and capacity.
-  const labelOf = id => rack.items.find(i => i.id === id)?.label ?? id;
+  // (scene3d.js); neither decides a ring itself. A ring that HOLDS a cable
+  // reaching just into it past its port (kit 0.12.0, `held: true` on the
+  // path's ring) is a pass like any other: its mark is {back: false} with its
+  // sense, so both drawings take the cable through it.
+  const marks = new Map((rack.cables || []).map(c => [c.id, paths.get(c.id)?.marks ?? ringMarks(rack, c, ctx)]));
+  // THE DETOURS (kit 0.11.0, #949): the points the kit added round a solid
+  // body, after the waypoint each one follows, so both drawings go round the
+  // body the way the length was measured (detourStops).
+  const detours = new Map((rack.cables || []).map(c => [c.id, detourStops(routes.get(c.id).waypoints, paths.get(c.id)?.detours)]));
+  // A ring a route would enter and leave by one face, and a body a route
+  // still crosses after its detours: shown with fill and capacity.
+  const labelOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
   const rings = ringFindings(rack, ctx, labelOf);
+  const bodies = bodyFindings(rack, ctx, labelOf);
   // THE BUNDLES (portrayal-site#142): each one's size check and straps from the
   // kit, with the cable types' diameters and bend radii (loaded once a page;
   // without them the kit counts each cable by its media), and where each
   // member rides its trunk. The 2D panes, the 3D scene, the cable list and the
   // sheet all read these, so they agree.
-  const types = (rack.bundles || []).length ? await loadCableTypes(DIST).catch(() => null) : null;
   const bctx = {route: ctx, ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})};
   const bundles = bundleFacts(rack, bctx);
   // AND AS THE EXPORTS READ THEM (Portrayal #923, kit 0.9.0): one record per
@@ -268,16 +320,21 @@ export async function routeFacts(rack, chassisOf) {
   const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
-  return {ctx, complete: failed.n === 0, routes, marks, fill: fill(rack, ctx),
-          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e), bundles, bundleRecords, places};
+  return {ctx, complete: failed.n === 0, routes, paths, marks, detours, fill: fill(rack, ctx),
+          over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, lengths, endPane: e => endPane(rack, e),
+          bundles, bundleRecords, places};
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone
 // waypoint notes (export-data.js fillNotes), then each ring a route would
-// enter and leave by one face (route.js ringFindings). The cable list and the
-// exports' notes both read this, so they say the same things.
-export function routeNotes(rack, facts, nameOf = id => id) {
+// enter and leave by one face (route.js ringFindings), then each solid body a
+// route still passes through after its detours (route.js bodyFindings, kit
+// 0.11.0). The cable list and the exports' notes both read this, so they say
+// the same things. `bodies: false` leaves the bodies out, for the cable
+// schedule, which writes each into its own cable's row instead.
+export function routeNotes(rack, facts, nameOf = id => id, {bodies = true} = {}) {
   if (!facts) return [];
   const rings = facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
-  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text)];
+  const crossed = !bodies ? [] : facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
+  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text)];
 }

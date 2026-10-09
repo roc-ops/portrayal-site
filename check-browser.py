@@ -4900,6 +4900,206 @@ def check_rack_ring_doubles_back(page, base):
     return bad
 
 
+# THE TUBES STAY OUT OF THE METAL (Portrayal #949, kit 0.11.0, cable-lay
+# design 1.4). The kit takes every route round the solid bodies and reports
+# what it cannot clear; the 3D tube rounds its corners inside 30 mm of that
+# path and could still cut a corner through a tray. So every routed cable's
+# tube is sampled along its centre line, densely, against the kit's own solid
+# boxes as the scene placed them (scene3d.js solidBoxes), and a sample
+# STRICTLY inside a box fails: one on a face, or within TUBE_EPS of it, is a
+# cable lying against the plate, not through it. NOT VACUOUS: it fails when
+# there is no routed tube, no box, or fewer samples than tubes times the
+# per-tube count.
+TUBE_EPS = 0.05     # mm: a sample this close to a face is on it
+TUBE_SAMPLES = 1500
+TUBES_INSIDE_JS = """async ([eps, n]) => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const deadline = Date.now() + 60000;
+  while (!(s.rackCables?.tubes ?? []).some(t => t.routed && t.mesh) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+  const boxes = s.rackCables?.boxes ?? [];
+  const tubes = (s.rackCables?.tubes ?? []).filter(t => t.routed && t.mesh);
+  const hits = new Map();
+  let samples = 0;
+  for (const t of tubes) {
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    if (!main) continue;
+    for (const p of main.geometry.parameters.path.getSpacedPoints(n)) {
+      samples++;
+      for (const b of boxes) {
+        const {min, max} = b.box;
+        if (p.x > min.x + eps && p.x < max.x - eps && p.y > min.y + eps && p.y < max.y - eps && p.z > min.z + eps && p.z < max.z - eps) {
+          const k = `${t.link.id}|${b.ref}|${b.part}`;
+          if (!hits.has(k)) hits.set(k, {cable: t.link.id, ref: b.ref, part: b.part, at: [p.x, p.y, p.z].map(v => Math.round(v * 10) / 10)});
+        }
+      }
+    }
+  }
+  return {tubes: tubes.length, boxes: boxes.length, samples, parts: [...new Set(boxes.map(b => `${b.ref}|${b.part}`))], hits: [...hits.values()]};
+}"""
+
+
+def tubes_inside(page, want_tubes, want_parts=()):
+    """Every routed tube sampled against the kit's solid boxes: problems, or []."""
+    got = page.evaluate(TUBES_INSIDE_JS, [TUBE_EPS, TUBE_SAMPLES])
+    bad = []
+    if got["tubes"] < want_tubes or got["samples"] < want_tubes * (TUBE_SAMPLES + 1) or not got["boxes"]:
+        bad.append(f"3D: sampled {got['tubes']} routed tubes ({got['samples']} points) against {got['boxes']} solid boxes, "
+                   f"expected {want_tubes} tubes and at least one box")
+    for part in want_parts:
+        if part not in got["parts"]:
+            bad.append(f"3D: the solid {part} is not among the scene's boxes: {got['parts']}")
+    for h in got["hits"][:12]:
+        bad.append(f"3D: cable {h['cable']}'s tube passes inside {h['ref']} {h['part']} at {h['at']}")
+    return bad
+
+
+def load_rack_3d_ready(page, base, rack):
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    n = len(rack["cables"])
+    page.wait_for_function("n => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id], #paneRear svg [data-cables] [data-cable-id]').length >= n",
+                           arg=n, timeout=READY_MS)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=n, timeout=READY_MS)
+
+
+CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
+
+
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 at 0.43-0.50 m with no lane, no ring and no body findings, and no 3D tube passes through the tray")
+def check_rack_cable_lay(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    paths = page.evaluate("() => window.__rack.paths()")
+    routes = dict(page.evaluate("() => window.__rack.routes()"))
+    ring_found = page.evaluate("() => window.__rack.rings().findings")
+    bodies = page.evaluate("() => window.__rack.bodies()")
+    if len(paths) != 16 or any(p is None for p in paths.values()):
+        return bad + [f"routes: not all 16 cords measured: {sorted(paths)}"]
+    for cid, p in sorted(paths.items(), key=lambda kv: int(kv[0][1:])):
+        ways = routes.get(cid, [])
+        if any("lane" in w for w in ways):
+            bad.append(f"{cid}: the automatic route goes out to a lane and back: {ways}")
+        vias = [(g["item"], g["via"], g["passed"]) for g in p["rings"]]
+        if not vias or any(i != "i4" or v not in ("guide-3", "guide-4", "guide-5") or not ok for i, v, ok in vias):
+            bad.append(f"{cid}: not through rings 3, 4 or 5 of the lacer, each passed: {vias}")
+        if not (0.43 - 1e-9 <= (p["measured"] or 0) <= 0.50 + 1e-9):
+            bad.append(f"{cid}: measured {p['measured']} m, not 0.43-0.50 m")
+        if p["crossings"]:
+            bad.append(f"{cid}: its path still crosses a body: {p['crossings']}")
+    if ring_found:
+        bad.append(f"ring findings: {ring_found}")
+    if bodies:
+        bad.append(f"crosses-body findings: {bodies}")
+    warn = page.evaluate("() => [...document.querySelectorAll('[data-route-warning]')].map(p => p.textContent)")
+    if any("passes through" in w or "same face" in w for w in warn):
+        bad.append(f"cable list: a ring or body warning is shown: {warn}")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    bad += tubes_inside(page, 16, want_parts=("i4|tray/floor",))
+    # The cords from the leaf below leave their plugs below the tray and rise
+    # to its rings: each is drawn out past the tray's front edge and back in,
+    # as a lead is dressed by hand (not straight up through the floor).
+    front = page.evaluate("""() => { const s = window.__rack.scene();
+      const tray = s.rackCables.boxes.filter(b => b.ref === 'i4' && b.part === 'tray/floor');
+      const edge = Math.max(...tray.map(b => b.box.max.z));
+      return s.rackCables.tubes.filter(t => +t.link.id.slice(1) >= 9).map(t => {
+        const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+        return [t.link.id, Math.max(...main.geometry.parameters.path.getSpacedPoints(400).map(p => p.z)) - edge]; }); }""")
+    short = [(c, round(dz, 1)) for c, dz in front if dz <= 0]
+    if len(front) != 8 or short:
+        bad.append(f"3D: the LEAF-B cords are not drawn out past the tray's front edge (mm beyond it): {front}")
+    return bad
+
+
+# A rack with a zero-U PDU at the right-rear upright, and two switches on the
+# rear rails at U10 and U30 joined from port 1 of each (at the rack's right, as
+# seen from the front, on a rear-facing switch): the right-rear lane
+# runs outboard of the PDU (route.js laneXAt), and each port's leg to it goes
+# round the PDU's back, the side facing into the rack (solids.js, rule 3 of
+# 1.3). Drawn in 2D and 3D through those detours, the cable goes round the
+# PDU, never through it.
+PDU_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.newRack({name: 'Rear PDU'});
+  const optic = {'port-1': 'generic/qsfp-lc@2'};
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 10, label: 'sw-low', face: 'rear', swaps: optic}));
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 30, label: 'sw-high', face: 'rear', swaps: optic}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i2', path: 'port-1', view: 'front'}, media: 'os2'}));
+  r = {...r, zeroU: [{id: 'z1', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-A', at: 'right-rear', offsetMm: 0}]};
+  return r;
+}"""
+
+
+@extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
+def check_rack_cable_lay_pdu(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    rack = page.evaluate(PDU_RACK_JS)
+    load_rack_3d_ready(page, base, rack)
+    paths = page.evaluate("() => window.__rack.paths()")
+    p = paths.get("c1")
+    routes = dict(page.evaluate("() => window.__rack.routes()"))
+    if not p:
+        return bad + [f"route: c1 is not measured: {paths}"]
+    if not any(w.get("lane") == "right-rear" for w in routes.get("c1", [])):
+        bad.append(f"route: c1 does not run up the right-rear lane beside the PDU: {routes.get('c1')}")
+    if not p["detours"]:
+        bad.append(f"route: c1 has no detour round the PDU: {p}")
+    if p["crossings"] or page.evaluate("() => window.__rack.bodies()"):
+        bad.append(f"route: c1 still crosses a body: {p['crossings']}")
+    # 2D (the rear pane, mirrored, so the right-rear PDU is on its left): the
+    # drawn cable goes outboard of the PDU's outer edge, where the lane runs,
+    # and passes every detour point.
+    geo = page.evaluate("""(p) => {
+      const s = document.querySelector('#paneRear svg');
+      const g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      const z = s.querySelector('[data-zerou-id="z1"]');
+      const inv = s.getScreenCTM().inverse();
+      const zb = z.getBoundingClientRect();
+      const a = new DOMPoint(zb.left, zb.top).matrixTransform(inv), b = new DOMPoint(zb.right, zb.bottom).matrixTransform(inv);
+      const pts = [];
+      for (const path of g.querySelectorAll('path')) {
+        if (path.dataset.leader) continue;
+        const m = inv.multiply(path.getScreenCTM()), L = path.getTotalLength();
+        for (let t = 0; t <= L; t += 0.5) { const q = path.getPointAtLength(t); const w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+      }
+      const H = window.__rack.doc().racks[0].frame.heightRU * 44.45, O = 450.85;
+      const want = p.detours.flatMap(d => d.points).map(q => [O / 2 - q.x, H - q.y]);
+      const miss = want.map(w => Math.min(...pts.map(q => Math.hypot(q[0] - w[0], q[1] - w[1]))));
+      // the run up the lane, half way between the two switches (U20)
+      const run = pts.filter(q => Math.abs(q[1] - (H - 19.5 * 44.45)) < 60);
+      return {pdu: [Math.min(a.x, b.x), Math.max(a.x, b.x)], minX: Math.min(...run.map(q => q[0])), maxX: Math.max(...run.map(q => q[0])),
+              mid: O / 2, miss, n: pts.length, run: run.length};
+    }""", p)
+    if not geo["n"]:
+        bad.append("2D: c1 is not drawn on the rear pane")
+    else:
+        # the lane's run, at U20, is wholly outboard: past the PDU's edge away from the rack's centre
+        left = (geo["pdu"][0] + geo["pdu"][1]) / 2 < geo["mid"]
+        inner = geo["maxX"] if left else geo["minX"]
+        if not geo["run"] or not (inner < geo["pdu"][0] if left else inner > geo["pdu"][1]):
+            bad.append(f"2D: the cable's run up the lane at U20 comes to x {inner:.1f} ({geo['run']} samples), "
+                       f"not outboard of the PDU ({geo['pdu'][0]:.1f}-{geo['pdu'][1]:.1f})")
+        # routed2d rounds each corner by 4 mm, so a detour corner is passed within that
+        far = [round(m, 2) for m in geo["miss"] if m > 4.5]
+        if far:
+            bad.append(f"2D: the drawn cable misses detour points by {far} mm")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    bad += tubes_inside(page, 1, want_parts=("z1|envelope",))
+    return bad
+
+
 @extra("rack.html: zero-U - a vertical duct placed beside a two-post rack is drawn in 2D and 3D, a cable's lane runs through it and fills it, narrow brackets go on one rail each, and the exports carry it with no position")
 def check_rack_zero_u(page, base):
     bad = []

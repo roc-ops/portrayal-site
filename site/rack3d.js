@@ -916,9 +916,12 @@ export function createRackScene(container, opts = {}) {
   }
 
   // Each mounted chassis as a world-space box, for a host that must keep
-  // something (a cable) out of the metal.
+  // something (a cable) out of the metal: the showcase and the hero, which
+  // have no rack file. The Rack Builder does not read these: it keeps its
+  // cables out of the kit's solid bodies (solids.js solidsOf, kit 0.11.0, by
+  // way of rack/scene3d.js solidBoxes), in which a sheet part is its plates.
   function deviceBoxes() {
-    // A sheet manager is open (a route passes through it), so it is no box.
+    // Here a sheet manager is left out whole: its envelope is mostly open.
     return mounted.filter(({entry}) => entry.chassis?.shell !== 'sheet').map(({entry, group}) => {
       const {w, h, d} = entry.chassis;
       group.updateMatrixWorld(true);
