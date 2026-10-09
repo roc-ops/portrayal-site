@@ -69,12 +69,12 @@ GONE is today's `'That device is no longer in the rack.'`. The sentences move fr
 
 `dcim` is a command so that agents and the API have one way in, but it is **not** recorded in history (§3.3).
 
-The `cable.route*` and `lengths.routed` rows come from cable-management piece 2 (pathways and routes, branch `claude/cable-routing-pathways`), which lands before this work starts (§6). Route editing and reset are ordinary undoable edits, as piece 2 makes them. `lengths.routed` is the page re-measuring the routed lengths after a render's route facts: a derived update the page saves without an Undo step today, and it stays that way. Two flags in `COMMANDS` say this:
+The `cable.route*` and `lengths.routed` rows come from cable-management piece 2 (pathways and routes, `2026-10-07-cable-routing-pathways-design.md`), which lands before this work starts (§6). Route editing and reset are ordinary undoable edits, as piece 2 makes them. `lengths.routed` is the page re-measuring the routed lengths after a render's route facts: a derived update the page saves without an Undo step today, and it stays that way. Two flags in `COMMANDS` say this:
 
 - `step: false` (`dcim`, `lengths.routed`): applied and saved, never recorded in history; an undo or redo restores its snapshot with the current values of what these commands own (`dcim`; the routed lengths are re-measured by the next render anyway);
 - `system: true` (`lengths.routed`): the agent adapters do not offer it, and the page sends it with `origin: 'system'`.
 
-If piece 2's final shape differs from this when it lands (its PR is not open at the time of writing), the plan follows what landed: the commands wrap whatever `route.js` and `rack-page.js` do then.
+If piece 2's final shape differs from this when it lands (its PR is not open at the time of writing), the build follows what landed: the commands wrap whatever `route.js` and `rack-page.js` do then.
 
 Every command's `summary` is one line for the history and change events: "Placed Nexus 93180YC-EX at U12.", "Moved ... to U20 on the rear.", "Added cable c3.", "Renamed the rack to Core A.". Commands whose edit today raises an Undo notice (`remove`, `detach`, `cable.remove`, a shrinking `frame`) use today's undo text as their summary.
 

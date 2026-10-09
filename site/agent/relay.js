@@ -9,7 +9,7 @@ import {modelContext, registerTools} from './webmcp.js';
 const VERSION = '5.1.0';  // @mcp-b/webmcp-local-relay, as vendored (vendor/mcp-b/VERSION)
 const SRC = {global: '/vendor/mcp-b/global.js', embed: '/vendor/mcp-b/embed.js'};
 const INTEGRITY = {};  // set only for the jsDelivr fallback (none: self-hosted)
-const RELAY_FRAME = 'iframe[data-webmcp-relay]';  // Spike findings
+const RELAY_FRAME = 'iframe[data-webmcp-relay]';  // spec §6.1, spike findings
 // The relay accepts one page origin, so the commands name THIS page's own: on
 // portrayal.dev that is https://portrayal.dev, and a localhost or preview page
 // tells its user the flag that page needs.

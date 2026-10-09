@@ -43,7 +43,7 @@ Most of the *drawing* exists. What is new is *authoring*: placement, collision, 
 | 1 | `rack.html`: frame, placement, Explorer lens, library, exports, nav entry | New page |
 | 2 | Cable mode, cable list, cable exports (including the showcase's plan), NetBox cable import last | New features |
 
-Each phase is shippable on its own. Each gets its own implementation plan.
+Each phase is shippable on its own.
 
 ## 4. Phase 0: one configured face for every consumer
 
@@ -158,7 +158,7 @@ Pure functions over the model and each device's `chassis` (`ru`, `d` in mm; all 
   - A rear-face item occupies `[railDepth − d, railDepth]`.
   - Items on opposite faces may share an RU only if these intervals do not overlap.
   - No item may extend beyond `usableDepth`.
-- **Two-post:** a device's body passes through the single rail plane whichever face it is mounted on, so **two-post RUs are never shared**. `face` records which side the ears are on, and `d ≤ usableDepth` still applies. *(This corrects the brainstorming summary, which suggested two-post front and rear could share.)*
+- **Two-post:** a device's body passes through the single rail plane whichever face it is mounted on, so **two-post RUs are never shared**. `face` records which side the ears are on, and `d ≤ usableDepth` still applies. *(Corrected 2026-09-26: an earlier draft suggested two-post front and rear could share.)*
 - **Same face:** items never overlap in RU.
 - **Zero-U:** items at the same attachment point may not overlap along its length.
 
@@ -266,7 +266,7 @@ Every export is built from the saved model through `configuredFace()`, never fro
 - A cable list panel with stage 5's media and purpose filter and click-to-highlight.
 - A cable schedule CSV.
 - Cables drawn on the SVG, PNG and GLB exports; cables as draw.io edges between `portrayal-path` port cells.
-- The showcase's stage 6 already shows the plan's cables and carries them in its SVG, PNG and GLB exports (moved into Phase 0 as Task 4b, 2026-09-26). Phase 2 adds them to its draw.io export as edges.
+- The showcase's stage 6 already shows the plan's cables and carries them in its SVG, PNG and GLB exports (moved into Phase 0, 2026-09-26). Phase 2 adds them to its draw.io export as edges.
 - **NetBox and Nautobot cable import** (Phase 2c) is part of each target's import kit (§8). A port's name comes from the matched type file's own name lists, never from convention alone: a fixed port is its drawing path looked up there, and a card port `<bay>/module/<leaf>` is `<bay position>/<leaf>`, the name the module's `{module}/<leaf>` gets once the module is in the bay whose position is `<bay>`. So the modules file comes before the cables file. **Verified against real instances on 2026-10-04**, with `tools/dcim-verify/`: the kits the page exports for an acceptance rack (as exported at `2bbe359e`) were imported, in each README's order, into a NetBox 4.7.2 (17 steps, none failed: the type files, the rack, devices, modules and cables, all through the UI's import pages) and a Nautobot 3.2.6 (25 steps, none failed: the type files through Nautobot's own UI import, the devices and modules as `text/csv`, the cables through `import_cables.py`: a dry run, `--apply`, and `--apply` a second time on the same file, which reported every row as already connected and exited 0); the devices and the cables each instance held matched the kit's rows and the rack's. That run included: a second location on the Nautobot holding a rack with the same name as the kit's, with every device landing in the rack of its own location (`rack__name` with `rack__location__name`); the script tying each port to its device by id, card ports included; the kits' limits at their exact values (a 64-character device name, a 100-character cable label, a 200-character description, 999999.99 m, and a length that rounds up to 32,767); and two devices whose names differ only by case, each imported under the name the kit gave it. **Still proven only against a mock, not a real instance:** every refusal path of `import_cables.py` (an ambiguous device, a port already in another cable, a redirect, a refused token (401 or 403), a cable that does not show both ends after it is created); an instance with real data in it beyond that one same-named rack; and any version other than those two.
 
 ### 9.5 Out of scope, as in the patching spec

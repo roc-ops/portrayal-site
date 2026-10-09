@@ -1,7 +1,7 @@
 # Showcase Inspect is Explorer: removable parts, module swaps, config dropdowns, and 3D in the lens
 
 **Date:** 2026-09-25
-**Status:** design approved, ready for an implementation plan
+**Status:** design approved
 **Builds on:** `2026-09-25-showcase-2d-first-design.md` (merged in roc-ops/portrayal-site#23)
 
 ---

@@ -84,7 +84,7 @@ Sections, in order:
 ## 4. How the live examples work
 
 **One file per example**, in `site/kit-examples/`:
-- files: `01-drawing.js`, `02-telemetry.js`, `03-metadata.js`, `04-seat.js`, `05-viewer3d.js`, `06-marks.js`, `07-shell.js` (final names settled in the plan);
+- files: `01-drawing.js`, `02-telemetry.js`, `03-metadata.js`, `04-seat.js`, `05-viewer3d.js`, `06-marks.js`, `07-shell.js`, in `site/kit-examples/`;
 - each exports `async function run(host)` and returns a small result object;
 - the page fetches the file's text to display it and imports the same file to run it, so what is shown is exactly what runs.
 

@@ -149,7 +149,7 @@ export function relaySwitch({mount, tools, examples}) -> {dispose}
   - The relay command, pinned to the vendored version, with Copy:
     `npx -y @mcp-b/webmcp-local-relay@<ver> --widget-origin https://portrayal.dev`
   - A Claude Desktop / Claude Code config snippet with the same command, with Copy.
-  - A status line: "Waiting for your desktop AI..." until the relay reports a connection, then "Connected." This line is shown only if the spike (§6, task 1) finds a status signal. Otherwise it is left out, not guessed.
+  - A status line: "Waiting for your desktop AI..." until the relay reports a connection, then "Connected." This line is shown only if the spike (§6.1) finds a status signal. Otherwise it is left out, not guessed. The spike found none, so the built line reports only a refusal.
   - Three example prompts, with Copy. They come from the page:
     - "Build a 42U rack with two leaf switches at the top, a 24-port patch panel between them, and cable every switch uplink to the panel."
     - "What in this rack has loose cable ends, and why?"
@@ -158,7 +158,7 @@ export function relaySwitch({mount, tools, examples}) -> {dispose}
 
 ### 4.4 Vendored MCP-B files: `vendor/mcp-b/`
 
-`@mcp-b/global` and `@mcp-b/webmcp-local-relay`'s browser build are copied at a pinned version, beside `vendor/three/`, with their licenses and a `VERSION` file. They are loaded only by `relay.js`, and never on page load. Self-hosting keeps a third-party CDN out of a page that may later hold users' API keys (the chat-box step). If the spike finds that the relay's iframe cannot be self-hosted, the fallback is the same pinned files from jsDelivr with Subresource Integrity, recorded in the plan.
+`@mcp-b/global` and `@mcp-b/webmcp-local-relay`'s browser build are copied at a pinned version, beside `vendor/three/`, with their licenses and a `VERSION` file. They are loaded only by `relay.js`, and never on page load. Self-hosting keeps a third-party CDN out of a page that may later hold users' API keys (the chat-box step). If the spike finds that the relay's iframe cannot be self-hosted, the fallback is the same pinned files from jsDelivr with Subresource Integrity. The spike found self-hosting works, so there is no fallback and no SRI (§6.1, spike findings).
 
 ### 4.5 `rack-page.js`
 
@@ -190,7 +190,7 @@ The change listener (`onChange`) already turns findings into notices. For `ev.or
 
 ## 6. Testing
 
-### 6.1 Spike first (plan task 1, throwaway)
+### 6.1 Spike first (throwaway)
 
 Before any tool code, on a local server and then on a preview deploy:
 
@@ -200,7 +200,25 @@ Before any tool code, on a local server and then on a preview deploy:
 - Is there a connection signal for the status line?
 - Does `@mcp-b/global` step aside when the browser has native `document.modelContext`?
 
-The answers are written into the plan before task 2.
+The answers are recorded below before any tool code is written.
+
+**Spike findings (2026-10-07),** against `@mcp-b/webmcp-local-relay` 5.1.0 and `@mcp-b/global` 5.1.0:
+
+- **Self-hosting works,** so there is no jsDelivr fallback and no SRI. Three files are vendored to `vendor/mcp-b/`:
+  - `global.js`, from global's `dist/index.iife.js`;
+  - `embed.js`, from the relay's `dist/browser/embed.js`;
+  - `widget.html`, from the relay's `dist/browser/widget.html`.
+- **`widget.html` must sit beside `embed.js` under that name.** `embed.js` fetches it relative to its own script URL. `widget.html` inlines its script, so `widget.js` is not needed.
+- **`embed.js` must be a classic `<script src>`,** loaded after `global.js`, because it reads `document.currentScript`. It reads these attributes:
+  - `data-relay-host` (default 127.0.0.1) and `data-relay-port` (default 9333);
+  - `data-auto-connect` (default true);
+  - `data-debug`, `data-relay-id`, `data-relay-workspace` and `data-request-timeout`.
+- **Tool names are not prefixed.** A tool registered as `ping` reaches the client as `ping`, beside the relay's own `webmcp_list_sources`, `webmcp_list_tools` and `webmcp_open_page`.
+- **`--widget-origin` sees the page's origin.** The relay's iframe is a `blob:` URL, so it inherits the page origin. On the live site the flag is `https://portrayal.dev`: scheme and host, no path. A wrong origin is refused, and the page's tools never appear.
+- **The relay frame** is `iframe[data-webmcp-relay]`. It is hidden and appended to `document.body` when `embed.js` runs.
+- **There is no "connected" signal.** No event, global or attribute is set when the relay accepts the page. The one thing the page can read is a `webmcp.relay.rejected` message from the relay frame (reason `host-origin-not-allowed`). It repeats, because the widget retries about every 0.5 s. A missing relay sends nothing. So the status line reports a refusal and never claims "connected" (§4.3).
+- **`@mcp-b/global` does not step aside for a native model context.** It installs its own server over both `document.modelContext` and `navigator.modelContext`, wrapping any native one. With no native context (the default) the relay works. Chrome 145's experimental native `navigator.modelContext` uses an older API, and the wrapper breaks the relay on it (`getTools is not a function`). A native WebMCP of another shape may behave either way, so the by-hand run (§6.4) covers it.
+- **The Local Network Access prompt** cannot be answered headlessly, so it is left to the by-hand run. `embed.js` already sets `allow="loopback-network; local-network; local-network-access"` on its iframe.
 
 ### 6.2 Node (`tests/rack/agent-tools.test.mjs`)
 
