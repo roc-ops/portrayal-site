@@ -114,6 +114,18 @@ shows it) or add it to `KIT_NOT_DOCUMENTED_YET` with a reason. A module that
 leaves the kit has to leave the page and the list as well; the check fails on
 a name in either that the kit no longer exports.
 
+A version bump is also a cue to re-read the prose, not only the module lists:
+a section can name every module and still describe what that version no longer
+does. The bundles section says `inspect` gives `bend: null`, for example,
+which stops being true when 0.8.0 adds the bend check. Re-read each section
+whose modules changed in the release.
+
+While the vendored kit is newer than the last npm release (`KIT_NPM_LATEST`
+in `check-contract.py`), `#files` must carry the `data-kit-unpublished` note
+saying so, since its `npm install` and CDN map cannot deliver the documented
+modules. When a release is published, update `KIT_NPM_LATEST`; the check then
+asks for the note to be removed.
+
 Then the half that needs a browser:
 
 ```sh

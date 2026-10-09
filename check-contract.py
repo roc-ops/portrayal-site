@@ -1129,13 +1129,39 @@ check(len(_kexp) >= 10 and "marks" in _kexp and "rack/editor" in _kexp,
       f"read {_kexp}")
 _said = re.findall(r'data-kit-version="([^"]*)"', _kit_html)
 _cdn = re.findall(r"@portrayal/kit@([^/\"'\s]+)/", _kit_html)
-check(len(_said) == 1 and bool(_cdn),
-      "kit.html states the kit's version once (data-kit-version) and pins its CDN map to a version",
-      f"data-kit-version {_said}, CDN pins {_cdn}")
-check(bool(_kver) and _said == [_kver] and set(_cdn) == {_kver},
+check(len(_said) == 1, "kit.html states the kit's version once (data-kit-version)",
+      f"found data-kit-version {_said}")
+check(bool(_cdn), "kit.html's CDN import map pins @portrayal/kit to a version",
+      "no @portrayal/kit@<version>/ URL on the page")
+_off = sorted({v for v in _said + _cdn if v != _kver})
+check(bool(_kver) and bool(_said) and not _off,
       f"kit.html states the vendored kit's version ({_kver})",
-      f"the page says {sorted(set(_said + _cdn))}; vendor/kit-package.json says {_kver!r} - "
+      f"the page also says {_off}; vendor/kit-package.json says {_kver!r} - "
       "update kit.html (data-kit-version and the CDN map) to the vendored kit")
+
+# WHAT NPM HAS. The vendored kit can be ahead of the last release: 0.7.0 was
+# vendored while npm's latest was 0.2.0, which has no rack/* at all, so the
+# page's `npm install` and CDN map could not deliver what it documents. While
+# that is so, #files must carry a note that says it (data-kit-unpublished,
+# naming the npm version in data-kit-npm); once the vendored version is
+# published, the note must go. Update KIT_NPM_LATEST when a kit release is
+# published (`npm view @portrayal/kit version`).
+KIT_NPM_LATEST = "0.2.0"
+_vt = lambda v: tuple(int(x) for x in re.findall(r"\d+", (v or "").split("-")[0])[:3]) or (0,)
+_files_m = re.search(r'<section\s+class="kit-sec"[^>]*\bid="files"[^>]*>(.*?)</section>', _kit_html, re.S)
+_files = _files_m.group(1) if _files_m else ""
+check(bool(_files_m), "kit.html has its Getting the files section (#files)")
+_notes = re.findall(r'<p class="kit-note" data-kit-unpublished>(.*?)</p>', _files, re.S)
+_npm_said = re.findall(r'data-kit-npm="([^"]*)"', _kit_html)
+if _kver and _vt(_kver) > _vt(KIT_NPM_LATEST):
+    check(len(_notes) == 1 and _npm_said == [KIT_NPM_LATEST] and _kver in _notes[0],
+          f"kit.html's #files says the documented kit {_kver} is not on npm (npm's latest is {KIT_NPM_LATEST})",
+          f"{len(_notes)} data-kit-unpublished notes, data-kit-npm {_npm_said} - add the note to #files, "
+          "naming both versions, or update KIT_NPM_LATEST if the kit has been published")
+else:
+    check(not _notes and not _npm_said,
+          f"kit {_kver} is on npm, so kit.html carries no not-on-npm note",
+          "remove the data-kit-unpublished note from #files")
 _secs = re.findall(r'<section\s+class="kit-sec"[^>]*\bid="([^"]+)"[^>]*>', _kit_html)
 _docd = {}
 for _tag in re.findall(r'<section\s+class="kit-sec"[^>]*>', _kit_html):
