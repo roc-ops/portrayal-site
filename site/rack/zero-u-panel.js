@@ -1,12 +1,12 @@
-// A PART BESIDE THE RACK, IN THE SIDE PANEL (zero-u.js): what it is, where it
+// A PART BESIDE THE RACK, IN THE SIDE PANEL (the kit's zero-u.js): what it is, where it
 // stands, and the controls that move or remove it. Like manager-panel.js it
 // changes nothing itself: every action is a callback, which the page sends as
 // a command through the editor.
 
 import {el} from './dom.js';
 import {attachPoints} from '../../vendor/rack/fit.js';
-import {ruOfZ, whereText} from './zero-u.js';
-import {uLabel} from '../../vendor/rack/model.js';
+import {zeroUBottom, uLabel} from '../../vendor/rack/model.js';
+import {whereText, carriesLane} from '../../vendor/rack/zero-u.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
@@ -23,7 +23,7 @@ export function zeroUInspector({z, rack, chassis, chassisOf, onUpdate, onRemove}
     attachPoints(rack.frame.kind).map(p => el('option', {value: p, text: p, ...(p === z.at ? {selected: ''} : {})})));
   at.addEventListener('change', () => send({at: at.value}, () => { at.value = z.at; }));
   // The bottom U as the rack labels it; the command takes it counted from the bottom.
-  const ru = ruOfZ(z);
+  const ru = zeroUBottom(z);
   const bottom = el('input', {id: 'zRu', type: 'number', min: '1', max: String(rack.frame.heightRU), value: String(ru)});
   bottom.addEventListener('change', () => {
     const n = Number(bottom.value);
@@ -36,7 +36,9 @@ export function zeroUInspector({z, rack, chassis, chassisOf, onUpdate, onRemove}
   return el('div', {class: 'rk-inspector', id: 'zeroUPanel'}, [
     el('h3', {text: z.label}),
     el('p', {class: 'rk-muted', id: 'zWhere', text: `${[chassis?.manufacturer, chassis?.model].filter(Boolean).join(' ') || z.ref} · ` +
-      `zero-U, ${whereText(rack, z, chassisOf)}. It takes no rack unit; the ${z.at} cable lane runs through it.`}),
+      `zero-U, ${whereText(rack, z, chassisOf)}. It takes no rack unit` +
+      // only a part that is a pathway carries the lane (kit zero-u.js carriesLane): a PDU leaves it in the gutter
+      `${carriesLane(chassis) ? `; the ${z.at} cable lane runs through it` : ''}.`}),
     el('label', {}, ['Label', label]),
     el('label', {}, ['Beside the upright', at]),
     el('label', {}, [`Bottom U (counted from the bottom; labelled U${uLabel(rack.frame, ru)})`, bottom]),
@@ -47,7 +49,7 @@ export function zeroUInspector({z, rack, chassis, chassisOf, onUpdate, onRemove}
   ]);
 }
 
-// A narrow rail part's rail: left, right, or across both (zero-u.js side.set).
+// A narrow rail part's rail: left, right, or across both (the kit's side.set).
 export function sideControl({item, onSide}) {
   const err = el('p', {class: 'rk-error', role: 'alert', id: 'mSideError'});
   const sel = el('select', {id: 'mSide', 'aria-label': 'Rail'}, [

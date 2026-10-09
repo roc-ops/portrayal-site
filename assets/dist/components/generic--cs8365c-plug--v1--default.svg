@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="65.1mm" height="65.1mm" viewBox="0 0 65.1 65.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cs8365c-plug" data-path="cs8365c-plug" data-class="inlet" data-ref="generic/cs8365c-plug@1:1.0.0" data-phases="3" data-plug="cs8365c" data-rating-a="50" data-rating-v="250" transform="translate(0,0)">
+    <title>cs8365c-plug</title>
+    <circle id="cs8365c-plug--grip" cx="32.55" cy="32.55" r="32.55" fill="#1b1c1e" stroke="#4a4d51" stroke-width="0.25" />
+    <circle id="cs8365c-plug--face" cx="32.55" cy="32.55" r="27.0" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.2" data-path="cs8365c-plug/face" data-class="inlet" />
+    <circle id="cs8365c-plug--rivet" cx="32.55" cy="32.55" r="5.9" fill="#5d6166" stroke="#3a3c3f" stroke-width="0.15" />
+    <circle cx="32.55" cy="32.55" r="2.5" fill="#101112" />
+    <path id="cs8365c-plug--blade-z" d="M 34.97 18.25 A 14.5 14.5 0 0 1 45.39 25.81 L 42.73 27.2 A 11.5 11.5 0 0 0 34.47 21.21 Z" fill="#b08d57" data-z-out="22" data-z-color="#b08d57" data-z-shape="1" />
+    <path id="cs8365c-plug--blade-x" d="M 19.4 38.66 A 14.5 14.5 0 0 1 19.8 25.65 L 22.43 27.08 A 11.5 11.5 0 0 0 22.12 37.39 Z M 19.69 29.01 L 16.52 27.29 L 17.95 24.65 L 21.11 26.37 Z" fill="#b08d57" data-z-out="22" data-z-color="#b08d57" data-z-shape="1" />
+    <path id="cs8365c-plug--blade-y" d="M 44.02 41.42 A 14.5 14.5 0 0 1 33.51 47.02 L 33.31 44.02 A 11.5 11.5 0 0 0 41.65 39.58 Z M 36.4 45.32 L 36.71 49.91 L 33.72 50.11 L 33.41 45.52 Z" fill="#b08d57" data-z-out="22" data-z-color="#b08d57" data-z-shape="1" />
+  </g>
+</svg>

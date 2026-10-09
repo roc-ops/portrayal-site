@@ -16,7 +16,7 @@ import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
-import {faceOfAt, sideOfAt, STANDOFF} from './zero-u.js';
+import {faceOfAt, sideOfAt, STANDOFF} from '../../vendor/rack/zero-u.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.
@@ -143,7 +143,7 @@ export function uAtY(frame, y, baseRU = 1) {
   return Math.min(baseRU + frame.heightRU - 1, Math.max(baseRU, baseRU + i));
 }
 
-// ZERO-U PARTS (site/rack/zero-u.js): a duct standing beside an upright, drawn
+// ZERO-U PARTS (the kit's rack/zero-u.js): a duct standing beside an upright, drawn
 // as it stands, portrait, outside the rail. `zeroU` entries are {id, ref, cfg,
 // label, at, ru, w, h}: w and h the part's chassis width and drawn height in mm,
 // ru its bottom U. A two-post's uprights are seen from both panes (its front

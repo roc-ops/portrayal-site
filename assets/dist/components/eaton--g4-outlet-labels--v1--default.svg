@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="4mm" height="180.29mm" viewBox="0 0 4 180.29">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="g4-outlet-labels" data-path="g4-outlet-labels" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" transform="translate(0,0)">
+    <title>g4-outlet-labels</title>
+    <g id="g4-outlet-labels--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="g4-outlet-labels--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#f4d440" data-fill-from="section-color" data-path="g4-outlet-labels/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="g4-outlet-labels--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">A1</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">A2</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">A3</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">A4</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">A5</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">A6</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">A7</text>
+    </g>
+  </g>
+</svg>

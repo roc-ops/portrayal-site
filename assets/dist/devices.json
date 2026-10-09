@@ -4192,7 +4192,7 @@
    },
    "profile": "networking",
    "search": "weight 132 lb / 61.23 kg fully loaded power-max-w 3600 power-envelope fully-configured ac-input-provisioning w across three 120 vac inputs (4800 over four recommended), or 4000 two 240 inputs. this is supply to be provisioned, not draw - the what v feeds come to, and a consumption figure psu-dc-input -42 -60 vdc, 20 nominal per feed at -48 vdc front-slots slot furniture item grounding point rear-slots fans fan module power pem c100g-chassis part bdm2 bdm2m bdm blank-faceplate brand-swoop cable-manager chassis-label csc-8x10g ds-8x192 ds-8x8 ds-8x96 ground-bolts ground-strap io-6p12-io2 io-6p12-sw-io2 io-6p12-sw io-6p12 lc-sw-bdm oob-2p8 rfd rfu-16x8 smm-2x10g smm-300g smm-300gm smm-8x10g smm-sw-bdm-a smm-sw-bdm-b ups-32x4 us-16x4 us-16x8 screw-head",
-   "version": "0.5.14"
+   "version": "0.5.15"
   },
   {
    "aliases": [],
@@ -4338,7 +4338,7 @@
    },
    "profile": "networking",
    "search": "power-max-w 1800 power-envelope fully-configured front-slots slot cooling fan module power pem furniture item grounding point rear-slots c40g-chassis-ac part c40g-chassis-dc bdm2 bdm2m bdm blank-faceplate c40g-ac-inlet-panel c40g-fan-left c40g-fan c40g-ground-studs c40g-pem c40g-psu-ac c40g-psu-cover chassis-label csc-8x10g ds-8x192 ds-8x8 ds-8x96 io-6p12-io2 io-6p12-sw-io2 io-6p12-sw io-6p12 lc-sw-bdm oob-2p8 rfd rfu-16x8 smm-2x10g smm-300g smm-300gm smm-8x10g smm-sw-bdm-a smm-sw-bdm-b ups-32x4 us-16x4 us-16x8 screw-head",
-   "version": "0.5.18"
+   "version": "0.5.19"
   },
   {
    "aliases": [],
@@ -8020,6 +8020,99 @@
    "version": "27.0.2"
   },
   {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "sha256": "244f64fb29724407edd1ca742942f753e6bfb5e0e09139cb3acba4733d0be5ae",
+    "title": "Eaton EVMI2130X SKU specifications (skuPage.EVMI2130X.pdf)",
+    "url": "https://www.eaton.com/us/en-us/skuPage.EVMI2130X.pdf"
+   },
+   "decor-confidence": {},
+   "description": "Eaton Rack PDU G4, metered input, 0U: a 1730 mm black aluminium strip that hangs on two mounting buttons in a rack's vertical channel and hands a three-phase 120/208 V wye feed (a fixed 10 ft cord with a NEMA L21-30P plug, 24 A, 8.6 kW) on to 42 outlets - 24 IEC C13 and 18 Eaton C39 - in six colour-coded sections of seven. Three 20 A two-pole breakers, A, B and C, each line to line, each feed two sections. A hot-swappable network module with two gigabit Ethernet ports, a pixel LCD and four keys sits between the two halves.",
+   "gaps": [
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "the outlet wells are built 18 (C13) and 20 (C39) deep from the plug side: the mating nose lengths in the registry (Volex V1625 and VAC19), cross-checked against the C14 and C20 shroud depths. No outlet drawing held dimensions the wells themselves. The mouldings' 3.96 standoff, which the drawing's side view does give, is not built: a raised box over the outlets would bury their wells.",
+     "scope": [
+      "front"
+     ],
+     "wanted": "a section through an Eaton G4 outlet moulding, or a measured unit.",
+     "what": "outlet-depth"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "9001-22301 draws a round boss 8.2 across at the cord end, between the ground screw and breaker A, and EVMI2130X_C5 shows it; nothing held names it. It is drawn as decor.",
+     "scope": [
+      "front"
+     ],
+     "wanted": "the part's name from Eaton, or the unit.",
+     "what": "boss-at-cord-end"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "the installation guide 2.11.4 says the ground symbol is marked in the chassis beside the M6 bonding screw; neither the drawing nor EVMI2130X_C5 resolves it, so it is not drawn.",
+     "scope": [
+      "front"
+     ],
+     "wanted": "a close-up of the cord end of the face.",
+     "what": "ground-symbol"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "one of `input-dc`, `input-ac` in `attrs.power`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `power` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 1 bay (front 1) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Eaton",
+   "model": "EVMI2130X",
+   "name": "evmi2130x",
+   "ns": "eaton",
+   "options": {
+    "airflow": [
+     "passive"
+    ],
+    "power": []
+   },
+   "portfolio": {},
+   "profile": "power",
+   "search": "length-mm 1730 weight-kg 8.3 construction aluminium chassis, black input-plug nema l21-30p on a fixed 10 ft cord, awg 5-conductor input-voltage 120/208 v three-phase wye, 3w+n+pe (drawing 100-127/173-240 v) input-current-a 24 plug-rating-a 30 capacity-kw 8.6 capacity-scope the load pdu can hand (24 at 208 three phase), from sku title and brochure table; it is not what draws itself, which no document held states output-voltage 173-240 v, line to output-rating per c13, 16 c39, section, phase breakers 20 two-pole, ul listed frequency 50/60 hz operating-temp 0 60 c (32 140 f) metering current, power energy for input; current each branch network-module g4 enmc, dual gigabit ethernet with network cascading emc fcc part 15 class a, ices-003 safety 62368-1; ctuvus drawing cybersecurity 2900-1 regulatory-model emif-pdxj-e27k eol none-announced outlets outlet section-labels label breaker slot grounding ground power-input input mounting button evmi2130x ground-screw-m6 c39-outlet g4-breaker-20a-2p g4-cord-l21-30p g4-enmc g4-mounting-button g4-outlet-labels c13-outlet",
+   "version": "0.1.0"
+  },
+  {
    "aliases": [
     "AGR110"
    ],
@@ -8761,7 +8854,7 @@
    },
    "profile": "networking",
    "search": "weight-note 21.2 kg (46.73 lb) with 2 psus and 4 fans installed (quick start guide); the datasheet says 21.5 (47.4 switching-capacity 51.2 tbps (102.4 full duplex) logical-ports up to 320 jumbo-frames 9416 bytes power-draw-max-w 2775 power-budget-per-port-w 30 operating-temp 0 40 c (front-to-back); 35 (back-to-front), subject used optics storage-temp -40 70 humidity operating: 5% 95% non-condensing altitude 1800 m cpu intel xeon d-1713nte ice lake d, 4-core 2.2 ghz, com type 7 switch-silicon broadcom bcm78900 tomahawk 5 bmc ast2600 running openbmc, secured by an ast1060 root of trust memory 32 gb ddr4 so-dimm ecc storage 240 m.2 2280 nvme ssd tpm 2.0 spi software onie preloaded; no nos image ships on device optics-qsfp-dd datasheet: each port takes 1 x 800 gbe 8 lanes 100g pam4, or breaks out 400g, 200g 100g. maximum logical ports. eol none-announced qsfp-dd800 qsfp-dd 800g port-leds led mgmt timing leds psu fan ais800-64d-af-un part fp6ec9664004z power-cord iec 60320 c19-c20 ais800-64d-af fp6ec9664002z none ais800-64d-ab-un fp6ec9664005z ais800-64d-ab fp6ec9664008z ais800-64d-df fp6ec9664014z ais800-64d-db fp6ec9664016z sfp28 25g rj45 1g usb-a rj45-serial console coax-sma rj45-tod ipinfusion ip infusion ocnos dc ground-stud-pair-5-8-m6 ground-symbol led-arrow-sm led-dot led-rect-sm reset-button rj45-eth ais800-64-psu-ac ais800-64-psu-dc fan-2u-1x1sn sfp sma",
-   "version": "4.0.1"
+   "version": "4.0.2"
   },
   {
    "aliases": [
@@ -8918,7 +9011,7 @@
    },
    "profile": "networking",
    "search": "weight-note 20.5 kg (45.19 lb) with 2 psus and 4 fans installed (quick start guide); the datasheet says 21.5 (47.4 switching-capacity 51.2 tbps (102.4 full duplex) jumbo-frames up to 9416 bytes power-draw-max-w 2775 power-budget-per-port-w 30 operating-temp 0 40 c (front-to-back); 35 (back-to-front), subject used optics storage-temp -40 70 humidity operating: 5% 95% non-condensing altitude 1800 m cpu intel xeon d-1713nte ice lake d, 4-core 2.2 ghz, com type 7 switch-silicon broadcom bcm78900 tomahawk 5 bmc ast2600 running openbmc, secured by an ast1060 root of trust memory 32 gb ddr4 so-dimm ecc storage 240 m.2 2280 nvme ssd boot-flash 64 mb spi flash x tpm 2.0 software onie preloaded; no nos image ships on device timing 1pps, 10 mhz tod ports, synce ieee 1588v2 ptp optics-osfp datasheet: each osfp800 port takes 1 800g 8 lanes 100g pam4, or breaks out 400g, 200g 100g; 50g pam4 it 400g 200g, 50g; 25g nrz. emissions en 55032 class a, as/nzs cispr32, 61000-3-2, 61000-3-3, fcc ices-003, vcci-cispr32 immunity 55035, iec 61000-4-2/3/4/5/6/8/11 safety ul (csa 22.2 62368-1 & 62368-1), cb (iec/en 62368-1) nebs gr63-core (pre-test) eol none-announced as9817-64o dcs560 osfp port-leds led mgmt leds psu fan ais800-64o-af-un part fp6ec9664003z power-cord 60320 c19-c20 ais800-64o-af fp6ec9664001z none ais800-64o-ab-un fp6ec9664006z ais800-64o-ab fp6ec9664007z ais800-64o-df fp6ec9664010z ais800-64o-db fp6ec9664012z sfp28 rj45 1g usb-a rj45-serial console coax-sma rj45-tod arrcus arcos switching (xgs) drivenets dnos network cloud packet forwarder (ncp) ground-stud-pair-5-8-m6 ground-symbol led-arrow-sm led-dot led-rect-sm reset-button rj45-eth ais800-64-psu-ac ais800-64-psu-dc fan-2u-1x1sn sfp sma",
-   "version": "4.0.1"
+   "version": "4.0.2"
   },
   {
    "aliases": [],
@@ -17030,7 +17123,7 @@
    },
    "profile": "networking",
    "search": "weight 32 kg fully loaded (two res, two lmics); 16 without frus (table 22) depth-with-brackets 782 mm over cable-management brackets, air filter and handles throughput 4.8 tbps system capacity; up to 12x400 gbps or 48x100 ports (three lmics) power-typical-w 1033 power-max-w 1436 power-envelope fully-configured operating-temp 0 c 40 storage-temp -40 70 in shipping container humidity 5-90 percent noncondensing altitude no performance degradation 1800 m asic juniper trio 6 (one yt per lmic) macsec inline on all at speeds timing 1pps 10 mhz smb input output, tod bits rj45, gm/ptp sfp (1-gbe/10-gbe); currently reserved for future use the guide redundancy full hardware - routing engines, power supplies fans eol none-announced res slot lmics port gm-ptp-leds led psus psu fan fan-leds grounding point esd clock output rj48 (reserved guide) rj45-tod time of day sfp-plus 10g ptp grandmaster esd-jack led-dot jnp304-blnk jnp304-re mx304-fan mx304-ground-plate mx304-lmic16 mx304-psu-ac mx304-psu-dc mx304-psu-hvacdc rj45",
-   "version": "4.0.1"
+   "version": "4.0.2"
   },
   {
    "aliases": [],
@@ -17811,7 +17904,7 @@
    "portfolio": {},
    "profile": "networking",
    "search": "part-number 3fe 79748 aa weight-kg 11.5 weight-kit-kg 16.75 width-over-flanges-mm 481 mounting-centre-mm 465 depth-with-ground-stud-mm 262 depth-with-power-module-mm 274 depth-with-front-cover-mm 290 depth-overall-datasheet-mm 287.3 mounting 19 in., 21 in. and 23 racks with extra equipment, vertical or horizontal power-input-dc 48/60 v dc nominal; fully redundant power feeding (branch a b) power-feed-limit 80 two lpwr-f aa, 100 ab power-wiring three-wire as delivered; two-wire by bridging the six batret/fg fast-on pairs on backpanel operating-temp -40 c to +65 at air inlet of shelf operating-temp-central-office -5 55 (etsi en 300 019 class 3.1e, gr-63-core) humidity 5% 93% (non-condensing) family lightspan mf chipset nokia quillion safety iec 62 368-1 / 368-1; as/nzs 62368-1; ul62368-1; can/csa-c22.2 no. 62368-1-14 emc ets 386; es 201 468; gr-1089-core; ices-003 issue 7 (2020); vcci-cispr32: 2016 environmental-class 019-1-3 3.1e 3.3; gr-3108-core 1 2; gr-63-core for temperature rohs eu directive 2011/65/eu amended including 2015/863/eu eol none-announced lmfs-f lt-slots slot nt-slots alarm-slot power-slots fans fan esd point grounding covers cover kit part 79747 esd-jack ground-stud-pair-5-8-m6 ground-symbol lalm-f lbnt-a lfan-f lmdb-b-ea lmdb-e-ba lwlt-c mf8-horizontal-front-cover",
-   "version": "1.0.1"
+   "version": "1.0.2"
   },
   {
    "aliases": [],

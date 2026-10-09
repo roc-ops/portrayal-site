@@ -33,8 +33,11 @@
     .portrayal-dim { opacity: 0.25; }
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
-</style>
-  <g id="fan" data-path="fan" data-class="fan" data-behaviour="fills" data-ref="casa/fan@1:1.7.0" data-body-depth="150.0" data-wall="#4a4f55" data-model="Fan Assembly" data-power-draw-max-w="100" transform="translate(0,0)">
+
+    g[data-ref^='casa/fan@'] .state-alarm { --led-color: #ef4444; }
+    g[data-ref^='casa/fan@'] .state-high-speed { --led-color: #3b82f6; }
+    g[data-ref^='casa/fan@'] .state-ok { --led-color: #39b54a; }</style>
+  <g id="fan" data-path="fan" data-class="fan" data-behaviour="fills" data-ref="casa/fan@1:1.8.0" data-body-depth="150.0" data-wall="#4a4f55" data-model="Fan Assembly" data-power-draw-max-w="100" transform="translate(0,0)">
     <title>fan</title>
     <rect id="fan--plate" x="0" y="0" width="137.25" height="91.2" fill="#8d949c" stroke="#6d6f71" stroke-width="0.6" />
     <g id="fan--perforation" fill="#23272c" stroke="#a7a9ac" stroke-width="0.35" data-z-vent="25.0">
@@ -239,9 +242,9 @@
       <g data-class="silkscreen">
         <text x="85.8" y="10.8" font-family="sans-serif" font-size="2.8" font-weight="bold" text-anchor="middle" fill="#231f20">OK</text>
       </g>
-      <circle id="fan--hs" cx="67.5" cy="21.2" r="1.7" fill="#231f20" stroke="#5f6469" stroke-width="0.2" data-path="fan/hs" data-class="led" data-z-dome="0.3" data-z-lift="1.5" />
-      <circle id="fan--alarm" cx="76.7" cy="21.2" r="1.7" fill="#231f20" stroke="#5f6469" stroke-width="0.2" data-path="fan/alarm" data-class="led" data-z-dome="0.3" data-z-lift="1.5" />
-      <circle id="fan--ok" cx="85.8" cy="21.2" r="1.7" fill="#10b981" stroke="#5f6469" stroke-width="0.2" data-path="fan/ok" data-class="led" data-z-dome="0.3" data-z-lift="1.5" />
+      <circle id="fan--hs" cx="67.5" cy="21.2" r="1.7" fill="var(--led-color, #231f20)" stroke="#5f6469" stroke-width="0.2" data-path="fan/hs" data-class="led" data-states="off high-speed" data-z-dome="0.3" data-z-lift="1.5" />
+      <circle id="fan--alarm" cx="76.7" cy="21.2" r="1.7" fill="var(--led-color, #231f20)" stroke="#5f6469" stroke-width="0.2" data-path="fan/alarm" data-class="led" data-states="off alarm" data-z-dome="0.3" data-z-lift="1.5" />
+      <circle id="fan--ok" cx="85.8" cy="21.2" r="1.7" fill="var(--led-color, #231f20)" stroke="#5f6469" stroke-width="0.2" data-path="fan/ok" data-class="led" data-states="off ok" data-z-dome="0.3" data-z-lift="1.5" />
     </g>
   </g>
 </svg>

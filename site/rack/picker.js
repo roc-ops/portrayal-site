@@ -15,8 +15,7 @@ import {fits} from '../../vendor/rack/fit.js';
 import {placement, hostAt} from '../../vendor/rack/managers.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {mountPick} from '../../vendor/rack/export-data.js';
-import {attachPoints} from '../../vendor/rack/fit.js';
-import {isRackSide, isNarrowFace, fitsZeroUSide, fitsSided} from './zero-u.js';
+import {attachPoints, isZeroUPart, isNarrow, fitsZeroU} from '../../vendor/rack/fit.js';
 
 const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
@@ -27,7 +26,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
   const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount));
-  // A RACK-SIDE PART (zero-u.js) stands beside an upright, its bottom level with
+  // A ZERO-U PART (the kit's fit.js fitsZeroU) stands beside an upright, its bottom level with
   // this U, and takes none; a NARROW RAIL PART goes on one rail. Each is judged
   // where it would go - the upright, the rail - as chosen below (state.at, state.side).
   const points = attachPoints(rack.frame.kind);
@@ -35,16 +34,16 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   // `choice` is the upright or the rail; null means the one chosen now.
   const fitFor = (e, choice = null) => {
     const at = choice ?? state.at, side = choice ?? state.side;
-    const key = isRackSide(e) ? `${e.name}|${at}` : isNarrowFace(e) ? `${e.name}|${side}` : e.name;
-    if (!fitCache.has(key)) fitCache.set(key, isRackSide(e) ? fitsZeroUSide(rack, {ref: e.name, at, ru}, chassisOf)
-      : isNarrowFace(e) ? fitsSided(rack, {ref: e.name, face, ru, side}, chassisOf)
+    const key = isZeroUPart(e) ? `${e.name}|${at}` : isNarrow(e) ? `${e.name}|${side}` : e.name;
+    if (!fitCache.has(key)) fitCache.set(key, isZeroUPart(e) ? fitsZeroU(rack, {ref: e.name, at, ru}, chassisOf)
+      : isNarrow(e) ? fits(rack, {ref: e.name, face, ru, side}, chassisOf)
       : fits(rack, {ref: e.name, ...(e.mount === 'rack-face' ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf));
     return fitCache.get(key);
   };
   // In the list, a part with a choice fits when ANY choice does (the line below
   // the list says whether the chosen one does): a bracket whose left rail is
   // taken here still goes on the right one.
-  const choices = e => (isRackSide(e) ? points : isNarrowFace(e) ? ['left', 'right'] : [null]);
+  const choices = e => (isZeroUPart(e) ? points : isNarrow(e) ? ['left', 'right'] : [null]);
   const fitOf = {get: name => { const e = byRefOf(name), all = choices(e).map(c => fitFor(e, c));
     return all.find(f => f.ok) ?? fitFor(e); }};
   // A U a rack device spans on this face is not empty: a rack-face part would attach to it.
@@ -95,8 +94,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
       const f = fitOf.get(e.name);
       const prefix = state.vendor === ALL ? `${e.manufacturer ?? ''} ${e.model}`.trim() : e.model;
       const mp = mountPick(e.mount);
-      const tag = isRackSide(e) ? 'zero-U, stands beside the rack' : mp?.tag;
-      const text = `${prefix} · ${e.mount === 'rack-face' || isRackSide(e) ? 0 : e.ru}U · ${Math.round(e.d ?? 0)} mm${tag ? ` · ${tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
+      const tag = isZeroUPart(e) ? 'zero-U, stands beside the rack' : mp?.tag;
+      const text = `${prefix} · ${e.mount === 'rack-face' || isZeroUPart(e) ? 0 : e.ru}U · ${Math.round(e.d ?? 0)} mm${tag ? ` · ${tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
       return el('option', {value: e.name, text, 'data-fits': f.ok ? 'true' : 'false'});
     }));
     if (!list.some(e => e.name === state.device)) setState({device: list[0]?.name ?? null});
@@ -107,8 +106,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const entry = state.device ? byRef.get(state.device) : null;
     // `hidden` alone loses to the panel's own label display rule: the style says it too.
     const show = (n, on) => { n.hidden = !on; n.style.display = on ? '' : 'none'; };
-    show(atRow, !!entry && isRackSide(entry)); show(betweenRow, !!entry && isRackSide(entry));
-    show(sideRow, !!entry && isNarrowFace(entry));
+    show(atRow, !!entry && isZeroUPart(entry)); show(betweenRow, !!entry && isZeroUPart(entry));
+    show(sideRow, !!entry && isNarrow(entry));
     if (!entry) {
       cfg.replaceChildren();
       cfg.disabled = true;
@@ -122,8 +121,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     cfg.replaceChildren(...configs.map(c => el('option', {value: c, text: c, ...(c === chosen ? {selected: ''} : {})})));
     const f = fitFor(entry);
     fitLine.textContent = !f.ok ? f.reason
-      : isRackSide(entry) ? `Fits here: it stands beside the rack at ${state.at}, its bottom level with U${uLabel(rack.frame, ru)}, and takes no U.`
-      : isNarrowFace(entry) ? `Fits here: it mounts on the ${state.side} rail's face and takes no U of its own.`
+      : isZeroUPart(entry) ? `Fits here: it stands beside the rack at ${state.at}, its bottom level with U${uLabel(rack.frame, ru)}, and takes no U.`
+      : isNarrow(entry) ? `Fits here: it mounts on the ${state.side} rail's face and takes no U of its own.`
       : entry.mount === 'rack-face' && host ? `Fits here: it mounts on the rail face over ${host.label}, and takes no U of its own.`
       : (mountPick(entry.mount)?.fit ?? 'Fits here.');
     fitLine.className = f.ok ? 'rk-muted' : 'rk-error';
@@ -156,8 +155,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     if (!f.ok) { fitLine.textContent = f.reason; fitLine.className = 'rk-error'; return; }
     const chosenCfg = cfg.value || entry.default || entry.configs?.[0] || '';
     setState({cfgByRef: {...state.cfgByRef, [entry.name]: chosenCfg}});
-    onPlace(entry, chosenCfg, isRackSide(entry) ? {at: state.at, between: !!state.between}
-      : isNarrowFace(entry) ? {side: state.side} : {});
+    onPlace(entry, chosenCfg, isZeroUPart(entry) ? {at: state.at, between: !!state.between}
+      : isNarrow(entry) ? {side: state.side} : {});
   }
 
   query.addEventListener('input', () => { setState({query: query.value}); redraw(); });

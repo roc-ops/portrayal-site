@@ -4404,14 +4404,18 @@ def check_rack_zero_u(page, base):
         bad.append(f"2D: the cable's lane runs at x {lane}, not through the duct's centre {centre}")
     fill = page.evaluate("() => window.__rack.fill()")
     zf = [x for x in (fill or {}).get("fill", []) if x["item"] == "z1"]
-    if not zf or zf[0]["count"] != 1 or zf[0]["cables"] != ["c1"]:
-        bad.append(f"fill: the duct does not count the cable through it: {fill}")
+    # ONCE: the kit's fill counts a duct beside the rack (kit 0.6.0, ctx.zeroUAperture),
+    # and the page no longer adds its own count of it, which would list it twice.
+    if len(zf) != 1 or zf[0]["count"] != 1 or zf[0]["cables"] != ["c1"] or not zf[0].get("zeroU"):
+        bad.append(f"fill: the duct is not counted once, by the kit, with the cable through it: {fill}")
     else:
         # Its channel: the drawn guide's 93.4 mm by the part's 165.1 mm depth; one OS2 fiber (3.0 mm) against 40% of it.
-        ap = zf[0].get("aperture") or {}
         want_pct = round(math.pi * 1.5 ** 2 / (0.4 * 93.4 * 165.1) * 100)
-        if abs(ap.get("w", 0) - 93.4) > 0.05 or abs(ap.get("h", 0) - 165.1) > 0.05 or zf[0]["percent"] != want_pct or zf[0]["over"]:
-            bad.append(f"fill: the duct's channel or percent is not 93.4 x 165.1 mm at {want_pct}%: {zf[0]}")
+        if zf[0]["percent"] != want_pct or zf[0]["over"]:
+            bad.append(f"fill: the duct's percent is not one OS2 fiber in 93.4 x 165.1 mm, {want_pct}%: {zf[0]}")
+    zo = [x for x in (fill or {}).get("over", []) if x["item"] == "z1"]
+    if zo:
+        bad.append(f"fill: one cable is over the duct's stated capacity: {zo}")
     # Selected, it has its own panel; an edit there is one undo step.
     page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
     page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
@@ -4478,6 +4482,65 @@ def check_rack_zero_u(page, base):
     lx, rx = (sd.get("left") or {}).get("x"), (sd.get("right") or {}).get("x")
     if lx is None or rx is None or abs(lx + 232.55) > 0.5 or abs(rx - 232.55) > 0.5 or abs(abs(sd["right"]["rz"]) - math.pi) > 1e-3:
         bad.append(f"3D: the brackets are not on their rails (left x {lx}, right x {rx}, turned {sd.get('right')})")
+    return bad
+
+
+@extra("rack.html: a version 2 rack an older page saved opens whole - sides, parts beside the rack and their ids - and is saved back as version 3")
+def check_rack_v2_migrates(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # As the site wrote it before kit 0.7.0: version 2, a bracket on one rail,
+    # a duct beside the rack, and a second duct an older page left without an id.
+    v2 = {"format": "portrayal-rack", "version": 2, "id": "doc-v2-site",
+          "racks": [{"id": "r1", "name": "Saved v2", "frame": {"kind": "two-post", "heightRU": 45},
+                     "items": [{"id": "i1", "ref": "cmv-5u3w", "cfg": "base", "label": "fb-1", "ru": 20, "face": "front",
+                                "turned": False, "swaps": {}, "fields": {}, "side": "right"}],
+                     "zeroU": [{"id": "z1", "ref": "cmv-sfd45u5w", "cfg": "base", "label": "vcm-1", "at": "left", "offsetMm": 0},
+                               {"ref": "cmv-sfd45u5w", "cfg": "base", "label": "vcm-2", "at": "right", "offsetMm": 0, "between": True}],
+                     "cables": []}]}
+    page.evaluate("""async doc => {
+      await window.__rack.flush();
+      await new Promise((res, rej) => { const o = indexedDB.open('portrayal-racks', 1);
+        o.onerror = rej; o.onsuccess = () => { const tx = o.result.transaction('docs', 'readwrite');
+          tx.objectStore('docs').put({...doc, updatedAt: Date.now() + 60000});
+          tx.oncomplete = () => { o.result.close(); res(); }; tx.onerror = rej; }; });
+      localStorage.setItem('portrayal.rack.last', doc.id);
+    }""", v2)
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    try:
+        page.wait_for_function("() => ['z1', 'z2'].every(id => document.querySelector(`#paneFront svg [data-zerou-id=\"${id}\"]`))", timeout=READY_MS)
+    except Exception:
+        pass   # said below, with what was drawn
+    got = page.evaluate("""() => { const d = window.__rack.doc(), r = d.racks[0];
+      return {id: d.id, version: d.version, side: r.items.map(i => i.side ?? null), zeroU: r.zeroU.map(z => [z.id, z.at, !!z.between]),
+              drawn: ['z1', 'z2'].map(id => !!document.querySelector(`#paneFront svg [data-zerou-id="${id}"]`))}; }""")
+    want = {"id": "doc-v2-site", "version": 3, "side": ["right"], "zeroU": [["z1", "left", False], ["z2", "right", True]],
+            "drawn": [True, True]}
+    if got != want:
+        bad.append(f"v2: the saved rack did not open whole as version 3: {got}, expected {want}")
+    # One edit, one save: the stored record is version 3, and keeps what it read.
+    page.evaluate("() => window.__rack.apply({op: 'rename', name: 'Saved v3'})")
+    stored = page.evaluate("""async () => { await window.__rack.flush();
+      return await new Promise((res, rej) => { const o = indexedDB.open('portrayal-racks', 1);
+        o.onerror = rej; o.onsuccess = () => { const q = o.result.transaction('docs').objectStore('docs').get('doc-v2-site');
+          q.onsuccess = () => { o.result.close(); const d = q.result;
+            res(d && {version: d.version, name: d.racks[0].name, side: d.racks[0].items[0]?.side ?? null, zeroU: d.racks[0].zeroU.map(z => z.id)}); };
+          q.onerror = rej; }; }); }""")
+    if stored != {"version": 3, "name": "Saved v3", "side": "right", "zeroU": ["z1", "z2"]}:
+        bad.append(f"v2: after one save the stored rack is not version 3 with its sides and ids: {stored}")
+    # The downloaded file is version 3 too (serialize writes VERSION).
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click("#libMenu summary")
+        page.click("#libItems >> text=Save as .json")
+    data = json.loads(pathlib.Path(dl.value.path()).read_text())
+    if data.get("version") != 3:
+        bad.append(f"v2: the downloaded rack file is version {data.get('version')}, not 3")
+    page.evaluate("""async () => { const L = await import('/site/rack/library.js'); const lib = await L.openLibrary(); await lib.remove('doc-v2-site'); }""")
     return bad
 
 

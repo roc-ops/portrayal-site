@@ -174,11 +174,50 @@ export function cableText(c) {
       (c.slack ? `; slack ${len(c.slack.metres)}` : ''),
     `route: ${c.route?.edited ? 'drawn by hand' : 'its own'}${c.route?.text ? `: ${clip(c.route.text, 300)}` : ''}`,
   ];
+  // A bundled cable (kit 0.7.0): which bundle, and where it joins and leaves it.
+  if (c.bundle) lines.push(`In bundle ${c.bundle.id}${c.bundle.join ? `, joining at ${wayText(c.bundle.join) ?? c.bundle.join}` : ''}` +
+    `${c.bundle.leave ? ` and leaving at ${wayText(c.bundle.leave) ?? c.bundle.leave}` : ''}; inspect ${c.bundle.id} for the bundle.`);
   const ways = Object.entries(c.passes ?? {}).filter(([, ids]) => ids.length).map(([it, ids]) => `{item: ${it}, via: ${cutList(ids, 6)}}`);
   if (c.lanes?.length) ways.push(`{lane, ru} with lane ${cutList(c.lanes.map(l => l.id ?? l), 6)}`);
   if (ways.length) lines.push(`Waypoints it can take: ${ways.join('; ')}`);
   if (c.unchecked || c.loose == null) lines.push('Its ends could not be checked, so whether they land is not known.');
   for (const l of c.loose ?? []) lines.push(`Loose: the ${l.end} end: ${l.reason}`);
   for (const m of c.mismatch ?? []) lines.push(`Mismatch: ${m}`);
+  return fit(lines.join('\n'));
+}
+
+// THE ANSWER FOR A PART BESIDE THE RACK (kit 0.6.0, #926: inspect's
+// `kind: 'zeroU'`): what it is, where it stands, and whether a lane runs
+// through it.
+export function zeroUText(z) {
+  const what = [z.manufacturer, z.model].filter(Boolean).join(' ') || z.ref;
+  return fit([
+    `${z.id}${z.label ? ` ${clip(z.label, 60)}` : ''}: ${what} (${z.ref}), cfg ${z.cfg || 'none'}`,
+    `zero-U, ${z.where ?? `at ${z.at}, bottom U${z.ru}`}${z.u ? `, runs beside ${z.u}U` : ''}${z.between ? ', serving the next rack too' : ''}.`,
+    z.lane ? `The ${z.lane} cable lane runs through it.` : 'No cable lane runs through it.',
+    'Move it with zerou.update, take it away with zerou.remove.',
+  ].join('\n'));
+}
+
+// THE ANSWER FOR A BUNDLE (kit 0.7.0, #921: inspect's `kind: 'bundle'`): its
+// members and where each joins and leaves, its trunk, size, straps and
+// warnings. What needs the routes is said not measured, never read as a pass.
+const wayText = w => (w ? (w.lane ? `${w.lane} U${w.ru}` : `${w.item} ${w.via}`) : null);
+export function bundleText(b) {
+  const size = b.size ? `about ${Math.round(b.size.max_mm)} mm across, against ${Math.round(b.size.limit_mm)} mm` +
+    `${b.size.limitBy?.text ? ` at ${clip(b.size.limitBy.text, 80)}` : ''}${b.size.estimated?.length ? ' (an estimate)' : ''}` : null;
+  const every = b.straps?.every;
+  const lines = [
+    `${b.id} ${clip(b.name, 60)}: number ${b.number}${b.label ? `, label ${clip(b.label, 60)}` : ''}, ${b.members.length} cable${b.members.length === 1 ? '' : 's'}`,
+    ...b.members.map(m => `${m.cable}${m.join ? `: joins at ${wayText(m.join) ?? m.join}` : ''}${m.leave ? `, leaves at ${wayText(m.leave) ?? m.leave}` : ''}` +
+      `${m.a ? `; peels off for its a end at ${wayText(m.a)}` : ''}${m.b ? `; peels off for its b end at ${wayText(m.b)}` : ''}`),
+    `route: ${b.route?.text ? clip(b.route.text, 300) : 'nowhere yet'}`,
+    `straps: ${every ? `every ${every.value} ${every.unit}` : 'none'}${b.straps?.count != null ? `, ${b.straps.count} of them` : ''}`,
+    b.checked ? [size ?? 'size not known', b.length?.metres != null ? `trunk ${len(b.length.metres)}` : null].filter(Boolean).join('; ')
+      : (b.members.length < 2 ? 'Fewer than two cables, so it is not drawn or checked.' : 'Not checked: the routes are not known here.'),
+    ...(b.gone ?? []).map(w => `Gone from its route: ${wayText(w)}.`),
+    ...(b.warnings ?? []).map(w => `Warning: ${w}`),
+    ...(b.notes ?? []).map(n => `Note: ${n}`),
+  ];
   return fit(lines.join('\n'));
 }
