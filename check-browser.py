@@ -5194,7 +5194,10 @@ def check_rack_inspect(page, base):
     # on the rear pane, so this dispatches straight to it.
     pick(page, "rear", 22, "TM-280", "tm-280", dispatch=True)
     # The TM-280 just placed has an inspector with an #iFace of its own: the
-    # one changed has to be the AS7726's, drawn by this click's render.
+    # one changed has to be the AS7726's, drawn by this click's render. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "inspect: TM-280 placed",
+        "() => window.__rack.doc().racks[0].items.length === 2 && !document.getElementById('catPlace')")
     tok = render_token(page)
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
     wait_rendered(page, "inspect: AS7726 selected", tok)
@@ -5374,7 +5377,10 @@ def check_rack_picker(page, base):
     if item["ref"] != "as7726-32x" or item["cfg"] != "dc-b2f":
         bad.append(f"picker: placed {item['ref']!r} with cfg {item['cfg']!r}, expected as7726-32x/dc-b2f")
 
-    # Clicking another empty U keeps the chosen vendor and query.
+    # Clicking another empty U keeps the chosen vendor and query. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "picker: as7726-32x placed",
+        "() => window.__rack.doc().racks[0].items.length === 1 && !document.getElementById('catPlace')")
     tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="30"]')
     wait_rendered(page, "picker: U30 picker opens", tok)
@@ -5892,13 +5898,25 @@ def open_new_rack(page, label):
     # swaps it in. A fresh page boots with an empty rack of its own, so a wait
     # for "no items" is met at once, before the click has done anything; the
     # new rack then lands in the middle of whatever the check does next and
-    # wipes it. What says the switch happened is the document's id changing.
-    # A pane is drawn too, so a render_token taken next is never null.
-    rid = page.evaluate("() => window.__rack.doc().id")
+    # wipes it. What says the switch happened is the document's id changing,
+    # and then the new document's own render: a pane already on screen (or
+    # one painted by a render still in flight from the step before) is the
+    # last document's. So each repaint of the front pane is logged with the
+    # document it was drawn for, and the wait is for a paint of the new one -
+    # after which the panes and the side panel are this rack's, and a
+    # render_token taken next is its pane.
+    rid = page.evaluate("""() => {
+      window.__paints = [];
+      if (!window.__paintLog) {
+        window.__paintLog = new MutationObserver(() => window.__paints.push(window.__rack.doc().id));
+        window.__paintLog.observe(document.getElementById('paneFront'), {childList: true});
+      }
+      return window.__rack.doc().id;
+    }""")
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, f"{label}: New rack opens a new document",
-        "(id) => window.__rack.doc().id !== id && window.__rack.doc().racks[0].items.length === 0"
-        " && !!document.querySelector('svg[data-pane=\"front\"]')", arg=rid)
+    wait_fn(page, f"{label}: New rack opens a new document, drawn",
+        "(id) => { const now = window.__rack.doc().id; return now !== id"
+        " && window.__rack.doc().racks[0].items.length === 0 && window.__paints.includes(now); }", arg=rid)
 
 
 @extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
@@ -6026,6 +6044,7 @@ def check_rack_faces(page, base):
     pick(page, "front", 20, "MX204", "mx204")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
     page.wait_for_selector('svg[data-pane="rear"] rect.rk-u[data-u="20"]', timeout=READY_MS)
+    wait_fn(page, "faces: second MX204 placed, drawn", "() => !document.getElementById('catPlace')")
     x20, y20 = u_center(page, "rear", 20)
     tok = render_token(page)
     page.mouse.click(x20, y20)
