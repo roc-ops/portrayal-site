@@ -1554,7 +1554,8 @@ const boundQueries = () => ({
 // the cable types, diameters and bend radii both (portrayal-site#164).
 // loadSlots memoizes through the dist fetch, so a warm call fetches nothing.
 const agentContext = agentContextFor({
-  loadSlots: refs => loadSlots(DIST, refs), chassisOf, cableFacts,
+  // chassisOf is read through, not captured: the catalog replaces it once loaded.
+  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts,
   routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();

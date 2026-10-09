@@ -34,7 +34,7 @@ import {routed2d, throughRings} from '../../vendor/rack/route-path.js';
 import {reverseMarks} from '../../vendor/rack/route.js';
 import {colorOf, WIDTH, TAG_H, sag2d, LEAD, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
         danglePoints3d, reaches, clearOf} from '../../vendor/rack/cable-geometry.js';
-import {roundedCurve} from './bend3d.js';
+import {clearCurve} from './bend3d.js';
 
 // A ROUTED RUN AS A POLYLINE: routePoints3d's own points - each end's plug,
 // its lead straight out of the face, then the waypoints with each ring passed
@@ -377,8 +377,11 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
         if (!marks) m = null;
         pts = line(THREE, ends[0], ends[1], w, lead, m);
       }
+      // A point strictly inside a solid body: an arc must not cut through one.
+      const inside = q => boxes.some(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05 && q.y > box.min.y + 0.05
+        && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05);
       if (R != null) {
-        bent = roundedCurve(THREE, pts, R);
+        bent = clearCurve(THREE, pts, R, inside);
         // A RING TOO THIN FOR THE TURN. A ring passed along its run has the
         // cable turn at its faces, and when its depth (a few mm of wire) is
         // all the leg a corner has, no bend of the cable's radius fits there.
@@ -391,7 +394,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
             && c.at.distanceTo(w[k]) <= lead + g.depth / 2 + 1e-3));
           if (thin.some(Boolean)) {
             pts = line(THREE, ends[0], ends[1], w, lead, m.map((g, k) => (thin[k] ? null : g)));
-            bent = roundedCurve(THREE, pts, R);
+            bent = clearCurve(THREE, pts, R, inside);
           }
         }
       }

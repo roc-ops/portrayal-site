@@ -12,7 +12,7 @@ import {createRackEditor} from '../../vendor/rack/editor.js';
 import {bendLookup, diameterLookup} from '../../vendor/rack/cable-types.js';
 import {rackTools} from '../../site/rack/agent-tools.js';
 import {agentContextFor} from '../../site/rack/agent-context.js';
-import {fitCorners, roundedCurve, tightText} from '../../site/rack/bend3d.js';
+import {fitCorners, roundedCurve, clearCurve, tightText} from '../../site/rack/bend3d.js';
 import {SIZES, chassisOf, slotsOf, compByRef} from './fixtures/kit-slots.mjs';
 
 // The cable types as the page loads them (cable-types.js loadCableTypes),
@@ -118,4 +118,17 @@ test('a doubling back has no room, and an unknown radius rounds and checks nothi
   const none = roundedCurve(THREE, [V(0, 0, 0), V(0, 0, 100), V(100, 0, 100)], null);
   assert.deepEqual(none.corners.map(x => [x.drawn_mm, x.short_mm]), [[null, 0]]);
   assert.equal(none.getLength(), 200);
+});
+
+test('a corner round a body is drawn tighter, not through it, and flagged', () => {
+  // round the corner of a box at x < 0, z < 0, 2 mm off its faces
+  const box = new THREE.Box3(V(-100, -10, -100), V(-2, 10, -2));
+  const inside = q => box.containsPoint(q) && q.x < -2.05 && q.z < -2.05;
+  const pts = [V(-100, 0, 0), V(0, 0, 0), V(0, 0, -100)];
+  assert.ok(roundedCurve(THREE, pts, 25).getSpacedPoints(400).some(inside));   // the full radius cuts the box
+  const c = clearCurve(THREE, pts, 25, inside);
+  assert.equal(c.getSpacedPoints(400).some(inside), false);
+  assert.ok(c.corners[0].short_mm > 0 && c.corners[0].drawn_mm < 25);
+  // with nothing in the way it is the full radius
+  assert.equal(clearCurve(THREE, pts, 25, () => false).corners[0].short_mm, 0);
 });
