@@ -5137,8 +5137,7 @@ def check_rack_place(page, base):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     # A fresh, empty rack, whatever an earlier check left in this browser.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "place")
 
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
@@ -5183,8 +5182,7 @@ def check_rack_inspect(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "inspect")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     item = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     page.wait_for_selector("#iLabel", timeout=READY_MS)
@@ -5195,7 +5193,11 @@ def check_rack_inspect(page, base):
     # refused. AS7726's own through panel now covers this U's hit rectangle
     # on the rear pane, so this dispatches straight to it.
     pick(page, "rear", 22, "TM-280", "tm-280", dispatch=True)
+    # The TM-280 just placed has an inspector with an #iFace of its own: the
+    # one changed has to be the AS7726's, drawn by this click's render.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    wait_rendered(page, "inspect: AS7726 selected", tok)
     page.select_option("#iFace", "rear")
     err = page.text_content(".rk-side .rk-error") or ""
     if "Taken by" not in err or item()["face"] != "front":
@@ -5307,8 +5309,7 @@ def check_rack_picker(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "picker")
 
     device_refs = lambda: page.eval_on_selector_all("#catDevice option", "os => os.map(o => o.value)")
     fits_false = lambda: page.eval_on_selector_all(
@@ -5316,8 +5317,11 @@ def check_rack_picker(page, base):
 
     # Near the top of the rack only 3U is free, so any 4U-and-up device does
     # not fit here - unticking "Only what fits here" has to reveal some.
+    # Each U click waits for its own render: #catDevice alone is met by the
+    # picker the last click (or Place) left on screen.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="40"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U40 picker opens", tok)
     if fits_false() != 0:
         bad.append("picker: an option has data-fits=false while 'Only what fits here' is ticked")
     page.uncheck("#catFitsOnly")
@@ -5327,8 +5331,9 @@ def check_rack_picker(page, base):
 
     # Lower in the rack, where everything fits: the vendor dropdown narrows
     # the list, and its counts match what the query alone already narrowed to.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U10 picker opens", tok)
 
     # "All vendors"'s own count matches the (unfiltered) device list, and the
     # list box fills the side panel's width rather than shrinking to its
@@ -5370,8 +5375,9 @@ def check_rack_picker(page, base):
         bad.append(f"picker: placed {item['ref']!r} with cfg {item['cfg']!r}, expected as7726-32x/dc-b2f")
 
     # Clicking another empty U keeps the chosen vendor and query.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="30"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U30 picker opens", tok)
     if page.eval_on_selector("#catQuery", "i => i.value") != "AS77":
         bad.append("picker: the search query did not survive clicking another U")
     if page.eval_on_selector("#catVendor", "s => s.value") != "Edgecore":
@@ -5701,8 +5707,7 @@ def check_rack_drag(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     wait_fn(page, "initial ready", "() => window.__rack && window.__rack.ready")
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "new rack: items empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "drag")
 
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "place as7726-32x on front U20",
@@ -5804,8 +5809,7 @@ def check_rack_drag(page, base):
 
     # Two-post: front and rear are the same plane, so dragging one device onto
     # the other's U (even on the other face) is refused.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "two-post setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "two-post setup")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     wait_fn(page, "two-post setup: frame kind switched", "() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -5835,8 +5839,7 @@ def check_rack_drag(page, base):
     # (its catalog panel left open) must not keep painting that U's brass
     # highlight forever - a later drag of an unrelated device has to replace
     # the selection, on both a same-pane and a cross-pane drop.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "stale-selection setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "stale-selection setup")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "stale-selection setup: place as7726-32x on front U20",
              'svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]')
@@ -5890,10 +5893,12 @@ def open_new_rack(page, label):
     # for "no items" is met at once, before the click has done anything; the
     # new rack then lands in the middle of whatever the check does next and
     # wipes it. What says the switch happened is the document's id changing.
+    # A pane is drawn too, so a render_token taken next is never null.
     rid = page.evaluate("() => window.__rack.doc().id")
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
     wait_fn(page, f"{label}: New rack opens a new document",
-        "(id) => window.__rack.doc().id !== id && window.__rack.doc().racks[0].items.length === 0", arg=rid)
+        "(id) => window.__rack.doc().id !== id && window.__rack.doc().racks[0].items.length === 0"
+        " && !!document.querySelector('svg[data-pane=\"front\"]')", arg=rid)
 
 
 @extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
@@ -5972,8 +5977,7 @@ def check_rack_faces(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces")
 
     # MX204 (short of a four-post's rear rail) at front U10, TM-280 at rear
     # U10: a four-post pair sharing a U.
@@ -6023,8 +6027,9 @@ def check_rack_faces(page, base):
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
     page.wait_for_selector('svg[data-pane="rear"] rect.rk-u[data-u="20"]', timeout=READY_MS)
     x20, y20 = u_center(page, "rear", 20)
+    tok = render_token(page)
     page.mouse.click(x20, y20)
-    page.wait_for_selector(".rk-side h3", timeout=READY_MS)
+    wait_rendered(page, "faces: the rear U20 click redraws", tok)
     heading = page.text_content(".rk-side h3") or ""
     if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
         bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
@@ -6036,8 +6041,7 @@ def check_rack_faces(page, base):
     # Two-post: front and rear are the same shared plane (fit.js's reaches()
     # is always true there), so a real click on a front device's rear
     # (through) panel selects the device.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: two-post")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -6053,8 +6057,7 @@ def check_rack_faces(page, base):
     # Four-post, full depth: R740xd (737.5 mm) reaches the far rail (>= 740 -
     # 50), so its through panel IS its real, present rear - a click there
     # selects it too, not the picker.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: full depth")
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
@@ -6090,8 +6093,7 @@ def check_rack_3d(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "3d")
 
     # A new rack defaults to four-post. R740xd on the front at U10, TM-280 on
     # the rear at U20 - a front and a rear mount that do not share a U, so
