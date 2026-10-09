@@ -4451,6 +4451,10 @@ def check_rack_v2_migrates(page, base):
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
+    try:
+        page.wait_for_function("() => ['z1', 'z2'].every(id => document.querySelector(`#paneFront svg [data-zerou-id=\"${id}\"]`))", timeout=READY_MS)
+    except Exception:
+        pass   # said below, with what was drawn
     got = page.evaluate("""() => { const d = window.__rack.doc(), r = d.racks[0];
       return {id: d.id, version: d.version, side: r.items.map(i => i.side ?? null), zeroU: r.zeroU.map(z => [z.id, z.at, !!z.between]),
               drawn: ['z1', 'z2'].map(id => !!document.querySelector(`#paneFront svg [data-zerou-id="${id}"]`))}; }""")
