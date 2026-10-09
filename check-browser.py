@@ -5146,8 +5146,7 @@ def check_rack_place(page, base):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     # A fresh, empty rack, whatever an earlier check left in this browser.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "place")
 
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
@@ -5192,8 +5191,7 @@ def check_rack_inspect(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "inspect")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     item = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     page.wait_for_selector("#iLabel", timeout=READY_MS)
@@ -5204,7 +5202,14 @@ def check_rack_inspect(page, base):
     # refused. AS7726's own through panel now covers this U's hit rectangle
     # on the rear pane, so this dispatches straight to it.
     pick(page, "rear", 22, "TM-280", "tm-280", dispatch=True)
+    # The TM-280 just placed has an inspector with an #iFace of its own: the
+    # one changed has to be the AS7726's, drawn by this click's render. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "inspect: TM-280 placed",
+        "() => window.__rack.doc().racks[0].items.length === 2 && !document.getElementById('catPlace')")
+    tok = render_token(page)
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    wait_rendered(page, "inspect: AS7726 selected", tok)
     page.select_option("#iFace", "rear")
     err = page.text_content(".rk-side .rk-error") or ""
     if "Taken by" not in err or item()["face"] != "front":
@@ -5316,8 +5321,7 @@ def check_rack_picker(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "picker")
 
     device_refs = lambda: page.eval_on_selector_all("#catDevice option", "os => os.map(o => o.value)")
     fits_false = lambda: page.eval_on_selector_all(
@@ -5325,8 +5329,11 @@ def check_rack_picker(page, base):
 
     # Near the top of the rack only 3U is free, so any 4U-and-up device does
     # not fit here - unticking "Only what fits here" has to reveal some.
+    # Each U click waits for its own render: #catDevice alone is met by the
+    # picker the last click (or Place) left on screen.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="40"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U40 picker opens", tok)
     if fits_false() != 0:
         bad.append("picker: an option has data-fits=false while 'Only what fits here' is ticked")
     page.uncheck("#catFitsOnly")
@@ -5336,8 +5343,9 @@ def check_rack_picker(page, base):
 
     # Lower in the rack, where everything fits: the vendor dropdown narrows
     # the list, and its counts match what the query alone already narrowed to.
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U10 picker opens", tok)
 
     # "All vendors"'s own count matches the (unfiltered) device list, and the
     # list box fills the side panel's width rather than shrinking to its
@@ -5378,9 +5386,13 @@ def check_rack_picker(page, base):
     if item["ref"] != "as7726-32x" or item["cfg"] != "dc-b2f":
         bad.append(f"picker: placed {item['ref']!r} with cfg {item['cfg']!r}, expected as7726-32x/dc-b2f")
 
-    # Clicking another empty U keeps the chosen vendor and query.
+    # Clicking another empty U keeps the chosen vendor and query. The
+    # place's own render is waited out first, or it could be the one met.
+    wait_fn(page, "picker: as7726-32x placed",
+        "() => window.__rack.doc().racks[0].items.length === 1 && !document.getElementById('catPlace')")
+    tok = render_token(page)
     page.click('svg[data-pane="front"] rect.rk-u[data-u="30"]')
-    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    wait_rendered(page, "picker: U30 picker opens", tok)
     if page.eval_on_selector("#catQuery", "i => i.value") != "AS77":
         bad.append("picker: the search query did not survive clicking another U")
     if page.eval_on_selector("#catVendor", "s => s.value") != "Edgecore":
@@ -5647,12 +5659,12 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
     try:
-        page.wait_for_function(expr, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout)
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -5710,8 +5722,7 @@ def check_rack_drag(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     wait_fn(page, "initial ready", "() => window.__rack && window.__rack.ready")
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "new rack: items empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "drag")
 
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "place as7726-32x on front U20",
@@ -5813,8 +5824,7 @@ def check_rack_drag(page, base):
 
     # Two-post: front and rear are the same plane, so dragging one device onto
     # the other's U (even on the other face) is refused.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "two-post setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "two-post setup")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     wait_fn(page, "two-post setup: frame kind switched", "() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -5844,8 +5854,7 @@ def check_rack_drag(page, base):
     # (its catalog panel left open) must not keep painting that U's brass
     # highlight forever - a later drag of an unrelated device has to replace
     # the selection, on both a same-pane and a cross-pane drop.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    wait_fn(page, "stale-selection setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "stale-selection setup")
     pick(page, "front", 20, "AS7726", "as7726-32x")
     wait_sel(page, "stale-selection setup: place as7726-32x on front U20",
              'svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]')
@@ -5891,53 +5900,95 @@ def check_rack_drag(page, base):
     return bad
 
 
+def open_new_rack(page, label):
+    # NEW RACK IS ASYNCHRONOUS, AND THE PAGE ALREADY HOLDS AN EMPTY RACK.
+    # startNewRack (rack-page.js) flushes the autosave, lists the library and
+    # stores the new document - three IndexedDB round trips - before setDoc()
+    # swaps it in. A fresh page boots with an empty rack of its own, so a wait
+    # for "no items" is met at once, before the click has done anything; the
+    # new rack then lands in the middle of whatever the check does next and
+    # wipes it. What says the switch happened is the document's id changing,
+    # and then the new document's own render: a pane already on screen (or
+    # one painted by a render still in flight from the step before) is the
+    # last document's. So each repaint of the front pane is logged with the
+    # document it was drawn for, and the wait is for a paint of the new one -
+    # after which the panes and the side panel are this rack's, and a
+    # render_token taken next is its pane.
+    rid = page.evaluate("""() => {
+      window.__paints = [];
+      if (!window.__paintLog) {
+        window.__paintLog = new MutationObserver(() => window.__paints.push(window.__rack.doc().id));
+        window.__paintLog.observe(document.getElementById('paneFront'), {childList: true});
+      }
+      return window.__rack.doc().id;
+    }""")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    wait_fn(page, f"{label}: New rack opens a new document, drawn",
+        "(id) => { const now = window.__rack.doc().id; return now !== id"
+        " && window.__rack.doc().racks[0].items.length === 0 && window.__paints.includes(now); }", arg=rid)
+
+
 @extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
 def check_rack_shrink(page, base):
+    # Every step waits on the page's own state, never on time: the document
+    # for the edit, and the render that follows it (render() is async and
+    # paints the panes and the side panel together, last) for anything read
+    # off or clicked in the DOM. Under load the model moves well before the
+    # DOM does, and a check that reads the panel in between reads the last one.
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "shrink")
 
-    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack.
-    pick(page, "front", 5, "MX204", "mx204")
-    pick(page, "front", 20, "AS7726", "as7726-32x")
-    pick(page, "front", 30, "R740", "r740xd")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack. Each place
+    # is waited for until its render has replaced the picker: a picker still
+    # on screen when the next U is clicked is the last U's, and its Place
+    # button places there (and is refused, as that U is now taken).
+    for n, (u, query, ref) in enumerate([(5, "MX204", "mx204"), (20, "AS7726", "as7726-32x"), (30, "R740", "r740xd")], 1):
+        pick(page, "front", u, query, ref)
+        wait_fn(page, f"shrink: {ref} placed at U{u}",
+            "(n) => window.__rack.doc().racks[0].items.length === n && !document.getElementById('catPlace')", arg=n)
     sorted_items = lambda: sorted(page.evaluate("() => window.__rack.doc().racks[0].items"), key=lambda i: i["ru"])
 
+    def set_height(ru):
+        # The form is the one the last render drew, and the edit's own render
+        # draws the notice: wait for that render, not just the model.
+        tok = render_token(page)
+        page.fill("#fHeight", str(ru))
+        page.dispatch_event("#fHeight", "change")
+        wait_fn(page, f"shrink: the frame becomes {ru}U",
+            "(ru) => window.__rack.doc().racks[0].frame.heightRU === ru", arg=ru)
+        wait_rendered(page, f"shrink: the frame becomes {ru}U: DOM settle", tok)
+        notice = page.query_selector(".rk-side .rk-notice")
+        return notice.text_content() if notice else None
+
+    tok = render_token(page)
     page.click("#frameBtn")
-    page.fill("#fHeight", "12")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 12")
+    wait_rendered(page, "shrink: the frame form opens", tok)
+    note = set_height(12)
     got = [(i["ref"], i["ru"]) for i in sorted_items()]
     want = [("mx204", 1), ("as7726-32x", 2), ("r740xd", 3)]
     if got != want:
         bad.append(f"shrink: after compacting to 12U items are {got}, expected {want}")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note = (page.text_content(".rk-side .rk-notice") or "").lower()
-    if "moved" not in note:
+    if note is None or "moved" not in note.lower():
         bad.append(f"shrink: the notice does not mention moving devices ({note!r})")
 
     # Shrinking further to 3U (from the 12U-compacted state, top at U4) means
     # 1+1+2 = 4U of devices no longer fit in 3U: the bottom one (MX204) goes.
-    page.fill("#fHeight", "3")
-    page.dispatch_event("#fHeight", "change")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 3")
+    note2 = set_height(3)
     refs = [i["ref"] for i in sorted_items()]
     if refs != ["as7726-32x", "r740xd"]:
         bad.append(f"shrink: shrinking to 3U left {refs}, expected the bottom device (mx204) removed")
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
-    note2 = page.text_content(".rk-side .rk-notice") or ""
-    if "MX204" not in note2:
+    if note2 is None or "MX204" not in note2:
         bad.append(f"shrink: the removal notice does not name MX204 ({note2!r})")
 
     # Undo restores the rack from just before this shrink - the 12U-compacted
-    # state, frame included - exactly.
+    # state, frame included - exactly. The Undo clicked is the 3U render's.
     page.click("#undoShrink")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    wait_fn(page, "shrink: Undo puts the rack back",
+        "() => window.__rack.doc().racks[0].items.length === 3")
     got2 = [(i["ref"], i["ru"]) for i in sorted_items()]
     if got2 != want:
         bad.append(f"shrink: Undo did not restore the pre-shrink positions, got {got2}")
@@ -5953,8 +6004,7 @@ def check_rack_faces(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces")
 
     # MX204 (short of a four-post's rear rail) at front U10, TM-280 at rear
     # U10: a four-post pair sharing a U.
@@ -6003,9 +6053,11 @@ def check_rack_faces(page, base):
     pick(page, "front", 20, "MX204", "mx204")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
     page.wait_for_selector('svg[data-pane="rear"] rect.rk-u[data-u="20"]', timeout=READY_MS)
+    wait_fn(page, "faces: second MX204 placed, drawn", "() => !document.getElementById('catPlace')")
     x20, y20 = u_center(page, "rear", 20)
+    tok = render_token(page)
     page.mouse.click(x20, y20)
-    page.wait_for_selector(".rk-side h3", timeout=READY_MS)
+    wait_rendered(page, "faces: the rear U20 click redraws", tok)
     heading = page.text_content(".rk-side h3") or ""
     if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
         bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
@@ -6017,8 +6069,7 @@ def check_rack_faces(page, base):
     # Two-post: front and rear are the same shared plane (fit.js's reaches()
     # is always true there), so a real click on a front device's rear
     # (through) panel selects the device.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: two-post")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
     page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
@@ -6034,8 +6085,7 @@ def check_rack_faces(page, base):
     # Four-post, full depth: R740xd (737.5 mm) reaches the far rail (>= 740 -
     # 50), so its through panel IS its real, present rear - a click there
     # selects it too, not the picker.
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "faces: full depth")
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
@@ -6071,8 +6121,7 @@ def check_rack_3d(page, base):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    open_new_rack(page, "3d")
 
     # A new rack defaults to four-post. R740xd on the front at U10, TM-280 on
     # the rear at U20 - a front and a rear mount that do not share a U, so
