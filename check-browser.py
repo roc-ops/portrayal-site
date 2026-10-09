@@ -2454,7 +2454,18 @@ KIT_EXPECT = {
     # two cables bundled, checked against the cable types: os2 3.0 mm and
     # cat6a 7.5 mm make sqrt((9 + 56.25) / 0.8) = 9.0 mm, under 63.5 mm
     "09-bundles": lambda r: r.get("members") == 2 and r.get("checked") is True and r.get("size") == 9
-                  and r.get("limit") == 63.5 and r.get("warnings") == [] and r.get("straps", 0) >= 1,
+                  and r.get("limit") == 63.5 and r.get("warnings") == [] and r.get("straps", 0) >= 1
+                  # the bend (kit 0.8.0): measured with the cable types' radii,
+                  # and the BOM's strap line buys the straps placed
+                  and (r.get("bend") or 0) > 0 and r.get("bendBy") and r.get("strapQty") == r.get("straps"),
+    # the generic ears (kit 0.8.0 ears2d): silver flanges each side of the
+    # 436 mm S9600-72XC out to the 482.6 mm rack face, none for a blank
+    "10-ears": lambda r: r.get("flange") == 23.3 and r.get("color") == "#c8cacc" and r.get("shapes", 0) >= 4
+               and r.get("blank") is None and r.get("viewBox", "").split()[2:3] == ["482.6"],
+    # an outlet's lamp follows it (kit 0.10.0 states): 42 switched outlets,
+    # A1 on green and A3 off red, off set rather than cleared
+    "11-outlets": lambda r: r.get("outlets") == 42 and r.get("applied") == 4 and r.get("offIsSet") is True
+                  and r.get("on") and r.get("off") and r.get("on") != r.get("off"),
 }
 
 @extra("kit.html: every recipe runs and returns what its section promises")
@@ -3317,6 +3328,167 @@ def check_explorer_latch_colour_live(page, base):
         bad.append(f"explorer: latch still {sorted(set(fills))} after the picker's input")
     if "latch-color~%23c22f2f" not in page.url:
         bad.append(f"explorer: the link does not carry the latch colour: {page.url}")
+    return bad
+
+
+# THE GENERIC RACK EAR ON A DEVICE PAGE (Portrayal #909, kit 0.8.0 ears2d,
+# silver since 0.9.0). Off by default in the Explorer and in Annotate, with a
+# "Rack ears" toggle shown only for a device that gets one; on, it is the
+# kit's overlay - two silver ears, the viewBox grown round them - and off
+# again it is gone with the face's own box back. A blanking panel's ears are
+# built into its face: no toggle, no overlay, and a face the rack's width.
+EARS_STATE = """() => {
+  const s = document.querySelector('#shell svg');
+  const bar = document.querySelector('#earsbar'), btn = bar?.querySelector('button');
+  const ov = s?.querySelector('[data-overlay="ears"]');
+  const vb = (s?.getAttribute('viewBox') || '').trim().split(/[\\s,]+/).map(Number);
+  return {bar: !!bar, shown: !!bar && !bar.hidden && getComputedStyle(bar).display !== 'none',
+          pressed: btn?.getAttribute('aria-pressed') ?? null,
+          ears: ov ? ov.querySelectorAll('[data-generic="ear"]').length : 0,
+          fills: ov ? [...new Set([...ov.querySelectorAll('rect')].map(r => r.getAttribute('fill')))] : [],
+          picked: ov ? getComputedStyle(ov).pointerEvents : null,
+          vbw: vb[2] ?? null, faceW: s ? parseFloat(s.getAttribute('data-face-w')) || null : null};
+}"""
+
+
+def ears_page_checks(page, base, page_name):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/{page_name}?device=s9600-72xc&view=front", wait_until="load")
+    page.wait_for_selector("#shell svg [data-path]", timeout=READY_MS)
+    try:
+        page.wait_for_function("() => { const b = document.querySelector('#earsbar'); return b && !b.hidden; }",
+                               timeout=READY_MS)
+    except Exception:
+        pass
+    st = page.evaluate(EARS_STATE)
+    if not st["shown"]:
+        return bad + [f"{page_name}: no visible Rack ears toggle on the S9600-72XC (436 mm, between its ear folds): {st}"]
+    if st["pressed"] != "false" or st["ears"]:
+        return bad + [f"{page_name}: the generic ears are not off by default: {st}"]
+    base_w = st["vbw"]
+    page.click("#earsbar button")
+    page.wait_for_function("() => document.querySelector('#shell svg [data-overlay=\"ears\"]')", timeout=READY_MS)
+    on = page.evaluate(EARS_STATE)
+    if on["pressed"] != "true" or on["ears"] != 2:
+        bad.append(f"{page_name}: the toggle did not draw two ears: {on}")
+    if on["fills"] != ["#c8cacc"]:
+        bad.append(f"{page_name}: the generic ears are {on['fills']}, not silver #c8cacc")
+    if on["picked"] != "none":
+        bad.append(f"{page_name}: the ear overlay takes pointer events ({on['picked']})")
+    if not (on["vbw"] and base_w and on["vbw"] > base_w + 40 and on["faceW"] == base_w):
+        bad.append(f"{page_name}: the viewBox did not grow round the ears and name the face "
+                   f"({base_w} -> {on['vbw']}, data-face-w {on['faceW']})")
+    page.click("#earsbar button")
+    page.wait_for_function("() => !document.querySelector('#shell svg [data-overlay=\"ears\"]')", timeout=READY_MS)
+    off = page.evaluate(EARS_STATE)
+    if off["pressed"] != "false" or off["vbw"] != base_w:
+        bad.append(f"{page_name}: toggled off, the ears or their box stayed: {off} (face {base_w})")
+    # A blank's ears are part of its face: no toggle, nothing drawn over it,
+    # and its face is the rack's full 482.6 mm.
+    page.goto(f"{base}/{page_name}?device=fhu-bps-2u&view=front", wait_until="load")
+    page.wait_for_selector("#shell svg [data-path]", timeout=READY_MS)
+    page.wait_for_timeout(500)                 # the ears' sync runs after the load
+    bl = page.evaluate(EARS_STATE)
+    if bl["shown"] or bl["ears"]:
+        bad.append(f"{page_name}: the FHU-BPS-2U blank, whose ears are built in, got a generic-ear toggle or overlay: {bl}")
+    if not (bl["vbw"] and bl["vbw"] >= 482):
+        bad.append(f"{page_name}: the FHU-BPS-2U face is {bl['vbw']} mm wide, not the 482.6 that holds its built-in ears")
+    return bad
+
+
+@extra("explorer.html: rack ears are off by default, a visible toggle draws silver generic ears and takes them off, and a blank's built-in ears need none (Portrayal #909)")
+def check_explorer_ears_default(page, base):
+    bad = ears_page_checks(page, base, "explorer.html")
+    if bad or webgl_trouble(page):
+        return bad
+    # ...and the 3D scene follows the toggle: the viewer is made with the
+    # reader's choice and told of every change after.
+    page.goto(f"{base}/explorer.html?device=s9600-72xc&view=front&debug=1", wait_until="load")
+    page.wait_for_function("() => { const b = document.querySelector('#earsbar'); return b && !b.hidden; }", timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer && document.querySelector('#stage-3d canvas')", timeout=READY_3D_MS)
+    page.wait_for_function("() => window.__viewer.info && window.__viewer.info.device === 's9600-72xc'", timeout=READY_3D_MS)
+    if page.evaluate("() => window.__viewer.ears()") is not None:
+        bad.append("explorer 3D: the scene has generic ears before the toggle was pressed")
+    page.click("#earsbar button")
+    try:
+        page.wait_for_function("() => { const p = window.__viewer.ears(); return p && p.color === '#c8cacc'; }", timeout=READY_3D_MS)
+    except Exception:
+        bad.append(f"explorer 3D: the toggle did not give the scene silver ears: {page.evaluate('() => window.__viewer.ears()')}")
+    return bad
+
+
+@extra("annotate.html: rack ears are off by default, a visible toggle draws silver generic ears and takes them off, and a blank's built-in ears need none (Portrayal #909)")
+def check_annotate_ears_default(page, base):
+    return ears_page_checks(page, base, "annotate.html")
+
+
+# AN OUTLET'S STATE IS SHOWN ON ITS LAMP (Portrayal #934, kit 0.10.0). The
+# EVMA8365X's 42 outlets are switched, and each outlet's lamp (led-<n>) is a
+# part of its own bound to it with `for:`. A chip on the outlet's row writes
+# the state on the outlet and its lamp (states.js boundLamps), `off` is a lit
+# state there (offIsSet: the G4 lamp is red), and the 3D scene is handed the
+# lamp's state too.
+OUTLET_STATE = """() => {
+  const s = document.querySelector('#shell svg');
+  const cls = p => { const e = s.querySelector(`[data-path="${p}"]`); return e ? [...e.classList].filter(c => c.startsWith('state-')) : null; };
+  const lamp = s.querySelector('[data-path="led-a1"]');
+  const fill = lamp ? getComputedStyle(lamp).getPropertyValue('--led-color').trim() : null;
+  return {outlet: cls('outlet-a1'), lamp: cls('led-a1'), other: cls('led-a2'), color: fill};
+}"""
+
+
+@extra("explorer.html: an outlet chip on the EVMA8365X lights the outlet's own lamp, on and off, in 2D and 3D (Portrayal #934)")
+def check_explorer_outlet_lamp(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=evma8365x&view=front&debug=1", wait_until="load")
+    page.wait_for_selector('#shell svg [data-path="outlet-a1"]', timeout=READY_MS)
+    row = page.locator('.node', has=page.locator('.nm:text-matches("^outlet-a1( |$)")')).first
+    try:
+        row.wait_for(timeout=READY_MS)
+    except Exception:
+        names = page.eval_on_selector_all(".nm", "ns => ns.slice(0, 40).map(n => n.textContent)")
+        return bad + [f"explorer: no tree row for outlet-a1 (rows {names})"]
+    chips = row.locator(".chip")
+    if sorted(chips.all_text_contents()) != ["off", "on"]:
+        return bad + [f"explorer: outlet-a1's chips are {chips.all_text_contents()}, not on and off"]
+    row.locator('.chip:text-is("on")').click()
+    st = page.evaluate(OUTLET_STATE)
+    if st["outlet"] != ["state-on"] or st["lamp"] != ["state-on"] or st["other"]:
+        bad.append(f"explorer: 'on' on outlet-a1 did not light led-a1 alone: {st}")
+    on_color = st["color"]
+    row.locator('.chip:text-is("off")').click()
+    st = page.evaluate(OUTLET_STATE)
+    # off is SET on a switched outlet, not cleared: its lamp shows the G4's red
+    if st["outlet"] != ["state-off"] or st["lamp"] != ["state-off"]:
+        bad.append(f"explorer: 'off' on outlet-a1 was not set on the outlet and led-a1: {st}")
+    if not st["color"] or st["color"] == on_color:
+        bad.append(f"explorer: led-a1 shows {st['color']!r} off and {on_color!r} on - the lamp did not change")
+    on_chip = row.locator('.chip:text-is("on")')
+    off_chip = row.locator('.chip:text-is("off")')
+    if "on" in (on_chip.get_attribute("class") or "").split() or "on" not in (off_chip.get_attribute("class") or "").split():
+        bad.append("explorer: outlet-a1's chips do not show off as the one set")
+    # and off again clears it
+    off_chip.click()
+    st = page.evaluate(OUTLET_STATE)
+    if st["outlet"] or st["lamp"]:
+        bad.append(f"explorer: pressing 'off' again did not clear outlet-a1 and led-a1: {st}")
+    if webgl_trouble(page):
+        print("[check_explorer_outlet_lamp] no WebGL here - checked the 2D half only")
+        return bad
+    # 3D: the scene is handed the lamp's state with the outlet's.
+    row.locator('.chip:text-is("off")').click()
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer && document.querySelector('#stage-3d canvas')", timeout=READY_3D_MS)
+    try:
+        page.wait_for_function("() => { const s = window.__viewer.states();"
+                               " return s['outlet-a1'] === 'state-off' && s['led-a1'] === 'state-off'; }",
+                               timeout=READY_3D_MS)
+    except Exception:
+        bad.append(f"explorer 3D: the scene's states are {page.evaluate('() => window.__viewer.states()')}, "
+                   "not outlet-a1 and led-a1 off")
     return bad
 
 
@@ -4467,6 +4639,114 @@ def check_rack_bundle_2d_rear(page, base):
         bad.append(f"2D: {geo['straps']} straps on the rear pane, the kit counts {f['count']}")
     if f["diameter"] <= 6 or abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the rear band is {geo['width']} wide, not the bundle's {f['diameter']} mm (above the 6 mm floor)")
+    return bad
+
+
+# THE RACK BUILDER'S EARS ARE ON (Portrayal #909): a device modelled between
+# its ear folds is drawn with a silver L-bracket over each rail, in 2D and 3D,
+# and a blanking panel - whose ears are its own face, 482.6 mm wide - gets no
+# second pair over the ones it draws.
+@extra("rack.html: rack ears are on - silver generic ears on a switch, none over a blank's built-in ears, in 2D and 3D (Portrayal #909)")
+def check_rack_ears_default(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    rack = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Ears'});
+      ({rack: r} = M.withItem(r, {ref: 's9600-72xc', cfg: cat['s9600-72xc'].default, ru: 20, face: 'front', label: 'agg-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhu-bps-2u', cfg: cat['fhu-bps-2u'].default, ru: 24, face: 'front', label: 'blank-1'}));
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("() => document.querySelector('#paneFront [data-item-id=\"i2\"][data-panel=\"mounted\"]')"
+                           " && document.querySelector('#paneFront [data-item-id=\"i1\"][data-panel=\"mounted\"]')", timeout=READY_MS)
+    page.wait_for_timeout(300)
+    got = page.evaluate("""() => {
+      const p = document.querySelector('#paneFront');
+      const e1 = p.querySelector('[data-ears-for="i1"]'), e2 = p.querySelector('[data-ears-for="i2"]');
+      return {switch: !!e1, color: e1?.getAttribute('data-ear-color') ?? null,
+              fills: e1 ? [...new Set([...e1.querySelectorAll('rect')].map(r => r.getAttribute('fill')))] : [],
+              blank: !!e2};
+    }""")
+    if not got["switch"]:
+        bad.append(f"2D: the S9600-72XC has no rack ears in the Rack Builder: {got}")
+    elif got["fills"] != ["#c8cacc"]:
+        bad.append(f"2D: the S9600-72XC's ears are {got['fills']}, not silver #c8cacc")
+    if got["blank"]:
+        bad.append("2D: the FHU-BPS-2U blank, whose ears are built into its face, got a second pair drawn over them")
+    if webgl_trouble(page):
+        print("[check_rack_ears_default] no WebGL here - checked the 2D half only")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    g3 = page.evaluate("""async () => {
+      const s = window.__rack.scene(), d = Date.now() + 60000;
+      let w = s.three.scene;
+      while (!(w.getObjectByName('device-i1') && w.getObjectByName('device-i2')) && Date.now() < d) {
+        await new Promise(r => setTimeout(r, 200)); w = s.three.scene;
+      }
+      const e1 = w.getObjectByName('ears-i1'), e2 = w.getObjectByName('ears-i2');
+      const mats = [];
+      e1?.traverse(o => { if (o.isMesh && o.geometry?.type === 'BoxGeometry') mats.push(o.material.color.getHexString()); });
+      return {devices: !!(w.getObjectByName('device-i1') && w.getObjectByName('device-i2')),
+              switch: e1 ? e1.children.length : 0, colors: [...new Set(mats)], blank: !!e2 && e2.children.length > 0};
+    }""")
+    if not g3["devices"]:
+        return bad + [f"3D: the two devices never stood up: {g3}"]
+    if not g3["switch"] or g3["colors"] != ["c8cacc"]:
+        bad.append(f"3D: the S9600-72XC's ears are missing or not silver: {g3}")
+    if g3["blank"]:
+        bad.append("3D: the FHU-BPS-2U blank got generic ears over its built-in ones")
+    return bad
+
+
+# THE BUNDLES IN THE EXPORTS (Portrayal #923, kit 0.9.0): the cable schedule
+# names each member's bundle in its `bundle` column and carries the kit's line
+# for the bundle in its notes, measured with the page's routes, cable types and
+# bend radii (so a bend radius, never "bend not checked", for Cat6A); the BOM
+# buys the straps the page draws, in one hook-and-loop line.
+@extra("rack.html: a bundle is in the exports - the schedule's bundle column and the kit's bundle note, and the BOM's strap line (Portrayal #923)")
+def check_rack_bundle_exports(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_bundle_rack(page, base, "front")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
+    f = page.evaluate("() => window.__rack.bundles()[0]")
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
+      const r = window.__rack.doc().racks[0];
+      const s = await X.cableScheduleCsv(r, of), b = await X.bomCsv(r, of);
+      return {sched: s.data, notes: s.notes, bom: b.data};
+    }""")
+    lines = got["sched"].split("\r\n")
+    cols = lines[0].split(",")
+    if "bundle" not in cols or cols.index("bundle") != cols.index("route") + 1:
+        bad.append(f"schedule: no bundle column straight after route: {cols}")
+    else:
+        k = cols.index("bundle")
+        named = [l.split(",")[k] for l in lines[1:4]]
+        if named != ["uplinks"] * 3:
+            bad.append(f"schedule: the members' bundle column reads {named}, not uplinks")
+    head = next((n for n in got["notes"] if n.startswith("uplinks (b1): 3 cables")), None)
+    if not head:
+        bad.append(f"schedule: no kit note for the bundle: {got['notes']}")
+    else:
+        if f"{f['count']} straps every 12 in" not in head:
+            bad.append(f"schedule: the bundle note does not count the {f['count']} straps the page draws: {head!r}")
+        if "bend radius" not in head or "bend not checked" in head:
+            bad.append(f"schedule: the bundle note has no measured bend radius: {head!r}")
+    strap = [l for l in got["bom"].split("\r\n") if "Hook-and-loop cable strap" in l]
+    if len(strap) != 1 or not strap[0].split(",")[1:2] == [str(f["count"])]:
+        bad.append(f"BOM: the strap line is {strap}, not one line of {f['count']}")
     return bad
 
 
@@ -10507,18 +10787,18 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule: named {dl.suggested_filename!r}")
     cols, rows, text = read_csv(dl)
     if cols != ["id", "cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
-                "length", "length_unit", "route", "length_source", "status", "notes"]:
+                "length", "length_unit", "route", "bundle", "length_source", "status", "notes"]:
         bad.append(f"cable schedule: columns {cols}")
     want = [
         {"id": "c1", "cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
-         "length_unit": "m", "route": "left-front U14-U2", "length_source": "entered", "status": "connected", "notes": ""},
+         "length_unit": "m", "route": "left-front U14-U2", "bundle": "", "length_source": "entered", "status": "connected", "notes": ""},
         {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
          "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "1.5", "length_unit": "m",
-         "route": "right-front U14 > right-rear U14", "length_source": "routed", "status": "connected", "notes": ""},
+         "route": "right-front U14 > right-rear U14", "bundle": "", "length_source": "routed", "status": "connected", "notes": ""},
         {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
          "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2", "length_unit": "m",
-         "route": "left-front U14-U20 > left-rear U20", "length_source": "routed", "status": "loose end",
+         "route": "left-front U14-U20 > left-rear U20", "bundle": "", "length_source": "routed", "status": "loose end",
          "notes": "End A is not connected: port-2 holds no optic. "
                   "OS2 single-mode fiber does not suit end B, which is copper."}]
     if rows != want:
@@ -10549,7 +10829,7 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule: the BOM does not say a length was kept as written: {odd['bom'].partition('Notes')[2]!r}")
     odd = odd["sched"]
     line = odd.split("\r\n")[1]
-    if not line.startswith("c1,'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,left-front U14-U2,,connected,"):
+    if not line.startswith("c1,'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,left-front U14-U2,,,connected,"):
         bad.append(f"cable schedule: a formula-like label or a length as written is wrong: {line!r}")
     if 'Length as written in the file: {""value"":""about 3"",""unit"":""m""}.' not in line:
         bad.append(f"cable schedule: the length as written is not quoted in the notes: {line!r}")

@@ -21,6 +21,7 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
+import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
@@ -384,7 +385,14 @@ export function createRackScene(container, opts = {}) {
   // ── rack ───────────────────────────────────────────────────────────────
   const railMat = new THREE.MeshLambertMaterial({color: 0xB9BFC6});
   const holeMat = new THREE.MeshBasicMaterial({color: 0x15181b});
-  const earMat = new THREE.MeshLambertMaterial({color: 0xA8AEB5});
+  // THE GENERIC EAR IS SILVER (Portrayal #909, relief.js EAR.SILVER #c8cacc)
+  // unless the device states `chassis.ears.color`: one material per colour.
+  const earMats = new Map();
+  const earMatOf = color => {
+    const c = color || '#c8cacc';
+    if (!earMats.has(c)) earMats.set(c, new THREE.MeshLambertMaterial({color: new THREE.Color(c)}));
+    return earMats.get(c);
+  };
   const screwMat = new THREE.MeshLambertMaterial({color: 0x8d949c});
 
   const rack = new THREE.Group();
@@ -448,7 +456,7 @@ export function createRackScene(container, opts = {}) {
   // running toward the front, and its screw heads facing the back - the
   // mirror image of a front ear, not a copy of it parented somewhere else.
   // Defaulted to the front pair, so nothing that already calls this changes.
-  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1) {
+  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null)) {
     const g = new THREE.Group();
     const yBase = (ru - 1) * RU;
     const h = ruHeight * RU - 4.5;
@@ -690,9 +698,18 @@ export function createRackScene(container, opts = {}) {
     // recess, which is what put a pair of white slabs out beside each unit.
     // A rear entry's ears go on the rail it is actually mounted to.
     // (none for a device the caller marks as not rack-mount: `entry.mount`)
-    const noEars = !!entry.mount && entry.mount !== 'rack';
+    //
+    // AND NONE WHERE THE KIT'S PLAN GIVES NONE (Portrayal #909, ears2d.js
+    // earPlan): a front as wide as the rack face has its ears built in - a
+    // blanking panel, a shelf, a full-width patch panel - and its own face
+    // draws them; a sheet body, or ears stated `behind`, get none either.
+    // Judged on the front's declared width, as the 2D elevation judges it.
+    const frontW = await svgSource(f('front'), relief).then(frontWidthOfText).catch(() => null);
+    const plan = (!!entry.mount && entry.mount !== 'rack') ? null
+      : earPlan(entry.index || {chassis: entry.chassis}, frontW);
+    const noEars = !plan;
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
+      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, earMatOf(plan.color));
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
 

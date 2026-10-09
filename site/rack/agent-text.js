@@ -202,6 +202,9 @@ export function zeroUText(z) {
 // THE ANSWER FOR A BUNDLE (kit 0.7.0, #921: inspect's `kind: 'bundle'`): its
 // members and where each joins and leaves, its trunk, size, straps and
 // warnings. What needs the routes is said not measured, never read as a pass.
+// Its bend (kit 0.8.0, #922: `bend` was null before) is the radius it needs
+// and the cable that sets it; a member with no radius is named unchecked,
+// never passed, and each too-tight place is in the warnings already.
 const wayText = w => (w ? (w.lane ? `${w.lane} U${w.ru}` : `${w.item} ${w.via}`) : null);
 export function bundleText(b) {
   const size = b.size ? `about ${Math.round(b.size.max_mm)} mm across, against ${Math.round(b.size.limit_mm)} mm` +
@@ -215,9 +218,12 @@ export function bundleText(b) {
     `straps: ${every ? `every ${every.value} ${every.unit}` : 'none'}${b.straps?.count != null ? `, ${b.straps.count} of them` : ''}`,
     b.checked ? [size ?? 'size not known', b.length?.metres != null ? `trunk ${len(b.length.metres)}` : null].filter(Boolean).join('; ')
       : (b.members.length < 2 ? 'Fewer than two cables, so it is not drawn or checked.' : 'Not checked: the routes are not known here.'),
+    b.bend ? `bend: ${b.bend.radius_mm > 0 ? `radius ${Math.round(b.bend.radius_mm)} mm${b.bend.by ? `, set by ${b.bend.by}` : ''}` : 'no radius known'}` +
+      `${b.bend.unchecked?.length ? `; not checked for ${b.bend.unchecked.join(', ')}` : ''}` +
+      `${b.bend.violations?.length ? `; ${b.bend.violations.length} place${b.bend.violations.length === 1 ? '' : 's'} too tight` : ''}` : null,
     ...(b.gone ?? []).map(w => `Gone from its route: ${wayText(w)}.`),
     ...(b.warnings ?? []).map(w => `Warning: ${w}`),
     ...(b.notes ?? []).map(n => `Note: ${n}`),
   ];
-  return fit(lines.join('\n'));
+  return fit(lines.filter(x => x != null).join('\n'));
 }

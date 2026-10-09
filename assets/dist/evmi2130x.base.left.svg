@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="53mm" height="1730mm" viewBox="0 0 53 1730" data-device="evmi2130x" data-view="left" data-length-mm="1730" data-weight-kg="8.3" data-construction="aluminium chassis, black" data-input-plug="NEMA L21-30P on a fixed 10 ft cord, 10 AWG 5-conductor" data-input-voltage="120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V)" data-input-current-a="24" data-plug-rating-a="30" data-capacity-kw="8.6" data-capacity-scope="the load the PDU can hand on (24 A at 208 V three phase), from the SKU title and the brochure table; it is not what the PDU draws itself, which no document held states" data-output-voltage="173-240 V, line to line" data-output-rating="10 A per C13, 16 A per C39, 16 A per section, 24 A per phase" data-breakers="three 20 A two-pole, UL listed" data-frequency="50/60 Hz" data-operating-temp="0 to 60 C (32 to 140 F)" data-metering="current, power and energy for the input; current for each branch" data-network-module="G4 eNMC, dual gigabit Ethernet with network cascading" data-emc="FCC part 15 class A, CAN ICES-003 class A" data-safety="UL 62368-1; cTUVus on the drawing" data-cybersecurity="UL 2900-1" data-regulatory-model="EMIF-PDXJ-E27K" data-eol="none-announced" data-airflow="passive">
+<svg xmlns="http://www.w3.org/2000/svg" width="53mm" height="1730mm" viewBox="0 0 53 1730" data-device="evmi2130x" data-view="left" data-length-mm="1730" data-weight-kg="8.3" data-construction="aluminium chassis, black" data-input-ac="120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V), 24 A, 50/60 Hz" data-input-plug="nema-l21-30p" data-input-cord="fixed" data-input-phase="three" data-input-wiring="wye" data-input-voltage-v="208" data-input-current-a="24" data-plug-rating-a="30" data-capacity-kw="8.6" data-capacity-scope="the load the PDU can hand on (24 A at 208 V three phase), from the SKU title and the brochure table; it is not what the PDU draws itself, which no document held states" data-output-voltage="173-240 V, line to line" data-output-rating="10 A per C13, 16 A per C39, 16 A per section, 24 A per phase" data-breakers="three 20 A two-pole, UL listed" data-frequency="50/60 Hz" data-operating-temp="0 to 60 C (32 to 140 F)" data-metering-scope="branch" data-outlet-switching="false" data-metering="current, power and energy for the input; current for each branch" data-network-module="G4 eNMC, dual gigabit Ethernet with network cascading" data-emc="FCC part 15 class A, CAN ICES-003 class A" data-safety="UL 62368-1; cTUVus on the drawing" data-cybersecurity="UL 2900-1" data-regulatory-model="EMIF-PDXJ-E27K" data-eol="none-announced" data-airflow="passive">
   <style>
     [data-path] { cursor: pointer; }
     .state-on    { --led-color: #22c55e; }
@@ -12,6 +12,12 @@
     .state-fail  { --led-color: #ef4444; }
     .state-locate { --led-color: #3b82f6; }
     .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
     /* A state is a colour AND a behaviour. Solid and blinking of the same colour
        are different facts on real hardware: on the S9510-28DC a solid green PWR
        is "system power good" and a blinking green PWR is "power good but BMC
@@ -34,7 +40,7 @@
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
 </style>
-  <metadata>{"device":"Eaton EVMI2130X","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"244d87878e1fde53b01983c8fa114adece041f742993ce31b67b4805e1351252","view":"left"}</metadata>
+  <metadata>{"device":"Eaton EVMI2130X","device-version":"0.2.1","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"a2979096b71cdd96717f203ef6d76714547fea8ad195818ea389c38cb273d707","view":"left"}</metadata>
   <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EVMI2130X" data-sku="EVMI2130X" data-part-number="" x="0" y="0" width="53" height="1730" rx="1.2" fill="#2e3033" stroke="#22262a" stroke-width="0.5" />
   <g id="--decor" data-class="decor">
     <rect id="seam" data-kind="seam" x="38.2" y="0" width="1.6" height="1730" rx="0.6" fill="#232528" />

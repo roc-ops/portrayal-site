@@ -144,3 +144,31 @@ function deepFreeze(v) {
   }
   return v;
 }
+
+// THE GENERIC RACK EAR A DEVICE GETS IN THE RACK (Portrayal #909): the kit's
+// plan (ears2d.js earPlan, relief.js genericEars) from the device's
+// configs.json and its front's declared width, or null where it gets none -
+// not a rack device, a sheet body, ears stated `behind`, or a front as wide
+// as the rack face, which is a face with its ears BUILT IN (a blanking panel,
+// a shelf, a full-width patch panel) and already draws them. The Rack Builder
+// draws its own rail-side ears (elevation.js, rack3d.js) only where this is
+// not null, in the plan's colour: silver (#c8cacc) unless the device states
+// `chassis.ears.color`. Memoized per device and configuration; a device whose
+// index or front cannot be read is judged on its chassis width alone.
+const EAR_PLANS = new Map();
+export function earPlanFor(ref, cfg) {
+  const key = `${ref}.${cfg || ''}`;
+  if (!EAR_PLANS.has(key)) {
+    EAR_PLANS.set(key, (async () => {
+      // imported on first use: ears2d.js brings relief.js, which reads the
+      // page's location as it loads, and this module also runs under node
+      const {earPlan, frontWidthOfText} = await import('../../vendor/ears2d.js');
+      const idx = await jdist(`${DIST}${ref}.configs.json`).catch(() => null);
+      if (!idx) return null;
+      const w = await faceUrl(DIST, ref, cfg || idx.default, 'front')
+        .then(u => fetch(u)).then(r => (r.ok ? r.text() : '')).then(frontWidthOfText).catch(() => null);
+      return earPlan(idx, w);
+    })());
+  }
+  return EAR_PLANS.get(key);
+}

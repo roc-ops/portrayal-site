@@ -326,7 +326,7 @@ function drawBundles2d(svg, rack, routes, pane, place) {
                               'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'data-bundle-trunk': f.id}));
     }
     // A corner too tight for the bundle's bend radius (kit 0.8.0, Portrayal
-    // #922): ringed where this pane places it. Nothing before 0.8.0.
+    // #922): ringed where this pane places it.
     for (const v of bendViolations(f.check)) {
       const p = pts[trunkIndexOf(L.trunk, v.waypoint)];
       if (!p) continue;

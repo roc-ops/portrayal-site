@@ -8,7 +8,7 @@ import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces} from './bundle-view.js';
 import {resolveRoute, fill, capacityOver, routedLength, endPane, ringMarks, ringFindings, orientMarks} from '../../vendor/rack/route.js';
-import {fillNotes} from '../../vendor/rack/export-data.js';
+import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUOf} from '../../vendor/rack/model.js';
@@ -259,12 +259,17 @@ export async function routeFacts(rack, chassisOf) {
   // member rides its trunk. The 2D panes, the 3D scene, the cable list and the
   // sheet all read these, so they agree.
   const types = (rack.bundles || []).length ? await loadCableTypes(DIST).catch(() => null) : null;
-  const bundles = bundleFacts(rack, {route: ctx, ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})});
+  const bctx = {route: ctx, ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})};
+  const bundles = bundleFacts(rack, bctx);
+  // AND AS THE EXPORTS READ THEM (Portrayal #923, kit 0.9.0): one record per
+  // bundle from the kit's bundleExports, measured with the same context, for
+  // the cable schedule's notes and the BOM's strap line.
+  const bundleRecords = bundleExports(rack, bctx);
   const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
   return {ctx, complete: failed.n === 0, routes, marks, fill: fill(rack, ctx),
-          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e), bundles, places};
+          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e), bundles, bundleRecords, places};
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone
