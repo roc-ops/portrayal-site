@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — the lint rules</title>
+<meta name="description" content="Every rule Portrayal's linter applies: what it checks, why it exists, what to do about a finding, and whether it fails or warns. Rendered from the linter's own rule table.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="portrayal.dev">
+<meta property="og:url" content="https://portrayal.dev/lint.html">
+<meta property="og:title" content="Portrayal — the lint rules">
+<meta property="og:description" content="Every rule Portrayal's linter applies: what it checks, why it exists, what to do about a finding, and whether it fails or warns. Rendered from the linter's own rule table.">
+<meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An AS7726-32X faceplate compiled from its manifest, with a brass callout on port-12 reading qsfp28 · 100g · 4 lanes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@portrayaldev">
+<meta name="twitter:title" content="Portrayal — the lint rules">
+<meta name="twitter:description" content="Every rule Portrayal's linter applies: what it checks, why it exists, what to do about a finding, and whether it fails or warns. Rendered from the linter's own rule table.">
+<meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/site.css">
+</head>
+<body>
+
+<a class="skip" href="#lint-body">Skip to the rules</a>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="index.html">
+      <img src="brand/portrayal-mark.svg" alt="" width="26" height="26">
+      <span class="brand-name">portrayal<span class="tld">.dev</span></span>
+    </a>
+    <nav class="masthead-nav">
+      <a href="index.html#showcase">Showcase</a>
+      <a href="explorer.html">Explorer</a>
+      <a href="rack.html">Rack Builder</a>
+      <a href="components.html">Components</a>
+    <a href="annotate.html">Annotate</a>
+      <details class="navmenu">
+        <summary>Export</summary>
+        <div class="navmenu-items">
+          <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+          <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+          <a href="drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
+        <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+        </div>
+      </details>
+      <details class="navmenu" data-docs data-here>
+        <summary>Docs</summary>
+        <div class="navmenu-items">
+          <a href="schema.html">Schema<span class="hint">the manifest, component and listing contracts</span></a>
+          <a href="lint.html" aria-current="page">Lint rules<span class="hint">what the linter checks, and why</span></a>
+          <a href="kit.html">Using the kit<span class="hint">2D, 3D and export in your own pages</span></a>
+          <a href="contribute.html">Contributing<span class="hint">add a device, request one, fix the tools</span></a>
+        </div>
+      </details>
+      <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
+      <a class="nav-sponsor" href="https://www.rocnetsupply.com/" aria-label="Sponsored by RocNet Supply">
+        <span class="nav-sponsor-label">Sponsored by</span>
+        <img class="on-dark" src="brand/sponsor/RocNet-Primary-Logo-white.svg" alt="" width="53" height="32">
+        <img class="on-light" src="brand/sponsor/RocNet-Primary-Logo.svg" alt="" width="53" height="32">
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="section" id="lint-top" style="border-top:none">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Lint rules <span class="on" id="lintCount">—</span></p>
+        <h1 style="font-size:clamp(2rem,4.5vw,2.9rem);font-weight:800;letter-spacing:-0.04em">
+          What the linter checks, and why.
+        </h1>
+        <p class="sub">
+          Every rule the library has to pass before a drawing is accepted: what
+          it applies to, what it checks, why it exists, what to do about a
+          finding, and whether a finding fails the lint or only warns. Rendered
+          from the linter's own rule table rather than transcribed, so this
+          page lists exactly the rules the linter runs. A device that claims
+          <code class="sc-code">maturity: verified</code> is held to more of
+          them than one still being drawn.
+        </p>
+      </div>
+
+      <div class="show" id="lintShell">
+        <div class="schema-head lr-controls">
+          <div class="lr-filters">
+            <label class="lr-field lr-search"><span>Search</span>
+              <input id="q" type="search" placeholder="code, word or phrase" autocomplete="off"></label>
+            <label class="lr-field"><span>Applies to</span>
+              <select id="scope"><option value="">everything</option></select></label>
+            <label class="lr-field"><span>Severity</span>
+              <select id="severity"><option value="">any</option></select></label>
+          </div>
+          <p class="lr-tally mono" id="tally" aria-live="polite"></p>
+          <div id="lintHead"></div>
+        </div>
+        <div class="schema-body" id="lint-body">
+          <p class="sc-loading">Reading the rules…</p>
+        </div>
+        <div class="show-foot">
+          <p class="show-hint">Each rule has its own link: lint.html#L53 opens on L53.</p>
+          <p class="show-src mono" id="lintSrc"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-in">
+    <div class="footer-brand">
+      <img src="brand/portrayal-mark-16.svg" alt="" width="16" height="16">
+      <span>portrayal<span class="tld">.dev</span></span>
+    </div>
+    <p>
+      The rule table is Apache-2.0, the same as the rest of Portrayal.
+    </p>
+    <p class="footer-tools"><a href="schema.html">Schema</a> · <a href="lint.html">Lint rules</a> · <a href="kit.html">Using the kit</a> · <a href="contribute.html">Contributing</a></p>
+    <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a> · <a href="https://x.com/portrayaldev">@portrayaldev on X</a></p>
+    <a class="footer-sponsor" href="https://www.rocnetsupply.com/">
+      <img class="on-dark" src="brand/sponsor/RocNet-Primary-Logo-white.svg" alt="" width="60" height="36">
+      <img class="on-light" src="brand/sponsor/RocNet-Primary-Logo.svg" alt="" width="60" height="36">
+      <span>Sponsored by RocNet Supply</span>
+    </a>
+  </div>
+</footer>
+
+<script type="module" src="site/lint-page.js"></script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviors a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
+</body>
+</html>

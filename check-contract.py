@@ -1085,8 +1085,13 @@ check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in
       f"recipes use {sorted(_used)}; snippet maps {_snipmap}")
 # American English on the kit page, as everywhere in this site's prose.
 _kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s in _exfiles)
+# ...and the Lint rules page's own words (portrayal-site#159): the page, its
+# script and the severity labels. Not the rules: they are Portrayal's text,
+# rendered as written.
+for _lp in ("lint.html", "site/lint-page.js", "site/lintcodes.js"):
+    _kit_prose += (HERE / _lp).read_text() if (HERE / _lp).exists() else ""
 _brit = sorted(set(re.findall(r"\b(\w*(?:utilis|behaviour|colour|centre|favourite|recognis|organis)\w*)\b", _kit_prose, re.I)))
-check(not _brit, "the kit page, its runner and its recipes are in American English", f"{_brit}")
+check(not _brit, "the kit page, its runner, its recipes and the Lint rules page are in American English", f"{_brit}")
 
 # THE PAGE KEEPS UP WITH THE KIT (#156). The schema page cannot drift - the
 # schema files are copied on every refresh and the browser check renders every
@@ -1184,16 +1189,17 @@ check(all(isinstance(v, str) and len(v) > 10 for v in KIT_NOT_DOCUMENTED_YET.val
       "every KIT_NOT_DOCUMENTED_YET entry gives its reason")
 
 # THE DOCS MENU: Schema and Using the kit, one menu, on every page with a nav.
-_DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
+_DOCS_PAGES = ["index.html", "schema.html", "lint.html", "kit.html", "explorer.html", "components.html",
                "annotate.html", "drawio.html", "exporter.html", "drawings.html", "rack.html"]
 for _p in _DOCS_PAGES:
     _t = (HERE / _p).read_text()
     _m = re.search(r'<details class="navmenu"[^>]*data-docs[^>]*>(.*?)</details>', _t, re.S)
     _ok = bool(_m) and 'href="schema.html"' in _m.group(1) and 'href="kit.html"' in _m.group(1) \
+          and 'href="lint.html"' in _m.group(1) \
           and "<summary>Docs</summary>" in _m.group(1)
     _nav = _t.split("</nav>")[0]
     check(_ok and re.search(r'<a href="schema\.html"[^>]*>Schema</a>', _nav) is None,
-          f"{_p}: the header has a Docs menu (Schema, Using the kit) in place of the Schema link",
+          f"{_p}: the header has a Docs menu (Schema, Lint rules, Using the kit) in place of the Schema link",
           "no <details class=navmenu data-docs> with both links, or a bare Schema link left in the nav")
 
 # THE SOURCE MANIFEST, ONCE PER DEVICE (Portrayal #669). A face no longer embeds
@@ -1954,6 +1960,94 @@ check(not _hook_bad,
 _hook_gate = _hook_src.find("PORTRAYAL_HOOK_BROWSER:-0")
 check(0 <= _hook_gate < _hook_src.find('python3 "$BROWSER"'),
       "hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks for it")
+
+# ── THE LINT RULES PAGE (portrayal-site#159) ────────────────────────────
+# lint.html renders assets/dist/lint-rules.json, Portrayal's rule table
+# (Portrayal #952, format 1 in its docs/format-stability.md), and the schema
+# page links every rule code its descriptions mention to lint.html#<code>. So
+# the file must be here and must list rules, and every code the schema page
+# would link must have an entry: a link to a rule the page does not list lands
+# on nothing. The pattern for "a code" is site/lintcodes.js's own LINT_CODE,
+# read from the file, so this checks exactly what the page links.
+_lr_f = DIST / "lint-rules.json"
+try:
+    _lr = json.loads(_lr_f.read_text())
+except Exception as _e:
+    _lr = {}
+    check(False, "assets/dist/lint-rules.json is readable", f"{_e} - run ./refresh-assets.sh")
+_lr_rules = _lr.get("rules") if isinstance(_lr.get("rules"), list) else []
+_lr_codes = [r.get("code") for r in _lr_rules if isinstance(r, dict)]
+_lr_retired = [r.get("code") for r in (_lr.get("retired") or []) if isinstance(r, dict)]
+# NOT VACUOUS: an empty table renders an empty page, and every check below
+# would pass on it. Portrayal had 170 rules when the page landed.
+check(_lr.get("format") == 1 and len(_lr_rules) >= 100,
+      f"assets/dist/lint-rules.json is format 1 and lists the linter's rules ({len(_lr_rules)})",
+      f"format {_lr.get('format')!r}, {len(_lr_rules)} rules - run ./refresh-assets.sh against a current build")
+_LR_KEYS = ("code", "scope", "rule", "why", "fix", "severity")
+_lr_short = [r.get("code", "?") for r in _lr_rules
+             if not isinstance(r, dict) or not all(isinstance(r.get(k), str) and r.get(k) for k in _LR_KEYS)
+             or not all(isinstance(r.get(k), bool) for k in ("fails", "warns", "fails-at-verified"))]
+check(_lr_rules and not _lr_short,
+      "every rule in lint-rules.json has a code, scope, rule, why, fix, severity and the three booleans",
+      f"{len(_lr_short)} short, e.g. {_lr_short[:5]}")
+_lr_dupe = sorted({c for c in _lr_codes + _lr_retired if (_lr_codes + _lr_retired).count(c) > 1})
+check(not _lr_dupe and all(isinstance(c, str) and re.fullmatch(r"L\d{1,3}", c) for c in _lr_codes),
+      "lint-rules.json names each code once, as L<digits>, so each is one anchor on lint.html",
+      f"repeated {_lr_dupe[:5]}")
+_lc_js = (HERE / "site" / "lintcodes.js").read_text() if (HERE / "site" / "lintcodes.js").exists() else ""
+_lc_m = re.search(r"^export const LINT_CODE = /(.+)/g;$", _lc_js, re.M)
+check(bool(_lc_m), "site/lintcodes.js defines LINT_CODE as a one-line /.../g literal")
+_LINT_CODE = re.compile(_lc_m.group(1)) if _lc_m else re.compile(r"(?!)")
+_SCH = HERE / "assets" / "schemas"
+_lr_known = set(_lr_codes) | set(_lr_retired)
+_linked = {}
+def _prose_codes(text):
+    # schema.js's richText: code spans (`...`) are never linked
+    return [m.group(0) for i, part in enumerate(re.split(r"`([^`]+)`", text)) if i % 2 == 0
+            for m in _LINT_CODE.finditer(part)]
+def _walk_prose(node, fname):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k in ("description", "$comment") and isinstance(v, str):
+                for c in _prose_codes(v):
+                    _linked.setdefault(c, set()).add(fname)
+            else:
+                _walk_prose(v, fname)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_prose(v, fname)
+for _sf in sorted(_SCH.glob("*.schema.json")):
+    _walk_prose(json.loads(_sf.read_text()), _sf.name)
+# NOT VACUOUS: the schemas cite dozens of rules; finding none means the pattern
+# or the walk broke, not that there is nothing to link.
+check(len(_linked) >= 20, f"the schema page links rule codes from the schemas' prose ({len(_linked)} codes)",
+      f"found {sorted(_linked)}")
+_lr_missing = sorted((c for c in _linked if c not in _lr_known), key=lambda c: int(c[1:]))
+check(not _lr_missing,
+      "every rule code the schema page links has an entry in lint-rules.json",
+      "; ".join(f"{c} (in {', '.join(sorted(_linked[c]))})" for c in _lr_missing[:8])
+      + " - a code that is not a lint rule needs LINT_CODE in site/lintcodes.js to leave it out")
+check("splitCodes" in SJS and "ruleHref" in SJS and "from './lintcodes.js'" in SJS,
+      "site/schema.js links rule codes through site/lintcodes.js")
+# The kit page is written by hand, so a code there is linked by hand: every
+# rule code in its prose (outside <pre> and <code>) is inside an
+# <a href="lint.html#<code>">, and has an entry.
+_kit_prose_html = re.sub(r"<(pre|code|script|style)\b.*?</\1>", " ", _kit_html, flags=re.S)
+_kit_codes, _kit_bare = [], []
+for _m in _LINT_CODE.finditer(re.sub(r"<[^>]+>", lambda t: " " * len(t.group(0)), _kit_prose_html)):
+    _kit_codes.append(_m.group(0))
+    _before = _kit_prose_html[:_m.start()]
+    _a = _before.rfind("<a ")
+    if _a < 0 or "</a>" in _before[_a:] or f'href="lint.html#{_m.group(0)}"' not in _before[_a:]:
+        _kit_bare.append(_m.group(0))
+check(not _kit_bare, f"every rule code kit.html mentions links to its entry on lint.html ({len(_kit_codes)} mentioned)",
+      f"{_kit_bare} - wrap each in <a href=\"lint.html#<code>\">")
+_kit_unknown = sorted(set(_kit_codes) - _lr_known)
+check(not _kit_unknown, "every rule code kit.html mentions has an entry in lint-rules.json", f"{_kit_unknown}")
+_lint_html = (HERE / "lint.html").read_text() if (HERE / "lint.html").exists() else ""
+check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" in
+      ((HERE / "site" / "lint-page.js").read_text() if (HERE / "site" / "lint-page.js").exists() else ""),
+      "lint.html renders the vendored lint-rules.json through site/lint-page.js")
 
 for s in skips:
     print(f"SKIP  {s}")
