@@ -114,7 +114,7 @@ test('describe_rack: a window pages one section, and the first line says which',
   assert.match(out.split('\n')[0], /^Rack 1 \(r1\): 20 items\b.*\b6-10\b/);
   const bad = await run('describe_rack', {offset: 5});
   assert.equal(bad.isError, true);
-  assert.equal(text(bad), 'Send section with offset: items or cables.');
+  assert.equal(text(bad), 'Send section with offset: items, zeroU, cables or bundles.');
 });
 
 test('describe_rack: limit is 40 when left out, and shrinks to keep the bound', async () => {
@@ -760,7 +760,7 @@ test('descriptions: within bounds, naming only real tools and arguments, and no 
 
 // The defaults the code applies, and only those, are stated (spec section 5).
 const DEFAULTS = {
-  'describe_rack.section': 'both when left out', 'describe_rack.offset': '0 when left out', 'describe_rack.limit': '40 when left out',
+  'describe_rack.section': 'all when left out', 'describe_rack.offset': '0 when left out', 'describe_rack.limit': '40 when left out',
   'find_devices.offset': '0 when left out',
   'list_free_ports.view': 'both when left out', 'list_free_ports.offset': '0 when left out',
   'inspect.cfg': 'its default when left out', 'inspect.section': 'the start when left out', 'inspect.offset': '0 when left out',
@@ -807,10 +807,13 @@ test('undo says when the step it took back was the user\'s own', async () => {
   assert.equal(text(await run('undo')), 'Undid: Renamed the rack to Agent.');
 });
 
-test('descriptions hold with the page\'s own command table too (zero-U)', async () => {
-  const {ALL_COMMANDS} = await import('../../site/rack/zero-u.js');
+test('descriptions hold with the kit\'s whole command table: zero-U parts (0.6.0) and bundles (0.7.0) too', async () => {
+  for (const op of ['zerou.place', 'zerou.update', 'zerou.remove', 'side.place', 'side.set',
+                    'bundle.create', 'bundle.add', 'bundle.peel', 'bundle.update', 'bundle.remove']) assert.ok(op in COMMANDS, op);
   const ed = createRackEditor({doc: M.newDoc(), chassisOf});
-  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries: {}, runExport: async () => ({}), commands: ALL_COMMANDS}).map(t => [t.name, t]));
+  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries: {}, runExport: async () => ({})}).map(t => [t.name, t]));
+  const offered = tools.edit_rack.inputSchema.properties.commands.items.oneOf.map(o => o.properties.op.const);
+  for (const op of ['zerou.place', 'side.set', 'bundle.create', 'bundle.peel']) assert.ok(offered.includes(op), `edit_rack does not offer ${op}`);
   const args = argNames(tools);
   for (const t of Object.values(tools)) for (const {where, d, long, node, prop} of described(t)) {
     assert.ok(d.length <= (long ? 500 : 150), `${where} is ${d.length} characters`);
@@ -844,4 +847,32 @@ test('edit_rack: a selector and an explicit id that overlap echo every cable rem
   assert.equal(res.isError, undefined, text(res));
   assert.match(text(res), /^Removed: c3, c1, c2\.\n/);
   assert.equal(ed.rack().cables.length, 0);
+});
+
+// ── kit 0.7.0: bundles through edit_rack, describe_rack and inspect ──
+test('bundles: edit_rack asks for the routes, describe_rack lists them, inspect reads one', async () => {
+  const {ed, run, contexts} = setup();
+  await twoCabled(run);
+  const made = await run('edit_rack', {commands: [{op: 'bundle.create', cables: ['c1', 'c2'],
+    route: [{lane: 'left-front', ru: 36}, {lane: 'left-front', ru: 40}], label: 'trunk-A'}]});
+  assert.equal(made.isError, undefined, text(made));
+  assert.deepEqual(contexts.at(-1).opts, {route: true});   // a bundle command loads the routing context
+  assert.deepEqual(M.bundlesOf(ed.rack()).map(b => [b.id, b.label, b.members.map(m => m.cable)]), [['b1', 'trunk-A', ['c1', 'c2']]]);
+  // The rack has a bundle, so describe_rack reads it with the routes too, and lists it.
+  const n = contexts.length;
+  const out = text(await run('describe_rack'));
+  assert.deepEqual(contexts.slice(n).map(c => c.opts), [{route: true}]);
+  assert.match(out, /\nBundles:\nb1 trunk-A: 2 cables \(c1-c2\), straps every 12 in, not checked\./);
+  assert.match(text(await run('describe_rack', {section: 'bundles'})), /^.*Bundles 1-1 shown\./);
+  // inspect reads the bundle in its own words, and a member names its bundle.
+  const b = text(await run('inspect', {id: 'b1'}));
+  assert.match(b, /^b1 trunk-A: number 1, label trunk-A, 2 cables\n/);
+  assert.match(b, /\nroute: left-front U36-U40\n/);
+  assert.match(b, /\nNot checked: the routes are not known here\./);
+  assert.match(text(await run('inspect', {id: 'c1'})), /\nIn bundle b1; inspect b1 for the bundle\./);
+  // A rack with no bundle is described without reading the routes.
+  ed.apply({op: 'bundle.remove', id: 'b1'});
+  const m = contexts.length;
+  await run('describe_rack');
+  assert.equal(contexts.length, m);
 });

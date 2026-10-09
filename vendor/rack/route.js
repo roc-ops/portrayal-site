@@ -9,9 +9,11 @@
 // to the right as seen from the FRONT. This file imports no DOM and nothing of
 // the site's pages, so the rack kit can take it as it is.
 
-import {uLabel} from './model.js';
+import {uLabel, zeroUOf, bundlesOf} from './model.js';
+import {followTrunk} from './bundle-route.js';
 import {RU, OPENING, RAIL_W} from './rails.js';
 import {throughRings} from './route-path.js';
+import {zeroUOnLane, zeroUX, carriesLane, runsThrough} from './zero-u.js';
 
 export const LANE_GAP = 40;          // mm: a lane runs in the middle of a 40 mm gutter outside each rail
 const SHORT = 2;                     // U: a jumper this close, with no manager, just hangs
@@ -131,14 +133,48 @@ function resolves(rack, w, ctx) {
   return !!itemOf(rack, w.item) && ctx.guidesOf(w.item).some(g => g.via === w.via);
 }
 
-// THE ROUTE A CABLE FOLLOWS: the stored one once edited, else the automatic
-// one. A stored waypoint that no longer resolves is skipped, and reported.
-export function resolveRoute(rack, cable, ctx) {
+// A CABLE'S OWN ROUTE: the stored one once edited, else the automatic one. A
+// stored waypoint that no longer resolves is skipped, and reported.
+export function ownRoute(rack, cable, ctx) {
   const auto = cable.routeEdited !== true;
   const list = auto ? autoRoute(rack, cable, ctx) : (cable.route || []);
   const waypoints = [], gone = [];
   for (const w of list) (resolves(rack, w, ctx) ? waypoints : gone).push(w);
   return {waypoints, gone, auto};
+}
+
+// A BUNDLE'S TRUNK as it resolves today: its stored waypoints, less those that
+// no longer stand for anything (reported as `gone`, and skipped).
+export function trunkRoute(rack, bundle, ctx) {
+  const waypoints = [], gone = [];
+  for (const w of bundle.route || []) (resolves(rack, w, ctx) ? waypoints : gone).push(w);
+  return {waypoints, gone};
+}
+
+// The bundle a cable is drawn in: one holding it and at least one other cable
+// (a bundle of fewer is kept and listed, but not drawn: #921 decision 5).
+export function drawnBundleOf(rack, cableId) {
+  return bundlesOf(rack).find(b => b.members.length >= 2 && b.members.some(m => m.cable === cableId)) ?? null;
+}
+
+// THE ROUTE A CABLE FOLLOWS. A member of a bundle (#921) follows its own route
+// up to where it joins the trunk, the trunk to where it leaves, then its own
+// route on to its far port (bundle-route.js followTrunk); the result then also
+// names its `bundle`, `join` and `leave`, so a drawing can tell the bundled
+// part from the leads. `gone` is the cable's own; a trunk's is the bundle's
+// (trunkRoute). Any other cable follows its own route.
+export function resolveRoute(rack, cable, ctx) {
+  const own = ownRoute(rack, cable, ctx);
+  const b = drawnBundleOf(rack, cable.id);
+  if (!b) return own;
+  const trunk = trunkRoute(rack, b, ctx).waypoints;
+  if (!trunk.length) return own;
+  const aNearStart = () => {
+    const p = portPoint(rack, cable.a, ctx), s = pointOf(rack, trunk[0], ctx), e = pointOf(rack, trunk.at(-1), ctx);
+    return !(p && s && e) || dist(p, s) <= dist(p, e);
+  };
+  const f = followTrunk(own.waypoints, trunk, b.members.find(m => m.cable === cable.id), {aNearStart});
+  return {...own, waypoints: f.waypoints, bundle: b.id, join: f.join, leave: f.leave};
 }
 
 // The route as a line of text: "mgr-1 ring 3 > left-front U12-U24 > ...".
@@ -163,13 +199,21 @@ export function routeText(route, nameOf = id => id, frame = null) {
 // length is the same whatever is on screen.
 const railDepthOf = f => (f.kind === 'two-post' ? 0 : f.railDepth);
 export const laneX = side => (side === 'left' ? -1 : 1) * (OPENING / 2 + RAIL_W + LANE_GAP / 2);
+// WHERE A LANE IS ACROSS THE RACK at a U (#926): the centre line of a zero-U
+// part that carries the lane there (a duct standing at that upright), else the
+// middle of the gutter. The route stays {lane, ru}; only where the lane runs
+// changes, so a length is measured through the duct the drawing shows.
+export function laneXAt(rack, lane, ru, chassisOf) {
+  const z = typeof chassisOf === 'function' ? zeroUOnLane(rack, lane, ru, chassisOf) : null;
+  return z ? zeroUX(z, chassisOf) : laneX(String(lane).split('-')[0]);
+}
 const planeZ = (f, pane) => (pane === 'rear' ? -railDepthOf(f) : 0);
 
 export function pointOf(rack, w, ctx) {
   const f = rack.frame;
   if (w.lane) {
-    const [side, pane = 'front'] = w.lane.split('-');
-    return {x: laneX(side), y: (w.ru - 0.5) * RU, z: planeZ(f, pane)};
+    const [, pane = 'front'] = w.lane.split('-');
+    return {x: laneXAt(rack, w.lane, w.ru, ctx?.chassisOf), y: (w.ru - 0.5) * RU, z: planeZ(f, pane)};
   }
   const it = itemOf(rack, w.item), g = it && ctx.guidesOf(it.id).find(x => x.via === w.via);
   if (!g) return null;
@@ -323,6 +367,11 @@ const areaOf = media => Math.PI * ((DIAMETERS[media] ?? UNSET_D) / 2) ** 2;
 // FILL_LIMIT of its opening. Lanes have no limit and are not listed.
 // A ring counts the cables that pass through it (routePath): one a route
 // would take to its face and back is a finding (ringFindings), not a member.
+// A ZERO-U PART that carries a lane (#926) is a pathway too: every cable
+// whose route runs on its lane through a U it spans counts once, against
+// FILL_LIMIT of its channel, `ctx.zeroUAperture(entry)` -> {w, h} mm, or null
+// when the drawing does not say (and then it is not listed). Its entry has the
+// part's id as `item`, its first guide as `via`, and `zeroU: true`.
 export function fill(rack, ctx) {
   const at = new Map();
   for (const c of rack.cables || []) {
@@ -340,10 +389,30 @@ export function fill(rack, ctx) {
       at.set(key, e);
     }
   }
-  return [...at.values()].map(e => {
-    const percent = Math.round(e.area / (FILL_LIMIT * e.aperture.w * e.aperture.h) * 100);
+  const filled = e => Math.round(e.area / (FILL_LIMIT * e.aperture.w * e.aperture.h) * 100);
+  const items = [...at.values()].map(e => {
+    const percent = filled(e);
     return {item: e.item, via: e.via, count: e.cables.length, percent, over: percent > 100, cables: e.cables};
   });
+  const beside = zeroUThrough(rack, ctx).flatMap(({z, c, cables}) => {
+    const ap = typeof ctx.zeroUAperture === 'function' ? ctx.zeroUAperture(z) : null;
+    if (!(ap?.w > 0 && ap?.h > 0)) return [];
+    const percent = filled({aperture: ap, area: cables.reduce((a, x) => a + areaOf(x.media), 0)});
+    const via = Object.values(c.guides || {}).flat()[0] ?? 'duct';
+    return [{item: z.id, via, count: cables.length, percent, over: percent > 100, cables: cables.map(x => x.id), zeroU: true}];
+  });
+  return [...items, ...beside];
+}
+
+// The zero-U parts that carry a lane, each with the cables whose routes run
+// through it, in rack order; a part no cable runs through is left out.
+function zeroUThrough(rack, ctx) {
+  const parts = zeroUOf(rack).map(z => ({z, c: ctx.chassisOf(z.ref)})).filter(({c}) => carriesLane(c));
+  if (!parts.length) return [];
+  const routes = (rack.cables || []).map(c => [c, resolveRoute(rack, c, ctx).waypoints]);
+  return parts
+    .map(({z, c}) => ({z, c, cables: routes.filter(([, ws]) => runsThrough(ws, z, ctx.chassisOf)).map(([cable]) => cable)}))
+    .filter(x => x.cables.length);
 }
 
 // Managers whose stated capacity the cables through them exceed. As in fill,
@@ -359,6 +428,11 @@ export function capacityOver(rack, ctx) {
   for (const [item, set] of by) {
     const cap = ctx.chassisOf(itemOf(rack, item)?.ref)?.capacity?.count;
     if (cap && set.size > cap) out.push({item, count: set.size, capacity: cap});
+  }
+  // a zero-U part that carries a lane, against its own stated capacity (#926)
+  for (const {z, c, cables} of zeroUThrough(rack, ctx)) {
+    const cap = c.capacity?.count;
+    if (cap && cables.length > cap) out.push({item: z.id, count: cables.length, capacity: cap, zeroU: true});
   }
   return out;
 }

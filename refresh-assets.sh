@@ -205,6 +205,10 @@ cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
 # rack.json is the Rack Builder's catalogue (Portrayal's rack_index.py, kit
 # 0.3.0): a bare cp, because the builder cannot place anything without it.
 cp "$SRC"/dist/rack.json "$HERE/assets/dist/"
+# cable-types.json is the published cable types (Portrayal #919): kit 0.7.0's
+# rack/cable-types.js loadCableTypes reads it, and the page hands its
+# diameterOf to the bundle commands' size check. A bare cp for the same reason.
+cp "$SRC"/dist/cable-types.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
 # vendors.json carries the alias and lineage registry - who owns a brand now,
 # which is what stops an ArcOS box being filed under the metal it runs on.

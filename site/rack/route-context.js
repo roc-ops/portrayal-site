@@ -9,7 +9,8 @@ import {resolveRoute, fill, capacityOver, routedLength, endPane, ringMarks, ring
 import {fillNotes} from '../../vendor/rack/export-data.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
-import {zeroUOf, zeroUFill, isRackSide} from './zero-u.js';
+import {zeroUOf} from '../../vendor/rack/model.js';
+import {carriesLane} from '../../vendor/rack/zero-u.js';
 
 const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 
@@ -20,7 +21,7 @@ const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 export const PANE_FLIP = {front: {y: -1}, rear: {x: -1, y: -1}};
 export const paneMarks = (marks, pane) => orientMarks(marks, PANE_FLIP[pane === 'rear' ? 'rear' : 'front']);
 
-// rects: [{id, kind?, cls?, x, y, w, h}] in face coordinates; a ring END
+// rects: [{id, kind?, cls?, run?, x, y, w, h}] in face coordinates; a ring END
 // (`<via>-end`, kind ring) stands for its ring; `guide--<via>` is a duct; `pass--<via>` a pass-through.
 // A RING'S RUN AND DEPTH (Portrayal #930): `runs` is {via: 'x'|'y'|'z'}, the
 // ring component's data-guide-run (guideRunsOf); a ring with none runs along
@@ -37,14 +38,20 @@ export function guidesFromRects(rects, face, faceW, apertures = {}, runs = {}) {
     else if (r.cls === 'pass' && r.id.startsWith('pass--')) { via = r.id.slice(6); kind = 'pass'; }
     if (!via) continue;
     // A ring's opening is its component's (top view); a duct's cross-section is
-    // taken as square on its drawn height - an estimate; a pass is its rect.
+    // taken as square on its drawn height - an estimate, and marked so (kit
+    // 0.7.0 bundles.js pathwaysOn: a stated aperture wins over an estimate); a
+    // pass is its rect.
     const aperture = kind === 'ring' ? (apertures[via] ?? null)
-      : kind === 'duct' ? {w: r.h, h: r.h} : {w: r.w, h: r.h};
+      : kind === 'duct' ? {w: r.h, h: r.h, estimated: true} : {w: r.w, h: r.h};
     const g = {via, kind, face, x: toRack(r.x + r.w / 2, face, faceW), box: {x: r.x, y: r.y, w: r.w, h: r.h}, aperture};
+    // EVERY GUIDE CARRIES ITS RUN (kit 0.7.0): a ring's from its component
+    // (guideRunsOf), x when it states none; a duct's from its own
+    // data-guide-run, which the compiler writes on every duct guide, x when
+    // missing; a pass-through goes through the panel, along z.
     if (kind === 'ring') {
       g.run = runs[via] ?? 'x';
       if (g.run === 'x' && r.w > 0) g.depth = r.w;
-    }
+    } else g.run = kind === 'duct' ? (r.run || 'x') : 'z';
     out.push(g);
   }
   return out;
@@ -115,14 +122,14 @@ function rectsOf(root) {
   const rects = [...root.querySelectorAll('rect[id]')].map(el => {
     const [dx, dy] = offset(el, root), n = a => parseFloat(el.getAttribute(a)) || 0;
     return {id: el.id, kind: el.getAttribute('data-kind'), cls: el.getAttribute('data-class'),
-            x: n('x') + dx, y: n('y') + dy, w: n('width'), h: n('height')};
+            run: el.getAttribute('data-guide-run'), x: n('x') + dx, y: n('y') + dy, w: n('width'), h: n('height')};
   });
   // Pass-throughs drawn as paths (obround windows): the box of their `d`.
   const paths = [...root.querySelectorAll('[data-class="pass"][id^="pass--"]:not(rect)')].flatMap(el => {
     const b = pathBox(el.getAttribute('d') || '');
     if (!b) return [];
     const [dx, dy] = offset(el, root);
-    return [{id: el.id, kind: null, cls: 'pass', x: b.x + dx, y: b.y + dy, w: b.w, h: b.h}];
+    return [{id: el.id, kind: null, cls: 'pass', run: null, x: b.x + dx, y: b.y + dy, w: b.w, h: b.h}];
   });
   return [...rects, ...paths];
 }
@@ -171,17 +178,18 @@ const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg,
   .catch(() => { failed.n++; return null; });
 
 // A ZERO-U DUCT'S CHANNEL: as wide as its drawn guide (`data-guide-run="y"`, the
-// guide rect on its front view) and, an estimate, as deep as the part. Null
-// when the drawing has no such guide.
+// guide rect on its front view) and, an estimate, as deep as the part, so
+// marked `estimated`. Null when the drawing has no such guide. The kit reads it
+// as ctx.zeroUAperture (route.js fill, bundles.js pathwaysOn).
 export function ductAperture(rects, depth) {
   const g = rects.find(r => r.cls === 'guide' && r.id.startsWith('guide--'));
-  return g && g.w > 0 && depth > 0 ? {w: g.w, h: depth} : null;
+  return g && g.w > 0 && depth > 0 ? {w: g.w, h: depth, estimated: true} : null;
 }
 async function zeroUApertures(rack, chassisOf) {
   const out = new Map();
   await Promise.all(zeroUOf(rack).map(async z => {
     const c = chassisOf(z.ref);
-    if (!isRackSide(c)) return;
+    if (!carriesLane(c)) return;
     const f = await configuredFace({ref: z.ref, cfg: z.cfg, view: 'front', swaps: {}, fields: {}}).catch(() => null);
     const ap = f ? ductAperture(rectsOf(rootOf(f.text)), c.d) : null;
     if (ap) out.set(z.id, ap);
@@ -191,6 +199,8 @@ async function zeroUApertures(rack, chassisOf) {
 
 export async function routeFacts(rack, chassisOf) {
   const guides = new Map(), ports = new Map(), failed = {n: 0};
+  // The ducts beside the rack, read from their drawings with the faces.
+  const ducts = zeroUApertures(rack, chassisOf);
   await Promise.all(rack.items.map(async it => {
     const c = chassisOf(it.ref) || {};
     const get = faceOf(it, failed);
@@ -212,6 +222,7 @@ export async function routeFacts(rack, chassisOf) {
     }
     guides.set(it.id, dedupeGuides(list));
   }));
+  const channels = await ducts;
   const itemOf = id => rack.items.find(i => i.id === id);
   const port = end => ports.get(`${end.item}|${end.view === 'rear' ? 'rear' : 'front'}|${portPathOf(end.path)}`) ?? null;
   const ctx = {
@@ -224,6 +235,10 @@ export async function routeFacts(rack, chassisOf) {
       // The drawing is centered, unscaled, in its U span (elevation.js).
       const u = Math.max(1, chassisOf(it.ref)?.ru ?? 1);
       return (it.ru - 1 + u) * RU - ((u * RU - p.faceH) / 2 + p.y); },
+    // A duct beside the rack: its channel, from its drawing (ductAperture), or
+    // null. The kit's fill and capacityOver count the cables through it, and a
+    // bundle's size check reads it, so the page does not count them itself.
+    zeroUAperture: z => channels.get(z?.id) ?? null,
   };
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   const lengths = new Map((rack.cables || []).map(c => [c.id, routedLength(rack, c, ctx)]));
@@ -236,12 +251,10 @@ export async function routeFacts(rack, chassisOf) {
   // A ring a route would enter and leave by one face: shown with fill and capacity.
   const labelOf = id => rack.items.find(i => i.id === id)?.label ?? id;
   const rings = ringFindings(rack, ctx, labelOf);
-  // Ducts beside the rack (zero-u.js): the lanes run through them, so they fill
-  // as any pathway does, and are counted against their stated capacity.
-  const ducts = await zeroUApertures(rack, chassisOf);
-  const side = zeroUFill(rack, routes, chassisOf, z => ducts.get(z.id) ?? null);
-  return {ctx, complete: failed.n === 0, routes, marks, fill: [...fill(rack, ctx), ...side.fill],
-          over: [...capacityOver(rack, ctx), ...side.over], ringFindings: rings, lengths, endPane: e => endPane(rack, e)};
+  // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
+  // read ctx.zeroUAperture, so each is listed once, by the kit.
+  return {ctx, complete: failed.n === 0, routes, marks, fill: fill(rack, ctx),
+          over: capacityOver(rack, ctx), ringFindings: rings, lengths, endPane: e => endPane(rack, e)};
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone

@@ -1,0 +1,491 @@
+{
+ "format": 1,
+ "generated-from": "spec/schemas/cable-types.yaml",
+ "sources": {
+  "ampcom-bend": {
+   "title": "AMPCOM, bend radius against return loss in screened cable",
+   "url": "https://www.ampcom.com/blogs/industry-insights/bend-radius-vs-return-loss"
+  },
+  "elliott-min-bend": {
+   "title": "Elliott Electric Supply, minimum bending radius table (TIA/EIA-568 and ISO 11801, an older revision)",
+   "url": "https://www.elliottelectric.com/StaticPages/ElectricalReferences/DataComm/minimum_bending.aspx"
+  },
+  "foa-tia568": {
+   "title": "The Fiber Optic Association, a summary of TIA-568 fibre cabling (bend radius and pulling tension)",
+   "url": "https://www.thefoa.org/tech/tia568b3.htm"
+  },
+  "hfcl-macrobend": {
+   "title": "HFCL, the macrobend test specifications of each ITU-T fibre grade (G.652.D, G.657.A1, A2)",
+   "url": "https://hfcl.com/insights/blogs/understanding-fiber-macrobending-specifications-and-applications-for-each-grade-of-fiber"
+  },
+  "itu-g652": {
+   "title": "ITU-T Recommendation G.652, characteristics of a single-mode optical fibre and cable",
+   "url": "https://www.itu.int/rec/T-REC-G.652"
+  },
+  "oznur-h05vv-f": {
+   "title": "Oznur Kablo, H05VV-F 300/500 V flexible cord, technical data (outer diameters and bending radius)",
+   "url": "https://www.oznurkablo.com.tr/en/products/300-500-V-PVC-Insulated-Multi-Core-Cables-With-Flexible-Copper-Conductors"
+  },
+  "portrayal-estimate": {
+   "title": "Portrayal's own estimate of a typical diameter, a sketch and not a measurement; for a bare media type it is the fill figure in kit/rack/route.js DIAMETERS",
+   "url": "https://github.com/roc-ops/Portrayal/blob/main/kit/rack/route.js"
+  },
+  "samm-fibre-classes": {
+   "title": "SAMM, a summary of the ITU-T G.652 and G.657 fibre classes and their bend limits",
+   "url": "https://samm.com/?p=4317"
+  },
+  "smartoptics-sfp28-dac": {
+   "title": "Smartoptics SO-SFP28-PCUxM datasheet, SFP28 passive DAC, AWG30 and AWG26",
+   "url": "https://smartoptics.com/wp-content/uploads/2022/12/so-sfp28-pcuxm.pdf"
+  },
+  "truecable-bend": {
+   "title": "trueCABLE, minimum bend radius of twisted-pair cable and patch cords",
+   "url": "https://www.truecable.com/blogs/cable-academy/minimum-bend-radius"
+  }
+ },
+ "types": {
+  "aoc": {
+   "family": "aoc",
+   "id": "aoc",
+   "label": "AOC (active optical cable)",
+   "media": "aoc",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "convention",
+     "note": "TIA-568's rule for other premises fibre cables, applied by analogy; vendor figures run 30 to 60 mm",
+     "sources": [
+      "foa-tia568"
+     ],
+     "unverified": true,
+     "xOD": 10
+    },
+    "loaded": {
+     "basis": "convention",
+     "note": "TIA-568's rule under the maximum rated pulling tension, applied by analogy",
+     "sources": [
+      "foa-tia568"
+     ],
+     "unverified": true,
+     "xOD": 15
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "cat6": {
+   "family": "copper",
+   "id": "cat6",
+   "label": "Cat 6 U/UTP",
+   "media": "cat6",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "sources": [
+      "elliott-min-bend",
+      "truecable-bend"
+     ],
+     "xOD": 4
+    },
+    "loaded": {
+     "basis": "standard",
+     "note": "ISO 11801, while pulled during installation",
+     "sources": [
+      "elliott-min-bend"
+     ],
+     "xOD": 8
+    }
+   },
+   "od_mm": 6.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ],
+   "shield": "U/UTP"
+  },
+  "cat6-ftp": {
+   "family": "copper",
+   "id": "cat6-ftp",
+   "label": "Cat 6 F/UTP (screened) patch cord",
+   "media": "cat6",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "note": "a stranded patch cord, screened or not; 8xOD is the solid horizontal-cable figure",
+     "sources": [
+      "truecable-bend"
+     ],
+     "xOD": 4
+    },
+    "loaded": null
+   },
+   "od_mm": 7.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ],
+   "shield": "F/UTP"
+  },
+  "cat6a": {
+   "family": "copper",
+   "id": "cat6a",
+   "label": "Cat 6A U/UTP",
+   "media": "cat6a",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "sources": [
+      "elliott-min-bend",
+      "truecable-bend"
+     ],
+     "xOD": 4
+    },
+    "loaded": {
+     "basis": "standard",
+     "note": "ISO 11801, while pulled during installation",
+     "sources": [
+      "elliott-min-bend"
+     ],
+     "xOD": 8
+    }
+   },
+   "od_mm": 7.5,
+   "od_sources": [
+    "portrayal-estimate"
+   ],
+   "shield": "U/UTP"
+  },
+  "cat6a-ftp": {
+   "family": "copper",
+   "id": "cat6a-ftp",
+   "label": "Cat 6A F/UTP (screened) patch cord",
+   "media": "cat6a",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "note": "a stranded patch cord, screened or not; 8xOD is the solid horizontal-cable figure",
+     "sources": [
+      "truecable-bend"
+     ],
+     "xOD": 4
+    },
+    "loaded": null
+   },
+   "od_mm": 7.5,
+   "od_sources": [
+    "ampcom-bend"
+   ],
+   "shield": "F/UTP"
+  },
+  "dac": {
+   "awg": 30,
+   "family": "dac",
+   "id": "dac",
+   "label": "Passive DAC (twinax), AWG30",
+   "media": "dac",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "convention",
+     "mm": 23,
+     "sources": [
+      "smartoptics-sfp28-dac"
+     ]
+    },
+    "loaded": null
+   },
+   "od_mm": 5.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "dac-26awg": {
+   "awg": 26,
+   "family": "dac",
+   "id": "dac-26awg",
+   "label": "Passive DAC (twinax), AWG26",
+   "media": "dac",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "convention",
+     "mm": 28,
+     "sources": [
+      "smartoptics-sfp28-dac"
+     ]
+    },
+    "loaded": null
+   },
+   "od_mm": 5.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "om3": {
+   "family": "fiber",
+   "fiber": {
+    "core_um": 50,
+    "grade": "OM3",
+    "mode": "multimode"
+   },
+   "id": "om3",
+   "label": "OM3 multimode fibre, duplex cord",
+   "media": "om3",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "om4": {
+   "family": "fiber",
+   "fiber": {
+    "core_um": 50,
+    "grade": "OM4",
+    "mode": "multimode"
+   },
+   "id": "om4",
+   "label": "OM4 multimode fibre, duplex cord",
+   "media": "om4",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "om5": {
+   "family": "fiber",
+   "fiber": {
+    "core_um": 50,
+    "grade": "OM5",
+    "mode": "multimode"
+   },
+   "id": "om5",
+   "label": "OM5 wideband multimode fibre, duplex cord",
+   "media": "om5",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "os2": {
+   "family": "fiber",
+   "fiber": {
+    "class": "G.652.D",
+    "grade": "OS2",
+    "min_bend": {
+     "basis": "standard",
+     "mm": 30,
+     "note": "the class's macrobend test radius (100 turns, at most 0.1 dB at 1625 nm), not a stated minimum",
+     "sources": [
+      "itu-g652",
+      "hfcl-macrobend"
+     ]
+    },
+    "mode": "single-mode"
+   },
+   "id": "os2",
+   "label": "OS2 single-mode fibre (G.652.D), duplex cord",
+   "media": "os2",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "note": "the cord's cable rule; the fibre class is tested at 30 mm",
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "os2-g657a1": {
+   "family": "fiber",
+   "fiber": {
+    "class": "G.657.A1",
+    "grade": "OS2",
+    "min_bend": {
+     "basis": "standard",
+     "mm": 10,
+     "note": "the class's 1-turn test radius",
+     "sources": [
+      "hfcl-macrobend",
+      "samm-fibre-classes"
+     ]
+    },
+    "mode": "single-mode"
+   },
+   "id": "os2-g657a1",
+   "label": "OS2 single-mode fibre, bend-insensitive G.657.A1, duplex cord",
+   "media": "os2",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "note": "the cord's cable rule; the fibre alone allows 10 mm",
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "os2-g657a2": {
+   "family": "fiber",
+   "fiber": {
+    "class": "G.657.A2",
+    "grade": "OS2",
+    "min_bend": {
+     "basis": "standard",
+     "mm": 7.5,
+     "note": "the class's 1-turn test radius",
+     "sources": [
+      "hfcl-macrobend",
+      "samm-fibre-classes"
+     ]
+    },
+    "mode": "single-mode"
+   },
+   "id": "os2-g657a2",
+   "label": "OS2 single-mode fibre, bend-insensitive G.657.A2, duplex cord",
+   "media": "os2",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "standard",
+     "mm": 25,
+     "note": "the cord's cable rule; the fibre alone allows 7.5 mm",
+     "sources": [
+      "foa-tia568"
+     ]
+    },
+    "loaded": {
+     "basis": "standard",
+     "mm": 50,
+     "note": "under a 222 N pull",
+     "sources": [
+      "foa-tia568"
+     ]
+    }
+   },
+   "od_mm": 3.0,
+   "od_sources": [
+    "portrayal-estimate"
+   ]
+  },
+  "power-c13": {
+   "conductor": "H05VV-F 3G1.0",
+   "family": "power",
+   "id": "power-c13",
+   "label": "IEC 60320 C13/C14 power cord, H05VV-F 3G1.0",
+   "media": "power",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "convention",
+     "note": "one maker's figure, not yet confirmed by a second",
+     "sources": [
+      "oznur-h05vv-f"
+     ],
+     "unverified": true,
+     "xOD": 6
+    },
+    "loaded": null
+   },
+   "od_mm": 7.1,
+   "od_sources": [
+    "oznur-h05vv-f"
+   ]
+  },
+  "power-c19": {
+   "conductor": "H05VV-F 3G1.5",
+   "family": "power",
+   "id": "power-c19",
+   "label": "IEC 60320 C19/C20 power cord, H05VV-F 3G1.5",
+   "media": "power",
+   "min_bend_radius": {
+    "installed": {
+     "basis": "convention",
+     "note": "one maker's figure, not yet confirmed by a second",
+     "sources": [
+      "oznur-h05vv-f"
+     ],
+     "unverified": true,
+     "xOD": 6
+    },
+    "loaded": null
+   },
+   "od_mm": 7.9,
+   "od_sources": [
+    "oznur-h05vv-f"
+   ]
+  }
+ },
+ "version": "1.0.0"
+}

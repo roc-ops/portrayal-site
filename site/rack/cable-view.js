@@ -19,7 +19,7 @@ import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
 import {paneMarks} from './route-context.js';
-import {ductOnLane, zeroUX} from './zero-u.js';
+import {zeroUOnLane, zeroUX} from '../../vendor/rack/zero-u.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -88,7 +88,7 @@ export function wayEl(svg, w) {
 
 // A waypoint's point in a pane, or null when it is not on this pane.
 // Lanes: sides are the rack's as seen from the front, so the rear pane mirrors them.
-// A lane through a zero-U duct (zero-u.js) runs up the duct's channel: `ductX(lane,
+// A lane through a zero-U duct (the kit's zero-u.js) runs up the duct's channel: `ductX(lane,
 // ru)` is the duct's centre in rack x, or null where no duct stands.
 function wayPoint(svg, w, view, frame, k, ductX = () => null) {
   if (w.lane) {
@@ -167,7 +167,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   if (routes?.routes) {
     const used = new Map();
     const chassisOf = routes.ctx?.chassisOf;
-    const ductX = (lane, ru) => { const z = chassisOf && ductOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
+    const ductX = (lane, ru) => { const z = chassisOf && zeroUOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
     // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
     // along the rack's axes, x right as seen from the front and y up. This
     // pane's y runs down, and the rear pane is seen mirrored, so its x runs

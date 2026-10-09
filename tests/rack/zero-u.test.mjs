@@ -1,358 +1,153 @@
+// tests/rack/zero-u.test.mjs
+// PARTS BESIDE THE RACK AND ON ONE RAIL, AS THE SITE USES THEM (kit 0.6.0, #926).
+// The commands, fit rules, lanes and fill are the kit's and are tested there;
+// these hold the site to using them: the kit's editor takes zerou.* and side.*
+// directly, a site-saved file reads back whole through library.js, the site's
+// duct channel is handed to the kit's fill (counted once, marked estimated),
+// and the exports word the parts as the kit does.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {newDoc, parseDoc, serialize, withItem} from '../../vendor/rack/model.js';
-import {withFrame} from '../../vendor/rack/model.js';
+import {newDoc, serialize, withFrame, zeroUOf, zeroUBottom, VERSION} from '../../vendor/rack/model.js';
 import {createRackEditor} from '../../vendor/rack/editor.js';
-import {laneX} from '../../vendor/rack/route.js';
-import {RU, OPENING, RAIL_W} from '../../vendor/rack/rails.js';
-import {fitsZeroUSide, fitsSided, fitsItem, applySite, needsSite, withZeroUEditor, keepSiteFields,
-        laneXAt, zeroUX, ductOnLane, zeroUFill, zeroUOf, ruOfZ, zSpan, offsetOf, isNarrowFace,
-        ZERO_U_COMMANDS, ALL_COMMANDS, zeroULines} from '../../site/rack/zero-u.js';
+import {COMMANDS} from '../../vendor/rack/commands.js';
+import {isZeroUPart, isNarrow, fits, fitsZeroU} from '../../vendor/rack/fit.js';
+import {fill, capacityOver} from '../../vendor/rack/route.js';
+import {zeroUNotes, zeroUImportItems, deviceImportRows, managerNotes, rackNotes, fillNotes} from '../../vendor/rack/export-data.js';
+import {readDoc, docNotes} from '../../site/rack/library.js';
+import {ductAperture, guidesFromRects} from '../../site/rack/route-context.js';
 
 const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url))).devices;
 const chassisOf = ref => devices[ref] ?? null;
-const ctx = {chassisOf};
-const DUCT = 'cmv-sfd45u5w', DUCT42 = 'cmv-sfd42u9w', BRACKET = 'cmv-5u3w';
+const DUCT = 'cmv-sfd45u5w', BRACKET = 'cmv-5u3w';
 const rackOf = (kind = 'two-post', heightRU = 45) => withFrame(newDoc({kind}).racks[0], {heightRU});
-const run = (rack, cmds) => applySite(rack, cmds, ctx);
+const editorOf = rack => createRackEditor({doc: {...newDoc(), racks: [rack]}, chassisOf});
 
-test('the catalogue has the rack-side ducts and the narrow bracket this works with', () => {
-  assert.equal(chassisOf(DUCT).mount, 'rack-side');
+test('the catalogue has the rack-side duct and the narrow bracket the page places', () => {
+  assert.ok(isZeroUPart(chassisOf(DUCT)));
   assert.equal(chassisOf(DUCT).ru, 45);
-  assert.equal(chassisOf(BRACKET).mount, 'rack-face');
-  assert.ok(isNarrowFace(chassisOf(BRACKET)));
-  assert.ok(!isNarrowFace(chassisOf('fhd-cmp5dr')));
+  assert.ok(isNarrow(chassisOf(BRACKET)));
+  assert.ok(!isNarrow(chassisOf('fhd-cmp5dr')));
 });
 
-test('a rack-side part fits on an upright of this frame, within its height by its ru', () => {
-  const r = rackOf();
-  assert.deepEqual(fitsZeroUSide(r, {ref: DUCT, at: 'left', ru: 1}, chassisOf), {ok: true});
-  assert.match(fitsZeroUSide(r, {ref: DUCT, at: 'left', ru: 2}, chassisOf).reason, /45U tall; 44U from U2/);
-  assert.match(fitsZeroUSide(rackOf('two-post', 42), {ref: DUCT, at: 'left', ru: 1}, chassisOf).reason, /45U tall/);
-  assert.match(fitsZeroUSide(r, {ref: DUCT, at: 'left-front', ru: 1}, chassisOf).reason, /not a side of a two-post frame: use left, right/);
-  assert.deepEqual(fitsZeroUSide(rackOf('four-post'), {ref: DUCT, at: 'left-rear', ru: 1}, chassisOf), {ok: true});
-  assert.match(fitsZeroUSide(r, {ref: 'fhd-cmp5dr', at: 'left', ru: 1}, chassisOf).reason, /not a rack-side part/);
-  assert.match(fitsZeroUSide(r, {ref: 'nope', at: 'left', ru: 1}, chassisOf).reason, /No size is known/);
-  assert.match(fitsZeroUSide(r, {ref: DUCT, at: 'left', ru: 0}, chassisOf).reason, /Below U1/);
-});
-
-test('zerou.place puts the part in zeroU, never in items, at offsetMm from the bottom', () => {
-  const r = rackOf();
-  const res = run(r, {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1});
+test('the kit\'s own editor takes zerou.* and side.*, each one undo step', () => {
+  for (const op of ['zerou.place', 'zerou.update', 'zerou.remove', 'side.place', 'side.set']) assert.ok(op in COMMANDS, op);
+  const ed = editorOf(rackOf());
+  const res = ed.apply([{op: 'zerou.place', ref: DUCT, at: 'left', ru: 1, as: 'duct'},
+                        {op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'right'},
+                        {op: 'zerou.update', id: '@duct', label: 'vcm-1'}]);
   assert.ok(!res.error, res.error);
-  assert.equal(res.rack.items.length, 0);
-  assert.deepEqual(res.rack.zeroU, [{id: 'z1', ref: DUCT, cfg: 'base', label: 'CMV-SFD45U5W', at: 'left', offsetMm: 0}]);
-  assert.match(res.summary, /Placed CMV-SFD45U5W beside the rack at left, U1-U45\./);
-  assert.deepEqual(res.created.ids, ['z1']);
-  assert.ok(res.step);
-  // The other upright is free; the same one is taken.
-  const two = run(res.rack, {op: 'zerou.place', ref: DUCT, at: 'right', ru: 1, between: true});
-  assert.equal(two.rack.zeroU[1].id, 'z2');
-  assert.equal(two.rack.zeroU[1].between, true);
-  assert.match(two.summary, /between racks at right/);
-  assert.match(run(res.rack, {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).error, /Overlaps CMV-SFD45U5W at left/);
-  // A shorter part stacks above another on the same upright when they do not overlap.
-  const r50 = rackOf('two-post', 50);
-  const low = run(r50, {op: 'zerou.place', ref: 'cmv-5u3w', at: 'left', ru: 1});
-  assert.match(low.error, /not a rack-side part/);
-});
-
-test('the kit place of a rack-side part is refused: it would land on the rails', () => {
-  const r = rackOf();
-  assert.ok(needsSite(r, [{op: 'place', ref: DUCT, face: 'front', ru: 1}], chassisOf));
-  const res = run(r, {op: 'place', ref: DUCT, face: 'front', ru: 1});
-  assert.match(res.error, /stands beside the rack, not on its rails: place it with zerou\.place/);
-  assert.ok(!needsSite(r, [{op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 1}], chassisOf));
-});
-
-test('zerou.update moves, renames and marks between; a no-op hands back the rack; remove takes it away', () => {
-  const r = run(rackOf('two-post', 48), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).rack;
-  const up = run(r, {op: 'zerou.update', id: 'z1', ru: 3, at: 'right', label: 'duct-A'});
-  assert.ok(!up.error, up.error);
-  assert.deepEqual(up.rack.zeroU[0], {id: 'z1', ref: DUCT, cfg: 'base', label: 'duct-A', at: 'right', offsetMm: offsetOf(3)});
-  assert.equal(ruOfZ(up.rack.zeroU[0]), 3);
-  assert.deepEqual(zSpan(up.rack.zeroU[0], chassisOf), [3, 47]);
-  assert.match(run(r, {op: 'zerou.update', id: 'z1', ru: 5}).error, /45U tall/);
-  const same = run(r, {op: 'zerou.update', id: 'z1', ru: 1});
-  assert.ok(same.noop);
-  assert.equal(same.rack, r);
-  const between = run(r, {op: 'zerou.update', id: 'z1', between: true});
-  assert.equal(between.rack.zeroU[0].between, true);
-  const back = run(between.rack, {op: 'zerou.update', id: 'z1', between: false});
-  assert.ok(!('between' in back.rack.zeroU[0]));
-  const gone = run(r, {op: 'zerou.remove', id: 'z1'});
-  assert.deepEqual(gone.rack.zeroU, []);
-  assert.match(run(gone.rack, {op: 'zerou.remove', id: 'z1'}).error, /no longer beside the rack/);
-});
-
-test('a batch mixes kit and site commands, binds @names across both, and refuses bad arguments with a sentence', () => {
-  const r = rackOf();
-  const res = run(r, [
-    {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1, as: 'duct'},
-    {op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 10, as: 'mgr'},
-    {op: 'zerou.update', id: '@duct', label: 'vcm-1'}]);
-  assert.ok(!res.error, res.error);
-  assert.deepEqual(res.created, {duct: 'z1', mgr: 'i1', ids: ['z1', 'i1']});
-  assert.equal(res.rack.zeroU[0].label, 'vcm-1');
-  assert.equal(res.rack.items[0].ref, 'fhd-cmp5dr');
-  assert.match(res.summary, /Placed CMV-SFD45U5W .* Placed FHD-CMP5DR at U10 on the front\. Moved vcm-1/);
-  assert.deepEqual(run(r, {op: 'zerou.place', ref: DUCT, ru: 1}), {error: 'zerou.place needs at, some text.', index: 0});
-  assert.deepEqual(run(r, {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1, side: 'left'}), {error: 'zerou.place does not take side.', index: 0});
-  assert.equal(run(r, [{op: 'zerou.update', id: '@x'}]).error, 'Nothing earlier in this batch is called x.');
-  // The table an agent reads has every command, the site's after the kit's.
-  assert.ok(Object.keys(ZERO_U_COMMANDS).every(op => op in ALL_COMMANDS));
-  assert.ok('place' in ALL_COMMANDS);
-});
-
-test('narrow rail parts: one on each rail at the same U, never two on one rail, and a full-width manager is refused there', () => {
-  const r = rackOf('two-post', 42);
-  const res = run(r, [{op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'left'},
-                      {op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'right'}]);
-  assert.ok(!res.error, res.error);
-  assert.deepEqual(res.rack.items.map(i => [i.id, i.side, i.ru]), [['i1', 'left', 10], ['i2', 'right', 10]]);
-  assert.match(res.summary, /on the left rail\. .*on the right rail\./);
-  // The bracket is 5U: its upper units are taken on its side too.
-  assert.match(run(res.rack, {op: 'side.place', ref: BRACKET, face: 'front', ru: 13, side: 'left'}).error, /Taken by CMV-5U3W/);
-  assert.ok(!run(res.rack, {op: 'side.place', ref: BRACKET, face: 'front', ru: 15, side: 'left'}).error);
-  // A full-width manager claims both sides.
-  assert.match(run(res.rack, {op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 12}).error, /Taken by/);
-  // A wide part has no side.
-  assert.match(run(r, {op: 'side.place', ref: 'fhd-cmp5dr', face: 'front', ru: 10, side: 'left'}).error, /spans the opening/);
-  // Each fits where it is, judged by its side.
-  for (const it of res.rack.items) assert.deepEqual(fitsItem(res.rack, it, chassisOf), {ok: true});
-});
-
-test('a narrow part moves by its side, and side.set turns it across or onto a rail', () => {
-  const r = run(rackOf('two-post', 42), [{op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'left'},
-                                         {op: 'side.place', ref: BRACKET, face: 'front', ru: 20, side: 'right'}]).rack;
-  assert.ok(needsSite(r, [{op: 'move', id: 'i2', ru: 10}], chassisOf));
-  const moved = run(r, {op: 'move', id: 'i2', ru: 10});
-  assert.ok(!moved.error, moved.error);
-  assert.equal(moved.rack.items[1].ru, 10);
-  // Across both rails, it meets the one on the left.
-  assert.match(run(moved.rack, {op: 'side.set', id: 'i2', side: null}).error, /Taken by/);
-  assert.match(run(moved.rack, {op: 'side.set', id: 'i2', side: 'left'}).error, /Taken by/);
-  const across = run(r, {op: 'side.set', id: 'i2', side: null});
-  assert.ok(!('side' in across.rack.items[1]));
-  assert.match(across.summary, /across both rails/);
-  assert.ok(run(r, {op: 'side.set', id: 'i2', side: 'right'}).noop);
-});
-
-test('lanes run through a duct: its centre line where it stands, the gutter elsewhere', () => {
-  const r = run(rackOf('two-post', 48), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 2}).rack;
-  const x = -(OPENING / 2 + RAIL_W + chassisOf(DUCT).w / 2);
-  assert.equal(zeroUX(r.zeroU[0], chassisOf), x);
-  assert.equal(laneXAt(r, 'left', 10, chassisOf), x);
-  assert.equal(laneXAt(r, 'left', 1, chassisOf), laneX('left'));
-  assert.equal(laneXAt(r, 'left', 47, chassisOf), laneX('left'));
-  assert.equal(laneXAt(r, 'right', 10, chassisOf), laneX('right'));
-  assert.equal(ductOnLane(r, 'left', 46, chassisOf)?.id, 'z1');
-});
-
-test('fill: every cable whose lane run passes through the duct, once, against 40% of its channel and its capacity', () => {
-  let r = run(rackOf('two-post', 45), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).rack;
-  r = {...r, cables: [{id: 'c1', media: 'cat6'}, {id: 'c2', media: 'os2'}, {id: 'c3', media: 'cat6'}]};
-  const routes = new Map([
-    ['c1', {waypoints: [{lane: 'left', ru: 10}, {lane: 'left', ru: 30}]}],
-    ['c2', {waypoints: [{item: 'i1', via: 'guide-1'}, {lane: 'left', ru: 5}]}],
-    ['c3', {waypoints: [{lane: 'right', ru: 10}, {lane: 'right', ru: 30}]}]]);
-  const {fill, over} = zeroUFill(r, routes, chassisOf, () => ({w: 5, h: 5}));
-  assert.equal(fill.length, 1);
-  assert.equal(fill[0].item, 'z1');
-  assert.equal(fill[0].via, 'duct');
-  assert.deepEqual(fill[0].cables, ['c1', 'c2']);
-  const area = Math.PI * 9 + Math.PI * 2.25;
-  assert.equal(fill[0].percent, Math.round(area / 10 * 100));
-  assert.ok(fill[0].over);
-  assert.deepEqual(over, []);
-  // No aperture: no fill entry, but the count still meets the stated capacity.
-  const many = {...r, cables: Array.from({length: 2746}, (_, k) => ({id: `c${k}`, media: 'cat6'}))};
-  const all = new Map(many.cables.map(c => [c.id, {waypoints: [{lane: 'left', ru: 3}]}]));
-  const got = zeroUFill(many, all, chassisOf);
-  assert.deepEqual(got.fill, []);
-  assert.deepEqual(got.over, [{item: 'z1', count: 2746, capacity: 2745}]);
-  // A run on the lane that only passes the duct's span still counts (its ends are outside it).
-  const r48 = run(rackOf('two-post', 48), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 2}).rack;
-  const pass = zeroUFill({...r48, cables: [{id: 'c1', media: 'cat6'}]},
-    new Map([['c1', {waypoints: [{lane: 'left', ru: 1}, {lane: 'left', ru: 48}]}]]), chassisOf, () => ({w: 93, h: 165}));
-  assert.equal(pass.fill[0].count, 1);
-});
-
-test('a rack file with zero-U parts and sided items reads back whole, and an older page still reads it', () => {
-  let r = rackOf('two-post', 45);
-  r = run(r, [{op: 'zerou.place', ref: DUCT, at: 'left', ru: 1, between: true},
-              {op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'right'}]).rack;
-  const doc = {...newDoc(), racks: [r]};
-  const text = serialize(doc);
-  // The kit's reader keeps zeroU as written and drops `side`; keepSiteFields puts it back.
-  const kitOnly = parseDoc(text);
-  assert.deepEqual(kitOnly.racks[0].zeroU, r.zeroU);
-  assert.ok(!('side' in kitOnly.racks[0].items[0]));
-  const back = keepSiteFields(text, kitOnly);
-  assert.deepEqual(back.racks[0], r);
-  // The version is the kit's own: nothing here needs an older page to refuse the file.
-  assert.equal(JSON.parse(text).version, 2);
-  // An entry with no id gets one, past the ids in use.
-  const noId = JSON.parse(text);
-  noId.racks[0].zeroU.push({ref: DUCT, at: 'right', offsetMm: 0});
-  const fixed = keepSiteFields(noId, parseDoc(noId));
-  assert.deepEqual(fixed.racks[0].zeroU.map(z => z.id), ['z1', 'z2']);
-  assert.equal(zeroUOf(fixed.racks[0]).length, 2);
-  assert.deepEqual(zeroULines(back.racks[0], chassisOf), ['z1 | CMV-SFD45U5W | FS.com CMV-SFD45U5W | between racks at left, U1-U45']);
-});
-
-test('the editor takes site commands as one undo step, and kit-only batches as before', () => {
-  const doc = {...newDoc({kind: 'two-post'}), racks: [rackOf('two-post', 45)]};
-  const ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
-  const events = [];
-  ed.on('change', ev => events.push(ev));
-  const res = ed.apply([{op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}]);
-  assert.ok(!res.error, res.error);
-  assert.equal(ed.rack().zeroU.length, 1);
-  assert.ok(ed.canUndo);
-  assert.match(ed.undoSummary, /Placed CMV-SFD45U5W beside the rack at right/);
-  assert.equal(events.at(-1).cause, 'apply');
+  assert.equal(res.created.duct, 'z1');
+  const r = ed.rack();
+  assert.equal(r.items.length, 1);
+  assert.equal(r.items[0].side, 'right');
+  assert.deepEqual(zeroUOf(r).map(z => [z.id, z.at, z.label, zeroUBottom(z)]), [['z1', 'left', 'vcm-1', 1]]);
+  // The kit refuses a duct on the rails, and a second duct on the same upright.
+  assert.match(ed.apply({op: 'place', ref: DUCT, face: 'front', ru: 1}).error, /zerou\.place/);
+  assert.match(ed.apply({op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).error, /Overlaps/);
+  // What the page's summary and drag preview call: the kit's fits, the item's side included.
+  for (const it of r.items) assert.deepEqual(fits(r, it, chassisOf, {ignoreId: it.id}), {ok: true});
+  for (const z of zeroUOf(r)) assert.deepEqual(fitsZeroU(r, z, chassisOf, {ignoreId: z.id}), {ok: true});
   ed.undo();
-  assert.equal(ed.rack().zeroU.length, 0);
-  ed.redo();
-  assert.equal(ed.rack().zeroU.length, 1);
-  // A refusal changes nothing; a dry run changes nothing.
-  assert.match(ed.apply({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}).error, /Overlaps/);
-  assert.ok(!ed.preview({op: 'zerou.remove', id: 'z1'}).error);
-  assert.equal(ed.rack().zeroU.length, 1);
-  // A kit batch goes to the kit's editor untouched.
-  const k = ed.apply({op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 3});
-  assert.equal(k.created.ids[0], 'i1');
-  assert.equal(ed.rack().zeroU.length, 1);
-  // The page's own command is still refused to anyone else in a site batch.
-  assert.match(ed.apply([{op: 'zerou.remove', id: 'z1'}, {op: 'lengths.routed', routeCtx: {}}]).error, /page's own command/);
+  assert.equal(ed.rack().items.length, 0);
+  assert.equal(zeroUOf(ed.rack()).length, 0);
 });
 
-test('a sided item placed through the editor keeps its side across undo', () => {
-  const doc = {...newDoc({kind: 'two-post'}), racks: [rackOf('two-post', 42)]};
-  const ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
-  ed.apply({op: 'side.place', ref: BRACKET, face: 'front', ru: 4, side: 'right'});
-  ed.apply({op: 'patch', id: 'i1', label: 'fb-1'});
-  assert.deepEqual([ed.rack().items[0].side, ed.rack().items[0].label], ['right', 'fb-1']);
-  ed.undo();
-  assert.equal(ed.rack().items[0].side, 'right');
+// A FILE AN OLDER SITE SAVED: version 2, with the `side` the site's own reader
+// used to put back and a zero-U entry with no id. The kit's reader keeps both
+// now and migrates it, and the next save writes VERSION.
+const v2File = () => ({
+  format: 'portrayal-rack', version: 2, id: 'doc-v2',
+  racks: [{id: 'r1', name: 'Saved v2', frame: {kind: 'two-post', heightRU: 45},
+    items: [{id: 'i1', ref: BRACKET, cfg: 'base', label: 'fb-1', ru: 20, face: 'front', turned: false, swaps: {}, fields: {}, side: 'right'}],
+    zeroU: [{id: 'z1', ref: DUCT, cfg: 'base', label: 'vcm-1', at: 'left', offsetMm: 0},
+            {ref: DUCT, cfg: 'base', label: 'vcm-2', at: 'right', offsetMm: 0, between: true}],
+    cables: []}]});
+
+test('a version 2 rack the site saved reads back whole through library.js, and saves as version 3', () => {
+  assert.equal(VERSION, 3);
+  for (const input of [v2File(), JSON.stringify(v2File())]) {
+    const doc = readDoc(input);
+    assert.equal(doc.version, 3);
+    assert.equal(doc.id, 'doc-v2');
+    const r = doc.racks[0];
+    assert.equal(r.items[0].side, 'right');
+    assert.deepEqual(r.zeroU.map(z => [z.id, z.at, z.between === true]), [['z1', 'left', false], ['z2', 'right', true]]);
+    assert.deepEqual(docNotes(doc), []);
+    const saved = JSON.parse(serialize(doc));
+    assert.equal(saved.version, 3);
+    // read again, it is the same document
+    assert.deepEqual(readDoc(saved), doc);
+  }
+  // A version 1 file (the browser checks' fixtures) migrates the same way.
+  assert.equal(readDoc({...v2File(), version: 1}).version, 3);
+  // A file newer than this page is refused with a sentence.
+  assert.throws(() => readDoc({...v2File(), version: 4}), /version 4; this page reads up to version 3/);
 });
 
-test('fitsSided judges the whole span of a tall narrow part', () => {
-  let r = rackOf('two-post', 42);
-  ({rack: r} = withItem(r, {ref: 'fhd-cmp5dr', cfg: 'base', face: 'front', ru: 14}));
-  assert.match(fitsSided(r, {ref: BRACKET, face: 'front', ru: 10, side: 'left'}, chassisOf).reason, /Taken by/);
-  assert.deepEqual(fitsSided(r, {ref: BRACKET, face: 'front', ru: 9, side: 'left'}, chassisOf), {ok: true});
-  assert.equal(RU, 44.45);
+test('what parseDoc says of a bundle it repaired reaches the editor\'s first findings', () => {
+  const f = v2File();
+  f.version = 3;
+  f.racks[0].cables = [{id: 'c1', a: {item: 'i1', path: 'p', view: 'front'}, b: {item: 'i1', path: 'q', view: 'front'}}];
+  f.racks[0].bundles = [{id: 'b1', number: 1, label: '', members: [{cable: 'c1'}, {cable: 'c9'}], route: []}];
+  const doc = readDoc(f);
+  const notes = docNotes(doc);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Saved v2: /);
+  assert.deepEqual(doc.racks[0].bundles[0].members, [{cable: 'c1'}]);
+  const ed = createRackEditor({doc: newDoc(), chassisOf});
+  const {findings} = ed.loadDoc(doc, {notes});
+  assert.deepEqual(findings[0], {kind: 'note', text: notes[0]});
 });
 
-test('a duct over its fill is named in the notes as any pathway is, and where each part stands is a note of its own', async () => {
-  const {fillNotes} = await import('../../vendor/rack/export-data.js');
-  const {zeroUNotes, zeroUComment, zeroUEntries, withoutZeroU} = await import('../../site/rack/zero-u.js');
-  let r = run(rackOf('two-post', 45), {op: 'zerou.place', ref: DUCT, at: 'right', ru: 1, label: 'vcm-1', between: true}).rack;
-  r = {...r, cables: [{id: 'c1', media: 'cat6a'}]};
-  const routes = new Map([['c1', {waypoints: [{lane: 'right', ru: 4}], gone: []}]]);
-  const z = zeroUFill(r, routes, chassisOf, () => ({w: 2, h: 2}));
-  const nameOf = id => zeroUOf(r).find(x => x.id === id)?.label ?? id;
-  assert.deepEqual(fillNotes(r, {...z, routes}, nameOf), [`duct on vcm-1: 1 cables, ${z.fill[0].percent}% of a 40% fill.`]);
+test('a duct\'s channel is the site\'s estimate, marked so, and the kit counts the duct once', () => {
+  // The guide rect on the duct's front view: 93.4 mm wide; the part is 165.1 mm deep.
+  const ap = ductAperture([{id: 'guide--duct', cls: 'guide', x: 0, y: 0, w: 93.4, h: 2000}], chassisOf(DUCT).d);
+  assert.deepEqual(ap, {w: 93.4, h: chassisOf(DUCT).d, estimated: true});
+  assert.equal(ductAperture([], 100), null);
+  let r = editorOf(rackOf()).apply({op: 'zerou.place', ref: DUCT, at: 'left', ru: 1});
+  r = {...r.rack, cables: [{id: 'c1', a: {item: 'x', path: 'p'}, b: {item: 'y', path: 'q'}, media: 'os2', route: [{lane: 'left', ru: 10}, {lane: 'left', ru: 30}], routeEdited: true}]};
+  const ctx = {chassisOf, guidesOf: () => [], portX: () => null, zeroUAperture: z => (z.id === 'z1' ? ap : null)};
+  const got = fill(r, ctx).filter(e => e.item === 'z1');
+  assert.equal(got.length, 1);
+  assert.deepEqual([got[0].count, got[0].cables, got[0].zeroU], [1, ['c1'], true]);
+  assert.equal(got[0].percent, Math.round(Math.PI * 1.5 ** 2 / (0.4 * 93.4 * chassisOf(DUCT).d) * 100));
+  assert.deepEqual(capacityOver(r, ctx), []);
+  // the notes read the kit's entries as they are
+  assert.deepEqual(fillNotes(r, {fill: [{...got[0], over: true}], over: [], routes: new Map(), ctx}, () => 'vcm-1'),
+    [`${got[0].via} on vcm-1: 1 cables, ${got[0].percent}% of a 40% fill.`]);
+});
+
+test('every guide carries its run; a duct\'s square aperture is marked estimated, a pass is not', () => {
+  const rects = [{id: 'guide-1-end', kind: 'ring', x: 10, y: 0, w: 6.8, h: 40},
+                 {id: 'guide--tray', cls: 'guide', run: 'x', x: 0, y: 10, w: 400, h: 30},
+                 {id: 'guide--up', cls: 'guide', run: 'y', x: 0, y: 0, w: 90, h: 400},
+                 {id: 'guide--old', cls: 'guide', run: null, x: 0, y: 0, w: 90, h: 30},
+                 {id: 'pass--brush', cls: 'pass', x: 0, y: 0, w: 300, h: 20}];
+  const g = Object.fromEntries(guidesFromRects(rects, 'front', 483).map(x => [x.via, x]));
+  assert.deepEqual(Object.values(g).map(x => [x.via, x.run]),
+    [['guide-1', 'x'], ['tray', 'x'], ['up', 'y'], ['old', 'x'], ['brush', 'z']]);
+  assert.deepEqual(g.tray.aperture, {w: 30, h: 30, estimated: true});
+  assert.deepEqual(g.brush.aperture, {w: 300, h: 20});
+});
+
+test('the exports word a part beside the rack and a part on one rail as the kit does', () => {
+  const ed = editorOf(rackOf());
+  ed.apply([{op: 'zerou.place', ref: DUCT, at: 'right', ru: 1, label: 'vcm-1', between: true},
+            {op: 'side.place', ref: BRACKET, face: 'front', ru: 20, side: 'left', label: 'fb-1'}]);
+  const r = ed.rack();
   assert.deepEqual(zeroUNotes(r, chassisOf),
     ['vcm-1: FS.com CMV-SFD45U5W, 0U, between racks at right, U1-U45; it serves the next rack too, which this file does not hold.']);
-  assert.equal(zeroUComment(r, zeroUEntries(r, chassisOf)[0], chassisOf, 'NetBox'),
-    '0U, a vertical cable manager between racks at right, U1-U45, serving the next rack too; NetBox has no field for that.');
-  assert.deepEqual(zeroUEntries(r, chassisOf)[0],
-    {id: 'z1', ref: DUCT, cfg: 'base', label: 'vcm-1', at: 'right', between: true, ru: 1, u: 45, w: 138.8, h: 2108, mount: 'rack-side'});
-  assert.deepEqual(withoutZeroU(r, chassisOf).zeroU, []);
-  // An entry this page cannot place stays, so the kit's own note still says it is left out.
-  const odd = {...r, zeroU: [...r.zeroU, {id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']};
-  assert.deepEqual(withoutZeroU(odd, chassisOf).zeroU, [{id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}, 'junk']);
-  assert.equal(zeroUNotes(odd, chassisOf).length, 1);
-});
-
-test('the editor: a per-call ctx reaches the kit, a no-step batch records no step, and its events carry the batch', async () => {
-  const doc = {...newDoc({kind: 'two-post'}), racks: [run(rackOf('two-post', 45), {op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}).rack]};
-  const kit = createRackEditor({doc, chassisOf});
-  const seen = [];
-  const fake = Object.create(kit);
-  fake.preview = (cmds, opts) => { seen.push(['preview', opts]); return kit.preview(cmds, opts); };
-  const ed = withZeroUEditor(fake, {chassisOf});
-  ed.preview({op: 'place', ref: 'fhd-cmp5dr', face: 'front', ru: 3}, {ctx: {probe: 1}});
-  assert.deepEqual(seen, [['preview', {ctx: {probe: 1}}]]);
-  // A site batch runs with the per-call ctx laid over {chassisOf}: here a lookup that makes the duct 50U.
-  const tall = ref => (ref === DUCT ? {...chassisOf(DUCT), ru: 50} : chassisOf(ref));
-  assert.match(ed.apply({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {ctx: {chassisOf: tall}}).error, /50U tall/);
-  assert.match(ed.preview({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {ctx: {chassisOf: tall}}).error, /50U tall/);
-  // A DCIM setting beside a site command that changes nothing: no undo step.
-  const events = [];
-  ed.on('change', ev => events.push(ev));
-  const r = ed.apply([{op: 'dcim', site: 'HQ'}, {op: 'zerou.update', id: 'z1', ru: 1}]);
-  assert.ok(!r.error, r.error);
-  assert.equal(ed.rack().dcim.site, 'HQ');
-  assert.ok(!ed.canUndo);
-  // A site step's event carries its commands and findings, and an agent's touches the part.
-  const cmds = [{op: 'zerou.update', id: 'z1', label: 'vcm-1'}];
-  ed.apply(cmds, {origin: 'agent'});
-  const ev = events.at(-1);
-  assert.deepEqual(ev.commands, cmds);
-  assert.deepEqual(ev.findings, []);
-  assert.equal(ev.origin, 'agent');
-  const {touchedIds} = await import('../../site/rack/agent-mark.js');
-  assert.deepEqual(touchedIds(ev), ['z1']);
-  const placed = ed.apply({op: 'zerou.place', ref: DUCT, at: 'right', ru: 1}, {origin: 'agent'});
-  assert.deepEqual(touchedIds(events.at(-1)), ['z2']);
-  assert.equal(placed.created.ids[0], 'z2');
-});
-
-test('a narrow part with no side, placed or moved by the kit, is judged on every unit it spans', () => {
-  const r = run(rackOf('two-post', 42), {op: 'side.place', ref: BRACKET, face: 'front', ru: 10, side: 'left'}).rack;
-  assert.ok(needsSite(r, [{op: 'place', ref: BRACKET, face: 'front', ru: 6}], chassisOf));
-  // Its bottom unit is free; its fifth is the sided bracket's bottom.
-  assert.match(run(r, {op: 'place', ref: BRACKET, face: 'front', ru: 6}).error, /Taken by CMV-5U3W/);
-  const ok = run(r, {op: 'place', ref: BRACKET, face: 'front', ru: 20});
-  assert.ok(!ok.error, ok.error);
-  assert.match(run(ok.rack, {op: 'move', id: 'i2', ru: 7}).error, /Taken by CMV-5U3W/);
-  assert.ok(!run(ok.rack, {op: 'move', id: 'i2', ru: 30}).error);
-});
-
-test('a narrow part names its rail in the kit\'s note and DCIM comment', async () => {
-  const {railNotes, railComment} = await import('../../site/rack/zero-u.js');
-  const {managerNotes} = await import('../../vendor/rack/export-data.js');
-  const r = run(rackOf('two-post', 42), {op: 'side.place', ref: BRACKET, face: 'front', ru: 20, side: 'left', label: 'fb-1'}).rack;
-  const it = r.items[0];
-  const note = managerNotes([it], chassisOf, r.frame)[0];
-  assert.deepEqual(railNotes([note, 'other'], r.items, chassisOf, x => managerNotes([x], chassisOf, r.frame)[0]),
-    [note.replace(/\.$/, ', left rail.'), 'other']);
-  assert.match(railNotes([note], r.items, chassisOf, x => managerNotes([x], chassisOf, r.frame)[0])[0], /at U20, front, left rail\.$/);
-  assert.equal(railComment('0U cable manager on the front rail face at U20; NetBox has no field for that.', it, chassisOf),
-    '0U cable manager on the front rail face at U20, left rail; NetBox has no field for that.');
-});
-
-// Kit 0.4.0's editor takes a per-call ctx (the parts lists loadSlots reads):
-// through this wrapper it reaches the kit's own check, on a kit batch and on a
-// site batch that carries a kit command, and is kept nowhere after the call.
-test('the editor: kit 0.4.0 checks a fit against the per-call parts lists, through either path', () => {
-  const SW = 'as7726-32x';
-  const slots = {bays: {front: [], rear: []}, cages: {front: [{id: 'port-1', interface: 'qsfp28', accepts: ['generic/qsfp-lc@2'], default: null}], rear: []},
-                 configs: [{name: chassisOf(SW).default, bays: {}, occupants: {}}], default: chassisOf(SW).default};
-  const parts = {slotsOf: ref => (ref === SW ? slots : null), compByRef: () => null};
-  const doc = {...newDoc({kind: 'two-post'}), racks: [rackOf('two-post', 45)]};
-  const ed = withZeroUEditor(createRackEditor({doc, chassisOf}), {chassisOf});
-  assert.ok(!ed.apply({op: 'place', ref: SW, face: 'front', ru: 10}).error);
-  const bad = {op: 'fit', id: 'i1', path: 'port-1', ref: 'generic/sfp-lr@1'};
-  assert.match(ed.apply(bad, {origin: 'agent', ctx: parts}).error, /port-1 does not take generic\/sfp-lr@1/);
-  assert.match(ed.preview(bad, {ctx: parts}).error, /does not take/);
-  // a site batch with a kit command in it: the same check, through applySite
-  const mixed = [{op: 'zerou.place', ref: DUCT, at: 'left', ru: 1}, bad];
-  assert.match(ed.apply(mixed, {origin: 'agent', ctx: parts}).error, /does not take/);
-  assert.match(ed.preview(mixed, {ctx: parts}).error, /does not take/);
-  // no ctx: unchecked, as the page's own calls always were
-  assert.equal(ed.preview(bad).error, undefined);
-});
-
-test('the site commands\' own words: the open rack, and the tool that lists ids', () => {
-  for (const [op, def] of Object.entries(ZERO_U_COMMANDS)) {
-    const props = def.args?.properties ?? {};
-    if (props.rack) assert.equal(props.rack.description, 'Edits go to the rack that is open; describe_rack names it.', op);
-    assert.doesNotMatch(JSON.stringify(def.args ?? {}), /Only the first rack|describe\(\)/, op);
-  }
+  assert.match(managerNotes(r.items, chassisOf, r.frame)[0], /^fb-1: .*at U20, front, left rail\.$/);
+  // An export that carries the parts calls none left out; one entry it cannot place still is.
+  assert.deepEqual(rackNotes(r, {cables: false, zeroU: false, chassisOf}), []);
+  const odd = {...r, zeroU: [...r.zeroU, {id: 'z9', ref: 'fhd-cmp5dr', at: 'left', offsetMm: 0}]};
+  assert.deepEqual(rackNotes(odd, {cables: false, zeroU: false, chassisOf}), ['1 zero-U item is not in this export yet.']);
+  // The DCIM row: no position, no face, where it stands in the comment.
+  const items = zeroUImportItems(r, chassisOf).map(z => ({...z, face: 'front', turned: false, swaps: {}, fields: {}}));
+  const types = new Map([['z1', {manufacturer: 'FS.com', model: 'CMV-SFD45U5W'}]]);
+  const {rows} = deviceImportRows({rack: r, items, types, target: 'netbox'});
+  assert.equal(rows.length, 1);
+  assert.deepEqual([rows[0].position, rows[0].face], ['', '']);
+  assert.equal(rows[0].comments, '0U, between racks at right, U1-U45, serving the next rack too; NetBox has no field for that.');
 });

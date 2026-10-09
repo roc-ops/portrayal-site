@@ -1,0 +1,959 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52mm" height="1730mm" viewBox="0 0 52 1730" data-device="evmi2130x" data-view="front" data-length-mm="1730" data-weight-kg="8.3" data-construction="aluminium chassis, black" data-input-plug="NEMA L21-30P on a fixed 10 ft cord, 10 AWG 5-conductor" data-input-voltage="120/208 V three-phase wye, 3W+N+PE (drawing 100-127/173-240 V)" data-input-current-a="24" data-plug-rating-a="30" data-capacity-kw="8.6" data-capacity-scope="the load the PDU can hand on (24 A at 208 V three phase), from the SKU title and the brochure table; it is not what the PDU draws itself, which no document held states" data-output-voltage="173-240 V, line to line" data-output-rating="10 A per C13, 16 A per C39, 16 A per section, 24 A per phase" data-breakers="three 20 A two-pole, UL listed" data-frequency="50/60 Hz" data-operating-temp="0 to 60 C (32 to 140 F)" data-metering="current, power and energy for the input; current for each branch" data-network-module="G4 eNMC, dual gigabit Ethernet with network cascading" data-emc="FCC part 15 class A, CAN ICES-003 class A" data-safety="UL 62368-1; cTUVus on the drawing" data-cybersecurity="UL 2900-1" data-regulatory-model="EMIF-PDXJ-E27K" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/g4-enmc@'] .state-activity { --led-color: #f5c518; }
+    g[data-ref^='eaton/g4-enmc@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='eaton/g4-enmc@'] .state-link { --led-color: #f5c518; }
+    g[data-ref^='eaton/g4-enmc@'] .state-peer-connected { --led-color: #22c55e; }
+    g[data-ref^='eaton/g4-enmc@'] .state-powered-by-peer { --led-color: #f5c518; }
+    g[data-ref^='eaton/g4-enmc@'] .state-probe-powered { --led-color: #22c55e; }
+    g[data-ref^='eaton/g4-enmc@'] .state-speed { --led-color: #22c55e; }
+    g[data-ref^='eaton/g4-enmc@'] .state-speed { animation: portrayal-blink 1s linear infinite; }
+    #network-module--module--sensor--led-a.state-activity, #network-module--module--eth0--led-a.state-activity, #network-module--module--eth1--led-a.state-activity { --led-color: #f5c518; }
+    #network-module--module--sensor--led-a.state-activity, #network-module--module--eth0--led-a.state-activity, #network-module--module--eth1--led-a.state-activity { animation: portrayal-blink 1s linear infinite; }
+    #network-module--module--eth0--led-a.state-link, #network-module--module--eth1--led-a.state-link { --led-color: #f5c518; }
+    #network-module--module--pdu-plus-1--led-b.state-peer-connected { --led-color: #22c55e; }
+    #network-module--module--pdu-plus-1--led-a.state-powered-by-peer { --led-color: #f5c518; }
+    #network-module--module--sensor--led-b.state-probe-powered { --led-color: #22c55e; }
+    #network-module--module--eth0--led-b.state-speed, #network-module--module--eth1--led-b.state-speed { --led-color: #22c55e; }
+    #network-module--module--eth0--led-b.state-speed, #network-module--module--eth1--led-b.state-speed { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Eaton EVMI2130X","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/ground-screw-m6@1":"1.0.1","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","eaton/c39-outlet@1":"1.0.0","eaton/g4-breaker-20a-2p@1":"1.0.0","eaton/g4-enmc@1":"1.0.0","eaton/g4-outlet-labels@1":"1.0.0","std/c13-outlet@1":"1.0.0","std/rj45@2":"2.1.0","std/usb-c@1":"1.2.0"},"source-sha256":"244d87878e1fde53b01983c8fa114adece041f742993ce31b67b4805e1351252","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EVMI2130X" data-sku="EVMI2130X" data-part-number="" x="0" y="0" width="52" height="1730" rx="1.2" fill="#2e3033" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="end-cap-top" data-kind="end-cap" x="0" y="0" width="52" height="2" rx="0.6" fill="#26282b" />
+    <rect id="end-cap-cord" data-kind="end-cap" x="0" y="1728" width="52" height="2" rx="0.6" fill="#26282b" />
+    <rect id="section-1-moulding" data-kind="outlet-moulding" x="6" y="1353.61" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="section-2-moulding" data-kind="outlet-moulding" x="6" y="1091.41" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="section-3-moulding" data-kind="outlet-moulding" x="6" y="829.11" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="section-4-moulding" data-kind="outlet-moulding" x="6" y="418.01" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="section-5-moulding" data-kind="outlet-moulding" x="6" y="215.01" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="section-6-moulding" data-kind="outlet-moulding" x="6" y="12.11" width="36.1" height="181.29" rx="2.5" fill="#1e1f21" />
+    <rect id="screw-cord-end" data-kind="screw-head" x="23" y="1713" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="screw-far-end" data-kind="screw-head" x="23" y="4" width="6" height="6" rx="3" fill="#565b60" />
+    <rect id="boss" data-kind="boss" x="31.9" y="1633.9" width="8.2" height="8.2" rx="4.1" fill="#25272a" />
+  </g>
+  <rect id="region--section-1" data-path="region:section-1" data-class="region" data-members="outlet-a1 outlet-a2 outlet-a3 outlet-a4 outlet-a5 outlet-a6 outlet-a7 labels-1 breaker-a" x="2" y="1354.11" width="48" height="244.89" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--section-2" data-path="region:section-2" data-class="region" data-members="outlet-b8 outlet-b9 outlet-b10 outlet-b11 outlet-b12 outlet-b13 outlet-b14 labels-2 breaker-b" x="2" y="1091.91" width="48" height="244.89" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--section-3" data-path="region:section-3" data-class="region" data-members="outlet-c15 outlet-c16 outlet-c17 outlet-c18 outlet-c19 outlet-c20 outlet-c21 labels-3 breaker-c" x="2" y="829.61" width="48" height="244.89" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--section-4" data-path="region:section-4" data-class="region" data-members="outlet-a22 outlet-a23 outlet-a24 outlet-a25 outlet-a26 outlet-a27 outlet-a28 labels-4" x="6.6" y="418.51" width="42.9" height="180.29" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--section-5" data-path="region:section-5" data-class="region" data-members="outlet-b29 outlet-b30 outlet-b31 outlet-b32 outlet-b33 outlet-b34 outlet-b35 labels-5" x="6.6" y="215.51" width="42.9" height="180.29" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--section-6" data-path="region:section-6" data-class="region" data-members="outlet-c36 outlet-c37 outlet-c38 outlet-c39 outlet-c40 outlet-c41 outlet-c42 labels-6" x="6.6" y="12.61" width="42.9" height="180.29" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <g id="outlet-a1" data-path="outlet-a1" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="1" transform="translate(9.1,1509.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a1</title>
+    <rect id="outlet-a1--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a1--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a1/recess" data-class="inlet" />
+    <g id="outlet-a1--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a2" data-path="outlet-a2" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="2" transform="translate(6.6,1481.76)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a2</title>
+    <rect id="outlet-a2--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a2--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a2/recess" data-class="inlet" />
+    <g id="outlet-a2--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a3" data-path="outlet-a3" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="3" transform="translate(9.1,1458.86)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a3</title>
+    <rect id="outlet-a3--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a3--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a3/recess" data-class="inlet" />
+    <g id="outlet-a3--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a4" data-path="outlet-a4" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="4" transform="translate(6.6,1430.96)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a4</title>
+    <rect id="outlet-a4--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a4--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a4/recess" data-class="inlet" />
+    <g id="outlet-a4--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a5" data-path="outlet-a5" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="5" transform="translate(9.1,1408.06)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a5</title>
+    <rect id="outlet-a5--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a5--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a5/recess" data-class="inlet" />
+    <g id="outlet-a5--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a6" data-path="outlet-a6" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="6" transform="translate(6.6,1380.16)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a6</title>
+    <rect id="outlet-a6--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a6--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a6/recess" data-class="inlet" />
+    <g id="outlet-a6--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a7" data-path="outlet-a7" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="7" transform="translate(9.1,1357.26)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a7</title>
+    <rect id="outlet-a7--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a7--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a7/recess" data-class="inlet" />
+    <g id="outlet-a7--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-1" data-path="labels-1" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="A1" data-label-2="A2" data-label-3="A3" data-label-4="A4" data-label-5="A5" data-label-6="A6" data-label-7="A7" data-section-color="#f4d440" data-rel-pos="1" transform="translate(45.5,1354.11)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-1</title>
+    <g id="labels-1--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-1--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#f4d440" data-fill-from="section-color" data-path="labels-1/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-1--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">A1</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">A2</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">A3</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">A4</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">A5</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">A6</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">A7</text>
+    </g>
+  </g>
+  <g id="outlet-b8" data-path="outlet-b8" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="8" transform="translate(9.1,1247.46)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b8</title>
+    <rect id="outlet-b8--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b8--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b8/recess" data-class="inlet" />
+    <g id="outlet-b8--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b9" data-path="outlet-b9" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="9" transform="translate(6.6,1219.56)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b9</title>
+    <rect id="outlet-b9--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b9--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b9/recess" data-class="inlet" />
+    <g id="outlet-b9--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b10" data-path="outlet-b10" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="10" transform="translate(9.1,1196.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b10</title>
+    <rect id="outlet-b10--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b10--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b10/recess" data-class="inlet" />
+    <g id="outlet-b10--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b11" data-path="outlet-b11" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="11" transform="translate(6.6,1168.76)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b11</title>
+    <rect id="outlet-b11--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b11--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b11/recess" data-class="inlet" />
+    <g id="outlet-b11--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b12" data-path="outlet-b12" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="12" transform="translate(9.1,1145.86)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b12</title>
+    <rect id="outlet-b12--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b12--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b12/recess" data-class="inlet" />
+    <g id="outlet-b12--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b13" data-path="outlet-b13" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="13" transform="translate(6.6,1117.96)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b13</title>
+    <rect id="outlet-b13--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b13--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b13/recess" data-class="inlet" />
+    <g id="outlet-b13--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b14" data-path="outlet-b14" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="14" transform="translate(9.1,1095.06)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b14</title>
+    <rect id="outlet-b14--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b14--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b14/recess" data-class="inlet" />
+    <g id="outlet-b14--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-2" data-path="labels-2" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="B8" data-label-2="B9" data-label-3="B10" data-label-4="B11" data-label-5="B12" data-label-6="B13" data-label-7="B14" data-section-color="#48c2f4" data-rel-pos="2" transform="translate(45.5,1091.91)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-2</title>
+    <g id="labels-2--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-2--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#48c2f4" data-fill-from="section-color" data-path="labels-2/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-2--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">B8</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">B9</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">B10</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">B11</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">B12</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">B13</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">B14</text>
+    </g>
+  </g>
+  <g id="outlet-c15" data-path="outlet-c15" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="15" transform="translate(9.1,985.16)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c15</title>
+    <rect id="outlet-c15--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c15--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c15/recess" data-class="inlet" />
+    <g id="outlet-c15--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c16" data-path="outlet-c16" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="16" transform="translate(6.6,957.26)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c16</title>
+    <rect id="outlet-c16--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c16--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c16/recess" data-class="inlet" />
+    <g id="outlet-c16--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c17" data-path="outlet-c17" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="17" transform="translate(9.1,934.36)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c17</title>
+    <rect id="outlet-c17--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c17--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c17/recess" data-class="inlet" />
+    <g id="outlet-c17--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c18" data-path="outlet-c18" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="18" transform="translate(6.6,906.46)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c18</title>
+    <rect id="outlet-c18--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c18--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c18/recess" data-class="inlet" />
+    <g id="outlet-c18--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c19" data-path="outlet-c19" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="19" transform="translate(9.1,883.56)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c19</title>
+    <rect id="outlet-c19--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c19--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c19/recess" data-class="inlet" />
+    <g id="outlet-c19--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c20" data-path="outlet-c20" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="20" transform="translate(6.6,855.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c20</title>
+    <rect id="outlet-c20--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c20--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c20/recess" data-class="inlet" />
+    <g id="outlet-c20--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c21" data-path="outlet-c21" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="21" transform="translate(9.1,832.76)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c21</title>
+    <rect id="outlet-c21--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c21--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c21/recess" data-class="inlet" />
+    <g id="outlet-c21--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-3" data-path="labels-3" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="C15" data-label-2="C16" data-label-3="C17" data-label-4="C18" data-label-5="C19" data-label-6="C20" data-label-7="C21" data-section-color="#f49448" data-rel-pos="3" transform="translate(45.5,829.61)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-3</title>
+    <g id="labels-3--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-3--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#f49448" data-fill-from="section-color" data-path="labels-3/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-3--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">C15</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">C16</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">C17</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">C18</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">C19</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">C20</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">C21</text>
+    </g>
+  </g>
+  <g id="outlet-a22" data-path="outlet-a22" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="22" transform="translate(9.1,574.06)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a22</title>
+    <rect id="outlet-a22--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a22--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a22/recess" data-class="inlet" />
+    <g id="outlet-a22--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a23" data-path="outlet-a23" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="23" transform="translate(6.6,546.16)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a23</title>
+    <rect id="outlet-a23--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a23--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a23/recess" data-class="inlet" />
+    <g id="outlet-a23--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a24" data-path="outlet-a24" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="24" transform="translate(9.1,523.26)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a24</title>
+    <rect id="outlet-a24--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a24--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a24/recess" data-class="inlet" />
+    <g id="outlet-a24--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a25" data-path="outlet-a25" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="25" transform="translate(6.6,495.36)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a25</title>
+    <rect id="outlet-a25--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a25--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a25/recess" data-class="inlet" />
+    <g id="outlet-a25--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a26" data-path="outlet-a26" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="26" transform="translate(9.1,472.46)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a26</title>
+    <rect id="outlet-a26--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a26--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a26/recess" data-class="inlet" />
+    <g id="outlet-a26--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a27" data-path="outlet-a27" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="27" transform="translate(6.6,444.56)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a27</title>
+    <rect id="outlet-a27--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-a27--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a27/recess" data-class="inlet" />
+    <g id="outlet-a27--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-a28" data-path="outlet-a28" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="28" transform="translate(9.1,421.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-a28</title>
+    <rect id="outlet-a28--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a28--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a28/recess" data-class="inlet" />
+    <g id="outlet-a28--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-4" data-path="labels-4" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="A22" data-label-2="A23" data-label-3="A24" data-label-4="A25" data-label-5="A26" data-label-6="A27" data-label-7="A28" data-section-color="#f4d440" data-rel-pos="4" transform="translate(45.5,418.51)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-4</title>
+    <g id="labels-4--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-4--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#f4d440" data-fill-from="section-color" data-path="labels-4/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-4--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">A22</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">A23</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">A24</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">A25</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">A26</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">A27</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">A28</text>
+    </g>
+  </g>
+  <g id="outlet-b29" data-path="outlet-b29" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="29" transform="translate(9.1,371.06)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b29</title>
+    <rect id="outlet-b29--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b29--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b29/recess" data-class="inlet" />
+    <g id="outlet-b29--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b30" data-path="outlet-b30" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="30" transform="translate(6.6,343.16)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b30</title>
+    <rect id="outlet-b30--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b30--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b30/recess" data-class="inlet" />
+    <g id="outlet-b30--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b31" data-path="outlet-b31" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="31" transform="translate(9.1,320.26)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b31</title>
+    <rect id="outlet-b31--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b31--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b31/recess" data-class="inlet" />
+    <g id="outlet-b31--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b32" data-path="outlet-b32" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="32" transform="translate(6.6,292.36)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b32</title>
+    <rect id="outlet-b32--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b32--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b32/recess" data-class="inlet" />
+    <g id="outlet-b32--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b33" data-path="outlet-b33" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="33" transform="translate(9.1,269.46)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b33</title>
+    <rect id="outlet-b33--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b33--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b33/recess" data-class="inlet" />
+    <g id="outlet-b33--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b34" data-path="outlet-b34" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="34" transform="translate(6.6,241.56)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b34</title>
+    <rect id="outlet-b34--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-b34--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b34/recess" data-class="inlet" />
+    <g id="outlet-b34--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-b35" data-path="outlet-b35" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="35" transform="translate(9.1,218.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-b35</title>
+    <rect id="outlet-b35--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b35--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b35/recess" data-class="inlet" />
+    <g id="outlet-b35--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-5" data-path="labels-5" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="B29" data-label-2="B30" data-label-3="B31" data-label-4="B32" data-label-5="B33" data-label-6="B34" data-label-7="B35" data-section-color="#48c2f4" data-rel-pos="5" transform="translate(45.5,215.51)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-5</title>
+    <g id="labels-5--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-5--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#48c2f4" data-fill-from="section-color" data-path="labels-5/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-5--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">B29</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">B30</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">B31</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">B32</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">B33</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">B34</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">B35</text>
+    </g>
+  </g>
+  <g id="outlet-c36" data-path="outlet-c36" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="36" transform="translate(9.1,168.16)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c36</title>
+    <rect id="outlet-c36--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c36--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c36/recess" data-class="inlet" />
+    <g id="outlet-c36--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c37" data-path="outlet-c37" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="37" transform="translate(6.6,140.26)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c37</title>
+    <rect id="outlet-c37--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c37--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c37/recess" data-class="inlet" />
+    <g id="outlet-c37--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c38" data-path="outlet-c38" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="38" transform="translate(9.1,117.36)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c38</title>
+    <rect id="outlet-c38--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c38--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c38/recess" data-class="inlet" />
+    <g id="outlet-c38--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c39" data-path="outlet-c39" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="39" transform="translate(6.6,89.46)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c39</title>
+    <rect id="outlet-c39--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c39--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c39/recess" data-class="inlet" />
+    <g id="outlet-c39--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c40" data-path="outlet-c40" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="40" transform="translate(9.1,66.56)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c40</title>
+    <rect id="outlet-c40--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c40--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c40/recess" data-class="inlet" />
+    <g id="outlet-c40--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-c41" data-path="outlet-c41" data-class="inlet" data-ref="eaton/c39-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-outlet="eaton-c39" data-rating-a="16" data-rel-pos="41" transform="translate(6.6,38.66)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c41</title>
+    <rect id="outlet-c41--well" x="0" y="0" width="35.4" height="26.6" fill="#1e1f21" />
+    <path id="outlet-c41--recess" fill-rule="evenodd" d="M 4.5 26.6 L 3.34 26.45 L 2.25 26 L 1.32 25.28 L 0.6 24.35 L 0.15 23.26 L 0 22.1 L 0 4.5 L 0.15 3.34 L 0.6 2.25 L 1.32 1.32 L 2.25 0.6 L 3.34 0.15 L 4.5 0 L 30.9 0 L 32.06 0.15 L 33.15 0.6 L 34.08 1.32 L 34.8 2.25 L 35.25 3.34 L 35.4 4.5 L 35.4 22.1 L 35.25 23.26 L 34.8 24.35 L 34.08 25.28 L 33.15 26 L 32.06 26.45 L 30.9 26.6 Z M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c41/recess" data-class="inlet" />
+    <g id="outlet-c41--nose">
+      <path d="M 6.35 21.54 L 6.35 10.94 L 11.75 10.94 L 11.75 5.94 L 23.6 5.94 L 23.6 10.94 L 29.1 10.94 L 29.1 21.54 L 19.8 21.54 L 19.8 17.04 L 15.6 17.04 L 15.6 21.54 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <path d="M 7.55 19.14 L 7.55 15.54 L 8.9 15.54 L 8.9 12.64 L 12.5 12.64 L 12.5 15.54 L 14.8 15.54 L 14.8 19.14 Z" fill="#030303" />
+      <path d="M 20.6 19.14 L 20.6 15.54 L 22.9 15.54 L 22.9 12.64 L 26.5 12.64 L 26.5 15.54 L 27.8 15.54 L 27.8 19.14 Z" fill="#030303" />
+      <path d="M 15.9 14.84 L 15.9 11.14 L 13.55 11.14 L 13.55 7.44 L 21.9 7.44 L 21.9 11.14 L 19.5 11.14 L 19.5 14.84 Z" fill="#030303" />
+    </g>
+    <path d="M 4 7.74 L 3.4 6.54 L 3.5 5.24 L 5 3.64 L 6.8 3.14 L 8 3.64 L 8.2 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+    <path d="M 31.3 7.74 L 31.9 6.54 L 31.8 5.24 L 30.3 3.64 L 28.5 3.14 L 27.3 3.64 L 27.1 4.64 Z" fill="#26282a" stroke="#45484c" stroke-width="0.15" />
+  </g>
+  <g id="outlet-c42" data-path="outlet-c42" data-class="inlet" data-ref="std/c13-outlet@1:1.0.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="42" transform="translate(9.1,15.76)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-c42</title>
+    <rect id="outlet-c42--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-c42--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-c42/recess" data-class="inlet" />
+    <g id="outlet-c42--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="labels-6" data-path="labels-6" data-class="marking" data-ref="eaton/g4-outlet-labels@1:1.0.0" data-label-1="C36" data-label-2="C37" data-label-3="C38" data-label-4="C39" data-label-5="C40" data-label-6="C41" data-label-7="C42" data-section-color="#f49448" data-rel-pos="6" transform="translate(45.5,12.61)" data-group="section-labels" data-group-role="furniture">
+    <title>labels-6</title>
+    <g id="labels-6--strip" transform="matrix(0,-1,1,0,0,180.29)">
+      <rect id="labels-6--band" x="0" y="0" width="180.29" height="4" rx="0.6" fill="#f49448" data-fill-from="section-color" data-path="labels-6/band" data-class="marking" />
+      <rect x="9.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="34.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="59.85" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="85.25" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="110.65" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="136.05" y="0" width="9.8" height="4" fill="#3a3c3e" />
+      <rect x="161.45" y="0" width="9.8" height="4" fill="#3a3c3e" />
+    </g>
+    <g id="labels-6--silkscreen" font-family="sans-serif" fill="#e6e6e6">
+      <text x="2" y="167.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 166.34)" data-from="label-1">C36</text>
+      <text x="2" y="142.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 140.94)" data-from="label-2">C37</text>
+      <text x="2" y="116.76" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 115.54)" data-from="label-3">C38</text>
+      <text x="2" y="91.36" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 90.14)" data-from="label-4">C39</text>
+      <text x="2" y="65.96" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 64.74)" data-from="label-5">C40</text>
+      <text x="2" y="40.56" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 39.34)" data-from="label-6">C41</text>
+      <text x="2" y="15.16" font-size="3.4" text-anchor="middle" transform="rotate(-90 2 13.94)" data-from="label-7">C42</text>
+    </g>
+  </g>
+  <g id="breaker-a" data-path="breaker-a" data-class="breaker" data-ref="eaton/g4-breaker-20a-2p@1:1.0.0" data-poles="2" data-rating-a="20" data-section="A" data-section-color="#f4d440" data-rel-pos="1" transform="translate(2,1539)" data-group="breakers" data-group-role="service" data-description="Breaker A, 20 A two-pole on L1-L2: protects both A sections, outlets A1-A7 and A22-A28">
+    <title>breaker-a</title>
+    <g id="breaker-a--plate" data-z-out="7.5">
+      <g transform="matrix(0,-1,1,0,0,60)">
+        <rect x="0" y="0" width="60" height="48" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+        <ellipse cx="24.5" cy="33.4" rx="14.0" ry="9.6" fill="#2a2d30" stroke="#3b3e42" stroke-width="0.2" />
+        <circle cx="8.9" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 14.5 h 3.4 M 8.9 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="51.1" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 49.4 14.5 h 3.4 M 51.1 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="8.9" cy="33.4" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 33.4 h 3.4 M 8.9 31.7 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="24.5" cy="33.4" r="7.6" fill="#141516" stroke="#3b3e42" stroke-width="0.2" />
+        <path id="breaker-a--tile" d="M 41.3 26.0 H 58.7 V 41.0 H 41.3 A 7.5 7.5 0 0 1 41.3 26.0 Z" fill="#f4d440" data-fill-from="section-color" />
+      </g>
+      <g id="breaker-a--silkscreen" font-family="sans-serif" fill="#202224">
+        <text x="33.5" y="18.07" font-size="12" text-anchor="middle" transform="rotate(-90 33.5 13.75)" data-from="section">A</text>
+      </g>
+      <rect id="breaker-a--rocker" x="30.6" y="29.5" width="5.6" height="12.0" rx="0.6" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" data-path="breaker-a/rocker" data-class="breaker" data-states="on off" />
+    </g>
+  </g>
+  <g id="breaker-b" data-path="breaker-b" data-class="breaker" data-ref="eaton/g4-breaker-20a-2p@1:1.0.0" data-poles="2" data-rating-a="20" data-section="B" data-section-color="#48c2f4" data-rel-pos="2" transform="translate(2,1276.8)" data-group="breakers" data-group-role="service" data-description="Breaker B, 20 A two-pole on L2-L3: protects both B sections, outlets B8-B14 and B29-B35">
+    <title>breaker-b</title>
+    <g id="breaker-b--plate" data-z-out="7.5">
+      <g transform="matrix(0,-1,1,0,0,60)">
+        <rect x="0" y="0" width="60" height="48" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+        <ellipse cx="24.5" cy="33.4" rx="14.0" ry="9.6" fill="#2a2d30" stroke="#3b3e42" stroke-width="0.2" />
+        <circle cx="8.9" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 14.5 h 3.4 M 8.9 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="51.1" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 49.4 14.5 h 3.4 M 51.1 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="8.9" cy="33.4" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 33.4 h 3.4 M 8.9 31.7 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="24.5" cy="33.4" r="7.6" fill="#141516" stroke="#3b3e42" stroke-width="0.2" />
+        <path id="breaker-b--tile" d="M 41.3 26.0 H 58.7 V 41.0 H 41.3 A 7.5 7.5 0 0 1 41.3 26.0 Z" fill="#48c2f4" data-fill-from="section-color" />
+      </g>
+      <g id="breaker-b--silkscreen" font-family="sans-serif" fill="#202224">
+        <text x="33.5" y="18.07" font-size="12" text-anchor="middle" transform="rotate(-90 33.5 13.75)" data-from="section">B</text>
+      </g>
+      <rect id="breaker-b--rocker" x="30.6" y="29.5" width="5.6" height="12.0" rx="0.6" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" data-path="breaker-b/rocker" data-class="breaker" data-states="on off" />
+    </g>
+  </g>
+  <g id="breaker-c" data-path="breaker-c" data-class="breaker" data-ref="eaton/g4-breaker-20a-2p@1:1.0.0" data-poles="2" data-rating-a="20" data-section="C" data-section-color="#f49448" data-rel-pos="3" transform="translate(2,1014.5)" data-group="breakers" data-group-role="service" data-description="Breaker C, 20 A two-pole on L3-L1: protects both C sections, outlets C15-C21 and C36-C42">
+    <title>breaker-c</title>
+    <g id="breaker-c--plate" data-z-out="7.5">
+      <g transform="matrix(0,-1,1,0,0,60)">
+        <rect x="0" y="0" width="60" height="48" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+        <ellipse cx="24.5" cy="33.4" rx="14.0" ry="9.6" fill="#2a2d30" stroke="#3b3e42" stroke-width="0.2" />
+        <circle cx="8.9" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 14.5 h 3.4 M 8.9 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="51.1" cy="14.5" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 49.4 14.5 h 3.4 M 51.1 12.8 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="8.9" cy="33.4" r="3.4" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 7.2 33.4 h 3.4 M 8.9 31.7 v 3.4" stroke="#24272a" stroke-width="0.5" />
+        <circle cx="24.5" cy="33.4" r="7.6" fill="#141516" stroke="#3b3e42" stroke-width="0.2" />
+        <path id="breaker-c--tile" d="M 41.3 26.0 H 58.7 V 41.0 H 41.3 A 7.5 7.5 0 0 1 41.3 26.0 Z" fill="#f49448" data-fill-from="section-color" />
+      </g>
+      <g id="breaker-c--silkscreen" font-family="sans-serif" fill="#202224">
+        <text x="33.5" y="18.07" font-size="12" text-anchor="middle" transform="rotate(-90 33.5 13.75)" data-from="section">C</text>
+      </g>
+      <rect id="breaker-c--rocker" x="30.6" y="29.5" width="5.6" height="12.0" rx="0.6" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" data-path="breaker-c/rocker" data-class="breaker" data-states="on off" />
+    </g>
+  </g>
+  <g id="ground" data-path="ground" data-class="ground" data-ref="common/ground-screw-m6@1:1.0.1" data-connector="terminal-stud" data-rel-pos="1" transform="translate(32.05,1671.95)" data-group="grounding" data-group-role="furniture">
+    <title>ground</title>
+    <g id="ground--head" data-z-cyl="4.6" data-z-color="#b9bec4">
+      <circle cx="6" cy="6" r="5.9" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+      <path d="M 3.36 6 H 8.64 M 6 3.36 V 8.64" fill="none" stroke="#4e5359" stroke-width="0.72" stroke-linecap="round" />
+    </g>
+    <g data-cp="mate" data-cp-at="6 6" data-cp-dir="front" data-cp-on="ground--head" />
+  </g>
+  <g id="network-module" data-path="network-module" data-class="bay" data-group="network" data-group-role="management" data-rel-pos="1">
+    <title>network-module</title>
+    <rect id="network-module--opening" x="1.45" y="623.25" width="49.15" height="187.9" fill="#101214" />
+    <g id="network-module--module" data-path="network-module/module" data-class="nic" data-behaviour="fills" data-ref="eaton/g4-enmc@1:1.0.0" data-body-depth="40" data-module="G4 eNMC" transform="translate(26.025,717.2) translate(-24.575,-93.95)">
+      <title>network-module--module</title>
+      <rect id="network-module--module--faceplate" x="0" y="0" width="49.15" height="187.9" rx="1.0" fill="#18191b" stroke="#3a3d41" stroke-width="0.25" />
+      <rect x="0.6" y="3.5" width="47.95" height="180.9" rx="7" fill="#212326" stroke="#34373b" stroke-width="0.2" />
+      <g transform="matrix(0,-1,1,0,0,187.9)">
+        <circle cx="9.55" cy="24.55" r="3.0" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 8.05 24.55 h 3 M 9.55 23.05 v 3" stroke="#24272a" stroke-width="0.45" />
+        <circle cx="177.35" cy="24.55" r="3.0" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+        <path d="M 175.85 24.55 h 3 M 177.35 23.05 v 3" stroke="#24272a" stroke-width="0.45" />
+        <g id="network-module--module--icons-silkscreen" font-family="sans-serif" fill="#c9ccd0">
+          <path d="M 26.35 14.85 V 17.85 M 27.95 14.85 V 17.85" stroke="#c9ccd0" stroke-width="0.3" fill="none" />
+          <path d="M 26.35 14.05 l -0.6 0.9 h 1.2 z M 27.95 18.65 l -0.6 -0.9 h 1.2 z" fill="#c9ccd0" />
+          <circle cx="27.15" cy="34.55" r="0.8" fill="none" stroke="#c9ccd0" stroke-width="0.25" />
+          <path d="M 27.15 31.15 V 33.75" stroke="#c9ccd0" stroke-width="0.5" />
+          <path d="M 49.05 8.95 h 1.4 v 0.9 h -1.4 z M 48.15 10.75 h 1.2 v 0.8 h -1.2 z M 50.15 10.75 h 1.2 v 0.8 h -1.2 z M 49.75 9.85 v 0.8 M 48.75 10.45 h 2.4" fill="none" stroke="#c9ccd0" stroke-width="0.2" />
+          <path d="M 49.05 36.95 h 1.4 v 0.9 h -1.4 z M 48.15 38.75 h 1.2 v 0.8 h -1.2 z M 50.15 38.75 h 1.2 v 0.8 h -1.2 z M 49.75 37.85 v 0.8 M 48.75 38.45 h 2.4" fill="none" stroke="#c9ccd0" stroke-width="0.2" />
+          <path d="M 94.25 11.15 h 2.8 v 1.8 h -2.8 z M 93.75 13.25 h 3.8" fill="none" stroke="#c9ccd0" stroke-width="0.2" />
+        </g>
+        <g id="network-module--module--keys-silkscreen">
+          <path d="M 150.7 14.1 L 146.3 17.1 L 150.7 20.1" fill="none" stroke="#c9ccd0" stroke-width="0.4" />
+          <path d="M 160.8 14.1 L 165.2 17.1 L 160.8 20.1" fill="none" stroke="#c9ccd0" stroke-width="0.4" />
+          <path d="M 165.6 30.3 V 32.7 H 160.6 M 160.4 32.7 l 1.1 -0.9 v 1.8 z" fill="none" stroke="#c9ccd0" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="network-module--module--standing-silkscreen" font-family="sans-serif" fill="#c9ccd0">
+        <text x="6.25" y="155.89" font-size="2.6" text-anchor="middle" transform="rotate(-90 6.25 154.95)">PDU+1</text>
+        <text x="43.55" y="154.79" font-size="2.6" text-anchor="middle" transform="rotate(-90 43.55 153.85)">SENSOR</text>
+        <text x="15.05" y="139.09" font-size="2.6" text-anchor="middle" transform="rotate(-90 15.05 138.15)">0</text>
+        <text x="33.05" y="139.09" font-size="2.6" text-anchor="middle" transform="rotate(-90 33.05 138.15)">1</text>
+        <text x="8.15" y="101.19" font-size="2.2" text-anchor="middle" transform="rotate(-90 8.15 100.4)">USB/0</text>
+        <text x="41.15" y="101.19" font-size="2.2" text-anchor="middle" transform="rotate(-90 41.15 100.4)">USB/1</text>
+        <text x="24.55" y="102.43" font-size="6.6" text-anchor="middle" transform="rotate(-90 24.55 100.05)" font-weight="bold">EATON</text>
+        <text x="31.9" y="40.48" font-size="3" text-anchor="middle" transform="rotate(-90 31.9 39.4)">ESC</text>
+        <text x="24.15" y="137.15" font-size="1.9" text-anchor="middle">10/100/1Gb</text>
+        <text x="24.15" y="166.95" font-size="1.9" text-anchor="middle">RESTART</text>
+      </g>
+      <rect id="network-module--module--lcd" x="8.95" y="52.15" width="31.1" height="30.9" fill="#2b4a99" stroke="#4a4d51" stroke-width="0.3" data-path="network-module/module/lcd" data-class="display" data-characters="19" />
+      <rect id="network-module--module--key-up" x="10.95" y="18.75" width="12.3" height="12.3" rx="3" fill="none" stroke="#6b7076" stroke-width="0.3" data-path="network-module/module/key-up" data-class="button" />
+      <rect id="network-module--module--key-enter" x="25.75" y="18.75" width="12.3" height="12.3" rx="3" fill="none" stroke="#6b7076" stroke-width="0.3" data-path="network-module/module/key-enter" data-class="button" />
+      <rect id="network-module--module--key-down" x="10.95" y="33.25" width="12.3" height="12.3" rx="3" fill="none" stroke="#6b7076" stroke-width="0.3" data-path="network-module/module/key-down" data-class="button" />
+      <rect id="network-module--module--key-esc" x="25.75" y="33.25" width="12.3" height="12.3" rx="3" fill="none" stroke="#6b7076" stroke-width="0.3" data-path="network-module/module/key-esc" data-class="button" />
+      <g id="network-module--module--pdu-plus-1" data-path="network-module/module/pdu-plus-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="power-redundancy" data-media="rj45-telemetry" transform="translate(8.35,144.6)" data-group="peripheral" data-group-role="management">
+        <title>network-module--module--pdu-plus-1</title>
+        <g id="network-module--module--pdu-plus-1--jack" data-path="network-module/module/pdu-plus-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>network-module--module--pdu-plus-1--jack</title>
+          <path id="network-module--module--pdu-plus-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--pdu-plus-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--pdu-plus-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="network-module/module/pdu-plus-1/jack/opening" data-class="cutout" />
+          <g id="network-module--module--pdu-plus-1--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="network-module--module--pdu-plus-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="network-module--module--pdu-plus-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/pdu-plus-1/led-a" data-class="led" data-states="off powered-by-peer" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="network-module--module--pdu-plus-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/pdu-plus-1/led-b" data-class="led" data-states="off peer-connected" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--sensor" data-path="network-module/module/sensor" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="environmental-probe" data-media="rj45-telemetry" transform="translate(24.9,144.6)" data-group="peripheral" data-group-role="management">
+        <title>network-module--module--sensor</title>
+        <g id="network-module--module--sensor--jack" data-path="network-module/module/sensor/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>network-module--module--sensor--jack</title>
+          <path id="network-module--module--sensor--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--sensor--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--sensor--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="network-module/module/sensor/jack/opening" data-class="cutout" />
+          <g id="network-module--module--sensor--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="network-module--module--sensor--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="network-module--module--sensor--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/sensor/led-a" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="network-module--module--sensor--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/sensor/led-b" data-class="led" data-states="off probe-powered" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--eth0" data-path="network-module/module/eth0" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(8.4,120.05)" data-group="ethernet" data-group-role="management" data-description="network ports 0 and 1, eth0 and eth1 on the LCD">
+        <title>network-module--module--eth0</title>
+        <g id="network-module--module--eth0--jack" data-path="network-module/module/eth0/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>network-module--module--eth0--jack</title>
+          <path id="network-module--module--eth0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--eth0--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--eth0--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="network-module/module/eth0/jack/opening" data-class="cutout" />
+          <g id="network-module--module--eth0--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="network-module--module--eth0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="network-module--module--eth0--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/eth0/led-a" data-class="led" data-states="off link activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="network-module--module--eth0--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/eth0/led-b" data-class="led" data-states="off speed" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--eth1" data-path="network-module/module/eth1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(24.85,120.05)" data-group="ethernet" data-group-role="management" data-description="network ports 0 and 1, eth0 and eth1 on the LCD">
+        <title>network-module--module--eth1</title>
+        <g id="network-module--module--eth1--jack" data-path="network-module/module/eth1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>network-module--module--eth1--jack</title>
+          <path id="network-module--module--eth1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--eth1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="network-module--module--eth1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="network-module/module/eth1/jack/opening" data-class="cutout" />
+          <g id="network-module--module--eth1--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="network-module--module--eth1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="network-module--module--eth1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/eth1/led-a" data-class="led" data-states="off link activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="network-module--module--eth1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="network-module/module/eth1/led-b" data-class="led" data-states="off speed" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--usb-0" data-path="network-module/module/usb-0" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-role="console" transform="translate(7.98,99.12) rotate(90 4.17 1.28)" data-group="peripheral" data-group-role="management">
+        <title>network-module--module--usb-0</title>
+        <rect id="network-module--module--usb-0--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="network-module/module/usb-0/opening" data-class="cutout" />
+        <rect id="network-module--module--usb-0--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+        <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--usb-1" data-path="network-module/module/usb-1" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-role="storage" transform="translate(32.78,99.12) rotate(90 4.17 1.28)" data-group="peripheral" data-group-role="management">
+        <title>network-module--module--usb-1</title>
+        <rect id="network-module--module--usb-1--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="network-module/module/usb-1/opening" data-class="cutout" />
+        <rect id="network-module--module--usb-1--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+        <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+      </g>
+      <g id="network-module--module--restart" data-path="network-module/module/restart" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" transform="translate(22.55,161.5)" data-group="controls" data-group-role="management">
+        <title>network-module--module--restart</title>
+        <circle id="network-module--module--restart--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="network-module--module--restart--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="network-module/module/restart/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+      </g>
+    </g>
+  </g>
+</svg>

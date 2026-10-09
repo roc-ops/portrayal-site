@@ -8,10 +8,9 @@ import {readFileSync, readdirSync} from 'node:fs';
 const REDUCERS = ['withItem', 'updateItem', 'withoutItem', 'withFrame', 'renamed', 'withDcim', 'detached', 'withCable',
                   'updateCable', 'withoutCable', 'withoutCablesOf', 'moveItem', 'shrinkRack', 'withRoutedLengths'];
 // The core may call them; drag.js may call moveItem for its PREVIEW only (the drop is a move command).
-// The core is the kit's now (vendor/rack/). zero-u.js holds the site's own commands
-// (zero-U parts, narrow parts on one rail) until the kit has them: it is core, run
-// only through the editor (withZeroUEditor), and calls withItem as the kit's place does.
-const ALLOWED = {'drag.js': ['moveItem'], 'zero-u.js': ['withItem']};
+// The core is the kit's (vendor/rack/), zero-U parts and narrow parts on one rail
+// included since kit 0.6.0 (#926): the site keeps no commands of its own.
+const ALLOWED = {'drag.js': ['moveItem']};
 
 test('the page and the UI modules import no reducer', () => {
   const files = [['rack-page.js', new URL('../../site/rack-page.js', import.meta.url)],
@@ -28,23 +27,20 @@ test('the page and the UI modules import no reducer', () => {
   }
 });
 
-// The site's own commands (zero-u.js) reach the rack only through the editor
-// it wraps: a UI module imports withZeroUEditor and the read helpers, never
-// the batch runner or a command's table entry to call.
-test('the page and the UI modules reach zero-u.js commands only through withZeroUEditor', () => {
+// NO SITE COMMAND LAYER (kit 0.6.0, #926): zerou.* and side.* are the kit's,
+// so the page runs the kit's editor as it is and nothing here wraps it or keeps
+// a command table of its own.
+test('the page runs the kit\'s editor directly, with no site command layer', () => {
   const dir = new URL('../../site/rack/', import.meta.url);
   const files = [['rack-page.js', new URL('../../site/rack-page.js', import.meta.url)],
-    ...readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'zero-u.js').map(f => [f, new URL(f, dir)])];
-  let wrapped = false;
+    ...readdirSync(dir).filter(f => f.endsWith('.js')).map(f => [f, new URL(f, dir)])];
+  assert.ok(!files.some(([name]) => name === 'zero-u.js'), 'site/rack/zero-u.js is back');
   for (const [name, url] of files) {
     const src = readFileSync(url, 'utf8');
-    for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']*zero-u\.js)'/g)) {
-      const names = m[1].split(',').map(s => s.trim().split(/\s+as\s+/)[0]).filter(Boolean);
-      const bad = names.filter(n => ['applySite', 'ZERO_U_COMMANDS', 'SITE_COMMANDS'].includes(n));
-      assert.deepEqual(bad, [], `${name} imports ${bad.join(', ')} from zero-u.js`);
-      if (names.includes('withZeroUEditor')) wrapped = true;
-    }
-    assert.doesNotMatch(src, /import\s*\*\s*as\s+\w+\s+from\s*'[^']*zero-u\.js'/, `${name} imports all of zero-u.js`);
+    assert.doesNotMatch(src, /from\s*'\.\/(?:rack\/)?zero-u\.js'/, `${name} imports a site zero-u.js`);
+    assert.doesNotMatch(src, /\b(?:withZeroUEditor|applySite|needsSite|keepSiteFields|ZERO_U_COMMANDS|ALL_COMMANDS|zeroUFill)\b/,
+      `${name} still names the site's zero-U command layer`);
   }
-  assert.ok(wrapped, 'nothing wraps the editor with withZeroUEditor');
+  const page = readFileSync(files[0][1], 'utf8');
+  assert.match(page, /\bed = createRackEditor\(\{doc, chassisOf\}\);/, 'the page does not run the kit\'s editor as it is');
 });

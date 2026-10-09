@@ -26,20 +26,22 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from '../../vendor/rack/export-data.js';
+        drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows,
+        zeroUNotes, zeroUImportItems} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeFacts, routeNotes} from './route-context.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
-import {dcimOf} from '../../vendor/rack/model.js';
+import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
-import {zeroUEntries, zeroUNotes, withoutZeroU, zeroUComment, zeroUOf, railNotes, railComment} from './zero-u.js';
+import {zeroUEntries} from '../../vendor/rack/zero-u.js';
 
-// A narrow part's rail, in the kit's own note for it (zero-u.js railNotes).
-const withRails = (notes, rack, items, chassisOf) =>
-  railNotes(notes, items, chassisOf, it => managerNotes([it], chassisOf, rack.frame)[0]);
+// AN EXPORT THAT CARRIES THE PARTS BESIDE THE RACK says where each stands
+// (export-data.js zeroUNotes), and calls left out only an entry it cannot
+// place: the kit's rackNotes with {zeroU: false, chassisOf} (#926).
+const besideNotes = (rack, chassisOf) => rackNotes(rack, {cables: false, zeroU: false, chassisOf});
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -52,9 +54,11 @@ export const faceOf = (it, view) => configuredFace({ref: it.ref, cfg: it.cfg, vi
   swaps: it.swaps || {}, fields: it.fields || {}}).catch(() => null);
 
 // What the panes named could not show, item by item. `cables: false` is for
-// a file that carries the cables, and so does not say they are left out.
-export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {cables = true} = {}) {
-  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame),
+// a file that carries the cables, and so does not say they are left out;
+// `zeroU: false` for one that draws the parts beside the rack. A narrow part's
+// rail is in the kit's own manager note (export-data.js managerNotes).
+export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {cables = true, zeroU = true} = {}) {
+  const notes = [...rackNotes(rack, {cables, zeroU, chassisOf}), ...mountNotes(items, chassisOf, rack.frame),
                  ...managerNotes(items, chassisOf, rack.frame)];
   for (const it of items) {
     for (const pane of panes) {
@@ -63,7 +67,7 @@ export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {
                                face: await faceOf(it, panel)}));
     }
   }
-  return uniq(withRails(notes, rack, items, chassisOf));
+  return uniq(notes);
 }
 
 const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {}) => {
@@ -144,9 +148,9 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const routed = hasWaypoints(rf);
   // What a pane could not show is judged on the items' own swaps: a plug
   // nobody chose is never "the part chosen".
-  // The parts beside the rack are drawn (zero-u.js), so the sheet says where each is, not that it is left out.
+  // The parts beside the rack are drawn (the kit's zero-u.js zeroUEntries), so the sheet says where each is, not that it is left out.
   const zeroU = zeroUEntries(rack, chassisOf);
-  const notes = [...await faceNotesFor(withoutZeroU(rack, chassisOf), base, faces, chassisOf, {cables: false}), ...zeroUNotes(rack, chassisOf)];
+  const notes = [...await faceNotesFor(rack, base, faces, chassisOf, {cables: false, zeroU: false}), ...zeroUNotes(rack, chassisOf)];
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
   const uOf = heightOf(chassisOf);
   // The cables' own notes wait for the drawing: they say which cables the sheet holds.
@@ -366,7 +370,7 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     // own reading only for a scene that has none (a stub, a failed hang).
     const facts = !(rack.cables || []).length ? UNCHECKED : scene.rackCables?.facts ?? await cableEnds(rack);
     // The scene stands the parts beside the rack (scene3d.js), so the model carries them.
-    const notes = uniq([...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...zeroUNotes(rack, chassisOf), ...mountNotes(rack.items, chassisOf, rack.frame),
+    const notes = uniq([...besideNotes(rack, chassisOf), ...zeroUNotes(rack, chassisOf), ...mountNotes(rack.items, chassisOf, rack.frame),
                         ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts, heightOf(chassisOf))]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
@@ -477,14 +481,13 @@ export async function dcimContext(rack, chassisOf, target) {
     causes.push(`The ${T} device type index (${EXPORTS_BASE}index.json) could not be read, so no device has a device type ` +
                 'and every device is left out. Check that the site is reachable and export again.');
   // A part beside the rack is a device of the rack with no position and no face, as a
-  // rack-face manager is: the kit's rows already write one so (export-data.js
-  // deviceImportRows), and dcimKit words its comment. Its type is upstream's,
-  // u_height 0 and not full depth.
+  // rack-face manager is: the kit's rows write one so, and word where it stands
+  // in its comment (export-data.js zeroUImportItems and deviceImportRows). Its
+  // type is upstream's, u_height 0 and not full depth.
   const rails = itemsWithU(rack, chassisOf);
-  const items = [...rails, ...zeroUEntries(rack, chassisOf).map(z => ({id: z.id, ref: z.ref, cfg: z.cfg, label: z.label,
-    ru: z.ru, u: z.u, face: 'front', turned: false, swaps: {}, fields: {}, mount: 'rack-face', zeroU: z}))];
-  // Where each part stands is its row's comment (dcimKit), not a note of the kit.
-  const notes = [...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...mountNotes(rails, chassisOf, rack.frame)];
+  const items = [...rails, ...zeroUImportItems(rack, chassisOf).map(z => ({...z, face: 'front', turned: false, swaps: {}, fields: {}}))];
+  // Where each part stands is its row's comment, not a note of the kit.
+  const notes = [...besideNotes(rack, chassisOf), ...mountNotes(rails, chassisOf, rack.frame)];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
     ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
@@ -627,16 +630,6 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
 
   const names = uniqueNames(ctx.items);
   const dev = deviceImportRows({rack, items: ctx.items, types: ctx.types, target, dcim, why: ctx.why});
-  // A part beside the rack went through as a rack-face part (no position, no face); its comment says where it really is.
-  for (const it of ctx.items.filter(i => i.side)) {
-    const row = dev.rows.find(r => r.name === names.get(it.id)?.name);
-    if (row) row.comments = railComment(row.comments, it, chassisOf);
-  }
-  for (const it of ctx.items.filter(i => i.zeroU)) {
-    const row = dev.rows.find(r => r.name === names.get(it.id)?.name);
-    if (row) row.comments = row.comments.replace(/0U cable manager on the \w+ rail face at U\d+[^;]*; \w+ has no field for that\./,
-      zeroUComment(rack, it.zeroU, chassisOf, TARGET_NAME[target]));
-  }
   const out = new Set(dev.left.map(l => l.id));
   const kept = new Set(ctx.items.filter(i => !out.has(i.id)).map(i => i.id));
   const deviceOf = id => ctx.types.get(id)?.lists ?? null;
@@ -715,7 +708,7 @@ export async function bomCsv(rack, chassisOf) {
   const cabled = (rack.cables || []).length > 0;
   const facts = cabled ? await cableEnds(rack) : UNCHECKED;
   const sides = zeroUEntries(rack, chassisOf);
-  notes.unshift(...rackNotes(withoutZeroU(rack, chassisOf), {cables: false}), ...mountNotes(items, chassisOf, rack.frame),
+  notes.unshift(...besideNotes(rack, chassisOf), ...mountNotes(items, chassisOf, rack.frame),
                 ...managerNotes(items, chassisOf, rack.frame), ...zeroUNotes(rack, chassisOf),
                 ...sides.map(z => `${z.label} hangs on its own brackets beside the upright, as its maker ships them; no rail hardware is counted for it.`));
   for (const m of managers.filter(i => i.on)) {
@@ -738,7 +731,7 @@ export async function bomCsv(rack, chassisOf) {
   for (const it of items)
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
   if (railUs.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
-  const all = uniq(withRails(notes, rack, items, chassisOf));
+  const all = uniq(notes);
   const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs}),
                 ...cableBomRows(rack, facts.ends)];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),

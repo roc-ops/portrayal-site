@@ -12,7 +12,8 @@ test('guidesFromRects maps ring ends, ducts and passes to via ids in rack coordi
   const front = guidesFromRects(rects, 'front', 483);
   assert.deepEqual(front.map(g => [g.via, g.kind, Math.round(g.x * 10) / 10]),
     [['guide-1', 'ring', -205.8], ['duct', 'duct', 0], ['rear-brush', 'pass', 0]]);
-  assert.deepEqual(front.find(g => g.via === 'duct').aperture, {w: 30, h: 30});
+  // a duct's cross-section is the site's square estimate, and says so (kit 0.7.0 pathwaysOn)
+  assert.deepEqual(front.find(g => g.via === 'duct').aperture, {w: 30, h: 30, estimated: true});
   assert.deepEqual(front.find(g => g.via === 'rear-brush').aperture, {w: 465, h: 32});
   const rear = guidesFromRects(rects, 'rear', 483);
   assert.equal(Math.round(rear[0].x * 10) / 10, 205.8);
@@ -47,7 +48,8 @@ test('a ring guide carries its run, and a ring along x its -end rect width as it
                  {id: 'guide--duct', cls: 'guide', x: 20, y: 5, w: 443, h: 30}];
   const g = guidesFromRects(rects, 'front', 483, {}, {'end-ring-left': 'y'});
   assert.deepEqual(g.map(x => [x.via, x.run, x.depth]),
-    [['guide-1', 'x', 6.8], ['end-ring-left', 'y', undefined], ['duct', undefined, undefined]]);
+    // a duct with no data-guide-run runs along x (kit 0.7.0: every guide carries its run)
+    [['guide-1', 'x', 6.8], ['end-ring-left', 'y', undefined], ['duct', 'x', undefined]]);
   assert.deepEqual(ringGroupsFrom([{id: 'end-ring-left', x: 0, w: 20}], 'front', 483, {'end-ring-left': 'y'})
     .map(x => [x.run, x.depth]), [['y', undefined]]);
 });

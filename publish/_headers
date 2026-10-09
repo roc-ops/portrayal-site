@@ -21,11 +21,17 @@
 # The Portrayal JSON schemas (roc-ops/portrayal-site#58), published by
 # tools/publish-schemas.sh. Each is served at the URL its $id names, and
 # readable cross-origin, since validators and editors fetch them from
-# anywhere. v1/ is permanent; a format 2 goes under /schemas/v2/ beside it.
+# anywhere. Each label is permanent: v1/ holds format 1 (and rack file
+# version 2), v2/ the rack file from version 3 (Portrayal #921). One block per
+# label, so a label is served only once it is meant to be.
 # NO Content-Type here: Cloudflare types a .json file as application/json from
 # its extension, and a rule here also applies to the 404 page served for a
 # missing schema - it labeled that HTML page application/json (seen live).
 /schemas/v1/*.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600
+
+/schemas/v2/*.json
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600
 
