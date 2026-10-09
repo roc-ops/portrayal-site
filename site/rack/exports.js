@@ -25,10 +25,10 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, dirOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, fillNotes, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
+        cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {routeFacts} from './route-context.js';
+import {routeFacts, routeNotes} from './route-context.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf} from '../../vendor/rack/model.js';
@@ -195,7 +195,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       }
       // A cable with no group on this sheet (a run, a lead or a tag) is said to be missing, and why.
       const drawn = new Set(panes.flatMap(pane => [...pane.querySelectorAll('[data-cable-id]')].map(n => n.getAttribute('data-cable-id'))));
-      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...fillNotes(rack, rf, labelOf(rack)));
+      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after, ...routeNotes(rack, rf, labelOf(rack)));
       roomForCables(panes);
       for (const pane of panes) {
         pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
@@ -723,7 +723,7 @@ export async function bomCsv(rack, chassisOf) {
     if (h) notes.push(`${m.label} shares ${h.label}'s rail screws; with two ears stacked, longer screws may be needed.`);
   }
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
-  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...fillNotes(rack, await routesOf(rack, chassisOf), labelOf(rack)));
+  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...routeNotes(rack, await routesOf(rack, chassisOf), labelOf(rack)));
   if (!items.length && !sides.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = [...items, ...sides].map(it => ({ref: it.ref, cfg: it.cfg,
@@ -774,7 +774,7 @@ export async function cableScheduleCsv(rack, chassisOf) {
   const facts = await cableEnds(rack);
   const rf = await routesOf(rack, chassisOf);
   const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes);
-  notes.push(...fillNotes(rack, rf, labelOf(rack)));
+  notes.push(...routeNotes(rack, rf, labelOf(rack)));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
 }

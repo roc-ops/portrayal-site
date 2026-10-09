@@ -18,6 +18,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP} from '../../vendor/rack/route.js';
+import {paneMarks} from './route-context.js';
 import {ductOnLane, zeroUX} from './zero-u.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
@@ -153,7 +154,8 @@ export function pillText(text) {
 }
 
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
-// `routes` is S.routes: its routes (cable id -> waypoints) and fill.
+// `routes` is S.routes: its routes (cable id -> waypoints), the ring marks
+// for them (cable id -> one per waypoint, route.js ringMarks) and fill.
 export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
@@ -166,17 +168,31 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     const used = new Map();
     const chassisOf = routes.ctx?.chassisOf;
     const ductX = (lane, ru) => { const z = chassisOf && ductOnLane(rack, lane, ru, chassisOf); return z ? zeroUX(z, chassisOf) : null; };
+    // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
+    // along the rack's axes, x right as seen from the front and y up. This
+    // pane's y runs down, and the rear pane is seen mirrored, so its x runs
+    // the other way too (wayPoint, elevation.js zeroUPaneX). Unturned, a rear
+    // ring or one that runs up the rack is entered from the wrong face and
+    // drawn as a hook (route-context.js paneMarks).
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
       if (!ws?.length) continue;
+      const marks = routes.marks?.get(link.id);
+      const turned = marks?.length === ws.length ? paneMarks(marks, pane) : null;
       // One offset per cable and lane, so its own run up the lane is vertical.
       const mine = new Map();
-      const pts = ws.map(w => {
+      const pts = [], rings = [];
+      ws.forEach((w, k) => {
         const key = w.lane ? `${w.lane}` : null;
         if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
-        return wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0, ductX);
-      }).filter(Boolean);
-      if (pts.length) link.via2d = {[pane]: pts};
+        const p = wayPoint(svg, w, pane, rack.frame, key ? mine.get(key) : 0, ductX);
+        // A waypoint this pane cannot place is dropped, and its mark with it.
+        if (p) { pts.push(p); rings.push(turned?.[k] ?? null); }
+      });
+      if (pts.length) {
+        link.via2d = {[pane]: pts};
+        if (turned) link.rings2d = {[pane]: rings};
+      }
     }
   }
   const endAt = (i, side) => cables[i][side === 'from' ? 'a' : 'b'];
