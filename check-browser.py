@@ -11990,8 +11990,13 @@ def check_rack_export_3d_cables(page, base):
     page.evaluate("() => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, cables: r.cables.map((c, k) => (k ? c : {...c, media: 'om4'}))}); }")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
     page.wait_for_timeout(600)
-    if page.query_selector(".rk-side .rk-notice"):
-        bad.append("3D export cables: the unchecked notice is shown again on a rebuild")
+    # (A rebuild may say something new - a corner drawn tighter than the cable's
+    # bend radius once its media has a type, portrayal-site#164 - but not this.)
+    again = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent || ''")
+    if "could not be checked" in again:
+        bad.append(f"3D export cables: the unchecked notice is shown again on a rebuild: {again!r}")
+    elif again:
+        print(f"    3D export cables: the rebuild's notice: {again!r}")
     page.evaluate("() => window.__rack.failSceneFacts(false)")
     page.click('#mode [data-mode="2d"]')
     return bad
