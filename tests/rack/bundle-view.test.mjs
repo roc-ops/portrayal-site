@@ -52,16 +52,17 @@ test('drawableRuns cuts the trunk where a view cannot place a waypoint', () => {
   assert.deepEqual(runs.map(r => [r.from, r.points.length]), [[0, 2], [3, 3]]);
 });
 
-// THE BEND HOOK (Portrayal #922, kit 0.8.0): null-safe on 0.7.0's `bend: null`,
-// and reading 0.8.0's {radius_mm, by, unchecked, points, violations} when it comes.
-test('the bend hook says nothing before kit 0.8.0', () => {
+// THE BEND HOOK (Portrayal #922): null-safe on a check with no bend (no
+// routes, or no bundle to bend: `bend: null`), and reading the kit's
+// {radius_mm, by, unchecked, points, violations} when it is there.
+test('the bend hook says nothing of a check with no bend result', () => {
   for (const check of [null, {}, {bend: null}]) {
     assert.equal(bendLine(check), null);
     assert.deepEqual(bendViolations(check), []);
   }
 });
 
-test('the bend hook reads kit 0.8.0\'s result: the radius and the violations', () => {
+test('the bend hook reads the kit\'s result: the radius and the violations', () => {
   const tight = {kind: 'corner', at: 'left-front U10', waypoint: lane(10), room_mm: 24.5, need_mm: 25, by: 'c2',
                  members: ['c1', 'c2'], unchecked: [], ok: false, short_mm: 0.5};
   const open = {kind: 'corner', at: 'pp-1 ring 1', waypoint: ring('guide-1'), ok: null, unchecked: ['c5']};

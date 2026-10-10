@@ -4990,10 +4990,20 @@ def check_rack_ears_default(page, base):
       ({rack: r} = M.withItem(r, {ref: 'fhu-bps-2u', cfg: cat['fhu-bps-2u'].default, ru: 24, face: 'front', label: 'blank-1'}));
       return r;
     }""")
+    # ONE FETCH PER FACE FILE: the pane draws the switch's front and the ear
+    # plan reads that same file for its declared width (face.js earPlanFor).
+    fronts = []
+    count = lambda r: fronts.append(r.url) if re.search(r"/assets/dist/[^/]+\.front\.svg$", r.url) else None
+    page.on("request", count)
     page.evaluate("r => window.__rack.replaceRack(r)", rack)
     page.wait_for_function("() => document.querySelector('#paneFront [data-item-id=\"i2\"][data-panel=\"mounted\"]')"
                            " && document.querySelector('#paneFront [data-item-id=\"i1\"][data-panel=\"mounted\"]')", timeout=READY_MS)
+    page.wait_for_function("() => document.querySelector('#paneFront [data-ears-for=\"i1\"]')", timeout=READY_MS)
     page.wait_for_timeout(300)
+    page.remove_listener("request", count)
+    names = sorted(u.rsplit("/", 1)[1] for u in fronts)
+    if len(names) != 2 or len(set(names)) != 2 or not any(n.startswith("s9600-72xc.") for n in names):
+        bad.append(f"2D: the two devices' fronts were not each fetched once: {names}")
     got = page.evaluate("""() => {
       const p = document.querySelector('#paneFront');
       const e1 = p.querySelector('[data-ears-for="i1"]'), e2 = p.querySelector('[data-ears-for="i2"]');

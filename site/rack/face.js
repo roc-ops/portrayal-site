@@ -106,11 +106,27 @@ export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {
   return hit;
 }
 
+// ONE FETCH PER FACE FILE. A face is asked for by the pane that draws it and,
+// when it is a front, by the ear plan that reads its declared width
+// (earPlanFor), and under other swaps by any other caller: each got its own
+// request for the same file. Resolves to the file's text, or null when the
+// face was never compiled. Bounded like MEMO, and small: it holds whole files
+// only to bridge callers that ask close together. A failed fetch is not kept.
+const TEXT_LIMIT = 16;
+const TEXTS = new Map();
+function faceText(url) {
+  let hit = TEXTS.get(url);
+  if (hit) TEXTS.delete(url);   // re-insert: Map order is recency
+  else hit = fetch(url).then(r => (r.ok ? r.text() : null)).catch(err => { TEXTS.delete(url); throw err; });
+  TEXTS.set(url, hit);
+  while (TEXTS.size > TEXT_LIMIT) TEXTS.delete(TEXTS.keys().next().value);
+  return hit;
+}
+
 async function build({ref, cfg, view, swaps, fields, turned}) {
   const shown = turned ? (OPPOSITE[view] || view) : view;
-  const res = await fetch(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
-  if (!res.ok) return null;
-  let text = await res.text();
+  let text = await faceText(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
+  if (text == null) return null;
   const seat = {applied: 0, refused: [], failed: []};
   const hasSwaps = Object.keys(swaps).length > 0;
   const hasFields = Object.keys(fields).length > 0;
@@ -153,20 +169,22 @@ function deepFreeze(v) {
 // a shelf, a full-width patch panel) and already draws them. The Rack Builder
 // draws its own rail-side ears (elevation.js, rack3d.js) only where this is
 // not null, in the plan's colour: silver (#c8cacc) unless the device states
-// `chassis.ears.color`. Memoized per device and configuration; a device whose
-// index or front cannot be read is judged on its chassis width alone.
+// `chassis.ears.color`. Memoized per device and configuration. A device whose
+// index cannot be read gets no plan (null: nothing says it is a rack device);
+// one whose front cannot be read is judged on its chassis width alone.
 const EAR_PLANS = new Map();
 export function earPlanFor(ref, cfg) {
   const key = `${ref}.${cfg || ''}`;
   if (!EAR_PLANS.has(key)) {
     EAR_PLANS.set(key, (async () => {
       // imported on first use: ears2d.js brings relief.js, which reads the
-      // page's location as it loads, and this module also runs under node
+      // page's location as it loads, and this module is also loaded under
+      // node (the tests of route-context.js, which imports it)
       const {earPlan, frontWidthOfText} = await import('../../vendor/ears2d.js');
       const idx = await jdist(`${DIST}${ref}.configs.json`).catch(() => null);
       if (!idx) return null;
       const w = await faceUrl(DIST, ref, cfg || idx.default, 'front')
-        .then(u => fetch(u)).then(r => (r.ok ? r.text() : '')).then(frontWidthOfText).catch(() => null);
+        .then(faceText).then(t => frontWidthOfText(t ?? '')).catch(() => null);
       return earPlan(idx, w);
     })());
   }
