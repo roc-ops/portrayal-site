@@ -9172,13 +9172,30 @@ def check_annotate_api(page, base):
     # finding, and the document must not name the device it never reached. The
     # bound is shortened for the check: the page reads window.__portrayalLoadMs
     # per call. Then a configuration whose face is held, the same way.
+    #
+    # THE SHORT BOUND IS THE CHECK'S ALONE: the page reads it only when it was
+    # opened with ?debug=1. On this page, which was not, a bound of 1 ms - one
+    # no load could meet - changes nothing.
+    page.evaluate("() => { window.__portrayalLoadMs = 1; }")
+    try:
+        r = set_doc({"device": "c40g", "config": "base", "view": "front", "marks": []})
+    finally:
+        page.evaluate("() => { delete window.__portrayalLoadMs; }")
+    if r["error"] or r["findings"] or r["target"][0] != "c40g":
+        bad.append(f"annotate api: without ?debug=1 the page still read __portrayalLoadMs - a load answered "
+                   f"{r['findings']} {r['error']}, document {r['target']}")
+    page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
+    wait_fn(page, "annotate api: settled under ?debug=1", f"() => {api} && {api}.settled")
     held = []
     hang = lambda route: held.append(route)
     page.route("**/assets/dist/agr110.configs.json", hang)
     page.route("**/assets/dist/c100g.bdm2m-11plus1.front.svg", hang)
-    page.evaluate("() => { window.__portrayalLoadMs = 3000; }")
+    # 6 s, not 3: the bound is on every load while it is set, the two that are
+    # not held included, and a real load on a busy machine has taken over 3 s
+    page.evaluate("() => { window.__portrayalLoadMs = 6000; }")
+    note = "() => document.querySelector('#stage-svg .stage-note')?.textContent || null"
     race = lambda d: page.evaluate(f"""async d => {{
-        const r = await Promise.race([{api}.setDoc(d), new Promise(ok => setTimeout(() => ok('hung'), 12000))]);
+        const r = await Promise.race([{api}.setDoc(d), new Promise(ok => setTimeout(() => ok('hung'), 20000))]);
         if (r === 'hung') return {{hung: true}};
         const g = {api}.getDoc();
         return {{findings: (r.findings || []).map(f => f.text), error: r.error || null,
@@ -9186,13 +9203,17 @@ def check_annotate_api(page, base):
     try:
         r = race({"device": "agr110", "swaps": swap, "marks": []})
         if r.get("hung"):
-            bad.append("annotate api #146: setDoc on a device whose load never finishes did not answer in 12 s")
+            bad.append("annotate api #146: setDoc on a device whose load never finishes did not answer in 20 s")
         else:
             if not any("did not finish loading" in f for f in r["findings"]) \
                     or not any("none were applied" in f for f in r["findings"]):
                 bad.append(f"annotate api #146: a device load that never finished answered {r['findings']}")
             if r["target"][0] == "agr110" or r["swaps"]:
                 bad.append(f"annotate api #146: after a stalled device load the document reads {r['target']}, swaps {r['swaps']}")
+            # a manifest that never came has not touched the stage: the drawing
+            # is still up, and the message box alone says what happened
+            if page.evaluate(note) or not page.evaluate("() => !!document.querySelector('#stage-svg svg')"):
+                bad.append(f"annotate api #146: after a stalled device load the stage holds note {page.evaluate(note)!r}")
         # the page is not left believing it is on the stalled device: the next
         # document is laid on the drawing it names
         r = set_doc({"device": "c100g", "config": "docsis-classic", "view": "front", "marks": []})
@@ -9203,9 +9224,22 @@ def check_annotate_api(page, base):
         # a configuration that times out is not the one the document names
         r = race({"device": "c100g", "config": "bdm2m-11plus1", "view": "front", "marks": []})
         if r.get("hung"):
-            bad.append("annotate api #146: setDoc on a configuration whose drawing never loads did not answer in 12 s")
+            bad.append("annotate api #146: setDoc on a configuration whose drawing never loads did not answer in 20 s")
         elif not any("did not finish loading" in f for f in r["findings"]) or r["target"][1] == "bdm2m-11plus1":
             bad.append(f"annotate api #146: a stalled configuration answered {r['findings']}, the document reads {r['target']}")
+        else:
+            # A FACE THAT NEVER CAME LEAVES NO DRAWING ON THE STAGE: the stage
+            # says why, in the sentence the message box has, rather than
+            # standing blank; and the next load that arrives takes it away.
+            said = page.evaluate(note)
+            if "did not finish loading" not in (said or "") or (page.text_content("#expmsg") or "") not in (said or ""):
+                bad.append(f"annotate api: a stalled configuration left the stage saying {said!r} "
+                           f"(message box: {page.text_content('#expmsg')!r})")
+            r = set_doc({"device": "c100g", "config": "docsis-classic", "view": "front", "marks": []})
+            if r["error"] or r["findings"] or page.evaluate(note) \
+                    or not page.evaluate("() => !!document.querySelector('#stage-svg svg')"):
+                bad.append(f"annotate api: after a stalled configuration the next setDoc answered {r['findings']} "
+                           f"{r['error']}, stage note {page.evaluate(note)!r}")
     finally:
         page.evaluate("() => { delete window.__portrayalLoadMs; }")
         # released before the routes go, so no handler is left waiting to be cancelled
@@ -9226,7 +9260,7 @@ def check_annotate_api(page, base):
 # the drawing the reader chose. The setDoc's manifest is held until both picks
 # are made, so its load is overtaken every time rather than when the timing
 # happens to fall that way.
-@extra("annotate.html: a setDoc load that two quick device switches replace is said as replaced, not as a stall")
+@extra("annotate.html: a load that a newer one replaces is said as replaced, not as a stall, and a link overtaken at boot is not an error")
 def check_annotate_replaced_load_is_not_a_stall(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9278,6 +9312,64 @@ def check_annotate_replaced_load_is_not_a_stall(page, base):
     doc = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, Object.keys(d.swaps).length]; }}")
     if doc != ["s9510-28dc", 0]:
         bad.append(f"annotate replaced: after the picks the document reads {doc}, expected s9510-28dc with no swaps")
+
+    # A LOAD THAT HANGS AND IS THEN OVERTAKEN IS REPLACED TOO, AND AT BOOT IT IS
+    # NOT AN ERROR. Above, the held manifest is released, so the kit gets to
+    # reject the replaced load. Here it never answers: a link to agr110 whose
+    # manifest is held for good, and one pick while it is out. The kit cannot
+    # say "superseded" for a fetch that has not come back, so this used to wait
+    # out the 20 s bound and read as a stall, and `ready` then resolved {error}
+    # for a page that was up and showing what the reader had picked. `ready`
+    # must resolve well inside the bound, {replaced: true} with no error.
+    enc = page.evaluate("""async d => (await import('/vendor/marks.js')).encode(d)""",
+                        {"device": "agr110", "marks": [{"select": ".port"}]})
+    page.goto("about:blank")
+    errors.clear()
+    page.route("**/assets/dist/agr110.configs.json", lambda route: held.append(route))
+    try:
+        page.goto(f"{base}/annotate.html#{enc.lstrip('#')}", wait_until="domcontentloaded")
+        for _ in range(400):
+            if held:
+                break
+            page.wait_for_timeout(50)
+        if not held:
+            return bad + ["annotate replaced: the link never asked for agr110's manifest"]
+        if page.evaluate(f"() => {api}.settled"):
+            bad.append("annotate replaced: the page settled while its link's manifest was still held")
+        q = page.locator(".devpick input[type=search]")
+        q.fill("s9510-28dc")
+        q.press("Enter")
+        boot = page.evaluate(f"""async () => {{
+            const t = performance.now();
+            const r = await Promise.race([{api}.ready, new Promise(ok => setTimeout(() => ok('hung'), 10000))]);
+            return r === 'hung' ? {{hung: true}} : {{...r, ms: Math.round(performance.now() - t)}}; }}""")
+        if boot.get("hung"):
+            bad.append("annotate replaced: with its link's load hung and a pick made, `ready` had not resolved in 10 s "
+                       "- the overtaken load waited out the bound")
+        elif boot.get("error") or boot.get("replaced") is not True:
+            bad.append(f"annotate replaced: `ready` resolved {boot} for a link a pick overtook, not {{replaced: true}}")
+        wait_fn(page, "annotate replaced: the pick is on the stage after an overtaken link",
+                f"() => {api}.getDoc().device === 's9510-28dc' && document.querySelector('#stage-svg svg')")
+        msg = page.text_content("#expmsg") or ""
+        if "did not finish loading" in msg or "could not restore" in msg \
+                or page.evaluate("() => !!document.querySelector('#stage-svg .stage-note')"):
+            bad.append(f"annotate replaced: after an overtaken link the page says {msg!r}")
+        # the held fetch failing later is still a replaced load, not one to log
+        for route in held:
+            with contextlib.suppress(Exception):
+                route.abort()
+        held.clear()
+        page.wait_for_timeout(500)
+        logged = [e for e in errors if "did not load" in e or "superseded" in e or "could not" in e.lower()]
+        if logged:
+            bad.append(f"annotate replaced: an overtaken link was logged as an error: {logged[:2]}")
+        if page.evaluate(f"() => {api}.getDoc().device") != "s9510-28dc":
+            bad.append("annotate replaced: the overtaken link's drawing landed after all")
+    finally:
+        for route in held:
+            with contextlib.suppress(Exception):
+                route.abort()
+        page.unroute("**/assets/dist/agr110.configs.json")
     return bad
 
 
