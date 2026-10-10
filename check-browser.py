@@ -4930,8 +4930,28 @@ def check_rack_bundle_2d_front(page, base):
     if order[:4] != ["B", "c1", "c2", "c3"]:
         bad.append(f"list: the members do not follow their bundle's header: {order}")
     c3 = page.inner_text('#cableList [data-cable-item="c3"] [data-bundle-of]')
-    if "In uplinks" not in c3 or "left-front U27" not in c3:
-        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U27: {c3!r}")
+    if "In uplinks" not in c3 or "left-front U27 for its b end" not in c3:
+        bad.append(f"list: c3's row does not say it leaves uplinks at left-front U27 for its b end: {c3!r}")
+    # WHICH END A PEELED CABLE HEADS FOR is the kit's choice, the nearer port
+    # (the page sends no end): c3 above left near the top for its b end, and
+    # c2 leaving near the bottom, at U22, heads for its a end (sw-1 at U20).
+    page.click('#cableList [data-bundle-row="b1"]')
+    page.wait_for_selector("#bPeelAt-c2", timeout=READY_MS)
+    opts = page.eval_on_selector_all("#bPeelAt-c2 option", "os => os.map(o => [o.value, o.textContent])")
+    at = next((v for v, t in opts if t == "from left-front U22"), None)
+    if at is None:
+        return bad + [f"peel: no 'from left-front U22' choice for c2: {opts}"]
+    page.select_option("#bPeelAt-c2", at)
+    page.click("#bPeel-c2")
+    page.wait_for_function("() => { const m = window.__rack.doc().racks[0].bundles[0].members[1]; return !!m.a || !!m.b; }", timeout=READY_MS)
+    m2 = page.evaluate("() => window.__rack.doc().racks[0].bundles[0].members[1]")
+    if (m2.get("a") or {}).get("ru") != 22 or m2.get("b") is not None:
+        bad.append(f"peel: c2, leaving at U22, was not sent to its a end, the nearer: {m2}")
+    page.click("#bDone")
+    page.wait_for_selector('#cableList [data-cable-item="c2"] [data-bundle-of]', timeout=READY_MS)
+    c2 = page.inner_text('#cableList [data-cable-item="c2"] [data-bundle-of]')
+    if "left-front U22 for its a end" not in c2:
+        bad.append(f"list: c2's row does not say it leaves uplinks at left-front U22 for its a end: {c2!r}")
     # Dissolving: no band, no header, the cables kept.
     page.click('#cableList [data-bundle-row="b1"]')
     page.click("#bRemove")
