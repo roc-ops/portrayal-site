@@ -27,6 +27,22 @@ test('ringGroupsFrom makes a ring of each group at the center of its extent, ape
   assert.equal(ringGroupsFrom(groups, 'rear', 483)[0].x, 241.5 - 73.75);
 });
 
+test('a ring group carries the opening its component declares, so a route through it is fill-checked (#130)', async () => {
+  const {fill} = await import('../../vendor/rack/route.js');
+  // the CMH-4DRB1U's ring (fs/cmh-4drb1u-ring 1.1.0, Portrayal #868): 37.2 x 74.8 mm
+  const rings = ringGroupsFrom([{id: 'guide-1', x: 63.75, w: 20, aperture: {w: 37.2, h: 74.8}}], 'front', 483);
+  assert.deepEqual(rings[0].aperture, {w: 37.2, h: 74.8});
+  const rack = {items: [{id: 'i1', ref: 'cmh-4drb1u', ru: 20}],
+                cables: [{id: 'c1', a: {}, b: {}, media: 'os2', route: [{item: 'i1', via: 'guide-1'}], routeEdited: true}]};
+  const ctx = {chassisOf: () => ({}), guidesOf: id => (id === 'i1' ? rings : []), portX: () => null, portY: () => null};
+  const f = fill(rack, ctx).filter(e => e.item === 'i1' && e.via === 'guide-1');
+  assert.equal(f.length, 1);
+  assert.deepEqual(f[0].cables, ['c1']);
+  // and with no opening, as before #868, the ring is passed through but never filled
+  const blind = {...ctx, guidesOf: id => (id === 'i1' ? ringGroupsFrom([{id: 'guide-1', x: 63.75, w: 20}], 'front', 483) : [])};
+  assert.deepEqual(fill(rack, blind).filter(e => e.via === 'guide-1'), []);
+});
+
 test('dedupeGuides keeps one guide per via and face, the first', () => {
   const a = {via: 'guide-1', face: 'front', x: 1}, b = {via: 'guide-1', face: 'front', x: 2};
   const c = {via: 'guide-1', face: 'rear', x: 3};

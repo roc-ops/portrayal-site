@@ -3586,6 +3586,41 @@ def check_explorer_latch_colour_live(page, base):
     return bad
 
 
+# A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
+# the C100G's empty base: no ?device= lands on explorer.html's FEATURED_DEVICE,
+# in a configuration that is not a base, with ports on the face; and a link
+# that names a device still opens on that device.
+@extra("Explorer with no ?device= opens on a populated device, not an empty base chassis")
+def check_explorer_first_device(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html", wait_until="load")
+    # the drawing in, and the page has written what it opened on (writeLocation)
+    page.wait_for_function("() => document.querySelector('#shell svg [data-class]')"
+                           " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
+    got = page.evaluate("""async () => {
+      const q = new URLSearchParams(location.search), device = q.get('device');
+      const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
+      const cfg = document.querySelector('#cfg').value;
+      return {device, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null,
+              ports: document.querySelectorAll('#shell svg [data-class="port"]').length};
+    }""")
+    want = re.search(r"const FEATURED_DEVICE = '([a-z0-9-]+)';",
+                     (pathlib.Path(__file__).parent / "explorer.html").read_text())
+    if not want or got["device"] != want.group(1):
+        bad.append(f"explorer: a first visit opened on {got['device']!r}, not FEATURED_DEVICE "
+                   f"{want and want.group(1)!r}")
+    if got["kind"] in (None, "base") or got["ports"] < 10:
+        bad.append(f"explorer: a first visit shows {got['device']} {got['cfg']} (kind {got['kind']!r}) "
+                   f"with {got['ports']} ports - an empty chassis")
+    page.goto(f"{base}/explorer.html?device=c100g", wait_until="load")
+    page.wait_for_function("() => document.querySelector('#shell svg')"
+                           " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
+    if (dev := page.evaluate("() => new URLSearchParams(location.search).get('device')")) != "c100g":
+        bad.append(f"explorer: ?device=c100g opened on {dev!r}")
+    return bad
+
+
 # THE GENERIC RACK EAR ON A DEVICE PAGE (Portrayal #909, kit 0.8.0 ears2d,
 # silver since 0.9.0). Off by default in the Explorer and in Annotate, with a
 # "Rack ears" toggle shown only for a device that gets one; on, it is the
@@ -5409,6 +5444,76 @@ def check_rack_bundle_3d(page, base):
              if ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5 < 1]
     if len(pts) != 3 or close:
         bad.append(f"3D: the members are not spread inside the bundle at U25: {pts}")
+    return bad
+
+
+# THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
+# Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
+# catalogue indexes on its front and rear is a guide routeFacts finds on that
+# face, and every ring among them has the opening its component declares. Then
+# a cable through the CMH-4DRB1U's guide-1 is fill-checked there: before #868
+# its rings were found only by data-group="guides", with no opening, and fill
+# skipped them.
+@extra("rack.html: every FS horizontal manager's indexed rings, ducts and passes are route guides, rings with their openings, and a cable through a CMH-4DRB1U ring is fill-checked (#130)")
+def check_rack_fs_manager_guides(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    got = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const K = await import('/vendor/rack/cable-rules.js'), R = await import('/site/rack/route-context.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices, chassisOf = ref => cat[ref];
+      const out = {managers: {}};
+      for (const ref of Object.keys(cat).filter(n => /^(us)?cmh-/.test(n)).sort()) {
+        let r = M.newRack({name: ref});
+        ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru: 10}));
+        const rf = await R.routeFacts(r, chassisOf);
+        const want = [];
+        for (const key of ['guides', 'passes'])
+          for (const [view, ids] of Object.entries(cat[ref][key] || {}))
+            if (view !== 'top') for (const id of ids) want.push(`${view}|${id}`);
+        out.managers[ref] = {complete: rf.complete, want: want.sort(),
+          got: rf.ctx.guidesOf('i1').map(g => ({key: `${g.face}|${g.via}`, kind: g.kind, aperture: g.aperture}))};
+      }
+      let r = M.newRack({name: 'Ring fill'});
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: {'port-1': 'generic/qsfp-lc@2'}}));
+      ({rack: r} = M.withItem(r, {ref: 'cmh-4drb1u', cfg: cat['cmh-4drb1u'].default, ru: 21, label: 'mgr-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      r = {...r, cables: r.cables.map(c => ({...c, route: [{item: 'i2', via: 'guide-1'}, {lane: 'left-front', ru: 25}], routeEdited: true}))};
+      const rf = await R.routeFacts(r, chassisOf);
+      out.fill = rf.fill;
+      out.rings = rf.ringFindings;
+      return out;
+    }""")
+    ms = got["managers"]
+    if len(ms) < 23:
+        bad.append(f"catalogue: {len(ms)} FS horizontal managers, expected the 23 on main")
+    rings = 0
+    for ref, m in ms.items():
+        keys = sorted(g["key"] for g in m["got"])
+        missing = [k for k in m["want"] if k not in keys]
+        if not m["complete"] or missing:
+            bad.append(f"{ref}: the route context does not find {missing} (indexed {m['want']}; faces read: {m['complete']})")
+        blind = [g["key"] for g in m["got"] if g["kind"] == "ring" and not g["aperture"]]
+        rings += sum(1 for g in m["got"] if g["kind"] == "ring")
+        if blind:
+            bad.append(f"{ref}: rings with no opening, so never fill-checked: {blind}")
+    if rings < 20:
+        bad.append(f"only {rings} rings across the FS managers - the check measured too little")
+    four = [g for g in ms.get("cmh-4drb1u", {}).get("got", []) if g["kind"] == "ring"]
+    if sorted((g["key"], json.dumps(g["aperture"], sort_keys=True)) for g in four) != \
+            [(f"front|guide-{i}", '{"h": 74.8, "w": 37.2}') for i in range(1, 5)]:
+        bad.append(f"cmh-4drb1u: its rings are not guide-1..4 at 37.2 x 74.8 mm: {four}")
+    if got["rings"]:
+        bad.append(f"the test route does not pass guide-1 cleanly: {got['rings']}")
+    f = [x for x in got["fill"] if x["item"] == "i2" and x["via"] == "guide-1"]
+    want_pct = round(math.pi * 1.5 ** 2 / (0.4 * 37.2 * 74.8) * 100)
+    if len(f) != 1 or f[0]["cables"] != ["c1"] or f[0]["percent"] != want_pct:
+        bad.append(f"fill: the cable through the CMH-4DRB1U's guide-1 is not fill-checked against its 37.2 x 74.8 mm"
+                   f" opening ({want_pct}%): {got['fill']}")
     return bad
 
 
