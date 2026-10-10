@@ -2111,10 +2111,8 @@ check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" 
 # the page opens on an empty chassis again. And every page that MAKES A SHELL
 # has to ask there: the Explorer and Annotate hand it firstDevice(), and the
 # showcase boots on FEATURED_DEVICE in a configuration of its own choosing,
-# which is held to one the device has that is not a base. NOT COVERED: pages
-# that pick a device without a shell - exporter.html, site/drawio-page.js and
-# site/drawings-page.js - still fall back to the first device in the index,
-# and nothing here reads them.
+# which is held to one the device has that is not a base. The pages that pick
+# a device without a shell are read by the check after these three.
 _feat_js = (HERE / "site" / "featured.js").read_text() if (HERE / "site" / "featured.js").is_file() else ""
 _fd = re.search(r"export const FEATURED_DEVICE = '([a-z0-9-]+)';", _feat_js)
 _fd_name = _fd and _fd.group(1)
@@ -2136,8 +2134,7 @@ _no_first = [n for n in _shell_pages
              if not re.search(r"createShell\(\{[^}]*\bdevice:\s*firstDevice\(\),", (HERE / n).read_text(), re.S)
              or not re.search(r"import \{ firstDevice \} from './site/featured\.js';", (HERE / n).read_text())]
 check({"explorer.html", "annotate.html"} <= set(_shell_pages) and not _no_first,
-      f"every page that makes a shell ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice(); "
-      "the export pages make no shell and are not checked here",
+      f"every page that makes a shell ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice()",
       f"createShell is not given `device: firstDevice()` in {_no_first or 'a page that is gone'}; pages found: {_shell_pages}")
 _art_src = (HERE / "site" / "showcase" / "artifact.js").read_text()
 _art_cfg = re.search(r"^export const CFG = '([^']+)';", _art_src, re.M)
@@ -2148,6 +2145,108 @@ check(re.search(r"^import \{FEATURED_DEVICE\} from '\.\./featured\.js';", _art_s
       f"the showcase boots on the featured device, in {_art_cfg_name}, a configuration it has that is not a base",
       f"site/showcase/artifact.js: DEV is not FEATURED_DEVICE, or CFG={_art_cfg_name!r} is kind "
       f"{_fd_kinds.get(_art_cfg_name)!r} on {_fd_name}")
+
+# EVERY PAGE THAT OPENS ON A DEVICE, not only the ones that make a shell. The
+# export pages read the device index themselves and fell back to its first
+# entry; the photo overlay named a device of its own, the schematic prototype a
+# vendor. Each asks site/featured.js now, and this holds them to it three ways:
+#   - every page ON DISK (the root's *.html and components/*.html) is READ
+#     here, with every site/ module it reaches, and the number read is
+#     asserted, so a page this could not open cannot pass by contributing
+#     nothing. Each is one check-browser.py serves (its PAGES), or is named in
+#     _FIRST_NOT_SWEPT with why not; a page in neither fails;
+#   - the pages found opening on a device are exactly the ones named below, so
+#     a new page that reads ?device= or mounts a device picker fails until it
+#     is given a rule and a browser check;
+#   - none of what was read falls back to the index's first entry, or to a
+#     device named beside the ?device= it reads. THIS ONE IS A SPELLING CHECK:
+#     it knows `DEVICES[0]`, `.at(0)`, `.shift()` and a destructured first on
+#     the names the pages give the index (DEVICES, devices, devs), and a
+#     fallback spelled another way passes it. What catches that is the browser
+#     check each page is required to have. featured.js is the one file
+#     allowed the first entry, for a link naming a device the library lacks,
+#     which lands where it always did.
+# Named with the file that asks and the browser check that opens the page.
+_FIRST_PAGES = {
+    "explorer.html": ("explorer.html", "firstDevice()", "check_explorer_first_device"),
+    "annotate.html": ("annotate.html", "firstDevice()", "check_annotate_first_device"),
+    "index.html": ("site/showcase/artifact.js", "DEV = FEATURED_DEVICE", "check_showcase_first_device"),
+    "exporter.html": ("exporter.html", "firstListed(DEVICES)", "check_exporter_first_device"),
+    "drawio.html": ("site/drawio-page.js", "firstListed(DEVICES)", "check_drawio_first_device"),
+    "drawings.html": ("site/drawings-page.js", "firstListed(DEVICES)", "check_drawings_first_device"),
+    "compare.html": ("compare.html", "firstDevice()", "check_compare_first_device"),
+    "schematic.html": ("schematic.html", "firstListed(DEVICES)", "check_schematic_first_device"),
+    "viewer3d-harness.html": ("viewer3d-harness.html", "firstListed(devs.map(", "check_harness3d_first_device"),
+}
+_FEATURED_JS = "site/featured.js"
+_SITE_IMPORT = re.compile(r"""(?:\bfrom\s*|\bimport\s*\(?\s*|<script\b[^>]*\bsrc=)['"]([^'"]+\.js)['"]""")
+_OPENS_ON = re.compile(r"get\('device'\)|createDevicePicker\(|createShell\(\{|firstDevice\(|firstListed\(|FEATURED_DEVICE")
+_FALLS_BACK = re.compile(r"\b(?:DEVICES|devices|devs)\s*(?:\[\s*0\s*\]|\.at\(\s*0\s*\)|\.shift\(\s*\))"
+                         r"|\[\s*\w+\s*(?:,[^\]=]*)?\]\s*=\s*(?:DEVICES|devices|devs)\b"
+                         r"|get\('device'\)\s*(?:\|\||\?\?)\s*['\"`]")
+# On disk and not in check-browser.py's page sweep, with the reason. Read here
+# all the same, and held to opening on no device.
+_FIRST_NOT_SWEPT = {"kit-frame.html": "hosts one kit recipe inside kit.html's iframe; check_kit_page opens it there"}
+
+
+def _page_sources(page):
+    """{path: text} of a page and every site/ module it reaches by a static
+    import or a script tag. vendor/ is Portrayal's and is not followed."""
+    seen, todo = {}, [HERE / page]
+    while todo:
+        f = todo.pop()
+        rel = f.relative_to(HERE).as_posix()
+        if rel in seen or not f.is_file():
+            continue
+        seen[rel] = f.read_text()
+        for ref in _SITE_IMPORT.findall(seen[rel]):
+            # a page's own URLs resolve against the page, a module's against the module
+            t = (f.parent / ref).resolve()
+            if t.is_relative_to(HERE / "site"):
+                todo.append(t)
+    return seen
+
+
+_first_disk = sorted(p.relative_to(HERE).as_posix()
+                     for p in list(HERE.glob("*.html")) + list((HERE / "components").glob("*.html")))
+_first_unswept = sorted(set(_first_disk) - set(_cb.PAGES) - set(_FIRST_NOT_SWEPT))
+_first_gone = sorted((set(_cb.PAGES) | set(_FIRST_NOT_SWEPT)) - set(_first_disk))
+_first_read = {pg: _page_sources(pg) for pg in _first_disk}
+_first_unread = sorted(pg for pg, src in _first_read.items() if not src.get(pg, "").strip())
+_first_found = sorted(pg for pg, src in _first_read.items()
+                      if any(_OPENS_ON.search(t) for rel, t in src.items() if rel != _FEATURED_JS))
+_first_stray = sorted({f"{rel}: {m.group(0)}" for src in _first_read.values() for rel, t in src.items()
+                       if rel != _FEATURED_JS for m in _FALLS_BACK.finditer(t)})
+_first_wrong = sorted(
+    pg for pg, (asker, call, browser) in _FIRST_PAGES.items()
+    if call not in _first_read.get(pg, {}).get(asker, "")
+    or _FEATURED_JS not in _first_read.get(pg, {})
+    or not re.search(r"\bimport \{\s*(?:firstDevice|firstListed|firstListed, namesDevice|FEATURED_DEVICE)\s*\} from '[./a-z]*featured\.js';",
+                     _first_read[pg][asker])
+    or browser not in _registered)
+_first_rule = re.search(r"if \(!want\) return FEATURED_DEVICE;\n\s*return devices\.some\(d => d\.name === want\) \? want : devices\[0\]\.name;",
+                        _feat_js) is not None
+# what is wrong first, then what to do about it
+_first_faults = [m for bad, m in [
+    (_first_unswept, f"{_first_unswept} on disk but neither in check-browser.py's PAGES nor in _FIRST_NOT_SWEPT: "
+                     "add the page to PAGES, or name it in _FIRST_NOT_SWEPT with the reason"),
+    (_first_gone, f"{_first_gone} named in PAGES or _FIRST_NOT_SWEPT but not on disk: remove the name"),
+    (_first_unread, f"{_first_unread} read as empty"),
+    (len(_first_read) != 18, f"{len(_first_read)} pages read, 18 expected: a page was added or removed - bump the count here"),
+    (_first_found != sorted(_FIRST_PAGES) or len(_first_found) != 9,
+     f"the pages that open on a device are not the 9 named: new {sorted(set(_first_found) - set(_FIRST_PAGES))}, "
+     f"gone {sorted(set(_FIRST_PAGES) - set(_first_found))}. A new page: have it ask site/featured.js, add it to "
+     "_FIRST_PAGES with a check_<page>_first_device in check-browser.py, and bump the count"),
+    (_first_stray, f"{_first_stray} falls back to a first device of its own: ask firstDevice() or firstListed() instead"),
+    (_first_wrong, f"{_first_wrong} does not import and call site/featured.js in the file _FIRST_PAGES names, "
+                   "or its browser check is not registered with @extra"),
+    (not _first_rule, "site/featured.js firstListed() is no longer `no device ? FEATURED_DEVICE : listed ? want : "
+                      "the first listed`: restore it, or update this check and the browser checks with the new rule"),
+] if bad]
+check(not _first_faults,
+      f"{len(_first_found)} of the {len(_first_read)} pages on disk open on a device, and each asks site/featured.js "
+      f"and has a browser check that opens it: {', '.join(_first_found)}",
+      "; ".join(_first_faults))
 
 for s in skips:
     print(f"SKIP  {s}")
