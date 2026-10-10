@@ -12,7 +12,7 @@ import {createRackEditor} from '../../vendor/rack/editor.js';
 import {bendLookup, diameterLookup} from '../../vendor/rack/cable-types.js';
 import {rackTools} from '../../site/rack/agent-tools.js';
 import {agentContextFor} from '../../site/rack/agent-context.js';
-import {fitCorners, roundedCurve, clearCurve, roundRoute, insideOf, tightText, MAX_EXTEND_R} from '../../site/rack/bend3d.js';
+import {fitCorners, roundedCurve, clearCurve, kitRoute, insideOf, tightText, MAX_EXTEND_R} from '../../site/rack/bend3d.js';
 import {SIZES, chassisOf, slotsOf, compByRef} from './fixtures/kit-slots.mjs';
 
 // The cable types as the page loads them (cable-types.js loadCableTypes),
@@ -148,70 +148,58 @@ test('a lead from a plug recessed in its own device is not flagged: only the arc
   assert.ok(low.corners[0].hit && low.corners[0].short_mm > 0);
 });
 
-test('a ring too thin for the turn is drawn as one corner through its centre (thin-ring rule)', () => {
-  // a ring 7 mm deep along x at (0, 0, 60): the cable rises to it from a
-  // port just below and 10 mm to its left, then runs on along x, so passing it
-  // face to face leaves a few mm of leg either side of its near face
-  const A = {points: [V(-10, -60, 20)], normal: V(0, 0, 1)}, B = {points: [V(300, 0, 20)], normal: V(0, 0, 1)};
-  const ring = {run: 'x', depth: 7, sense: 1};
-  const w = [V(0, 0, 60)];
-  const kept = roundRoute(THREE, A, B, w, [ring], 25, 30, () => false, {thin: false}).bent;
-  assert.ok(kept.corners.some(c => c.short_mm > 0));
-  const {pts, bent} = roundRoute(THREE, A, B, w, [ring], 25, 30, () => false);
-  // the ring's two faces are gone: its centre is one corner of the path
-  assert.ok(pts.some(q => q.distanceTo(w[0]) < 1e-9));
-  assert.ok(!pts.some(q => Math.abs(Math.abs(q.x) - 3.5) < 1e-9 && q.z === 60));
-  // and that corner is rounder than the face-to-face drawing could be
-  const at = c => c.drawn_mm;
-  assert.ok(Math.min(...bent.corners.map(at)) > Math.min(...kept.corners.map(at)));
-  // a ring the route doubles back at is left as the kit decided it
-  const back = roundRoute(THREE, A, B, w, [{...ring, back: true}], 25, 30, () => false);
-  assert.ok(!back.pts.some(q => q.distanceTo(w[0]) < 1e-9));
+test('the kit path is drawn through its own points: the arc out of a plug starts at the plug, along its axis (#166)', () => {
+  // a duplex plug pair whose far ends are at z 47.6, the kit's next point 60 mm
+  // to the right and 30 mm up: the tube starts at the pair's middle, runs out
+  // along the normal and turns there with a 25 mm arc that starts AT the plug
+  const A = {points: [V(-3, 0, 47.6), V(3, 0, 47.6)], normal: V(0, 0, 1)};
+  const B = {points: [V(300, 0, 47.6)], normal: V(0, 0, 1)};
+  const mid = [V(0, 0, 47.6), V(60, 30, 90), V(300, 30, 90), V(300, 0, 47.6)];   // reach a, two kit points, reach b
+  const {pts, bent, extended_mm} = kitRoute(THREE, A, B, mid, 25, () => false);
+  assert.ok(pts[0].distanceTo(V(0, 0, 47.6)) < 1e-9);                // the tube's first point is the reach point
+  assert.ok(extended_mm[0] > 0 && extended_mm[0] <= MAX_EXTEND_R * 25);
+  assert.ok(Math.abs(pts[1].z - (47.6 + extended_mm[0])) < 1e-9 && Math.hypot(pts[1].x, pts[1].y) < 1e-9);
+  const first = bent.corners.find(c => c.at.distanceTo(pts[1]) < 1e-9);
+  assert.ok(first && first.short_mm === 0 && Math.abs(first.t - extended_mm[0]) < 1e-3, JSON.stringify(first));
+  // so the curve leaves the plug along its axis
+  const t0 = bent.getTangent(0);
+  assert.ok(t0.z > 0.999, JSON.stringify(t0));
+  // every kit point between the reach points is on the polyline, as given
+  for (const q of mid.slice(1, -1)) assert.ok(pts.some(p => p.distanceTo(q) < 1e-9));
 });
 
-test('a lead whose turn would start inside its own device is drawn longer, not flagged', () => {
-  // the envelope reaches 11 mm past the face; the plug is 6 mm behind it and
-  // the lead 44 mm long, so a 25 mm bend through 120 degrees (43 mm of leg)
-  // would start inside the device
-  const device = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-200, -20, -400), V(200, 20, 11))}];
-  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, -6)], normal: V(0, 0, 1), item: 'i9'};
-  const w = [V(120, -5, 20)];
-  // without the lengthening the turn is drawn tighter and flagged for the body
-  const short = clearCurve(THREE, [A.points[0], V(0, 0, 38), ...w, V(300, -300, 34), B.points[0]], 25, insideOf(device));
-  assert.equal(short.corners[0].why, 'body');
-  assert.equal(short.corners[0].hitRef, 'i1');
-  const {pts, bent, extended_mm} = roundRoute(THREE, A, B, w, null, 25, 30, insideOf(device));
-  const lead = bent.corners.find(c => c.at.distanceTo(pts[1]) < 1e-6);
-  assert.ok(lead && lead.short_mm === 0 && lead.why === null, JSON.stringify(lead));
-  assert.ok(pts[1].z > -6 + 44);                                   // drawn further out
-  assert.ok(extended_mm[0] > 0 && extended_mm[0] <= MAX_EXTEND_R * 25 && extended_mm[1] === 0, String(extended_mm));
-  assert.ok(Math.abs(pts[1].z - (-6 + 44 + extended_mm[0])) < 1e-6);
-  // only the straight run out of the plug is inside the device
-  assert.ok(bent.getSpacedPoints(2000).filter(insideOf(device)).every(q => Math.hypot(q.x, q.y) < 1e-6));
+test('kit points on one line are one leg, so a turn beside a ring has the run through it (#166)', () => {
+  // a ring's approach, entry, exit and approach lie on its run, 6.5 + 6.8 + 6.5 mm;
+  // the cable comes down to the first approach point and leaves level
+  const A = {points: [V(0, 100, 30)], normal: V(0, 0, 1)}, B = {points: [V(300, 0, 30)], normal: V(0, 0, 1)};
+  const ring = [V(0, 0, 60), V(6.5, 0, 60), V(13.3, 0, 60), V(19.8, 0, 60)];
+  const {pts, bent} = kitRoute(THREE, A, B, [V(0, 100, 60), ...ring, V(300, 0, 60)], 25, () => false);
+  assert.ok(!pts.some(p => p.distanceTo(ring[1]) < 1e-9 || p.distanceTo(ring[2]) < 1e-9));   // straight through: not corners
+  const turn = bent.corners.find(c => c.at.distanceTo(ring[0]) < 1e-9);
+  assert.ok(turn && turn.t > 6.5, JSON.stringify(turn));     // more than the 6.5 mm to the ring's face
 });
 
-test('a tray in front of the port still flags: the lead is not pushed through another body (#164 round 2)', () => {
-  // the same lead and turn, with a tray's floor (item i4) just below the turn,
-  // where the arc would pass: the lead stays as long as it was, and the
-  // corner is flagged for the tray
-  const bodies = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-200, -20, -400), V(200, 20, 11))},
-                  {ref: 'i4', part: 'tray/floor', box: new THREE.Box3(V(2, -20, 14), V(200, 20, 30))}];
-  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, -6)], normal: V(0, 0, 1), item: 'i9'};
-  const {pts, bent, extended_mm} = roundRoute(THREE, A, B, [V(120, -5, 34)], null, 25, 30, insideOf(bodies));
-  const lead = bent.corners.find(c => c.at.distanceTo(pts[1]) < 1e-6);
-  assert.equal(lead.why, 'body');
-  assert.equal(lead.hitRef, 'i4');
-  assert.ok(lead.short_mm > 0);
-  assert.equal(extended_mm[0], 0);
-  assert.ok(Math.abs(pts[1].z - 38) < 1e-6);
-});
-
-test('a lead is drawn at most MAX_EXTEND_R radii longer; past that its corner is flagged', () => {
-  // a narrow device whose envelope reaches 200 mm past the plug, the turn
-  // beside it: no lead within the cap clears it
-  const deep = [{ref: 'i1', part: 'envelope', box: new THREE.Box3(V(-30, -20, -400), V(30, 20, 200))}];
-  const A = {points: [V(0, 0, -6)], normal: V(0, 0, 1), reach: 44, item: 'i1'}, B = {points: [V(300, -300, 300)], normal: V(0, 0, -1), item: 'i9'};
-  const {bent, extended_mm} = roundRoute(THREE, A, B, [V(120, -5, 60)], null, 25, 30, insideOf(deep));
+test('a lead out of a plug is at most MAX_EXTEND_R radii; past that its corner is flagged (#166)', () => {
+  // the kit's next point is nearly back behind the plug: no lead within the cap holds the turn
+  const A = {points: [V(0, 0, 40)], normal: V(0, 0, 1)}, B = {points: [V(300, 0, 40)], normal: V(0, 0, 1)};
+  const {bent, extended_mm} = kitRoute(THREE, A, B, [V(5, 0, 0), V(300, 0, 0)], 25, () => false);
   assert.ok(extended_mm[0] <= MAX_EXTEND_R * 25 + 1e-9, String(extended_mm));
   assert.ok(bent.corners.some(c => c.short_mm > 0));
+});
+
+test("a ring's part is met by the tube: its box grown by the radius keeps a rounded arc out of it (#166)", () => {
+  // a part of a ring standing inside the corner where the cable comes down
+  // and turns along x: clear of both straight legs, in the way of the arc
+  const leg = new THREE.Box3(V(8, 9, 47), V(14, 14, 53));
+  const grown = leg.clone().expandByScalar(1.5);
+  const A = {points: [V(0, 120, 30)], normal: V(0, 0, 1)}, B = {points: [V(300, 0, 30)], normal: V(0, 0, 1)};
+  const mid = [V(0, 120, 50), V(0, 6, 50), V(300, 6, 50)];
+  const open = kitRoute(THREE, A, B, mid, 25, () => false).bent;
+  const near = open.getSpacedPoints(4000).some(q => grown.containsPoint(q));
+  assert.ok(near, 'the full-radius arc would pass over the leg');
+  const kept = kitRoute(THREE, A, B, mid, 25, insideOf([{ref: 'i4', part: 'ring/guide-3/front-leg', box: grown}])).bent;
+  assert.ok(!kept.getSpacedPoints(4000).some(q => grown.containsPoint(q) && q.x > grown.min.x + 0.05 && q.x < grown.max.x - 0.05
+    && q.y > grown.min.y + 0.05 && q.y < grown.max.y - 0.05 && q.z > grown.min.z + 0.05 && q.z < grown.max.z - 0.05));
+  const c = kept.corners.find(x => x.why === 'body');
+  assert.ok(c && c.hitRef === 'i4', JSON.stringify(kept.corners));
 });

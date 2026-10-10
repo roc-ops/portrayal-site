@@ -4498,17 +4498,23 @@ def check_rack_cable_routes(page, base):
         const run = pts.filter(q => Math.abs(q[0] - ext) < 0.6).map(q => q[1]);
         out[id] = {ext, span: Math.max(...run) - Math.min(...run)};
       }
+      // THE RING WHERE THE KIT LAYS THE CABLE (kit 0.14.0): across, the
+      // centre of guide-1's drawing; in height, its sill, the kit's entry and
+      // exit (rack mm: the pane's y runs down from the top of the rack)
       const g1 = s.querySelector('[data-cables] [data-cable-id="c1"]');
       const end = s.querySelector('[data-item-id="i2"] [id="guide-1-end"]') || s.querySelector('#guide-1-end');
-      const eb = end.getBoundingClientRect(), cx = eb.left + eb.width / 2, cy = eb.top + eb.height / 2;
+      const eb = end.getBoundingClientRect(), cx = eb.left + eb.width / 2;
+      const kp = window.__rack.paths().c1.points.filter(q => q.item === 'i2' && q.via === 'guide-1' && (q.at === 'entry' || q.at === 'exit'));
+      const H = window.__rack.doc().racks[0].frame.heightRU * 44.45, sillY = H - kp.reduce((a, q) => a + q.y, 0) / (kp.length || NaN);
+      const inv = s.getScreenCTM().inverse();
+      const cxPane = new DOMPoint(cx, 0).matrixTransform(inv).x;
       let best = Infinity;
       for (const p of g1.querySelectorAll('path')) {
         if (p.dataset.leader) continue;
-        const m = p.getScreenCTM(), L = p.getTotalLength();
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
         for (let t = 0; t <= L; t += 0.25) {
-          const q = p.getPointAtLength(t);
-          const X = m.a * q.x + m.c * q.y + m.e, Y = m.b * q.x + m.d * q.y + m.f;
-          best = Math.min(best, Math.hypot(X - cx, Y - cy) / m.a);
+          const q = new DOMPoint(p.getPointAtLength(t).x, p.getPointAtLength(t).y).matrixTransform(m);
+          best = Math.min(best, Math.hypot(q.x - cxPane, q.y - sillY));
         }
       }
       out.ringGap = best;
@@ -4520,7 +4526,7 @@ def check_rack_cable_routes(page, base):
         if geo[cid]["span"] < 20:
             bad.append(f"2D: {cid}'s lane run is not vertical (the vertical span at its extreme x is {geo[cid]['span']})")
     if not (geo["ringGap"] <= 1.5):
-        bad.append(f"2D: c1's path passes {geo['ringGap']} units from the center of guide-1-end, over 1.5")
+        bad.append(f"2D: c1's path passes {geo['ringGap']} units from guide-1 at the kit's sill height, over 1.5")
     # Editing. Select c1 from the list, open its form, type a label, add a waypoint after row 0.
     page.click('#cableList [data-cable-row="c1"]')
     page.click("#cableEdit")
@@ -4532,6 +4538,8 @@ def check_rack_cable_routes(page, base):
     page.keyboard.press("Enter")
     page.click("#routeAdd")
     # While picking, the rear pane's left-gutter targets are named for the right (mirrored).
+    # (once the redraw that draws them is done: the routes now read each plug's reach first)
+    page.wait_for_function("() => document.querySelector('#paneRear svg [data-pick-lane]')", timeout=READY_MS)
     rear = page.evaluate("""() => {
       const s = document.querySelector('#paneRear svg');
       const xOf = n => { const r = s.querySelector(`[data-pick-lane="${n}"]`); return r ? r.getBBox().x : null; };
@@ -4574,56 +4582,42 @@ def check_rack_cable_routes(page, base):
       const s = window.__rack.scene(); await s.complete?.();
       const deadline = Date.now() + 20000;
       while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
-      const top = await s.guideAnchor({id: 'i2'}, 'guide-1'), end = await s.guideAnchor({id: 'i2'}, 'guide-1-end');
+      // THROUGH THE RING AS THE KIT PASSES IT (portrayal-site#166): the
+      // tube's polyline runs through the kit's entry and exit of guide-1, on
+      // its sill, and is straight between them
+      const faceZ = s.metrics().faceZ;
+      const kp = window.__rack.paths().c1.points.filter(q => q.item === 'i2' && q.via === 'guide-1');
       const tubes = s.rackCables.tubes;
       const pts = tubes.flatMap(t => t.points);
-      const target = {x: top.position.x, y: end.position.y, z: top.position.z};
       const segDist = (p, a, b) => {
         const ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / (ab.lengthSq() || 1)));
         return a.clone().add(ab.multiplyScalar(t)).distanceTo(p);
       };
-      const T = pts[0].clone().set(target.x, target.y, target.z);
-      let ring = Infinity, lane = Infinity;
-      for (let i = 0; i + 1 < pts.length; i++) ring = Math.min(ring, segDist(T, pts[i], pts[i + 1]));
+      const on = q => { const T = pts[0].clone().set(q.x, q.y, faceZ + q.z); let d = Infinity;
+        for (let i = 0; i + 1 < pts.length; i++) d = Math.min(d, segDist(T, pts[i], pts[i + 1])); return d; };
+      const io = kp.filter(q => q.at === 'entry' || q.at === 'exit');
+      const ring = io.length === 2 ? Math.max(...io.map(on)) : Infinity;
+      let lane = Infinity;
       const lx = R.laneX('left');
       for (const p of pts) lane = Math.min(lane, Math.abs(p.x - lx));
       const inside = [];
       for (const {ref, box} of s.deviceBoxes()) for (const p of pts) if (box.containsPoint(p)) inside.push(ref);
-      // THROUGH THE RING ALONG ITS RUN (Portrayal #930): the kit's mark for
-      // guide-1, and the tube's points from where it enters to where it
-      // leaves, which must share the ring centre's y and z.
-      const r = window.__rack.rings();
-      const ws = new Map(window.__rack.routes()).get('c1') || [];
-      const k = ws.findIndex(w => w.item === 'i2' && w.via === 'guide-1');
-      const mark = k >= 0 ? new Map(r?.marks || []).get('c1')?.[k] : null;
-      let through = null;
-      if (mark && mark.sense) {
-        const half = mark.depth / 2;
-        const near = (p, x) => Math.abs(p.x - x) < 0.05 && Math.abs(p.y - target.y) < 0.05 && Math.abs(p.z - target.z) < 0.05;
-        const i = pts.findIndex(p => near(p, target.x - mark.sense * half));
-        const j = pts.findIndex(p => near(p, target.x + mark.sense * half));
-        const between = i >= 0 && j > i ? pts.slice(i, j + 1) : [];
-        through = {mark, i, j, n: between.length,
-                   off: Math.max(0, ...between.map(p => Math.max(Math.abs(p.y - target.y), Math.abs(p.z - target.z))))};
-      }
+      const through = {kit: kp.map(q => q.at), entryExit: io.length,
+                       apart: io.length === 2 ? Math.hypot(io[0].x - io[1].x, io[0].y - io[1].y, io[0].z - io[1].z) : null};
       return {ring, lane, laneX: lx, tubes: tubes.length, npts: pts.length, inside, through};
     }""")
     if res["npts"] == 0:
         bad.append(f"3D: the lone cable has no tube points ({res})")
     else:
-        if not (res["ring"] < 3):
-            bad.append(f"3D: the tube misses guide-1's opening center by {res['ring']} mm (limit 3)")
+        if not (res["ring"] < 0.05):
+            bad.append(f"3D: the tube misses the kit's entry or exit of guide-1 by {res['ring']} mm: {res['through']}")
         if not (res["lane"] < 3):
             bad.append(f"3D: the tube never reaches the lane at x = {res['laneX']} (closest {res['lane']} mm)")
         if res["inside"]:
             bad.append(f"3D: tube points lie inside a device box: {res['inside']}")
         t = res["through"]
-        if not t:
-            bad.append(f"3D: no ring mark for c1 at guide-1 (window.__rack.rings() {res})")
-        elif t["i"] < 0 or t["j"] <= t["i"]:
-            bad.append(f"3D: the tube has no entry and exit {t['mark']['depth']} mm apart along x at guide-1's centre: {t}")
-        elif t["off"] > 0.05:
-            bad.append(f"3D: between guide-1's entry and exit the tube leaves the run by {t['off']} mm: {t}")
+        if t["entryExit"] != 2 or "approach" not in t["kit"] or abs((t["apart"] or 0) - 6.8) > 0.05:
+            bad.append(f"3D: the kit does not pass guide-1 from an approach point, entering and leaving 6.8 mm apart: {t}")
     return bad
 
 
@@ -5151,12 +5145,16 @@ def check_rack_ring_doubles_back(page, base):
       while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
       const top = await s.guideAnchor({id: 'i2'}, 'guide-5');
       const pts = s.rackCables.tubes.flatMap(t => t.points);
-      return {cx: top.position.x, maxX: Math.max(...pts.map(p => p.x)), n: pts.length};
+      // the kit's `face` point: since 0.15.0 (#968) a solid ring is gone to as
+      // far as its approach point before the face, the radius and CLEAR short
+      const face = window.__rack.paths().c1.points.find(q => q.item === 'i2' && q.via === 'guide-5' && q.at === 'face');
+      return {cx: top.position.x, face: face?.x ?? null, maxX: Math.max(...pts.map(p => p.x)), n: pts.length};
     }""")
     if not res["n"]:
         bad.append(f"3D: the cable has no tube points ({res})")
-    elif abs(res["maxX"] - (res["cx"] - half)) > 0.05:
-        bad.append(f"3D: the doubled-back tube reaches x {res['maxX']:.2f}, not guide-5's left face at {res['cx'] - half:.2f}")
+    elif res["face"] is None or abs(res["maxX"] - res["face"]) > 0.05 or not (res["face"] <= res["cx"] - half + 1e-6):
+        bad.append(f"3D: the doubled-back tube reaches x {res['maxX']:.2f}, not the kit's face point {res['face']} "
+                   f"short of guide-5's left face at {res['cx'] - half:.2f}")
     return bad
 
 
@@ -5167,7 +5165,10 @@ def check_rack_ring_doubles_back(page, base):
 # tube is sampled along its centre line, densely, against the kit's own solid
 # boxes as the scene placed them (scene3d.js solidBoxes), and a sample
 # STRICTLY inside a box fails: one on a face, or within TUBE_EPS of it, is a
-# cable lying against the plate, not through it. NOT VACUOUS: it fails when
+# cable lying against the plate, not through it. A ring's part and a zero-U
+# part are met by the TUBE (kit 0.15.0): their boxes are grown by the tube's
+# radius in the scene (scene3d.js solidBoxes), so a centre line inside one is
+# a tube touching the part. NOT VACUOUS: it fails when
 # there is no routed tube, no box, or fewer samples than tubes times the
 # per-tube count.
 TUBE_EPS = 0.05     # mm: a sample this close to a face is on it
@@ -5228,7 +5229,7 @@ def load_rack_3d_ready(page, base, rack):
 CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
 
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 at 0.43-0.50 m with no lane, no ring and no body findings, and no 3D tube passes through the tray")
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.49-0.57 m, lower 0.61-0.68 m) with no lane, no ring and no body findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -5248,8 +5249,14 @@ def check_rack_cable_lay(page, base):
         vias = [(g["item"], g["via"], g["passed"]) for g in p["rings"]]
         if not vias or any(i != "i4" or v not in ("guide-3", "guide-4", "guide-5") or not ok for i, v, ok in vias):
             bad.append(f"{cid}: not through rings 3, 4 or 5 of the lacer, each passed: {vias}")
-        if not (0.43 - 1e-9 <= (p["measured"] or 0) <= 0.50 + 1e-9):
-            bad.append(f"{cid}: measured {p['measured']} m, not 0.43-0.50 m")
+        # the kit's lengths (0.15.0): from each plug's reach (an optic's 32.5 mm,
+        # the panel's duplex plug 13.7), resting on the ring's sill, over the
+        # tray's front edge for the lower leaf
+        lo, hi = (0.49, 0.57) if int(cid[1:]) <= 8 else (0.61, 0.68)
+        if not (lo - 1e-9 <= (p["measured"] or 0) <= hi + 1e-9):
+            bad.append(f"{cid}: measured {p['measured']} m, not {lo}-{hi} m")
+        if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
+            bad.append(f"{cid}: the kit does not rest it on a ring's sill: {p.get('rests')}")
         if p["crossings"]:
             bad.append(f"{cid}: its path still crosses a body: {p['crossings']}")
     if ring_found:
@@ -5261,7 +5268,7 @@ def check_rack_cable_lay(page, base):
         bad.append(f"cable list: a ring or body warning is shown: {warn}")
     page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
-    bad += tubes_inside(page, 16, want_parts=("i4|tray/floor",))
+    bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
     # The cords from the leaf below leave their plugs below the tray and rise
     # to its rings: each is drawn out past the tray's front edge and back in,
     # as a lead is dressed by hand (not straight up through the floor).
@@ -5274,6 +5281,101 @@ def check_rack_cable_lay(page, base):
     short = [(c, round(dz, 1)) for c, dz in front if dz <= 0]
     if len(front) != 8 or short:
         bad.append(f"3D: the LEAF-B cords are not drawn out past the tray's front edge (mm beyond it): {front}")
+    return bad
+
+
+# THE CORDS CLEAR THE RINGS (portrayal-site#166, Portrayal #968). A D-ring is
+# solid round its opening: its legs, bar, seat and hook are in rack.json's
+# `solids` as `ring/<id>/<part>` (kit 0.15.0), and the kit routes each cord
+# through the opening from an approach point on the ring's run. On the
+# cable-lay rack (the owner's rack: the same items, frame and cable ends,
+# saved there with routed lengths), every routed tube's centre line is
+# sampled every half millimetre against each ring part AS THE KIT PLACES IT
+# (the scene's `raw` box, not grown), and against each zero-U part: none may
+# come nearer than the tube's radius, less TUBE_EPS. On site main the scene
+# drew its own ring points (the opening's centre, a lead, a spread), and its
+# rounded arcs swung through the legs and the bar. NOT VACUOUS: it fails
+# without ring parts among the scene's bodies, without 16 routed tubes, or
+# with too few samples.
+RING_CLEAR_STEP = 0.5
+RING_CLEAR_JS = """async ([step, which]) => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const deadline = Date.now() + 60000;
+  while (!(s.rackCables?.tubes ?? []).some(t => t.routed && t.mesh) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+  const isRing = b => String(b.part).startsWith('ring/');
+  const parts = (s.rackCables?.boxes ?? []).filter(b => isRing(b) || b.zeroU)
+    .map(b => { const x = b.raw ?? b.box; return {ring: isRing(b), ref: b.ref, part: b.part, min: [x.min.x, x.min.y, x.min.z], max: [x.max.x, x.max.y, x.max.z]}; });
+  const dist = (p, b) => Math.hypot(...[0, 1, 2].map(k => Math.max(b.min[k] - p[k], 0, p[k] - b.max[k])));
+  // `which`: the routed cables' tubes, or each bundle's trunk (its own radius)
+  let tubes = [];
+  if (which === 'trunks') {
+    const d = Date.now() + 30000;
+    while (!s.rackCables?.bundles && Date.now() < d) await new Promise(r => setTimeout(r, 200));
+    s.three.scene.traverse(o => { if (/^bundle-.+-trunk$/.test(o.name) && o.geometry?.parameters?.path) tubes.push({id: o.name, main: o}); });
+  } else tubes = (s.rackCables?.tubes ?? []).filter(t => t.routed && t.mesh)
+    .map(t => ({id: t.link.id, main: t.mesh.children.find(m => m.geometry?.parameters?.path)}));
+  const cords = [];
+  let samples = 0;
+  for (const {id, main} of tubes) {
+    if (!main) continue;
+    const curve = main.geometry.parameters.path, r = main.geometry.parameters.radius;
+    let worst = null;
+    for (const q of curve.getSpacedPoints(Math.max(2, Math.ceil(curve.getLength() / step)))) {
+      samples++;
+      const p = [q.x, q.y, q.z];
+      for (const b of parts) {
+        const c = dist(p, b) - r;
+        if (!worst || c < worst.clear) worst = {clear: c, ref: b.ref, part: b.part, at: p.map(v => Math.round(v * 10) / 10)};
+      }
+    }
+    if (worst) cords.push({cable: id, clear_mm: Math.round(worst.clear * 100) / 100, ref: worst.ref, part: worst.part, at: worst.at});
+  }
+  return {rings: parts.filter(b => b.ring).length, tubes: tubes.length, samples, cords};
+}"""
+
+
+def ring_clearance(page, want_tubes, which="cables"):
+    """Every routed tube (or, `which` "trunks", every bundle trunk at its own
+    radius) against every ring part and zero-U part: problems, or []."""
+    got = page.evaluate(RING_CLEAR_JS, [RING_CLEAR_STEP, which])
+    if not got["rings"] or got["tubes"] < want_tubes or got["samples"] < want_tubes * 200:
+        return [f"3D: {got['rings']} ring parts among the scene's bodies, {got['tubes']} {which}, {got['samples']} samples; "
+                f"expected ring parts and {want_tubes} {which}"]
+    return [f"3D: {c['cable']}'s tube runs {-c['clear_mm']} mm into {c['ref']} {c['part']} at {c['at']}"
+            for c in got["cords"] if c["clear_mm"] < -TUBE_EPS]
+
+
+@extra("rack.html: ring solids - on the owner's cable-lay rack every cord's 3D tube stays at least its radius from every part of every D-ring (kit 0.15.0 ring/<id>/<part>), drawn from the kit's own reach points, and a bundle's trunk through a ring by its own radius")
+def check_rack_ring_clearance(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+    bad += ring_clearance(page, 16)
+    # Drawn through the kit's points: each tube starts at the kit's reach
+    # point (the plug's far end, plugReachOf), within the 2D/3D port offset.
+    gaps = page.evaluate("""() => (window.__rack.scene().rackCables.tubes || []).filter(t => t.routed)
+      .map(t => [t.link.id, t.reachGap ?? null])""")
+    far = [(c, g) for c, g in gaps if not g or any(v is None or v > 2.0 for v in g)]
+    if len(gaps) != 16 or far:
+        bad.append(f"3D: the tubes do not start at the kit's reach points (mm apart, a and b): {far or gaps}")
+    # A BUNDLE'S TRUNK through a ring (three Cat 6A cords through mgr-1's ring
+    # 1, on the front and on the rear rails): it is wider than its members,
+    # so it is laid on the sill at its own radius and clears every ring part
+    # by it, as a cable does by its own.
+    for face in ("front", "rear"):
+        open_bundle_rack(page, base, face)
+        res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+        if res.get("error"):
+            bad.append(f"{face}: bundle.create refused: {res['error']}")
+            continue
+        page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
+        page.click('#mode [data-mode="3d"]')
+        page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+        bad += [f"{face}: {b}" for b in ring_clearance(page, 1, "trunks")]
     return bad
 
 
@@ -5307,7 +5409,7 @@ PDU_RACK_JS = """async () => {
 # a corner the drawing flagged as too tight for its legs, and no tighter than
 # the radius it flagged; each flag is true (bend_faults) and in the kit's
 # bend-check words, and kept in the scene, not said in the page's notice
-# (not until kit 0.13's reach reaches the site); and each tube's length is its polyline's less exactly
+# (the notice stays off, portrayal-site#164 and #166); and each tube's length is its polyline's less exactly
 # what rounding took off, R(2 tan(theta/2) - theta) a corner. NOT VACUOUS: it
 # fails without 16 rounded tubes at OM4's radius, without enough samples, or
 # without a corner drawn at the full radius.
@@ -5333,22 +5435,21 @@ def bend_faults(flags, extends=()):
     short for a reason that holds:
     - 'body': a point of its full arc is strictly inside a solid box;
     - 'legs': it is drawn with all the leg its neighbours leave it;
-    - a lead out of a port is not flagged - it is drawn long enough to clear
-      its own device and make its turn (bend3d.js roundRoute) - unless the
-      body its arc meets is another item's (a tray in front of the port,
-      which the lead is never pushed through), or its lengthening reached
-      the cap.
+    - a lead out of a port is not flagged for its own device: its arc starts
+      at the plug's end, out of the device (bend3d.js kitRoute) - only for
+      another item's body (a tray in front of the port), for its legs, or
+      when its lead reached the cap.
     And no lead is drawn more than MAX_EXTEND_R radii longer."""
     out = []
     for f in flags:
         who = f.get("cable") or f.get("bundle")
         if f["why"] == "body" and not f.get("hitInside"):
             out.append(f"{who}'s corner is flagged for a body its arc does not meet: {f['text']!r}")
-        if f.get("lead"):
-            other = f["why"] == "body" and f.get("hitInsideRef") and f["hitInsideRef"] != f.get("leadItem")
+        if f.get("lead") and f["why"] == "body":
+            other = f.get("hitInsideRef") and f["hitInsideRef"] != f.get("leadItem")
             capped = (f.get("extended_mm") or 0) >= MAX_EXTEND_R * (f.get("radius_mm") or 0) - 1e-6
             if not (other or capped):
-                out.append(f"{who}'s lead out of its port is flagged ({f['why']}): {f['text']!r}")
+                out.append(f"{who}'s lead out of its port is flagged for its own device: {f['text']!r}")
         if f["why"] == "legs" and f.get("t") is not None and abs(f["t"] - f["room_t"]) > 1e-6:
             out.append(f"{who}'s corner is flagged short of legs but drawn tighter than its legs allow: {f}")
         if f["why"] not in ("body", "legs", "back"):
@@ -5412,8 +5513,11 @@ BEND_SAMPLE_JS = """async ([tol, step]) => {
     for (let k = 1; k < P.length - 1; k++) {
       const r = circ(P[k - 1], P[k], P[k + 1]);
       if (r >= R * (1 - tol)) continue;
-      const near = flags.find(c => P[k].distanceTo(c.at) <= c.t + step);
-      const why = !near ? 'not flagged' : r < near.drawn_mm * (1 - tol) ? `tighter than its flag (${near.drawn_mm} mm)` : null;
+      // the flagged corners whose arcs reach this sample (corners can sit a
+      // few mm apart, where the kit hangs a span): one of them must allow it
+      const near = flags.filter(c => P[k].distanceTo(c.at) <= c.t + step);
+      const why = !near.length ? 'not flagged' : near.every(c => r < c.drawn_mm * (1 - tol))
+        ? `tighter than its flag (${Math.min(...near.map(c => c.drawn_mm))} mm)` : null;
       if (why && (!worst || r < worst.r)) worst = {r, why, at: [P[k].x, P[k].y, P[k].z].map(v => Math.round(v))};
     }
     if (worst) out.bad.push({cable: t.link.id, need: R, r: Math.round(worst.r * 100) / 100, why: worst.why, at: worst.at});
@@ -5463,7 +5567,7 @@ def check_rack_bend_radius_3d(page, base):
     if got["flagged"] != len(got["tight"]):
         bad.append(f"3D: {got['flagged']} corners flagged but {len(got['tight'])} said")
     # The flags are the scene's (rackCables.tight), not the page's to say yet
-    # (portrayal-site#164: no notice until kit 0.13's reach reaches the site).
+    # (portrayal-site#164 and #166: the notice stays off until it is decided).
     if got["tight"] and BEND_FLAG_RE.search(got["notice"]):
         bad.append(f"3D: the page says a bend flag: {got['notice']!r}")
     for t in got["tight"]:
@@ -5626,6 +5730,8 @@ def check_rack_zero_u(page, base):
         page.select_option("#catSide", side)
         page.click("#catPlace")
         page.wait_for_function("(s) => window.__rack.doc().racks[0].items.some(i => i.ref === 'cmv-5u3w' && i.side === s)", arg=side, timeout=READY_MS)
+    # (once the redraw that draws the second is done: the routes now read each plug's reach first)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-side]').length >= 2", timeout=READY_MS)
     xs = page.evaluate("""() => { const s = document.querySelector('#paneFront svg');
       return Object.fromEntries([...s.querySelectorAll('[data-side]')].map(g => { const b = g.getBoundingClientRect();
         const m = s.getScreenCTM().inverse(); return [g.dataset.side, new DOMPoint(b.left + b.width / 2, 0).matrixTransform(m).x]; })); }""")
@@ -11446,7 +11552,8 @@ def check_rack_export_cable_schedule(page, base):
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
          "length_unit": "m", "route": "left-front U14-U2", "bundle": "", "length_source": "entered", "status": "connected", "notes": ""},
         {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
-         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "1.5", "length_unit": "m",
+         # c2 measures 1.503 m on kit 0.15.0 (each RJ45 plug's reach and its hang), 3 mm over the 1.5 m break
+         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "2", "length_unit": "m",
          "route": "right-front U14 > right-rear U14", "bundle": "", "length_source": "routed", "status": "connected", "notes": ""},
         {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
          "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2", "length_unit": "m",
@@ -11692,7 +11799,9 @@ def check_rack_export_bom_cables(page, base):
     status = export_status(page)
     cables = [(r["qty"], r["manufacturer"], r["model"], r["description"], r["ref"]) for r in rows if r["section"] == "Cables"]
     # c2 and c3 have no entered length, so the page measures one along their routes and the BOM marks it.
-    want = [("1", "", "Cat 6A copper", "1.5 m (routed); copper at both ends", ""),
+    # (c2, front to rear, measures 1.503 m on kit 0.15.0, 3 mm over the 1.5 m
+    # stock break: each RJ45 plug's reach and the free spans' hang, portrayal-site#166)
+    want = [("1", "", "Cat 6A copper", "2 m (routed); copper at both ends", ""),
             ("1", "", "OS2 single-mode fiber", "2 m (routed); copper at one end", ""),
             ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", "")]
     if cables != want:
@@ -12060,7 +12169,8 @@ def check_rack_export_drawio_cables(page, base):
                      "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
                      "style": style.format(colors["os2"])},
         # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
-        "cable-c2": {"label": "1.5 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "1.5 m",
+        # c2 measures 1.503 m on kit 0.15.0, 3 mm over the 1.5 m break (portrayal-site#166)
+        "cable-c2": {"label": "2 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "2 m",
                      "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
                      "style": style.format(colors["cat6a"])}}
     if got != want:
@@ -12102,7 +12212,7 @@ def check_rack_export_drawio_cables(page, base):
         bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
     if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
         bad.append(f"draw.io cables: a cable with no media is styled {odd['style'][-30:]!r}, media {odd['media']!r}")
-    if odd["label"] != '<b>&" · 1.5 m':
+    if odd["label"] != '<b>&" · 2 m':
         bad.append(f"draw.io cables: a cable's label is not its own text: {odd['label']!r}")
     return bad
 
