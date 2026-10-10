@@ -106,7 +106,15 @@ const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 // the device's ears are its own - built into a face as wide as the rack, or
 // stated `behind`. A null plan draws NO flange, only the screw heads: the
 // device is still bolted to the rail at every U, as the BOM counts it.
-function drawEars(out, item, topOf, ruH, C = THEMED, plan = null) {
+//
+// THE FLANGE STARTS AT THE FACE'S OWN EDGE (#168), `face` = [left, right] in
+// pane x, as the plan's flange does (ears2d.js: from the face's side out to
+// the 482.6 mm rack face) and as rack3d.js's flange does (from W/2 out). It
+// started at the opening's edge, so every device narrower than the 450.85 mm
+// opening - 186 of the 187 that take a generic ear - showed a strip of rail
+// between its body and each ear: 9.75 mm on the 431.35 mm XCU10, 115 mm on a
+// half-width box. Without a face (a missing drawing) it keeps the opening.
+function drawEars(out, item, topOf, ruH, C = THEMED, plan = null, face = [0, OPENING]) {
   const color = plan?.color || null;
   const X = x => x + OPENING / 2;
   const top = topOf(ruH), bottom = topOf(0);
@@ -124,8 +132,8 @@ function drawEars(out, item, topOf, ruH, C = THEMED, plan = null) {
                         ...(color ? {'data-ear-color': color} : {}), 'pointer-events': 'all'});
   for (const s of SIDES) {
     const holeX = X(s.hole);
-    const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : OPENING;
-    const x1 = s.side === 'left' ? 0 : holeX + EAR_OVERHANG;
+    const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : face[1];
+    const x1 = s.side === 'left' ? face[0] : holeX + EAR_OVERHANG;
     if (plan) g.append(svgEl('rect', {x: x0, y: top, width: x1 - x0, height: bottom - top,
       fill: color || C.ear, 'fill-opacity': C.earOpacity, stroke: C.earLine, 'stroke-width': 1}));
     for (const cy of screwYs) {
@@ -291,7 +299,18 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const h = parseFloat(root.getAttribute('height')) || vb[3];
     if (it.u == null) ruH = Math.max(1, Math.round(h / RU));
     const y = topOf(ruH) + (ruH * RU - h) / 2;
-    const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${(OPENING - w) / 2} ${y})`, ...common,
+    // THE FACE IS CENTRED, NOT THE DRAWING (#168). A drawing bigger than its
+    // face (#865: `data-face-w`/`-h`, the face at 0,0 in it, its viewBox grown
+    // round what stands off it) was centred by its whole width and ignored
+    // its viewBox origin, which put the 482.6 mm CMH-6DR1U 43 mm left of the
+    // rails. Its children keep their own coordinates here, so the face's
+    // origin is 0 when declared and the viewBox origin when not.
+    const fw = parseFloat(root.getAttribute('data-face-w')), fh = parseFloat(root.getAttribute('data-face-h'));
+    const declared = fw > 0 && fh > 0;
+    const [faceW, faceH] = declared ? [fw, fh] : [w, h];
+    const [ox, oy] = declared ? [0, 0] : [Number.isFinite(vb[0]) ? vb[0] : 0, Number.isFinite(vb[1]) ? vb[1] : 0];
+    const fx = (OPENING - faceW) / 2, fy = topOf(ruH) + (ruH * RU - faceH) / 2;
+    const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${fx - ox} ${fy - oy})`, ...common,
                           ...(isFace(it) && SIDED.has(it.side) ? {'data-side': it.side} : {}),
                           'data-panel': through ? 'through' : 'mounted'});
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
@@ -324,7 +343,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // second pair over them would hide the real ones: such a device gets its
     // screw heads only. In the plan's colour, silver unless the device states
     // `chassis.ears.color`.
-    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C, await earPlanFor(it.ref, it.cfg));
+    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C, await earPlanFor(it.ref, it.cfg), [fx, fx + faceW]);
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
   // A U carrying a manager says so in the gutter: the manager itself is mostly
