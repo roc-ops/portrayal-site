@@ -13663,6 +13663,7 @@ def check_rack_dcim_kit_netbox(page, base):
     lines = flat_readme(readme).split("\n")
     if lines[0] != "NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04." or \
             not lines[2].startswith("Read this first: 2-devices.csv will be refused as it is: its site and role columns are blank") or \
+            "Set the site and the device role under Export, DCIM import settings, and export again" not in lines[2] or \
             max(len(l) for l in readme.split("\n")) > 78 or "\r" in readme:
         bad.append(f"NetBox kit: the README opens {lines[:3]}, or has a line over 78 columns, or a CR")
 
