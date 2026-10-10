@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { splitCodes, severityOf, severityFacts, scopesOf, ruleMatches, ruleHref, SEVERITY }
+import { splitCodes, severityOf, severityFacts, scopesOf, ruleMatches, retiredMatches, rankRules, ruleHref, SEVERITY }
   from '../../site/lintcodes.js';
 
 const codes = s => splitCodes(s).filter(p => typeof p !== 'string').map(p => p.code);
@@ -78,4 +78,29 @@ test('every rule in the vendored lint-rules.json is searchable by its code', () 
   catch { return; }
   assert.ok(data.rules.length > 0);
   for (const r of data.rules) assert.ok(ruleMatches(r, {query: r.code}), r.code);
+});
+
+test('a retired code is searched by its code and note, and either filter hides it', () => {
+  const r = {code: 'L12', note: 'Folded into L53 when bays got paths.'};
+  assert.equal(retiredMatches(r, {}), true);
+  assert.equal(retiredMatches(r, {query: 'l12'}), true);
+  assert.equal(retiredMatches(r, {query: 'folded bays'}), true);
+  assert.equal(retiredMatches(r, {query: 'pitch'}), false);
+  assert.equal(retiredMatches(r, {scope: 'device'}), false);
+  assert.equal(retiredMatches(r, {severity: 'error'}), false);
+});
+
+test('an exact code match is listed first, the rest keep their order', () => {
+  const rules = ['L1', 'L50', 'L5', 'L51'].map(code => ({code}));
+  assert.deepEqual(rankRules(rules, 'L5').map(r => r.code), ['L5', 'L1', 'L50', 'L51']);
+  assert.deepEqual(rankRules(rules, ' l5 ').map(r => r.code), ['L5', 'L1', 'L50', 'L51']);
+  assert.deepEqual(rankRules(rules, 'pitch').map(r => r.code), ['L1', 'L50', 'L5', 'L51']);
+  assert.deepEqual(rankRules(rules, '').map(r => r.code), ['L1', 'L50', 'L5', 'L51']);
+});
+
+test('a severity token that is an Object prototype key is not a known token', () => {
+  for (const t of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    assert.equal(severityOf(t).known, false, t);
+    assert.equal(severityOf(t).label, 'Other severity', t);
+  }
 });

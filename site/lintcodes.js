@@ -100,3 +100,24 @@ export function ruleMatches(rule, {query = '', scope = '', severity = ''} = {}) 
   const h = haystack(rule);
   return words.every(w => h.includes(w));
 }
+
+// Does a retired code pass the search box and the two filters? A retired code
+// has no scope and no severity, so either filter hides it; the search looks
+// through its code and its note, as it does a rule's fields.
+export function retiredMatches(entry, {query = '', scope = '', severity = ''} = {}) {
+  if (scope || severity) return false;
+  const words = String(query).toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const h = [entry?.code, entry?.note].filter(v => typeof v === 'string').join('\n').toLowerCase();
+  return words.every(w => h.includes(w));
+}
+
+// The order to list rules in for a search: a rule whose code is the whole
+// query ("L5", "l5") first, then the rest in the file's order. Searching L5
+// also matches L50 to L59 and every rule that names L5, and the one asked for
+// should not be the eleventh.
+export function rankRules(rules, query = '') {
+  const q = String(query).trim().toLowerCase();
+  const exact = r => typeof r?.code === 'string' && r.code.toLowerCase() === q;
+  return q ? [...rules.filter(exact), ...rules.filter(r => !exact(r))] : [...rules];
+}

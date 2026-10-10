@@ -10,7 +10,7 @@
 // Each rule is an element with the code as its id, so lint.html#L53 lands on
 // it; check-browser.py's check_lint_page counts the rules against the file and
 // resolves every anchor.
-import {splitCodes, severityOf, scopesOf, ruleMatches, SEVERITY} from './lintcodes.js';
+import {splitCodes, severityOf, scopesOf, ruleMatches, retiredMatches, rankRules} from './lintcodes.js';
 
 const SRC = 'assets/dist/lint-rules.json';
 const $ = id => document.getElementById(id);
@@ -102,18 +102,21 @@ const scopes = [...new Set(RULES.flatMap(scopesOf))].sort();
 const tokens = [...new Set([...(Array.isArray(data.severities) ? data.severities : []),
                             ...RULES.map(r => r.severity)].filter(t => typeof t === 'string' && t))];
 $('scope').append(...scopes.map(s => el('option', {value: s, text: s})));
-$('severity').append(...tokens.map(t => el('option', {value: t,
-  text: t in SEVERITY ? SEVERITY[t].label : `Other severity (${t})`})));
+// A token's words come from severityOf, which asks hasOwnProperty: a token
+// named "constructor" or "toString" is not one this site has words for.
+$('severity').append(...tokens.map(t => {
+  const s = severityOf(t);
+  return el('option', {value: t, text: s.known ? s.label : `Other severity (${t})`});
+}));
 
 const list = el('div', {class: 'lr-list'});
 const blocks = new Map(RULES.map(r => [r, ruleBlock(r)]));
 list.append(...blocks.values());
 const none = el('p', {class: 'sc-loading', id: 'lint-none', text: 'No rule matches.', hidden: ''});
 body.replaceChildren(list, none);
-if (RETIRED.length) {
-  body.append(el('p', {class: 'sc-section-label', text: 'Retired codes, never reissued'}),
-              el('div', {class: 'lr-list'}, RETIRED.map(retiredBlock)));
-}
+const retired = new Map(RETIRED.map(r => [r, retiredBlock(r)]));
+const retiredLabel = el('p', {class: 'sc-section-label', text: 'Retired codes, never reissued'});
+if (RETIRED.length) body.append(retiredLabel, el('div', {class: 'lr-list'}, [...retired.values()]));
 
 // Counts are read from the file, never typed.
 const fails = RULES.filter(r => r.fails).length;
@@ -135,7 +138,18 @@ function apply() {
     b.hidden = !on;
     if (on) shown++;
   }
-  none.hidden = shown > 0;
+  // An exact code first ("L5" before L50 to L59); appending a node moves it.
+  list.append(...rankRules(RULES, f.query).map(r => blocks.get(r)));
+  // The retired codes answer the same search, so a filter that hides every
+  // rule does not leave them listed under "No rule matches.".
+  let retiredShown = 0;
+  for (const [r, b] of retired) {
+    const on = retiredMatches(r, f);
+    b.hidden = !on;
+    if (on) retiredShown++;
+  }
+  retiredLabel.hidden = retiredShown === 0;
+  none.hidden = shown > 0 || retiredShown > 0;
   $('tally').textContent = shown === RULES.length ? `${RULES.length} rules` : `${shown} of ${RULES.length} rules`;
 }
 
@@ -156,6 +170,12 @@ function land() {
 
 for (const id of ['q', 'scope', 'severity']) $(id).addEventListener(id === 'q' ? 'input' : 'change', apply);
 window.addEventListener('hashchange', land);
+// A link to the rule already in the address bar fires no hashchange, so a
+// rule the filters hid since would stay hidden: land on the click as well.
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('a[href^="#"]');
+  if (a && a.hash && a.hash === location.hash) land();
+});
 apply();
 land();
 // The web fonts can arrive after the first landing and change the height of

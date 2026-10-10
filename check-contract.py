@@ -1599,12 +1599,20 @@ check(_wr.get("main") == "./worker/index.mjs" and (HERE / "worker" / "index.mjs"
       and list((HERE / "tests" / "worker").glob("*.test.mjs")),
       "wrangler.jsonc runs worker/index.mjs with the assets bound as ASSETS, and tests/worker/ tests it (checks.yml runs tests/*/*.test.mjs)",
       f"main={_wr.get('main')!r}, binding={_wr['assets'].get('binding')!r}")
+# A RUNTIME PLACEHOLDER is what a script replaces as soon as it runs: a count
+# that is still an em dash ("Lint rules —", "— devices") or a status line
+# ("Reading the rules…", "loading…"). In prose an em dash sits between words;
+# a placeholder one ends a line, starts one, or follows a "·" separator.
+_PLACEHOLDER = re.compile(r"(?m)\u2014[ \t]*$|^[ \t]*\u2014|\u00b7[ \t]*\u2014|\u2014 devices"
+                          r"|^[^\w\n]*[A-Za-z]+ing\b[^.!?\n]*\u2026[^\w\n]*$")
 for _m in _pages_md:
     _t = _sp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--print", f"{_m}.md"], capture_output=True, text=True).stdout
+    _body = _t.split("\n---\n", 1)[-1]
+    _ph = _PLACEHOLDER.search(_body)
     check(re.match(r'---\ntitle: "[^"\n]+"\n(?:description: "[^\n]+"\n)?url: https://portrayal\.dev/\S*\n---\n\S', _t) is not None
-          and "\u2014 devices" not in _t and not re.search(r"\]\((?:https://portrayal\.dev/)?[^)\s]*\.html", _t),
+          and _ph is None and not re.search(r"\]\((?:https://portrayal\.dev/)?[^)\s]*\.html", _t),
           f"{_m}.md: frontmatter, a body, no runtime placeholder, every site link canonical",
-          _t[:200].replace("\n", " | "))
+          f"placeholder {_ph.group(0)!r}" if _ph else _t[:200].replace("\n", " | "))
 # A PAGE'S DATA FILE: a page whose content a script draws names the file in its
 # <head> (rel="alternate" type="application/json"). Its Markdown copy lists it,
 # _headers sends it as a Link header at the page's URL, and it is served.

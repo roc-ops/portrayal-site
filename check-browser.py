@@ -2975,12 +2975,47 @@ def check_lint_page(page, base):
                          mast: m ? m.getBoundingClientRect().bottom : 0, vh: innerHeight}; }""", c)
         if not pos or pos["hidden"] or not pos["target"] or not (pos["mast"] - 1 <= pos["top"] < pos["vh"] - 40):
             bad.append(f"lint: lint.html#{c} does not land on the rule: {pos}")
+
+    # a link to the rule already in the address bar lands too, though no
+    # hashchange fires: one rule names another, the reader filters the target
+    # away, and clicks the name again
+    pair = page.evaluate("""async () => { const {haystack} = await import('./site/lintcodes.js');
+        const rules = (await (await fetch('assets/dist/lint-rules.json')).json()).rules;
+        const by = Object.fromEntries(rules.map(r => [r.code, r]));
+        for (const a of document.querySelectorAll('.lr-rule[data-rule] .lr-codelink')) {
+            const from = a.closest('.lr-rule').id, to = a.getAttribute('href').slice(1);
+            if (to !== from && by[to] && !haystack(by[to]).includes(from.toLowerCase())) return [from, to];
+        }
+        return null; }""")
+    if not pair:
+        bad.append("lint: no rule links another it does not share a search with, so the same-hash click proves nothing")
+    else:
+        frm, to = pair
+        page.goto("about:blank")
+        page.goto(f"{base}/lint.html#{to}", wait_until="load")
+        page.wait_for_selector(ready, timeout=READY_MS)
+        page.fill("#q", frm.lower())
+        page.wait_for_timeout(50)
+        if to in shown() or frm not in shown():
+            bad.append(f"lint: searching {frm} shows {shown()[:5]}, so the same-hash click proves nothing")
+        else:
+            page.click(f"#{frm} .lr-codelink[href='#{to}']")
+            page.wait_for_timeout(300)
+            st = page.evaluate("c => { const t = document.getElementById(c); return {hash: location.hash, hidden: t.hidden, target: t.classList.contains('is-target')}; }", to)
+            if st["hash"] != f"#{to}" or st["hidden"] or not st["target"]:
+                bad.append(f"lint: clicking {to} in {frm} while the address is already #{to} does not show it: {st}")
     page.goto(f"{base}/lint.html", wait_until="load")
 
     # a severity token the site has no words for still shows, with its booleans
     odd = json.loads(json.dumps(data))
     odd["rules"][0]["severity"] = "advisory-zz"
     odd["severities"] = odd["severities"] + ["advisory-zz"]
+    # and a retired code, which the search finds and the filters hide
+    odd["retired"] = [{"code": "L999", "note": "Folded into another rule; zzretired."}]
+    # and a first rule that names the last, so a search for the last code
+    # matches a rule ahead of it in the file, and the exact match must lead
+    last = odd["rules"][-1]["code"]
+    odd["rules"][0]["why"] += f" See {last}."
     page.route("**/assets/dist/lint-rules.json", lambda r: r.fulfill(json=odd))
     page.goto(f"{base}/lint.html", wait_until="load")
     try:
@@ -2994,6 +3029,26 @@ def check_lint_page(page, base):
             bad.append(f"lint: filtering on an unknown token shows {shown()[:5]}")
         if page.eval_on_selector_all(".lr-rule[data-rule]", "ns => ns.length") != len(codes):
             bad.append("lint: an unknown severity token dropped rules")
+        page.select_option("#severity", "")
+        got_last = search(last.lower())
+        if got_last[:1] != [last] or c0 not in got_last:
+            bad.append(f"lint: searching {last.lower()!r}, which {c0} also names, lists {got_last[:4]}, not {last} first")
+        if search("") != codes:
+            bad.append("lint: clearing the search does not restore the file's order")
+        page.select_option("#severity", "advisory-zz")
+        retired_on = lambda: page.is_visible("#L999")
+        if retired_on():
+            bad.append("lint: a retired code is listed under a severity filter it has no severity for")
+        page.select_option("#severity", "")
+        state = lambda: {"rules": len(shown()), "retired": retired_on(), "none": page.is_visible("#lint-none")}
+        search("zzretired")
+        st = state()
+        if st != {"rules": 0, "retired": True, "none": False}:
+            bad.append(f"lint: searching a word only a retired code's note has gives {st}, want it alone, without 'No rule matches.'")
+        search("zzqx-no-such-rule")
+        st = state()
+        if st != {"rules": 0, "retired": False, "none": True}:
+            bad.append(f"lint: a search that matches nothing leaves {st}, want no rule, no retired code and 'No rule matches.'")
     except Exception as e:
         bad.append(f"lint: the page did not render with an unknown severity token ({str(e).splitlines()[0]})")
     page.unroute("**/assets/dist/lint-rules.json")
