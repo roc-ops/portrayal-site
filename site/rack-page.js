@@ -134,6 +134,9 @@ async function rebuild3d() {
     routes: S.routes?.routes ?? null, paths: S.routes?.paths ?? null, ctx: S.routes?.ctx ?? null, bundles: bundles3d(S.routes),
     bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
+  // No scene: this browser gives no WebGL, or the build failed, and
+  // mountRack3d has put its sentence on the stage. S.scene3d stays null.
+  if (!built) return;
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
   // exist yet: the scene is current for the rack as it is now.

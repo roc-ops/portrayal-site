@@ -8019,8 +8019,8 @@ def check_rack_stage(page, base):
     look = """() => { const out = {};
       for (const sel of ['#mode button.on', '#mode button:not(.on)']) {
         const b = document.querySelector(sel), c = b && getComputedStyle(b);
-        out[sel] = c && [c.backgroundColor, c.borderTopColor, c.color, c.fontSize, c.paddingTop, c.paddingLeft,
-                         c.borderTopLeftRadius, c.borderTopRightRadius];
+        out[sel] = c && [c.backgroundColor, c.borderTopColor, c.color, c.fontFamily, c.fontWeight, c.fontSize, c.paddingTop,
+                         c.paddingLeft, c.borderTopLeftRadius, c.borderTopRightRadius];
       }
       const sw = document.querySelector('#stagebg .sw'), w = sw && getComputedStyle(sw);
       out.sw = w && [w.width, w.height, w.borderTopLeftRadius];
@@ -8086,7 +8086,45 @@ def check_rack_stage(page, base):
     page.click('#stagebg .sw[data-c="#101214"]')
     if tones() != {"bg": "101214", "tag": "d7dbdf", "unit": "6b727a", "emph": "e4e7ea"}:
         bad.append(f"stage 3D: black is not the scene's own label tones again: {tones()}")
+    # PICKED WHILE THE SCENE IS BUILDING: there is no scene to tell, so the
+    # build takes the colour when it lands (rack-page.js rebuild3d). The switch
+    # to 3D and the swatch are clicked in one task, so the click finds no scene.
+    page.click('#mode [data-mode="2d"]')
+    page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
+    none = page.evaluate("""() => { document.querySelector('#mode [data-mode="3d"]').click();
+      document.querySelector('#stagebg .sw[data-c="#c5c9ce"]').click();
+      return window.__rack.scene() == null; }""")
+    if not none:
+        bad.append("stage 3D: the swatch was not clicked during a build (a scene was up), so that path was not measured")
+    settle_scene(page, "stage 3D: the scene built under a swatch click")
+    if tones() != {"bg": "c5c9ce", "tag": "2b3035", "unit": "5a6168", "emph": "101214"}:
+        bad.append(f"stage 3D: light grey, picked while the scene was building, did not reach it: {tones()}")
     page.evaluate("() => { localStorage.removeItem('portrayal.stage'); localStorage.removeItem('portrayal.rack.mode'); }")
+    # NO WEBGL: mountRack3d gives no scene and its own sentence, and the page
+    # goes on - no exception from the rebuild, and a swatch still turns the panes.
+    nogl = page.context.browser.new_page()
+    try:
+        errs = []
+        nogl.on("pageerror", lambda e: errs.append(str(e)))
+        nogl.add_init_script(NO_WEBGL_JS)
+        nogl.goto(f"{base}/rack.html?probe=1", wait_until="load")
+        nogl.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+        nogl.evaluate("() => window.__rack.ready")
+        nogl.click('#mode [data-mode="2d"]')
+        nogl.click('#mode [data-mode="3d"]')
+        nogl.wait_for_function("() => (document.querySelector('#stage3d')?.textContent || '').includes(\"3D isn't available\")",
+                               timeout=READY_MS)
+        nogl.click('#stagebg .sw[data-c="#ffffff"]')
+        nogl.wait_for_timeout(600)          # past a rebuild's 300 ms, were one waiting
+        if errs:
+            bad.append(f"stage, no WebGL: the 3D switch threw: {errs}")
+        if nogl.evaluate("() => window.__rack.scene()") is not None:
+            bad.append("stage, no WebGL: the page holds a scene")
+        if nogl.evaluate("() => document.getElementById('panes').dataset.stage") != "light":
+            bad.append("stage, no WebGL: a swatch picked in 3D did not reach the panes")
+        nogl.evaluate("() => { localStorage.removeItem('portrayal.stage'); localStorage.removeItem('portrayal.rack.mode'); }")
+    finally:
+        nogl.close()
     return bad
 
 
