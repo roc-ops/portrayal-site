@@ -32,6 +32,27 @@ def check(cond, what, detail=""):
     return cond
 
 
+# THE NAMES IN A JS `{a, b as c}` LIST. `side` 0 is the name the other module
+# knows (an import's source name), -1 the name this one does (an export's
+# public name). Split on `as` between any whitespace: `split(" as ")` read
+# `a\n  as b`, or two spaces, as one name, "a\n  as b", which no module
+# exports and nothing matches - and comments inside the braces as names.
+_JS_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+_JS_AS = re.compile(r"\s+as\s+")
+
+
+def js_names(group, side):
+    return {_JS_AS.split(n.strip())[side].strip()
+            for n in _JS_COMMENT.sub("", group).split(",") if n.strip()}
+
+
+check(js_names("a,\n  b\tas\n  c,  d  as  e, // why\n  f /* old */ as g,\n", 0) == {"a", "b", "d", "f"}
+      and js_names("a,\n  b\tas\n  c,  d  as  e, // why\n  f /* old */ as g,\n", -1) == {"a", "c", "e", "g"}
+      and js_names("alias, basket as last", 0) == {"alias", "basket"},
+      "an import or export list is read name by name: `as` across a line break, a tab or two spaces, "
+      "comments, a trailing comma, and names that only contain `as`")
+
+
 def face_file(idx, cfg, view):
     """The file that draws `view` of configuration `cfg` (Portrayal #670): the
     kit's faceFile, in Python. A drawing is written once and shared by every
@@ -421,7 +442,7 @@ stage_files = sorted((HERE / "site" / "showcase" / "stages").glob("*.js"))
 direct, epoch_readers = [], []
 for p in stage_files:
     for names, src in IMPORT_FROM.findall(p.read_text()):
-        got = {n.strip().split(" as ")[0] for n in names.split(",") if n.strip()}
+        got = js_names(names, 0)
         if src.endswith("/artifact.js") and got & BANNED:
             direct.append(f"{p.name}: {sorted(got & BANNED)}")
         if src.endswith("/stage-rail.js") and "epoch" in got:
@@ -1031,7 +1052,7 @@ def _exports(mod):
     t = (VENDOR / f"{mod}.js").read_text()
     names = set(re.findall(r"^export\s+(?:async\s+)?(?:function\*?|const|let|class)\s+([A-Za-z_$][\w$]*)", t, re.M))
     for grp in re.findall(r"^export\s*\{([^}]*)\}", t, re.M):
-        names |= {n.split(" as ")[-1].strip() for n in grp.split(",") if n.strip()}
+        names |= js_names(grp, -1)
     return names
 
 for _stem in _exfiles:
@@ -1044,7 +1065,7 @@ for _stem in _exfiles:
     check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
           f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
     for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'", _src):
-        _want = {n.split(" as ")[0].strip() for n in _names.split(",") if n.strip()}
+        _want = js_names(_names, 0)
         _have = _exports(_mod) if _mod in _kitmods else set()
         check(_mod in _kitmods and _want <= _have,
               f"kit example {_stem}: @portrayal/kit/{_mod} exports {sorted(_want)}",
@@ -1105,7 +1126,7 @@ def kit_import_problems(src, exports_of):
     out = []
     for names, mod in _KIT_IMPORT.findall(src):
         have = exports_of(mod)
-        want = {n.split(" as ")[0].strip() for n in names.split(",") if n.strip()}
+        want = js_names(names, 0)
         if have is None:
             out.append(f"@portrayal/kit/{mod} is not a module the vendored kit exports")
         elif want - have:
@@ -1524,13 +1545,12 @@ _REEXP = re.compile(r"^\s*export\s*\{([^}]*)\}\s*from", re.M)
 # A local list, `export {a, b as c}` with no `from`, exports names this module
 # declared, so it counts as declaring them (the exported name, after `as`).
 _LOCEXP = re.compile(r"^\s*export\s*\{([^}]*)\}(?!\s*from\b)", re.M)
-_local_exports = lambda t: [n.strip().split(" as ")[-1].strip()
-                            for g in _LOCEXP.findall(t) for n in g.split(",") if n.strip()]
+_local_exports = lambda t: sorted(n for g in _LOCEXP.findall(t) for n in js_names(g, -1))
 _kit_names = set()
 for _f in _vrack:
     _t = (VRACK / _f).read_text()
     _kit_names |= set(_DECL.findall(_t))
-    _kit_names |= {n.strip().split(" as ")[-1].strip() for g in _REEXP.findall(_t) for n in g.split(",") if n.strip()}
+    _kit_names |= {n for g in _REEXP.findall(_t) for n in js_names(g, -1)}
     _kit_names |= set(_local_exports(_t))
 _redef = sorted(f"{p.name}: {n}" for p in sorted((HERE / "site" / "rack").glob("*.js"))
                 for _t in [p.read_text()] for n in _DECL.findall(_t) + _local_exports(_t) if n in _kit_names)
@@ -2125,6 +2145,41 @@ check(not _flat,
 # into the page, so tests/catalog pins what the page renders.
 check("site/catalog-page.js" in _cat_html,
       "components/catalog.html renders through site/catalog-page.js")
+
+# ── refresh-assets.sh REFUSES BEFORE IT COPIES ──────────────────────────
+# Run for real, as a copy in a scratch folder (the script works on the folder
+# it is in), against a library and a kit that are in no git checkout: it must
+# refuse, and vendor/ must be as it was. It used to copy the kit's modules and
+# empty vendor/rack/ first, then find it could not name the commit. And with
+# no library at all, the advice reads in the order it is followed: clone,
+# build, or else point PORTRAYAL_UPSTREAM somewhere.
+def _refresh_dry():
+    with _tf.TemporaryDirectory() as _d:
+        _d = Path(_d)
+        for _sub in ("site/vendor/rack", "up/library/dist", "up/kit/rack"):
+            (_d / _sub).mkdir(parents=True)
+        (_d / "site" / "refresh-assets.sh").write_text((HERE / "refresh-assets.sh").read_text())
+        (_d / "site" / "vendor" / "rack" / "kept.js").write_text("export const kept = 1;\n")
+        (_d / "up" / "library" / "dist" / "devices.json").write_text('{"devices": []}')
+        (_d / "up" / "kit" / "new.js").write_text("export const fresh = 1;\n")
+        (_d / "up" / "kit" / "rack" / "new.js").write_text("export const fresh = 1;\n")
+        _env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "PORTRAYAL_"))}
+        # No repository above the scratch folder, whatever the temp folder sits in.
+        _env["GIT_CEILING_DIRECTORIES"] = str(_d.resolve().parent)
+        _run = lambda *a: _sp.run(["sh", str(_d / "site" / "refresh-assets.sh"), *a],
+                                  capture_output=True, text=True, env=_env)
+        _r = _run(str(_d / "up" / "library"))
+        _left = sorted(str(f.relative_to(_d / "site" / "vendor")) for f in (_d / "site" / "vendor").rglob("*") if f.is_file())
+        return _r, _left, _run(str(_d / "nowhere"))
+_rf, _rf_left, _rf_none = _refresh_dry()
+check(_rf.returncode == 1 and "refusing" in _rf.stderr and "not in a git checkout" in _rf.stderr
+      and _rf_left == ["rack/kept.js"],
+      "refresh-assets.sh refuses a kit it cannot name the commit of before it copies anything into vendor/",
+      f"exit {_rf.returncode}, vendor/ holds {_rf_left} (wanted only rack/kept.js): {_rf.stderr.strip()[-200:]}")
+_rf_at = [_rf_none.stderr.find(s) for s in ("git clone ", "./build.sh", "PORTRAYAL_UPSTREAM")]
+check(_rf_none.returncode == 1 and -1 < _rf_at[0] < _rf_at[1] < _rf_at[2],
+      "refresh-assets.sh with no library says clone, then build, then the PORTRAYAL_UPSTREAM alternative",
+      f"exit {_rf_none.returncode}, found at {_rf_at}: {_rf_none.stderr.strip()[-300:]}")
 
 # ── THE PRE-PUSH HOOK'S IDEA OF "THE SITE" ──────────────────────────────
 # hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks
