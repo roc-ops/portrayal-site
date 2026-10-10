@@ -146,14 +146,6 @@ async function rebuild3d() {
   if (built.rackCables && built.rackCables.checked === false) {
     if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
   } else if (built.rackCables) S.unchecked3dSaid = false;
-  // A corner the drawing could not round to its cable's bend radius
-  // (portrayal-site#164, scene3d.js): said once per set of such corners.
-  const tight = (built?.rackCables?.tight ?? []).map(t => t.text);
-  const said = tight.join('\n');
-  if (said !== (S.tight3dSaid ?? '')) {
-    S.tight3dSaid = said;
-    if (tight.length) { addNotice(tight.length > 3 ? `${tight.slice(0, 3).join(' ')} And ${tight.length - 3} more.` : tight.join(' '), 'note'); render(); }
-  }
 }
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on

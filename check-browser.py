@@ -5050,8 +5050,9 @@ PDU_RACK_JS = """async () => {
 # millimetre and the radius through each three neighbouring samples taken. A
 # sample tighter than the cable's installed radius (less BEND_TOL) must lie on
 # a corner the drawing flagged as too tight for its legs, and no tighter than
-# the radius it flagged; each flag is said in the page's notice in the kit's
-# bend-check words; and each tube's length is its polyline's less exactly
+# the radius it flagged; each flag is true (bend_faults) and in the kit's
+# bend-check words, and kept in the scene, not said in the page's notice
+# (not until kit 0.13's reach reaches the site); and each tube's length is its polyline's less exactly
 # what rounding took off, R(2 tan(theta/2) - theta) a corner. NOT VACUOUS: it
 # fails without 16 rounded tubes at OM4's radius, without enough samples, or
 # without a corner drawn at the full radius.
@@ -5170,7 +5171,7 @@ BEND_SAMPLE_JS = """async ([tol, step]) => {
 }"""
 
 
-@extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged and said where its legs cannot hold one")
+@extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged in the scene where its legs cannot hold one")
 def check_rack_bend_radius_3d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -5206,8 +5207,10 @@ def check_rack_bend_radius_3d(page, base):
         bad.append(f"3D: {b['cable']}'s tube bends at {b['r']} mm near {b['at']}, under its {b['need']} mm radius: {b['why']}")
     if got["flagged"] != len(got["tight"]):
         bad.append(f"3D: {got['flagged']} corners flagged but {len(got['tight'])} said")
-    if got["tight"] and got["tight"][0] not in got["notice"]:
-        bad.append(f"3D: the first tight corner is not in the notice: {got['tight'][0]!r} vs {got['notice']!r}")
+    # The flags are the scene's (rackCables.tight), not the page's to say yet
+    # (portrayal-site#164: no notice until kit 0.13's reach reaches the site).
+    if got["tight"] and BEND_FLAG_RE.search(got["notice"]):
+        bad.append(f"3D: the page says a bend flag: {got['notice']!r}")
     for t in got["tight"]:
         if not re.search(r"^c\d+ in 3D (turns .* with room for an? [\d.]+ mm bend; c\d+ \(om4\) needs 25 mm, [\d.]+ mm short|(turns|doubles back) .*no room for a bend; c\d+ \(om4\) needs 25 mm)\.$", t):
             bad.append(f"3D: a tight corner is not in the kit's bend-check words: {t!r}")
@@ -12065,16 +12068,14 @@ def check_rack_export_3d_cables(page, base):
     page.evaluate("() => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, cables: r.cables.map((c, k) => (k ? c : {...c, media: 'om4'}))}); }")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
     page.wait_for_timeout(600)
-    # A rebuild may say something new - a corner drawn tighter than the
-    # cable's bend radius once its media has a type (portrayal-site#164) - but
-    # nothing else: every sentence of its notice is a bend flag, and every flag
-    # is true (bend_flags_true).
+    # The rebuild says neither the unchecked notice again nor a bend flag (the
+    # scene's to keep, portrayal-site#164), and every flag it keeps is true
+    # (bend_flags_true).
     again = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent || ''")
     if "could not be checked" in again:
         bad.append(f"3D export cables: the unchecked notice is shown again on a rebuild: {again!r}")
-    rest = BEND_FLAG_RE.sub("", again).replace(" ", "")
-    if rest:
-        bad.append(f"3D export cables: the rebuild's notice says more than bend flags: {again!r}")
+    if BEND_FLAG_RE.search(again):
+        bad.append(f"3D export cables: the rebuild's notice says a bend flag: {again!r}")
     bad += [f"3D export cables: {b}" for b in bend_flags_true(page)]
     page.evaluate("() => window.__rack.failSceneFacts(false)")
     page.click('#mode [data-mode="2d"]')

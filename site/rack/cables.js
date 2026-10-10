@@ -272,9 +272,13 @@ function tubeEnds(THREE, mesh) {
   });
 }
 
-// A ring round each corner drawn tighter than its bend radius. One switch, so
-// the scene can keep its flags (`tight`) without drawing them.
-const BEND_RINGS = true;
+// A ring round each corner drawn tighter than its bend radius. OFF for now
+// (portrayal-site#164): most such corners today are the site's own lead
+// dress and the drawing's resting, not the rack's. The rings come back when
+// kit 0.13's plug reach and cable-lay step 3's resting reach the site. The
+// scene keeps its flags (`tight`) either way; the GLB and USDZ never carry
+// these rings.
+const BEND_RINGS = false;
 
 // Every link of the plan as a tube in `scene` (rack3d.js's scene API). Returns
 // {tubes, anchors, boxes, group}: per link {link, i, mesh, loose, points,
@@ -393,8 +397,8 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // Where each connector's run begins, measured off the drawn geometry: a
     // strand's first ring, or the main tube's first or last.
     const starts = [...tubeEnds(THREE, main), ...strands.map(s => tubeEnds(THREE, s)[0])];
-    // The corners drawn tighter than the radius (bend3d.js), and a warning
-    // ring round the tube at each, as a bundle's too-tight corner has one.
+    // The corners drawn tighter than the radius (bend3d.js), and, when
+    // BEND_RINGS is on, a warning ring round the tube at each.
     const tight = bent ? bent.corners.filter(c => c.short_mm > 0) : [];
     if (BEND_RINGS) for (const [k, c] of tight.entries()) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: 0xd9822b}));
