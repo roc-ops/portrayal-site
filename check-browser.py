@@ -852,6 +852,39 @@ def webgl_trouble(page):
     return page.evaluate(WEBGL_TROUBLE_JS)
 
 
+# THE RACK BUILDER'S 3D SCENE THAT STAYS, not the first one up. The page
+# rebuilds its scene 300 ms after an edit, and again when the routes of that
+# edit settle (rack-page.js rebuild3d, scheduleRebuild3d): each rebuild disposes
+# the scene and leaves `window.__rack.scene()` null until the next is built. A
+# check that waits for `scene() != null` and then reads it has read, on a slow
+# runner, a scene about to go or no scene at all ("Cannot read properties of
+# null (reading 'complete')", CI run 38043086157, check_rack_cable_routes).
+# This waits for a scene that has completed and is still the page's own 500 ms
+# later, past the 300 ms debounce; with `tubes`, one whose cables are hung as
+# well. Every rack check that reads the scene goes through it, so the next read
+# of `window.__rack.scene()` is of that scene.
+SCENE_SETTLED_JS = """async ({tubes, ms}) => {
+  const sleep = t => new Promise(r => setTimeout(r, t));
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    const s = window.__rack.scene();
+    if (!s) { await sleep(200); continue; }
+    await s.complete?.();
+    await sleep(500);           // past the page's 300 ms rebuild debounce
+    if (window.__rack.scene() !== s) continue;
+    if (tubes && !(s.rackCables?.tubes ?? []).some(t => t.points?.length)) continue;
+    return true;
+  }
+  return false; }"""
+
+
+def settle_scene(page, label, tubes=False, timeout=None):
+    """Wait for the Rack Builder's settled 3D scene; a RuntimeError naming `label` if none comes."""
+    ms = READY_3D_MS if timeout is None else timeout
+    if not page.evaluate(SCENE_SETTLED_JS, {"tubes": tubes, "ms": ms}):
+        raise RuntimeError(f"{label}: no 3D scene that stayed{' with its cables hung' if tubes else ''} in {ms} ms")
+
+
 # A browser with WebGL switched off, as far as a page can tell: every WebGL
 # context request comes back null, which is what Chrome hands a page when
 # graphics acceleration is off (site/webgl.js).
@@ -4004,7 +4037,7 @@ def check_rack_export_3d(page, base):
     if page.query_selector('#exportItems [data-export="glb"]'):
         bad.append("3D export: 2D offers GLB, which only a 3D scene can make")
     page.click('#exportItems [data-export="to-3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D export: the scene")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if dl.suggested_filename != "Export-test.glb" or glb[:4] != b"glTF":
@@ -4441,7 +4474,7 @@ def check_rack_face_managers(page, base):
     if items != [["i1", 24, None], ["i2", 24, "i1"]]:
         bad.append(f"move: the manager did not follow its host: {items}")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the managers' scene")
     got = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
       const g = s.three.scene.getObjectByName('device-i2'), h = s.three.scene.getObjectByName('device-i1');
@@ -4615,29 +4648,13 @@ def check_rack_cable_routes(page, base):
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
-    # THE SCENE THAT STAYS, not the first one up. The cable list was just cut
-    # to c1, and its routes settle after the 3D switch has started a build:
-    # the page then disposes that scene and builds another (rebuild3d,
-    # scheduleRebuild3d), so `scene()` can be null, or a scene about to go, by
-    # the time this reads it - on a slow runner, between the wait above and
-    # the line below (CI run 38043086157). Measure a scene that has completed
-    # and is still the page's own a moment later, with its tubes hung.
+    # THE SCENE THAT STAYS (settle_scene). The cable list was just cut to c1,
+    # and its routes settle after the 3D switch has started a build: the page
+    # then disposes that scene and builds another.
+    settle_scene(page, "3D: the lone cable's scene", tubes=True)
     res = page.evaluate("""async () => {
       const R = await import('/vendor/rack/route.js');
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const deadline = Date.now() + 180000;
-      let s = null;
-      while (Date.now() < deadline) {
-        s = window.__rack.scene();
-        if (s) {
-          await s.complete?.();
-          await sleep(500);           // past the page's 300 ms rebuild debounce
-          if (window.__rack.scene() === s && (s.rackCables?.tubes ?? []).some(t => t.points?.length)) break;
-        } else await sleep(200);
-        s = null;
-      }
-      if (!s) return {ring: Infinity, lane: Infinity, laneX: null, tubes: 0, npts: 0, inside: [], through: null, unsettled: true};
+      const s = window.__rack.scene();
       // THROUGH THE RING AS THE KIT PASSES IT (portrayal-site#166): the
       // tube's polyline runs through the kit's entry and exit of guide-1, on
       // its sill, and is straight between them
@@ -5000,7 +5017,7 @@ def check_rack_ears_default(page, base):
         print("[check_rack_ears_default] no WebGL here - checked the 2D half only")
         return bad
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the ears' scene")
     g3 = page.evaluate("""async () => {
       const s = window.__rack.scene(), d = Date.now() + 60000;
       let w = s.three.scene;
@@ -5190,7 +5207,7 @@ def check_rack_hover_dims(page, base):
     page.click('#mode [data-mode="3d"]')
     page.wait_for_function("""() => { const s = window.__rack.scene(); const w = s?.three.scene;
       return w && w.getObjectByName('cable-c4') && w.getObjectByName('bundle-b1'); }""", timeout=READY_3D_MS)
-    page.wait_for_timeout(500)
+    settle_scene(page, "3D: the hover rack's scene", tubes=True)
     park_mouse(page)
     base3 = page.evaluate(HOVER_3D_STATE)
     if not base3.get("bundle-b1") or not base3.get("cable-c4"):
@@ -5399,7 +5416,7 @@ def check_rack_bundle_3d(page, base):
     page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
     f = page.evaluate("() => window.__rack.bundles()[0]")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the bundle's scene", tubes=True)
     got = page.evaluate("""async () => {
       const s = window.__rack.scene(); const d = Date.now() + 30000;
       while (!s.rackCables?.bundles && Date.now() < d) await new Promise(r => setTimeout(r, 200));
@@ -5579,7 +5596,7 @@ def check_rack_ring_doubles_back(page, base):
     if not (face2d - 4 <= geo["maxX"] <= face2d + 0.5):
         bad.append(f"2D: the doubled-back cable reaches x {geo['maxX']:.2f}, not guide-5's left face at {face2d:.2f} (centre {geo['cx']:.2f})")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the doubled-back cable's scene", tubes=True)
     res = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
       const deadline = Date.now() + 20000;
@@ -5708,7 +5725,7 @@ def check_rack_cable_lay(page, base):
     if any("passes through" in w or "same face" in w for w in warn):
         bad.append(f"cable list: a ring or body warning is shown: {warn}")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
     # The cords from the leaf below leave their plugs below the tray and rise
     # to its rings: each is drawn out past the tray's front edge and back in,
@@ -5794,7 +5811,7 @@ def check_rack_ring_clearance(page, base):
     rack.pop("_note", None)
     load_rack_3d_ready(page, base, rack)
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the ring rack's scene", tubes=True)
     bad += ring_clearance(page, 16)
     # Drawn through the kit's points: each tube starts at the kit's reach
     # point (the plug's far end, plugReachOf), within the 2D/3D port offset.
@@ -5815,7 +5832,7 @@ def check_rack_ring_clearance(page, base):
             continue
         page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
         page.click('#mode [data-mode="3d"]')
-        page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+        settle_scene(page, f"{face}: the bundled rack's scene", tubes=True)
         bad += [f"{face}: {b}" for b in ring_clearance(page, 1, "trunks")]
     return bad
 
@@ -5997,7 +6014,7 @@ def check_rack_bend_radius_3d(page, base):
     if any(any("not loaded" in w for w in b["warnings"]) for b in page_bundles):
         bad.append(f"page: a bundle's warnings say the cable types are not loaded: {page_bundles}")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the bend rack's scene", tubes=True)
     got = page.evaluate(BEND_SAMPLE_JS, [BEND_TOL, BEND_STEP])
     if got["tubes"] != 16 or got["rounded"] != 16 or set(got["radii"]) != {25}:
         bad.append(f"3D: {got['rounded']} of {got['tubes']} routed tubes rounded, at radii {sorted(set(got['radii']))}; expected 16 at OM4's 25 mm")
@@ -6079,7 +6096,7 @@ def check_rack_cable_lay_pdu(page, base):
         if far:
             bad.append(f"2D: the drawn cable misses detour points by {far} mm")
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the PDU rack's scene", tubes=True)
     bad += tubes_inside(page, 1, want_parts=("z1|envelope",))
     return bad
 
@@ -6202,7 +6219,7 @@ def check_rack_zero_u(page, base):
         bad.append("NetBox: the duct's device type (u_height 0) is not in the kit")
     # 3D: stood beside the upright, and the tube runs up its channel.
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the zero-U rack's scene", tubes=True)
     res = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete?.();
       const deadline = Date.now() + 20000;
@@ -6487,7 +6504,7 @@ def check_rack_mount_flag_3d_exports(page, base):
 
     page.click("#exportMenu > summary")
     page.click('#exportItems [data-export="to-3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D ears by device: the scene")
     ears = page.evaluate("""async () => {
       const s = window.__rack.scene(); await s.complete();
       const ids = Object.fromEntries(window.__rack.doc().racks[0].items.map(i => [i.ref, i.id]));
@@ -6511,7 +6528,7 @@ def check_rack_export_overtaken(page, base):
     page.on("download", lambda d: downloads.append(d.suggested_filename))
     open_fixture(page, base)
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "overtaken by 2D: the scene")
     # save() clicks a download link; counting those is the page's own account
     # of what it offered, with no wait for a download that must not come.
     page.evaluate("""() => { window.__saves = [];
@@ -6540,7 +6557,7 @@ def check_rack_export_overtaken(page, base):
     # 2. An edit committed in the same task as the click: the scene on screen
     #    is no longer this rack's, and is rebuilt (disposed) 300 ms later.
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "overtaken by an edit: the scene")
     page.click("#frameBtn")
     page.wait_for_selector("#fNumbering", timeout=READY_MS)
     page.click("#exportMenu > summary")
@@ -6559,7 +6576,7 @@ def check_rack_export_overtaken(page, base):
     if saves:
         bad.append(f"overtaken by an edit: a file was offered anyway: {saves}")
     # The same export, left alone, still downloads.
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "overtaken: the scene after the edit")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     if dl.suggested_filename != "Export-test.glb" or not export_status(page).startswith("Downloaded"):
         bad.append(f"overtaken: an undisturbed export after it gave {dl.suggested_filename!r}, "
@@ -7883,8 +7900,7 @@ def check_rack_3d(page, base):
             bad.append("rack 3D (no WebGL): #panes is still visible once 3D is chosen")
         return bad
 
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
-    page.evaluate("async () => { await window.__rack.scene().complete(); }")
+    settle_scene(page, "rack 3D: the scene")
 
     posts = page.evaluate("() => window.__rack.scene().posts()")
     if posts != 4:
@@ -7948,8 +7964,7 @@ def check_rack_3d(page, base):
     # Reload while in 3D (the mode is remembered) and switch back to 2D: the
     # same blank-pane bug, from the reload direction rather than the toggle.
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
-    page.evaluate("async () => { await window.__rack.scene().complete(); }")
+    settle_scene(page, "rack 3D: the scene before the reload")
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
@@ -8045,7 +8060,7 @@ def check_rack_stage(page, base):
     if webgl_trouble(page):
         print("[check_rack_stage] WebGL unavailable - the 3D half is not checked")
         return bad
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "stage 3D: the scene")
     tones = lambda: page.evaluate("""() => {
       const s = window.__rack.scene(), t = {};
       s.three.scene.traverse(x => { if (x.isSprite && x.userData.labelTone) t[x.userData.labelTone] = x.material.color.getHexString('srgb'); });
@@ -8063,7 +8078,7 @@ def check_rack_stage(page, base):
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "stage 3D: the scene after a reload")
     if tones() != light:
         bad.append(f"stage 3D: after a reload the scene is {tones()}, not the white it was left on")
     if page.evaluate("() => localStorage.getItem('portrayal.stage')") != "#ffffff":
@@ -11352,12 +11367,14 @@ def check_rack_cables_3d(page, base):
                                    arg=old, timeout=READY_3D_MS)
         except Exception as e:
             raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
+        settle_scene(page, label)
         old.dispose()
         return page.evaluate_handle("() => window.__rack.scene()")
 
     scene = None
     if not no_webgl:
         wait_fn(page, "cables 3D: the scene", "() => !!window.__rack.scene()", timeout=READY_3D_MS)
+        settle_scene(page, "cables 3D: the scene")
         scene = page.evaluate_handle("() => window.__rack.scene()")
         if groups() != ["cable-c1", "cable-c2", "cable-c3"]:
             bad.append(f"cables 3D: the scene's cables are {groups()}")
@@ -11809,7 +11826,7 @@ def check_rack_export_after_cable_edit(page, base):
         print("[check_rack_export_after_cable_edit] WebGL unavailable - not exercised")
         return bad
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "export after a cable edit: the scene")
     page.click("#exportMenu > summary")
     page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
     # One page task: a device is added (its rebuild waits 300 ms), a cable's
@@ -12215,7 +12232,7 @@ def check_rack_export_cable_failures(page, base):
             print("[check_rack_export_cable_failures] WebGL unavailable - GLB not exercised")
             return bad
         page.click('#mode [data-mode="3d"]')
-        page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+        settle_scene(page, "GLB, facts failing: the scene")
         page.evaluate("window.__rack.failExport({facts: true})")
         dl = export_file(page, "glb", timeout=READY_3D_MS)
         glb = pathlib.Path(dl.path()).read_bytes()
@@ -12764,7 +12781,7 @@ def check_rack_cables_3d_scene(page, base):
         print("[check_rack_cables_3d_scene] WebGL unavailable - not exercised")
         return bad
     page.click('#mode [data-mode="3d"]')
-    wait_fn(page, "3D cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D cables: the scene")
     got = page.evaluate(CABLES_3D_JS)
     if got["rc"] != "drawn" or not got.get("checked"):
         return bad + [f"3D cables: the scene's cables are {got['rc']!r}"]
@@ -12808,7 +12825,7 @@ def check_rack_cables_3d_scene(page, base):
     page.click('#mode [data-mode="2d"]')
     open_fixture(page, base)
     page.click('#mode [data-mode="3d"]')
-    wait_fn(page, "3D cables: the scene of a rack with no cables", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D cables: the scene of a rack with no cables")
     got = page.evaluate(CABLES_3D_JS)
     if got["rc"] is not None or got["groups"] or \
             got["overrides"] != [i["swaps"] for i in EXPORT_FIXTURE["racks"][0]["items"]]:
@@ -12885,7 +12902,7 @@ def check_rack_export_3d_cables(page, base):
         print("[check_rack_export_3d_cables] WebGL unavailable - the files were not exercised")
         return bad
     page.click('#mode [data-mode="3d"]')
-    wait_fn(page, "3D export cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D export cables: the scene")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     status = export_status(page)
     glb = pathlib.Path(dl.path()).read_bytes()
@@ -12923,7 +12940,7 @@ def check_rack_export_3d_cables(page, base):
     # "not connected" finding the model would contradict.
     page.evaluate("() => window.__rack.failSceneFacts(true)")
     page.click('#mode [data-mode="3d"]')
-    wait_fn(page, "3D export cables: the unchecked scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "3D export cables: the unchecked scene")
     wait_fn(page, "3D export cables: the 3D notice",
             "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')")
     if page.evaluate("() => window.__rack.scene().rackCables.checked") is not False:
@@ -12938,7 +12955,7 @@ def check_rack_export_3d_cables(page, base):
     old = page.evaluate_handle("() => window.__rack.scene()")
     page.evaluate("() => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, cables: r.cables.map((c, k) => (k ? c : {...c, media: 'om4'}))}); }")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
-    page.wait_for_timeout(600)
+    settle_scene(page, "3D export cables: the rebuilt scene")
     # The rebuild says neither the unchecked notice again nor a bend flag (the
     # scene's to keep, portrayal-site#164), and every flag it keeps is true
     # (bend_flags_true).
@@ -13046,7 +13063,7 @@ def check_rack_unchecked_3d_each_rack(page, base):
     page.evaluate("() => window.__rack.failSceneFacts(true)")
     try:
         page.click('#mode [data-mode="3d"]')
-        wait_fn(page, "unchecked 3D: the first rack's scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+        settle_scene(page, "unchecked 3D: the first rack's scene")
         wait_fn(page, "unchecked 3D: the first rack's notice", said)
         # Another rack, opened while still in 3D: its scene is unchecked as well, and it has not been told.
         old = page.evaluate_handle("() => window.__rack.scene()")
@@ -13055,6 +13072,7 @@ def check_rack_unchecked_3d_each_rack(page, base):
                                                   "buffer": json.dumps(other).encode()}])
         page.wait_for_function("() => window.__rack.doc().racks[0].name === 'Other rack'", timeout=READY_MS)
         page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+        settle_scene(page, "unchecked 3D: the second rack's scene")
         if page.evaluate("() => window.__rack.scene().rackCables.checked") is not False:
             bad.append("unchecked 3D: the second rack's scene is called checked")
         try:
@@ -13506,7 +13524,7 @@ def check_rack_dcim_settings_scene(page, base):
         print("[check_rack_dcim_settings_scene] WebGL unavailable - not exercised")
         return bad
     page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    settle_scene(page, "DCIM settings: the scene")
 
     def draft(label, site):
         page.evaluate("() => { window.__scene = window.__rack.scene(); }")
