@@ -236,14 +236,19 @@ export function detourStops(waypoints, detours) {
 // agree. A map of endKey -> mm; an end with no connector drawn (an MPO
 // adapter, a loose end) is not in it, and the kit takes its media's figure.
 const plugAt = (cp, path) => cp === `${path}-occupant` || cp.startsWith(`${path}-occupant/`);
-export async function plugReaches(rack) {
+// `facts`, when the caller has them (rack-page.js render reads them just
+// before), are cableFacts' answer, and are not read again.
+export async function plugReaches(rack, facts = null) {
   const out = new Map();
   const ends = (rack.cables || []).flatMap(c => [c.a, c.b]).filter(e => e?.item && e.path);
   if (!ends.length) return out;
   // imported here: relief.js reads the page's address at load, and this module
   // is also loaded where there is no page (the node tests of the agent tools)
-  const [{cablePoints}, {cableFacts}] = await Promise.all([import('../../vendor/relief.js'), import('./cable-plugs.js')]);
-  const facts = await cableFacts(rack).catch(() => null);
+  const {cablePoints} = await import('../../vendor/relief.js');
+  if (!facts?.seats || facts.unchecked) {
+    const {cableFacts} = await import('./cable-plugs.js');
+    facts = await cableFacts(rack).catch(() => null);
+  }
   const items = new Map(rack.items.map(i => [i.id, i]));
   const roots = new Map();
   const rootOfPanel = (it, view) => {
@@ -281,7 +286,7 @@ export const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => 
 export const withCableTypes = (ctx, types) =>
   (types ? {...ctx, diameterOf: types.diameterOf, bendOf: types.bendOf} : ctx);
 
-export async function routeFacts(rack, chassisOf) {
+export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {}) {
   const guides = new Map(), ports = new Map(), failed = {n: 0};
   const typesReady = cableTypes();
   // The ducts beside the rack, read from their drawings with the faces.
@@ -333,7 +338,7 @@ export async function routeFacts(rack, chassisOf) {
   // and each end from the far end of its seated plug (`plugReachOf`, kit
   // 0.13.0), so every length the page shows is the kit's, measured the way
   // the 3D scene draws it.
-  const [types, reachOf] = await Promise.all([typesReady, plugReaches(rack)]);
+  const [types, reachOf] = await Promise.all([typesReady, plugReaches(rack, given)]);
   if (types) Object.assign(ctx, {diameterOf: types.diameterOf, typeOf: types.typeOf, bendOf: types.bendOf});
   ctx.plugReachOf = end => reachOf.get(endKey(end)) ?? null;
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));

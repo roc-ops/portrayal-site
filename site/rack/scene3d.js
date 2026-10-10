@@ -16,7 +16,7 @@ import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
-import {solidsOf} from '../../vendor/rack/solids.js';
+import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
 
@@ -110,16 +110,47 @@ export function solidBoxes(THREE, rack, chassisOf, faceZ) {
 const STRAP_BAND = 12;   // mm along the run: a strap as drawn
 // The kit's points for one trunk waypoint, in the scene: the first member
 // path that tags points with it, else pointOf. [] when neither places it.
-function trunkStop(THREE, rack, w, members, paths, ctx, at) {
+// AT A RING WHOSE OPENING THE KIT PLACES (solids.js traysOf: a ring on a
+// tray) the members lie on its sill at their own radius, and the trunk is
+// wider: it is laid there by the kit's own rule with the trunk's radius `rt`
+// - its centre `rt` over the opening's lowest inside edge, across the run
+// at the side nearer the rail by `rt` (the middle, when the opening is
+// narrower than the trunk) - so it rests on the sill and against the leg as
+// the kit lays a cable, never through them (portrayal-site#166 round 2).
+function trunkStop(THREE, rack, w, members, paths, ctx, at, rt = 0) {
+  let own = [];
   if (!w.lane) for (const id of members) {
-    const own = (paths?.get(id)?.points ?? []).filter(q => q.item === w.item && q.via === w.via);
-    if (own.length) return own.map(at);
+    own = (paths?.get(id)?.points ?? []).filter(q => q.item === w.item && q.via === w.via);
+    if (own.length) break;
   }
-  let p = null;
-  try { p = ctx ? pointOf(rack, w, ctx) : null; } catch { p = null; }
-  return p ? [at(p)] : [];
+  if (!own.length) {
+    // no member's path names it (yet: a scene hung while the members' routes
+    // still follow their own way): the kit's point for the waypoint
+    let p = null;
+    try { p = ctx ? pointOf(rack, w, ctx) : null; } catch { p = null; }
+    own = p ? [p] : [];
+  }
+  const open = rt > 0 && !w.lane && own.length ? openingOf(rack, w, ctx) : null;
+  if (!open) return own.map(at);
+  const b = open.box, across = open.run === 'x' ? 'z' : 'x';
+  const lo = b[`${across}0`], hi = b[`${across}1`];
+  const rail = (rack.items.find(i => i.id === w.item)?.face === 'rear')
+    ? -(rack.frame.kind === 'two-post' ? 0 : Number(rack.frame.railDepth) || 0) : 0;
+  const c = hi - lo <= 2 * rt || across === 'x' ? (lo + hi) / 2
+    : Math.abs(lo - rail) <= Math.abs(hi - rail) ? lo + rt : hi - rt;
+  return own.map(q => at({...q, y: b.y0 + rt, [across]: c}));
 }
-async function hangBundles(scene, rack, facts, inside = null) {
+// The opening of a ring a waypoint names, where the kit places it ({run, box}), or null.
+function openingOf(rack, w, ctx) {
+  let trays = [];
+  try { trays = ctx?.chassisOf ? traysOf(rack, ctx) : []; } catch { trays = []; }
+  for (const t of trays) if (t.item === w.item) { const o = t.rings.find(x => x.via === w.via); if (o) return o; }
+  return null;
+}
+// The bodies a trunk of radius `rt` is kept out of: a ring's part and a
+// zero-U part met by the trunk's tube (grown by its radius), the rest as they are.
+const trunkInside = (boxes, rt) => insideOf((boxes ?? []).map(b => (b.raw ? {...b, box: b.raw.clone().expandByScalar(rt)} : b)));
+async function hangBundles(scene, rack, facts, boxes = null) {
   const {THREE, scene: world} = scene.three;
   const toScene = inScene(THREE, scene.metrics().faceZ);
   const group = new THREE.Group(); group.name = 'cable-bundles';
@@ -129,9 +160,10 @@ async function hangBundles(scene, rack, facts, inside = null) {
     if (!f.drawn || !L?.trunk?.length) continue;
     // one point per trunk waypoint (the middle of its stop), for the straps
     // and the bend marks; the tube runs through every point of each stop
-    const stops = L.trunk.map(w => trunkStop(THREE, rack, w, f.members ?? [], facts.paths, facts.ctx, toScene));
-    const pts = stops.map(q => (q.length ? q.reduce((a, b) => a.add(b), new THREE.Vector3()).multiplyScalar(1 / q.length) : null));
     const D = drawnDiameter(f.diameter, WIDTH);
+    const stops = L.trunk.map(w => trunkStop(THREE, rack, w, f.members ?? [], facts.paths, facts.ctx, toScene, D / 2));
+    const pts = stops.map(q => (q.length ? q.reduce((a, b) => a.add(b), new THREE.Vector3()).multiplyScalar(1 / q.length) : null));
+    const inside = trunkInside(boxes, D / 2);
     const g = new THREE.Group(); g.name = `bundle-${f.id}`;
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
                                                    depthWrite: false});
@@ -308,7 +340,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx}, insideOf(drawn.boxes));
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }

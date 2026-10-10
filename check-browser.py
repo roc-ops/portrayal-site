@@ -5298,7 +5298,7 @@ def check_rack_cable_lay(page, base):
 # without ring parts among the scene's bodies, without 16 routed tubes, or
 # with too few samples.
 RING_CLEAR_STEP = 0.5
-RING_CLEAR_JS = """async ([step]) => {
+RING_CLEAR_JS = """async ([step, which]) => {
   const s = window.__rack.scene(); await s.complete?.();
   const deadline = Date.now() + 60000;
   while (!(s.rackCables?.tubes ?? []).some(t => t.routed && t.mesh) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
@@ -5306,11 +5306,17 @@ RING_CLEAR_JS = """async ([step]) => {
   const parts = (s.rackCables?.boxes ?? []).filter(b => isRing(b) || b.zeroU)
     .map(b => { const x = b.raw ?? b.box; return {ring: isRing(b), ref: b.ref, part: b.part, min: [x.min.x, x.min.y, x.min.z], max: [x.max.x, x.max.y, x.max.z]}; });
   const dist = (p, b) => Math.hypot(...[0, 1, 2].map(k => Math.max(b.min[k] - p[k], 0, p[k] - b.max[k])));
-  const tubes = (s.rackCables?.tubes ?? []).filter(t => t.routed && t.mesh);
+  // `which`: the routed cables' tubes, or each bundle's trunk (its own radius)
+  let tubes = [];
+  if (which === 'trunks') {
+    const d = Date.now() + 30000;
+    while (!s.rackCables?.bundles && Date.now() < d) await new Promise(r => setTimeout(r, 200));
+    s.three.scene.traverse(o => { if (/^bundle-.+-trunk$/.test(o.name) && o.geometry?.parameters?.path) tubes.push({id: o.name, main: o}); });
+  } else tubes = (s.rackCables?.tubes ?? []).filter(t => t.routed && t.mesh)
+    .map(t => ({id: t.link.id, main: t.mesh.children.find(m => m.geometry?.parameters?.path)}));
   const cords = [];
   let samples = 0;
-  for (const t of tubes) {
-    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+  for (const {id, main} of tubes) {
     if (!main) continue;
     const curve = main.geometry.parameters.path, r = main.geometry.parameters.radius;
     let worst = null;
@@ -5322,23 +5328,24 @@ RING_CLEAR_JS = """async ([step]) => {
         if (!worst || c < worst.clear) worst = {clear: c, ref: b.ref, part: b.part, at: p.map(v => Math.round(v * 10) / 10)};
       }
     }
-    if (worst) cords.push({cable: t.link.id, clear_mm: Math.round(worst.clear * 100) / 100, ref: worst.ref, part: worst.part, at: worst.at});
+    if (worst) cords.push({cable: id, clear_mm: Math.round(worst.clear * 100) / 100, ref: worst.ref, part: worst.part, at: worst.at});
   }
   return {rings: parts.filter(b => b.ring).length, tubes: tubes.length, samples, cords};
 }"""
 
 
-def ring_clearance(page, want_tubes):
-    """Every routed tube against every ring part and zero-U part: problems, or []."""
-    got = page.evaluate(RING_CLEAR_JS, [RING_CLEAR_STEP])
+def ring_clearance(page, want_tubes, which="cables"):
+    """Every routed tube (or, `which` "trunks", every bundle trunk at its own
+    radius) against every ring part and zero-U part: problems, or []."""
+    got = page.evaluate(RING_CLEAR_JS, [RING_CLEAR_STEP, which])
     if not got["rings"] or got["tubes"] < want_tubes or got["samples"] < want_tubes * 200:
-        return [f"3D: {got['rings']} ring parts among the scene's bodies, {got['tubes']} routed tubes, {got['samples']} samples; "
-                f"expected ring parts and {want_tubes} tubes"]
-    return [f"3D: cable {c['cable']}'s tube runs {-c['clear_mm']} mm into {c['ref']} {c['part']} at {c['at']}"
+        return [f"3D: {got['rings']} ring parts among the scene's bodies, {got['tubes']} {which}, {got['samples']} samples; "
+                f"expected ring parts and {want_tubes} {which}"]
+    return [f"3D: {c['cable']}'s tube runs {-c['clear_mm']} mm into {c['ref']} {c['part']} at {c['at']}"
             for c in got["cords"] if c["clear_mm"] < -TUBE_EPS]
 
 
-@extra("rack.html: ring solids - on the owner's cable-lay rack every cord's 3D tube stays at least its radius from every part of every D-ring (kit 0.15.0 ring/<id>/<part>), drawn from the kit's own reach points")
+@extra("rack.html: ring solids - on the owner's cable-lay rack every cord's 3D tube stays at least its radius from every part of every D-ring (kit 0.15.0 ring/<id>/<part>), drawn from the kit's own reach points, and a bundle's trunk through a ring by its own radius")
 def check_rack_ring_clearance(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -5355,6 +5362,20 @@ def check_rack_ring_clearance(page, base):
     far = [(c, g) for c, g in gaps if not g or any(v is None or v > 2.0 for v in g)]
     if len(gaps) != 16 or far:
         bad.append(f"3D: the tubes do not start at the kit's reach points (mm apart, a and b): {far or gaps}")
+    # A BUNDLE'S TRUNK through a ring (three Cat 6A cords through mgr-1's ring
+    # 1, on the front and on the rear rails): it is wider than its members,
+    # so it is laid on the sill at its own radius and clears every ring part
+    # by it, as a cable does by its own.
+    for face in ("front", "rear"):
+        open_bundle_rack(page, base, face)
+        res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+        if res.get("error"):
+            bad.append(f"{face}: bundle.create refused: {res['error']}")
+            continue
+        page.wait_for_function("() => (window.__rack.bundles() || [])[0]?.count > 0", timeout=READY_MS)
+        page.click('#mode [data-mode="3d"]')
+        page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().rackCables", timeout=READY_3D_MS)
+        bad += [f"{face}: {b}" for b in ring_clearance(page, 1, "trunks")]
     return bad
 
 
@@ -11531,6 +11552,7 @@ def check_rack_export_cable_schedule(page, base):
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
          "length_unit": "m", "route": "left-front U14-U2", "bundle": "", "length_source": "entered", "status": "connected", "notes": ""},
         {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
+         # c2 measures 1.503 m on kit 0.15.0 (each RJ45 plug's reach and its hang), 3 mm over the 1.5 m break
          "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "2", "length_unit": "m",
          "route": "right-front U14 > right-rear U14", "bundle": "", "length_source": "routed", "status": "connected", "notes": ""},
         {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
@@ -11777,8 +11799,8 @@ def check_rack_export_bom_cables(page, base):
     status = export_status(page)
     cables = [(r["qty"], r["manufacturer"], r["model"], r["description"], r["ref"]) for r in rows if r["section"] == "Cables"]
     # c2 and c3 have no entered length, so the page measures one along their routes and the BOM marks it.
-    # (c2, front to rear, crossed the 1.5 m stock break with kit 0.13-0.15:
-    # each RJ45 plug's reach and the free spans' hang, portrayal-site#166)
+    # (c2, front to rear, measures 1.503 m on kit 0.15.0, 3 mm over the 1.5 m
+    # stock break: each RJ45 plug's reach and the free spans' hang, portrayal-site#166)
     want = [("1", "", "Cat 6A copper", "2 m (routed); copper at both ends", ""),
             ("1", "", "OS2 single-mode fiber", "2 m (routed); copper at one end", ""),
             ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", "")]
@@ -12147,6 +12169,7 @@ def check_rack_export_drawio_cables(page, base):
                      "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
                      "style": style.format(colors["os2"])},
         # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
+        # c2 measures 1.503 m on kit 0.15.0, 3 mm over the 1.5 m break (portrayal-site#166)
         "cable-c2": {"label": "2 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "2 m",
                      "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
                      "style": style.format(colors["cat6a"])}}

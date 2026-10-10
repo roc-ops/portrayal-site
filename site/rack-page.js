@@ -896,7 +896,7 @@ async function render() {
     // panel and cable list below read S.routes.
     if (r.cables.length) {
       const at = theDoc();
-      const rf = await routeFacts(r, chassisOf).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
       else if (theDoc() === at) {

@@ -258,6 +258,21 @@ export function kitRoute(THREE, A, B, mid, R, inside, {most = MAX_EXTEND_R * (R 
     return !(R > 0) || Math.hypot(u, R - w) >= R; };
   while (inner.length > 1 && inner[0].kitAt === 'rest' && !reachable(a, A.normal, inner[0])) inner = inner.slice(1);
   while (inner.length > 1 && inner.at(-1).kitAt === 'rest' && !reachable(b, B.normal, inner.at(-1))) inner = inner.slice(0, -1);
+  // A LEAD AND THE CORNER AFTER IT SHARE ONE LEG. The lead's corner needs
+  // its own t on the leg to the next point, and when that point is itself a
+  // corner of the kit's hang (a rest sample), both cannot have their arcs:
+  // the sample is passed over too, as the arc stands in for the hang there,
+  // until the next point leaves the leg room for both (or is not a rest).
+  const crowded = (s, n, list) => {
+    if (!(R > 0) || list.length < 2 || list[0].kitAt !== 'rest') return false;
+    const l = leadOut(s, n, list[0], R, most), v = s.clone().addScaledVector(n, l);
+    const d1 = list[0].clone().sub(v), L = d1.length(), d2 = list[1].clone().sub(list[0]);
+    if (L <= EPS || d2.length() <= EPS) return true;
+    const th = Math.acos(Math.max(-1, Math.min(1, d1.normalize().dot(d2.normalize()))));
+    return l + (th < STRAIGHT ? 0 : R * Math.tan(Math.min(th, Math.PI - STRAIGHT) / 2)) > L + 1e-6;
+  };
+  while (crowded(a, A.normal, inner)) inner = inner.slice(1);
+  while (crowded(b, B.normal, [...inner].reverse())) inner = inner.slice(0, -1);
   const qa = inner[0] ?? b, qb = inner[inner.length - 1] ?? a;
   const la = leadOut(a, A.normal, qa, R, most), lb = leadOut(b, B.normal, qb, R, most);
   const pts = straighten([a, ...(la > EPS ? [a.clone().addScaledVector(A.normal, la)] : []), ...inner,
