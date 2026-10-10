@@ -4972,6 +4972,83 @@ def check_rack_ears_default(page, base):
     return bad
 
 
+# THE EARS MEET THE BODY (#168). A generic ear's flange runs from the face's
+# own edge out over the rail, as the kit's plan and the 3D flange do. It ran
+# from the opening's edge, so every device narrower than the 450.85 mm opening
+# showed rail between body and ear (9.75 mm each side on the XCU10, 115 mm on a
+# half-width TM-340). And a face is centred on the opening by its DECLARED box:
+# the CMH-6DR1U's drawing is wider than its face (#865, viewBox from -43), and
+# centring the drawing put its built-in ears 43 mm off the rails. Measured in
+# pane millimetres off the drawn DOM, against each face's declared box read
+# from the compiled file; the FHD-CMP5DR (built-in ears, a rack-face part) and
+# the full-width blank are in the sample to hold their centring.
+@extra("rack.html: generic rack ears meet the device body in 2D, and every face is centred by its declared box (#168)")
+def check_rack_ears_meet_face(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    sample = [("xcu", 37), ("fhd-cmp5dr", 41), ("s9600-72xc", 20), ("tm-340", 10), ("fhu-bps-2u", 24), ("cmh-6dr1u", 30)]
+    rack = page.evaluate("""async sample => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Ears meet'});
+      for (const [ref, ru] of sample)
+        ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, face: 'front', label: ref}));
+      return r;
+    }""", sample)
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => document.querySelectorAll('#paneFront [data-item-id][data-panel=\"mounted\"]').length === n",
+                           arg=len(sample), timeout=READY_MS)
+    page.wait_for_timeout(300)
+    got = page.evaluate(r"""async () => {
+      const {OPENING} = await import('/vendor/rack/rails.js');
+      const C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      const pane = document.querySelector('#paneFront');
+      const out = [];
+      for (const g of pane.querySelectorAll('[data-item-id][data-panel="mounted"]')) {
+        const ref = g.dataset.deviceRef, cfg = cat[ref].default;
+        let r = await fetch(`/assets/dist/${ref}.${cfg}.front.svg`);
+        if (!r.ok) r = await fetch(`/assets/dist/${ref}.front.svg`);
+        const root = new DOMParser().parseFromString(await r.text(), 'image/svg+xml').documentElement;
+        const vb = root.getAttribute('viewBox').trim().split(/[\s,]+/).map(Number);
+        const fw = parseFloat(root.getAttribute('data-face-w'));
+        const declared = fw > 0;
+        const faceW = declared ? fw : vb[2], ox = declared ? 0 : vb[0];
+        const m = g.transform.baseVal.consolidate().matrix;
+        const left = m.e + ox, right = left + faceW;
+        const ears = pane.querySelector(`[data-ears-for="${g.dataset.itemId}"]`);
+        const rects = ears ? [...ears.querySelectorAll('rect')].map(e => [+e.getAttribute('x'), +e.getAttribute('width')]) : [];
+        out.push({ref, faceW, left, right, centre: (OPENING - faceW) / 2, kind: ears?.dataset.ears ?? null,
+                  earL: rects[0] ? rects[0][0] + rects[0][1] : null, earR: rects[1] ? rects[1][0] : null});
+      }
+      return out;
+    }""")
+    seen = {d["ref"] for d in got}
+    for ref, _ in sample:
+        if ref not in seen:
+            bad.append(f"{ref}: never drawn on the front pane")
+    generic = 0
+    for d in got:
+        if abs(d["left"] - d["centre"]) > 0.05:
+            bad.append(f"{d['ref']}: its {d['faceW']} mm face starts at x={d['left']:.2f}, not centred at {d['centre']:.2f}")
+        if d["kind"] == "generic":
+            generic += 1
+            gl, gr = d["left"] - d["earL"], d["earR"] - d["right"]
+            if abs(gl) > 0.05 or abs(gr) > 0.05:
+                bad.append(f"{d['ref']}: its generic ears stop {gl:.2f} mm (left) and {gr:.2f} mm (right) short of its "
+                           f"{d['faceW']} mm face; they must meet it")
+    for ref in ("xcu", "s9600-72xc", "tm-340"):
+        if not any(d["ref"] == ref and d["kind"] == "generic" for d in got):
+            bad.append(f"{ref}: no generic ears drawn, so nothing was measured for it")
+    if generic < 3:
+        bad.append(f"only {generic} generic ear pairs measured, expected 3")
+    return bad
+
+
 # THE BUNDLES IN THE EXPORTS (Portrayal #923, kit 0.9.0): the cable schedule
 # names each member's bundle in its `bundle` column and carries the kit's line
 # for the bundle in its notes, measured with the page's routes, cable types and
