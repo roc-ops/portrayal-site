@@ -84,44 +84,78 @@ keepalive_ok() {
   ssh -G "$host" 2>/dev/null | grep -qE '^serveraliveinterval [1-9]'
 }
 
+# A CHECK THAT DID NOT RUN SAYS SO, IN ONE LINE. A push that ends quietly reads
+# as a push that was checked, and the node tests and the browser pass can both
+# be left out without a failure. Under GitHub Actions the same line is a
+# warning annotation as well, so it is on the run's summary and not only in a
+# log nobody opens.
+skipped() {
+  echo "pre-push: skipped $1" >&2
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    echo "::warning title=pre-push::skipped $1"
+  fi
+  return 0
+}
+
 z=0000000000000000000000000000000000000000
 changed=""
 full=0
 
+# What a ref adds since `$1`, onto $changed; everything, if git cannot say.
+# Never the hook's exit: under `set -e` a failed `git diff` inside an
+# assignment ended the hook with git's own status, 128, and no word of why.
+changed_since() {
+  if names=$(git diff --name-only "$1" "$2" 2>/dev/null); then
+    changed="$changed
+$names"
+  else
+    full=1
+  fi
+}
+
 while read -r _local_ref local_sha _remote_ref remote_sha; do
   [ "$local_sha" = "$z" ] && continue            # deleting a ref pushes nothing
-  if [ "$remote_sha" = "$z" ]; then
-    # A BRANCH THE REMOTE HAS NOT SEEN. There is no "since" to diff from, so
-    # ask what it adds over the default branch; if that is unknown too - a
-    # fresh clone with no origin/main - check everything rather than guess.
+  if [ "$remote_sha" != "$z" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    changed_since "$remote_sha" "$local_sha"
+  else
+    # A BRANCH THE REMOTE HAS NOT SEEN, OR A REMOTE TIP THIS CLONE HAS NOT: a
+    # force-push over commits that were never fetched names a SHA that is not
+    # here. Either way there is no "since" to diff from, so ask what the ref
+    # adds over the default branch; if that is unknown too - a fresh clone
+    # with no origin/main - check everything rather than guess.
     base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || base=""
     if [ -n "$base" ]; then
-      changed="$changed
-$(git diff --name-only "$base" "$local_sha")"
+      changed_since "$base" "$local_sha"
     else
       full=1
     fi
-  else
-    changed="$changed
-$(git diff --name-only "$remote_sha" "$local_sha")"
   fi
 done
 
 # Nothing on stdin and nothing resolved: `git push` with no new commits.
-[ -z "$(printf %s "$changed" | tr -d '[:space:]')" ] && [ "$full" = 0 ] && exit 0
+if [ -z "$(printf %s "$changed" | tr -d '[:space:]')" ] && [ "$full" = 0 ]; then
+  echo "pre-push: nothing new to check" >&2
+  exit 0
+fi
 
 echo "pre-push: $CONTRACT"
 python3 "$CONTRACT"
 
 # The rack builder's pure modules: no browser, a second or two, so always.
-if command -v node >/dev/null 2>&1 && ls tests/*/*.test.mjs >/dev/null 2>&1; then
+if ! command -v node >/dev/null 2>&1; then
+  skipped "the node tests - no node on PATH (CI runs them)"
+elif ! ls tests/*/*.test.mjs >/dev/null 2>&1; then
+  skipped "the node tests - no tests/*/*.test.mjs here"
+else
   echo "pre-push: node --test tests/*"
   node --test tests/*/*.test.mjs
 fi
 
 # THE BROWSER PASS, ON REQUEST. Any value but empty or 0 asks for it.
 case "${PORTRAYAL_HOOK_BROWSER:-0}" in
-  ""|0) exit 0 ;;
+  ""|0)
+    skipped "$BROWSER - not asked for; CI runs it on every pull request (PORTRAYAL_HOOK_BROWSER=1 git push runs it here)"
+    exit 0 ;;
 esac
 
 if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
@@ -137,14 +171,12 @@ if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
   else
     # NOT FATAL BY DEFAULT, and loud. A hook that refuses to push because an
     # optional dependency is missing teaches one lesson - how to bypass it.
-    echo "pre-push: skipping $BROWSER - no playwright here" >&2
-    echo "          pip install playwright && playwright install chromium" >&2
+    skipped "$BROWSER - no playwright here (pip install playwright && playwright install chromium)"
     if [ -n "${PORTRAYAL_HOOK_STRICT:-}" ]; then
       echo "pre-push: PORTRAYAL_HOOK_STRICT is set, so that is a failure" >&2
       exit 1
     fi
   fi
 else
-  echo "pre-push: PORTRAYAL_HOOK_BROWSER is set, but nothing a page loads changed;"
-  echo "          skipping $BROWSER"
+  skipped "$BROWSER - PORTRAYAL_HOOK_BROWSER is set, but nothing a page loads changed"
 fi

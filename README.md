@@ -174,6 +174,11 @@ Even then it runs only when the push touches anything a page loads: `vendor/`,
 the server itself. A README fix skips it. Missing Playwright is a loud skip
 rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
 
+Whatever the hook leaves out, it says: one `pre-push: skipped ...` line for
+each check that did not run, with the reason. A force-push over commits this
+clone never fetched has nothing to diff against, so it is checked as a new
+branch is.
+
 Over SSH, an asked-for pass also wants a keepalive:
 
 ```sh

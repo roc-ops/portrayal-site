@@ -2209,10 +2209,61 @@ _hook_bad = ([f"{p} should run the browser pass" for p in _want_pass if not _tou
 check(not _hook_bad,
       "hooks/pre-push runs the browser pass for every page, including one in a subdirectory",
       "; ".join(_hook_bad))
-# And only on request: the default push runs the contract check, not the pass.
-_hook_gate = _hook_src.find("PORTRAYAL_HOOK_BROWSER:-0")
-check(0 <= _hook_gate < _hook_src.find('python3 "$BROWSER"'),
-      "hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks for it")
+# THE HOOK ITSELF, RUN: in a scratch repository with stand-ins for the two
+# checks, fed what git feeds it. Where the browser pass sits in the file says
+# nothing about whether a push gets through, so each case asserts the exit
+# status and what ran. A scratch repository has no tests/, so every run also
+# leaves the node tests out, and has to say so.
+_STUB = "import os, sys\nopen('ran', 'a').write('%s\\n')\nsys.exit(int(os.environ.get('STUB_EXIT', '0')))\n"
+def _hook_runs():
+    with _tf.TemporaryDirectory() as _d:
+        _env = {k: v for k, v in os.environ.items()
+                if not k.startswith(("GIT_", "PORTRAYAL_")) and k != "GITHUB_ACTIONS"}
+        _env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")
+        _g = lambda *a: _sp.run(["git", "-c", "user.name=check", "-c", "user.email=check@example.invalid",
+                                 "-c", "commit.gpgsign=false", *a],
+                                cwd=_d, capture_output=True, text=True, env=_env)
+        _g("init", "-q")
+        (Path(_d) / "check-contract.py").write_text(_STUB % "contract")
+        (Path(_d) / "check-browser.py").write_text(_STUB % "browser")
+        (Path(_d) / "README.md").write_text("one\n")
+        _g("add", "-A"); _g("commit", "-q", "-m", "one")
+        (Path(_d) / "index.html").write_text("<p>two</p>\n")
+        _g("add", "-A"); _g("commit", "-q", "-m", "two")
+        _c1, _c2 = _g("rev-parse", "HEAD~1").stdout.strip(), _g("rev-parse", "HEAD").stdout.strip()
+        def _push(remote_sha, **extra):
+            (Path(_d) / "ran").write_text("")
+            _r = _sp.run(["sh", str(HERE / "hooks" / "pre-push"), "origin", "/nowhere"], cwd=_d, text=True,
+                         input=f"refs/heads/b {_c2} refs/heads/b {remote_sha}\n" if remote_sha else "",
+                         capture_output=True, env={**_env, **extra})
+            return _r.returncode, (Path(_d) / "ran").read_text().split(), _r.stdout + _r.stderr
+        return {"default": _push(_c1), "asked": _push(_c1, PORTRAYAL_HOOK_BROWSER="1"),
+                "unknown": _push("0123456789abcdef0123456789abcdef01234567"),
+                "ci": _push(_c1, GITHUB_ACTIONS="true"), "failing": _push(_c1, STUB_EXIT="3"),
+                "nothing": _push("")}, bool(_c1 and _c2)
+_hr, _hr_made = _hook_runs()
+_skip_lines = lambda out, what: [l for l in out.splitlines() if l.startswith("pre-push: skipped") and what in l]
+check(_hr_made and _hr["default"][:2] == (0, ["contract"]) and len(_skip_lines(_hr["default"][2], "check-browser.py")) == 1,
+      "hooks/pre-push, run: a default push exits 0 having run the contract check and not the browser pass, and says so",
+      f"exit {_hr['default'][0]}, ran {_hr['default'][1]}: {_hr['default'][2][-300:]}")
+check(_hr["asked"][0] == 0 and (_hr["asked"][1] == ["contract", "browser"]
+                                or (_hr["asked"][1] == ["contract"] and _skip_lines(_hr["asked"][2], "no playwright"))),
+      "hooks/pre-push, run: with PORTRAYAL_HOOK_BROWSER=1 a push that touches a page exits 0 having run the browser "
+      "pass, or says it has no playwright",
+      f"exit {_hr['asked'][0]}, ran {_hr['asked'][1]}: {_hr['asked'][2][-300:]}")
+check(_hr["unknown"][:2] == (0, ["contract"]),
+      "hooks/pre-push, run: a force-push over a commit this clone does not have exits 0 and is checked, not exit 128",
+      f"exit {_hr['unknown'][0]}, ran {_hr['unknown'][1]}: {_hr['unknown'][2][-300:]}")
+check(_hr["failing"][0] == 3 and _hr["nothing"][:2] == (0, []),
+      "hooks/pre-push, run: a failing contract check stops the push with its own status, and a push of nothing runs nothing",
+      f"failing: exit {_hr['failing'][0]}; nothing: exit {_hr['nothing'][0]}, ran {_hr['nothing'][1]}")
+_hr_notes = {k: [l for l in v[2].splitlines() if "skipped" in l] for k, v in _hr.items()}
+check(len(_skip_lines(_hr["default"][2], "node tests")) == 1
+      and not any(l.startswith("::warning") for l in _hr_notes["default"])
+      and sum(l.startswith("::warning title=pre-push::skipped") for l in _hr_notes["ci"]) == len(_skip_lines(_hr["ci"][2], "")) == 2,
+      "hooks/pre-push, run: each check left out is one `pre-push: skipped` line, and under GITHUB_ACTIONS a "
+      "::warning:: annotation as well",
+      f"default {_hr_notes['default']}; under GITHUB_ACTIONS {_hr_notes['ci']}")
 
 # ── THE LINT RULES PAGE (portrayal-site#159) ────────────────────────────
 # lint.html renders assets/dist/lint-rules.json, Portrayal's rule table
