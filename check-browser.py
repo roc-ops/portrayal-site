@@ -11529,7 +11529,7 @@ def check_rack_export_cable_schedule(page, base):
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
          "length_unit": "m", "route": "left-front U14-U2", "bundle": "", "length_source": "entered", "status": "connected", "notes": ""},
         {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
-         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "1.5", "length_unit": "m",
+         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "2", "length_unit": "m",
          "route": "right-front U14 > right-rear U14", "bundle": "", "length_source": "routed", "status": "connected", "notes": ""},
         {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
          "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2", "length_unit": "m",
@@ -11775,7 +11775,9 @@ def check_rack_export_bom_cables(page, base):
     status = export_status(page)
     cables = [(r["qty"], r["manufacturer"], r["model"], r["description"], r["ref"]) for r in rows if r["section"] == "Cables"]
     # c2 and c3 have no entered length, so the page measures one along their routes and the BOM marks it.
-    want = [("1", "", "Cat 6A copper", "1.5 m (routed); copper at both ends", ""),
+    # (c2, front to rear, crossed the 1.5 m stock break with kit 0.13-0.15:
+    # each RJ45 plug's reach and the free spans' hang, portrayal-site#166)
+    want = [("1", "", "Cat 6A copper", "2 m (routed); copper at both ends", ""),
             ("1", "", "OS2 single-mode fiber", "2 m (routed); copper at one end", ""),
             ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", "")]
     if cables != want:
@@ -12143,7 +12145,7 @@ def check_rack_export_drawio_cables(page, base):
                      "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
                      "style": style.format(colors["os2"])},
         # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
-        "cable-c2": {"label": "1.5 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "1.5 m",
+        "cable-c2": {"label": "2 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "2 m",
                      "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
                      "style": style.format(colors["cat6a"])}}
     if got != want:
@@ -12185,7 +12187,7 @@ def check_rack_export_drawio_cables(page, base):
         bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
     if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
         bad.append(f"draw.io cables: a cable with no media is styled {odd['style'][-30:]!r}, media {odd['media']!r}")
-    if odd["label"] != '<b>&" · 1.5 m':
+    if odd["label"] != '<b>&" · 2 m':
         bad.append(f"draw.io cables: a cable's label is not its own text: {odd['label']!r}")
     return bad
 
