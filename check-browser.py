@@ -8665,10 +8665,21 @@ def check_3d_context_loss(page, base):
 # waiting: no file may arrive until the scene is up, and every file that does
 # arrive is the model. Then the same during a config rebuild, and an export with
 # no meshes must say it failed rather than save.
+#
+# AND THE THREE WAYS A SCENE CHANGES UNDER THE BAR (site/mode3d.js): a file
+# still being built when the configuration changes is not saved; a round trip
+# dc -> ac -> dc made while the ac scene is building ends on dc, with the
+# buttons back; a seated optic rebuilds the scene and the buttons follow it;
+# and a build that fails says so instead of "building the scene…" for ever.
+#
+# 3D OFF IS NOT 3D REFUSED. A runner with no WebGL has nothing to check, and
+# says so. A page that has WebGL and still came back to 2D refused, and that is
+# a failure with the page's own reason - it used to be a press loop that never
+# found its button, reported as a bare timeout.
 GLB_EARLY_MIN_BYTES = 4096
 
 
-@extra("3D: Download GLB pressed before the scene has built saves nothing, and an empty export says it failed")
+@extra("3D: Download GLB saves only the scene on screen - not before it has built, not one that changed under the export, not a failed build")
 def check_3d_download_waits_for_scene(page, base):
     bad, got = [], []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -8690,28 +8701,44 @@ def check_3d_download_waits_for_scene(page, base):
               msg: document.querySelector('#glx .msg')?.textContent,
               disabled: document.querySelector('{glb}')?.disabled,
               ready: document.querySelector('#glx')?.dataset.ready,
+              mode: document.querySelector('#mode button.on')?.dataset.mode,
+              scene: window.__viewer?.info?.config,
               cfg: document.querySelector('#cfg')?.value}})""")
             bad.append(f"timed out waiting for {what} - {st}")
             return False
 
+    def pick_cfg(name):
+        page.evaluate("""name => { const sel = document.querySelector('#cfg');
+          sel.value = name; sel.dispatchEvent(new Event('change', {bubbles: true})); }""", name)
+
+    scene_is = lambda cfg: (f"() => window.__viewer.info.config === '{cfg}'"
+                            f" && document.querySelector('#glx').dataset.ready === '1'")
+
     page.goto(f"{base}/explorer.html?device=s9510-28dc&config=dc&debug=1", wait_until="load")
     page.wait_for_selector("#stage svg", timeout=READY_MS)
     if webgl_trouble(page):
-        print("[check_3d_download_waits_for_scene] no WebGL here - nothing to export")
+        print("[check_3d_download_waits_for_scene] 3D is off: no WebGL here - nothing to export")
         return bad
     # The press is made from the page itself, on the first frame the button is
     # in the DOM - a Playwright click would wait for it to be enabled, which is
-    # exactly the wait this check must not do.
-    page.evaluate("""() => new Promise(done => {
+    # exactly the wait this check must not do. The same loop notices a page that
+    # went back to 2D: the button it is waiting for is never coming.
+    pressed = page.evaluate("""() => new Promise(done => {
+      const t0 = performance.now();
       const press = () => {
         const b = document.querySelector('#glx button[data-fmt="glb"]');
-        if (!b) return requestAnimationFrame(press);
-        b.click();
-        done();
+        if (b) { b.click(); return done({pressed: true}); }
+        const status = document.querySelector('#status').textContent;
+        const back = document.querySelector('#mode button.on')?.dataset.mode === '2d';
+        if (back && (/^3D (unavailable|needs)/.test(status) || performance.now() - t0 > 20000))
+          return done({refused: status || 'the page went back to 2D and gave no reason'});
+        requestAnimationFrame(press);
       };
-      press();
       document.querySelector('#mode [data-mode="3d"]').click();
+      press();
     })""")
+    if pressed.get("refused"):
+        return bad + [f"3D was refused on a runner that has WebGL: {pressed['refused']!r}"]
     page.wait_for_timeout(3000)
     early = [n for n in sizes() if n < GLB_EARLY_MIN_BYTES]
     if early:
@@ -8756,6 +8783,128 @@ def check_3d_download_waits_for_scene(page, base):
         bad.append("rebuild: the Download buttons stayed on while the scene rebuilt for another config")
     if got:
         bad.append(f"rebuild: a press as the rebuild started saved a file - {sizes()}")
+    got.clear()
+
+    # A FILE STILL BEING BUILT WHEN THE CONFIGURATION CHANGES IS NOT SAVED. The
+    # export is held open (the real exporter's bytes, kept back), the
+    # configuration is changed and its scene left to build, and only then are
+    # the bytes handed over: they are the ac scene, under a page now showing dc.
+    page.evaluate("""() => {
+      const v = window.__viewer, real = v.exportData.bind(v);
+      window.__realExport = v.exportData;
+      window.__handOver = null;
+      v.exportData = async fmt => {
+        const data = await real(fmt);
+        await new Promise(go => { window.__handOver = go; });
+        return data;
+      };
+    }""")
+    page.click(glb)
+    if until("() => typeof window.__handOver === 'function'", "the held export to have its bytes"):
+        pick_cfg("dc")
+        if until(scene_is("dc"), "the dc scene to build under a held export"):
+            page.evaluate("() => window.__handOver()")
+            until("() => /changed while the file was being built/.test(document.querySelector('#glx .msg').textContent)"
+                  " && document.querySelector('#glx .msg').classList.contains('bad')",
+                  "an export overtaken by a config change to say nothing was saved", READY_MS)
+            page.wait_for_timeout(500)
+            if got:
+                bad.append(f"export during a config change: a file was saved - {sizes()}, "
+                           f"named {[d.suggested_filename for d in got]}")
+            if page.evaluate(f"() => document.querySelector('{glb}').disabled"):
+                bad.append("export during a config change: the buttons stayed off after the refusal")
+    page.evaluate("() => { window.__viewer.exportData = window.__realExport; }")
+    got.clear()
+    if bad:
+        return bad
+
+    # A ROUND TRIP WHILE THE SCENE BUILDS ENDS WHERE THE PAGE IS. On dc: change
+    # to ac, and back to dc while the ac scene is still building. The viewer's
+    # loads are passed through in order with the ac one held, so "still
+    # building" is a fact here rather than a race with the runner's speed.
+    page.evaluate("""() => {
+      const v = window.__viewer, real = v.load.bind(v);
+      window.__realLoad = v.load;
+      window.__loads = [];
+      window.__letAc = null;
+      let chain = Promise.resolve();
+      v.load = spec => {
+        window.__loads.push(spec.config);
+        const held = spec.config === 'ac' ? new Promise(go => { window.__letAc = go; }) : null;
+        const run = chain.then(() => held).then(() => real(spec));
+        chain = run.catch(() => {});
+        return run;
+      };
+    }""")
+    pick_cfg("ac")
+    if until("() => typeof window.__letAc === 'function'", "the ac scene to start building"):
+        pick_cfg("dc")
+        # the dc drawing is back on the 2D stage, and the page has had its turn to sync
+        until("() => /· dc ·/.test(document.querySelector('#crumb')?.textContent || '')"
+              " && document.querySelector('#stage-svg svg')", "the dc drawing after the round trip", READY_MS)
+        page.wait_for_timeout(500)
+        page.evaluate("() => window.__letAc()")
+        if not until(scene_is("dc"), "the scene to end on dc after dc -> ac -> dc", READY_MS):
+            bad.append(f"round trip: the page shows dc and the scene holds "
+                       f"{page.evaluate('() => window.__viewer.info.config')!r} "
+                       f"(loads asked for: {page.evaluate('() => window.__loads')})")
+        elif page.evaluate(f"() => document.querySelector('{glb}').disabled"):
+            bad.append("round trip: the scene is dc and the Download buttons are still off")
+    page.evaluate("() => { window.__viewer.load = window.__realLoad; }")
+    if bad:
+        return bad
+
+    # A SEATED OPTIC IS A REBUILD TOO: the swap is part of what is on screen.
+    # Through the inspector, as a reader does it. The buttons go off for the
+    # rebuild and come back, and the file saved then is the model.
+    page.evaluate("""() => {
+      const bar = document.querySelector('#glx');
+      window.__notReady = 0;
+      new MutationObserver(() => { if (bar.dataset.ready === '0') window.__notReady++; })
+        .observe(bar, {attributes: true, attributeFilter: ['data-ready']});
+    }""")
+    page.click(".node[data-path='port-0']")
+    page.wait_for_selector("#optic", timeout=READY_MS)
+    optic = page.evaluate("() => [...document.querySelectorAll('#optic option')].map(o => o.value).find(Boolean)")
+    page.select_option("#optic", optic)
+    if not until("() => window.__notReady > 0", f"the Download buttons to go off while {optic} is seated", READY_MS):
+        return bad
+    if not until(scene_is("dc"), "the rebuild for the seated optic"):
+        return bad
+    with page.expect_download(timeout=READY_3D_MS) as dl:
+        page.click(glb)
+    n = pathlib.Path(dl.value.path()).stat().st_size
+    if n < GLB_EARLY_MIN_BYTES:
+        bad.append(f"after a swap: the GLB is {n} bytes")
+    until("() => !/building GLB/.test(document.querySelector('#glx .msg').textContent)", "the GLB after a swap to finish")
+    got.clear()
+
+    # A BUILD THAT FAILS SAYS SO. The bar read "building the scene…" under a
+    # scene that was never coming, and the status line called it "3D
+    # unavailable" with 3D up. The next build that works clears both.
+    page.evaluate("""() => {
+      const v = window.__viewer;
+      window.__realLoad = v.load;
+      v.load = () => Promise.reject(new Error('no such face'));
+    }""")
+    pick_cfg("ac")
+    if until("() => /scene failed to build/.test(document.querySelector('#glx .msg').textContent)",
+             "a failed build to say so in the download bar", READY_MS):
+        said = page.evaluate(f"""() => ({{msg: document.querySelector('#glx .msg').textContent,
+          bad: document.querySelector('#glx .msg').classList.contains('bad'),
+          off: document.querySelector('{glb}').disabled,
+          status: document.querySelector('#status').textContent}})""")
+        if "building the scene" in said["msg"] or not said["bad"] or not said["off"]:
+            bad.append(f"failed build: the download bar reads {said['msg']!r} (bad {said['bad']}, buttons off {said['off']})")
+        if "scene failed to build" not in said["status"] or "no such face" not in said["status"] \
+                or "unavailable" in said["status"]:
+            bad.append(f"failed build: the status line reads {said['status']!r}")
+    page.evaluate("() => { window.__viewer.load = window.__realLoad; }")
+    pick_cfg("dc")
+    if not until(scene_is("dc"), "a build that works after one that failed"):
+        return bad
+    if "failed" in (page.text_content("#glx .msg") or ""):
+        bad.append(f"failed build: after a build that worked the bar still reads {page.text_content('#glx .msg')!r}")
     got.clear()
 
     # An export with no meshes is a failure in the status line, and no file.

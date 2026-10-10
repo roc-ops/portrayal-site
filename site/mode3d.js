@@ -79,6 +79,16 @@ function why3d(err) {
   return `3D unavailable: ${msg}`;
 }
 const LOST_MSG = '3D paused — the graphics context was lost; it will resume, or reload the page';
+// A SCENE THAT DID NOT BUILD, while 3D itself is up. Not "3D unavailable": the
+// viewer is there and the last scene may still be on screen; what failed is
+// this device, configuration or swap. A lost or refused context keeps why3d's
+// sentence, which says what to do about it.
+const BUILD_FAILED = 'the scene failed to build';
+function whyBuild(err) {
+  const msg = String(err?.message || err);
+  return /WebGL context/i.test(msg) ? why3d(err)
+    : `3D: ${BUILD_FAILED} (${msg}) — switch to 2D and back to try again`;
+}
 
 export function createMode3d(shell, opts = {}) {
   const state = shell.state;
@@ -118,12 +128,17 @@ export function createMode3d(shell, opts = {}) {
   shell.el.status.before(fruBox);
 
   let mode = '2d', viewer = null, loading = null, loadedKey = '';
-  // The load in flight and the key it is for: see sync().
-  let inflight = null;
+  // The newest load asked of the viewer, while it is in flight, and the key it
+  // is for: see sync(). `builds` counts every load asked for, so an export can
+  // tell that the scene was rebuilt under it; `failedKey` is the key whose
+  // build last failed, until another build is asked for.
+  let inflight = null, builds = 0, failedKey = null;
   // The browser took the WebGL context away and has not handed it back yet.
   let gpuLost = false;
   // The download bar, once mounted, and whether an export from it is running.
-  let glx = null, exporting = false;
+  // `exported` is what the last export said - the file's name and size, or why
+  // there is none - so the bar can be repainted from state at any time.
+  let glx = null, exporting = false, exported = {text: '', bad: false};
 
   async function ensureViewer() {
     if (viewer) return viewer;
@@ -178,18 +193,27 @@ export function createMode3d(shell, opts = {}) {
   const wantKey = () => `${state.device}.${state.cfg}|${swapKey()}`;
   const sceneReady = () => !!viewer && !inflight && loadedKey !== '' && loadedKey === wantKey() && !gpuLost;
   const WAIT_MSG = 'building the scene…';
+  // WHY THE BUTTONS ARE OFF, when they are. A build that failed is not a build
+  // in progress: "building the scene…" under a scene that will never arrive
+  // kept a reader waiting for buttons that were not coming back. A lost context
+  // is the status line's to explain.
+  const sceneMsg = () => sceneReady() ? ''
+    : failedKey !== null && failedKey === wantKey() && !inflight ? `${BUILD_FAILED}, so there is nothing to download`
+    : WAIT_MSG;
   function paintDownloads() {
     if (!glx) return;
     const ready = sceneReady();
     glx.bar.dataset.ready = ready ? '1' : '0';
+    glx.bar.dataset.failed = !ready && sceneMsg() !== WAIT_MSG ? '1' : '0';
     for (const b of glx.buttons) b.disabled = exporting || !ready;
     if (exporting) return;
-    if (!ready) {
-      glx.msg.classList.remove('bad');
-      glx.msg.textContent = WAIT_MSG;
-    } else if (glx.msg.textContent === WAIT_MSG) {
-      glx.msg.textContent = '';
-    }
+    // A file's name and size describe the scene it was saved from, and go when
+    // that scene does. A refusal stays beside the reason the buttons are off:
+    // it is the only word the reader gets that their press saved nothing.
+    if (!ready && !exported.bad) exported = {text: '', bad: false};
+    const scene = sceneMsg();
+    glx.msg.textContent = [exported.text, scene].filter(Boolean).join(' · ');
+    glx.msg.classList.toggle('bad', exported.bad || (!!scene && scene !== WAIT_MSG));
   }
 
   function mountDownloads(v) {
@@ -211,26 +235,36 @@ export function createMode3d(shell, opts = {}) {
       // is now, not only on how the buttons were last painted.
       if (exporting || !sceneReady()) { paintDownloads(); return; }
       exporting = true;
+      exported = {text: '', bad: false};
       all.forEach(x => { x.disabled = true; });
       msg.classList.remove('bad');
       msg.textContent = `building ${fmt.toUpperCase()}…`;
       try {
         let name, size;
         if (typeof v.exportData === 'function' && typeof v.exportName === 'function') {
+          // THE SCENE THE PRESS WAS MADE ON, AND ITS NAME, before the wait. The
+          // export takes seconds, and nothing stops the reader picking another
+          // configuration or seating an optic while it runs: the viewer then
+          // rebuilds the scene under the exporter, and the file is the old
+          // device, half of each, or the new one - named, after the wait, for
+          // whatever was loaded last. So the press remembers which build it
+          // saw, and a file is saved only if that is still the scene on screen.
+          const built = builds;
+          name = `${v.exportName()}.${fmt}`;
           // Exported, then counted, then saved: a file with no meshes is not
           // the model, and is reported as a failure rather than handed over.
           const data = await v.exportData(fmt);
+          if (built !== builds || !sceneReady())
+            throw new Error('the scene changed while the file was being built, so nothing was saved');
           if (!exportMeshes(fmt, data)) throw new Error('the scene has no geometry yet, so nothing was saved');
-          name = `${v.exportName()}.${fmt}`;
           saveFile(data, name, fmt === 'glb' ? 'model/gltf-binary' : 'model/vnd.usdz+zip');
           size = data.byteLength ?? data.length;
         } else {
           ({name, size} = await v.download(fmt));
         }
-        msg.textContent = `${name} — ${kb(size)}`;
+        exported = {text: `${name} — ${kb(size)}`, bad: false};
       } catch (err) {
-        msg.textContent = `${fmt.toUpperCase()} failed: ${err.message || err}`;
-        msg.classList.add('bad');
+        exported = {text: `${fmt.toUpperCase()} failed: ${err.message || err}`, bad: true};
       } finally {
         exporting = false;
         paintDownloads();
@@ -287,24 +321,48 @@ export function createMode3d(shell, opts = {}) {
     // The page's own state (Annotate's marks and lamp colours), at the same
     // point and for the same reason. The viewer keeps marks across a rebuild.
     if (afterSync) await afterSync(v);
-    if (key === loadedKey) return;
-    // ONE BUILD PER KEY. loadedKey is only set once a load has finished, and the
-    // viewer queues loads rather than merging them, so two syncs for the same
-    // key while the first build ran - a page re-syncing on every edit, a load
-    // event and a render together - each built the whole scene again. A sync
-    // for the key already loading waits for that load instead.
-    if (inflight && inflight.key === key) {
-      await inflight.done;
-      if (afterSync) await afterSync(v);
-      return;
-    }
+    // WHAT THE SCENE IS ABOUT TO BE, NOT WHAT IT LAST WAS. The viewer queues
+    // loads and builds them in order, so with one in flight the scene will be
+    // that load's, whatever loadedKey says. Asking loadedKey alone lost a
+    // round trip: on k1, a change to k2 starts a build, a change back to k1
+    // while it runs found "k1 is loaded" and returned, and the k2 build then
+    // finished under a page that wanted k1 - the wrong scene, and Download
+    // buttons that waited for a build nobody had asked for.
+    //
+    // ONE BUILD PER KEY. loadedKey is only set once a load has finished, so two
+    // syncs for the same key while the first build ran - a page re-syncing on
+    // every edit, a load event and a render together - each built the whole
+    // scene again. A sync for the key already loading waits for that load.
+    if (inflight) {
+      if (inflight.key === key) {
+        await inflight.done;
+        if (afterSync) await afterSync(v);
+        return;
+      }
+    } else if (key === loadedKey) return;
     const done = v.load({device: state.device, config: state.cfg, overrides: overrides()});
-    inflight = {key, done};
+    const mine = inflight = {key, done};
+    builds++;
+    failedKey = null;
     paintDownloads();
-    try { await done; } finally {
-      if (inflight && inflight.done === done) inflight = null;
+    try {
+      await done;
+    } catch (err) {
+      // A newer load is queued behind this one: the scene is its to report on.
+      if (inflight !== mine) { console.warn('[portrayal] a 3D build that was replaced failed', err); return; }
+      // WHAT IS ON SCREEN IS NOT A SCENE OF ANYTHING NOW. loadedKey kept the
+      // last good key, so a retry for it returned early and settled() said the
+      // scene was built.
+      inflight = null;
+      loadedKey = '';
+      failedKey = key;
       paintDownloads();
+      throw err;
     }
+    // not the newest any more: the sync that asked for the newer load does the
+    // rest once that one has built
+    if (inflight !== mine) return;
+    inflight = null;
     loadedKey = key;                // only once it is actually the thing on screen
     paintDownloads();
     fruBar(v);
@@ -394,7 +452,7 @@ export function createMode3d(shell, opts = {}) {
   shell.on('select', path => { if (mode === '3d' && viewer) viewer.select(path); });
   const failed = what => err => {
     console.warn(`[portrayal] 3D ${what} failed`, err);
-    shell.el.status.textContent = why3d(err);
+    shell.el.status.textContent = whyBuild(err);
   };
   shell.on('change', () => { sync().catch(failed('swap sync')); });
   shell.on('load', () => {
