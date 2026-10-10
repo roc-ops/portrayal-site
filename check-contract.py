@@ -1454,6 +1454,31 @@ check(set(_g("cmh-4drb1u", "front")) >= {f"guide-{i}" for i in range(1, 5)},
 check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
       "fhd-cmp5dr carries its stated capacity, 30",
       "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
+# THE FS HORIZONTAL MANAGERS (Portrayal #868, portrayal-site#130): every CMH /
+# USCMH is rack-mounted on its ears in its own U (not `rack-face`, which is the
+# FHD-CMP5DR's place in front of another device), and has its front pathway
+# indexed: a duct, or its rings. check_rack_fs_manager_guides then reads them
+# back through the route context, with each ring's opening.
+_hmgr = sorted(n for n in _cat if re.fullmatch(r"(us)?cmh-[a-z0-9-]+", n))
+_hbad = [n for n in _hmgr if _cat[n].get("mount", "rack") != "rack" or not (_cat[n].get("ru") or 0) >= 1
+         or not _g(n, "front")]
+check(len(_hmgr) >= 23 and not _hbad,
+      f"the {len(_hmgr)} FS horizontal managers are rack-mounted in their own U with their front pathway indexed",
+      f"{len(_hmgr)} found; wrong mount, no ru or no front guide: {_hbad}")
+# THE RING STOPGAP IS GONE (portrayal-site#130): site/rack/route-context.js
+# ringGroupsOf reads a ring group by its data-guide="ring" declaration and its
+# opening, not by data-group="guides". So no vendored drawing may draw a
+# guides group that does not declare itself, or its ring would drop out of
+# every route.
+_gtag = re.compile(r'<g\b[^>]*\bdata-group="guides"[^>]*>')
+_undeclared = sorted({f"{p.name}: {re.search(r'id=\"([^\"]*)\"', t_).group(1) if 'id=' in t_ else '?'}"
+                      for p in DIST.glob("*.svg") for _txt in [p.read_text()] if 'data-group="guides"' in _txt
+                      for t_ in _gtag.findall(_txt)
+                      if 'data-guide="ring"' not in t_ or "data-guide-aperture=" not in t_})
+_ring_files = sum(1 for p in DIST.glob("*.svg") if 'data-guide="ring"' in p.read_text())
+check(_ring_files > 0 and not _undeclared,
+      f"every data-group=\"guides\" group in assets/dist declares data-guide=\"ring\" and its aperture ({_ring_files} drawings with rings)",
+      f"undeclared: {_undeclared[:8]} - restore the data-group fallback in route-context.js ringGroupsOf, or fix upstream")
 
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",

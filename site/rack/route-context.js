@@ -59,15 +59,18 @@ export function guidesFromRects(rects, face, faceW, apertures = {}, runs = {}) {
   return out;
 }
 
-// Ring GROUPS: a device whose D-rings are drawn as groups (`<g id="guide-N"
-// data-group="guides" data-ref=...>`, no `-end` rect) still has rings. groups:
-// [{id, x, w}] where x is the group's left edge and w its width, in face
-// coordinates (its translate plus its child rects' extent). Aperture unknown.
-// Its run from `runs` as for guidesFromRects; no depth (a group is the whole
-// ring, not its band), so the kit's estimate is taken.
+// Ring GROUPS: a device whose D-rings are drawn as groups on its face (`<g
+// id="guide-N" data-guide="ring" data-guide-aperture="w h" ...>`, no `-end`
+// rect) has rings too: the FS CMH-4DRB1U, CMH-5DR1U(-N), CMH-6DR1U (its
+// guides and its two end rings) and USCMH-5DR1U. groups: [{id, x, w,
+// aperture}] where x is the group's left edge and w its width, in face
+// coordinates (its translate plus its child rects' extent), and aperture the
+// opening the ring component declares, or null. Its run from `runs` as for
+// guidesFromRects; no depth (a group is the whole ring, not its band), so the
+// kit's estimate is taken.
 export function ringGroupsFrom(groups, face, faceW, runs = {}) {
   return groups.map(g => ({via: g.id, kind: 'ring', face, x: toRack(g.x + g.w / 2, face, faceW),
-                           box: {x: g.x, y: 0, w: g.w, h: 0}, aperture: null, run: runs[g.id] ?? 'x'}));
+                           box: {x: g.x, y: 0, w: g.w, h: 0}, aperture: g.aperture ?? null, run: runs[g.id] ?? 'x'}));
 }
 
 // One guide per (via, face): a ring seen as an end rect and again as a group
@@ -136,10 +139,16 @@ function rectsOf(root) {
   return [...rects, ...paths];
 }
 
-// Ring groups of a face: each group's horizontal extent from its child rects.
+// Ring groups of a face: each group that declares itself a ring (Portrayal
+// #868, `guide: {kind: ring, aperture}` on the component), its horizontal
+// extent from its child rects, and its opening. Until #868 the site took any
+// `data-group="guides"` group for a ring, with no opening, so those rings were
+// routed through and never fill-checked; every such group in the vendored
+// drawings now carries data-guide="ring" and its aperture, and that stopgap
+// is gone (portrayal-site#130; check-contract.py holds it so).
 function ringGroupsOf(root) {
   const out = [];
-  for (const g of root.querySelectorAll('g[data-group="guides"][data-ref][id]')) {
+  for (const g of root.querySelectorAll('g[data-guide="ring"][data-ref][id]')) {
     const [gx] = offset(g, root, true);
     let lo = Infinity, hi = -Infinity;
     for (const r of g.querySelectorAll('rect')) {
@@ -148,17 +157,23 @@ function ringGroupsOf(root) {
       lo = Math.min(lo, x); hi = Math.max(hi, x + w);
     }
     if (lo > hi) { lo = 0; hi = 0; }
-    out.push({id: g.id, x: gx + lo, w: hi - lo});
+    out.push({id: g.id, x: gx + lo, w: hi - lo, aperture: apertureOf(g)});
   }
   return out;
 }
 
-// A ring component's opening, from the top view: `data-guide-aperture="w h"`.
+// A ring component's opening: `data-guide-aperture="w h"`, or null.
+function apertureOf(el) {
+  const [w, h] = (el.getAttribute('data-guide-aperture') || '').split(/\s+/).map(Number);
+  return w > 0 && h > 0 ? {w, h} : null;
+}
+// Every ring opening a view declares, by id (the top view, for rings whose
+// faces draw only their `-end` rects).
 function aperturesOf(root) {
   const out = {};
   for (const el of root.querySelectorAll('[data-guide-aperture]')) {
-    const [w, h] = el.getAttribute('data-guide-aperture').split(/\s+/).map(Number);
-    if (el.id && w > 0 && h > 0) out[el.id] = {w, h};
+    const ap = apertureOf(el);
+    if (el.id && ap) out[el.id] = ap;
   }
   return out;
 }
