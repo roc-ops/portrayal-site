@@ -17,11 +17,24 @@ import {fileStem} from '../../vendor/rack/export-data.js';
 // document: they are held here beside the document they came with, so the page
 // can hand them to the editor's loadDoc (docNotes), which makes them its first
 // findings. A document copied with a new id carries them over by hand.
+//
+// A FILE NEWER THAN THIS PAGE is refused by parseDoc with what the reader
+// supports ("... this reader supports up to version N."), which says nothing of
+// what to do: the kit cannot know a host can be reloaded (#895 upstream). This
+// page can, so the refusal it shows - from Open and from the library alike -
+// says so.
 const NOTES = new WeakMap();
+const TOO_NEW = /this reader supports up to version \d+\.$/;
+export const RELOAD = 'Reload to get the newer page.';
 export const docNotes = doc => (doc && NOTES.get(doc)) || [];
 export function readDoc(input) {
   const notes = [];
-  const doc = parseDoc(input, {notes});
+  let doc;
+  try { doc = parseDoc(input, {notes}); }
+  catch (err) {
+    if (TOO_NEW.test(err?.message || '')) err.message = `${err.message} ${RELOAD}`;
+    throw err;
+  }
   if (notes.length) NOTES.set(doc, notes);
   return doc;
 }

@@ -267,7 +267,7 @@
 
 <div id="shell" class="fill"></div>
 <script type="module">
-import { createShell, esc } from './vendor/shell.js';
+import { createShell, esc, isSuperseded } from './vendor/shell.js';
 import * as marks from './vendor/marks.js';
 import { toDrawio } from './vendor/drawio.js';
 import { toGraffle } from './vendor/omnigraffle.js';
@@ -606,12 +606,22 @@ let pendingSwaps = null, pendingFields = null;
 // handler below has already written the target and drawn by the time it is.
 // The timer is cleared as soon as the race is decided. `__portrayalLoadMs`
 // shortens the bound for the browser check, and is read per call.
+// A LOAD A NEWER ONE OVERTOOK is neither: the shell holds one load at a time,
+// and one that a later pick or setDoc replaced rejects with an error
+// `isSuperseded` recognizes (kit #929). That is REPLACED, which is not a
+// failure and not a stall - the newer load owns the stage and its own 'load'
+// writes the target - so it is not logged and the caller says nothing of it.
 const LOAD_MS = 20000;
+const REPLACED = 'replaced';
 const loadMs = () => Number(globalThis.__portrayalLoadMs) || LOAD_MS;
 function settle(p) {
   let timer;
   return Promise.race([
-    Promise.resolve(p).then(() => true, err => { console.error('[portrayal] a drawing did not load', err); return false; }),
+    Promise.resolve(p).then(() => true, err => {
+      if (isSuperseded(err)) return REPLACED;
+      console.error('[portrayal] a drawing did not load', err);
+      return false;
+    }),
     new Promise(resolve => { timer = setTimeout(() => resolve(false), loadMs()); }),
   ]).finally(() => clearTimeout(timer));
 }
@@ -671,7 +681,8 @@ async function applyPendingSwaps() {
 // message box, and a caller passes them on - an agent that named a device that
 // is not here must not hear that it worked. `live` says whether the caller is
 // still the newest; once it is not, no further reload is started. `stalled`
-// is true when a load it started did not finish in time.
+// is true when a load it started did not finish in time, and `replaced` when a
+// newer load overtook it (settle).
 async function retarget(d, live = () => true) {
   const drawing = [], view = [];
   let moving = false;
@@ -680,6 +691,7 @@ async function retarget(d, live = () => true) {
     refuse(drawing, `${what} did not finish loading.`, `${what} did not finish loading`);
     return {moving, drawing, view, stalled: true};
   };
+  const replaced = () => ({moving, drawing, view, replaced: true});
   const here = shown?.device || state.device;
   if (d.device && !shell.devices().some(x => x.name === d.device)) {
     refuse(drawing, `There is no device called ${d.device}; the document was laid on ${here} instead.`,
@@ -695,7 +707,9 @@ async function retarget(d, live = () => true) {
     // asked for where the device has them, and its own defaults where not.
     if (!live()) return {moving, drawing, view};
     moving = true;
-    if (!await settle(shell.loadDevice(device, {config: d.config, view: d.view}))) return stall(device);
+    const got = await settle(shell.loadDevice(device, {config: d.config, view: d.view}));
+    if (got === REPLACED) return replaced();
+    if (!got) return stall(device);
   } else {
     const wantCfg = has(state.meta?.configs?.map(c => c.name), d.config) && d.config !== state.cfg;
     const wantView = has(state.meta?.views, d.view) && d.view !== state.view;
@@ -709,8 +723,9 @@ async function retarget(d, live = () => true) {
     if ((wantCfg || changedFromBuilt()) && live()) {
       moving = true;
       const cfg = wantCfg ? d.config : state.cfg, v = wantView ? d.view : state.view;
-      if (!await settle(shell.loadDevice(device, {config: cfg, view: v})))
-        return stall(wantCfg ? `The config ${cfg}` : `${device}`);
+      const got = await settle(shell.loadDevice(device, {config: cfg, view: v}));
+      if (got === REPLACED) return replaced();
+      if (!got) return stall(wantCfg ? `The config ${cfg}` : `${device}`);
     } else if (wantView && live()) {
       // a view alone keeps what is seated: the shell's own view handler,
       // done here so the load it starts is the one waited for
@@ -718,7 +733,9 @@ async function retarget(d, live = () => true) {
       shell.el.view.value = d.view;
       state.view = d.view;
       state.module = null;
-      if (!await settle(shell.loadStage())) return stall(`The view ${d.view}`);
+      const got = await settle(shell.loadStage());
+      if (got === REPLACED) return replaced();
+      if (!got) return stall(`The view ${d.view}`);
     }
   }
   if (d.config && state.cfg !== d.config)
@@ -1663,6 +1680,7 @@ shell.on('row', () => {
 // can be the older call's half-loaded answer. Its own document is taken only
 // once that wait is over, so the swaps and fields pending are always its own.
 const OVERTAKEN = {error: 'Overtaken by a newer document.'};
+const OVERTAKEN_LOAD = {error: 'Overtaken by a newer drawing: another device, configuration or view was loaded before this one finished.'};
 let loads = 0, restoring = Promise.resolve();
 async function restore(input) {
   const mine = ++loads;
@@ -1686,8 +1704,18 @@ async function restoreNow(input, live) {
   // retarget waits for every reload it starts, so past this line the shell is
   // on the drawing it could reach and the page has drawn it - or the load it
   // started did not finish in time, and `stalled` says so
-  const {moving, drawing, view, stalled} = await retarget(next, live);
+  const {moving, drawing, view, stalled, replaced} = await retarget(next, live);
   if (!live()) return OVERTAKEN;
+  if (replaced) {
+    // ANOTHER LOAD TOOK THE STAGE - the reader picked a drawing while this one
+    // was on its way. The marks stay; the swaps and fields belonged to the
+    // drawing that never arrived, and the newer load's 'load' writes the target.
+    // If that load has already finished, its 'load' wrote the target while
+    // these were still pending, so it is written again without them.
+    pendingSwaps = pendingFields = null;
+    if (steady()) { writeTarget(); render(); }
+    return OVERTAKEN_LOAD;
+  }
   // SWAPS AND FIELDS BELONG TO THE DRAWING THEY WERE MADE ON: its device and
   // configuration, not its view. When the shell could not reach that drawing
   // they are not laid on whatever it shows instead; a view it lacks drops

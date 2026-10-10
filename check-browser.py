@@ -3307,11 +3307,15 @@ def check_rack_library(page, base):
       await none.put(a);   // a no-op, never a throw
       let refused = '';
       try { await L.readDocFile(new File(['{"format":"x"}'], 'x.json')); } catch (e) { refused = e.message; }
+      // a file from a newer page: the kit says what it reads, the page says to reload
+      let newer = '';
+      try { await L.readDocFile(new File([JSON.stringify({...a, version: 99})], 'n.json')); } catch (e) { newer = e.message; }
       return {available: lib.available, names, same: JSON.stringify(got) === JSON.stringify(a),
-              renamed, after, off, refused};
+              renamed, after, off, refused, newer};
     }""")
     want = {"available": True, "names": ["Beta", "Alpha"], "same": True, "renamed": "Alpha 3",
-            "after": ["Alpha 3"], "off": [False, 0, None], "refused": "This is not a Portrayal rack file."}
+            "after": ["Alpha 3"], "off": [False, 0, None], "refused": "This is not a Portrayal rack file.",
+            "newer": "This rack file is version 99; this reader supports up to version 3. Reload to get the newer page."}
     for k, v in want.items():
         if r.get(k) != v:
             bad.append(f"library: {k} is {r.get(k)!r}, expected {v!r}")
@@ -9142,6 +9146,70 @@ def check_annotate_api(page, base):
     return bad
 
 
+# A LOAD THAT A NEWER ONE REPLACED IS NOT A STALL. The kit holds one load at a
+# time and rejects one a newer load overtook with an error `isSuperseded`
+# recognizes (Portrayal #929). A setDoc whose device is still loading when the
+# reader switches devices twice in quick succession has been replaced, not
+# stalled: Annotate must not log it as a drawing that did not load, must not say
+# "did not finish loading", and must not lay the replaced document's swaps on
+# the drawing the reader chose. The setDoc's manifest is held until both picks
+# are made, so its load is overtaken every time rather than when the timing
+# happens to fall that way.
+@extra("annotate.html: a setDoc load that two quick device switches replace is said as replaced, not as a stall")
+def check_annotate_replaced_load_is_not_a_stall(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate replaced: settled", f"() => {api} && {api}.settled")
+    held = []
+    page.route("**/assets/dist/agr110.configs.json", lambda route: held.append(route))
+    try:
+        page.evaluate(f"""() => {{ window.__replaced = {api}.setDoc({{device: 'agr110',
+            swaps: {{'port-0': 'generic/qsfp-cable@1'}}, marks: [{{select: '.a'}}]}}); }}""")
+        for _ in range(400):     # the route handler runs while the page is waited on
+            if held:
+                break
+            page.wait_for_timeout(50)
+        if not held:
+            return bad + ["annotate replaced: the setDoc never asked for agr110's manifest"]
+        # two device switches, back to back, while the setDoc's load is on the wire
+        q = page.locator(".devpick input[type=search]")
+        for name in ("c100g", "s9510-28dc"):
+            q.fill(name)
+            q.press("Enter")
+        for route in held:
+            route.continue_()
+        held.clear()
+        r = page.evaluate("""async () => {
+            const r = await Promise.race([window.__replaced, new Promise(ok => setTimeout(() => ok('hung'), 12000))]);
+            return r === 'hung' ? {hung: true} : {error: r.error || null, findings: (r.findings || []).map(f => f.text)}; }""")
+    finally:
+        for route in held:
+            with contextlib.suppress(Exception):
+                route.continue_()
+        page.unroute("**/assets/dist/agr110.configs.json")
+    if r.get("hung"):
+        return bad + ["annotate replaced: setDoc did not answer in 12 s once its load was replaced"]
+    if any("did not finish loading" in f for f in r["findings"]) or "Overtaken by a newer drawing" not in (r["error"] or ""):
+        bad.append(f"annotate replaced: a replaced load answered error {r['error']!r}, findings {r['findings']}")
+    wait_fn(page, "annotate replaced: the last pick is on the stage",
+            f"() => {api}.getDoc().device === 's9510-28dc'")
+    page.wait_for_timeout(500)
+    msg = page.text_content("#expmsg") or ""
+    if "did not finish loading" in msg:
+        bad.append(f"annotate replaced: the message box reads {msg!r}")
+    logged = [e for e in errors if "did not load" in e or "superseded" in e]
+    if logged:
+        bad.append(f"annotate replaced: a replaced load was logged as an error: {logged[:2]}")
+    doc = page.evaluate(f"() => {{ const d = {api}.getDoc(); return [d.device, Object.keys(d.swaps).length]; }}")
+    if doc != ["s9510-28dc", 0]:
+        bad.append(f"annotate replaced: after the picks the document reads {doc}, expected s9510-28dc with no swaps")
+    return bad
+
+
 @extra("svg-export.js is the one save/standalone; the showcase re-exports the same functions")
 def check_svg_export_leaf(page, base):
     bad = []
@@ -12322,7 +12390,8 @@ SHEET_1B_JS = """async ([y, m, d]) => {
     const box = U.svgEl('rect', {x: M, y: blockY, width: (width - 2 * M).toFixed(2), fill: 'none', stroke: RULE});
     sheet.append(box);
     let yy = blockY + 22;
-    D.titleLines(rack, date).forEach((line, i) => {
+    // the Rack Builder's own name for itself: the kit's default since #895 upstream is 'Portrayal'
+    D.titleLines(rack, date, {source: 'the Portrayal Rack Builder'}).forEach((line, i) => {
       sheet.append(text(M + 12, yy, line, i ? {fill: MUTED} : {size: 14, weight: 600}));
       yy += LINE;
     });

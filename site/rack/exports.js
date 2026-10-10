@@ -45,6 +45,11 @@ import {zeroUEntries} from '../../vendor/rack/zero-u.js';
 // place: the kit's rackNotes with {zeroU: false, chassisOf} (#926).
 const besideNotes = (rack, chassisOf) => rackNotes(rack, {cables: false, zeroU: false, chassisOf});
 
+// WHAT THIS PAGE CALLS ITSELF in what it writes (#895 upstream): the kit's sheet title and import-kit README
+// name whoever drew them, and say where the DCIM settings are, in words a host passes in. These are the Rack
+// Builder's own, which the sheet and the README said before the kit took them as arguments.
+const SOURCE = 'the Portrayal Rack Builder';
+const SETTINGS_AT = 'under Export, DCIM import settings';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
 const M = 24, GAP = 48, HEAD = 28, LINE = 16, NOTE_LINE = 13;
@@ -221,7 +226,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
     const box = svgEl('rect', {x: M, y: blockY, width: (width - 2 * M).toFixed(2), fill: 'none', stroke: RULE});
     sheet.append(box);
     let y = blockY + 22;
-    titleLines(rack, date).forEach((line, i) => {
+    titleLines(rack, date, {source: SOURCE}).forEach((line, i) => {
       sheet.append(text(M + 12, y, line, i ? {fill: MUTED} : {size: 14, weight: 600}));
       y += LINE;
     });
@@ -590,12 +595,14 @@ async function consolePorts(rack, items) {
 // The Nautobot kit's script: a real file of the site, fetched as any other.
 const SCRIPT_URL = `site/rack/nautobot/${KIT_SCRIPT}`;
 // Where the README says the script is: this page's own site, so a preview or a mirror points at itself. A page
-// with no http(s) origin (file://) gives none, and the README falls back to portrayal.dev.
+// with no http(s) origin (file://) has none, and the README names portrayal.dev's copy instead: the kit names
+// no site of its own (#895), so that fallback is this site's to keep.
+const SCRIPT_FALLBACK = `https://portrayal.dev/${SCRIPT_URL}`;
 const scriptHref = () => {
   try {
     const u = new URL(SCRIPT_URL, document.baseURI);
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null;
-  } catch { return null; }
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : SCRIPT_FALLBACK;
+  } catch { return SCRIPT_FALLBACK; }
 };
 
 // THE IMPORT KIT (Phase 2c ruling 1): ONE zip per target, its files numbered
@@ -675,7 +682,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   if (!ctx.items.length) notes.unshift('This rack has no devices, so there is nothing to import.');
   const readme = kitReadme({target, rack, date, dcim, typeFiles, manufacturers, rows, script,
                             left: [...ctx.causes, ...left, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),
-                            scriptUrl: scriptHref()});
+                            scriptUrl: scriptHref(), source: SOURCE, settingsAt: SETTINGS_AT});
   add('README.txt', readme.text);
   // The entries are dated with the export's DAY, the one the README prints: the same rack on the same day
   // gives the same bytes.

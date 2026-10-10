@@ -281,6 +281,12 @@
               shell. It styles the page it lands in, so it runs here in a frame of
               its own. <a href="explorer.html">The Explorer</a> is the full example,
               with 3D.</p>
+            <p>One load holds the stage at a time. When a newer
+              <code>loadDevice</code> or <code>loadStage</code> overtakes one you
+              awaited, yours writes nothing and rejects with an error that
+              <code>isSuperseded(err)</code> recognizes: another load replaced it,
+              which is not a failure. <a href="annotate.html">Annotate</a> treats it
+              that way.</p>
             <figure class="kit-ex" data-example="07-shell" data-run="frame">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>
@@ -465,8 +471,8 @@ const path = routePath(rack, cable, route);
                 <tr><td><code>rack/solids</code></td><td>The solid bodies a route may not pass through: <code>solidsOf</code> (since 0.15.0 with a ring's legs, bar, seat and hook, <code>ring/&lt;id&gt;/&lt;part&gt;</code>), <code>legCrossings</code>, <code>detour</code>, <code>CLEAR</code>, the clearance a detour keeps, and <code>traysOf</code>, the trays a cable lies on.</td></tr>
                 <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>).</td></tr>
                 <tr><td><code>rack/cable-geometry</code></td><td>The 3D path (<code>routePoints3d</code>), cable and plug colors, and the lead and sag figures the drawings share.</td></tr>
-                <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column, and each body a route crosses in its cable's notes), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), and the device-import data.</td></tr>
-                <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README.</td></tr>
+                <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column, and each body a route crosses in its cable's notes), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), the device-import data, and the drawing sheet's title block (<code>titleLines</code>, which names the host it was drawn with as <code>source</code>).</td></tr>
+                <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README (<code>kitReadme</code>; a host passes its own <code>source</code>, where its DCIM settings are as <code>settingsAt</code>, and the script's <code>scriptUrl</code>).</td></tr>
                 <tr><td><code>rack/validate</code></td><td><code>validate(schema, value)</code>, the small JSON Schema validator the commands use, and <code>same</code>.</td></tr>
               </tbody>
             </table>
