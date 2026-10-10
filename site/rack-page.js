@@ -34,6 +34,7 @@ import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
+import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, sameTarget} from './rack/hover.js';
 import {routeFacts, routeNotes, withCableTypes} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
@@ -66,6 +67,7 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
+  hover: null,       // {kind: 'cable'|'bundle', id, from: 'stage'|'list'}: what the pointer is over (#169)
   routes: null,
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
@@ -137,6 +139,7 @@ async function rebuild3d() {
   // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
+  paintHover3d(built, litFor(now, S.hover));
   // A swatch picked while this was building found no scene to tell.
   if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
@@ -956,6 +959,7 @@ async function render() {
       if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
       paintCables(S.svgs, r, {selectedId: selectedCable(), on: S.cableFilter});
       paintBundles(S.svgs, selectedBundle());
+      paintHover2d(S.svgs, litFor(r, S.hover));
     }
     if (S.routePick) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
@@ -1002,7 +1006,57 @@ function summary() {
   ]);
 }
 
+// ── Hover (#169) ──────────────────────────────────────────────────────────
+// A cable or bundle under the pointer lights and the rest dim, in whichever
+// view shows (hover.js). Restyles the panes and the scene; never redraws,
+// never selects. A touch pointer is ignored: on touch the page is as before.
+function setHover(target) {
+  if (sameTarget(S.hover, target)) { if (S.hover && target) S.hover.from = target.from; return; }
+  S.hover = target;
+  const lit = litFor(rack(), target);
+  paintHover2d(S.svgs, lit);
+  if (S.scene3d) paintHover3d(S.scene3d, lit);
+}
+let hoverFrame = 0, hoverEv = null;
+function hoverMove(ev, find) {
+  if (ev.pointerType === 'touch') return;
+  hoverEv = ev;
+  if (hoverFrame) return;
+  hoverFrame = requestAnimationFrame(() => {
+    hoverFrame = 0;
+    const e = hoverEv;
+    // an orbit or a drag in progress is not a hover
+    if (e.buttons) return;
+    const t = find(e);
+    setHover(t ? {...t, from: 'stage'} : null);
+  });
+}
+function wireHover() {
+  for (const id of ['paneFront', 'paneRear']) {
+    const pane = $(id);
+    pane.addEventListener('pointermove', ev => hoverMove(ev, e => {
+      const svg = pane.querySelector(':scope > svg');
+      return svg ? hoverAt2d(svg, e) : null;
+    }));
+    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+  }
+  const stage = $('stage3d');
+  stage.addEventListener('pointermove', ev => hoverMove(ev, e => (S.scene3d ? hoverAt3d(S.scene3d, e) : null)));
+  stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+  const side = $('side');
+  side.addEventListener('pointerover', ev => {
+    if (ev.pointerType === 'touch') return;
+    const t = hoverAtList(ev);
+    if (t) setHover({...t, from: 'list'});
+    else if (S.hover?.from === 'list') setHover(null);
+  });
+  side.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'list') setHover(null); });
+}
+
 function renderSide() {
+  // The list is rebuilt: a row the pointer was over is gone, and no
+  // pointerout will say so. Its hover ends here; the next move finds the new row.
+  if (S.hover?.from === 'list') setHover(null);
   // Rebuilding the panel must not take keyboard focus away (a frame edit
   // redraws the form): the control that had it gets it back, by id.
   const had = document.activeElement;
@@ -1378,6 +1432,7 @@ async function bootInner() {
   if (!doc) { doc = newDoc(); await S.lib.put(doc); }
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
+  wireHover();
   drag = createDragController({
     panesEl: $('panes'),
     svgFor: face => S.svgs.find(s => s.dataset.pane === face),
