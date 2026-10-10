@@ -223,6 +223,12 @@
          line-height:1.4; word-break:break-word; }
   .msg.bad { color:var(--bad); }
   .msg.good { color:#22c55e; }
+  /* a load that did not finish, said where the drawing would have been. On its
+     own surface: the stage behind it is whichever swatch the reader chose. */
+  #stage-svg .stage-note { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+         margin:0; max-width:min(80%, 32rem); padding:0.6rem 0.9rem; text-align:center;
+         border:1px solid var(--bad); border-radius:6px; background:var(--pt-surface);
+         color:var(--ink); font-size:0.8rem; line-height:1.4; }
   /* the tree says which rows a mark reached: the same colour, in the same place,
      as the swatch in the panel */
   .node .pm { width:0.5rem; height:0.5rem; border-radius:50%; flex:none;
@@ -274,6 +280,7 @@ import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
+import { firstDevice } from './site/featured.js';
 import { docToScene, legendItems } from './site/annotate3d.js';
 import { createMarksEditor } from './site/annotate/editor.js';
 import { describe as describeMarks } from './site/annotate/describe.js';
@@ -283,10 +290,15 @@ import { describe as describeMarks } from './site/annotate/describe.js';
 import { statesOfEl, pathIndex, firstMatch, paints, undocumented,
          lampCensus, lampable, stateChoices } from './vendor/states.js';
 
+// A first visit opens on a populated device, not on the first in the index and
+// its empty base chassis (roc-ops/portrayal-site#19): site/featured.js is the
+// one rule, shared with the Explorer and the showcase. A link that names a
+// device, in ?device= or in its document, still opens on that device.
 const shell = createShell({
   title: 'Annotate',
   dist: 'assets/dist',
   mount: document.getElementById('shell'),
+  device: firstDevice(),
 });
 const state = shell.state;
 
@@ -426,7 +438,9 @@ let hadLegend = false;
 // script that loads with the page finds it at once. `ready` resolves once the
 // drawing is up and any document in the URL has been laid on it, so a setDoc
 // sent after it is never overtaken by the page's own restore. It resolves to
-// {} or, when the page could not start or restore its link, {error}.
+// {}; to {error, replaced: true} when something newer overtook the link before
+// it had loaded; or, when the page could not start or restore its link, to
+// {error} alone.
 let settled = false, markReady;
 const ready = new Promise(resolve => { markReady = resolve; });
 window.portrayalAnnotate = Object.freeze({
@@ -604,26 +618,58 @@ let pendingSwaps = null, pendingFields = null;
 // that never arrives must not hold a caller for ever (#146). The promise is the
 // load's own, so it is settled by that load and no other; the shell's 'load'
 // handler below has already written the target and drawn by the time it is.
-// The timer is cleared as soon as the race is decided. `__portrayalLoadMs`
-// shortens the bound for the browser check, and is read per call.
+// The timer is cleared as soon as the race is decided.
+//
 // A LOAD A NEWER ONE OVERTOOK is neither: the shell holds one load at a time,
-// and one that a later pick or setDoc replaced rejects with an error
-// `isSuperseded` recognizes (kit #929). That is REPLACED, which is not a
+// and one that a later pick or setDoc replaced is REPLACED, which is not a
 // failure and not a stall - the newer load owns the stage and its own 'load'
 // writes the target - so it is not logged and the caller says nothing of it.
+// It is known two ways, because the kit can only say so once the replaced
+// load's own fetch comes back:
+//   - its promise rejects with an error `isSuperseded` recognizes (kit #929);
+//   - ANOTHER LOAD LANDS WHILE THIS ONE IS STILL OUT. A load that hangs - its
+//     manifest never answers - never reaches the kit's test, and used to sit
+//     here until the bound and then read as a stall, twenty seconds after the
+//     reader had moved on. The shell announces one 'load' per drawing mounted
+//     and resolves that load's promise in the same turn, so a 'load' that
+//     leaves this promise unsettled a task later was a newer load's.
+//
+// `__portrayalLoadMs` shortens the bound for the browser check. It is read per
+// call, and only on a page opened with ?debug=1 - the switch that already puts
+// the 3D viewer on window (site/mode3d.js) - so nothing a visitor's page
+// happens to define can change how long a load is given.
 const LOAD_MS = 20000;
 const REPLACED = 'replaced';
-const loadMs = () => Number(globalThis.__portrayalLoadMs) || LOAD_MS;
-function settle(p) {
+const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+const loadMs = () => {
+  const ms = DEBUG ? Number(globalThis.__portrayalLoadMs) : NaN;
+  return ms > 0 ? ms : LOAD_MS;
+};
+// a bounded wait: `p`'s answer, or false once the bound is up
+function within(...ps) {
   let timer;
   return Promise.race([
-    Promise.resolve(p).then(() => true, err => {
-      if (isSuperseded(err)) return REPLACED;
-      console.error('[portrayal] a drawing did not load', err);
-      return false;
-    }),
+    ...ps,
     new Promise(resolve => { timer = setTimeout(() => resolve(false), loadMs()); }),
   ]).finally(() => clearTimeout(timer));
+}
+const landings = new Set();
+shell.on('load', () => { for (const landed of [...landings]) landed(); });
+function settle(load) {
+  let verdict, landed;
+  const overtaken = new Promise(resolve => {
+    landed = () => setTimeout(() => resolve(REPLACED), 0);
+    landings.add(landed);
+  });
+  const own = Promise.resolve(load).then(() => true, err => {
+    // a replaced load's fetch that fails afterwards is still a replaced load
+    if (isSuperseded(err) || verdict === REPLACED) return REPLACED;
+    console.error('[portrayal] a drawing did not load', err);
+    return false;
+  });
+  return within(own, overtaken)
+    .then(got => (verdict = got))
+    .finally(() => landings.delete(landed));
 }
 // THE DRAWING ON SCREEN, as the last 'load' left it. The shell's own state is
 // not that: loadDevice names the new device before it has fetched anything, and
@@ -669,6 +715,21 @@ async function applyPendingSwaps() {
   return {swaps: Object.keys(ignored || {}).length, fields: lost};
 }
 
+// A LOAD THAT DID NOT FINISH CAN LEAVE THE STAGE EMPTY. The shell clears the
+// stage when it starts fetching a face and fills it when the face arrives, so
+// a configuration or view whose drawing never comes left a blank stage, with
+// the reason only in the export panel's message box. The same sentence goes on
+// the stage. Only when the stage holds no drawing: a device whose manifest
+// never arrived has not touched it. The next load to start clears it, as it
+// clears a drawing.
+function stageSays(text) {
+  const host = shell.el.svgHost;
+  if (host.querySelector('svg')) return;
+  const note = Object.assign(document.createElement('p'), {className: 'stage-note', textContent: text});
+  note.setAttribute('role', 'status');
+  host.replaceChildren(note);
+}
+
 // Moves the shell to the drawing a document names, and returns once it is
 // there: every reload it starts is waited for, so the document and the report
 // a caller reads next are of the new drawing. `moving` is true when the shell
@@ -689,6 +750,7 @@ async function retarget(d, live = () => true) {
   const refuse = (list, text, msg) => { list.push(text); say('#expmsg', msg, 'bad'); };
   const stall = what => {
     refuse(drawing, `${what} did not finish loading.`, `${what} did not finish loading`);
+    stageSays(`${what} did not finish loading.`);
     return {moving, drawing, view, stalled: true};
   };
   const replaced = () => ({moving, drawing, view, replaced: true});
@@ -1679,8 +1741,12 @@ shell.on('row', () => {
 // drawing, because until then the shell's device, configuration and selects
 // can be the older call's half-loaded answer. Its own document is taken only
 // once that wait is over, so the swaps and fields pending are always its own.
-const OVERTAKEN = {error: 'Overtaken by a newer document.'};
-const OVERTAKEN_LOAD = {error: 'Overtaken by a newer drawing: another device, configuration or view was loaded before this one finished.'};
+//
+// OVERTAKEN IS NOT A FAILURE. A caller still hears it as `error`, because its
+// document is not the one on screen, but `replaced` beside it says nothing
+// went wrong: something newer was asked for, and that is what the page shows.
+const OVERTAKEN = Object.freeze({error: 'Overtaken by a newer document.', replaced: true});
+const OVERTAKEN_LOAD = Object.freeze({error: 'Overtaken by a newer drawing: another device, configuration or view was loaded before this one finished.', replaced: true});
 let loads = 0, restoring = Promise.resolve();
 async function restore(input) {
   const mine = ++loads;
@@ -1689,7 +1755,7 @@ async function restore(input) {
   let done;
   restoring = new Promise(resolve => { done = resolve; });
   try {
-    await settle(before);
+    await within(before);
     if (!live()) return OVERTAKEN;
     return await restoreNow(input, live);
   } finally {
@@ -1728,8 +1794,15 @@ async function restoreNow(input, live) {
   if (stalled) {
     // A LOAD THAT DID NOT FINISH reached nothing, so the document names the
     // drawing last shown, not the one asked for and not the shell's half-set
-    // state, and carries none of the swaps or fields it could not lay. Should
-    // the load finish later, its own 'load' writes the target it reached.
+    // state, and carries none of the swaps or fields it could not lay.
+    //
+    // IT IS NOT CANCELLED, and what it does later is not this call's. If
+    // another load starts first - a pick, or a setDoc that has to move the
+    // shell - the kit drops this one and it writes nothing (#929). If none
+    // does, it lands whenever its fetch answers: the shell mounts it and the
+    // 'load' handler retargets whatever document is current by then, a later
+    // setDoc's included, to that drawing as built. The swaps and fields that
+    // were dropped here are not laid on it.
     ed.retarget({device: shown?.device || '', config: shown?.config || '', view: shown?.view || '',
                  swaps: {}, fields: {}});
     render();
@@ -1786,13 +1859,35 @@ async function restoreLink(d) {
 // `ready` ALWAYS RESOLVES, with {error} when the page could not start or its
 // link could not be restored, and the listener is always attached: a page that
 // failed once must still take the next link pasted into it.
+//
+// A LINK THAT WAS OVERTAKEN DID NOT FAIL. The reader picked a drawing, or a
+// script sent a document, before the link's own had loaded; the page is up and
+// showing the newer one. `ready` is a stable answer, so it keeps the `error`
+// it has always carried for this - the link's document is not the one on
+// screen - and gains `replaced: true` beside it, as setDoc's answer does: a
+// caller that reads `replaced` knows nothing went wrong. The page itself never
+// treats it as a failure: nothing is logged, and the message box says nothing.
 let boot = {};
 try {
   await shell.ready;
   const fromHash = marks.decode(location.hash);
   if (fromHash) {
+    // A STORED LINK KEEPS ITS MEANING. A document that names no device is laid
+    // on the drawing the page is showing, and on a link with no ?device= that
+    // was the shell's own first device until this page began opening on the
+    // featured one (site/featured.js, #19). Such a link would now put its
+    // marks on a different box. So for that one case - at boot, no device in
+    // the document, none in the address - the document is given the device it
+    // used to land on, by the shell's own rule: the C100G, or the first in the
+    // index. A page opened with no document still opens on the featured device,
+    // and a device-less document sent later still means the drawing on screen.
+    if (!fromHash.device && !new URLSearchParams(location.search).get('device')) {
+      const all = shell.devices();
+      fromHash.device = (all.find(d => d.name === 'c100g') || all[0])?.name || '';
+    }
     const r = await restoreLink(fromHash);
-    if (r.error) boot = {error: r.error};
+    if (r.replaced) boot = {error: r.error, replaced: true};
+    else if (r.error) boot = {error: r.error};
   }
 } catch (err) {
   console.error('[portrayal] Annotate could not start', err);

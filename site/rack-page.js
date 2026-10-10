@@ -34,7 +34,7 @@ import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
-import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, sameTarget} from './rack/hover.js';
+import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeFacts, routeNotes, withCableTypes} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
@@ -134,6 +134,9 @@ async function rebuild3d() {
     routes: S.routes?.routes ?? null, paths: S.routes?.paths ?? null, ctx: S.routes?.ctx ?? null, bundles: bundles3d(S.routes),
     bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
+  // No scene: this browser gives no WebGL, or the build failed, and
+  // mountRack3d has put its sentence on the stage. S.scene3d stays null.
+  if (!built) return;
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
   // exist yet: the scene is current for the rack as it is now.
@@ -1028,7 +1031,8 @@ function hoverMove(ev, find) {
     // an orbit or a drag in progress is not a hover
     if (e.buttons) return;
     const t = find(e);
-    setHover(t ? {...t, from: 'stage'} : null);
+    // over nothing: a row keyboard focus is on is lit again, as on leaving the list
+    setHover(t ? {...t, from: 'stage'} : focusHover());
   });
 }
 function wireHover() {
@@ -1038,19 +1042,35 @@ function wireHover() {
       const svg = pane.querySelector(':scope > svg');
       return svg ? hoverAt2d(svg, e) : null;
     }));
-    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   }
   const stage = $('stage3d');
   stage.addEventListener('pointermove', ev => hoverMove(ev, e => (S.scene3d ? hoverAt3d(S.scene3d, e) : null)));
-  stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+  stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   const side = $('side');
   side.addEventListener('pointerover', ev => {
     if (ev.pointerType === 'touch') return;
     const t = hoverAtList(ev);
     if (t) setHover({...t, from: 'list'});
-    else if (S.hover?.from === 'list') setHover(null);
+    else if (S.hover?.from === 'list') setHover(focusHover());
   });
-  side.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'list') setHover(null); });
+  side.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'list') setHover(focusHover()); });
+  // KEYBOARD FOCUS ON A ROW is a hover of it (hover.js hoverAtFocus). The
+  // pointer over a row outranks it; when the pointer leaves the list, the
+  // focused row is lit again (above).
+  side.addEventListener('focusin', () => {
+    const t = focusHover();
+    if (t) { if (S.hover?.from !== 'list') setHover(t); }
+    else if (S.hover?.from === 'focus') setHover(null);
+  });
+  side.addEventListener('focusout', ev => {
+    if (S.hover?.from === 'focus' && !side.contains(ev.relatedTarget)) setHover(null);
+  });
+}
+// The row keyboard focus is on, as a hover target, or null.
+function focusHover() {
+  const t = hoverAtFocus($('side'));
+  return t ? {...t, from: 'focus'} : null;
 }
 
 function renderSide() {
@@ -1222,6 +1242,9 @@ function renderSide() {
   else if (back) back.focus();
   // A cable form that just opened takes the keyboard at its first field.
   else if (S.sel?.kind === 'cable-form') $('cMedia')?.focus();
+  // A row lit by keyboard focus: the rebuild took its row away and may have
+  // put focus back on it, on another control, or nowhere. The hover follows.
+  if (S.hover?.from === 'focus') setHover(focusHover());
 }
 
 function onPaneClick(ev) {
@@ -1637,7 +1660,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // The routes the page resolved, as plain data: [[cable id, waypoints], ...], or null.
     routes: () => (S.routes ? [...S.routes.routes].map(([id, r]) => [id, r.waypoints]) : null),
     // The pathway fill the page resolved (route.js fill, and the ducts beside the rack), as plain data.
-    fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f})), over: S.routes.over.map(o => ({...o}))} : null),
+    // A duct's entry carries the channel the page read off its drawing and gave the kit (ductAperture).
+    fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f, ...(f.zeroU ? {aperture: S.routes.ctx?.zeroUAperture?.({id: f.item}) ?? null} : {})})),
+                             over: S.routes.over.map(o => ({...o}))} : null),
     // The ring marks the panes and the scene drew by (route.js ringMarks, rack axes), and the
     // rings a route would enter and leave by one face (route.js ringFindings), as plain data.
     rings: () => (S.routes ? {marks: [...S.routes.marks].map(([id, m]) => [id, m.map(x => (x ? {...x} : null))]),
