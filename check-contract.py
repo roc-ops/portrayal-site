@@ -2108,10 +2108,13 @@ check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" 
 # on FEATURED_DEVICE, named once in site/featured.js, so it has to stay in the
 # library and keep a populated default. If it leaves, the shell falls back to
 # the C100G and its empty base without a word; if its default becomes a base,
-# the page opens on an empty chassis again. And every page that opens on a
-# device has to ask there: the Explorer and Annotate hand the shell
-# firstDevice(), and the showcase boots on FEATURED_DEVICE in a configuration
-# of its own choosing, which is held to one the device has that is not a base.
+# the page opens on an empty chassis again. And every page that MAKES A SHELL
+# has to ask there: the Explorer and Annotate hand it firstDevice(), and the
+# showcase boots on FEATURED_DEVICE in a configuration of its own choosing,
+# which is held to one the device has that is not a base. NOT COVERED: pages
+# that pick a device without a shell - exporter.html, site/drawio-page.js and
+# site/drawings-page.js - still fall back to the first device in the index,
+# and nothing here reads them.
 _feat_js = (HERE / "site" / "featured.js").read_text() if (HERE / "site" / "featured.js").is_file() else ""
 _fd = re.search(r"export const FEATURED_DEVICE = '([a-z0-9-]+)';", _feat_js)
 _fd_name = _fd and _fd.group(1)
@@ -2126,14 +2129,15 @@ check(_fd_listed and _fd_kind not in (None, "base")
       "and a ?device= still wins",
       f"site/featured.js: FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or "
       "firstDevice() is not ?device= || FEATURED_DEVICE")
-# every page in the tree that makes a shell, so a new one cannot open on the
-# index's first device without failing here
+# every root page that calls createShell({, so a new shell page cannot open on
+# the index's first device without failing here
 _shell_pages = sorted(p.name for p in HERE.glob("*.html") if re.search(r"\bcreateShell\(\{", p.read_text()))
 _no_first = [n for n in _shell_pages
              if not re.search(r"createShell\(\{[^}]*\bdevice:\s*firstDevice\(\),", (HERE / n).read_text(), re.S)
              or not re.search(r"import \{ firstDevice \} from './site/featured\.js';", (HERE / n).read_text())]
 check({"explorer.html", "annotate.html"} <= set(_shell_pages) and not _no_first,
-      f"every shell page ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice()",
+      f"every page that makes a shell ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice(); "
+      "the export pages make no shell and are not checked here",
       f"createShell is not given `device: firstDevice()` in {_no_first or 'a page that is gone'}; pages found: {_shell_pages}")
 _art_src = (HERE / "site" / "showcase" / "artifact.js").read_text()
 _art_cfg = re.search(r"^export const CFG = '([^']+)';", _art_src, re.M)
