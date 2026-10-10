@@ -14,6 +14,7 @@
 
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {drawElevation, panelFor} from './elevation.js';
+import {holdUndimmed} from './hover.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
 import {itemsWithU, heightOf} from '../../vendor/rack/fit.js';
@@ -378,7 +379,8 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
-            data: usdz ? await scene.toUSDZ() : await scene.toGLB(),
+            // never the hover's dimming (#169): the file is the rack, not the pointer
+            data: await holdUndimmed(scene, () => (usdz ? scene.toUSDZ() : scene.toGLB())),
             type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary',
             ...(usdz ? {notes: [], left: notes, leftText: 'USDZ carries no notes; the GLB does.'} : {notes})};
   } finally {

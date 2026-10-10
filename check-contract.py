@@ -1454,6 +1454,31 @@ check(set(_g("cmh-4drb1u", "front")) >= {f"guide-{i}" for i in range(1, 5)},
 check(_cat.get("fhd-cmp5dr", {}).get("capacity", {}).get("count") == 30,
       "fhd-cmp5dr carries its stated capacity, 30",
       "rebuild the Portrayal clone ($PORTRAYAL_UPSTREAM) from main and run ./refresh-assets.sh")
+# THE FS HORIZONTAL MANAGERS (Portrayal #868, portrayal-site#130): every CMH /
+# USCMH is rack-mounted on its ears in its own U (not `rack-face`, which is the
+# FHD-CMP5DR's place in front of another device), and has its front pathway
+# indexed: a duct, or its rings. check_rack_fs_manager_guides then reads them
+# back through the route context, with each ring's opening.
+_hmgr = sorted(n for n in _cat if re.fullmatch(r"(us)?cmh-[a-z0-9-]+", n))
+_hbad = [n for n in _hmgr if _cat[n].get("mount", "rack") != "rack" or not (_cat[n].get("ru") or 0) >= 1
+         or not _g(n, "front")]
+check(len(_hmgr) >= 23 and not _hbad,
+      f"the {len(_hmgr)} FS horizontal managers are rack-mounted in their own U with their front pathway indexed",
+      f"{len(_hmgr)} found; wrong mount, no ru or no front guide: {_hbad}")
+# THE RING STOPGAP IS GONE (portrayal-site#130): site/rack/route-context.js
+# ringGroupsOf reads a ring group by its data-guide="ring" declaration and its
+# opening, not by data-group="guides". So no vendored drawing may draw a
+# guides group that does not declare itself, or its ring would drop out of
+# every route.
+_gtag = re.compile(r'<g\b[^>]*\bdata-group="guides"[^>]*>')
+_undeclared = sorted({f"{p.name}: {re.search(r'id=\"([^\"]*)\"', t_).group(1) if 'id=' in t_ else '?'}"
+                      for p in DIST.glob("*.svg") for _txt in [p.read_text()] if 'data-group="guides"' in _txt
+                      for t_ in _gtag.findall(_txt)
+                      if 'data-guide="ring"' not in t_ or "data-guide-aperture=" not in t_})
+_ring_files = sum(1 for p in DIST.glob("*.svg") if 'data-guide="ring"' in p.read_text())
+check(_ring_files > 0 and not _undeclared,
+      f"every data-group=\"guides\" group in assets/dist declares data-guide=\"ring\" and its aperture ({_ring_files} drawings with rings)",
+      f"undeclared: {_undeclared[:8]} - restore the data-group fallback in route-context.js ringGroupsOf, or fix upstream")
 
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",
@@ -1501,6 +1526,28 @@ check(all(f"media/{m}" in _srv for m in _MEDIA),
 _rd = _srv["_redirects"].read_text() if "_redirects" in _srv else ""
 check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, re.M) for m in _MEDIA),
       "the old root media paths 301 to /media/", "_redirects lacks a 301 for one of " + ", ".join(_MEDIA))
+# EVERY portrayal.dev URL THE PORTRAYAL README LINKS STAYS SERVED (#61). The
+# README is on GitHub and npm, where a link cannot be updated once people
+# have followed it, so each path it names is pinned here and must be in the
+# build: a file as it is, a page as <path>.html (the Worker serves it
+# extensionless). With an upstream clone, a link the README gains must be
+# added here too, so it is held from then on; without one, that half is a
+# named skip and the pinned list is still checked.
+_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json"]
+_served_as = lambda p: next((c for c in (p, f"{p}.html", f"{p}/index.html" if p else "index.html") if c in _srv), None)
+check(all(_served_as(p) for p in _README_LINKS),
+      f"the {len(_README_LINKS)} portrayal.dev URLs the Portrayal README links are served",
+      f"not built: {[p for p in _README_LINKS if not _served_as(p)]}")
+_readme_up = _upstream / "README.md"
+if _readme_up.is_file():
+    _up_links = sorted({u.rstrip(".,").split("#")[0].split("?")[0].strip("/") for u in
+                        re.findall(r"https://(?:www\.)?portrayal\.dev(/[^\s)\"'<>\]]*)?", _readme_up.read_text())
+                        if u})
+    check(bool(_up_links) and set(_up_links) <= set(_README_LINKS),
+          f"every portrayal.dev URL in {_readme_up} is pinned in _README_LINKS ({len(_up_links)} linked)",
+          f"add to _README_LINKS (and serve): {sorted(set(_up_links) - set(_README_LINKS))}")
+else:
+    skips.append(f"the Portrayal README's portrayal.dev links are all pinned - no README at {_readme_up}")
 # THE ROLLBACK STILL WORKS: coming-soon/ is kept whole, and its page still
 # shows the 3D video from media/, so pointing wrangler.jsonc back at it is a
 # one-line change.
@@ -2056,6 +2103,26 @@ _lint_html = (HERE / "lint.html").read_text() if (HERE / "lint.html").exists() e
 check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" in
       ((HERE / "site" / "lint-page.js").read_text() if (HERE / "site" / "lint-page.js").exists() else ""),
       "lint.html renders the vendored lint-rules.json through site/lint-page.js")
+
+# THE EXPLORER'S FIRST DEVICE (roc-ops/portrayal-site#19): a visit with no
+# ?device= opens on FEATURED_DEVICE, named in explorer.html, so it has to stay
+# in the library and keep a populated default. If it leaves, the shell falls
+# back to the C100G and its empty base without a word; if its default becomes
+# a base, the page opens on an empty chassis again.
+_ex_html = (HERE / "explorer.html").read_text()
+_fd = re.search(r"const FEATURED_DEVICE = '([a-z0-9-]+)';", _ex_html)
+_fd_name = _fd and _fd.group(1)
+_fd_meta = json.loads((DIST / f"{_fd_name}.configs.json").read_text()) \
+    if _fd_name and (DIST / f"{_fd_name}.configs.json").is_file() else {}
+_fd_kind = next((c.get("kind") for c in _fd_meta.get("configs", []) if c.get("name") == _fd_meta.get("default")), None)
+_fd_listed = _fd_name in {d["name"] for d in json.loads((DIST / "devices.json").read_text())["devices"]}
+check(_fd_listed and _fd_kind not in (None, "base")
+      and re.search(r"device:\s*new URLSearchParams\(location\.search\)\.get\('device'\)\s*\|\|\s*FEATURED_DEVICE",
+                    _ex_html) is not None,
+      f"the Explorer opens on {_fd_name}, a listed device whose default ({_fd_meta.get('default')}) is not a base, "
+      "and a ?device= still wins",
+      f"FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or createShell is not given "
+      "device: ?device= || FEATURED_DEVICE")
 
 for s in skips:
     print(f"SKIP  {s}")
