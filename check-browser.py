@@ -4577,11 +4577,28 @@ def check_rack_cable_routes(page, base):
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
     page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    # THE SCENE THAT STAYS, not the first one up. The cable list was just cut
+    # to c1, and its routes settle after the 3D switch has started a build:
+    # the page then disposes that scene and builds another (rebuild3d,
+    # scheduleRebuild3d), so `scene()` can be null, or a scene about to go, by
+    # the time this reads it - on a slow runner, between the wait above and
+    # the line below (CI run 38043086157). Measure a scene that has completed
+    # and is still the page's own a moment later, with its tubes hung.
     res = page.evaluate("""async () => {
       const R = await import('/vendor/rack/route.js');
-      const s = window.__rack.scene(); await s.complete?.();
-      const deadline = Date.now() + 20000;
-      while (!(s.rackCables?.tubes ?? []).some(t => t.points?.length) && Date.now() < deadline) await new Promise(r => setTimeout(r, 200));
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const deadline = Date.now() + 180000;
+      let s = null;
+      while (Date.now() < deadline) {
+        s = window.__rack.scene();
+        if (s) {
+          await s.complete?.();
+          await sleep(500);           // past the page's 300 ms rebuild debounce
+          if (window.__rack.scene() === s && (s.rackCables?.tubes ?? []).some(t => t.points?.length)) break;
+        } else await sleep(200);
+        s = null;
+      }
+      if (!s) return {ring: Infinity, lane: Infinity, laneX: null, tubes: 0, npts: 0, inside: [], through: null, unsettled: true};
       // THROUGH THE RING AS THE KIT PASSES IT (portrayal-site#166): the
       // tube's polyline runs through the kit's entry and exit of guide-1, on
       // its sill, and is straight between them
