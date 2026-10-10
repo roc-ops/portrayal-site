@@ -1526,6 +1526,28 @@ check(all(f"media/{m}" in _srv for m in _MEDIA),
 _rd = _srv["_redirects"].read_text() if "_redirects" in _srv else ""
 check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, re.M) for m in _MEDIA),
       "the old root media paths 301 to /media/", "_redirects lacks a 301 for one of " + ", ".join(_MEDIA))
+# EVERY portrayal.dev URL THE PORTRAYAL README LINKS STAYS SERVED (#61). The
+# README is on GitHub and npm, where a link cannot be updated once people
+# have followed it, so each path it names is pinned here and must be in the
+# build: a file as it is, a page as <path>.html (the Worker serves it
+# extensionless). With an upstream clone, a link the README gains must be
+# added here too, so it is held from then on; without one, that half is a
+# named skip and the pinned list is still checked.
+_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json"]
+_served_as = lambda p: next((c for c in (p, f"{p}.html", f"{p}/index.html" if p else "index.html") if c in _srv), None)
+check(all(_served_as(p) for p in _README_LINKS),
+      f"the {len(_README_LINKS)} portrayal.dev URLs the Portrayal README links are served",
+      f"not built: {[p for p in _README_LINKS if not _served_as(p)]}")
+_readme_up = _upstream / "README.md"
+if _readme_up.is_file():
+    _up_links = sorted({u.rstrip(".,").split("#")[0].split("?")[0].strip("/") for u in
+                        re.findall(r"https://(?:www\.)?portrayal\.dev(/[^\s)\"'<>\]]*)?", _readme_up.read_text())
+                        if u})
+    check(bool(_up_links) and set(_up_links) <= set(_README_LINKS),
+          f"every portrayal.dev URL in {_readme_up} is pinned in _README_LINKS ({len(_up_links)} linked)",
+          f"add to _README_LINKS (and serve): {sorted(set(_up_links) - set(_README_LINKS))}")
+else:
+    skips.append(f"the Portrayal README's portrayal.dev links are all pinned - no README at {_readme_up}")
 # THE ROLLBACK STILL WORKS: coming-soon/ is kept whole, and its page still
 # shows the 3D video from media/, so pointing wrangler.jsonc back at it is a
 # one-line change.
