@@ -82,7 +82,9 @@ test('a version 2 rack the site saved reads back whole through library.js, and s
   // A version 1 file (the browser checks' fixtures) migrates the same way.
   assert.equal(readDoc({...v2File(), version: 1}).version, 3);
   // A file newer than this page is refused with a sentence.
-  assert.throws(() => readDoc({...v2File(), version: 4}), /version 4; this page reads up to version 3/);
+  // The kit says what it reads; the page adds what to do about it, once.
+  assert.throws(() => readDoc({...v2File(), version: 4}),
+                {message: 'This rack file is version 4; this reader supports up to version 3. Reload to get the newer page.'});
 });
 
 test('what parseDoc says of a bundle it repaired reaches the editor\'s first findings', () => {
