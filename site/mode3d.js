@@ -84,10 +84,10 @@ const LOST_MSG = '3D paused — the graphics context was lost; it will resume, o
 // this device, configuration or swap. A lost or refused context keeps why3d's
 // sentence, which says what to do about it.
 const BUILD_FAILED = 'the scene failed to build';
-function whyBuild(err) {
+function whyBuild(err, retry = 'switch to 2D and back to try again') {
   const msg = String(err?.message || err);
   return /WebGL context/i.test(msg) ? why3d(err)
-    : `3D: ${BUILD_FAILED} (${msg}) — switch to 2D and back to try again`;
+    : `3D: ${BUILD_FAILED} (${msg}) — ${retry}`;
 }
 
 export function createMode3d(shell, opts = {}) {
@@ -430,7 +430,11 @@ export function createMode3d(shell, opts = {}) {
       shell.el.status.textContent = gpuLost ? LOST_MSG : '';
     } catch (err) {
       console.warn('[portrayal] 3D unavailable', err);
-      shell.el.status.textContent = why3d(err);
+      // WITH A VIEWER, 3D IS AVAILABLE and it was the scene that failed: the
+      // same sentence a failed rebuild gets. Without one the viewer itself
+      // could not be made, and why3d says what to do about that. Either way
+      // the page goes back to the drawing, so the retry is the 3D button.
+      shell.el.status.textContent = viewer ? whyBuild(err, 'press 3D to try again') : why3d(err);
       setMode('2d');
     }
   }

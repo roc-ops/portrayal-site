@@ -14,7 +14,8 @@
 // ONE RULE, HERE. A page that wrote its own would be a second answer to the
 // same question, and the two would drift the first time the library moved.
 // check-contract.py fails if this device leaves the library or its default
-// becomes a base, and if a page that opens on a device does not ask here.
+// becomes a base, and if any page it finds opening on a device - by making a
+// shell, mounting a device picker or reading ?device= - does not ask here.
 export const FEATURED_DEVICE = 'as7726-32x';
 
 // What a shell page hands createShell as `device`: the device its link names,
@@ -24,13 +25,24 @@ export const FEATURED_DEVICE = 'as7726-32x';
 export const firstDevice = (search = location.search) =>
   new URLSearchParams(search).get('device') || FEATURED_DEVICE;
 
-// The same answer for a page that reads the device index itself and so can
-// tell a device that exists from one that does not: the export pages, whose
-// picker needs a listed name. A link that names a listed device opens on it; a
-// link that names none, or one the library does not have, is a first visit.
-// These pages fell back to the first entry of the index, which is whatever
-// sorts first: a breaker panel today, a C100G before it.
+// The same answer for a page that reads the device index itself: the export
+// pages, whose picker needs a listed name. These fell back to the first entry
+// of the index, which is whatever sorts first: a breaker panel today, a C100G
+// before it. A link that names no device is a first visit and opens on the
+// featured one.
+//
+// A STORED LINK KEEPS ITS MEANING, including one whose device has since left
+// the library: it names a device, so it is not a first visit, and it lands
+// where it always has, on the first entry of the list the page hands in. That
+// is the only reader of the index's order left, and it is here so no page
+// carries one of its own.
 export const firstListed = (devices, search = location.search) => {
   const want = new URLSearchParams(search).get('device');
-  return devices.some(d => d.name === want) ? want : FEATURED_DEVICE;
+  if (!want) return FEATURED_DEVICE;
+  return devices.some(d => d.name === want) ? want : devices[0].name;
 };
+
+// Whether the link names a device at all: what a page asks before it applies
+// anything meant only for a first visit.
+export const namesDevice = (search = location.search) =>
+  !!new URLSearchParams(search).get('device');

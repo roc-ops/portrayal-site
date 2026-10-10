@@ -2108,10 +2108,11 @@ check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" 
 # on FEATURED_DEVICE, named once in site/featured.js, so it has to stay in the
 # library and keep a populated default. If it leaves, the shell falls back to
 # the C100G and its empty base without a word; if its default becomes a base,
-# the page opens on an empty chassis again. And every page that opens on a
-# device has to ask there: the Explorer and Annotate hand the shell
-# firstDevice(), and the showcase boots on FEATURED_DEVICE in a configuration
-# of its own choosing, which is held to one the device has that is not a base.
+# the page opens on an empty chassis again. And every page that MAKES A SHELL
+# has to ask there: the Explorer and Annotate hand it firstDevice(), and the
+# showcase boots on FEATURED_DEVICE in a configuration of its own choosing,
+# which is held to one the device has that is not a base. The pages that pick
+# a device without a shell are read by the check after these three.
 _feat_js = (HERE / "site" / "featured.js").read_text() if (HERE / "site" / "featured.js").is_file() else ""
 _fd = re.search(r"export const FEATURED_DEVICE = '([a-z0-9-]+)';", _feat_js)
 _fd_name = _fd and _fd.group(1)
@@ -2126,14 +2127,14 @@ check(_fd_listed and _fd_kind not in (None, "base")
       "and a ?device= still wins",
       f"site/featured.js: FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or "
       "firstDevice() is not ?device= || FEATURED_DEVICE")
-# every page in the tree that makes a shell, so a new one cannot open on the
-# index's first device without failing here
+# every root page that calls createShell({, so a new shell page cannot open on
+# the index's first device without failing here
 _shell_pages = sorted(p.name for p in HERE.glob("*.html") if re.search(r"\bcreateShell\(\{", p.read_text()))
 _no_first = [n for n in _shell_pages
              if not re.search(r"createShell\(\{[^}]*\bdevice:\s*firstDevice\(\),", (HERE / n).read_text(), re.S)
              or not re.search(r"import \{ firstDevice \} from './site/featured\.js';", (HERE / n).read_text())]
 check({"explorer.html", "annotate.html"} <= set(_shell_pages) and not _no_first,
-      f"every shell page ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice()",
+      f"every page that makes a shell ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice()",
       f"createShell is not given `device: firstDevice()` in {_no_first or 'a page that is gone'}; pages found: {_shell_pages}")
 _art_src = (HERE / "site" / "showcase" / "artifact.js").read_text()
 _art_cfg = re.search(r"^export const CFG = '([^']+)';", _art_src, re.M)
@@ -2156,7 +2157,9 @@ check(re.search(r"^import \{FEATURED_DEVICE\} from '\.\./featured\.js';", _art_s
 #     a new page that reads ?device= or mounts a device picker fails until it
 #     is given a rule and a browser check;
 #   - none of what was read falls back to the index's first entry, or to a
-#     device named beside the ?device= it reads.
+#     device named beside the ?device= it reads. featured.js is the one file
+#     allowed the first entry, for a link naming a device the library lacks,
+#     which lands where it always did.
 # Named with the file that asks and the browser check that opens the page.
 _FIRST_PAGES = {
     "explorer.html": ("explorer.html", "firstDevice()", "check_explorer_first_device"),
@@ -2203,19 +2206,20 @@ _first_wrong = sorted(
     pg for pg, (asker, call, browser) in _FIRST_PAGES.items()
     if call not in _first_read.get(pg, {}).get(asker, "")
     or _FEATURED_JS not in _first_read.get(pg, {})
-    or not re.search(r"\bimport \{\s*(?:firstDevice|firstListed|FEATURED_DEVICE)\s*\} from '[./a-z]*featured\.js';",
+    or not re.search(r"\bimport \{\s*(?:firstDevice|firstListed|firstListed, namesDevice|FEATURED_DEVICE)\s*\} from '[./a-z]*featured\.js';",
                      _first_read[pg][asker])
     or browser not in _registered)
 check(len(_first_read) == len(_cb.PAGES) == 17 and not _first_unread
       and _first_found == sorted(_FIRST_PAGES) and len(_first_found) == 9
       and not _first_stray and not _first_wrong
-      and re.search(r"devices\.some\(d => d\.name === want\) \? want : FEATURED_DEVICE;", _feat_js) is not None,
+      and re.search(r"if \(!want\) return FEATURED_DEVICE;\n\s*return devices\.some\(d => d\.name === want\) \? want : devices\[0\]\.name;",
+                    _feat_js) is not None,
       f"{len(_first_found)} of the {len(_first_read)} pages read open on a device, and each asks site/featured.js "
       f"and has a browser check that opens it: {', '.join(_first_found)}",
       f"read {len(_first_read)} of {len(_cb.PAGES)} pages (17 expected; empty or missing: {_first_unread}); "
       f"pages that open on a device: {_first_found}, named in _FIRST_PAGES: {sorted(_FIRST_PAGES)}; "
       f"falls back to its own first device: {_first_stray}; does not ask featured.js where _FIRST_PAGES says, "
-      f"or has no registered browser check: {_first_wrong}; or firstListed() is not `listed ? want : FEATURED_DEVICE`")
+      f"or has no registered browser check: {_first_wrong}; or firstListed() is not `no device ? FEATURED_DEVICE : listed ? want : the first listed`")
 
 for s in skips:
     print(f"SKIP  {s}")

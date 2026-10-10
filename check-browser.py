@@ -3643,7 +3643,7 @@ def check_explorer_first_device(page, base):
 # document's own target, read through the page's API once the page has settled.
 # A link names a device two ways here, in ?device= and in the document its hash
 # carries, and each still wins.
-@extra("Annotate with no device in its link opens on a populated device; ?device= and a document's own device still win")
+@extra("Annotate with no device in its link opens on a populated device; ?device=, a document's own device and a stored device-less document still land where they did")
 def check_annotate_first_device(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -3673,6 +3673,25 @@ def check_annotate_first_device(page, base):
     if [got["device"], got["cfg"]] != ["s9510-28dc", "dc"] or got["boot"]:
         bad.append(f"annotate: a link whose document names s9510-28dc dc opened on {got['device']} {got['cfg']}, "
                    f"boot {got['boot']}")
+    # A STORED LINK THAT NAMES NO DEVICE KEEPS ITS MEANING. Before the page
+    # opened on the featured device, such a document on a bare annotate.html was
+    # laid on the shell's own first device, the C100G; its marks were written
+    # against that box and must still land there. With ?device= it was, and is,
+    # laid on the device the address names.
+    enc = page.evaluate("""async d => (await import('/vendor/marks.js')).encode(d)""",
+                        {"view": "rear", "marks": [{"select": ".port"}]})
+    frag = enc if enc.startswith("#") else "#" + enc
+    got = opened(f"{base}/annotate.html{frag}")
+    marks_n = page.evaluate(f"() => {api}.getDoc().marks.length")
+    if got["device"] != "c100g" or got["boot"] or marks_n != 1:
+        bad.append(f"annotate: a stored link whose document names no device opened on {got['device']!r} "
+                   f"({marks_n} marks, boot {got['boot']}), not the c100g it was laid on before")
+    view = page.evaluate(f"() => {api}.getDoc().view")
+    if view != "rear":
+        bad.append(f"annotate: the device-less document's view rear came out as {view!r}")
+    got = opened(f"{base}/annotate.html?device=s9510-28dc{frag}")
+    if got["device"] != "s9510-28dc" or got["boot"]:
+        bad.append(f"annotate: a device-less document on ?device=s9510-28dc opened on {got['device']!r}, boot {got['boot']}")
     return bad
 
 
@@ -3712,12 +3731,13 @@ LISTED_OPENED_JS = """async device => {
 PICKED = "() => document.querySelector('#pick select.dev')?.value || null"
 
 
-def listed_first_device(page, base, page_name, ready, picked=PICKED, bad=None):
+def listed_first_device(page, base, page_name, ready, picked=PICKED):
     """The faults of `page_name` opened three ways: with no device (the featured
     one, populated), with ?device=c100g (that device, as before), and with a
-    device the library does not have (a first visit). `ready` is the page's own
-    sign that it has finished opening."""
-    bad = [] if bad is None else bad
+    device the library does not have (the first entry of the index, as before:
+    a stored link keeps its meaning). `ready` is the page's own sign that it
+    has finished opening."""
+    bad, stale = [], json.loads((HERE / "assets" / "dist" / "devices.json").read_text())["devices"][0]["name"]
     page.on("pageerror", lambda e: bad.append(f"{page_name}: uncaught {e}"))
 
     def opened(query):
@@ -3730,9 +3750,12 @@ def listed_first_device(page, base, page_name, ready, picked=PICKED, bad=None):
     bad += first_device_faults(page_name, got)
     if (dev := opened("?device=c100g")) != "c100g":
         bad.append(f"{page_name}: ?device=c100g opened on {dev!r}")
-    if (dev := opened("?device=no-such-device")) != featured_device():
+    if stale == featured_device():
+        bad.append(f"{page_name}: the index's first entry is the featured device, so the stale-link "
+                   "case cannot be told from a first visit - pick another assertion, not a pass")
+    if (dev := opened("?device=no-such-device")) != stale:
         bad.append(f"{page_name}: a link naming a device the library lacks opened on {dev!r}, "
-                   f"not {featured_device()!r}")
+                   f"not on {stale!r} as it did before")
     return bad
 
 
@@ -3874,7 +3897,8 @@ def check_harness3d_first_device(page, base):
     # the menu is set before the build starts, and these two are left while
     # theirs is still fetching: an aborted fetch is not the page's fault
     building[0] = False
-    for query, want in (("?device=c100g", "c100g"), ("?device=no-such-device", featured_device())):
+    stale = sorted(d["name"] for d in json.loads((HERE / "assets" / "dist" / "devices.json").read_text())["devices"])[0]
+    for query, want in (("?device=c100g", "c100g"), ("?device=no-such-device", stale)):
         page.goto("about:blank")
         page.goto(f"{base}/viewer3d-harness.html{query}", wait_until="load")
         wait_fn(page, f"3D harness {query}: the menu", "() => !!document.querySelector('#dev').value")
@@ -8918,7 +8942,7 @@ def check_3d_download_waits_for_scene(page, base):
         if (b) { b.click(); return done({pressed: true}); }
         const status = document.querySelector('#status').textContent;
         const back = document.querySelector('#mode button.on')?.dataset.mode === '2d';
-        if (back && (/^3D (unavailable|needs)/.test(status) || performance.now() - t0 > 20000))
+        if (back && (/^3D( unavailable| needs|:)/.test(status) || performance.now() - t0 > 20000))
           return done({refused: status || 'the page went back to 2D and gave no reason'});
         requestAnimationFrame(press);
       };
@@ -9656,8 +9680,10 @@ def check_annotate_replaced_load_is_not_a_stall(page, base):
     # manifest is held for good, and one pick while it is out. The kit cannot
     # say "superseded" for a fetch that has not come back, so this used to wait
     # out the 20 s bound and read as a stall, and `ready` then resolved {error}
-    # for a page that was up and showing what the reader had picked. `ready`
-    # must resolve well inside the bound, {replaced: true} with no error.
+    # with nothing to tell that apart from a page that could not start.
+    # `ready` must resolve well inside the bound, keeping its `error` and
+    # carrying `replaced: true` beside it; and the page must not log it or say
+    # it in the message box.
     enc = page.evaluate("""async d => (await import('/vendor/marks.js')).encode(d)""",
                         {"device": "agr110", "marks": [{"select": ".port"}]})
     page.goto("about:blank")
@@ -9683,8 +9709,11 @@ def check_annotate_replaced_load_is_not_a_stall(page, base):
         if boot.get("hung"):
             bad.append("annotate replaced: with its link's load hung and a pick made, `ready` had not resolved in 10 s "
                        "- the overtaken load waited out the bound")
-        elif boot.get("error") or boot.get("replaced") is not True:
-            bad.append(f"annotate replaced: `ready` resolved {boot} for a link a pick overtook, not {{replaced: true}}")
+        elif boot.get("replaced") is not True or "Overtaken by a newer drawing" not in (boot.get("error") or ""):
+            # BOTH FIELDS: `error` is the answer this stable API has always
+            # given for an overtaken link, and `replaced` says it is not a failure
+            bad.append(f"annotate replaced: `ready` resolved {boot} for a link a pick overtook, "
+                       "not {error: 'Overtaken by a newer drawing…', replaced: true}")
         wait_fn(page, "annotate replaced: the pick is on the stage after an overtaken link",
                 f"() => {api}.getDoc().device === 's9510-28dc' && document.querySelector('#stage-svg svg')")
         msg = page.text_content("#expmsg") or ""

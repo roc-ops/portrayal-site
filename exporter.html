@@ -124,7 +124,7 @@
 <script type="module">
 import { createDevicePicker } from './vendor/devsel.js';
 import { jdist } from './vendor/dist.js';
-import { firstListed } from './site/featured.js';
+import { firstListed, namesDevice } from './site/featured.js';
 import { makeZip } from './site/bundle.js';
 import { rasterize } from './site/raster.js';
 
@@ -484,7 +484,7 @@ that does that by default is one that will eventually do it by accident.
   // the device the link names, and site/featured.js's when it names none,
   // not whatever sorts first in the index
   DEV = firstListed(DEVICES);
-  if (DEV !== new URLSearchParams(location.search).get('device')) FIRST = await firstType(DEV);
+  if (!namesDevice()) FIRST = await firstType(DEV);
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; FIRST = null; show(); }});
   $('target').onchange = show;

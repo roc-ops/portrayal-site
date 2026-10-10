@@ -438,8 +438,9 @@ let hadLegend = false;
 // script that loads with the page finds it at once. `ready` resolves once the
 // drawing is up and any document in the URL has been laid on it, so a setDoc
 // sent after it is never overtaken by the page's own restore. It resolves to
-// {}; to {replaced: true} when something newer overtook the link before it had
-// loaded; or, when the page could not start or restore its link, to {error}.
+// {}; to {error, replaced: true} when something newer overtook the link before
+// it had loaded; or, when the page could not start or restore its link, to
+// {error} alone.
 let settled = false, markReady;
 const ready = new Promise(resolve => { markReady = resolve; });
 window.portrayalAnnotate = Object.freeze({
@@ -1861,15 +1862,31 @@ async function restoreLink(d) {
 //
 // A LINK THAT WAS OVERTAKEN DID NOT FAIL. The reader picked a drawing, or a
 // script sent a document, before the link's own had loaded; the page is up and
-// showing the newer one. That resolves {replaced: true}, with no `error`, so a
-// caller that treats `error` as "the page is broken" is not told that it is.
+// showing the newer one. `ready` is a stable answer, so it keeps the `error`
+// it has always carried for this - the link's document is not the one on
+// screen - and gains `replaced: true` beside it, as setDoc's answer does: a
+// caller that reads `replaced` knows nothing went wrong. The page itself never
+// treats it as a failure: nothing is logged, and the message box says nothing.
 let boot = {};
 try {
   await shell.ready;
   const fromHash = marks.decode(location.hash);
   if (fromHash) {
+    // A STORED LINK KEEPS ITS MEANING. A document that names no device is laid
+    // on the drawing the page is showing, and on a link with no ?device= that
+    // was the shell's own first device until this page began opening on the
+    // featured one (site/featured.js, #19). Such a link would now put its
+    // marks on a different box. So for that one case - at boot, no device in
+    // the document, none in the address - the document is given the device it
+    // used to land on, by the shell's own rule: the C100G, or the first in the
+    // index. A page opened with no document still opens on the featured device,
+    // and a device-less document sent later still means the drawing on screen.
+    if (!fromHash.device && !new URLSearchParams(location.search).get('device')) {
+      const all = shell.devices();
+      fromHash.device = (all.find(d => d.name === 'c100g') || all[0])?.name || '';
+    }
     const r = await restoreLink(fromHash);
-    if (r.replaced) boot = {replaced: true};
+    if (r.replaced) boot = {error: r.error, replaced: true};
     else if (r.error) boot = {error: r.error};
   }
 } catch (err) {
