@@ -3832,19 +3832,6 @@
    "what": "fan-bay-labels-sit-on-the-tray-flange"
   },
   {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9902",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "CISCO'S OWN STENCIL AND ITS OWN DATA SHEETS DISAGREE ABOUT HOW WIDE THIS CHASSIS IS RELATIVE TO ITS SIBLING. The ASR 9902 and ASR 9903 front masters draw their bodies 1568.93 and 1569.68 art units wide, the same outline to 0.2 mm, while c78-744663 gives 439.74 mm for this chassis and c78-744035 gives 443.86 mm for the 9903. THIS FILE TAKES THE 439.74 and the evidence for that choice is a ruler inside the artwork rather than a preference: at that scale the twenty SFP-class cage columns come out on a 14.253 mm pitch against SFF-8433's 14.25, while the same measurement on the ASR 9903 at its own stated width lands on 14.36, which is 0.8 percent over a standard that does not vary. So the 9902 is the chassis the outline fits. WHAT IT COSTS IF THE READING IS WRONG is about 0.9 percent on every x on this face and on the RP slot pitch, which would go from 209.58 to 211.44.",
-   "scope": [
-    "front"
-   ],
-   "wanted": "a Cisco mechanical drawing of either chassis, or a tape measure across a real ASR 9902 and a real ASR 9903 - two numbers that would settle both models at once. Tracked in roc-ops/Portrayal#374.",
-   "what": "two-chassis-one-body-outline"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "asr-9902",
@@ -3918,6 +3905,22 @@
    "manufacturer": "Cisco",
    "wanted": "`physical-context` on port groups qsfp-dd, qsfp28, sfp-plus, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9903",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BODY IS DRAWN 443.86 WIDE AND CISCO'S DIMENSIONED DRAWING SAYS 439.9. The data sheet c78-744035, Table 2, gives 17.475 in (443.86 mm), which `chassis` carries. The Cisco ASR 9000 Series Fixed-Port Routers Hardware Installation Guide, Site Layout and Equipment Dimensions, Figure 19, \"Cisco ASR 9903 Router Chassis Footprint and Dimensions - Top View\", dimensions it 17.32 in (439.9 mm), and its Figure 18 gives the ASR 9902 17.3 in (439.5 mm). The stencil draws the two bodies the same 1569 art units, and two rulers in the artwork agree with the drawing and not the data sheet: at 439.9 the SFP cage pitch on the fixed board comes to 14.23 mm against SFF-8433's 14.25 (14.36 at 443.86), and the x calibration, 0.280248 mm/unit, meets the y calibration's 0.280384 to 0.05 percent, where 443.86's 0.282773 is 0.85 percent off it. The RP pitch would be 209.55, the ASR 9902's 209.58 for the same A99-RP-F (#374). NOT YET APPLIED, because it is not one number. Every x on the front and rear was read at 0.282773 mm/unit and scales by 0.99108, and so do the parts measured off the same masters: cisco/a9903-20hg-pec@1, cisco/a9903-8hg-pec@1, cisco/asr-9903-fan@1, cisco/pwr-1p6kw-ac@1 and cisco/pwr-1p6kw-dc@1, the last two also seated by the ASR 9902, whose own master reads the supply 74.94 wide against the 74.02 the rescale would give - a second disagreement the rescale has to answer. Each is a major.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "The rescale itself, as its own change: chassis.width 439.9 and the front and rear x by 0.99108, with the five parts above re-derived on the corrected scale and the supply's two readings reconciled against a photograph.",
+   "what": "chassis-width-sources-disagree"
   },
   {
    "because": "sources-disagree",
@@ -8696,7 +8699,7 @@
    "scope": [
     "front"
    ],
-   "wanted": "The second lamp on each OSFP port. The System LEDs enlargement resolves FOUR triangles under each column - two up for the upper port and two down for the lower - and the guide names both: a left lamp carrying seven rate and breakout modes, and a right lamp carrying link, activity and a blinking red for \"no link on one or more ports\". One per port is drawn and it carries the LEFT lamp's vocabulary, because that is the one that says what the port is doing. Drawing both would be 32 placements and 32 cutouts, and edgecore/dcs240, edgecore/dcs201 and edgecore/as5912-54x all make the same simplification on the same kind of cluster.",
+   "wanted": "The second lamp on each OSFP port. The System LEDs enlargement resolves FOUR triangles under each column - two up for the upper port and two down for the lower - and the guide names both: a left lamp carrying seven rate and breakout modes, and a right lamp carrying link, activity and a blinking red for \"no link on one or more ports\". One per port is drawn and it carries the LEFT lamp's vocabulary, because that is the one that says what the port is doing. Drawing both would be 32 placements and 32 cutouts, and edgecore/dcs240, edgecore/dcs201 and edgecore/as5912-54x all make the same simplification on the same kind of cluster. The undrawn right windows are at 7.2 and 18.4 from each opening's left edge (provenance.port-strip).",
    "what": "the-second-osfp-lamp"
   },
   {
