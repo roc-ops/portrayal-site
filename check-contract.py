@@ -1077,12 +1077,40 @@ if _snip:
     _js = re.search(r"\{.*\}", _raw, re.S)
     try: _snipmap = json.loads(_js.group(0))["imports"] if _js else {}
     except ValueError: _snipmap = {}
+# THE PAGE'S OWN SNIPPETS COUNT TOO. A <pre class="kit-snippet"> is code a
+# reader copies, exactly like a recipe, but nothing runs it: the rack section
+# names resolveRoute, ringMarks, solidsOf and the rest only there. So the
+# modules a snippet imports must be in the map as well, and (below, once the
+# kit's package.json is read) every name a snippet imports must be exported.
+import html as _html
+_snippets = [_html.unescape(s) for s in
+             re.findall(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)]
+_KIT_FROM = re.compile(r"from\s*'(@portrayal/kit/[\w/-]+)'")
+_KIT_IMPORT = re.compile(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'")
 _used = set()
 for _stem in _exfiles:
-    _used |= set(re.findall(r"from\s*'(@portrayal/kit/[\w/-]+)'", (_exdir / f"{_stem}.js").read_text()))
-check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in _used),
-      "the 'Getting the files' import map resolves every @portrayal/kit module the recipes import, to a .js file",
-      f"recipes use {sorted(_used)}; snippet maps {_snipmap}")
+    _used |= set(_KIT_FROM.findall((_exdir / f"{_stem}.js").read_text()))
+_snip_used = {u for s in _snippets for u in _KIT_FROM.findall(s)}
+_unmapped = sorted(u for u in _used | _snip_used if not (u in _snipmap and _snipmap[u].endswith(".js")))
+check(bool(_used) and not _unmapped,
+      "the 'Getting the files' import map resolves every @portrayal/kit module the recipes and the page's "
+      "snippets import, to a .js file",
+      f"not mapped to a .js file: {_unmapped}; recipes use {sorted(_used)}, snippets {sorted(_snip_used)}")
+
+
+def kit_import_problems(src, exports_of):
+    """What is wrong with the `import {names} from '@portrayal/kit/<module>'`
+    lines in `src`: a module the kit does not export (exports_of gives None),
+    or a name the module does not export."""
+    out = []
+    for names, mod in _KIT_IMPORT.findall(src):
+        have = exports_of(mod)
+        want = {n.split(" as ")[0].strip() for n in names.split(",") if n.strip()}
+        if have is None:
+            out.append(f"@portrayal/kit/{mod} is not a module the vendored kit exports")
+        elif want - have:
+            out.append(f"@portrayal/kit/{mod} does not export {sorted(want - have)}")
+    return out
 # American English on the kit page, as everywhere in this site's prose.
 _kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s in _exfiles)
 # ...and the Lint rules page's own words (portrayal-site#159): the page, its
@@ -1131,6 +1159,26 @@ check(_kpkg.get("name") == "@portrayal/kit" and bool(re.fullmatch(r"\d+\.\d+\.\d
 check(len(_kexp) >= 10 and "marks" in _kexp and "rack/editor" in _kexp,
       f"vendor/kit-package.json lists the kit's exports ({len(_kexp)} read)",
       f"read {_kexp}")
+# EVERY NAME A SNIPPET IMPORTS IS ONE THE VENDORED KIT EXPORTS. The recipes
+# are held to this above; the snippets were not read at all, so a refresh that
+# dropped or renamed ringMarks left the page documenting an import that fails.
+_snip_imports = [m for s in _snippets for m in _KIT_IMPORT.findall(s)]
+_snip_bad = sorted({b for s in _snippets for b in kit_import_problems(
+    s, lambda m: _exports(m) if m in _kexp and (VENDOR / f"{m}.js").is_file() else None)})
+check(bool(_snip_imports) and not _snip_bad,
+      f"every name kit.html's snippets import from @portrayal/kit is exported by the vendored kit "
+      f"({len(_snip_imports)} import lines)",
+      "; ".join(_snip_bad) or "no kit-snippet imports from @portrayal/kit - has the markup changed?")
+_kip = lambda src: kit_import_problems(src, lambda m: {"a", "b"} if m == "rack/m" else None)
+_kip_bad = [what for what, got, want in [
+    ("a removed export", _kip("import {a, gone} from '@portrayal/kit/rack/m';"), "does not export ['gone']"),
+    ("a removed module", _kip("import {a} from '@portrayal/kit/rack/none';"), "rack/none is not a module"),
+    ("a renamed import", _kip("import {gone as a} from '@portrayal/kit/rack/m';"), "does not export ['gone']"),
+] if not any(want in g for g in got)]
+_kip_bad += [f"a good import: {g}" for g in _kip("import {a, b as c} from '@portrayal/kit/rack/m';\nimport {x} from './x.js';")]
+check(not _kip_bad,
+      "the snippet import check fails a removed export, a removed module and a renamed import, and passes a good one",
+      "; ".join(_kip_bad))
 _said = re.findall(r'data-kit-version="([^"]*)"', _kit_html)
 _cdn = re.findall(r"@portrayal/kit@([^/\"'\s]+)/", _kit_html)
 check(len(_said) == 1, "kit.html states the kit's version once (data-kit-version)",
@@ -1157,11 +1205,58 @@ _files = _files_m.group(1) if _files_m else ""
 check(bool(_files_m), "kit.html has its Getting the files section (#files)")
 _notes = re.findall(r'<p class="kit-note" data-kit-unpublished>(.*?)</p>', _files, re.S)
 _npm_said = re.findall(r'data-kit-npm="([^"]*)"', _kit_html)
+# A VERSION IS A WHOLE TOKEN. `"0.15.0" in note` passed a note bumped in one
+# place and not the other ("documents 0.15.0 ... until 0.14.0 is published"),
+# and passed 0.1.0 inside 10.1.0. Every version the note names is read, and
+# they must be exactly the two it is about.
+_VERSION = re.compile(r"(?<![\w.])\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?(?!\.?\w)")
+
+
+def kit_note_problems(notes, npm_said, kver, npm_latest):
+    """What is wrong with #files' not-on-npm note(s) while kit `kver` is
+    documented and npm's latest is `npm_latest`: [] for one note that names
+    those two versions and no other."""
+    if not notes:
+        return [f"no data-kit-unpublished note - add one to #files, naming {kver} and {npm_latest}, "
+                "or update KIT_NPM_LATEST if the kit has been published"]
+    out = []
+    if len(notes) > 1:
+        out.append(f"{len(notes)} data-kit-unpublished notes - keep one")
+    if npm_said != [npm_latest]:
+        out.append(f"data-kit-npm says {npm_said}, KIT_NPM_LATEST is {npm_latest!r} - they must agree, once")
+    for note in notes:
+        named = set(_VERSION.findall(note))
+        if named != {kver, npm_latest}:
+            out.append(f"the note is stale: it names {sorted(named) or 'no version'}, and must name {kver} "
+                       f"(documented) and {npm_latest} (npm's latest) and no other version - update the note, "
+                       "or KIT_NPM_LATEST if the kit has been published")
+    return out
+
+
+_note = lambda doc, npm: (f'This page documents kit {doc}: npm\'s latest is <span data-kit-npm="{npm}">{npm}</span>. '
+                          f'Until {doc} is published, use a checkout.')
+_knp_cases = [
+    ("no note", ([], [], "0.15.0", "0.2.0"), "add one"),
+    ("a half-bumped note", ([_note("0.15.0", "0.2.0").replace("Until 0.15.0", "Until 0.14.0")], ["0.2.0"],
+                            "0.15.0", "0.2.0"), "stale"),
+    ("a note for the last kit", ([_note("0.14.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.2.0"), "stale"),
+    ("a version inside another", ([_note("10.1.0", "0.2.0")], ["0.2.0"], "0.1.0", "0.2.0"), "stale"),
+    ("an old npm version", ([_note("0.15.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.3.0"), "KIT_NPM_LATEST is '0.3.0'"),
+    ("two notes", ([_note("0.15.0", "0.2.0")] * 2, ["0.2.0"], "0.15.0", "0.2.0"), "keep one"),
+]
+_knp_bad = [f"{name}: {kit_note_problems(*a)}" for name, a, want in _knp_cases
+            if not any(want in s for s in kit_note_problems(*a))]
+_knp_bad += [f"a stale note is told to add one: {s}" for s in kit_note_problems(*_knp_cases[1][1]) if "add one" in s]
+_knp_bad += [f"a current note: {s}" for s in kit_note_problems([_note("0.15.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.2.0")]
+check(not _knp_bad,
+      "the not-on-npm note check fails a missing, half-bumped, outdated or doubled note, each in its own words, "
+      "and passes a current one",
+      "; ".join(_knp_bad))
 if _kver and _vt(_kver) > _vt(KIT_NPM_LATEST):
-    check(len(_notes) == 1 and _npm_said == [KIT_NPM_LATEST] and _kver in _notes[0],
+    _note_bad = kit_note_problems(_notes, _npm_said, _kver, KIT_NPM_LATEST)
+    check(not _note_bad,
           f"kit.html's #files says the documented kit {_kver} is not on npm (npm's latest is {KIT_NPM_LATEST})",
-          f"{len(_notes)} data-kit-unpublished notes, data-kit-npm {_npm_said} - add the note to #files, "
-          "naming both versions, or update KIT_NPM_LATEST if the kit has been published")
+          "; ".join(_note_bad))
 else:
     check(not _notes and not _npm_said,
           f"kit {_kver} is on npm, so kit.html carries no not-on-npm note",
@@ -1357,11 +1452,29 @@ check({d["name"] for d in _devs} <= set(_rack.get("devices") or {}),
 VRACK = VENDOR / "rack"
 _vrack = sorted(p.name for p in VRACK.glob("*.js")) if VRACK.is_dir() else []
 _srcf = VRACK / "SOURCE"
-_src_sha = next((ln.strip() for ln in (_srcf.read_text().splitlines() if _srcf.is_file() else [])
-                 if ln.strip() and not ln.lstrip().startswith("#")), "")
-check(bool(re.fullmatch(r"[0-9a-f]{40}", _src_sha)),
-      "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from",
-      f"got {_src_sha!r} - run ./refresh-assets.sh")
+
+
+def source_commit(text):
+    """(what vendor/rack/SOURCE says, the commit it names): the first line
+    that is not a comment, and that line again only if it is a full 40-hex
+    SHA - else "". Only the second is ever handed to git: `HEAD`, a branch or
+    a short SHA would resolve in the clone, and the vendored core would then
+    be compared with whatever that name points at today."""
+    said = next((ln.strip() for ln in text.splitlines() if ln.strip() and not ln.lstrip().startswith("#")), "")
+    return said, (said if re.fullmatch(r"[0-9a-f]{40}", said) else "")
+
+
+_src_said, _src_sha = source_commit(_srcf.read_text() if _srcf.is_file() else "")
+check(bool(_src_sha),
+      "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from, as a full SHA",
+      f"got {_src_said!r} - run ./refresh-assets.sh")
+_sc_full = "0123456789abcdef0123456789abcdef01234567"
+_sc_bad = [f"{said!r} was taken as a commit" for said in
+           ("HEAD", "main", _sc_full[:12], _sc_full.upper(), "--help", _sc_full + "0", "")
+           if source_commit(f"# a comment\n{said}\n")[1]]
+_sc_bad += [] if source_commit(f"# a comment\n\n  {_sc_full}\n") == (_sc_full, _sc_full) else ["a full SHA was refused"]
+check(not _sc_bad, "only a full 40-hex SHA in vendor/rack/SOURCE is handed to git; HEAD, a branch or a short SHA is not",
+      "; ".join(_sc_bad))
 # $PORTRAYAL_UPSTREAM, else ../Portrayal beside this repository: the same default
 # as refresh-assets.sh and tools/publish-schemas.sh (README, "Where Portrayal is").
 _upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or (HERE.parent / "Portrayal"))
@@ -1372,9 +1485,12 @@ _git = lambda *a: _sp.run(["git", "-C", str(_upstream), *a], capture_output=True
 if not (_upstream / ".git").exists():
     skips.append(f"vendor/rack/ holds exactly the kit's rack/*.js - no upstream clone at {_upstream} "
                  "(set PORTRAYAL_UPSTREAM to check the vendored rack core against its source)")
-elif not _src_sha or _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode != 0:
+elif not _src_sha:
     check(False, "vendor/rack/ holds exactly the kit's rack/*.js",
-          f"commit {_src_sha or '(none)'} is not in {_upstream} - git -C {_upstream} fetch, or run ./refresh-assets.sh")
+          f"vendor/rack/SOURCE says {_src_said or '(nothing)'!r}, which is not a full commit SHA - run ./refresh-assets.sh")
+elif _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode != 0:
+    check(False, "vendor/rack/ holds exactly the kit's rack/*.js",
+          f"commit {_src_sha} is not in {_upstream} - git -C {_upstream} fetch, or run ./refresh-assets.sh")
 else:
     _ls = _git("ls-tree", "--name-only", f"{_src_sha}:kit/rack")
     _want = sorted(n for n in _ls.stdout.decode().split() if n.endswith(".js"))
@@ -1533,21 +1649,48 @@ check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, r
 # extensionless). With an upstream clone, a link the README gains must be
 # added here too, so it is held from then on; without one, that half is a
 # named skip and the pinned list is still checked.
-_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json"]
+# THREE READMES, NOT ONE: the repository's, the kit's (it is the npm page of
+# @portrayal/kit) and the components README the first two send people to. A
+# path is as written after the host; the bare host is "" and is the front page.
+_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json",
+                 "schemas/v2/rack.schema.json"]
+_READMES = ["README.md", "kit/README.md", "library/components/README.md"]
+_PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w.-])(/[^\s)\"'<>\]`]*)?")
+
+
+def portrayal_dev_paths(text):
+    """Every portrayal.dev path `text` links, without query, fragment or the
+    punctuation that follows a URL in prose: "" for the site's root."""
+    return {m.group(1).rstrip(".,;:").split("#")[0].split("?")[0].strip("/") if m.group(1) else ""
+            for m in _PD_URL.finditer(text)}
+
+
+_shown = lambda paths: ["/" + p for p in sorted(paths)]
 _served_as = lambda p: next((c for c in (p, f"{p}.html", f"{p}/index.html" if p else "index.html") if c in _srv), None)
 check(all(_served_as(p) for p in _README_LINKS),
-      f"the {len(_README_LINKS)} portrayal.dev URLs the Portrayal README links are served",
-      f"not built: {[p for p in _README_LINKS if not _served_as(p)]}")
-_readme_up = _upstream / "README.md"
-if _readme_up.is_file():
-    _up_links = sorted({u.rstrip(".,").split("#")[0].split("?")[0].strip("/") for u in
-                        re.findall(r"https://(?:www\.)?portrayal\.dev(/[^\s)\"'<>\]]*)?", _readme_up.read_text())
-                        if u})
-    check(bool(_up_links) and set(_up_links) <= set(_README_LINKS),
-          f"every portrayal.dev URL in {_readme_up} is pinned in _README_LINKS ({len(_up_links)} linked)",
-          f"add to _README_LINKS (and serve): {sorted(set(_up_links) - set(_README_LINKS))}")
-else:
-    skips.append(f"the Portrayal README's portrayal.dev links are all pinned - no README at {_readme_up}")
+      f"the {len(_README_LINKS)} portrayal.dev URLs Portrayal's READMEs link are served",
+      f"not built: {_shown(p for p in _README_LINKS if not _served_as(p))}")
+_pdp = portrayal_dev_paths("see https://portrayal.dev/components/catalog. Or [the file](https://www.portrayal.dev/"
+                           "assets/dist/components.json?x=1#top), `https://portrayal.dev/schemas/v2/rack.schema.json`,"
+                           " <https://portrayal.dev/>, https://portrayal.dev and https://portrayal.device/x")
+check(_pdp == {"components/catalog", "assets/dist/components.json", "schemas/v2/rack.schema.json", ""},
+      "a README's portrayal.dev links are read whole: no trailing punctuation, query or fragment, the bare host "
+      "as the root, and no other host", f"read {_shown(_pdp)}")
+# The root README is the one that must link something: no links read from it
+# is a pattern that stopped matching, not a README with nothing to hold.
+_no_readme = [r for r in _READMES if not (_upstream / r).is_file()]
+if _no_readme:
+    skips.append(f"the portrayal.dev links in Portrayal's {', '.join(_no_readme)} are all pinned - "
+                 f"not found under {_upstream}")
+for _rel in (r for r in _READMES if r not in _no_readme):
+    _readme_up = _upstream / _rel
+    _up_links = portrayal_dev_paths(_readme_up.read_text())
+    # The front page is always served (checked above), so the root needs no pin.
+    _unpinned = _up_links - set(_README_LINKS) - {""}
+    check((bool(_up_links) or _rel != "README.md") and not _unpinned,
+          f"every portrayal.dev URL in Portrayal's {_rel} is pinned in _README_LINKS ({len(_up_links)} linked)",
+          f"not pinned: {_shown(_unpinned)} - add each to _README_LINKS in check-contract.py, without the "
+          "leading slash, and serve it" if _unpinned else f"no portrayal.dev link read from {_readme_up}")
 # THE ROLLBACK STILL WORKS: coming-soon/ is kept whole, and its page still
 # shows the 3D video from media/, so pointing wrangler.jsonc back at it is a
 # one-line change.
