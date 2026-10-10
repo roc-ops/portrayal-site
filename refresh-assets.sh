@@ -95,11 +95,19 @@ fi
 # name it, and a kit that is not in a git checkout cannot be named. That
 # refusal used to come after the modules were copied and vendor/rack/ was
 # emptied and refilled, so it left a half-refreshed vendor/ whose SOURCE
-# still named the commit before. Nothing below this line may fail for a
-# reason that could have been known here.
+# still named the commit before. The kit's package.json is the same case: it
+# is the last thing copied from the kit, after vendor/rack/ is refilled and
+# SOURCE rewritten, so a kit without one is refused here as well. What is
+# checked here is what is copied from the KIT; the drawings and the exports
+# further down are read from the build and can still fail on their own.
 kit_sha=$(git -C "$KIT" rev-parse --verify HEAD 2>/dev/null || true)
 if [ -z "$kit_sha" ]; then
   echo "refusing: $KIT is not in a git checkout, so vendor/rack/SOURCE cannot name its commit" >&2
+  echo "nothing was copied." >&2
+  exit 1
+fi
+if [ ! -f "$KIT/package.json" ]; then
+  echo "refusing: no package.json at $KIT, so vendor/kit-package.json cannot say which kit this is" >&2
   echo "nothing was copied." >&2
   exit 1
 fi

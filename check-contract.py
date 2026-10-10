@@ -1727,7 +1727,7 @@ check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, r
 _README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json",
                  "schemas/v2/rack.schema.json"]
 _READMES = ["README.md", "kit/README.md", "library/components/README.md"]
-_PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w.-])(/[^\s)\"'<>\]`]*)?")
+_PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w-]|\.\w)(/[^\s)\"'<>\]`]*)?")
 
 
 def portrayal_dev_paths(text):
@@ -1745,9 +1745,11 @@ check(all(_served_as(p) for p in _README_LINKS),
 _pdp = portrayal_dev_paths("see https://portrayal.dev/components/catalog. Or [the file](https://www.portrayal.dev/"
                            "assets/dist/components.json?x=1#top), `https://portrayal.dev/schemas/v2/rack.schema.json`,"
                            " <https://portrayal.dev/>, https://portrayal.dev and https://portrayal.device/x")
-check(_pdp == {"components/catalog", "assets/dist/components.json", "schemas/v2/rack.schema.json", ""},
+check(_pdp == {"components/catalog", "assets/dist/components.json", "schemas/v2/rack.schema.json", ""}
+      and portrayal_dev_paths("It is at https://portrayal.dev. Not https://portrayal.dev.example/x") == {""}
+      and portrayal_dev_paths("no link to portrayal.dev here") == set(),
       "a README's portrayal.dev links are read whole: no trailing punctuation, query or fragment, the bare host "
-      "as the root, and no other host", f"read {_shown(_pdp)}")
+      "as the root even at a sentence's end, and no other host", f"read {_shown(_pdp)}")
 # The root README is the one that must link something: no links read from it
 # is a pattern that stopped matching, not a README with nothing to hold.
 _no_readme = [r for r in _READMES if not (_upstream / r).is_file()]
@@ -2218,12 +2220,33 @@ def _refresh_dry():
         _env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "PORTRAYAL_"))}
         # No repository above the scratch folder, whatever the temp folder sits in.
         _env["GIT_CEILING_DIRECTORIES"] = str(_d.resolve().parent)
+        # The script refuses a library under a folder named as Portrayal's
+        # working tree is, and a dist older than its checkout. A TMPDIR under
+        # such a folder, or a commit made a second after the scratch dist, is
+        # neither, so both refusals are switched off: what is tested here is
+        # the refusals that come after them.
+        _env.update(PORTRAYAL_ALLOW_LIVE="1", PORTRAYAL_ALLOW_STALE="1", GIT_CONFIG_GLOBAL=os.devnull,
+                    GIT_CONFIG_NOSYSTEM="1")
         _run = lambda *a: _sp.run(["sh", str(_d / "site" / "refresh-assets.sh"), *a],
                                   capture_output=True, text=True, env=_env)
+        _vendor = lambda: sorted(str(f.relative_to(_d / "site" / "vendor"))
+                                 for f in (_d / "site" / "vendor").rglob("*") if f.is_file())
         _r = _run(str(_d / "up" / "library"))
-        _left = sorted(str(f.relative_to(_d / "site" / "vendor")) for f in (_d / "site" / "vendor").rglob("*") if f.is_file())
-        return _r, _left, _run(str(_d / "nowhere"))
-_rf, _rf_left, _rf_none = _refresh_dry()
+        _left = _vendor()
+        _none = _run(str(_d / "nowhere"))
+        # The same kit, now in a commit, but with no package.json: the last
+        # thing the script copies from it.
+        _g = lambda *a: _sp.run(["git", "-c", "user.name=check", "-c", "user.email=check@example.invalid",
+                                 "-c", "commit.gpgsign=false", *a], cwd=_d / "up", capture_output=True, env=_env)
+        _g("init", "-q"); _g("add", "-A"); _made = _g("commit", "-q", "-m", "a kit with no package.json")
+        _nopkg = _run(str(_d / "up" / "library"))
+        return _r, _left, _none, _made.returncode, _nopkg, _vendor()
+_rf, _rf_left, _rf_none, _rf_made, _rf_nopkg, _rf_nopkg_left = _refresh_dry()
+check(_rf_made == 0 and _rf_nopkg.returncode == 1 and "refusing" in _rf_nopkg.stderr
+      and "package.json" in _rf_nopkg.stderr and _rf_nopkg_left == ["rack/kept.js"],
+      "refresh-assets.sh refuses a kit with no package.json before it copies anything into vendor/",
+      f"commit made: {_rf_made == 0}; exit {_rf_nopkg.returncode}, vendor/ holds {_rf_nopkg_left} "
+      f"(wanted only rack/kept.js): {_rf_nopkg.stderr.strip()[-200:]}")
 check(_rf.returncode == 1 and "refusing" in _rf.stderr and "not in a git checkout" in _rf.stderr
       and _rf_left == ["rack/kept.js"],
       "refresh-assets.sh refuses a kit it cannot name the commit of before it copies anything into vendor/",
