@@ -1,6 +1,7 @@
 // The compiled drawings, zipped: pick a scope, get the SVGs.
 import {faceFile} from './faces.js';
 import { createDevicePicker } from '../vendor/devsel.js';
+import { firstListed } from './featured.js';
 import { jdist } from '../vendor/dist.js';
 import { makeZip } from './bundle.js';
 import { bindScopes } from './scope.js';
@@ -213,8 +214,9 @@ function describe() {
     $('stat').textContent = `could not load the device index: ${err.message}`;
     return;
   }
-  const want = new URLSearchParams(location.search).get('device');
-  DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
+  // the device the link names, and site/featured.js's when it names none
+  // (roc-ops/portrayal-site#19), not whatever sorts first in the index
+  DEV = firstListed(DEVICES);
   SCOPE = bindScopes({
     selects: ['scope'],
     devices: () => DEVICES,

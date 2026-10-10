@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
-        trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes} from '../../site/rack/bundle-view.js';
+        trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes, peelText} from '../../site/rack/bundle-view.js';
 
 const ring = (via) => ({item: 'i2', via});
 const lane = (ru) => ({lane: 'left-front', ru});
@@ -52,16 +52,17 @@ test('drawableRuns cuts the trunk where a view cannot place a waypoint', () => {
   assert.deepEqual(runs.map(r => [r.from, r.points.length]), [[0, 2], [3, 3]]);
 });
 
-// THE BEND HOOK (Portrayal #922, kit 0.8.0): null-safe on 0.7.0's `bend: null`,
-// and reading 0.8.0's {radius_mm, by, unchecked, points, violations} when it comes.
-test('the bend hook says nothing before kit 0.8.0', () => {
+// THE BEND HOOK (Portrayal #922): null-safe on a check with no bend (no
+// routes, or no bundle to bend: `bend: null`), and reading the kit's
+// {radius_mm, by, unchecked, points, violations} when it is there.
+test('the bend hook says nothing of a check with no bend result', () => {
   for (const check of [null, {}, {bend: null}]) {
     assert.equal(bendLine(check), null);
     assert.deepEqual(bendViolations(check), []);
   }
 });
 
-test('the bend hook reads kit 0.8.0\'s result: the radius and the violations', () => {
+test('the bend hook reads the kit\'s result: the radius and the violations', () => {
   const tight = {kind: 'corner', at: 'left-front U10', waypoint: lane(10), room_mm: 24.5, need_mm: 25, by: 'c2',
                  members: ['c1', 'c2'], unchecked: [], ok: false, short_mm: 0.5};
   const open = {kind: 'corner', at: 'pp-1 ring 1', waypoint: ring('guide-1'), ok: null, unchecked: ['c5']};
@@ -121,4 +122,18 @@ test('one drawn diameter for every view: the kit\'s, never under two cable width
     const [u, v] = packOffset({index, n: 5, diameter: null}, 3);
     assert.ok(Math.hypot(u, v) <= (6 - 3) / 2 + 1e-9);
   }
+});
+
+// WHERE A MEMBER LEAVES, AND FOR WHICH END. The kit stores a peel point under
+// the end the cable heads for from there (`a` or `b`: commands.js bundle.peel
+// picks the nearer port when the page names none); the list says both.
+test('peelText names the waypoint and the end a peeled member heads for', () => {
+  const rack = {frame: {kind: 'four-post', heightRU: 42, numbering: 'bottom-up'}, items: []};
+  const bundle = {id: 'b1', route: [lane(20), lane(30)], members: [
+    {cable: 'c1'}, {cable: 'c2', a: lane(22)}, {cable: 'c3', b: lane(27)}, {cable: 'c4', a: lane(21), b: lane(29)}]};
+  assert.equal(peelText(rack, bundle, 'c1'), null, 'a member that rides the whole trunk has no peel point');
+  assert.equal(peelText(rack, bundle, 'c2'), 'leaves at left-front U22 for its a end');
+  assert.equal(peelText(rack, bundle, 'c3'), 'leaves at left-front U27 for its b end');
+  assert.equal(peelText(rack, bundle, 'c4'), 'leaves at left-front U21 for its a end; leaves at left-front U29 for its b end');
+  assert.equal(peelText(rack, bundle, 'c9'), null, 'not a member');
 });

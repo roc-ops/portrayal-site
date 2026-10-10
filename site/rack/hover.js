@@ -17,6 +17,14 @@
 // hover, so a touch pointer is ignored: on a phone or a tablet the stage and
 // the list behave as they did (a tap still selects).
 //
+// THE KEYBOARD HOVERS TOO. A row of the list reached with Tab lights its
+// cable or bundle as the pointer over it does (hoverAtFocus), for as long as
+// focus stays on it: Tab away or a blur ends it, and Escape does not (focus
+// has not moved). The pointer over another cable outranks it, and over
+// nothing hands back to it. Only focus the browser would ring
+// (:focus-visible): a row clicked with the mouse keeps focus, and is not held
+// lit by it once the pointer has gone.
+//
 // NEVER IN A FILE. The 2D exports are drawn fresh by exports.js, so the panes'
 // classes cannot reach them. A GLB or USDZ is written from the live scene, so
 // modelFile holds the scene undimmed while it writes (holdUndimmed).
@@ -145,6 +153,17 @@ export function hoverAtList(ev) {
   if (!row) return null;
   return row.dataset.cableItem != null ? {kind: 'cable', id: row.dataset.cableItem}
     : {kind: 'bundle', id: row.dataset.bundleItem};
+}
+
+/** The hover target keyboard focus names inside `root` (the side panel): the
+ *  row that holds the focused control, when the browser would ring that focus
+ *  (:focus-visible), else null. */
+export function hoverAtFocus(root) {
+  const a = root?.ownerDocument?.activeElement;
+  if (!a || a === root || !root.contains(a)) return null;
+  let ring = true;
+  try { ring = a.matches(':focus-visible'); } catch { /* no :focus-visible here: any focus counts */ }
+  return ring ? hoverAtList({target: a}) : null;
 }
 
 export const sameTarget = (a, b) => (a?.kind ?? null) === (b?.kind ?? null) && (a?.id ?? null) === (b?.id ?? null);
