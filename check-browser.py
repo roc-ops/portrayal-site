@@ -3586,6 +3586,41 @@ def check_explorer_latch_colour_live(page, base):
     return bad
 
 
+# A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
+# the C100G's empty base: no ?device= lands on explorer.html's FEATURED_DEVICE,
+# in a configuration that is not a base, with ports on the face; and a link
+# that names a device still opens on that device.
+@extra("Explorer with no ?device= opens on a populated device, not an empty base chassis")
+def check_explorer_first_device(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html", wait_until="load")
+    # the drawing in, and the page has written what it opened on (writeLocation)
+    page.wait_for_function("() => document.querySelector('#shell svg [data-class]')"
+                           " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
+    got = page.evaluate("""async () => {
+      const q = new URLSearchParams(location.search), device = q.get('device');
+      const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
+      const cfg = document.querySelector('#cfg').value;
+      return {device, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null,
+              ports: document.querySelectorAll('#shell svg [data-class="port"]').length};
+    }""")
+    want = re.search(r"const FEATURED_DEVICE = '([a-z0-9-]+)';",
+                     (pathlib.Path(__file__).parent / "explorer.html").read_text())
+    if not want or got["device"] != want.group(1):
+        bad.append(f"explorer: a first visit opened on {got['device']!r}, not FEATURED_DEVICE "
+                   f"{want and want.group(1)!r}")
+    if got["kind"] in (None, "base") or got["ports"] < 10:
+        bad.append(f"explorer: a first visit shows {got['device']} {got['cfg']} (kind {got['kind']!r}) "
+                   f"with {got['ports']} ports - an empty chassis")
+    page.goto(f"{base}/explorer.html?device=c100g", wait_until="load")
+    page.wait_for_function("() => document.querySelector('#shell svg')"
+                           " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
+    if (dev := page.evaluate("() => new URLSearchParams(location.search).get('device')")) != "c100g":
+        bad.append(f"explorer: ?device=c100g opened on {dev!r}")
+    return bad
+
+
 # THE GENERIC RACK EAR ON A DEVICE PAGE (Portrayal #909, kit 0.8.0 ears2d,
 # silver since 0.9.0). Off by default in the Explorer and in Annotate, with a
 # "Rack ears" toggle shown only for a device that gets one; on, it is the
