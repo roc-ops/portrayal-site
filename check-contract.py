@@ -1090,11 +1090,39 @@ check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not
 # each maps to a .js file. A folder mapping ("@portrayal/kit/": "…/") resolves
 # @portrayal/kit/dist to …/dist, with no .js - a 404 for anyone who copies it.
 # The snippet that IS the import map: the section also shows `npm install`.
-_snip = next((m for m in re.finditer(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)
-              if "importmap" in m.group(1)), None)
+import html as _html
+# A snippet is a <pre> whose class list has kit-snippet, whatever else the tag
+# carries, around a <code>. Either quote ends an import's module name.
+_SNIPPET = re.compile(r'<pre\b[^>]*\bclass="[^"]*(?<![\w-])kit-snippet(?![\w-])[^"]*"[^>]*>\s*<code\b[^>]*>(.*?)</code>\s*</pre>', re.S)
+_KIT_FROM = re.compile(r"""from\s*['"](@portrayal/kit/[\w/-]+)['"]""")
+_KIT_IMPORT = re.compile(r"""import\s*\{([^}]*)\}\s*from\s*['"]@portrayal/kit/([\w/-]+)['"]""")
+
+
+def kit_snippets(page):
+    """(the page's kit-snippet blocks as text, what could not be read). The
+    second list is what makes the first trustworthy: a block the pattern did
+    not match, or a mention of @portrayal/kit/ in a snippet that is not an
+    `import {names} from` line, is code the checks below would pass unread."""
+    blocks = [_html.unescape(s) for s in _SNIPPET.findall(page)]
+    unread = []
+    if len(blocks) != page.count("kit-snippet"):
+        unread.append(f"kit-snippet is written {page.count('kit-snippet')} times and {len(blocks)} blocks were read "
+                      '- each must be <pre class="kit-snippet"><code>...</code></pre>')
+    for b in blocks:
+        if "importmap" in b:
+            continue
+        said, read = b.count("@portrayal/kit/"), len(_KIT_IMPORT.findall(b))
+        if said != read:
+            unread.append(f"a snippet names @portrayal/kit/ {said} times and {read} were read as "
+                          f"`import {{names}} from '@portrayal/kit/<module>'`: {b.strip().splitlines()[0][:70]}")
+    return blocks, unread
+
+
+_snippets, _snip_unread = kit_snippets(_kit_html)
+_snip = next((s for s in _snippets if "importmap" in s), None)
 _snipmap = {}
 if _snip:
-    _raw = _snip.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    _raw = _snip
     _js = re.search(r"\{.*\}", _raw, re.S)
     try: _snipmap = json.loads(_js.group(0))["imports"] if _js else {}
     except ValueError: _snipmap = {}
@@ -1103,11 +1131,10 @@ if _snip:
 # names resolveRoute, ringMarks, solidsOf and the rest only there. So the
 # modules a snippet imports must be in the map as well, and (below, once the
 # kit's package.json is read) every name a snippet imports must be exported.
-import html as _html
-_snippets = [_html.unescape(s) for s in
-             re.findall(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)]
-_KIT_FROM = re.compile(r"from\s*'(@portrayal/kit/[\w/-]+)'")
-_KIT_IMPORT = re.compile(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'")
+check(len(_snippets) >= 4 and not _snip_unread,
+      f"every kit-snippet on kit.html was read, and every @portrayal/kit/ module one names is an import line "
+      f"that was parsed ({len(_snippets)} blocks)",
+      "; ".join(_snip_unread) or f"only {len(_snippets)} blocks read")
 _used = set()
 for _stem in _exfiles:
     _used |= set(_KIT_FROM.findall((_exdir / f"{_stem}.js").read_text()))
@@ -1200,6 +1227,31 @@ _kip_bad += [f"a good import: {g}" for g in _kip("import {a, b as c} from '@port
 check(not _kip_bad,
       "the snippet import check fails a removed export, a removed module and a renamed import, and passes a good one",
       "; ".join(_kip_bad))
+# ...and it fails a broken import WHEREVER it is written. Each of these is a
+# snippet importing a name the module does not export; the first two were
+# passed unread, one for an attribute on the <pre> and one for its quotes.
+def _page_problems(page):
+    blocks, unread = kit_snippets(page)
+    return unread + [b for s in blocks for b in _kip(s)]
+_pre = lambda tag, code: f'<p>x</p>\n{tag}<code>{code}</code></pre>\n'
+_gone = "import {a, gone} from '@portrayal/kit/rack/m';"
+_sn_cases = {
+    "an attribute on the <pre>": _pre('<pre class="kit-snippet" data-x>', _gone),
+    "double quotes": _pre('<pre class="kit-snippet">', _gone.replace("'", "&quot;")),
+    "another class beside it": _pre('<pre class="wide kit-snippet">', _gone),
+    "a <pre> with no <code>": '<pre class="kit-snippet">' + _gone + "</pre>",
+    "a dynamic import": _pre('<pre class="kit-snippet">', "const m = await import('@portrayal/kit/rack/none');"),
+    "a namespace import": _pre('<pre class="kit-snippet">', "import * as m from '@portrayal/kit/rack/none';"),
+}
+_sn_bad = [name for name, page in _sn_cases.items() if not _page_problems(page)]
+_sn_bad += [f"a good page: {b}" for b in _page_problems(
+    _pre('<pre class="kit-snippet" data-x>', 'import {a} from "@portrayal/kit/rack/m";\n// a, from the kit')
+    + _pre('<pre class="kit-snippet">', "npm install @portrayal/kit three")
+    + _pre('<pre class="kit-snippet">', '&lt;script type="importmap"&gt;{"imports": {"@portrayal/kit/rack/m": "m.js"}}'))]
+check(not _sn_bad,
+      "a broken import in a snippet fails whatever the <pre> carries and whichever quotes it uses, and a snippet "
+      "that could not be read is a failure, not a pass",
+      "; ".join(_sn_bad))
 _said = re.findall(r'data-kit-version="([^"]*)"', _kit_html)
 _cdn = re.findall(r"@portrayal/kit@([^/\"'\s]+)/", _kit_html)
 check(len(_said) == 1, "kit.html states the kit's version once (data-kit-version)",
