@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444mm" height="44.4mm" viewBox="0 0 444 44.4" data-device="pdumh20net" data-view="front" data-weight-kg="5.67" data-construction="metal" data-input-ac="120 V single-phase, 16 A continuous (agency de-rated; for a 20 A circuit), 50/60 Hz" data-input-plug="nema-l5-20p" data-input-cord="fixed" data-input-phase="single" data-input-voltage-v="120" data-input-current-a="16" data-plug-rating-a="20" data-capacity-kw="1.92" data-capacity-scope="the load the PDU can hand on, 1.92 kW at 120 V, 16 A in all (spec sheet); it is not what the PDU draws itself, which no document held states" data-output-voltage="120 V" data-output-rating="16 A total; 16 A max per outlet" data-frequency="50/60 Hz" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-30 to 50 C (-22 to 122 F)" data-humidity="5 to 95 % non-condensing" data-altitude="0 to 3000 m (0 to 10000 ft)" data-metering-scope="input" data-outlet-switching="true" data-metering="total output load in amps on the front display; input voltage, frequency and load over the network" data-network-interface="pre-installed WEBCARDLX (PowerAlert Device Manager PADM20), 10/100 Mbps" data-protocols="HTTP, HTTPS, PowerAlert Network Management System, SMTP, SNMPv1, SNMPv2, SNMPv3, Telnet, SSH, FTP, DHCP, NTP" data-certifications="CSA (Canada); NOM (Mexico); UL 60950-1" data-product-compliance="RoHS; FCC Part 15 Class A (USA); Trade Agreements Act (TAA)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='f'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-0 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-1 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-2 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-3 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-4 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-5 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='g'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-6 [data-seg='b'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-7 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-8 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-9 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='a'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='b'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='c'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='d'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='e'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='f'] ,g[data-ref^='eaton/tripplite-ammeter@'] .state-blank [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/webcardlx@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='eaton/webcardlx@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='eaton/webcardlx@'] .state-alternating { --led-color: #f97316; }
+    g[data-ref^='eaton/webcardlx@'] .state-alternating { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='eaton/webcardlx@'] .state-on { --led-color: #22c55e; }
+    g[data-ref^='eaton/webcardlx@'] .state-speed-100m { --led-color: #facc15; }
+    #card--module--lan--led-a.state-activity { --led-color: #22c55e; }
+    #card--module--lan--led-a.state-activity { animation: portrayal-blink 1s linear infinite; }
+    #card--module--status--lamp.state-alternating { --led-color: #f97316; }
+    #card--module--status--lamp.state-alternating { animation: portrayal-blink 1s linear infinite; }
+    #card--module--status--lamp.state-on { --led-color: #22c55e; }
+    #card--module--lan--led-b.state-speed-100m { --led-color: #facc15; }
+</style>
+  <metadata>{"device":"Eaton PDUMH20NET","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/led-rect-sm@1":"1.0.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","eaton/tripplite-ammeter@1":"1.0.0","eaton/webcardlx@1":"1.0.0","std/micro-usb@1":"1.0.1","std/nema-5-20r@1":"1.0.1","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"69c35209e796f534a14fe11185025f4bd60ac3b3edf741fbcf8367757c78f57b","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PDUMH20NET" data-sku="PDUMH20NET" data-part-number="" x="0" y="0" width="444" height="44.4" rx="1.2" fill="#1d1d1b" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="hole-front" data-kind="hole" x="6.1" y="37.8" width="3" height="3" rx="1.5" fill="#0a0a09" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="18.1" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-8">8</text>
+    <text x="54.05" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-7">7</text>
+    <text x="90" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-6">6</text>
+    <text x="125.95" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-5">5</text>
+    <text x="161.9" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-4">4</text>
+    <text x="197.85" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-3">3</text>
+    <text x="233.8" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-2">2</text>
+    <text x="269.75" y="36.7" font-family="sans-serif" font-size="4.3" text-anchor="middle" fill="#c7ccd1" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-1">1</text>
+    <text x="400.45" y="32.4" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#c7ccd1" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="meter">LOAD (AMPS)</text>
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="8" transform="translate(4.6,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-8</title>
+    <rect id="outlet-8--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-8/face" data-class="inlet" />
+    <path id="outlet-8--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-8--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-8--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="7" transform="translate(40.55,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-7</title>
+    <rect id="outlet-7--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-7/face" data-class="inlet" />
+    <path id="outlet-7--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-7--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-7--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="6" transform="translate(76.5,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-6</title>
+    <rect id="outlet-6--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-6/face" data-class="inlet" />
+    <path id="outlet-6--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-6--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-6--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="5" transform="translate(112.45,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-5</title>
+    <rect id="outlet-5--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-5/face" data-class="inlet" />
+    <path id="outlet-5--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-5--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-5--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="4" transform="translate(148.4,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-4</title>
+    <rect id="outlet-4--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-4/face" data-class="inlet" />
+    <path id="outlet-4--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-4--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-4--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="3" transform="translate(184.35,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-3</title>
+    <rect id="outlet-3--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-3/face" data-class="inlet" />
+    <path id="outlet-3--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-3--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-3--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="2" transform="translate(220.3,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-2</title>
+    <rect id="outlet-2--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-2/face" data-class="inlet" />
+    <path id="outlet-2--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-2--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-2--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="std/nema-5-20r@1:1.0.1" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="1" transform="translate(256.25,5.6) rotate(90 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 16 NEMA 5-15/20R outlets, 1 to 8 on the front and 9 to 16 on the rear, numbered as printed; each switchable" data-states="on off" data-lamped="true">
+    <title>outlet-1</title>
+    <rect id="outlet-1--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-1/face" data-class="inlet" />
+    <path id="outlet-1--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-1--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-1--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+  </g>
+  <g id="led-8" data-path="led-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(17.1,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-8">
+    <title>led-8</title>
+    <circle id="led-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-8/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-7" data-path="led-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(53.05,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-7">
+    <title>led-7</title>
+    <circle id="led-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-7/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-6" data-path="led-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(89.0,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-6">
+    <title>led-6</title>
+    <circle id="led-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-6/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-5" data-path="led-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(124.95,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-5">
+    <title>led-5</title>
+    <circle id="led-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-5/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-4" data-path="led-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(160.9,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-4">
+    <title>led-4</title>
+    <circle id="led-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-4/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-3" data-path="led-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(196.85,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-3">
+    <title>led-3</title>
+    <circle id="led-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-3/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-2" data-path="led-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(232.8,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-2">
+    <title>led-2</title>
+    <circle id="led-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-2/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="led-1" data-path="led-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(268.75,38.6)" data-group="outlet-leds" data-group-role="indicator" data-description="one lamp per outlet, lit while the outlet is ready to distribute live AC power (owner's manual 933687 rev A, 2-3); its colour is not stated" data-states="on off" data-for="outlet-1">
+    <title>led-1</title>
+    <circle id="led-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-1/lamp" data-class="led" data-states="on off" data-z-dome="0.3" />
+  </g>
+  <g id="meter" data-path="meter" data-class="display" data-ref="eaton/tripplite-ammeter@1:1.0.0" data-rel-pos="1" transform="translate(387.8,10.65)" data-group="meter" data-group-role="indicator" data-for="chassis">
+    <title>meter</title>
+    <rect id="meter--bezel" x="0.15" y="0.15" width="25.0" height="18.25" rx="0.4" fill="#0b0b0b" stroke="#4b4a47" stroke-width="0.3" />
+    <rect id="meter--window" x="0.6" y="0.55" width="24.0" height="17.5" fill="#070707" data-path="meter/window" data-class="display" data-characters="2" data-description="the readout window, two seven-segment cells showing the total output load in whole amps; each cell's glyph set is on its digit." />
+    <g id="meter--ghost" fill="#15190f">
+      <rect x="4.10" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect x="2.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="10.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="4.10" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect x="2.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="10.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="4.10" y="15.35" width="6.80" height="1.60" rx="0.5" />
+      <rect x="15.20" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect x="13.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="21.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect x="15.20" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect x="13.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="21.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect x="15.20" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+    <g id="meter--digit-1" fill="#63bc46" data-path="meter/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="4.10" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="f" opacity="0" x="2.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="b" opacity="0" x="10.70" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="g" opacity="0" x="4.10" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="e" opacity="0" x="2.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="c" opacity="0" x="10.70" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="d" opacity="0" x="4.10" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+    <g id="meter--digit-2" fill="#63bc46" data-path="meter/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="15.20" y="1.75" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="f" opacity="0" x="13.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="b" opacity="0" x="21.80" y="2.95" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="g" opacity="0" x="15.20" y="8.55" width="6.80" height="1.60" rx="0.5" />
+      <rect data-seg="e" opacity="0" x="13.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="c" opacity="0" x="21.80" y="9.75" width="1.60" height="6.00" rx="0.5" />
+      <rect data-seg="d" opacity="0" x="15.20" y="15.35" width="6.80" height="1.60" rx="0.5" />
+    </g>
+  </g>
+  <g id="card" data-path="card" data-class="bay" data-group="network" data-group-role="management" data-rel-pos="1">
+    <title>card</title>
+    <rect id="card--opening" x="298.85" y="4.4" width="67.3" height="29.1" fill="#101214" />
+    <g id="card--module" data-path="card/module" data-class="nic" data-behaviour="fills" data-ref="eaton/webcardlx@1:1.0.0" transform="translate(332.5,18.95) translate(-42.9,-14.55)">
+      <title>card--module</title>
+      <path id="card--module--faceplate" d="M 9.6 0 H 84.8 A 1.0 1.0 0 0 1 85.8 1.0 V 7.4 A 1.0 1.0 0 0 1 84.8 8.4 H 77.4 A 1.0 1.0 0 0 0 76.4 9.4 V 28.1 A 1.0 1.0 0 0 1 75.4 29.1 H 1.0 A 1.0 1.0 0 0 1 0 28.1 V 19.6 A 1.0 1.0 0 0 1 1.0 18.6 H 8.1 A 1.0 1.0 0 0 0 9.1 17.6 V 0.5 A 0.5 0.5 0 0 1 9.6 0 Z" fill="#212020" stroke="#3b3a38" stroke-width="0.3" />
+      <rect id="card--module--rj45-shield" x="23.9" y="7.6" width="19.2" height="14.4" rx="0.3" fill="#a9acae" stroke="#6d7174" stroke-width="0.2" />
+      <rect id="card--module--usb-shell" x="58.9" y="6.4" width="6.8" height="14.8" rx="0.4" fill="#b8bbbe" stroke="#6d7174" stroke-width="0.2" />
+      <g id="card--module--screws">
+        <circle cx="4.4" cy="23.8" r="2.2" fill="#2b2b2a" stroke="#4a4a48" stroke-width="0.2" />
+        <path d="M 3.2 23.8 H 5.6 M 4.4 22.6 V 25.0" stroke="#0e0e0d" stroke-width="0.5" />
+        <circle cx="82.0" cy="3.6" r="2.2" fill="#2b2b2a" stroke="#4a4a48" stroke-width="0.2" />
+        <path d="M 80.8 3.6 H 83.2 M 82.0 2.4 V 4.8" stroke="#0e0e0d" stroke-width="0.5" />
+      </g>
+      <g id="card--module--silkscreen" fill="#fefefe" font-family="Helvetica, Arial, sans-serif" font-weight="bold">
+        <text x="49.7" y="27.5" font-size="2.6" text-anchor="middle">CONSOLE</text>
+        <text x="62.0" y="27.5" font-size="2.6" text-anchor="middle">STATUS</text>
+      </g>
+      <g id="card--module--lan" data-path="card/module/lan" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="100m" transform="translate(25.6,8.2)" data-group="mgmt" data-group-role="management">
+        <title>card--module--lan</title>
+        <g id="card--module--lan--jack" data-path="card/module/lan/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>card--module--lan--jack</title>
+          <path id="card--module--lan--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="card--module--lan--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="card--module--lan--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="card/module/lan/jack/opening" data-class="cutout" />
+          <g id="card--module--lan--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="card--module--lan--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="card--module--lan--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="card/module/lan/led-a" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="card--module--lan--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="card/module/lan/led-b" data-class="led" data-states="off speed-100m" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="card--module--reset" data-path="card/module/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" transform="translate(30.7,21.8)" data-group="buttons" data-group-role="service">
+        <title>card--module--reset</title>
+        <circle id="card--module--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="card--module--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="card/module/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+      </g>
+      <g id="card--module--console" data-path="card/module/console" data-class="port" data-ref="std/micro-usb@1:1.0.1" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(46.65,19.22)" data-group="mgmt" data-group-role="management">
+        <title>card--module--console</title>
+        <rect id="card--module--console--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+        <path id="card--module--console--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="card/module/console/opening" data-class="cutout" />
+        <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+        <g data-cp="mate" data-cp-at="3.755 1.38" data-cp-dir="front" />
+      </g>
+      <g id="card--module--usb" data-path="card/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(56.3,11.55) rotate(270 6.0 2.25)" data-group="mgmt" data-group-role="management">
+        <title>card--module--usb</title>
+        <rect id="card--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="card/module/usb/opening" data-class="cutout" />
+        <rect id="card--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="card--module--status" data-path="card/module/status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(60.7,23.0)" data-group="status-leds" data-group-role="indicator">
+        <title>card--module--status</title>
+        <rect id="card--module--status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+        <rect id="card--module--status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="card/module/status/lamp" data-class="led" data-states="off on alternating" data-z-dome="0.2" />
+      </g>
+    </g>
+  </g>
+</svg>

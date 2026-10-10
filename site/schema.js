@@ -19,6 +19,8 @@
 
 // Device first. A visitor arriving here is looking for "what is a device",
 // and leading with the component contract read as though it were the device.
+import {splitCodes, ruleHref} from './lintcodes.js';
+
 const SOURCES = {
   device:    {url: 'assets/schemas/device.schema.json',    label: 'one piece of hardware'},
   component: {url: 'assets/schemas/component.schema.json', label: 'a reusable part it places'},
@@ -67,12 +69,21 @@ const el = (tag, attrs = {}, kids = []) => {
 //
 // Paired backticks only. An unpaired one stays literal, because swallowing the
 // rest of a sentence is worse than showing one stray character.
+//
+// A lint rule code in the prose (L53) links to its entry on the Lint rules
+// page (portrayal-site#159). site/lintcodes.js says what counts as a code;
+// check-contract.py applies the same pattern to the vendored schemas and fails
+// when a code linked here has no entry in lint-rules.json. A code inside a
+// code span stays code.
 function richText(text) {
   const frag = document.createDocumentFragment();
   String(text).split(/`([^`]+)`/g).forEach((part, i) => {
     if (!part) return;
-    frag.append(i % 2 ? el('code', {class: 'sc-code', text: part})
-                      : document.createTextNode(part));
+    if (i % 2) { frag.append(el('code', {class: 'sc-code', text: part})); return; }
+    for (const p of splitCodes(part)) {
+      frag.append(typeof p === 'string' ? document.createTextNode(p)
+        : el('a', {class: 'sc-lint', href: ruleHref(p.code), 'data-lint': p.code, text: p.code}));
+    }
   });
   return frag;
 }

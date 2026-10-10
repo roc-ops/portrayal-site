@@ -58,7 +58,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 # list rather than quietly stop being checked.
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
-         "schema.html", "kit.html", "schematic.html", "marks-harness.html",
+         "schema.html", "lint.html", "kit.html", "schematic.html", "marks-harness.html",
          "viewer3d-harness.html", "rack.html", "contribute.html",
          "components/catalog.html"]
 
@@ -2576,7 +2576,7 @@ def check_kit_no_webgl(page, base):
     return bad
 
 
-DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
+DOCS_PAGES = ["index.html", "schema.html", "lint.html", "kit.html", "explorer.html", "components.html",
               "annotate.html", "drawio.html", "exporter.html", "drawings.html",
               "contribute.html"]
 
@@ -2831,7 +2831,7 @@ def check_docs_menu(page, base):
             bad.append(f"{name}: the Docs label is {off:.1f}px off its neighbors' baseline")
         page.click(f"{d} > summary")
         links = page.eval_on_selector_all(f"{d}[open] .navmenu-items a", "as => as.map(a => a.getAttribute('href'))")
-        if links != ["schema.html", "kit.html", "contribute.html"]:
+        if links != ["schema.html", "lint.html", "kit.html", "contribute.html"]:
             bad.append(f"{name}: the open Docs menu offers {links}")
         page.keyboard.press("Escape")
         if page.evaluate(f"!!document.querySelector('{d}').open"):
@@ -2844,6 +2844,261 @@ def check_docs_menu(page, base):
             page.wait_for_timeout(300)
             sw = page.evaluate("document.documentElement.scrollWidth")
             if sw > w: bad.append(f"{name} at {w}px scrolls sideways to {sw}px")
+    return bad
+
+# THE LINT RULES PAGE (portrayal-site#159) renders assets/dist/lint-rules.json.
+# Everything expected here is read from that file, so the check follows a
+# refresh: every rule is on the page, in order, with its own words; every
+# anchor resolves and lands below the masthead; search and both filters show
+# exactly the rules the file says they should; a severity token the site has no
+# words for still renders; and a code linked from the schema page lands on its
+# rule.
+@extra("lint.html lists every rule with an anchor, its search and filters work, and schema.html's code links land")
+def check_lint_page(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"lint: uncaught {e}"))
+    data = json.loads((HERE / "assets" / "dist" / "lint-rules.json").read_text())
+    rules = data["rules"]
+    codes = [r["code"] for r in rules]
+    if len(codes) < 100:
+        return [f"lint: assets/dist/lint-rules.json lists only {len(codes)} rules"]
+    plain = lambda t: re.sub(r"\s+", " ", (t or "").replace("`", "")).strip()
+    ready = "body[data-lint-ready]"
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{base}/lint.html", wait_until="load")
+    page.wait_for_selector(ready, timeout=READY_MS)
+    shown = lambda: page.eval_on_selector_all(".lr-rule[data-rule]:not([hidden])", "ns => ns.map(n => n.id)")
+
+    # every rule, in the file's order, each with its own words
+    got = page.evaluate("""() => [...document.querySelectorAll('.lr-rule[data-rule]')].map(n => ({
+        id: n.id, code: n.querySelector('.lr-code')?.textContent,
+        scopes: [...n.querySelectorAll('.lr-scope')].map(s => s.textContent),
+        rule: n.querySelector('.lr-rule-text')?.textContent,
+        why: n.querySelector('[data-field=why]')?.textContent,
+        fix: n.querySelector('[data-field=fix]')?.textContent,
+        sev: n.querySelector('.lr-sev')?.textContent, tok: n.querySelector('.lr-sev')?.dataset.sev }))""")
+    if [g["id"] for g in got] != codes:
+        missing = [c for c in codes if c not in {g["id"] for g in got}]
+        bad.append(f"lint: the page lists {len(got)} rules, the file {len(codes)}; missing {missing[:5]}")
+    labels = page.evaluate("""async () => { const m = await import('./site/lintcodes.js');
+        return Object.fromEntries(Object.entries(m.SEVERITY).map(([k, v]) => [k, v.label])); }""")
+    by = {g["id"]: g for g in got}
+    for r in rules:
+        g = by.get(r["code"])
+        if not g:
+            continue
+        want = {"code": r["code"], "scopes": [s.strip() for s in r["scope"].split(",") if s.strip()],
+                "rule": plain(r["rule"]), "why": plain(r["why"]), "fix": plain(r["fix"]),
+                "sev": labels.get(r["severity"], "Other severity")}
+        have = {"code": g["code"], "scopes": g["scopes"], "rule": plain(g["rule"]), "why": plain(g["why"]),
+                "fix": plain(g["fix"]), "sev": g["sev"]}
+        diff = [k for k in want if want[k] != have[k]]
+        if diff:
+            bad.append(f"lint: {r['code']} shows {diff} unlike the file: " + "; ".join(f"{k} {have[k]!r} != {want[k]!r}" for k in diff[:2]))
+    # an in-page code link (one rule naming another) resolves too
+    dead = page.evaluate("""() => [...document.querySelectorAll('#lint-body a[href^="#"]')]
+        .map(a => a.getAttribute('href').slice(1)).filter(id => !document.getElementById(id)?.classList.contains('lr-rule'))""")
+    if dead:
+        bad.append(f"lint: in-page links to no rule: {sorted(set(dead))[:5]}")
+
+    # search: a code, a word only one rule's `why` has, every word must match, and nothing
+    def search(q):
+        page.fill("#q", q)
+        page.wait_for_timeout(50)
+        return shown()
+    lone = None
+    for r in rules:
+        for w in re.findall(r"[a-z]{7,}", r["why"].lower()):
+            if sum(w in " ".join([x["code"], x["scope"], x["rule"], x["why"], x["fix"], x["severity"]]).lower()
+                   for x in rules) == 1 and w not in " ".join(labels.values()).lower():
+                lone = (w, r["code"]); break
+        if lone: break
+    if "L53" in codes and "L53" not in search("L53"):
+        bad.append("lint: searching L53 does not show L53")
+    if not lone:
+        bad.append("lint: no word is unique to one rule's why, so the search check has nothing to find")
+    elif search(lone[0].upper()) != [lone[1]]:
+        bad.append(f"lint: searching {lone[0]!r}, which only {lone[1]}'s why says, shows {shown()[:5]}")
+    if search("zzqx-no-such-rule"):
+        bad.append("lint: a search that matches nothing still shows rules")
+    if page.is_hidden("#lint-none"):
+        bad.append("lint: a search that matches nothing does not say so")
+    if len(search("")) != len(codes):
+        bad.append("lint: clearing the search does not show every rule")
+
+    # the filters offer what the file has, and show exactly its rules
+    scopes = sorted({s.strip() for r in rules for s in r["scope"].split(",") if s.strip()})
+    toks = list(dict.fromkeys([*data.get("severities", []), *[r["severity"] for r in rules]]))
+    opts = lambda sel: page.eval_on_selector_all(f"#{sel} option", "os => os.map(o => o.value).filter(Boolean)")
+    if opts("scope") != scopes:
+        bad.append(f"lint: the scope filter offers {opts('scope')}, the file has {scopes}")
+    if opts("severity") != toks:
+        bad.append(f"lint: the severity filter offers {opts('severity')}, the file has {toks}")
+    for sc in scopes:
+        page.select_option("#scope", sc)
+        want = [r["code"] for r in rules if sc in [s.strip() for s in r["scope"].split(",")]]
+        if shown() != want:
+            bad.append(f"lint: scope {sc!r} shows {len(shown())} rules, the file has {len(want)}")
+    page.select_option("#scope", "")
+    for t in toks:
+        page.select_option("#severity", t)
+        want = [r["code"] for r in rules if r["severity"] == t]
+        if shown() != want:
+            bad.append(f"lint: severity {t!r} shows {len(shown())} rules, the file has {len(want)}")
+    # the two together, and with a search
+    page.select_option("#severity", "error")
+    page.select_option("#scope", "device")
+    want = [r["code"] for r in rules if r["severity"] == "error" and "device" in r["scope"].split(", ")]
+    if shown() != want:
+        bad.append(f"lint: device + error shows {len(shown())} rules, the file has {len(want)}")
+
+    # every anchor resolves: each code is one element, and a few land for real,
+    # below the masthead - including one the filters above are hiding
+    ids = page.evaluate("codes => codes.filter(c => document.querySelectorAll(`[id='${c}']`).length !== 1 || !document.getElementById(c).classList.contains('lr-rule'))", codes)
+    if ids:
+        bad.append(f"lint: codes without exactly one rule element: {ids[:5]}")
+    hidden_one = next((r["code"] for r in rules if r["severity"] != "error"), None)
+    if hidden_one in shown():
+        bad.append(f"lint: {hidden_one} is not hidden by device + error, so the hidden landing proves nothing")
+    for k, c in enumerate([hidden_one, codes[0], "L53", codes[-1]]):
+        if c not in codes:
+            continue
+        if k == 0:   # still filtered to device + error: the anchor must clear the filters
+            page.evaluate("c => { location.hash = c; }", c)
+        else:   # a fresh load, not a hash change on the page already open
+            page.goto("about:blank")
+            page.goto(f"{base}/lint.html#{c}", wait_until="load")
+            page.wait_for_selector(ready, timeout=READY_MS)
+        page.wait_for_timeout(300)
+        pos = page.evaluate("""c => { const t = document.getElementById(c); const m = document.querySelector('.masthead');
+            return t && {hidden: t.hidden, target: t.classList.contains('is-target'), top: t.getBoundingClientRect().top,
+                         mast: m ? m.getBoundingClientRect().bottom : 0, vh: innerHeight}; }""", c)
+        if not pos or pos["hidden"] or not pos["target"] or not (pos["mast"] - 1 <= pos["top"] < pos["vh"] - 40):
+            bad.append(f"lint: lint.html#{c} does not land on the rule: {pos}")
+
+    # a link to the rule already in the address bar lands too, though no
+    # hashchange fires: one rule names another, the reader filters the target
+    # away, and clicks the name again
+    pair = page.evaluate("""async () => { const {haystack} = await import('./site/lintcodes.js');
+        const rules = (await (await fetch('assets/dist/lint-rules.json')).json()).rules;
+        const by = Object.fromEntries(rules.map(r => [r.code, r]));
+        for (const a of document.querySelectorAll('.lr-rule[data-rule] .lr-codelink')) {
+            const from = a.closest('.lr-rule').id, to = a.getAttribute('href').slice(1);
+            if (to !== from && by[to] && !haystack(by[to]).includes(from.toLowerCase())) return [from, to];
+        }
+        return null; }""")
+    if not pair:
+        bad.append("lint: no rule links another it does not share a search with, so the same-hash click proves nothing")
+    else:
+        frm, to = pair
+        page.goto("about:blank")
+        page.goto(f"{base}/lint.html#{to}", wait_until="load")
+        page.wait_for_selector(ready, timeout=READY_MS)
+        page.fill("#q", frm.lower())
+        page.wait_for_timeout(50)
+        if to in shown() or frm not in shown():
+            bad.append(f"lint: searching {frm} shows {shown()[:5]}, so the same-hash click proves nothing")
+        else:
+            page.click(f"#{frm} .lr-codelink[href='#{to}']")
+            page.wait_for_timeout(300)
+            st = page.evaluate("c => { const t = document.getElementById(c); return {hash: location.hash, hidden: t.hidden, target: t.classList.contains('is-target')}; }", to)
+            if st["hash"] != f"#{to}" or st["hidden"] or not st["target"]:
+                bad.append(f"lint: clicking {to} in {frm} while the address is already #{to} does not show it: {st}")
+    page.goto(f"{base}/lint.html", wait_until="load")
+
+    # a severity token the site has no words for still shows, with its booleans
+    odd = json.loads(json.dumps(data))
+    odd["rules"][0]["severity"] = "advisory-zz"
+    odd["severities"] = odd["severities"] + ["advisory-zz"]
+    # and a retired code, which the search finds and the filters hide
+    odd["retired"] = [{"code": "L999", "note": "Folded into another rule; zzretired."}]
+    # and a first rule that names the last, so a search for the last code
+    # matches a rule ahead of it in the file, and the exact match must lead
+    last = odd["rules"][-1]["code"]
+    odd["rules"][0]["why"] += f" See {last}."
+    page.route("**/assets/dist/lint-rules.json", lambda r: r.fulfill(json=odd))
+    page.goto(f"{base}/lint.html", wait_until="load")
+    try:
+        page.wait_for_selector(ready, timeout=READY_MS)
+        c0 = odd["rules"][0]["code"]
+        u = page.evaluate("c => { const n = document.getElementById(c); return n && {sev: n.querySelector('.lr-sev')?.textContent, facts: n.querySelector('.lr-facts')?.textContent || ''}; }", c0)
+        if not u or u["sev"] != "Other severity" or "advisory-zz" not in u["facts"] or "fails:" not in u["facts"]:
+            bad.append(f"lint: an unknown severity token renders as {u}")
+        page.select_option("#severity", "advisory-zz")
+        if shown() != [c0]:
+            bad.append(f"lint: filtering on an unknown token shows {shown()[:5]}")
+        if page.eval_on_selector_all(".lr-rule[data-rule]", "ns => ns.length") != len(codes):
+            bad.append("lint: an unknown severity token dropped rules")
+        page.select_option("#severity", "")
+        got_last = search(last.lower())
+        if got_last[:1] != [last] or c0 not in got_last:
+            bad.append(f"lint: searching {last.lower()!r}, which {c0} also names, lists {got_last[:4]}, not {last} first")
+        if search("") != codes:
+            bad.append("lint: clearing the search does not restore the file's order")
+        page.select_option("#severity", "advisory-zz")
+        retired_on = lambda: page.is_visible("#L999")
+        if retired_on():
+            bad.append("lint: a retired code is listed under a severity filter it has no severity for")
+        page.select_option("#severity", "")
+        state = lambda: {"rules": len(shown()), "retired": retired_on(), "none": page.is_visible("#lint-none")}
+        search("zzretired")
+        st = state()
+        if st != {"rules": 0, "retired": True, "none": False}:
+            bad.append(f"lint: searching a word only a retired code's note has gives {st}, want it alone, without 'No rule matches.'")
+        search("zzqx-no-such-rule")
+        st = state()
+        if st != {"rules": 0, "retired": False, "none": True}:
+            bad.append(f"lint: a search that matches nothing leaves {st}, want no rule, no retired code and 'No rule matches.'")
+    except Exception as e:
+        bad.append(f"lint: the page did not render with an unknown severity token ({str(e).splitlines()[0]})")
+    page.unroute("**/assets/dist/lint-rules.json")
+
+    # phone width: no sideways scroll
+    page.set_viewport_size({"width": 360, "height": 780})
+    page.goto("about:blank")
+    page.goto(f"{base}/lint.html#L53", wait_until="load")
+    page.wait_for_selector(ready, timeout=READY_MS)
+    sw = page.evaluate("document.documentElement.scrollWidth")
+    if sw > 360:
+        bad.append(f"lint: at 360px the page scrolls sideways to {sw}px")
+    page.set_viewport_size({"width": 1280, "height": 900})
+
+    # the schema page links the codes it renders, each to an entry, and a click lands
+    for doc in ("device", "lab"):
+        page.goto(f"{base}/schema.html?doc={doc}", wait_until="load")
+        page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
+        links = page.eval_on_selector_all("#schema-body a.sc-lint, #schemaHead a.sc-lint",
+                                          "as => as.map(a => [a.textContent, a.getAttribute('href')])")
+        if len(links) < 5:
+            bad.append(f"schema: ?doc={doc} links {len(links)} rule codes")
+        wrong = [l for l in links if l[1] != f"lint.html#{l[0]}" or l[0] not in codes]
+        if wrong:
+            bad.append(f"schema: ?doc={doc} has code links with no entry or the wrong href: {wrong[:5]}")
+        # a code in the prose that is not a link would be one the reader cannot follow
+        loose = page.evaluate("""async () => { const {LINT_CODE} = await import('./site/lintcodes.js');
+            const w = document.createTreeWalker(document.getElementById('schema-body'), NodeFilter.SHOW_TEXT);
+            const out = []; let n;
+            while ((n = w.nextNode())) { if (n.parentElement.closest('a, code, .sc-name, .sc-enum, .sc-chip, pre, summary, .sc-branch-head')) continue;
+              for (const m of n.data.matchAll(new RegExp(LINT_CODE.source, 'g'))) out.push(m[0]); }
+            return out; }""")
+        if loose:
+            bad.append(f"schema: ?doc={doc} prose names {sorted(set(loose))[:5]} without linking it")
+    page.goto(f"{base}/schema.html?doc=lab", wait_until="load")
+    try:
+        page.wait_for_selector("a.sc-lint", timeout=READY_MS)
+    except Exception:
+        return bad + ["schema: ?doc=lab has no rule code link to click"]
+    first = page.eval_on_selector("a.sc-lint", "a => a.textContent")
+    page.click("a.sc-lint")
+    try:
+        page.wait_for_selector(".lr-rule.is-target", timeout=READY_MS)
+        page.wait_for_timeout(300)
+        landed = page.evaluate("""() => { const t = document.querySelector('.lr-rule.is-target');
+            return {id: t.id, top: t.getBoundingClientRect().top, vh: innerHeight, url: location.pathname + location.hash}; }""")
+        if landed["id"] != first or landed["url"] != f"/lint.html#{first}" or not (0 <= landed["top"] < landed["vh"] - 40):
+            bad.append(f"schema: clicking {first} landed {landed}")
+    except Exception:
+        bad.append(f"schema: clicking {first} did not land on a rule on lint.html")
     return bad
 
 @extra("configuredFace snapshots swaps/fields, immune to the caller mutating them before awaiting")

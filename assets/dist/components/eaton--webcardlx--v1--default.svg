@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="85.8mm" height="29.1mm" viewBox="0 0 85.8 29.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/webcardlx@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='eaton/webcardlx@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='eaton/webcardlx@'] .state-alternating { --led-color: #f97316; }
+    g[data-ref^='eaton/webcardlx@'] .state-alternating { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='eaton/webcardlx@'] .state-on { --led-color: #22c55e; }
+    g[data-ref^='eaton/webcardlx@'] .state-speed-100m { --led-color: #facc15; }</style>
+  <g id="webcardlx" data-path="webcardlx" data-class="nic" data-behaviour="fills" data-ref="eaton/webcardlx@1:1.0.0" transform="translate(0,0)">
+    <title>webcardlx</title>
+    <path id="webcardlx--faceplate" d="M 9.6 0 H 84.8 A 1.0 1.0 0 0 1 85.8 1.0 V 7.4 A 1.0 1.0 0 0 1 84.8 8.4 H 77.4 A 1.0 1.0 0 0 0 76.4 9.4 V 28.1 A 1.0 1.0 0 0 1 75.4 29.1 H 1.0 A 1.0 1.0 0 0 1 0 28.1 V 19.6 A 1.0 1.0 0 0 1 1.0 18.6 H 8.1 A 1.0 1.0 0 0 0 9.1 17.6 V 0.5 A 0.5 0.5 0 0 1 9.6 0 Z" fill="#212020" stroke="#3b3a38" stroke-width="0.3" />
+    <rect id="webcardlx--rj45-shield" x="23.9" y="7.6" width="19.2" height="14.4" rx="0.3" fill="#a9acae" stroke="#6d7174" stroke-width="0.2" />
+    <rect id="webcardlx--usb-shell" x="58.9" y="6.4" width="6.8" height="14.8" rx="0.4" fill="#b8bbbe" stroke="#6d7174" stroke-width="0.2" />
+    <g id="webcardlx--screws">
+      <circle cx="4.4" cy="23.8" r="2.2" fill="#2b2b2a" stroke="#4a4a48" stroke-width="0.2" />
+      <path d="M 3.2 23.8 H 5.6 M 4.4 22.6 V 25.0" stroke="#0e0e0d" stroke-width="0.5" />
+      <circle cx="82.0" cy="3.6" r="2.2" fill="#2b2b2a" stroke="#4a4a48" stroke-width="0.2" />
+      <path d="M 80.8 3.6 H 83.2 M 82.0 2.4 V 4.8" stroke="#0e0e0d" stroke-width="0.5" />
+    </g>
+    <g id="webcardlx--silkscreen" fill="#fefefe" font-family="Helvetica, Arial, sans-serif" font-weight="bold">
+      <text x="49.7" y="27.5" font-size="2.6" text-anchor="middle">CONSOLE</text>
+      <text x="62.0" y="27.5" font-size="2.6" text-anchor="middle">STATUS</text>
+    </g>
+    <g id="webcardlx--lan" data-path="webcardlx/lan" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="100m" transform="translate(25.6,8.2)" data-group="mgmt" data-group-role="management">
+      <title>webcardlx--lan</title>
+      <g id="webcardlx--lan--jack" data-path="webcardlx/lan/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>webcardlx--lan--jack</title>
+        <path id="webcardlx--lan--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="webcardlx--lan--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="webcardlx--lan--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="webcardlx/lan/jack/opening" data-class="cutout" />
+        <g id="webcardlx--lan--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="webcardlx--lan--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="webcardlx--lan--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="webcardlx/lan/led-a" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="webcardlx--lan--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="webcardlx/lan/led-b" data-class="led" data-states="off speed-100m" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="webcardlx--reset" data-path="webcardlx/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" transform="translate(30.7,21.8)" data-group="buttons" data-group-role="service">
+      <title>webcardlx--reset</title>
+      <circle id="webcardlx--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="webcardlx--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="webcardlx/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+    <g id="webcardlx--console" data-path="webcardlx/console" data-class="port" data-ref="std/micro-usb@1:1.0.1" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(46.65,19.22)" data-group="mgmt" data-group-role="management">
+      <title>webcardlx--console</title>
+      <rect id="webcardlx--console--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="webcardlx--console--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="webcardlx/console/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+      <g data-cp="mate" data-cp-at="3.755 1.38" data-cp-dir="front" />
+    </g>
+    <g id="webcardlx--usb" data-path="webcardlx/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(56.3,11.55) rotate(270 6.0 2.25)" data-group="mgmt" data-group-role="management">
+      <title>webcardlx--usb</title>
+      <rect id="webcardlx--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="webcardlx/usb/opening" data-class="cutout" />
+      <rect id="webcardlx--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="webcardlx--status" data-path="webcardlx/status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(60.7,23.0)" data-group="status-leds" data-group-role="indicator">
+      <title>webcardlx--status</title>
+      <rect id="webcardlx--status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="webcardlx--status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="webcardlx/status/lamp" data-class="led" data-states="off on alternating" data-z-dome="0.2" />
+    </g>
+  </g>
+</svg>
