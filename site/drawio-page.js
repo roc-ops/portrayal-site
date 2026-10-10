@@ -1,5 +1,6 @@
 // The draw.io export page: pick a scope, get a library.
 import { createDevicePicker } from '../vendor/devsel.js';
+import { firstListed } from './featured.js';
 import { jdist } from '../vendor/dist.js';
 import { entry, library, rackDiagram, connectable, RACK, SCALE } from '../vendor/drawio.js';
 import { loadFace, portsOf } from '../vendor/zones.js';
@@ -561,8 +562,9 @@ function describe() {
     $('note').textContent = `could not load the device index: ${err.message}`;
     return;
   }
-  const want = new URLSearchParams(location.search).get('device');
-  DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
+  // the device the link names, and site/featured.js's when it names none
+  // (roc-ops/portrayal-site#19), not whatever sorts first in the index
+  DEV = firstListed(DEVICES);
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
   for (const id of ['scope', 'rscope', 'dscope', 'oscope']) $(id).addEventListener('change', describe);

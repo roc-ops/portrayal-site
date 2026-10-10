@@ -56,6 +56,7 @@
 import { loadFace, portsOf } from './vendor/zones.js';
 import { faceFile } from './site/faces.js';
 import { schematicPage, bandsOf } from './site/schematic.js';
+import { firstListed } from './site/featured.js';
 
 const DIST = 'assets/dist/';
 const $ = s => document.querySelector(s);
@@ -66,12 +67,13 @@ const DEVICES = (await (await fetch(DIST + 'devices.json')).json()).devices;
 const vendors = [...new Set(DEVICES.map(d => d.manufacturer))].sort();
 $('#vendor').innerHTML = vendors.map(v => `<option>${v}</option>`).join('');
 
-function fillDevices() {
+function fillDevices(first) {
   const v = $('#vendor').value;
   const mine = DEVICES.filter(d => d.manufacturer === v)
     .sort((a, b) => (a.model || a.name).localeCompare(b.model || b.name));
   $('#device').innerHTML = mine
     .map(d => `<option value="${d.name}">${d.model || d.name}</option>`).join('');
+  if (mine.some(d => d.name === first)) $('#device').value = first;
   refresh();
 }
 
@@ -279,10 +281,15 @@ $('#all').onclick = async () => {
   say(`${devs.length} devices written.`);
 };
 
-$('#vendor').onchange = fillDevices;
+$('#vendor').onchange = () => fillDevices();
 $('#device').onchange = refresh;
-$('#vendor').value = 'Casa Systems';
-fillDevices();
+// The page opens on site/featured.js's device, under that device's vendor. It
+// opened on a vendor named here, and on whichever of that vendor's models
+// sorted first. It reads ?device= as its siblings do, which it never did, so
+// no link saved before this names one.
+const FIRST = DEVICES.find(d => d.name === firstListed(DEVICES));
+$('#vendor').value = FIRST.manufacturer;
+fillDevices(FIRST.name);
 </script>
 </body>
 </html>
