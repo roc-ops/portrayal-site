@@ -180,6 +180,15 @@ export function cableText(c) {
   const ways = Object.entries(c.passes ?? {}).filter(([, ids]) => ids.length).map(([it, ids]) => `{item: ${it}, via: ${cutList(ids, 6)}}`);
   if (c.lanes?.length) ways.push(`{lane, ru} with lane ${cutList(c.lanes.map(l => l.id ?? l), 6)}`);
   if (ways.length) lines.push(`Waypoints it can take: ${ways.join('; ')}`);
+  // WHAT IT LIES ON (kit 0.14.0, #949 step 3: inspect's route.rests): each
+  // ring whose sill holds it, each tray it runs along or lands on (the face,
+  // its role there, and on a held face the tie slots it uses) and each body a
+  // free span comes to rest on.
+  const rests = (c.route?.rests ?? []).map(x => (x.kind === 'ring' ? `the sill of ${wayText({item: x.item, via: x.via}) ?? `${x.item} ${x.via}`}`
+    : x.kind === 'tray' ? `${wayText({item: x.item, via: x.via}) ?? `${x.item} ${x.via}`} (${x.face ?? 'top'} face, ${x.role ?? 'resting'}`
+      + `${x.ties?.length ? `, tie slots ${x.ties.join(', ')}` : ''})`
+    : `${x.item}${x.part && x.part !== 'envelope' ? ` (${clip(x.part, 60)})` : ''}`));
+  if (rests.length) lines.push(`Rests on: ${cutList(rests, 8)}.`);
   // Each solid body the route still passes through after its detours (kit
   // 0.11.0, #949: inspect's route.crosses): what, between which two stops,
   // and where it enters, in mm. A warning, never a refusal.

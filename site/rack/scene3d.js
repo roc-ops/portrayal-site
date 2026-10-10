@@ -10,15 +10,13 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {throughRings} from '../../vendor/rack/route-path.js';
-import {trunkMarks, trunkMembers, strapAt, drawableRuns, bendViolations, trunkIndexOf, packOffset, drawnDiameter} from './bundle-view.js';
-import {laneX} from '../../vendor/rack/route.js';
+import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, packOffset} from './bundle-view.js';
+import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
-import {laneXAt, lanesOf} from '../../vendor/rack/route.js';
-import {solidsOf, detour} from '../../vendor/rack/solids.js';
+import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
 
@@ -31,170 +29,141 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 //     device) does not land, so 2D and 3D agree on which cables hang free;
 //   - an end with a plug or a DAC end seated lands on its cable points;
 //   - any other end lands on the center of its port, as it does in 2D.
-// Where a route's waypoints are in the room. A ring, duct or pass by its
-// drawing (guideAnchor, which tries the ring's own components and the guide
-// and pass rects); a lane LANE_GAP/2 outside the posts at the U's middle.
-// Cables that share a waypoint are spread on a small grid so their tubes do
-// not overlap.
-// THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): `marks` is cable id ->
-// route.js ringMarks, one per waypoint. The scene is in the rack's own axes,
-// so they pass unturned; each is dropped in step with a waypoint the scene
-// cannot place, and a ring's spread is across its own run, at its centre,
-// before cables.js routePoints3d expands it to its entry and exit.
-// Returns {points, marks} per link.
-const SPREAD = 6;   // mm between cables sharing a waypoint
-// A waypoint's point in the room, unspread, and the run a cable takes there.
-async function anchorOf(scene, THREE, w, laneAt) {
-  const m = scene.metrics();
-  let p = null, run = 'x';
-  if (w.lane) {
-    const [, face = 'front'] = w.lane.split('-');
-    // Through a zero-U duct where one stands on this lane (route.js laneXAt).
-    p = new THREE.Vector3(laneAt(w.lane, w.ru), (w.ru - 0.5) * RU, face === 'rear' ? m.faceZ - m.railDepth : m.faceZ);
-    run = 'y';
-  } else {
-    // A ring: x and z from its top-view component, y from the center of
-    // its end rect, so the point is the center of the OPENING. A duct runs
-    // along x like a ring; a pass crosses the face, along z.
-    const [top, end] = await Promise.all([w.via, `${w.via}-end`].map(id => scene.guideAnchor({id: w.item}, id)));
-    if (top || end) {
-      p = (top || end).position.clone();
-      if (top && end) p.y = end.position.y;
-    } else {
-      const duct = await scene.guideAnchor({id: w.item}, `guide--${w.via}`);
-      const pass = duct ? null : await scene.guideAnchor({id: w.item}, `pass--${w.via}`);
-      if (duct || pass) p = (duct || pass).position.clone();
-      if (pass) run = 'z';
-    }
-  }
-  return p ? {p, run} : null;
-}
-// The two axes across a run.
-const across = run => (run === 'x' ? ['y', 'z'] : run === 'y' ? ['x', 'z'] : ['x', 'y']);
-// A BUNDLE'S MEMBERS (portrayal-site#142): where a member rides its trunk
-// (`places`, bundle-view.js memberPlaces), the bundle takes ONE slot of the
-// grid at each waypoint, as one cable would, and its members are packed
-// inside the bundle's diameter around that slot's centre (bundle-view.js
-// packOffset: a sunflower in the circle, so every member is inside it,
-// however many there are).
-// `bases` collects each bundle's slot offset from the waypoint's anchor, per
-// lane or pathway, Map(`bundle|key` -> Vector3), for its tube (hangBundles).
-// THE DETOURS (kit 0.11.0, #949): `detoursOf` is cable id -> route-context.js
-// detourStops, the points the kit added round a solid body, in rack mm, each
-// after the waypoint its leg starts from. The scene is in the rack's axes with
-// the front rail plane at metrics().faceZ, so a point is (x, y, faceZ + z).
-function waypointsFor(scene, routes, THREE, laneAt = (lane, ru) => laneX(lane.split('-')[0]), marksOf = new Map(),
-                      places = null, bases = new Map(), detoursOf = new Map()) {
-  const used = new Map(), slot = new Map();
-  const faceZ = scene.metrics().faceZ;
+// A ROUTED CABLE IS DRAWN THROUGH THE KIT'S OWN POINTS (portrayal-site#166):
+// route.js routePath, measured once by route-context.js routeFacts, with
+// each plug's reach (the plug's cable-point z, kit 0.13.0), each ring's
+// approach, entry and exit on its sill (kit 0.14.0 and 0.15.0), a tray's
+// stretch, each free span's rest and each detour. The scene is in the rack's
+// own axes with the front rail plane at metrics().faceZ, so a point in rack
+// mm is (x, y, faceZ + z). Nothing is placed here: no ring centre, no lead,
+// no spread. Cables through one ring share its sill point, as the kit lays a
+// cable on its own (the lay of several is the kit's step 5).
+const inScene = (THREE, faceZ) => q => new THREE.Vector3(q.x, q.y, faceZ + q.z);
+// link -> {points, kit: true}: the kit's points between the two ports (the
+// reach points included, the ports left out: the tube starts at the plugs).
+// A cable with no waypoints and nothing to go round is not routed, and
+// hangs as it always has.
+function kitPointsFor(THREE, faceZ, paths, routes, places = null) {
+  const at = inScene(THREE, faceZ);
   return async link => {
-    const r = routes?.get(link.id);
-    if (!r) return {points: [], marks: null};
-    const all = marksOf.get(link.id);
-    const given = all?.length === r.waypoints.length ? all : null;
-    const place = places?.get(link.id) ?? null;
-    const out = [], marks = [];
-    const ds = detoursOf?.get(link.id) ?? [];
-    const after = k => { for (const d of ds) if (d.after === k) for (const q of d.points) {
-      out.push(new THREE.Vector3(q.x, q.y, faceZ + q.z));
-      marks.push(null);
-    } };
-    after(-1);
-    for (const [i, w] of r.waypoints.entries()) {
-      const got = await anchorOf(scene, THREE, w, laneAt);
-      if (!got) continue;
-      const {p} = got, anchor = p.clone();
-      let {run} = got;
-      const mark = given?.[i] ?? null;
-      if (mark?.run) run = mark.run;
-      // Spread across the run: the first cable at 0, then +-1 steps, on a 3x3
-      // grid (it wraps after 9 cables sharing a waypoint).
-      // A lane takes one slot per cable per lane, so the cable's run along it is
-      // straight (vertical), as cable-view.js draws it; a ring or duct takes one per cable.
-      const inBundle = place && i >= place.stretch[0] && i <= place.stretch[1];
-      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`, own = inBundle ? `${place.bundle}|${key}` : `${link.id}|${key}`;
-      if (!slot.has(own)) { slot.set(own, used.get(key) || 0); used.set(key, (used.get(key) || 0) + 1); }
-      const k = slot.get(own);
-      const off = n => ((n + 1) % 3 - 1) * SPREAD;   // 0, +1, -1, 0, ...
-      const [u, v] = across(run);
-      p[u] += off(k % 3); p[v] += off(Math.floor(k / 3) % 3);
-      if (inBundle) {
-        if (!bases.has(own)) bases.set(own, p.clone().sub(anchor));
-        const [du, dv] = packOffset(place, WIDTH);
-        p[u] += du; p[v] += dv;
-      }
-      out.push(p);
-      marks.push(mark);
-      after(i);
+    const p = paths?.get(link.id), ws = routes?.get(link.id)?.waypoints;
+    if (!p?.points?.length || (!ws?.length && !p.detours?.length)) return {points: []};
+    // the reach points are where the plugs end: the scene's own plug points
+    // stand there (the plug's cable-point z is the kit's reach), so the tube
+    // starts at those, and the two reach points come along to say how far apart
+    const reach = ['a', 'b'].map(e => p.points.find(q => q.at === 'reach' && q.end === e)).map(q => (q ? at(q) : null));
+    const inner = p.points.filter(q => q.at !== 'a' && q.at !== 'b' && q.at !== 'reach');
+    const pts = inner.map(q => Object.assign(at(q), {kitAt: q.at}));
+    // A BUNDLE'S MEMBER (portrayal-site#142) is combed inside its bundle where
+    // it runs up a lane with it (bundle-view.js packOffset, across the lane:
+    // x and z), so the members show side by side in the trunk. At a ring or a
+    // tray each lies where the kit lays it, on the sill: the lay of several
+    // there is the kit's (cable-lay step 5).
+    const place = places?.get(link.id);
+    if (place && ws?.length) {
+      const [du, dv] = packOffset(place, WIDTH);
+      let w = 0;
+      inner.forEach((q, k) => {
+        if (q.at !== 'lane') return;
+        while (w < ws.length && !ws[w].lane) w++;
+        if (w < ws.length && w >= place.stretch[0] && w <= place.stretch[1]) { pts[k].x += du; pts[k].z += dv; }
+        w++;
+      });
     }
-    return {points: out, marks: given ? marks : null};
-  };
-}
-
-// THE DRAWN LEGS, ROUND THE SAME BODIES (cables.js drawCables3d `clear`). A
-// tube leaves its plug and reaches out of the face before it turns, where the
-// kit measures from the port on the panel, so a drawn leg from there to a
-// ring can rise through a tray floor the kit's leg passed behind. Each drawn
-// leg is taken round by the kit's own rules (solids.js detour: the tray's
-// front edge first), in rack mm, with the drawn tube's width as its diameter.
-// Returns [{after, points}] as cables.js wants them; a leg the rules cannot
-// clear is left, and the browser check finds it.
-function clearLegs(THREE, rack, chassisOf, faceZ) {
-  if (typeof chassisOf !== 'function') return null;
-  const solids = solidsOf(rack, {chassisOf});
-  if (!solids.length) return null;
-  const lanes = y => {
-    const ru = Math.max(1, Math.min(rack.frame.heightRU, Math.floor(y / RU) + 1));
-    return [...new Set(lanesOf(rack.frame).map(l => laneXAt(rack, l, ru, chassisOf)))];
-  };
-  const toRack = v => ({x: v.x, y: v.y, z: v.z - faceZ});
-  return pts => {
-    const out = [];
-    for (let k = 1; k < pts.length; k++) {
-      const extra = detour(toRack(pts[k - 1]), toRack(pts[k]), solids, {diameter: WIDTH, lanes});
-      if (extra?.length) out.push({after: k - 2, points: extra.map(q => new THREE.Vector3(q.x, q.y, faceZ + q.z))});
-    }
-    return out;
+    return {points: pts, reach, kit: true};
   };
 }
 
 // THE SOLID BODIES OF THE RACK (kit 0.11.0, #949: solids.js solidsOf) as
-// world boxes, [{ref, part, box}]: a box device's envelope, a sheet part's
-// plates (a lacer's tray floor), a duct's walls and a PDU, each where the kit
-// measures it. A hanging cable is kept out of them (cables.js clearOf), and
-// the browser check samples every routed tube against them.
+// world boxes, [{ref, part, box, raw?}]: a box device's envelope, a sheet
+// part's plates (a lacer's tray floor), a duct's walls and a PDU, each where
+// the kit measures it, and (kit 0.15.0, #968) each part of a ring's solid
+// loop, `ring/<id>/<part>`. A ring's part is met by the cable's TUBE, as the
+// kit meets it (solids.js legCrossings): its box here is grown by the drawn
+// tube's radius, so a centre line strictly inside it is a tube touching the
+// part, and `raw` keeps the part itself. So is a zero-U part's (a PDU, a
+// duct's walls: kit 0.15.0 meets those with the tube as well). A hanging cable is kept out of them
+// (cables.js clearOf), a rounded corner too (bend3d.js clearCurve), and the
+// browser check samples every routed tube against them.
+export const RING_PART = /^ring\/[^/]+\/./;
 export function solidBoxes(THREE, rack, chassisOf, faceZ) {
   if (typeof chassisOf !== 'function') return [];
-  return solidsOf(rack, {chassisOf}).map(s => ({ref: s.item, part: s.part,
-    box: new THREE.Box3(new THREE.Vector3(s.box.x0, s.box.y0, faceZ + s.box.z0),
-                        new THREE.Vector3(s.box.x1, s.box.y1, faceZ + s.box.z1))}));
+  const r = WIDTH / 2;
+  return solidsOf(rack, {chassisOf}).map(s => {
+    const raw = new THREE.Box3(new THREE.Vector3(s.box.x0, s.box.y0, faceZ + s.box.z0),
+                               new THREE.Vector3(s.box.x1, s.box.y1, faceZ + s.box.z1));
+    return RING_PART.test(String(s.part)) || s.zeroU === true
+      ? {ref: s.item, part: s.part, box: raw.clone().expandByScalar(r), raw, grown: r, ...(s.zeroU ? {zeroU: true} : {})}
+      : {ref: s.item, part: s.part, box: raw};
+  });
 }
 
 // THE BUNDLES AS TUBES (portrayal-site#142; design section 6): each drawn
 // bundle's trunk as a tube of its diameter (the kit's size check), see-through
-// so its members show packed inside, through the same points its members take
-// (each waypoint's anchor moved by the bundle's slot offset there), passing
-// each ring the way its members do (bundle-view.js trunkMarks; the scene is in
-// the rack's axes, so they pass unturned); and each strap a band round it at
+// so its members show inside, through the kit's points as its members take
+// them (portrayal-site#166): at a ring or a pathway, the points a member's
+// path (route.js routePath) gives that waypoint - a ring's approach, entry
+// and exit on its sill - and anywhere else the kit's own point for the
+// waypoint (route.js pointOf: a lane's run). Each strap is a band round it at
 // the kit's position along its trunk segment. Returns {group, bundles: [{id,
 // diameter, points, straps: [Vector3]}]}.
 const STRAP_BAND = 12;   // mm along the run: a strap as drawn
-async function hangBundles(scene, rack, facts, laneAt, bases, inside = null) {
+// The kit's points for one trunk waypoint, in the scene: the first member
+// path that tags points with it, else pointOf. [] when neither places it.
+// AT A RING WHOSE OPENING THE KIT PLACES (solids.js traysOf: a ring on a
+// tray) the members lie on its sill at their own radius, and the trunk is
+// wider: it is laid there by the kit's own rule with the trunk's radius `rt`
+// - its centre `rt` over the opening's lowest inside edge, across the run
+// at the side nearer the rail by `rt` (the middle, when the opening is
+// narrower than the trunk) - so it rests on the sill and against the leg as
+// the kit lays a cable, never through them (portrayal-site#166 round 2).
+function trunkStop(THREE, rack, w, members, paths, ctx, at, rt = 0) {
+  let own = [];
+  if (!w.lane) for (const id of members) {
+    own = (paths?.get(id)?.points ?? []).filter(q => q.item === w.item && q.via === w.via);
+    if (own.length) break;
+  }
+  if (!own.length) {
+    // no member's path names it (yet: a scene hung while the members' routes
+    // still follow their own way): the kit's point for the waypoint
+    let p = null;
+    try { p = ctx ? pointOf(rack, w, ctx) : null; } catch { p = null; }
+    own = p ? [p] : [];
+  }
+  const open = rt > 0 && !w.lane && own.length ? openingOf(rack, w, ctx) : null;
+  if (!open) return own.map(at);
+  const b = open.box, across = open.run === 'x' ? 'z' : 'x';
+  const lo = b[`${across}0`], hi = b[`${across}1`];
+  const rail = (rack.items.find(i => i.id === w.item)?.face === 'rear')
+    ? -(rack.frame.kind === 'two-post' ? 0 : Number(rack.frame.railDepth) || 0) : 0;
+  const c = hi - lo <= 2 * rt || across === 'x' ? (lo + hi) / 2
+    : Math.abs(lo - rail) <= Math.abs(hi - rail) ? lo + rt : hi - rt;
+  return own.map(q => at({...q, y: b.y0 + rt, [across]: c}));
+}
+// The opening of a ring a waypoint names, where the kit places it ({run, box}), or null.
+function openingOf(rack, w, ctx) {
+  let trays = [];
+  try { trays = ctx?.chassisOf ? traysOf(rack, ctx) : []; } catch { trays = []; }
+  for (const t of trays) if (t.item === w.item) { const o = t.rings.find(x => x.via === w.via); if (o) return o; }
+  return null;
+}
+// The bodies a trunk of radius `rt` is kept out of: a ring's part and a
+// zero-U part met by the trunk's tube (grown by its radius), the rest as they are.
+const trunkInside = (boxes, rt) => insideOf((boxes ?? []).map(b => (b.raw ? {...b, box: b.raw.clone().expandByScalar(rt)} : b)));
+async function hangBundles(scene, rack, facts, boxes = null) {
   const {THREE, scene: world} = scene.three;
+  const toScene = inScene(THREE, scene.metrics().faceZ);
   const group = new THREE.Group(); group.name = 'cable-bundles';
   const out = [], drawnTight = [];
   for (const f of facts.bundles.values()) {
     const L = f.check?.layout;
     if (!f.drawn || !L?.trunk?.length) continue;
-    const pts = [];
-    for (const w of L.trunk) {
-      const key = w.lane ? `${w.lane}` : `${w.item}|${w.via}`;
-      const a = (await anchorOf(scene, THREE, w, laneAt))?.p ?? null;
-      const off = bases.get(`${f.id}|${key}`);
-      pts.push(a && off ? a.add(off) : a);
-    }
+    // one point per trunk waypoint (the middle of its stop), for the straps
+    // and the bend marks; the tube runs through every point of each stop
     const D = drawnDiameter(f.diameter, WIDTH);
-    const marks = trunkMarks(L.trunk, trunkMembers(f, facts.routes, facts.marks, facts.places));
+    const stops = L.trunk.map(w => trunkStop(THREE, rack, w, f.members ?? [], facts.paths, facts.ctx, toScene, D / 2));
+    const pts = stops.map(q => (q.length ? q.reduce((a, b) => a.add(b), new THREE.Vector3()).multiplyScalar(1 / q.length) : null));
+    const inside = trunkInside(boxes, D / 2);
     const g = new THREE.Group(); g.name = `bundle-${f.id}`;
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
                                                    depthWrite: false});
@@ -206,8 +175,7 @@ async function hangBundles(scene, rack, facts, laneAt, bases, inside = null) {
     const R = f.check?.bend?.radius_mm > 0 ? f.check.bend.radius_mm : null;
     const runs = [];
     for (const run of drawableRuns(pts)) {
-      const rings = marks.slice(run.from, run.from + run.points.length);
-      const path = rings.some(Boolean) ? throughRings(run.points, rings, {lead: R != null ? Math.max(30, R) : 30}).points : run.points;
+      const path = run.points.flatMap((_, k) => stops[run.from + k]);
       let curve;
       if (R != null) curve = clearCurve(THREE, path, R, inside);
       else {
@@ -340,32 +308,31 @@ function cornerWhere(rack, link, pts, c, faceZ) {
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
 // `tight` lists every corner drawn tighter than its radius, as sentences.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = null, bundles = null, detours = null, bendOf = null) {
+async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
-  const laneAt = (lane, ru) => laneXAt(rack, lane, ru, chassisOf);
-  const bases = new Map();
+  const {THREE} = scene.three, faceZ = scene.metrics().faceZ;
   try {
     // The bodies are the kit's (solidsOf), not the scene's meshes: a sheet
-    // part's plates are solid as well, and a hang is kept out of them.
-    const boxes = solidBoxes(scene.three.THREE, rack, chassisOf, scene.metrics().faceZ);
-    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes,
-      clear: clearLegs(scene.three.THREE, rack, chassisOf, scene.metrics().faceZ), anchor: async (item, path, view) => {
+    // part's plates are solid as well, and a ring's parts (kit 0.15.0), and a
+    // hang or a rounded corner is kept out of them.
+    const boxes = solidBoxes(THREE, rack, chassisOf, faceZ);
+    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
       const got = await scene.cableAnchor({id: item}, path, {view});
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: waypointsFor(scene, routes, scene.three.THREE, laneAt, marks ?? new Map(), bundles?.places ?? null, bases,
-                               detours ?? new Map()), bendOf: radiusOf(rack, bendOf, bundles)});
+    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null), bendOf: radiusOf(rack, bendOf, bundles)});
     // Each corner drawn tighter than its radius, in the kit's bend-check words.
-    const faceZ = scene.metrics().faceZ;
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
       const cable = byId.get(t.link.id), kind = cable?.type || cable?.media;
       // a lead out of a port: which end, and that end's device
       const end = [t.points[1], t.points[t.points.length - 2]].findIndex(q => q && c.at.distanceTo(q) < 1e-3);
-      const lead = end >= 0, leadItem = lead ? (end === 0 ? t.link.from : t.link.to)[0] : null;
+      // (the corner out of a plug: drawn there only where the lead runs out of it, kitRoute)
+      const lead = end >= 0 && (t.bend.extended_mm?.[end] ?? 1) > 0, leadItem = lead ? (end === 0 ? t.link.from : t.link.to)[0] : null;
       return {cable: t.link.id, drawn_mm: c.drawn_mm, need_mm: c.need_mm, why: c.why, lead, leadItem, t: c.t, room_t: c.room_t,
+              at: [c.at.x, c.at.y, c.at.z - faceZ],
               extended_mm: lead ? t.bend.extended_mm?.[end] ?? 0 : 0, radius_mm: t.bend.radius_mm,
               hit: c.hit ? [c.hit.x, c.hit.y, c.hit.z] : null, hitRef: c.hitRef ?? null,
               text: tightText(`${t.link.id} in 3D`, kind ? `${t.link.id} (${kind})` : t.link.id, cornerWhere(rack, t.link, t.points, c, faceZ), c)};
@@ -373,7 +340,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, marks}, laneAt, bases, insideOf(drawn.boxes));
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
@@ -390,11 +357,12 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, marks = 
 // opening view. `stage` is the background colour the reader picked (stage.js);
 // the page changes it on a built scene with setStage below.
 // `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
-// `detours` is routeFacts' cable id -> detourStops (kit 0.11.0), or null.
+// `paths` is routeFacts' cable id -> routePath (the kit's points), and `ctx`
+// its route context (a bundle's lane stops are the kit's pointOf), or null.
 // `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
-export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, marks = null,
-                                              bundles = null, detours = null, bendOf = null, stage = '#101214'}) {
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
+                                              ctx = null, bundles = null, bendOf = null, stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -440,8 +408,14 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   const {guard3d} = await import('../webgl.js');
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
+    // THE KIT'S FRAME (portrayal-site#166): a rack device's panel is on its
+    // rail plane, as route.js portPoint and solids.js place it, so the plugs
+    // the scene draws end where the kit's reach points are and the devices
+    // stand where their solid envelopes are. rack3d.js's own default sets a
+    // faceplate 30 mm behind the rails, which put every drawn plug 30 mm
+    // behind the path it starts.
     const built = createRackScene(container, {
-      stack, heightRU: frame.heightRU,
+      stack, heightRU: frame.heightRU, recess: 0,
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
     });
@@ -451,7 +425,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, marks, bundles, detours, bendOf) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
