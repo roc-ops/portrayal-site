@@ -86,15 +86,9 @@ keepalive_ok() {
 
 # A CHECK THAT DID NOT RUN SAYS SO, IN ONE LINE. A push that ends quietly reads
 # as a push that was checked, and the node tests and the browser pass can both
-# be left out without a failure. Under GitHub Actions the same line is a
-# warning annotation as well, so it is on the run's summary and not only in a
-# log nobody opens.
+# be left out without a failure.
 skipped() {
   echo "pre-push: skipped $1" >&2
-  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
-    echo "::warning title=pre-push::skipped $1"
-  fi
-  return 0
 }
 
 z=0000000000000000000000000000000000000000

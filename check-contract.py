@@ -2292,8 +2292,7 @@ check(not _hook_bad,
 _STUB = "import os, sys\nopen('ran', 'a').write('%s\\n')\nsys.exit(int(os.environ.get('STUB_EXIT', '0')))\n"
 def _hook_runs():
     with _tf.TemporaryDirectory() as _d:
-        _env = {k: v for k, v in os.environ.items()
-                if not k.startswith(("GIT_", "PORTRAYAL_")) and k != "GITHUB_ACTIONS"}
+        _env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "PORTRAYAL_"))}
         _env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")
         _g = lambda *a: _sp.run(["git", "-c", "user.name=check", "-c", "user.email=check@example.invalid",
                                  "-c", "commit.gpgsign=false", *a],
@@ -2314,7 +2313,7 @@ def _hook_runs():
             return _r.returncode, (Path(_d) / "ran").read_text().split(), _r.stdout + _r.stderr
         return {"default": _push(_c1), "asked": _push(_c1, PORTRAYAL_HOOK_BROWSER="1"),
                 "unknown": _push("0123456789abcdef0123456789abcdef01234567"),
-                "ci": _push(_c1, GITHUB_ACTIONS="true"), "failing": _push(_c1, STUB_EXIT="3"),
+                "failing": _push(_c1, STUB_EXIT="3"),
                 "nothing": _push("")}, bool(_c1 and _c2)
 _hr, _hr_made = _hook_runs()
 _skip_lines = lambda out, what: [l for l in out.splitlines() if l.startswith("pre-push: skipped") and what in l]
@@ -2332,13 +2331,10 @@ check(_hr["unknown"][:2] == (0, ["contract"]),
 check(_hr["failing"][0] == 3 and _hr["nothing"][:2] == (0, []),
       "hooks/pre-push, run: a failing contract check stops the push with its own status, and a push of nothing runs nothing",
       f"failing: exit {_hr['failing'][0]}; nothing: exit {_hr['nothing'][0]}, ran {_hr['nothing'][1]}")
-_hr_notes = {k: [l for l in v[2].splitlines() if "skipped" in l] for k, v in _hr.items()}
-check(len(_skip_lines(_hr["default"][2], "node tests")) == 1
-      and not any(l.startswith("::warning") for l in _hr_notes["default"])
-      and sum(l.startswith("::warning title=pre-push::skipped") for l in _hr_notes["ci"]) == len(_skip_lines(_hr["ci"][2], "")) == 2,
-      "hooks/pre-push, run: each check left out is one `pre-push: skipped` line, and under GITHUB_ACTIONS a "
-      "::warning:: annotation as well",
-      f"default {_hr_notes['default']}; under GITHUB_ACTIONS {_hr_notes['ci']}")
+_hr_notes = [l for l in _hr["default"][2].splitlines() if "skipped" in l]
+check(len(_skip_lines(_hr["default"][2], "node tests")) == 1 and len(_hr_notes) == 2,
+      "hooks/pre-push, run: each check left out is one `pre-push: skipped` line",
+      f"{_hr_notes}")
 
 # ── THE LINT RULES PAGE (portrayal-site#159) ────────────────────────────
 # lint.html renders assets/dist/lint-rules.json, Portrayal's rule table
