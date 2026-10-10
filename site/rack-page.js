@@ -1640,7 +1640,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // The routes the page resolved, as plain data: [[cable id, waypoints], ...], or null.
     routes: () => (S.routes ? [...S.routes.routes].map(([id, r]) => [id, r.waypoints]) : null),
     // The pathway fill the page resolved (route.js fill, and the ducts beside the rack), as plain data.
-    fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f})), over: S.routes.over.map(o => ({...o}))} : null),
+    // A duct's entry carries the channel the page read off its drawing and gave the kit (ductAperture).
+    fill: () => (S.routes ? {fill: S.routes.fill.map(f => ({...f, ...(f.zeroU ? {aperture: S.routes.ctx?.zeroUAperture?.({id: f.item}) ?? null} : {})})),
+                             over: S.routes.over.map(o => ({...o}))} : null),
     // The ring marks the panes and the scene drew by (route.js ringMarks, rack axes), and the
     // rings a route would enter and leave by one face (route.js ringFindings), as plain data.
     rings: () => (S.routes ? {marks: [...S.routes.marks].map(([id, m]) => [id, m.map(x => (x ? {...x} : null))]),

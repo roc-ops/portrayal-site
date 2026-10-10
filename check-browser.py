@@ -6177,6 +6177,12 @@ def check_rack_zero_u(page, base):
         bad.append(f"fill: the duct is not counted once, by the kit, with the cable through it: {fill}")
     else:
         # Its channel: the drawn guide's 93.4 mm by the part's 165.1 mm depth; one OS2 fiber (3.0 mm) against 40% of it.
+        # THE CHANNEL ITSELF, as the page read it off the drawing: one fiber in
+        # a duct rounds to 0% whatever the channel is, so the percent alone
+        # would pass with any aperture.
+        ap = zf[0].get("aperture") or {}
+        if (ap.get("w"), ap.get("h"), ap.get("estimated")) != (93.4, 165.1, True):
+            bad.append(f"fill: the duct's channel is not the drawn guide's 93.4 mm by the part's 165.1 mm depth, an estimate: {ap}")
         want_pct = round(math.pi * 1.5 ** 2 / (0.4 * 93.4 * 165.1) * 100)
         if zf[0]["percent"] != want_pct or zf[0]["over"]:
             bad.append(f"fill: the duct's percent is not one OS2 fiber in 93.4 x 165.1 mm, {want_pct}%: {zf[0]}")
