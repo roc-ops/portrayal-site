@@ -232,7 +232,17 @@ export function detourStops(waypoints, detours) {
 // a detour keeps clear by), and the bundles their bend radii. null when they
 // cannot be read: the kit then takes each cable's media's typical figure.
 let typesOnce = null;
-const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => null));
+export const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => null));
+
+// A BUNDLE'S CHECK READS THE CABLE TYPES (portrayal-site#164): each member's
+// diameter for its size, and its installed bend radius (`bendOf`) for its
+// bend. Without `bendOf` the kit says the bend "is not checked: the cable
+// types are not loaded", so every path that checks a bundle - the page's
+// panels and list, the agent's tools, the exports - builds its context here,
+// and none spells the pair out for itself. `types` is loadCableTypes' answer,
+// or null when they could not be read: the context is then left as it is.
+export const withCableTypes = (ctx, types) =>
+  (types ? {...ctx, diameterOf: types.diameterOf, bendOf: types.bendOf} : ctx);
 
 export async function routeFacts(rack, chassisOf) {
   const guides = new Map(), ports = new Map(), failed = {n: 0};
@@ -311,7 +321,7 @@ export async function routeFacts(rack, chassisOf) {
   // without them the kit counts each cable by its media), and where each
   // member rides its trunk. The 2D panes, the 3D scene, the cable list and the
   // sheet all read these, so they agree.
-  const bctx = {route: ctx, ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})};
+  const bctx = withCableTypes({route: ctx}, types);
   const bundles = bundleFacts(rack, bctx);
   // AND AS THE EXPORTS READ THEM (Portrayal #923, kit 0.9.0): one record per
   // bundle from the kit's bundleExports, measured with the same context, for
@@ -320,7 +330,9 @@ export async function routeFacts(rack, chassisOf) {
   const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
-  return {ctx, complete: failed.n === 0, routes, paths, marks, detours, fill: fill(rack, ctx),
+  // `types` goes with them, so a bundle command sent before the page's own
+  // load of the cable types has finished still checks the bend (bundleCtx).
+  return {ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, fill: fill(rack, ctx),
           over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, lengths, endPane: e => endPane(rack, e),
           bundles, bundleRecords, places};
 }

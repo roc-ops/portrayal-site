@@ -42,7 +42,7 @@ sys.path.insert(0, str(HERE / "tools"))
 from page_markdown import markdown, page_url  # noqa: E402
 
 PAGES = ["index.html", "explorer.html", "rack.html", "components.html", "annotate.html",
-         "exporter.html", "drawio.html", "drawings.html", "schema.html", "kit.html",
+         "exporter.html", "drawio.html", "drawings.html", "schema.html", "lint.html", "kit.html",
          "kit-frame.html", "contribute.html", "components/catalog.html"]
 DIRS = ["site", "brand", "assets", "vendor"]
 SHARED = ["404.html", "_redirects", "favicon.svg", "portrayal-mark.svg", "media"]   # from coming-soon/

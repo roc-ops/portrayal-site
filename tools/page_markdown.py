@@ -38,6 +38,10 @@ SKIP_CLASS = {"skip", "brand"}
 BR = "\x00"             # a <br>, kept through whitespace collapsing
 # Fewer words than this in <main> and the page is a tool more than a text.
 THIN = 60
+# A script's own status line, "Loading the compiled drawing…" or "Reading the
+# rules…": one gerund-led phrase ending in an ellipsis, which the script
+# replaces as soon as it runs. Not content, in a paragraph or in a <pre>.
+STATUS = re.compile(r"[A-Za-z]+ing\b[^.!?\n]*…")
 
 
 def page_url(page):
@@ -182,7 +186,7 @@ class _Md(HTMLParser):
             code = "".join(self.line).strip("\n")
             self.line, self.prefix = [], ""
             self.pre -= 1
-            if code.strip():
+            if code.strip() and not STATUS.fullmatch(code.strip()):
                 self.out.append(f"```\n{code}\n```")
             return
         if tag == "code" and not self.pre:
@@ -222,7 +226,7 @@ def markdown(page, html):
     # Inline marks around nothing (`` or ****) are what a script fills at runtime.
     blocks = [re.sub(r"(\*\*|`)\s*\1", "", b).strip() for b in p.out]
     # Empty marks, and a script's own status line ("Loading the compiled drawing…").
-    blocks = [b for b in blocks if b and not re.fullmatch(r"[#>\-*\d. ]+|Loading\b.*…", b)]
+    blocks = [b for b in blocks if b and not re.fullmatch(r"[#>\-*\d. ]+", b) and not STATUS.fullmatch(b)]
     words = sum(len(re.findall(r"\w+", b)) for b in blocks)
     url = page_url(page)
     title = re.sub(r"\s+", " ", unescape(p.title)).strip()

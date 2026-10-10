@@ -29,7 +29,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows,
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {routeFacts, routeNotes} from './route-context.js';
+import {routeFacts, routeNotes, withCableTypes, cableTypes} from './route-context.js';
 import {LANE_GAP, bodyFindings} from '../../vendor/rack/route.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
@@ -722,7 +722,8 @@ export async function bomCsv(rack, chassisOf) {
   // THE STRAPS (Portrayal #923): one hook-and-loop line, every bundle's straps
   // summed, and a note for a bundle whose straps cannot be counted.
   const rf = cabled ? await routesOf(rack, chassisOf) : null;
-  const bundles = (rack.bundles || []).length ? (rf?.bundleRecords ?? bundleExports(rack)) : [];
+  // Without the routes the kit still reads the cable types (portrayal-site#164).
+  const bundles = (rack.bundles || []).length ? (rf?.bundleRecords ?? bundleExports(rack, withCableTypes({}, await cableTypes()))) : [];
   if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...routeNotes(rack, rf, labelOf(rack)));
   notes.push(...strapBomNotes(bundles));
   if (!items.length && !sides.length) notes.push('This rack has no devices, so there is nothing to list.');
