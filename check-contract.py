@@ -2373,25 +2373,8 @@ check(_fd_listed and _fd_kind not in (None, "base")
       f"FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or createShell is not given "
       "device: ?device= || FEATURED_DEVICE")
 
-# A SKIP IS PRINTED BY NAME, AND IN CI IT IS AN ANNOTATION TOO. The workflow
-# has no Portrayal clone, so the checks that need one are skipped on every
-# pull request; a SKIP line in a passing job's log is read by nobody, and a
-# ::warning:: is on the run's summary.
-def skip_lines(skips, env):
-    out = [f"SKIP  {s}" for s in skips]
-    if env.get("GITHUB_ACTIONS") == "true":
-        out += [f"::warning title=check-contract skipped::{s}" for s in skips]
-    return out
-
-
-check(skip_lines(["a - why"], {}) == ["SKIP  a - why"]
-      and skip_lines(["a - why", "b"], {"GITHUB_ACTIONS": "true"})
-      == ["SKIP  a - why", "SKIP  b", "::warning title=check-contract skipped::a - why",
-          "::warning title=check-contract skipped::b"]
-      and skip_lines([], {"GITHUB_ACTIONS": "true"}) == [],
-      "a skipped check is printed by name, and under GITHUB_ACTIONS is a ::warning:: annotation as well")
-for _line in skip_lines(skips, os.environ):
-    print(_line)
+for s in skips:
+    print(f"SKIP  {s}")
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:
