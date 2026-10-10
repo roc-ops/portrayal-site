@@ -5165,7 +5165,7 @@ def park_mouse(page):
     page.wait_for_timeout(350)  # a frame for the hover, the 120 ms fade
 
 
-@extra("rack.html: hovering a cable or a bundle (stage, cable row, bundle row) dims every other one in 2D and 3D, restores exactly on leave, and never reaches an export (#169)")
+@extra("rack.html: hovering a cable or a bundle (stage, cable row, bundle row), or keyboard focus on a row, dims every other one in 2D and 3D, restores exactly on leave, and never reaches an export (#169)")
 def check_rack_hover_dims(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -5212,6 +5212,54 @@ def check_rack_hover_dims(page, base):
     park_mouse(page)
     if page.evaluate(HOVER_2D_STATE) != base2:
         bad.append("2D: leaving c2's row did not restore everything exactly")
+
+    # THE KEYBOARD, with the pointer parked: Tab onto a row and it is lit as
+    # under the pointer. The list runs b1's header, c1, c2, c3, then c4.
+    at = "() => { const a = document.activeElement; return a?.dataset?.cableRow ?? a?.dataset?.bundleRow ?? null; }"
+    page.focus('#cableList [data-bundle-row="b1"]')
+    page.keyboard.press("Tab")
+    page.wait_for_timeout(350)
+    if page.evaluate(at) != "c1":
+        bad.append(f"2D keyboard: Tab from b1's header did not reach c1's row ({page.evaluate(at)!r}), so focus was not measured")
+    else:
+        bad += [f"2D keyboard focus on c1: {m}" for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1"}, set())]
+        page.keyboard.press("Tab")
+        page.wait_for_timeout(350)
+        bad += [f"2D keyboard focus on {page.evaluate(at)}, after c1: {m}"
+                for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c2"}, set())]
+        page.keyboard.press("Shift+Tab")
+        page.keyboard.press("Shift+Tab")
+        page.wait_for_timeout(350)
+        bad += [f"2D keyboard focus on {page.evaluate(at)}, the bundle's header: {m}"
+                for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
+        # The pointer over another row outranks the focused one, and gives it back on leaving.
+        page.hover('#cableList [data-cable-row="c4"]')
+        page.wait_for_timeout(350)
+        bad += [f"2D pointer on c4 with focus on b1: {m}" for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c4"}, set())]
+        park_mouse(page)
+        bad += [f"2D pointer gone, focus still on b1: {m}"
+                for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
+        if page.evaluate("() => !!document.querySelector('#cableList [aria-pressed=\"true\"]')"):
+            bad.append("2D keyboard: focus pressed a row in the list (focus must not select)")
+        # Focus moved off the rows (to the control before the list) ends it.
+        page.keyboard.press("Shift+Tab")
+        page.wait_for_timeout(350)
+        if page.evaluate(at) is not None or page.evaluate(HOVER_2D_STATE) != base2:
+            bad.append(f"2D keyboard: focus leaving the rows (now on {page.evaluate(at)!r}) did not restore everything exactly")
+    # A row clicked with the mouse keeps focus, with no ring: it is not held
+    # lit once the pointer has gone. (The click selects c4; a second puts it back.)
+    page.click('#cableList [data-cable-row="c4"]')
+    park_mouse(page)
+    held = page.evaluate("() => [document.activeElement?.dataset?.cableRow ?? null, !!document.querySelector('#paneFront > svg.cable-hover')]")
+    if held != ["c4", False]:
+        bad.append(f"2D mouse: after a click on c4's row and the pointer gone, [focused row, panes in hover] is {held}, expected ['c4', False]")
+    page.click('#cableList [data-cable-row="c4"]')
+    page.wait_for_function("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')", timeout=READY_MS)
+    page.evaluate("() => document.activeElement?.blur()")
+    park_mouse(page)
+    if page.evaluate(HOVER_2D_STATE) != base2:
+        bad.append("2D mouse: selecting c4 and putting it back did not leave everything as it was")
+
     page.hover('#cableList [data-bundle-row="b1"]')
     page.wait_for_timeout(350)
     bad += [f"2D bundle row hover on b1: {m}" for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
@@ -5278,6 +5326,18 @@ def check_rack_hover_dims(page, base):
     park_mouse(page)
     if page.evaluate(HOVER_3D_STATE) != base3:
         bad.append("3D: leaving c2's row did not restore every material exactly")
+    # The keyboard in 3D: Tab from the bundle's header onto c1's row, then focus gone.
+    page.focus('#cableList [data-bundle-row="b1"]')
+    page.keyboard.press("Tab")
+    page.wait_for_timeout(350)
+    if page.evaluate("() => document.activeElement?.dataset?.cableRow ?? null") != "c1":
+        bad.append("3D keyboard: Tab from b1's header did not reach c1's row, so focus was not measured")
+    else:
+        bad += [f"3D keyboard focus on c1: {m}" for m in hover_3d_dims(page.evaluate(HOVER_3D_STATE), base3, {"cable-c1"})]
+    page.evaluate("() => document.activeElement?.blur()")
+    page.wait_for_timeout(350)
+    if page.evaluate(HOVER_3D_STATE) != base3:
+        bad.append("3D keyboard: focus leaving c1's row did not restore every material exactly")
 
     page.hover('#cableList [data-bundle-row="b1"]')
     page.wait_for_timeout(350)
