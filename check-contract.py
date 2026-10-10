@@ -2150,14 +2150,20 @@ check(re.search(r"^import \{FEATURED_DEVICE\} from '\.\./featured\.js';", _art_s
 # export pages read the device index themselves and fell back to its first
 # entry; the photo overlay named a device of its own, the schematic prototype a
 # vendor. Each asks site/featured.js now, and this holds them to it three ways:
-#   - every page check-browser.py serves is READ here, with every site/ module
-#     it reaches, and the number read is the number served, so a page this
-#     could not open cannot pass by contributing nothing;
+#   - every page ON DISK (the root's *.html and components/*.html) is READ
+#     here, with every site/ module it reaches, and the number read is
+#     asserted, so a page this could not open cannot pass by contributing
+#     nothing. Each is one check-browser.py serves (its PAGES), or is named in
+#     _FIRST_NOT_SWEPT with why not; a page in neither fails;
 #   - the pages found opening on a device are exactly the ones named below, so
 #     a new page that reads ?device= or mounts a device picker fails until it
 #     is given a rule and a browser check;
 #   - none of what was read falls back to the index's first entry, or to a
-#     device named beside the ?device= it reads. featured.js is the one file
+#     device named beside the ?device= it reads. THIS ONE IS A SPELLING CHECK:
+#     it knows `DEVICES[0]`, `.at(0)`, `.shift()` and a destructured first on
+#     the names the pages give the index (DEVICES, devices, devs), and a
+#     fallback spelled another way passes it. What catches that is the browser
+#     check each page is required to have. featured.js is the one file
 #     allowed the first entry, for a link naming a device the library lacks,
 #     which lands where it always did.
 # Named with the file that asks and the browser check that opens the page.
@@ -2175,7 +2181,12 @@ _FIRST_PAGES = {
 _FEATURED_JS = "site/featured.js"
 _SITE_IMPORT = re.compile(r"""(?:\bfrom\s*|\bimport\s*\(?\s*|<script\b[^>]*\bsrc=)['"]([^'"]+\.js)['"]""")
 _OPENS_ON = re.compile(r"get\('device'\)|createDevicePicker\(|createShell\(\{|firstDevice\(|firstListed\(|FEATURED_DEVICE")
-_FALLS_BACK = re.compile(r"\b(?:DEVICES|devices|devs)\s*\[\s*0\s*\]|get\('device'\)\s*(?:\|\||\?\?)\s*['\"`]")
+_FALLS_BACK = re.compile(r"\b(?:DEVICES|devices|devs)\s*(?:\[\s*0\s*\]|\.at\(\s*0\s*\)|\.shift\(\s*\))"
+                         r"|\[\s*\w+\s*(?:,[^\]=]*)?\]\s*=\s*(?:DEVICES|devices|devs)\b"
+                         r"|get\('device'\)\s*(?:\|\||\?\?)\s*['\"`]")
+# On disk and not in check-browser.py's page sweep, with the reason. Read here
+# all the same, and held to opening on no device.
+_FIRST_NOT_SWEPT = {"kit-frame.html": "hosts one kit recipe inside kit.html's iframe; check_kit_page opens it there"}
 
 
 def _page_sources(page):
@@ -2196,7 +2207,11 @@ def _page_sources(page):
     return seen
 
 
-_first_read = {pg: _page_sources(pg) for pg in _cb.PAGES}
+_first_disk = sorted(p.relative_to(HERE).as_posix()
+                     for p in list(HERE.glob("*.html")) + list((HERE / "components").glob("*.html")))
+_first_unswept = sorted(set(_first_disk) - set(_cb.PAGES) - set(_FIRST_NOT_SWEPT))
+_first_gone = sorted((set(_cb.PAGES) | set(_FIRST_NOT_SWEPT)) - set(_first_disk))
+_first_read = {pg: _page_sources(pg) for pg in _first_disk}
 _first_unread = sorted(pg for pg, src in _first_read.items() if not src.get(pg, "").strip())
 _first_found = sorted(pg for pg, src in _first_read.items()
                       if any(_OPENS_ON.search(t) for rel, t in src.items() if rel != _FEATURED_JS))
@@ -2209,17 +2224,29 @@ _first_wrong = sorted(
     or not re.search(r"\bimport \{\s*(?:firstDevice|firstListed|firstListed, namesDevice|FEATURED_DEVICE)\s*\} from '[./a-z]*featured\.js';",
                      _first_read[pg][asker])
     or browser not in _registered)
-check(len(_first_read) == len(_cb.PAGES) == 17 and not _first_unread
-      and _first_found == sorted(_FIRST_PAGES) and len(_first_found) == 9
-      and not _first_stray and not _first_wrong
-      and re.search(r"if \(!want\) return FEATURED_DEVICE;\n\s*return devices\.some\(d => d\.name === want\) \? want : devices\[0\]\.name;",
-                    _feat_js) is not None,
-      f"{len(_first_found)} of the {len(_first_read)} pages read open on a device, and each asks site/featured.js "
+_first_rule = re.search(r"if \(!want\) return FEATURED_DEVICE;\n\s*return devices\.some\(d => d\.name === want\) \? want : devices\[0\]\.name;",
+                        _feat_js) is not None
+# what is wrong first, then what to do about it
+_first_faults = [m for bad, m in [
+    (_first_unswept, f"{_first_unswept} on disk but neither in check-browser.py's PAGES nor in _FIRST_NOT_SWEPT: "
+                     "add the page to PAGES, or name it in _FIRST_NOT_SWEPT with the reason"),
+    (_first_gone, f"{_first_gone} named in PAGES or _FIRST_NOT_SWEPT but not on disk: remove the name"),
+    (_first_unread, f"{_first_unread} read as empty"),
+    (len(_first_read) != 18, f"{len(_first_read)} pages read, 18 expected: a page was added or removed - bump the count here"),
+    (_first_found != sorted(_FIRST_PAGES) or len(_first_found) != 9,
+     f"the pages that open on a device are not the 9 named: new {sorted(set(_first_found) - set(_FIRST_PAGES))}, "
+     f"gone {sorted(set(_FIRST_PAGES) - set(_first_found))}. A new page: have it ask site/featured.js, add it to "
+     "_FIRST_PAGES with a check_<page>_first_device in check-browser.py, and bump the count"),
+    (_first_stray, f"{_first_stray} falls back to a first device of its own: ask firstDevice() or firstListed() instead"),
+    (_first_wrong, f"{_first_wrong} does not import and call site/featured.js in the file _FIRST_PAGES names, "
+                   "or its browser check is not registered with @extra"),
+    (not _first_rule, "site/featured.js firstListed() is no longer `no device ? FEATURED_DEVICE : listed ? want : "
+                      "the first listed`: restore it, or update this check and the browser checks with the new rule"),
+] if bad]
+check(not _first_faults,
+      f"{len(_first_found)} of the {len(_first_read)} pages on disk open on a device, and each asks site/featured.js "
       f"and has a browser check that opens it: {', '.join(_first_found)}",
-      f"read {len(_first_read)} of {len(_cb.PAGES)} pages (17 expected; empty or missing: {_first_unread}); "
-      f"pages that open on a device: {_first_found}, named in _FIRST_PAGES: {sorted(_FIRST_PAGES)}; "
-      f"falls back to its own first device: {_first_stray}; does not ask featured.js where _FIRST_PAGES says, "
-      f"or has no registered browser check: {_first_wrong}; or firstListed() is not `no device ? FEATURED_DEVICE : listed ? want : the first listed`")
+      "; ".join(_first_faults))
 
 for s in skips:
     print(f"SKIP  {s}")

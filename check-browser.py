@@ -3732,11 +3732,13 @@ PICKED = "() => document.querySelector('#pick select.dev')?.value || null"
 
 
 def listed_first_device(page, base, page_name, ready, picked=PICKED):
-    """The faults of `page_name` opened three ways: with no device (the featured
-    one, populated), with ?device=c100g (that device, as before), and with a
-    device the library does not have (the first entry of the index, as before:
-    a stored link keeps its meaning). `ready` is the page's own sign that it
-    has finished opening."""
+    """The faults of `page_name` opened four ways: with no device (the featured
+    one, populated); with an empty ?device=, which names none and is the same
+    first visit, as firstDevice() has it on the Explorer and Annotate; with
+    ?device=c100g (that device); and with a device the library does not have
+    (the first entry of the index, where a stale link lands, so that a stored
+    link keeps its meaning). `ready` is the page's own sign that it has
+    finished opening."""
     bad, stale = [], json.loads((HERE / "assets" / "dist" / "devices.json").read_text())["devices"][0]["name"]
     page.on("pageerror", lambda e: bad.append(f"{page_name}: uncaught {e}"))
 
@@ -3748,6 +3750,9 @@ def listed_first_device(page, base, page_name, ready, picked=PICKED):
 
     got = page.evaluate(LISTED_OPENED_JS, opened("") or "")
     bad += first_device_faults(page_name, got)
+    if (dev := opened("?device=")) != featured_device():
+        bad.append(f"{page_name}: an empty ?device= names no device and opened on {dev!r}, "
+                   f"not {featured_device()!r}")
     if (dev := opened("?device=c100g")) != "c100g":
         bad.append(f"{page_name}: ?device=c100g opened on {dev!r}")
     if stale == featured_device():
@@ -3755,7 +3760,7 @@ def listed_first_device(page, base, page_name, ready, picked=PICKED):
                    "case cannot be told from a first visit - pick another assertion, not a pass")
     if (dev := opened("?device=no-such-device")) != stale:
         bad.append(f"{page_name}: a link naming a device the library lacks opened on {dev!r}, "
-                   f"not on {stale!r} as it did before")
+                   f"not on {stale!r}, the index's first entry, where a stale link lands")
     return bad
 
 
@@ -3858,6 +3863,8 @@ def check_compare_first_device(page, base):
 
     got = page.evaluate(LISTED_OPENED_JS, opened(""))
     bad += first_device_faults("compare.html", got)
+    if (dev := opened("?device=")) != featured_device():
+        bad.append(f"compare.html: an empty ?device= opened on {dev!r}")
     if (dev := opened("?device=c100g")) != "c100g":
         bad.append(f"compare.html: ?device=c100g opened on {dev!r}")
     return bad
@@ -3892,13 +3899,18 @@ def check_harness3d_first_device(page, base):
     got = page.evaluate(f"""async () => {{
       const got = await ({LISTED_OPENED_JS})(document.querySelector('#dev').value);
       const cfg = document.querySelector('#cfg').value, meta = await (await fetch(`assets/dist/${{got.device}}.configs.json`)).json();
-      return {{...got, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null}}; }}""")
+      return {{...got, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null,
+              paths: document.querySelector('#sel').options.length - 1}}; }}""")
     bad += first_device_faults("viewer3d-harness.html", got)
+    # what the viewer itself built, read from the page's own menu of paths
+    if got["paths"] < 10:
+        bad.append(f"viewer3d-harness.html: the scene built for {got['device']} {got['cfg']} offers "
+                   f"{got['paths']} paths to select - an empty chassis")
     # the menu is set before the build starts, and these two are left while
     # theirs is still fetching: an aborted fetch is not the page's fault
     building[0] = False
     stale = sorted(d["name"] for d in json.loads((HERE / "assets" / "dist" / "devices.json").read_text())["devices"])[0]
-    for query, want in (("?device=c100g", "c100g"), ("?device=no-such-device", stale)):
+    for query, want in (("?device=", featured_device()), ("?device=c100g", "c100g"), ("?device=no-such-device", stale)):
         page.goto("about:blank")
         page.goto(f"{base}/viewer3d-harness.html{query}", wait_until="load")
         wait_fn(page, f"3D harness {query}: the menu", "() => !!document.querySelector('#dev').value")
