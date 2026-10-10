@@ -171,23 +171,16 @@ import { configuredFace } from './site/rack/face.js';
 import { rasterize } from './site/raster.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
+import { firstDevice } from './site/featured.js';
 
-// THE DEVICE A FIRST VISIT OPENS ON (roc-ops/portrayal-site#19). Left to the
-// shell, a page with no ?device= opens on the C100G, whose default is its
-// `base` configuration: fourteen empty bays and no ports, the opposite of the
-// page's argument. 220 of 256 devices default to a base, so "the first device
-// whose default is not a base" lands on whatever sorts first among the rest;
-// a named device says what the page shows. The AS7726-32X's default is an
-// orderable SKU with 73 ports and 143 lamps on one 1RU face. A link that names
-// a device still opens on it. check-contract.py fails if this device leaves
-// the library or its default becomes a base.
-const FEATURED_DEVICE = 'as7726-32x';
+// A first visit opens on a populated device, not on the first in the index
+// (roc-ops/portrayal-site#19): site/featured.js is the one rule, shared with
+// Annotate and the showcase.
 const shell = createShell({
   title: 'Explorer',
   dist: 'assets/dist',
   mount: document.getElementById('shell'),
-  // the shell prefers opts.device over ?device=, so the URL's is passed back in
-  device: new URLSearchParams(location.search).get('device') || FEATURED_DEVICE,
+  device: firstDevice(),
 });
 const state = shell.state;
 

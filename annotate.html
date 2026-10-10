@@ -274,6 +274,7 @@ import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
+import { firstDevice } from './site/featured.js';
 import { docToScene, legendItems } from './site/annotate3d.js';
 import { createMarksEditor } from './site/annotate/editor.js';
 import { describe as describeMarks } from './site/annotate/describe.js';
@@ -283,10 +284,15 @@ import { describe as describeMarks } from './site/annotate/describe.js';
 import { statesOfEl, pathIndex, firstMatch, paints, undocumented,
          lampCensus, lampable, stateChoices } from './vendor/states.js';
 
+// A first visit opens on a populated device, not on the first in the index and
+// its empty base chassis (roc-ops/portrayal-site#19): site/featured.js is the
+// one rule, shared with the Explorer and the showcase. A link that names a
+// device, in ?device= or in its document, still opens on that device.
 const shell = createShell({
   title: 'Annotate',
   dist: 'assets/dist',
   mount: document.getElementById('shell'),
+  device: firstDevice(),
 });
 const state = shell.state;
 

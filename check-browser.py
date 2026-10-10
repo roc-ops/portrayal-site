@@ -3591,9 +3591,34 @@ def check_explorer_latch_colour_live(page, base):
 
 
 # A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
-# the C100G's empty base: no ?device= lands on explorer.html's FEATURED_DEVICE,
-# in a configuration that is not a base, with ports on the face; and a link
-# that names a device still opens on that device.
+# the C100G's empty base: the Explorer, Annotate and the showcase each open on
+# site/featured.js's FEATURED_DEVICE, in a configuration that is not a base,
+# with ports on the face; and a link that names a device still opens on that
+# device. One check per page, so `--only` can name the page that was changed.
+def featured_device():
+    m = re.search(r"export const FEATURED_DEVICE = '([a-z0-9-]+)';", (HERE / "site" / "featured.js").read_text())
+    return m and m.group(1)
+
+
+# what a page opened on: the configuration's kind from the device's own index,
+# and the ports counted on the drawing that is on screen
+FIRST_OPENED_JS = """async ({device, cfg, svg}) => {
+  const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
+  return {device, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null,
+          ports: document.querySelectorAll(`${svg} [data-class="port"]`).length};
+}"""
+
+
+def first_device_faults(page_name, got):
+    bad, want = [], featured_device()
+    if not want or got["device"] != want:
+        bad.append(f"{page_name}: a first visit opened on {got['device']!r}, not FEATURED_DEVICE {want!r}")
+    if got["kind"] in (None, "base") or got["ports"] < 10:
+        bad.append(f"{page_name}: a first visit shows {got['device']} {got['cfg']} (kind {got['kind']!r}) "
+                   f"with {got['ports']} ports - an empty chassis")
+    return bad
+
+
 @extra("Explorer with no ?device= opens on a populated device, not an empty base chassis")
 def check_explorer_first_device(page, base):
     bad = []
@@ -3602,26 +3627,72 @@ def check_explorer_first_device(page, base):
     # the drawing in, and the page has written what it opened on (writeLocation)
     page.wait_for_function("() => document.querySelector('#shell svg [data-class]')"
                            " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
-    got = page.evaluate("""async () => {
-      const q = new URLSearchParams(location.search), device = q.get('device');
-      const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
-      const cfg = document.querySelector('#cfg').value;
-      return {device, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null,
-              ports: document.querySelectorAll('#shell svg [data-class="port"]').length};
-    }""")
-    want = re.search(r"const FEATURED_DEVICE = '([a-z0-9-]+)';",
-                     (pathlib.Path(__file__).parent / "explorer.html").read_text())
-    if not want or got["device"] != want.group(1):
-        bad.append(f"explorer: a first visit opened on {got['device']!r}, not FEATURED_DEVICE "
-                   f"{want and want.group(1)!r}")
-    if got["kind"] in (None, "base") or got["ports"] < 10:
-        bad.append(f"explorer: a first visit shows {got['device']} {got['cfg']} (kind {got['kind']!r}) "
-                   f"with {got['ports']} ports - an empty chassis")
+    got = page.evaluate(f"""() => ({FIRST_OPENED_JS})({{
+      device: new URLSearchParams(location.search).get('device'),
+      cfg: document.querySelector('#cfg').value, svg: '#shell svg'}})""")
+    bad += first_device_faults("explorer", got)
     page.goto(f"{base}/explorer.html?device=c100g", wait_until="load")
     page.wait_for_function("() => document.querySelector('#shell svg')"
                            " && new URLSearchParams(location.search).get('config')", timeout=READY_MS)
     if (dev := page.evaluate("() => new URLSearchParams(location.search).get('device')")) != "c100g":
         bad.append(f"explorer: ?device=c100g opened on {dev!r}")
+    return bad
+
+
+# Annotate does not write its device into the address: what it opened on is the
+# document's own target, read through the page's API once the page has settled.
+# A link names a device two ways here, in ?device= and in the document its hash
+# carries, and each still wins.
+@extra("Annotate with no device in its link opens on a populated device; ?device= and a document's own device still win")
+def check_annotate_first_device(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    api = "window.portrayalAnnotate"
+
+    def opened(url):
+        page.goto("about:blank")          # a hash-only change is not a navigation
+        page.goto(url, wait_until="load")
+        wait_fn(page, f"annotate first device: {url.split('/')[-1][:40]} settled",
+                f"() => {api} && {api}.settled && document.querySelector('#shell svg [data-class]')")
+        return page.evaluate(f"""async () => {{
+          const boot = await {api}.ready, d = {api}.getDoc();
+          const got = await ({FIRST_OPENED_JS})({{device: d.device, cfg: d.config, svg: '#shell svg'}});
+          return {{...got, boot, select: document.querySelector('#cfg').value}}; }}""")
+
+    got = opened(f"{base}/annotate.html")
+    bad += first_device_faults("annotate", got)
+    if got["boot"] or got["select"] != got["cfg"]:
+        bad.append(f"annotate: a first visit booted with {got['boot']}, document config {got['cfg']!r}, "
+                   f"select {got['select']!r}")
+    got = opened(f"{base}/annotate.html?device=c100g")
+    if got["device"] != "c100g":
+        bad.append(f"annotate: ?device=c100g opened on {got['device']!r}")
+    enc = page.evaluate("""async d => (await import('/vendor/marks.js')).encode(d)""",
+                        {"device": "s9510-28dc", "config": "dc", "view": "front", "marks": [{"select": ".port"}]})
+    got = opened(f"{base}/annotate.html{enc if enc.startswith('#') else '#' + enc}")
+    if [got["device"], got["cfg"]] != ["s9510-28dc", "dc"] or got["boot"]:
+        bad.append(f"annotate: a link whose document names s9510-28dc dc opened on {got['device']} {got['cfg']}, "
+                   f"boot {got['boot']}")
+    return bad
+
+
+# The showcase boots its stage drawing before any stage runs: the device and
+# configuration are artifact.js's own DEVICE and CONFIG, which name the drawing
+# that actually loaded.
+@extra("the showcase boots on a populated device, not an empty base chassis")
+def check_showcase_first_device(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    wait_fn(page, "showcase first device: the boot drawing", "() => document.querySelector('#stage2d svg [data-class]')")
+    got = page.evaluate(f"""async () => {{
+      const A = await import('/site/showcase/artifact.js');
+      const got = await ({FIRST_OPENED_JS})({{device: A.DEVICE, cfg: A.CONFIG, svg: '#stage2d svg'}});
+      return {{...got, src: A.srcName()}}; }}""")
+    bad += first_device_faults("showcase", got)
+    # the file that loaded is that device's (the footer line is each stage's to rewrite)
+    if not (got["src"] or "").startswith(f"{got['device']}."):
+        bad.append(f"showcase: the boot drawing is {got['src']!r}, not one of {got['device']}'s")
     return bad
 
 

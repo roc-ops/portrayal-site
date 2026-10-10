@@ -8,14 +8,18 @@ import {faceUrl} from '../faces.js';
 // read off the compiled SVG's own attributes, and a state is only ever applied
 // to an element that declares it in data-states.
 
+import {FEATURED_DEVICE} from '../featured.js';
 import {el, svgEl} from '../rack/dom.js';
 export {el, svgEl};
 import {save, standalone, saveSvg} from '../svg-export.js';
 export {save, standalone, saveSvg};
 
-// The default device: the one the page boots with. Which device is actually
-// on the stage is DEVICE, below - a spoke opens any device in the cast.
-export const DEV = 'as7726-32x';
+// The default device: the one the page boots with, which is the one every
+// page opens on (site/featured.js, roc-ops/portrayal-site#19) and never the
+// first in the index. Which device is actually on the stage is DEVICE, below -
+// a spoke opens any device in the cast. CFG is that device's configuration to
+// boot in; check-contract.py holds it to one the device has that is not a base.
+export const DEV = FEATURED_DEVICE;
 export const CFG = 'ac-f2b';          // the default configuration
 export const DIST = 'assets/dist/';
 

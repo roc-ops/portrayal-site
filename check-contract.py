@@ -2104,25 +2104,46 @@ check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" 
       ((HERE / "site" / "lint-page.js").read_text() if (HERE / "site" / "lint-page.js").exists() else ""),
       "lint.html renders the vendored lint-rules.json through site/lint-page.js")
 
-# THE EXPLORER'S FIRST DEVICE (roc-ops/portrayal-site#19): a visit with no
-# ?device= opens on FEATURED_DEVICE, named in explorer.html, so it has to stay
-# in the library and keep a populated default. If it leaves, the shell falls
-# back to the C100G and its empty base without a word; if its default becomes
-# a base, the page opens on an empty chassis again.
-_ex_html = (HERE / "explorer.html").read_text()
-_fd = re.search(r"const FEATURED_DEVICE = '([a-z0-9-]+)';", _ex_html)
+# THE FIRST DEVICE (roc-ops/portrayal-site#19): a visit with no ?device= opens
+# on FEATURED_DEVICE, named once in site/featured.js, so it has to stay in the
+# library and keep a populated default. If it leaves, the shell falls back to
+# the C100G and its empty base without a word; if its default becomes a base,
+# the page opens on an empty chassis again. And every page that opens on a
+# device has to ask there: the Explorer and Annotate hand the shell
+# firstDevice(), and the showcase boots on FEATURED_DEVICE in a configuration
+# of its own choosing, which is held to one the device has that is not a base.
+_feat_js = (HERE / "site" / "featured.js").read_text() if (HERE / "site" / "featured.js").is_file() else ""
+_fd = re.search(r"export const FEATURED_DEVICE = '([a-z0-9-]+)';", _feat_js)
 _fd_name = _fd and _fd.group(1)
 _fd_meta = json.loads((DIST / f"{_fd_name}.configs.json").read_text()) \
     if _fd_name and (DIST / f"{_fd_name}.configs.json").is_file() else {}
-_fd_kind = next((c.get("kind") for c in _fd_meta.get("configs", []) if c.get("name") == _fd_meta.get("default")), None)
+_fd_kinds = {c.get("name"): c.get("kind") for c in _fd_meta.get("configs", [])}
+_fd_kind = _fd_kinds.get(_fd_meta.get("default"))
 _fd_listed = _fd_name in {d["name"] for d in json.loads((DIST / "devices.json").read_text())["devices"]}
 check(_fd_listed and _fd_kind not in (None, "base")
-      and re.search(r"device:\s*new URLSearchParams\(location\.search\)\.get\('device'\)\s*\|\|\s*FEATURED_DEVICE",
-                    _ex_html) is not None,
-      f"the Explorer opens on {_fd_name}, a listed device whose default ({_fd_meta.get('default')}) is not a base, "
+      and re.search(r"get\('device'\)\s*\|\|\s*FEATURED_DEVICE", _feat_js) is not None,
+      f"a first visit opens on {_fd_name}, a listed device whose default ({_fd_meta.get('default')}) is not a base, "
       "and a ?device= still wins",
-      f"FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or createShell is not given "
-      "device: ?device= || FEATURED_DEVICE")
+      f"site/featured.js: FEATURED_DEVICE={_fd_name!r} listed={_fd_listed} default kind={_fd_kind!r}, or "
+      "firstDevice() is not ?device= || FEATURED_DEVICE")
+# every page in the tree that makes a shell, so a new one cannot open on the
+# index's first device without failing here
+_shell_pages = sorted(p.name for p in HERE.glob("*.html") if re.search(r"\bcreateShell\(\{", p.read_text()))
+_no_first = [n for n in _shell_pages
+             if not re.search(r"createShell\(\{[^}]*\bdevice:\s*firstDevice\(\),", (HERE / n).read_text(), re.S)
+             or not re.search(r"import \{ firstDevice \} from './site/featured\.js';", (HERE / n).read_text())]
+check({"explorer.html", "annotate.html"} <= set(_shell_pages) and not _no_first,
+      f"every shell page ({', '.join(_shell_pages)}) opens on site/featured.js's firstDevice()",
+      f"createShell is not given `device: firstDevice()` in {_no_first or 'a page that is gone'}; pages found: {_shell_pages}")
+_art_src = (HERE / "site" / "showcase" / "artifact.js").read_text()
+_art_cfg = re.search(r"^export const CFG = '([^']+)';", _art_src, re.M)
+_art_cfg_name = _art_cfg and _art_cfg.group(1)
+check(re.search(r"^import \{FEATURED_DEVICE\} from '\.\./featured\.js';", _art_src, re.M) is not None
+      and re.search(r"^export const DEV = FEATURED_DEVICE;", _art_src, re.M) is not None
+      and _fd_kinds.get(_art_cfg_name) not in (None, "base"),
+      f"the showcase boots on the featured device, in {_art_cfg_name}, a configuration it has that is not a base",
+      f"site/showcase/artifact.js: DEV is not FEATURED_DEVICE, or CFG={_art_cfg_name!r} is kind "
+      f"{_fd_kinds.get(_art_cfg_name)!r} on {_fd_name}")
 
 for s in skips:
     print(f"SKIP  {s}")
