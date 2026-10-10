@@ -19,9 +19,11 @@
 //
 // THE KEYBOARD HOVERS TOO. A row of the list reached with Tab lights its
 // cable or bundle as the pointer over it does (hoverAtFocus), for as long as
-// focus stays on it. Only focus the browser would ring (:focus-visible): a
-// row clicked with the mouse keeps focus, and is not held lit by it once the
-// pointer has gone.
+// focus stays on it: Tab away or a blur ends it, and Escape does not (focus
+// has not moved). The pointer over another cable outranks it, and over
+// nothing hands back to it. Only focus the browser would ring
+// (:focus-visible): a row clicked with the mouse keeps focus, and is not held
+// lit by it once the pointer has gone.
 //
 // NEVER IN A FILE. The 2D exports are drawn fresh by exports.js, so the panes'
 // classes cannot reach them. A GLB or USDZ is written from the live scene, so

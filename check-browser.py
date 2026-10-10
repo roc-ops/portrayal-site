@@ -869,7 +869,10 @@ SCENE_SETTLED_JS = """async ({tubes, ms}) => {
   while (Date.now() < deadline) {
     const s = window.__rack.scene();
     if (!s) { await sleep(200); continue; }
-    await s.complete?.();
+    // bounded: a complete() that never resolves ends at the deadline, as no scene
+    const done = await Promise.race([Promise.resolve(s.complete?.()).then(() => true),
+                                     sleep(Math.max(0, deadline - Date.now())).then(() => false)]);
+    if (!done) break;
     await sleep(500);           // past the page's 300 ms rebuild debounce
     if (window.__rack.scene() !== s) continue;
     if (tubes && !(s.rackCables?.tubes ?? []).some(t => t.points?.length)) continue;
@@ -5239,6 +5242,25 @@ def check_rack_hover_dims(page, base):
         park_mouse(page)
         bad += [f"2D pointer gone, focus still on b1: {m}"
                 for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
+        # The pointer over an empty part of the stage does not end it either: focus is still on the row.
+        empty = page.evaluate("""async () => {
+          const H = await import('/site/rack/hover.js');
+          const svg = document.querySelector('#paneFront > svg'), r = svg.getBoundingClientRect();
+          for (let fy = 0.1; fy < 0.95; fy += 0.07) for (let fx = 0.3; fx < 0.75; fx += 0.07) {
+            const x = r.left + r.width * fx, y = r.top + r.height * fy, el = document.elementFromPoint(x, y);
+            if (el?.closest('#paneFront') && !H.hoverAt2d(svg, {clientX: x, clientY: y, target: el})) return [x, y];
+          }
+          return null; }""")
+        if not empty:
+            bad.append("2D: found no empty point on the front pane to move the pointer over")
+        else:
+            page.mouse.move(empty[0], empty[1])
+            page.wait_for_timeout(350)
+            bad += [f"2D pointer over empty stage, focus still on b1: {m}"
+                    for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
+            park_mouse(page)
+            bad += [f"2D pointer off the stage, focus still on b1: {m}"
+                    for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
         if page.evaluate("() => !!document.querySelector('#cableList [aria-pressed=\"true\"]')"):
             bad.append("2D keyboard: focus pressed a row in the list (focus must not select)")
         # Focus moved off the rows (to the control before the list) ends it.

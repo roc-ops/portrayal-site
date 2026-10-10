@@ -117,7 +117,11 @@ const TEXTS = new Map();
 function faceText(url) {
   let hit = TEXTS.get(url);
   if (hit) TEXTS.delete(url);   // re-insert: Map order is recency
-  else hit = fetch(url).then(r => (r.ok ? r.text() : null)).catch(err => { TEXTS.delete(url); throw err; });
+  else {
+    // a failure drops its own entry only: by then the URL may hold a later ask's
+    hit = fetch(url).then(r => (r.ok ? r.text() : null))
+      .catch(err => { if (TEXTS.get(url) === hit) TEXTS.delete(url); throw err; });
+  }
   TEXTS.set(url, hit);
   while (TEXTS.size > TEXT_LIMIT) TEXTS.delete(TEXTS.keys().next().value);
   return hit;

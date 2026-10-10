@@ -1031,7 +1031,8 @@ function hoverMove(ev, find) {
     // an orbit or a drag in progress is not a hover
     if (e.buttons) return;
     const t = find(e);
-    setHover(t ? {...t, from: 'stage'} : null);
+    // over nothing: a row keyboard focus is on is lit again, as on leaving the list
+    setHover(t ? {...t, from: 'stage'} : focusHover());
   });
 }
 function wireHover() {
@@ -1041,11 +1042,11 @@ function wireHover() {
       const svg = pane.querySelector(':scope > svg');
       return svg ? hoverAt2d(svg, e) : null;
     }));
-    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   }
   const stage = $('stage3d');
   stage.addEventListener('pointermove', ev => hoverMove(ev, e => (S.scene3d ? hoverAt3d(S.scene3d, e) : null)));
-  stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(null); });
+  stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   const side = $('side');
   side.addEventListener('pointerover', ev => {
     if (ev.pointerType === 'touch') return;
