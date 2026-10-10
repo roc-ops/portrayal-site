@@ -124,6 +124,7 @@
 <script type="module">
 import { createDevicePicker } from './vendor/devsel.js';
 import { jdist } from './vendor/dist.js';
+import { firstListed } from './site/featured.js';
 import { makeZip } from './site/bundle.js';
 import { rasterize } from './site/raster.js';
 
@@ -188,12 +189,36 @@ function planBundle(target, scope, listings, man) {
 }
 window.__exporter = {planBundle};
 
+// THE TYPE A FIRST VISIT SHOWS (roc-ops/portrayal-site#19). The files of a
+// device sort by folder, so the first of the featured switch's sixteen is a
+// NOS vendor's listing of its DC back-to-front SKU: a true type, and the wrong
+// one to meet first on a page that says the maker's facts are the source. A
+// visit whose link names no device shows the maker's own type of the device's
+// default configuration instead, found by that configuration's SKU names in
+// the device's index. It lasts until a device is picked; a link that names a
+// device shows that device's first file, as it always has.
+let FIRST = null;          // {dir, skus}, while the page is on the device it opened on unasked
+async function firstType(name) {
+  const meta = await jdist(`assets/dist/${name}.configs.json`).catch(() => null);
+  const cfg = (meta?.configs || []).find(c => c.name === meta.default);
+  const maker = (DEVICES.find(d => d.name === name) || {}).manufacturer;
+  const skus = new Set(Object.keys(cfg?.['part-numbers'] || {}));
+  return skus.size && maker ? {dir: dirOf(maker), skus} : null;
+}
+const firstFile = files => FIRST && files.find(rel => {
+  const parts = rel.split('/');
+  return parts[1] === 'device-types' && parts[2] === FIRST.dir
+      && FIRST.skus.has(parts.at(-1).replace(/\.yaml$/, ''));
+});
+
 function paintVariants() {
   const sel = $('variant');
   const files = filesFor();
   sel.textContent = '';
   for (const f of files) sel.appendChild(new Option(label(f), f));
   sel.disabled = !files.length;
+  const own = firstFile(files);
+  if (own) sel.value = own;
 }
 
 async function show() {
@@ -456,10 +481,12 @@ that does that by default is one that will eventually do it by accident.
   // fetched: the module type is named for the model, the drawing for the part.
   COMPONENTS = (await jdist('assets/dist/components.json')
     .catch(() => ({}))).components || [];
-  const want = new URLSearchParams(location.search).get('device');
-  DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
+  // the device the link names, and site/featured.js's when it names none,
+  // not whatever sorts first in the index
+  DEV = firstListed(DEVICES);
+  if (DEV !== new URLSearchParams(location.search).get('device')) FIRST = await firstType(DEV);
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
-                      onchange: name => { DEV = name; show(); }});
+                      onchange: name => { DEV = name; FIRST = null; show(); }});
   $('target').onchange = show;
   $('variant').onchange = show;
   $('bdl').onclick = ev => buildBundle(ev.target);

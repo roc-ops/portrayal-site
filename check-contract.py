@@ -2145,6 +2145,78 @@ check(re.search(r"^import \{FEATURED_DEVICE\} from '\.\./featured\.js';", _art_s
       f"site/showcase/artifact.js: DEV is not FEATURED_DEVICE, or CFG={_art_cfg_name!r} is kind "
       f"{_fd_kinds.get(_art_cfg_name)!r} on {_fd_name}")
 
+# EVERY PAGE THAT OPENS ON A DEVICE, not only the ones that make a shell. The
+# export pages read the device index themselves and fell back to its first
+# entry; the photo overlay named a device of its own, the schematic prototype a
+# vendor. Each asks site/featured.js now, and this holds them to it three ways:
+#   - every page check-browser.py serves is READ here, with every site/ module
+#     it reaches, and the number read is the number served, so a page this
+#     could not open cannot pass by contributing nothing;
+#   - the pages found opening on a device are exactly the ones named below, so
+#     a new page that reads ?device= or mounts a device picker fails until it
+#     is given a rule and a browser check;
+#   - none of what was read falls back to the index's first entry, or to a
+#     device named beside the ?device= it reads.
+# Named with the file that asks and the browser check that opens the page.
+_FIRST_PAGES = {
+    "explorer.html": ("explorer.html", "firstDevice()", "check_explorer_first_device"),
+    "annotate.html": ("annotate.html", "firstDevice()", "check_annotate_first_device"),
+    "index.html": ("site/showcase/artifact.js", "DEV = FEATURED_DEVICE", "check_showcase_first_device"),
+    "exporter.html": ("exporter.html", "firstListed(DEVICES)", "check_exporter_first_device"),
+    "drawio.html": ("site/drawio-page.js", "firstListed(DEVICES)", "check_drawio_first_device"),
+    "drawings.html": ("site/drawings-page.js", "firstListed(DEVICES)", "check_drawings_first_device"),
+    "compare.html": ("compare.html", "firstDevice()", "check_compare_first_device"),
+    "schematic.html": ("schematic.html", "firstListed(DEVICES)", "check_schematic_first_device"),
+    "viewer3d-harness.html": ("viewer3d-harness.html", "firstListed(devs.map(", "check_harness3d_first_device"),
+}
+_FEATURED_JS = "site/featured.js"
+_SITE_IMPORT = re.compile(r"""(?:\bfrom\s*|\bimport\s*\(?\s*|<script\b[^>]*\bsrc=)['"]([^'"]+\.js)['"]""")
+_OPENS_ON = re.compile(r"get\('device'\)|createDevicePicker\(|createShell\(\{|firstDevice\(|firstListed\(|FEATURED_DEVICE")
+_FALLS_BACK = re.compile(r"\b(?:DEVICES|devices|devs)\s*\[\s*0\s*\]|get\('device'\)\s*(?:\|\||\?\?)\s*['\"`]")
+
+
+def _page_sources(page):
+    """{path: text} of a page and every site/ module it reaches by a static
+    import or a script tag. vendor/ is Portrayal's and is not followed."""
+    seen, todo = {}, [HERE / page]
+    while todo:
+        f = todo.pop()
+        rel = f.relative_to(HERE).as_posix()
+        if rel in seen or not f.is_file():
+            continue
+        seen[rel] = f.read_text()
+        for ref in _SITE_IMPORT.findall(seen[rel]):
+            # a page's own URLs resolve against the page, a module's against the module
+            t = (f.parent / ref).resolve()
+            if t.is_relative_to(HERE / "site"):
+                todo.append(t)
+    return seen
+
+
+_first_read = {pg: _page_sources(pg) for pg in _cb.PAGES}
+_first_unread = sorted(pg for pg, src in _first_read.items() if not src.get(pg, "").strip())
+_first_found = sorted(pg for pg, src in _first_read.items()
+                      if any(_OPENS_ON.search(t) for rel, t in src.items() if rel != _FEATURED_JS))
+_first_stray = sorted({f"{rel}: {m.group(0)}" for src in _first_read.values() for rel, t in src.items()
+                       if rel != _FEATURED_JS for m in _FALLS_BACK.finditer(t)})
+_first_wrong = sorted(
+    pg for pg, (asker, call, browser) in _FIRST_PAGES.items()
+    if call not in _first_read.get(pg, {}).get(asker, "")
+    or _FEATURED_JS not in _first_read.get(pg, {})
+    or not re.search(r"\bimport \{\s*(?:firstDevice|firstListed|FEATURED_DEVICE)\s*\} from '[./a-z]*featured\.js';",
+                     _first_read[pg][asker])
+    or browser not in _registered)
+check(len(_first_read) == len(_cb.PAGES) == 17 and not _first_unread
+      and _first_found == sorted(_FIRST_PAGES) and len(_first_found) == 9
+      and not _first_stray and not _first_wrong
+      and re.search(r"devices\.some\(d => d\.name === want\) \? want : FEATURED_DEVICE;", _feat_js) is not None,
+      f"{len(_first_found)} of the {len(_first_read)} pages read open on a device, and each asks site/featured.js "
+      f"and has a browser check that opens it: {', '.join(_first_found)}",
+      f"read {len(_first_read)} of {len(_cb.PAGES)} pages (17 expected; empty or missing: {_first_unread}); "
+      f"pages that open on a device: {_first_found}, named in _FIRST_PAGES: {sorted(_FIRST_PAGES)}; "
+      f"falls back to its own first device: {_first_stray}; does not ask featured.js where _FIRST_PAGES says, "
+      f"or has no registered browser check: {_first_wrong}; or firstListed() is not `listed ? want : FEATURED_DEVICE`")
+
 for s in skips:
     print(f"SKIP  {s}")
 if problems:

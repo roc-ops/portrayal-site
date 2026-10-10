@@ -3696,6 +3696,194 @@ def check_showcase_first_device(page, base):
     return bad
 
 
+# THE PAGES THAT READ THE DEVICE INDEX THEMSELVES (roc-ops/portrayal-site#19):
+# the three export pages, and the three that are not deployed. Each fell back
+# to the first entry of the index, or named a device or a vendor of its own.
+# None of them draws the device on the page, so what a first visit opened on is
+# read from the page's own picker and held to the device's own files: the
+# default configuration's kind, and the ports on the default front face, which
+# is the drawing each of these pages exports, overlays or reads.
+LISTED_OPENED_JS = """async device => {
+  const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
+  const face = await (await fetch(`assets/dist/${device}.front.svg`)).text();
+  return {device, cfg: meta.default, kind: meta.configs.find(c => c.name === meta.default)?.kind ?? null,
+          ports: (face.match(/data-class="port"/g) || []).length};
+}"""
+PICKED = "() => document.querySelector('#pick select.dev')?.value || null"
+
+
+def listed_first_device(page, base, page_name, ready, picked=PICKED, bad=None):
+    """The faults of `page_name` opened three ways: with no device (the featured
+    one, populated), with ?device=c100g (that device, as before), and with a
+    device the library does not have (a first visit). `ready` is the page's own
+    sign that it has finished opening."""
+    bad = [] if bad is None else bad
+    page.on("pageerror", lambda e: bad.append(f"{page_name}: uncaught {e}"))
+
+    def opened(query):
+        page.goto("about:blank")
+        page.goto(f"{base}/{page_name}{query}", wait_until="load")
+        wait_fn(page, f"{page_name}{query}: opened", ready)
+        return page.evaluate(picked)
+
+    got = page.evaluate(LISTED_OPENED_JS, opened("") or "")
+    bad += first_device_faults(page_name, got)
+    if (dev := opened("?device=c100g")) != "c100g":
+        bad.append(f"{page_name}: ?device=c100g opened on {dev!r}")
+    if (dev := opened("?device=no-such-device")) != featured_device():
+        bad.append(f"{page_name}: a link naming a device the library lacks opened on {dev!r}, "
+                   f"not {featured_device()!r}")
+    return bad
+
+
+# The DCIM page shows one device type as text, so "populated" is read off the
+# text: the maker's own type, with interfaces. A link that names the featured
+# device still shows that device's first file, the NOS listing it always did.
+@extra("exporter.html with no ?device= opens on the featured device's own type, with interfaces; a named device opens as before")
+def check_exporter_first_device(page, base):
+    shown = """() => { const s = document.querySelector('#variant'), o = s?.selectedOptions[0];
+      const t = document.querySelector('#out').textContent, at = t.indexOf('\\ninterfaces:\\n');
+      const block = at < 0 ? '' : t.slice(at + 13).split(/\\n(?=\\S)/)[0];
+      return {index: s ? s.selectedIndex : -1, label: o ? o.textContent : '', file: o ? o.value : '',
+              options: s ? s.options.length : 0, interfaces: (block.match(/^  - name:/gm) || []).length,
+              airflow: (t.match(/^airflow: (\\S+)/m) || [])[1] || null}; }"""
+    ready = "() => /^manufacturer: /m.test(document.querySelector('#out').textContent)"
+    bad = listed_first_device(page, base, "exporter.html", ready)
+    page.goto("about:blank")
+    page.goto(f"{base}/exporter.html", wait_until="load")
+    wait_fn(page, "exporter first device: the type's text", ready)
+    first = page.evaluate(shown)
+    meta = json.loads((HERE / "assets" / "dist" / f"{featured_device()}.configs.json").read_text())
+    skus = next(c for c in meta["configs"] if c["name"] == meta["default"]).get("part-numbers") or {}
+    name = first["file"].rsplit("/", 1)[-1].removesuffix(".yaml")
+    if "NOS listing" in first["label"] or name not in skus or first["interfaces"] < 10:
+        bad.append(f"exporter: a first visit shows {first['label']!r} ({first['file']}) with "
+                   f"{first['interfaces']} interfaces - not the maker's type of the default configuration "
+                   f"{meta['default']} ({sorted(skus)[:3]})")
+    # the other library is the same first visit
+    page.select_option("#target", "nautobot")
+    wait_fn(page, "exporter first device: Nautobot's type", "() => document.querySelector('#src').textContent.includes('/nautobot/')")
+    other = page.evaluate(shown)
+    if other["file"] != first["file"].replace("netbox/", "nautobot/", 1):
+        bad.append(f"exporter: Nautobot's first type is {other['file']!r}, NetBox's {first['file']!r}")
+    # a link that names the device: its first file, whichever sorts first
+    page.goto("about:blank")
+    page.goto(f"{base}/exporter.html?device={featured_device()}", wait_until="load")
+    wait_fn(page, "exporter first device: the named device's text", ready)
+    named = page.evaluate(shown)
+    if named["index"] != 0 or named["options"] != first["options"] or named["options"] < 2:
+        bad.append(f"exporter: ?device={featured_device()} shows option {named['index']} of {named['options']}, "
+                   "not the first as before")
+    if named["file"] == first["file"]:
+        bad.append("exporter: the first visit and the named link show the same file, so this check cannot "
+                   "tell the two rules apart - pick another assertion, not a pass")
+    return bad
+
+
+@extra("drawio.html with no ?device= opens on the featured device; a named device still opens on it")
+def check_drawio_first_device(page, base):
+    ready = "() => document.querySelector('#detail').textContent.length > 20 && document.querySelector('#scope').options.length"
+    bad = listed_first_device(page, base, "drawio.html", ready)
+    page.goto(f"{base}/drawio.html", wait_until="load")
+    wait_fn(page, "drawio first device: the detail line", ready)
+    got = page.evaluate("""async () => { const name = document.querySelector('#pick select.dev').value;
+      const d = (await (await fetch('assets/dist/devices.json')).json()).devices.find(x => x.name === name);
+      return {model: d.model, detail: document.querySelector('#detail').textContent,
+              scopes: [...document.querySelector('#scope').options].map(o => o.textContent)}; }""")
+    if got["model"] not in got["detail"] or not any(got["model"] in s for s in got["scopes"]):
+        bad.append(f"drawio: the page names {got['detail'][:60]!r} and scopes {got['scopes']}, not {got['model']}")
+    return bad
+
+
+@extra("drawings.html with no ?device= opens on the featured device; a named device still opens on it")
+def check_drawings_first_device(page, base):
+    ready = "() => document.querySelector('#scope').options.length > 0 && !!document.querySelector('#pick select.dev')?.value"
+    bad = listed_first_device(page, base, "drawings.html", ready)
+    page.goto(f"{base}/drawings.html", wait_until="load")
+    wait_fn(page, "drawings first device: the scopes", ready)
+    got = page.evaluate("""async () => { const name = document.querySelector('#pick select.dev').value;
+      const d = (await (await fetch('assets/dist/devices.json')).json()).devices.find(x => x.name === name);
+      return {model: d.model, scopes: [...document.querySelector('#scope').options].map(o => o.textContent)}; }""")
+    if not any(got["model"] in s for s in got["scopes"]):
+        bad.append(f"drawings: the scopes are {got['scopes']}, none of them {got['model']}")
+    return bad
+
+
+# The pages below are not deployed (tools/build-public.py PAGES), and are held
+# to the same rule so the tools a contributor opens agree with the site.
+# compare.html asks for a photograph per view and this repository ships none,
+# so its stage is empty here: what it opened on is the device it stamped on the
+# stage, which is the one it fetched the index of.
+@extra("compare.html with no ?device= overlays the featured device; a named device still opens on it")
+def check_compare_first_device(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"compare.html: uncaught {e}"))
+    asked = []
+    page.on("request", lambda r: asked.append(r.url.rsplit("/", 1)[-1]) if ".configs.json" in r.url else None)
+    ready = ("() => !!document.querySelector('#stage').dataset.device"
+             " && !!(document.querySelector('#cal').textContent || document.querySelector('#svgbox svg'))")
+
+    def opened(query):
+        del asked[:]
+        page.goto("about:blank")
+        page.goto(f"{base}/compare.html{query}", wait_until="load")
+        wait_fn(page, f"compare.html{query}: opened", ready)
+        dev = page.evaluate("() => document.querySelector('#stage').dataset.device")
+        if asked != [f"{dev}.configs.json"]:
+            bad.append(f"compare.html{query}: the stage says {dev!r} and the page read {asked}")
+        return dev
+
+    got = page.evaluate(LISTED_OPENED_JS, opened(""))
+    bad += first_device_faults("compare.html", got)
+    if (dev := opened("?device=c100g")) != "c100g":
+        bad.append(f"compare.html: ?device=c100g opened on {dev!r}")
+    return bad
+
+
+@extra("schematic.html opens on the featured device under its own vendor, with ports; a named device still opens on it")
+def check_schematic_first_device(page, base):
+    ready = "() => /\\d+ ports, /.test(document.querySelector('#out').textContent)"
+    bad = listed_first_device(page, base, "schematic.html", ready,
+                              picked="() => document.querySelector('#device').value")
+    page.goto(f"{base}/schematic.html", wait_until="load")
+    wait_fn(page, "schematic first device: the summary", ready)
+    got = page.evaluate("""async () => { const name = document.querySelector('#device').value;
+      const d = (await (await fetch('assets/dist/devices.json')).json()).devices.find(x => x.name === name);
+      return {vendor: document.querySelector('#vendor').value, maker: d.manufacturer, model: d.model,
+              out: document.querySelector('#out').textContent.split('\\n')[0]}; }""")
+    ports = int((re.search(r"(\d+) ports, ", got["out"]) or [0, 0])[1])
+    if got["vendor"] != got["maker"] or not got["out"].startswith(got["model"]) or ports < 10:
+        bad.append(f"schematic: opened under vendor {got['vendor']!r} (the device's is {got['maker']!r}) "
+                   f"reading {got['out']!r}")
+    return bad
+
+
+# The 3D harness loads what its menu says, so the menu is read once the load
+# has reported: the configuration it built is the one held to "not a base".
+@extra("viewer3d-harness.html with no ?device= builds the featured device in a populated configuration; a named device still opens on it")
+def check_harness3d_first_device(page, base):
+    bad, building = [], [True]
+    page.on("pageerror", lambda e: building[0] and bad.append(f"viewer3d-harness.html: uncaught {e}"))
+    page.goto(f"{base}/viewer3d-harness.html", wait_until="load")
+    wait_fn(page, "3D harness first device: loaded", "() => / — loaded in \\d+ms/.test(document.querySelector('#hud').textContent)")
+    got = page.evaluate(f"""async () => {{
+      const got = await ({LISTED_OPENED_JS})(document.querySelector('#dev').value);
+      const cfg = document.querySelector('#cfg').value, meta = await (await fetch(`assets/dist/${{got.device}}.configs.json`)).json();
+      return {{...got, cfg, kind: meta.configs.find(c => c.name === cfg)?.kind ?? null}}; }}""")
+    bad += first_device_faults("viewer3d-harness.html", got)
+    # the menu is set before the build starts, and these two are left while
+    # theirs is still fetching: an aborted fetch is not the page's fault
+    building[0] = False
+    for query, want in (("?device=c100g", "c100g"), ("?device=no-such-device", featured_device())):
+        page.goto("about:blank")
+        page.goto(f"{base}/viewer3d-harness.html{query}", wait_until="load")
+        wait_fn(page, f"3D harness {query}: the menu", "() => !!document.querySelector('#dev').value")
+        if (dev := page.evaluate("() => document.querySelector('#dev').value")) != want:
+            bad.append(f"viewer3d-harness.html{query} opened on {dev!r}, not {want!r}")
+    page.goto("about:blank")
+    return bad
+
+
 # THE GENERIC RACK EAR ON A DEVICE PAGE (Portrayal #909, kit 0.8.0 ears2d,
 # silver since 0.9.0). Off by default in the Explorer and in Annotate, with a
 # "Rack ears" toggle shown only for a device that gets one; on, it is the

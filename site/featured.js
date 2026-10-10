@@ -1,5 +1,7 @@
 // THE DEVICE A FIRST VISIT OPENS ON (roc-ops/portrayal-site#19), for every
-// page that opens on one: the Explorer, Annotate and the showcase.
+// page that opens on one: the Explorer, Annotate and the showcase, the three
+// export pages (DCIM, draw.io, drawings), and the pages that are not deployed
+// (the photo overlay, the schematic prototype, the 3D harness).
 //
 // Left to the shell, a page with no ?device= opens on the C100G, whose default
 // is its `base` configuration: fourteen empty bays and no ports, the opposite
@@ -21,3 +23,14 @@ export const FEATURED_DEVICE = 'as7726-32x';
 // opens on it.
 export const firstDevice = (search = location.search) =>
   new URLSearchParams(search).get('device') || FEATURED_DEVICE;
+
+// The same answer for a page that reads the device index itself and so can
+// tell a device that exists from one that does not: the export pages, whose
+// picker needs a listed name. A link that names a listed device opens on it; a
+// link that names none, or one the library does not have, is a first visit.
+// These pages fell back to the first entry of the index, which is whatever
+// sorts first: a breaker panel today, a C100G before it.
+export const firstListed = (devices, search = location.search) => {
+  const want = new URLSearchParams(search).get('device');
+  return devices.some(d => d.name === want) ? want : FEATURED_DEVICE;
+};

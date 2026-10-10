@@ -29,10 +29,14 @@
 </div>
 <div class="stage" id="stage"><div id="svgbox"></div><img id="photo"></div>
 <div id="cal"></div>
-<script>
-const DEV = new URLSearchParams(location.search).get('device') || 'as7726-32x';
+<script type="module">
+// the device the link names, and site/featured.js's when it names none: one
+// device, because the page lays one drawing over one photograph of it
+import { firstDevice } from './site/featured.js';
+const DEV = firstDevice();
 const CAL = {};
 const $ = id => document.getElementById(id);
+$('stage').dataset.device = DEV;
 async function load() {
   const v = $('view').value;
   if (!v) return;

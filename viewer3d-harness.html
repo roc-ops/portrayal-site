@@ -57,6 +57,7 @@
 
 <script type="module">
 import { createViewer } from './vendor/viewer3d.js';
+import { firstListed } from './site/featured.js';
 
 const P = new URLSearchParams(location.search);
 if (P.get('bare')) document.body.classList.add('bare');
@@ -150,7 +151,8 @@ async function loadCurrent() {
 mount();
 const devs = await devices();
 devs.forEach(d => $('dev').appendChild(new Option(d, d)));
-$('dev').value = P.get('device') && devs.includes(P.get('device')) ? P.get('device') : devs[0];
+// the device the link names, and site/featured.js's when it names none
+$('dev').value = firstListed(devs.map(name => ({name})));
 if (P.get('config')) $('cfg').appendChild(new Option(P.get('config'), P.get('config')));
 $('cfg').value = P.get('config') || '';
 await loadCurrent();
