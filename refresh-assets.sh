@@ -27,24 +27,26 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 #
 UPSTREAM="${PORTRAYAL_UPSTREAM:-$HERE/../Portrayal}"
 SRC="${1:-$UPSTREAM/library}"
+if [ ! -d "$SRC" ]; then
+  echo "no library at $SRC" >&2
+  echo "clone it and build it first:" >&2
+  echo "  git clone https://github.com/roc-ops/Portrayal.git ${UPSTREAM}" >&2
+  echo "  (cd ${UPSTREAM} && ./build.sh)" >&2
+  echo "or point PORTRAYAL_UPSTREAM at an existing, built clone." >&2
+  exit 1
+fi
 # The viewer modules used to live in library/viewer. They are now portrayal-kit,
 # a published package at the repository root with its own package.json and an
 # exports map - the consumer half, which reads compiled artifacts and never
 # reads YAML. Derived from SRC so a caller pointing at another checkout's
-# library still finds the kit beside it.
+# library still finds the kit beside it - and derived AFTER the check above:
+# it has to cd into SRC's parent, and under `set -e` a library that is not
+# there ended the script on that cd, before the advice above was ever printed.
 KIT="${PORTRAYAL_KIT:-$(cd "$SRC/.." && pwd -P)/kit}"
 
 # Refuse to read Portrayal's working tree. A comment saying "use the clone" is
 # advice; this is the part that makes it true. PORTRAYAL_ALLOW_LIVE=1 is the
 # deliberate escape hatch, and it is deliberately ugly to type.
-if [ ! -d "$SRC" ]; then
-  echo "no library at $SRC" >&2
-  echo "clone it first:" >&2
-  echo "  git clone https://github.com/roc-ops/Portrayal.git ${UPSTREAM}" >&2
-  echo "or point PORTRAYAL_UPSTREAM at an existing clone." >&2
-  echo "  (cd ${UPSTREAM} && ./build.sh)" >&2
-  exit 1
-fi
 case "$(cd "$SRC" && pwd -P)" in
   */Network-Device-Visualization/*)
     if [ "${PORTRAYAL_ALLOW_LIVE:-}" != "1" ]; then
@@ -89,6 +91,30 @@ if [ ! -d "$SRC/dist" ]; then
   exit 1
 fi
 
+# WHICH COMMIT THIS IS, BEFORE ANYTHING IS COPIED. vendor/rack/SOURCE has to
+# name it, and a kit that is not in a git checkout cannot be named. That
+# refusal used to come after the modules were copied and vendor/rack/ was
+# emptied and refilled, so it left a half-refreshed vendor/ whose SOURCE
+# still named the commit before. The kit's package.json is the same case: it
+# is the last thing copied from the kit, after vendor/rack/ is refilled and
+# SOURCE rewritten, so a kit without one is refused here as well. What is
+# checked here is what is copied from the KIT; the drawings and the exports
+# further down are read from the build and can still fail on their own.
+kit_sha=$(git -C "$KIT" rev-parse --verify HEAD 2>/dev/null || true)
+if [ -z "$kit_sha" ]; then
+  echo "refusing: $KIT is not in a git checkout, so vendor/rack/SOURCE cannot name its commit" >&2
+  echo "nothing was copied." >&2
+  exit 1
+fi
+if [ ! -f "$KIT/package.json" ]; then
+  echo "refusing: no package.json at $KIT, so vendor/kit-package.json cannot say which kit this is" >&2
+  echo "nothing was copied." >&2
+  exit 1
+fi
+if [ -n "$(git -C "$KIT" status --porcelain -- rack 2>/dev/null)" ]; then
+  echo "WARNING: $KIT/rack has uncommitted changes; vendor/rack/ will not match $kit_sha" >&2
+fi
+
 # EVERY MODULE THE KIT SHIPS, not a list of the ones we remember.
 #
 # These modules are Portrayal's to own - they are how you talk to a drawing.
@@ -125,17 +151,10 @@ mkdir -p "$HERE/vendor/rack"
 for f in "$KIT"/rack/*.js; do
   cp "$f" "$HERE/vendor/rack/$(basename "$f")"
 done
-# Which commit that was, for check-contract.py: it compares vendor/rack/ with
-# kit/rack/ AT this commit, file by file, rather than with the clone's HEAD,
-# which moves on while the snapshot here does not.
-kit_sha=$(git -C "$KIT" rev-parse HEAD 2>/dev/null || true)
-if [ -z "$kit_sha" ]; then
-  echo "refusing: $KIT is not in a git checkout, so vendor/rack/SOURCE cannot name its commit" >&2
-  exit 1
-fi
-if [ -n "$(git -C "$KIT" status --porcelain -- rack 2>/dev/null)" ]; then
-  echo "WARNING: $KIT/rack has uncommitted changes; vendor/rack/ will not match $kit_sha" >&2
-fi
+# Which commit that was (kit_sha, read before anything was copied), for
+# check-contract.py: it compares vendor/rack/ with kit/rack/ AT this commit,
+# file by file, rather than with the clone's HEAD, which moves on while the
+# snapshot here does not.
 printf '# The Portrayal commit vendor/rack/ was copied from (kit/rack/). Written by refresh-assets.sh.\n%s\n' \
   "$kit_sha" > "$HERE/vendor/rack/SOURCE"
 # The kit's own package.json, from the same commit: its `version` is the one

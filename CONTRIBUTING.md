@@ -109,6 +109,9 @@ one-way if any of these is true:
   plan) so that one saved before the change no longer opens as it did.
 - **It changes how changes are checked, merged or deployed:** a workflow,
   `wrangler.jsonc`, the Worker's routing, the hook, or a repository setting.
+  Adding a check to `check-contract.py` or `check-browser.py`, or making one
+  stricter, is two-way: a revert removes it. Removing a check, loosening one,
+  or changing what one of the named items does is one-way.
 - **It changes what an AI client connected through the agent relay can do**
   without the visitor asking for it.
 
