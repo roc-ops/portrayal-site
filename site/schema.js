@@ -40,7 +40,7 @@ const SOURCES = {
 
 const KNOWN = new Set([
   'type', 'properties', 'required', 'description', 'enum', 'const', '$ref',
-  'items', 'oneOf', 'anyOf', 'allOf', 'if', 'then', 'else',
+  'items', 'oneOf', 'anyOf', 'allOf', 'if', 'then', 'else', 'not',
   'additionalProperties', 'patternProperties', 'default', 'pattern', 'format',
   'minItems', 'maxItems', 'uniqueItems', 'minimum', 'maximum', 'title',
   'exclusiveMinimum', 'exclusiveMaximum', 'minProperties', 'maxProperties',
@@ -226,6 +226,17 @@ function condition(node) {
   return `when it matches ${JSON.stringify(node)}`;
 }
 
+// What a `not` refuses, in words for the shapes these schemas use: keys that
+// may not be given, alone or as any of several.
+const onlyRequired = n => isSchema(n) && Array.isArray(n.required) && Object.keys(n).every(k => k === 'required');
+const keysText = ks => ks.map(k => `\`${k}\``).join(' and ');
+function negation(node) {
+  if (onlyRequired(node)) return `give ${keysText(node.required)}`;
+  if (Array.isArray(node.anyOf) && Object.keys(node).length === 1 && node.anyOf.every(onlyRequired))
+    return `give any of ${node.anyOf.map(b => keysText(b.required)).join(', ')}`;
+  return `match ${JSON.stringify(node)}`;
+}
+
 const COMBINERS = [
   ['oneOf', 'exactly one of these'],
   ['anyOf', 'at least one of these'],
@@ -288,6 +299,20 @@ function renderNode(node, depth, ptr, ctx = {}) {
       wrap.append(branch(`${label} — option ${i + 1}${typeLabel(b) ? ` — ${typeLabel(b)}` : ''}`,
                          b, depth + 1, `${ptr}/${kw}/${i}`, ctx));
     });
+    frag.append(wrap);
+  }
+
+  // A NEGATION (`not`): a shape the node must not have. The schemas use it
+  // to take keys away - `trays` on any view but `top`, `at` or `diameter` on
+  // a tray's slack that is not stored - so it is said in those words where it
+  // is only `required` keys, and its keys are shown as tested (their presence
+  // is what is refused), stamped with their /not/ pointers.
+  if (isSchema(node.not)) {
+    const wrap = el('div', {class: 'sc-oneof sc-cond', 'data-negated': ptr || '/'});
+    const head = el('p', {class: 'sc-branch-head'});
+    head.append(richText(`must not: ${negation(node.not)}`));
+    wrap.append(head);
+    wrap.append(branch('the shape it must not have', node.not, depth + 1, `${ptr}/not`, {test: true}));
     frag.append(wrap);
   }
 

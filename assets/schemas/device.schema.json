@@ -717,7 +717,7 @@
       "description": "the configuration a viewer opens with. Where a `base` exists it is the default and nothing else may claim it, so `default` never means 'whatever the drawing happens to be populated with'."
      },
      "airflow": {
-      "description": "ONLY WHEN THIS BUILD DIFFERS FROM THE CHASSIS. A front-to-back and a back-to-front SKU of one switch are two configurations of one chassis, and that is what this is for; a chassis whose airflow does not depend on the build states it once under `chassis.airflow` instead. Restating the chassis value here is what L91 reports. Narrower than the chassis enum on purpose: `side` and `passive` are not options a buyer picks between.",
+      "description": "ONLY WHEN THIS BUILD DIFFERS FROM THE CHASSIS. A front-to-back and a back-to-front SKU of one switch are two configurations of one chassis, and that is what this is for; a chassis whose airflow does not depend on the build states it once under `chassis.airflow` instead. Restating the chassis value here is what L91 reports. Narrower than the chassis enum on purpose: `side`, `passive` and `top-to-bottom` are not options a buyer picks between.",
       "enum": [
        "front-to-back",
        "back-to-front"
@@ -941,6 +941,20 @@
    "propertyNames": {
     "$ref": "#/$defs/segment"
    },
+   "allOf": [
+    {
+     "description": "`trays` is declared on the plan, the `top` view, only: a floor's third axis is its height, which only a plan leaves out",
+     "patternProperties": {
+      "^(?!top$)": {
+       "not": {
+        "required": [
+         "trays"
+        ]
+       }
+      }
+     }
+    }
+   ],
    "additionalProperties": {
     "type": "object",
     "additionalProperties": false,
@@ -1760,6 +1774,142 @@
        }
       }
      },
+     "trays": {
+      "type": "array",
+      "description": "FLOORS CABLES LIE ON, declared on the plan (the `top` view, and no other): a duct channel's floor, an enclosure drawer's floor, seen from above. Each is named by its `id`, which shares one namespace with the face's guides and pass-throughs, so a route names a tray as it names a ring. It compiles to an unpainted `data-class=\"tray\"` rect per floor rectangle and a `data-class=\"tie\"` rect per tie slot, and the DCIM exports ignore it. A floor every placement of a part carries is declared on the part's contract as `tray:`, not here. L170 holds every floor inside its view and every tie slot inside a floor.",
+      "items": {
+       "type": "object",
+       "required": [
+        "id",
+        "floor",
+        "height",
+        "run"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "id": {
+         "$ref": "#/$defs/segment"
+        },
+        "floor": {
+         "type": "array",
+         "minItems": 1,
+         "description": "where a cable can lie: one or more rectangles on this view",
+         "items": {
+         "type": "object",
+         "required": [
+          "at",
+          "size"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "at": {
+           "$ref": "#/$defs/xy"
+          },
+          "size": {
+           "$ref": "#/$defs/xy"
+          }
+         }
+        }
+        },
+        "height": {
+         "type": "number",
+         "minimum": 0,
+         "description": "millimetres, the top of the floor above the bottom of the device's envelope: the third axis, which this view does not show. A cable resting on the tray lies with its centre this high plus its own radius."
+        },
+        "lip": {
+         "type": "number",
+         "minimum": 0,
+         "description": "millimetres an edge of the floor stands up above it; 0 is a plain edge. A channel with walls states their height. It bounds how much the tray holds."
+        },
+        "run": {
+         "enum": [
+          "x",
+          "y"
+         ],
+         "description": "the direction cables lie along the floor, across (`x`) or down (`y`) this view"
+        },
+        "ties": {
+         "type": "array",
+         "description": "the tie slots cut in the floor, each a rectangle on this view inside one of the floor's: where a strap passes through to hold a cable to the floor, never an opening a cable passes through, whatever its size. A tray that states none holds cables on its upward face only.",
+         "items": {
+         "type": "object",
+         "required": [
+          "at",
+          "size"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "at": {
+           "$ref": "#/$defs/xy"
+          },
+          "size": {
+           "$ref": "#/$defs/xy"
+          }
+         }
+        }
+        },
+        "slack": {
+         "type": "object",
+         "required": [
+          "kind"
+         ],
+         "additionalProperties": false,
+         "description": "how the tray holds a cable's spare length. `area`: coiled on the floor, less what stands on it. `spool`: wound round a drum of `diameter` millimetres centred at `at`, on this view.",
+         "properties": {
+          "kind": {
+           "enum": [
+            "area",
+            "spool"
+           ]
+          },
+          "at": {
+           "$ref": "#/$defs/xy"
+          },
+          "diameter": {
+           "type": "number",
+           "exclusiveMinimum": 0
+          }
+         },
+         "if": {
+          "properties": {
+           "kind": {
+            "const": "spool"
+           }
+          }
+         },
+         "then": {
+          "required": [
+           "at",
+           "diameter"
+          ]
+         },
+         "else": {
+          "not": {
+           "anyOf": [
+            {
+             "required": [
+              "at"
+             ]
+            },
+            {
+             "required": [
+              "diameter"
+             ]
+            }
+           ]
+          }
+         }
+        },
+        "confidence": {
+         "$ref": "#/$defs/confidence"
+        },
+        "source": {
+         "type": "string",
+         "description": "where precisely, in one phrase"
+        }
+       }
+      }
+     },
      "regions": {
       "type": "array",
       "items": {
@@ -1852,7 +2002,7 @@
   "interfaces": {
    "type": "array",
    "minItems": 1,
-   "description": "WHAT THE VENDOR'S OWN OPERATING SYSTEM CALLS EACH PORT, for a box that ships with one. The same rules a NOS vendor's listing states: `physical` is a placement id or an id a placement presents, with `{n}` over `range`; `name` is the interface name, with `{n}` or arithmetic on it. The DCIM export of the hardware's own device type names each interface by the rule that names its id, and by the faceplate id where no rule does. Two connectors of one interface take one name and export once. A listing's own `interfaces` still decide that listing's document. The same rules also name the device's power outlets by their printed labels - a rack PDU's `outlet-a1` exports as `A1` - and an outlet no rule names keeps its placement id. Changing a name is a major bump: a DCIM that imported the type holds the old one.",
+   "description": "WHAT THE VENDOR'S OWN OPERATING SYSTEM CALLS EACH PORT, for a box that ships with one. The same rules a NOS vendor's listing states: `physical` is a placement id or an id a placement presents, with `{n}` over `range`; `name` is the interface name, with `{n}` or arithmetic on it. The DCIM export of the hardware's own device type names each interface by the rule that names its id, and by the faceplate id where no rule does. Two connectors of one interface take one name and export once. A listing's own `interfaces` still decide that listing's document. The same rules also name the device's power outlets by their printed labels - a rack PDU's `outlet-a1` exports as `A1` - and an outlet no rule names keeps its placement id. A NOS listing that states its own `interfaces` does not apply these rules, so its export keeps every outlet's placement id. Changing a name is a major bump: a DCIM that imported the type holds the old one.",
    "items": {
     "type": "object",
     "required": [

@@ -1529,7 +1529,7 @@
   {
    "code": "L138",
    "scope": "component, device",
-   "rule": "a guide fits what declares it - a ring's opening inside the part, seen along its run (its size, and its relief or `size.d` out of the face), and a duct inside its view, with a finger gap less than the finger pitch",
+   "rule": "a guide fits what declares it - a ring's opening inside the part, seen along its run (its size, and its relief or `size.d` out of the face), its `depth` and `aperture.at` inside the part, its `sill` only on a ring whose run lies in the face and with the opening above it still inside the part's reach, and the loop's `wall` legs, `height` and `slit` inside the part, the height over the opening and the slit between the sill and the top; and a duct inside its view, with a finger gap less than the finger pitch",
    "why": "Cable routing reads a guide's opening, so an opening bigger than its loop or a duct off its face would route cables through space that does not exist, and fingers with no width describe a duct that cannot be built.",
    "fix": "measure the clear opening, not the outside of the loop; give the part the relief that holds the opening; move the duct onto its face, or re-read the pitch and the gap off the drawing",
    "severity": "error",
@@ -1873,6 +1873,17 @@
    "rule": "`lines` stands on a placement of class `breaker` or on a power outlet (error), and on a three-phase input every outlet's lines resolve, on itself or on the breaker it runs `through` (warning)",
    "why": "Lines on a part that protects no circuit say nothing true, and on a three-phase PDU an outlet with no lines exports no feed leg to the DCIM.",
    "fix": "state `lines` once, on the breaker that protects the circuit, and `through: <breaker>` on each outlet it feeds",
+   "severity": "mixed",
+   "fails": true,
+   "warns": true,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L170",
+   "scope": "component, device",
+   "rule": "a tray fits what declares it: every floor rectangle inside its part or its view, every tie slot inside a floor rectangle, its id unique among the guides, pass-throughs and trays of the device, and a part's tray placed, and a view's `trays` declared, on the plan (`top`) only (error); a part's tray placed on the plan stands at the height its `size.d` gives, and, for a placement that is not rotated, its tie slots are the slots the device draws on its bottom view, where it draws any (warning; a rotated placement's slots are not compared)",
+   "why": "A route lies a cable on a tray's floor and straps it through its tie slots, so a floor off its part, a slot off its floor, a height that disagrees with the drawing, or a slot drawn and not declared would put cables and straps where the hardware has no metal, and a second pathway under one id leaves a route naming it ambiguous.",
+   "fix": "re-read the floor and the slots off the plan; give the tray its own id; declare the tray on the top view; state the height as the envelope less the depth of the well; draw each tie slot on the bottom view, or declare it",
    "severity": "mixed",
    "fails": true,
    "warns": true,
