@@ -34,8 +34,7 @@ import {routed2d} from '../../vendor/rack/route-path.js';
 import {reverseMarks} from '../../vendor/rack/route.js';
 import {colorOf, WIDTH, TAG_H, sag2d, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
         danglePoints3d, reaches, clearOf} from '../../vendor/rack/cable-geometry.js';
-import {routeLine3d, roundRoute, insideOf} from './bend3d.js';
-export {routeLine3d} from './bend3d.js';
+import {kitRoute, insideOf} from './bend3d.js';
 
 
 export {COLORS, colorOf, JACKETS, colorOfJacket, PLUGS, plugColorOf, WIDTH, TAG_H, sag2d,
@@ -272,12 +271,11 @@ function tubeEnds(THREE, mesh) {
   });
 }
 
-// A ring round each corner drawn tighter than its bend radius. OFF for now
-// (portrayal-site#164): most such corners today are the site's own lead
-// dress and the drawing's resting, not the rack's. The rings come back when
-// kit 0.13's plug reach and cable-lay step 3's resting reach the site. The
-// scene keeps its flags (`tight`) either way; the GLB and USDZ never carry
-// these rings.
+// A ring round each corner drawn tighter than its bend radius. OFF
+// (portrayal-site#164, and still since #166 drew the tubes through the kit's
+// points): whether they come back is decided on the kit's own bend findings.
+// The scene keeps its flags (`tight`) either way; the GLB and USDZ never
+// carry these rings.
 const BEND_RINGS = false;
 
 // Every link of the plan as a tube in `scene` (rack3d.js's scene API). Returns
@@ -297,17 +295,18 @@ const BEND_RINGS = false;
 // `boxes`, when given, are the bodies to keep a hanging cable out of
 // ([{ref, box}], world THREE.Box3): the Rack Builder passes the kit's solid
 // bodies (scene3d.js solidBoxes); without them, the scene's device boxes.
-// `clear(points)`, when given, takes a routed tube's drawn polyline (its two
-// lead points and its waypoints, world Vector3s) and returns the points to add
-// round a body, [{after, points}], `after` an index into the waypoints (-1:
-// after the first lead point).
+// `waypoints(link)`, when given, gives a routed cable's points: a list (the
+// showcase's waypoints, eased by routePoints3d), or {points, kit: true}, the
+// kit's own path points between its two reach points (route.js routePath,
+// world Vector3s: the Rack Builder's, scene3d.js), drawn as they are.
 // `bendOf(link)`, when given, is the installed bend radius in mm the routed
 // tube's corners are rounded to (bend3d.js roundedCurve; the cable types'
 // radius, or its bundle's), or null when not known. With it, a routed tube
-// is the polyline - lead, detours, ring passes, waypoints - with each corner
-// a true arc of that radius, and its `tight` lists the corners whose legs
-// could not hold one (bend3d.js fitCorners). Without it, as before.
-export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null, clear = null,
+// is the polyline - each plug's lead, the kit's points - with each corner a
+// true arc of that radius kept out of `boxes` (bend3d.js kitRoute,
+// clearCurve), and its `tight` lists the corners whose legs could not hold
+// one (bend3d.js fitCorners). Without it the corners are eased.
+export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null,
                                                  bendOf = null} = {}) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
@@ -349,32 +348,28 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // for the hangs and the unplugged leads only, and a routed tube that
     // still meets metal is a drawing fault the browser check finds.
     const routed = !dangling && wps.length > 0;
-    let pts, bent = null, extended = null;
-    if (routed) {
-      // THE DRAWING'S OWN LEGS. The kit measures from each port on its panel;
-      // the tube leaves its plug and reaches out of the face first (`reach`),
-      // so a leg from there to the first ring is not the leg the kit cleared,
-      // and can rise through a tray floor in front of the panel. `clear`
-      // (scene3d.js) takes each drawn leg round the same bodies by the kit's
-      // own rules (solids.js detour).
-      // With a bend radius the polyline is kept as it is and bend3d.js rounds
-      // its corners; without one, routePoints3d eases them as it always has.
+    let pts, bent = null, extended = null, reachGap = null;
+    if (routed && got?.kit) {
+      // THE KIT'S PATH (portrayal-site#166): its points are the drawing, from
+      // each plug's reach point, which is where the tube leaves its connector
+      // (route-context.js passes the plug's cable-point z as plugReachOf), so
+      // the drawn tube goes round what the measured path goes round and
+      // through each ring as the kit entered it. With a radius each corner is
+      // a true arc kept out of the solids, ring parts included (kitRoute).
       const R = bendOf ? bendOf(link) : null;
-      const line = R != null ? routeLine3d : routePoints3d;
-      const lead = R != null ? Math.max(30, R) : 30;
-      pts = line(THREE, ends[0], ends[1], wps, lead, marks);
-      const more = clear ? clear([pts[1], ...wps, pts[pts.length - 2]]) : [];
-      let w = wps, m = marks;
-      if (more.length) {
-        w = []; m = [];
-        const add = k => { for (const d of more) if (d.after === k) for (const q of d.points) { w.push(q); m.push(null); } };
-        add(-1);
-        wps.forEach((q, k) => { w.push(q); m.push(marks ? marks[k] : null); add(k); });
-        if (!marks) m = null;
-        pts = line(THREE, ends[0], ends[1], w, lead, m);
+      // how far the tube's start is from the kit's reach point, each end (mm)
+      reachGap = (got.reach ?? []).map((q, k) => (q ? q.distanceTo(ends[k].points.reduce((s, p) => s.add(p), new THREE.Vector3())
+        .multiplyScalar(1 / ends[k].points.length)) : null));
+      if (R != null) ({pts, bent, extended_mm: extended} = kitRoute(THREE, ends[0], ends[1], wps, R, insideOf(boxes)));
+      else {
+        const e0 = ends[0].points, e1 = ends[1].points;
+        const mean = ps => ps.reduce((q, p) => q.add(p), new THREE.Vector3()).multiplyScalar(1 / ps.length);
+        pts = [mean(e0), ...wps, mean(e1)];
       }
-      // An arc must not cut through a solid body (bend3d.js clearCurve).
-      if (R != null) ({pts, bent, extended_mm: extended} = roundRoute(THREE, ends[0], ends[1], w, m, R, lead, insideOf(boxes)));
+    } else if (routed) {
+      const R = bendOf ? bendOf(link) : null;
+      const lead = R != null ? Math.max(30, R) : 30;
+      pts = routePoints3d(THREE, ends[0], ends[1], wps, lead, marks);
     } else pts = clearOf(dangling ? danglePoints3d(THREE, landed[0]) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
@@ -386,10 +381,12 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // A duplex end: a thinner strand from each connector into the merge.
     const strands = [];
     for (const e of landed) if (e.points.length > 1) {
-      const m = mergeOf(THREE, e);
+      // into where the tube starts: the kit's path starts at the pair's middle,
+      // at the plugs' far end; an eased route starts at mergeOf
+      const kit = routed && got?.kit, m = kit ? pts[e === ends[0] ? 0 : pts.length - 1] : mergeOf(THREE, e);
       for (const p of e.points) {
         const s = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
-          [p, p.clone().addScaledVector(e.normal, 12), m]), 16, WIDTH * 0.3, 6, false), mat);
+          kit ? [p, m] : [p, p.clone().addScaledVector(e.normal, 12), m]), 16, WIDTH * 0.3, 6, false), mat);
         g.add(s); strands.push(s);
       }
     }
@@ -406,7 +403,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
       ring.name = `cable-${link.id ?? i}-bend-${k}`;
       g.add(ring);
     }
-    tubes.push({link, i, mesh: g, loose, points: pts, starts, dangling, routed,
+    tubes.push({link, i, mesh: g, loose, points: pts, starts, dangling, routed, ...(reachGap ? {reachGap} : {}),
                 ...(bent ? {bend: {radius_mm: bent.radius, corners: bent.corners, length_mm: bent.getLength(),
                                    polyline_mm: bent.polyline, extended_mm: extended}, tight} : {})});
   }

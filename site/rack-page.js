@@ -114,8 +114,11 @@ function disposeScene3d() {
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
 // The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
 // And the detours (kit 0.11.0, #949): a body moved can take a cable round it with no waypoint changing.
+// And the kit's points (portrayal-site#166): the scene draws each routed cable
+// through them, and a plug seated or a body moved changes them with no
+// waypoint changing.
 const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null,
-  rf.detours?.get(id) ?? null]))
+  rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
   + bundlesSig(rf) : '');
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
@@ -126,8 +129,8 @@ async function rebuild3d() {
   disposeScene3d();
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, marks: S.routes?.marks ?? null, bundles: bundles3d(S.routes),
-    detours: S.routes?.detours ?? null, bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
+    routes: S.routes?.routes ?? null, paths: S.routes?.paths ?? null, ctx: S.routes?.ctx ?? null, bundles: bundles3d(S.routes),
+    bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -1592,7 +1595,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       measured: S.routes.lengths.get(id)?.measured ?? null, value: S.routes.lengths.get(id)?.value ?? null,
       rings: p.rings.map(g => ({item: g.item, via: g.via, passed: g.passed, held: g.held === true})),
       detours: p.detours.map(d => ({between: d.between, points: d.points.map(q => ({...q}))})),
-      crossings: p.crossings.map(f => ({...f}))}])) : null),
+      crossings: p.crossings.map(f => ({...f})),
+      // the kit's own points (kit 0.13-0.15: reach, approach, tray, rest) and what it lies on
+      points: p.points.map(q => ({...q})), rests: (p.rests ?? []).map(x => ({...x}))}])) : null),
     bodies: () => (S.routes ? S.routes.bodyFindings.map(f => ({...f})) : null),
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,

@@ -183,6 +183,17 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   // A DETOUR POINT on this pane (kit 0.11.0, #949): rack mm to the pane's
   // user space, as wayPoint places a lane (x mirrored on the rear pane, y down).
   const detourAt = p => [pane === 'rear' ? OPENING / 2 - p.x : OPENING / 2 + p.x, rack.frame.heightRU * RU - p.y];
+  // The kit's height for a ring or tray waypoint (route.js routePath: a
+  // ring's entry and exit on its sill, a tray's stretch on its floor), in
+  // this pane, at the middle of those points; null when the kit does not
+  // lay the cable there (a ring on no tray stays where its drawing is).
+  const restAt = (id, w) => {
+    const p = routes?.paths?.get(id);
+    const rested = (p?.rests ?? []).some(x => (x.kind === 'ring' || x.kind === 'tray') && x.item === w.item && x.via === w.via);
+    const qs = rested ? p.points.filter(q => q.item === w.item && q.via === w.via && q.at !== 'approach') : [];
+    if (!qs.length) return null;
+    return detourAt({x: qs.reduce((a, q) => a + q.x, 0) / qs.length, y: qs.reduce((a, q) => a + q.y, 0) / qs.length});
+  };
   if (routes?.routes) {
     // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
     // along the rack's axes, x right as seen from the front and y up. This
@@ -208,7 +219,15 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
         if (key && inBundle) mine.set(`in|${key}`, bundleSlot(place.bundle, key));
         else if (key && !mine.has(key)) { mine.set(key, used.get(key) || 0); used.set(key, mine.get(key) + 1); }
         const slot = key ? mine.get(inBundle ? `in|${key}` : key) : 0;
-        return wayPoint(svg, w, pane, rack.frame, slot, ductX, inBundle && key ? combOffset(place, WIDTH) : 0);
+        const p = wayPoint(svg, w, pane, rack.frame, slot, ductX, inBundle && key ? combOffset(place, WIDTH) : 0);
+        // RESTING, AS HEIGHT (kit 0.14.0; cable-lay note section 3, "What 2D
+        // shows"): where the kit lays the cable at a ring or a tray - on a
+        // ring's sill, along a tray's floor line - the pane draws it at that
+        // height, not at the middle of the ring's drawing. A tray, which has
+        // no element of its own on the pane, is placed by the kit's points.
+        const rest = !w.lane ? restAt(link.id, w) : null;
+        if (!rest) return p;
+        return p ? [p[0], rest[1]] : rest;
       });
       // THE DETOURS (kit 0.11.0, #949: route-context.js detourStops), each
       // after the waypoint its leg starts from, so the drawn cable goes round
