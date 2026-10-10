@@ -5709,6 +5709,8 @@ def check_rack_zero_u(page, base):
         page.select_option("#catSide", side)
         page.click("#catPlace")
         page.wait_for_function("(s) => window.__rack.doc().racks[0].items.some(i => i.ref === 'cmv-5u3w' && i.side === s)", arg=side, timeout=READY_MS)
+    # (once the redraw that draws the second is done: the routes now read each plug's reach first)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-side]').length >= 2", timeout=READY_MS)
     xs = page.evaluate("""() => { const s = document.querySelector('#paneFront svg');
       return Object.fromEntries([...s.querySelectorAll('[data-side]')].map(g => { const b = g.getBoundingClientRect();
         const m = s.getScreenCTM().inverse(); return [g.dataset.side, new DOMPoint(b.left + b.width / 2, 0).matrixTransform(m).x]; })); }""")
