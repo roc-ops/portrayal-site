@@ -32,6 +32,27 @@ def check(cond, what, detail=""):
     return cond
 
 
+# THE NAMES IN A JS `{a, b as c}` LIST. `side` 0 is the name the other module
+# knows (an import's source name), -1 the name this one does (an export's
+# public name). Split on `as` between any whitespace: `split(" as ")` read
+# `a\n  as b`, or two spaces, as one name, "a\n  as b", which no module
+# exports and nothing matches - and comments inside the braces as names.
+_JS_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+_JS_AS = re.compile(r"\s+as\s+")
+
+
+def js_names(group, side):
+    return {_JS_AS.split(n.strip())[side].strip()
+            for n in _JS_COMMENT.sub("", group).split(",") if n.strip()}
+
+
+check(js_names("a,\n  b\tas\n  c,  d  as  e, // why\n  f /* old */ as g,\n", 0) == {"a", "b", "d", "f"}
+      and js_names("a,\n  b\tas\n  c,  d  as  e, // why\n  f /* old */ as g,\n", -1) == {"a", "c", "e", "g"}
+      and js_names("alias, basket as last", 0) == {"alias", "basket"},
+      "an import or export list is read name by name: `as` across a line break, a tab or two spaces, "
+      "comments, a trailing comma, and names that only contain `as`")
+
+
 def face_file(idx, cfg, view):
     """The file that draws `view` of configuration `cfg` (Portrayal #670): the
     kit's faceFile, in Python. A drawing is written once and shared by every
@@ -421,7 +442,7 @@ stage_files = sorted((HERE / "site" / "showcase" / "stages").glob("*.js"))
 direct, epoch_readers = [], []
 for p in stage_files:
     for names, src in IMPORT_FROM.findall(p.read_text()):
-        got = {n.strip().split(" as ")[0] for n in names.split(",") if n.strip()}
+        got = js_names(names, 0)
         if src.endswith("/artifact.js") and got & BANNED:
             direct.append(f"{p.name}: {sorted(got & BANNED)}")
         if src.endswith("/stage-rail.js") and "epoch" in got:
@@ -1031,7 +1052,7 @@ def _exports(mod):
     t = (VENDOR / f"{mod}.js").read_text()
     names = set(re.findall(r"^export\s+(?:async\s+)?(?:function\*?|const|let|class)\s+([A-Za-z_$][\w$]*)", t, re.M))
     for grp in re.findall(r"^export\s*\{([^}]*)\}", t, re.M):
-        names |= {n.split(" as ")[-1].strip() for n in grp.split(",") if n.strip()}
+        names |= js_names(grp, -1)
     return names
 
 for _stem in _exfiles:
@@ -1044,7 +1065,7 @@ for _stem in _exfiles:
     check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
           f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
     for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'", _src):
-        _want = {n.split(" as ")[0].strip() for n in _names.split(",") if n.strip()}
+        _want = js_names(_names, 0)
         _have = _exports(_mod) if _mod in _kitmods else set()
         check(_mod in _kitmods and _want <= _have,
               f"kit example {_stem}: @portrayal/kit/{_mod} exports {sorted(_want)}",
@@ -1069,20 +1090,75 @@ check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not
 # each maps to a .js file. A folder mapping ("@portrayal/kit/": "…/") resolves
 # @portrayal/kit/dist to …/dist, with no .js - a 404 for anyone who copies it.
 # The snippet that IS the import map: the section also shows `npm install`.
-_snip = next((m for m in re.finditer(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)
-              if "importmap" in m.group(1)), None)
+import html as _html
+# A snippet is a <pre> whose class list has kit-snippet, whatever else the tag
+# carries, around a <code>. Either quote ends an import's module name.
+_SNIPPET = re.compile(r'<pre\b[^>]*\bclass="[^"]*(?<![\w-])kit-snippet(?![\w-])[^"]*"[^>]*>\s*<code\b[^>]*>(.*?)</code>\s*</pre>', re.S)
+_KIT_FROM = re.compile(r"""from\s*['"](@portrayal/kit/[\w/-]+)['"]""")
+_KIT_IMPORT = re.compile(r"""import\s*\{([^}]*)\}\s*from\s*['"]@portrayal/kit/([\w/-]+)['"]""")
+
+
+def kit_snippets(page):
+    """(the page's kit-snippet blocks as text, what could not be read). The
+    second list is what makes the first trustworthy: a block the pattern did
+    not match, or a mention of @portrayal/kit/ in a snippet that is not an
+    `import {names} from` line, is code the checks below would pass unread."""
+    blocks = [_html.unescape(s) for s in _SNIPPET.findall(page)]
+    unread = []
+    if len(blocks) != page.count("kit-snippet"):
+        unread.append(f"kit-snippet is written {page.count('kit-snippet')} times and {len(blocks)} blocks were read "
+                      '- each must be <pre class="kit-snippet"><code>...</code></pre>')
+    for b in blocks:
+        if "importmap" in b:
+            continue
+        said, read = b.count("@portrayal/kit/"), len(_KIT_IMPORT.findall(b))
+        if said != read:
+            unread.append(f"a snippet names @portrayal/kit/ {said} times and {read} were read as "
+                          f"`import {{names}} from '@portrayal/kit/<module>'`: {b.strip().splitlines()[0][:70]}")
+    return blocks, unread
+
+
+_snippets, _snip_unread = kit_snippets(_kit_html)
+_snip = next((s for s in _snippets if "importmap" in s), None)
 _snipmap = {}
 if _snip:
-    _raw = _snip.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    _raw = _snip
     _js = re.search(r"\{.*\}", _raw, re.S)
     try: _snipmap = json.loads(_js.group(0))["imports"] if _js else {}
     except ValueError: _snipmap = {}
+# THE PAGE'S OWN SNIPPETS COUNT TOO. A <pre class="kit-snippet"> is code a
+# reader copies, exactly like a recipe, but nothing runs it: the rack section
+# names resolveRoute, ringMarks, solidsOf and the rest only there. So the
+# modules a snippet imports must be in the map as well, and (below, once the
+# kit's package.json is read) every name a snippet imports must be exported.
+check(len(_snippets) >= 4 and not _snip_unread,
+      f"every kit-snippet on kit.html was read, and every @portrayal/kit/ module one names is an import line "
+      f"that was parsed ({len(_snippets)} blocks)",
+      "; ".join(_snip_unread) or f"only {len(_snippets)} blocks read")
 _used = set()
 for _stem in _exfiles:
-    _used |= set(re.findall(r"from\s*'(@portrayal/kit/[\w/-]+)'", (_exdir / f"{_stem}.js").read_text()))
-check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in _used),
-      "the 'Getting the files' import map resolves every @portrayal/kit module the recipes import, to a .js file",
-      f"recipes use {sorted(_used)}; snippet maps {_snipmap}")
+    _used |= set(_KIT_FROM.findall((_exdir / f"{_stem}.js").read_text()))
+_snip_used = {u for s in _snippets for u in _KIT_FROM.findall(s)}
+_unmapped = sorted(u for u in _used | _snip_used if not (u in _snipmap and _snipmap[u].endswith(".js")))
+check(bool(_used) and not _unmapped,
+      "the 'Getting the files' import map resolves every @portrayal/kit module the recipes and the page's "
+      "snippets import, to a .js file",
+      f"not mapped to a .js file: {_unmapped}; recipes use {sorted(_used)}, snippets {sorted(_snip_used)}")
+
+
+def kit_import_problems(src, exports_of):
+    """What is wrong with the `import {names} from '@portrayal/kit/<module>'`
+    lines in `src`: a module the kit does not export (exports_of gives None),
+    or a name the module does not export."""
+    out = []
+    for names, mod in _KIT_IMPORT.findall(src):
+        have = exports_of(mod)
+        want = js_names(names, 0)
+        if have is None:
+            out.append(f"@portrayal/kit/{mod} is not a module the vendored kit exports")
+        elif want - have:
+            out.append(f"@portrayal/kit/{mod} does not export {sorted(want - have)}")
+    return out
 # American English on the kit page, as everywhere in this site's prose.
 _kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s in _exfiles)
 # ...and the Lint rules page's own words (portrayal-site#159): the page, its
@@ -1131,6 +1207,51 @@ check(_kpkg.get("name") == "@portrayal/kit" and bool(re.fullmatch(r"\d+\.\d+\.\d
 check(len(_kexp) >= 10 and "marks" in _kexp and "rack/editor" in _kexp,
       f"vendor/kit-package.json lists the kit's exports ({len(_kexp)} read)",
       f"read {_kexp}")
+# EVERY NAME A SNIPPET IMPORTS IS ONE THE VENDORED KIT EXPORTS. The recipes
+# are held to this above; the snippets were not read at all, so a refresh that
+# dropped or renamed ringMarks left the page documenting an import that fails.
+_snip_imports = [m for s in _snippets for m in _KIT_IMPORT.findall(s)]
+_snip_bad = sorted({b for s in _snippets for b in kit_import_problems(
+    s, lambda m: _exports(m) if m in _kexp and (VENDOR / f"{m}.js").is_file() else None)})
+check(bool(_snip_imports) and not _snip_bad,
+      f"every name kit.html's snippets import from @portrayal/kit is exported by the vendored kit "
+      f"({len(_snip_imports)} import lines)",
+      "; ".join(_snip_bad) or "no kit-snippet imports from @portrayal/kit - has the markup changed?")
+_kip = lambda src: kit_import_problems(src, lambda m: {"a", "b"} if m == "rack/m" else None)
+_kip_bad = [what for what, got, want in [
+    ("a removed export", _kip("import {a, gone} from '@portrayal/kit/rack/m';"), "does not export ['gone']"),
+    ("a removed module", _kip("import {a} from '@portrayal/kit/rack/none';"), "rack/none is not a module"),
+    ("a renamed import", _kip("import {gone as a} from '@portrayal/kit/rack/m';"), "does not export ['gone']"),
+] if not any(want in g for g in got)]
+_kip_bad += [f"a good import: {g}" for g in _kip("import {a, b as c} from '@portrayal/kit/rack/m';\nimport {x} from './x.js';")]
+check(not _kip_bad,
+      "the snippet import check fails a removed export, a removed module and a renamed import, and passes a good one",
+      "; ".join(_kip_bad))
+# ...and it fails a broken import WHEREVER it is written. Each of these is a
+# snippet importing a name the module does not export; the first two were
+# passed unread, one for an attribute on the <pre> and one for its quotes.
+def _page_problems(page):
+    blocks, unread = kit_snippets(page)
+    return unread + [b for s in blocks for b in _kip(s)]
+_pre = lambda tag, code: f'<p>x</p>\n{tag}<code>{code}</code></pre>\n'
+_gone = "import {a, gone} from '@portrayal/kit/rack/m';"
+_sn_cases = {
+    "an attribute on the <pre>": _pre('<pre class="kit-snippet" data-x>', _gone),
+    "double quotes": _pre('<pre class="kit-snippet">', _gone.replace("'", "&quot;")),
+    "another class beside it": _pre('<pre class="wide kit-snippet">', _gone),
+    "a <pre> with no <code>": '<pre class="kit-snippet">' + _gone + "</pre>",
+    "a dynamic import": _pre('<pre class="kit-snippet">', "const m = await import('@portrayal/kit/rack/none');"),
+    "a namespace import": _pre('<pre class="kit-snippet">', "import * as m from '@portrayal/kit/rack/none';"),
+}
+_sn_bad = [name for name, page in _sn_cases.items() if not _page_problems(page)]
+_sn_bad += [f"a good page: {b}" for b in _page_problems(
+    _pre('<pre class="kit-snippet" data-x>', 'import {a} from "@portrayal/kit/rack/m";\n// a, from the kit')
+    + _pre('<pre class="kit-snippet">', "npm install @portrayal/kit three")
+    + _pre('<pre class="kit-snippet">', '&lt;script type="importmap"&gt;{"imports": {"@portrayal/kit/rack/m": "m.js"}}'))]
+check(not _sn_bad,
+      "a broken import in a snippet fails whatever the <pre> carries and whichever quotes it uses, and a snippet "
+      "that could not be read is a failure, not a pass",
+      "; ".join(_sn_bad))
 _said = re.findall(r'data-kit-version="([^"]*)"', _kit_html)
 _cdn = re.findall(r"@portrayal/kit@([^/\"'\s]+)/", _kit_html)
 check(len(_said) == 1, "kit.html states the kit's version once (data-kit-version)",
@@ -1157,11 +1278,58 @@ _files = _files_m.group(1) if _files_m else ""
 check(bool(_files_m), "kit.html has its Getting the files section (#files)")
 _notes = re.findall(r'<p class="kit-note" data-kit-unpublished>(.*?)</p>', _files, re.S)
 _npm_said = re.findall(r'data-kit-npm="([^"]*)"', _kit_html)
+# A VERSION IS A WHOLE TOKEN. `"0.15.0" in note` passed a note bumped in one
+# place and not the other ("documents 0.15.0 ... until 0.14.0 is published"),
+# and passed 0.1.0 inside 10.1.0. Every version the note names is read, and
+# they must be exactly the two it is about.
+_VERSION = re.compile(r"(?<![\w.])\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?(?!\.?\w)")
+
+
+def kit_note_problems(notes, npm_said, kver, npm_latest):
+    """What is wrong with #files' not-on-npm note(s) while kit `kver` is
+    documented and npm's latest is `npm_latest`: [] for one note that names
+    those two versions and no other."""
+    if not notes:
+        return [f"no data-kit-unpublished note - add one to #files, naming {kver} and {npm_latest}, "
+                "or update KIT_NPM_LATEST if the kit has been published"]
+    out = []
+    if len(notes) > 1:
+        out.append(f"{len(notes)} data-kit-unpublished notes - keep one")
+    if npm_said != [npm_latest]:
+        out.append(f"data-kit-npm says {npm_said}, KIT_NPM_LATEST is {npm_latest!r} - they must agree, once")
+    for note in notes:
+        named = set(_VERSION.findall(note))
+        if named != {kver, npm_latest}:
+            out.append(f"the note is stale: it names {sorted(named) or 'no version'}, and must name {kver} "
+                       f"(documented) and {npm_latest} (npm's latest) and no other version - update the note, "
+                       "or KIT_NPM_LATEST if the kit has been published")
+    return out
+
+
+_note = lambda doc, npm: (f'This page documents kit {doc}: npm\'s latest is <span data-kit-npm="{npm}">{npm}</span>. '
+                          f'Until {doc} is published, use a checkout.')
+_knp_cases = [
+    ("no note", ([], [], "0.15.0", "0.2.0"), "add one"),
+    ("a half-bumped note", ([_note("0.15.0", "0.2.0").replace("Until 0.15.0", "Until 0.14.0")], ["0.2.0"],
+                            "0.15.0", "0.2.0"), "stale"),
+    ("a note for the last kit", ([_note("0.14.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.2.0"), "stale"),
+    ("a version inside another", ([_note("10.1.0", "0.2.0")], ["0.2.0"], "0.1.0", "0.2.0"), "stale"),
+    ("an old npm version", ([_note("0.15.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.3.0"), "KIT_NPM_LATEST is '0.3.0'"),
+    ("two notes", ([_note("0.15.0", "0.2.0")] * 2, ["0.2.0"], "0.15.0", "0.2.0"), "keep one"),
+]
+_knp_bad = [f"{name}: {kit_note_problems(*a)}" for name, a, want in _knp_cases
+            if not any(want in s for s in kit_note_problems(*a))]
+_knp_bad += [f"a stale note is told to add one: {s}" for s in kit_note_problems(*_knp_cases[1][1]) if "add one" in s]
+_knp_bad += [f"a current note: {s}" for s in kit_note_problems([_note("0.15.0", "0.2.0")], ["0.2.0"], "0.15.0", "0.2.0")]
+check(not _knp_bad,
+      "the not-on-npm note check fails a missing, half-bumped, outdated or doubled note, each in its own words, "
+      "and passes a current one",
+      "; ".join(_knp_bad))
 if _kver and _vt(_kver) > _vt(KIT_NPM_LATEST):
-    check(len(_notes) == 1 and _npm_said == [KIT_NPM_LATEST] and _kver in _notes[0],
+    _note_bad = kit_note_problems(_notes, _npm_said, _kver, KIT_NPM_LATEST)
+    check(not _note_bad,
           f"kit.html's #files says the documented kit {_kver} is not on npm (npm's latest is {KIT_NPM_LATEST})",
-          f"{len(_notes)} data-kit-unpublished notes, data-kit-npm {_npm_said} - add the note to #files, "
-          "naming both versions, or update KIT_NPM_LATEST if the kit has been published")
+          "; ".join(_note_bad))
 else:
     check(not _notes and not _npm_said,
           f"kit {_kver} is on npm, so kit.html carries no not-on-npm note",
@@ -1357,11 +1525,29 @@ check({d["name"] for d in _devs} <= set(_rack.get("devices") or {}),
 VRACK = VENDOR / "rack"
 _vrack = sorted(p.name for p in VRACK.glob("*.js")) if VRACK.is_dir() else []
 _srcf = VRACK / "SOURCE"
-_src_sha = next((ln.strip() for ln in (_srcf.read_text().splitlines() if _srcf.is_file() else [])
-                 if ln.strip() and not ln.lstrip().startswith("#")), "")
-check(bool(re.fullmatch(r"[0-9a-f]{40}", _src_sha)),
-      "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from",
-      f"got {_src_sha!r} - run ./refresh-assets.sh")
+
+
+def source_commit(text):
+    """(what vendor/rack/SOURCE says, the commit it names): the first line
+    that is not a comment, and that line again only if it is a full 40-hex
+    SHA - else "". Only the second is ever handed to git: `HEAD`, a branch or
+    a short SHA would resolve in the clone, and the vendored core would then
+    be compared with whatever that name points at today."""
+    said = next((ln.strip() for ln in text.splitlines() if ln.strip() and not ln.lstrip().startswith("#")), "")
+    return said, (said if re.fullmatch(r"[0-9a-f]{40}", said) else "")
+
+
+_src_said, _src_sha = source_commit(_srcf.read_text() if _srcf.is_file() else "")
+check(bool(_src_sha),
+      "vendor/rack/SOURCE names the Portrayal commit the rack core was vendored from, as a full SHA",
+      f"got {_src_said!r} - run ./refresh-assets.sh")
+_sc_full = "0123456789abcdef0123456789abcdef01234567"
+_sc_bad = [f"{said!r} was taken as a commit" for said in
+           ("HEAD", "main", _sc_full[:12], _sc_full.upper(), "--help", _sc_full + "0", "")
+           if source_commit(f"# a comment\n{said}\n")[1]]
+_sc_bad += [] if source_commit(f"# a comment\n\n  {_sc_full}\n") == (_sc_full, _sc_full) else ["a full SHA was refused"]
+check(not _sc_bad, "only a full 40-hex SHA in vendor/rack/SOURCE is handed to git; HEAD, a branch or a short SHA is not",
+      "; ".join(_sc_bad))
 # $PORTRAYAL_UPSTREAM, else ../Portrayal beside this repository: the same default
 # as refresh-assets.sh and tools/publish-schemas.sh (README, "Where Portrayal is").
 _upstream = Path(os.environ.get("PORTRAYAL_UPSTREAM") or (HERE.parent / "Portrayal"))
@@ -1372,9 +1558,12 @@ _git = lambda *a: _sp.run(["git", "-C", str(_upstream), *a], capture_output=True
 if not (_upstream / ".git").exists():
     skips.append(f"vendor/rack/ holds exactly the kit's rack/*.js - no upstream clone at {_upstream} "
                  "(set PORTRAYAL_UPSTREAM to check the vendored rack core against its source)")
-elif not _src_sha or _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode != 0:
+elif not _src_sha:
     check(False, "vendor/rack/ holds exactly the kit's rack/*.js",
-          f"commit {_src_sha or '(none)'} is not in {_upstream} - git -C {_upstream} fetch, or run ./refresh-assets.sh")
+          f"vendor/rack/SOURCE says {_src_said or '(nothing)'!r}, which is not a full commit SHA - run ./refresh-assets.sh")
+elif _git("cat-file", "-e", f"{_src_sha}^{{commit}}").returncode != 0:
+    check(False, "vendor/rack/ holds exactly the kit's rack/*.js",
+          f"commit {_src_sha} is not in {_upstream} - git -C {_upstream} fetch, or run ./refresh-assets.sh")
 else:
     _ls = _git("ls-tree", "--name-only", f"{_src_sha}:kit/rack")
     _want = sorted(n for n in _ls.stdout.decode().split() if n.endswith(".js"))
@@ -1408,13 +1597,12 @@ _REEXP = re.compile(r"^\s*export\s*\{([^}]*)\}\s*from", re.M)
 # A local list, `export {a, b as c}` with no `from`, exports names this module
 # declared, so it counts as declaring them (the exported name, after `as`).
 _LOCEXP = re.compile(r"^\s*export\s*\{([^}]*)\}(?!\s*from\b)", re.M)
-_local_exports = lambda t: [n.strip().split(" as ")[-1].strip()
-                            for g in _LOCEXP.findall(t) for n in g.split(",") if n.strip()]
+_local_exports = lambda t: sorted(n for g in _LOCEXP.findall(t) for n in js_names(g, -1))
 _kit_names = set()
 for _f in _vrack:
     _t = (VRACK / _f).read_text()
     _kit_names |= set(_DECL.findall(_t))
-    _kit_names |= {n.strip().split(" as ")[-1].strip() for g in _REEXP.findall(_t) for n in g.split(",") if n.strip()}
+    _kit_names |= {n for g in _REEXP.findall(_t) for n in js_names(g, -1)}
     _kit_names |= set(_local_exports(_t))
 _redef = sorted(f"{p.name}: {n}" for p in sorted((HERE / "site" / "rack").glob("*.js"))
                 for _t in [p.read_text()] for n in _DECL.findall(_t) + _local_exports(_t) if n in _kit_names)
@@ -1533,21 +1721,50 @@ check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, r
 # extensionless). With an upstream clone, a link the README gains must be
 # added here too, so it is held from then on; without one, that half is a
 # named skip and the pinned list is still checked.
-_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json"]
+# THREE READMES, NOT ONE: the repository's, the kit's (it is the npm page of
+# @portrayal/kit) and the components README the first two send people to. A
+# path is as written after the host; the bare host is "" and is the front page.
+_README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json",
+                 "schemas/v2/rack.schema.json"]
+_READMES = ["README.md", "kit/README.md", "library/components/README.md"]
+_PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w-]|\.\w)(/[^\s)\"'<>\]`]*)?")
+
+
+def portrayal_dev_paths(text):
+    """Every portrayal.dev path `text` links, without query, fragment or the
+    punctuation that follows a URL in prose: "" for the site's root."""
+    return {m.group(1).rstrip(".,;:").split("#")[0].split("?")[0].strip("/") if m.group(1) else ""
+            for m in _PD_URL.finditer(text)}
+
+
+_shown = lambda paths: ["/" + p for p in sorted(paths)]
 _served_as = lambda p: next((c for c in (p, f"{p}.html", f"{p}/index.html" if p else "index.html") if c in _srv), None)
 check(all(_served_as(p) for p in _README_LINKS),
-      f"the {len(_README_LINKS)} portrayal.dev URLs the Portrayal README links are served",
-      f"not built: {[p for p in _README_LINKS if not _served_as(p)]}")
-_readme_up = _upstream / "README.md"
-if _readme_up.is_file():
-    _up_links = sorted({u.rstrip(".,").split("#")[0].split("?")[0].strip("/") for u in
-                        re.findall(r"https://(?:www\.)?portrayal\.dev(/[^\s)\"'<>\]]*)?", _readme_up.read_text())
-                        if u})
-    check(bool(_up_links) and set(_up_links) <= set(_README_LINKS),
-          f"every portrayal.dev URL in {_readme_up} is pinned in _README_LINKS ({len(_up_links)} linked)",
-          f"add to _README_LINKS (and serve): {sorted(set(_up_links) - set(_README_LINKS))}")
-else:
-    skips.append(f"the Portrayal README's portrayal.dev links are all pinned - no README at {_readme_up}")
+      f"the {len(_README_LINKS)} portrayal.dev URLs Portrayal's READMEs link are served",
+      f"not built: {_shown(p for p in _README_LINKS if not _served_as(p))}")
+_pdp = portrayal_dev_paths("see https://portrayal.dev/components/catalog. Or [the file](https://www.portrayal.dev/"
+                           "assets/dist/components.json?x=1#top), `https://portrayal.dev/schemas/v2/rack.schema.json`,"
+                           " <https://portrayal.dev/>, https://portrayal.dev and https://portrayal.device/x")
+check(_pdp == {"components/catalog", "assets/dist/components.json", "schemas/v2/rack.schema.json", ""}
+      and portrayal_dev_paths("It is at https://portrayal.dev. Not https://portrayal.dev.example/x") == {""}
+      and portrayal_dev_paths("no link to portrayal.dev here") == set(),
+      "a README's portrayal.dev links are read whole: no trailing punctuation, query or fragment, the bare host "
+      "as the root even at a sentence's end, and no other host", f"read {_shown(_pdp)}")
+# The root README is the one that must link something: no links read from it
+# is a pattern that stopped matching, not a README with nothing to hold.
+_no_readme = [r for r in _READMES if not (_upstream / r).is_file()]
+if _no_readme:
+    skips.append(f"the portrayal.dev links in Portrayal's {', '.join(_no_readme)} are all pinned - "
+                 f"not found under {_upstream}")
+for _rel in (r for r in _READMES if r not in _no_readme):
+    _readme_up = _upstream / _rel
+    _up_links = portrayal_dev_paths(_readme_up.read_text())
+    # The front page is always served (checked above), so the root needs no pin.
+    _unpinned = _up_links - set(_README_LINKS) - {""}
+    check((bool(_up_links) or _rel != "README.md") and not _unpinned,
+          f"every portrayal.dev URL in Portrayal's {_rel} is pinned in _README_LINKS ({len(_up_links)} linked)",
+          f"not pinned: {_shown(_unpinned)} - add each to _README_LINKS in check-contract.py, without the "
+          "leading slash, and serve it" if _unpinned else f"no portrayal.dev link read from {_readme_up}")
 # THE ROLLBACK STILL WORKS: coming-soon/ is kept whole, and its page still
 # shows the 3D video from media/, so pointing wrangler.jsonc back at it is a
 # one-line change.
@@ -1983,6 +2200,62 @@ check(not _flat,
 check("site/catalog-page.js" in _cat_html,
       "components/catalog.html renders through site/catalog-page.js")
 
+# ── refresh-assets.sh REFUSES BEFORE IT COPIES ──────────────────────────
+# Run for real, as a copy in a scratch folder (the script works on the folder
+# it is in), against a library and a kit that are in no git checkout: it must
+# refuse, and vendor/ must be as it was. It used to copy the kit's modules and
+# empty vendor/rack/ first, then find it could not name the commit. And with
+# no library at all, the advice reads in the order it is followed: clone,
+# build, or else point PORTRAYAL_UPSTREAM somewhere.
+def _refresh_dry():
+    with _tf.TemporaryDirectory() as _d:
+        _d = Path(_d)
+        for _sub in ("site/vendor/rack", "up/library/dist", "up/kit/rack"):
+            (_d / _sub).mkdir(parents=True)
+        (_d / "site" / "refresh-assets.sh").write_text((HERE / "refresh-assets.sh").read_text())
+        (_d / "site" / "vendor" / "rack" / "kept.js").write_text("export const kept = 1;\n")
+        (_d / "up" / "library" / "dist" / "devices.json").write_text('{"devices": []}')
+        (_d / "up" / "kit" / "new.js").write_text("export const fresh = 1;\n")
+        (_d / "up" / "kit" / "rack" / "new.js").write_text("export const fresh = 1;\n")
+        _env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "PORTRAYAL_"))}
+        # No repository above the scratch folder, whatever the temp folder sits in.
+        _env["GIT_CEILING_DIRECTORIES"] = str(_d.resolve().parent)
+        # The script refuses a library under a folder named as Portrayal's
+        # working tree is, and a dist older than its checkout. A TMPDIR under
+        # such a folder, or a commit made a second after the scratch dist, is
+        # neither, so both refusals are switched off: what is tested here is
+        # the refusals that come after them.
+        _env.update(PORTRAYAL_ALLOW_LIVE="1", PORTRAYAL_ALLOW_STALE="1", GIT_CONFIG_GLOBAL=os.devnull,
+                    GIT_CONFIG_NOSYSTEM="1")
+        _run = lambda *a: _sp.run(["sh", str(_d / "site" / "refresh-assets.sh"), *a],
+                                  capture_output=True, text=True, env=_env)
+        _vendor = lambda: sorted(str(f.relative_to(_d / "site" / "vendor"))
+                                 for f in (_d / "site" / "vendor").rglob("*") if f.is_file())
+        _r = _run(str(_d / "up" / "library"))
+        _left = _vendor()
+        _none = _run(str(_d / "nowhere"))
+        # The same kit, now in a commit, but with no package.json: the last
+        # thing the script copies from it.
+        _g = lambda *a: _sp.run(["git", "-c", "user.name=check", "-c", "user.email=check@example.invalid",
+                                 "-c", "commit.gpgsign=false", *a], cwd=_d / "up", capture_output=True, env=_env)
+        _g("init", "-q"); _g("add", "-A"); _made = _g("commit", "-q", "-m", "a kit with no package.json")
+        _nopkg = _run(str(_d / "up" / "library"))
+        return _r, _left, _none, _made.returncode, _nopkg, _vendor()
+_rf, _rf_left, _rf_none, _rf_made, _rf_nopkg, _rf_nopkg_left = _refresh_dry()
+check(_rf_made == 0 and _rf_nopkg.returncode == 1 and "refusing" in _rf_nopkg.stderr
+      and "package.json" in _rf_nopkg.stderr and _rf_nopkg_left == ["rack/kept.js"],
+      "refresh-assets.sh refuses a kit with no package.json before it copies anything into vendor/",
+      f"commit made: {_rf_made == 0}; exit {_rf_nopkg.returncode}, vendor/ holds {_rf_nopkg_left} "
+      f"(wanted only rack/kept.js): {_rf_nopkg.stderr.strip()[-200:]}")
+check(_rf.returncode == 1 and "refusing" in _rf.stderr and "not in a git checkout" in _rf.stderr
+      and _rf_left == ["rack/kept.js"],
+      "refresh-assets.sh refuses a kit it cannot name the commit of before it copies anything into vendor/",
+      f"exit {_rf.returncode}, vendor/ holds {_rf_left} (wanted only rack/kept.js): {_rf.stderr.strip()[-200:]}")
+_rf_at = [_rf_none.stderr.find(s) for s in ("git clone ", "./build.sh", "PORTRAYAL_UPSTREAM")]
+check(_rf_none.returncode == 1 and -1 < _rf_at[0] < _rf_at[1] < _rf_at[2],
+      "refresh-assets.sh with no library says clone, then build, then the PORTRAYAL_UPSTREAM alternative",
+      f"exit {_rf_none.returncode}, found at {_rf_at}: {_rf_none.stderr.strip()[-300:]}")
+
 # ── THE PRE-PUSH HOOK'S IDEA OF "THE SITE" ──────────────────────────────
 # hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks
 # for it (#144: CI runs it on every PR), and even then only when the push
@@ -2011,10 +2284,57 @@ _hook_bad = ([f"{p} should run the browser pass" for p in _want_pass if not _tou
 check(not _hook_bad,
       "hooks/pre-push runs the browser pass for every page, including one in a subdirectory",
       "; ".join(_hook_bad))
-# And only on request: the default push runs the contract check, not the pass.
-_hook_gate = _hook_src.find("PORTRAYAL_HOOK_BROWSER:-0")
-check(0 <= _hook_gate < _hook_src.find('python3 "$BROWSER"'),
-      "hooks/pre-push runs the browser pass only when PORTRAYAL_HOOK_BROWSER asks for it")
+# THE HOOK ITSELF, RUN: in a scratch repository with stand-ins for the two
+# checks, fed what git feeds it. Where the browser pass sits in the file says
+# nothing about whether a push gets through, so each case asserts the exit
+# status and what ran. A scratch repository has no tests/, so every run also
+# leaves the node tests out, and has to say so.
+_STUB = "import os, sys\nopen('ran', 'a').write('%s\\n')\nsys.exit(int(os.environ.get('STUB_EXIT', '0')))\n"
+def _hook_runs():
+    with _tf.TemporaryDirectory() as _d:
+        _env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "PORTRAYAL_"))}
+        _env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")
+        _g = lambda *a: _sp.run(["git", "-c", "user.name=check", "-c", "user.email=check@example.invalid",
+                                 "-c", "commit.gpgsign=false", *a],
+                                cwd=_d, capture_output=True, text=True, env=_env)
+        _g("init", "-q")
+        (Path(_d) / "check-contract.py").write_text(_STUB % "contract")
+        (Path(_d) / "check-browser.py").write_text(_STUB % "browser")
+        (Path(_d) / "README.md").write_text("one\n")
+        _g("add", "-A"); _g("commit", "-q", "-m", "one")
+        (Path(_d) / "index.html").write_text("<p>two</p>\n")
+        _g("add", "-A"); _g("commit", "-q", "-m", "two")
+        _c1, _c2 = _g("rev-parse", "HEAD~1").stdout.strip(), _g("rev-parse", "HEAD").stdout.strip()
+        def _push(remote_sha, **extra):
+            (Path(_d) / "ran").write_text("")
+            _r = _sp.run(["sh", str(HERE / "hooks" / "pre-push"), "origin", "/nowhere"], cwd=_d, text=True,
+                         input=f"refs/heads/b {_c2} refs/heads/b {remote_sha}\n" if remote_sha else "",
+                         capture_output=True, env={**_env, **extra})
+            return _r.returncode, (Path(_d) / "ran").read_text().split(), _r.stdout + _r.stderr
+        return {"default": _push(_c1), "asked": _push(_c1, PORTRAYAL_HOOK_BROWSER="1"),
+                "unknown": _push("0123456789abcdef0123456789abcdef01234567"),
+                "failing": _push(_c1, STUB_EXIT="3"),
+                "nothing": _push("")}, bool(_c1 and _c2)
+_hr, _hr_made = _hook_runs()
+_skip_lines = lambda out, what: [l for l in out.splitlines() if l.startswith("pre-push: skipped") and what in l]
+check(_hr_made and _hr["default"][:2] == (0, ["contract"]) and len(_skip_lines(_hr["default"][2], "check-browser.py")) == 1,
+      "hooks/pre-push, run: a default push exits 0 having run the contract check and not the browser pass, and says so",
+      f"exit {_hr['default'][0]}, ran {_hr['default'][1]}: {_hr['default'][2][-300:]}")
+check(_hr["asked"][0] == 0 and (_hr["asked"][1] == ["contract", "browser"]
+                                or (_hr["asked"][1] == ["contract"] and _skip_lines(_hr["asked"][2], "no playwright"))),
+      "hooks/pre-push, run: with PORTRAYAL_HOOK_BROWSER=1 a push that touches a page exits 0 having run the browser "
+      "pass, or says it has no playwright",
+      f"exit {_hr['asked'][0]}, ran {_hr['asked'][1]}: {_hr['asked'][2][-300:]}")
+check(_hr["unknown"][:2] == (0, ["contract"]),
+      "hooks/pre-push, run: a force-push over a commit this clone does not have exits 0 and is checked, not exit 128",
+      f"exit {_hr['unknown'][0]}, ran {_hr['unknown'][1]}: {_hr['unknown'][2][-300:]}")
+check(_hr["failing"][0] == 3 and _hr["nothing"][:2] == (0, []),
+      "hooks/pre-push, run: a failing contract check stops the push with its own status, and a push of nothing runs nothing",
+      f"failing: exit {_hr['failing'][0]}; nothing: exit {_hr['nothing'][0]}, ran {_hr['nothing'][1]}")
+_hr_notes = [l for l in _hr["default"][2].splitlines() if "skipped" in l]
+check(len(_skip_lines(_hr["default"][2], "node tests")) == 1 and len(_hr_notes) == 2,
+      "hooks/pre-push, run: each check left out is one `pre-push: skipped` line",
+      f"{_hr_notes}")
 
 # ── THE LINT RULES PAGE (portrayal-site#159) ────────────────────────────
 # lint.html renders assets/dist/lint-rules.json, Portrayal's rule table

@@ -6,6 +6,22 @@
 #   tools/publish-schemas.sh v0.1.0          from the upstream clone, at that ref
 #   tools/publish-schemas.sh --from-dir DIR  from a folder of *.schema.json
 #
+# A REF PUBLISHES EVERY SCHEMA AT THAT REF; --from-dir PUBLISHES WHAT IS IN THE
+# FOLDER, so it is how one schema goes out on its own. The rack schema is the
+# case: its label follows the rack file's version, not a Portrayal release, so
+# it moves when the manifest schemas do not. A ref would stage all of them, and
+# if any manifest schema at that ref differs from the one published under its
+# label, the whole run refuses and nothing is copied, the rack schema
+# included (and --force would then rewrite every one that differs). So the
+# rack schema is put in a folder alone:
+#
+#   d=$(mktemp -d)
+#   git -C "$PORTRAYAL_UPSTREAM" show <ref>:spec/schemas/rack.schema.json > "$d/rack.schema.json"
+#   tools/publish-schemas.sh --from-dir "$d"
+#
+# /schemas/v2/rack.schema.json was published that way. Everything already
+# under schemas/ stays as it is, and is listed as "(kept as published)".
+#
 # EACH SCHEMA'S LABEL IS ITS OWN. A schema's $id names the URL it is served
 # at, https://portrayal.dev/schemas/<label>/<file>, and that is where it is
 # copied: the manifest schemas are format 1 under /schemas/v1/, and the rack
@@ -30,12 +46,30 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 # repository - the same default as refresh-assets.sh and check-contract.py.
 UPSTREAM="${PORTRAYAL_UPSTREAM:-$HERE/../Portrayal}"
 FROM_DIR="" REF="" TO="" FORCE=""
+usage() {
+  cat >&2 <<USAGE
+usage: $0 <portrayal-ref>  [--to DIR] [--force]
+       $0 --from-dir DIR   [--to DIR] [--force]
+
+  <portrayal-ref>  every spec/schemas/*.schema.json at that ref of the Portrayal
+                   clone (\$PORTRAYAL_UPSTREAM, else ../Portrayal): a release
+  --from-dir DIR   only the *.schema.json files in DIR. To publish one schema on
+                   its own, put it in a folder alone: the rack schema goes out
+                   this way, because its label follows the rack file's version
+                   and a ref would stage the manifest schemas with it
+  --to DIR         where schemas/ lives (default: publish/schemas)
+  --force          replace a published schema whose content differs
+
+Each schema is copied to <label>/<file>, the label its own \$id names. Nothing
+already published is removed, and without --force nothing published is changed.
+USAGE
+}
 while [ $# -gt 0 ]; do
   case "$1" in
     --from-dir) FROM_DIR="${2:?--from-dir needs a folder}"; shift 2 ;;
     --to) TO="${2:?--to needs a folder}"; shift 2 ;;
     --force) FORCE=1; shift ;;
-    -*) echo "unknown option $1" >&2; exit 2 ;;
+    -*) echo "unknown option $1" >&2; usage; exit 2 ;;
     *) REF="$1"; shift ;;
   esac
 done
@@ -51,7 +85,7 @@ elif [ -n "$REF" ]; then
     git -C "$UPSTREAM" show "$REF:$f" > "$STAGE/$(basename "$f")"
   done
 else
-  echo "usage: $0 <portrayal-ref> | --from-dir DIR  [--to DIR]" >&2; exit 2
+  usage; exit 2
 fi
 python3 - "$STAGE" "$TO" "$FORCE" <<'PY'
 import json, os, re, shutil, sys
