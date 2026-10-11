@@ -5698,10 +5698,12 @@ def check_rack_hover_dims(page, base):
 # A CORD'S SPARE IS SAID (site/rack/spare.js). The page draws the path a cable
 # takes and nothing more, so on the reference rack c4, a 0.5 m cord, and c12, a
 # 1 m cord, look alike: their paths are 130 mm apart and their cords half a
-# metre. The cable list says each cord and its spare, marks a cord whose spare
-# is more than half of it with how much is not drawn, and says in one line
-# what the drawing shows; a cable under the pointer says the same two figures
-# beside it, in 2D and in 3D. A length entered in feet says both in feet.
+# metre. The cable list says each cord and its spare, and in one line what the
+# drawing shows; no row is marked for having much spare. A cable under the
+# pointer says the same two figures beside it, in 2D and in 3D. A length
+# entered in feet says both in feet. An entered cord shorter than the stock
+# size its route asks for says so as a warning, whether it still reaches (3 ft
+# where the route asks for 1 m) or falls short (0.2 m on c4's path).
 #
 # THE EXPECTED SPARE is worked here from the page's own kit output, by another
 # road than spare.js takes: each path's points added up (window.__rack.paths),
@@ -5721,10 +5723,13 @@ SPARE_WANT_JS = """async () => {
       mm += Math.hypot(p.points[k].x - p.points[k - 1].x, p.points[k].y - p.points[k - 1].y, p.points[k].z - p.points[k - 1].z);
     const unit = l.unit ?? 'm', cord = l.value * PER[unit];
     const spare = cord - (mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media]);
-    const amount = `${r2(spare / PER[unit])} ${unit}`;
+    const shown = r2(spare / PER[unit]);
+    const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : 'spare'}`;
+    // an entered cord under the stock size the kit chose for this path
+    const asks = l.source !== 'routed' && cord < p.value - 1e-9
+      ? `the route asks for ${p.value} m${unit === 'ft' ? ` (${r2(p.value / PER.ft)} ft)` : ''}` : null;
     out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, path_mm: Math.round(mm), spare,
-      large: spare > cord / 2, text: `${l.value} ${unit} cord, ${amount} spare`,
-      note: `${amount} of this cord is not drawn: the picture shows its path only.`};
+      text, asks, short: asks ? [`${text}; ${asks}.`] : []};
   }
   return out;
 }"""
@@ -5733,14 +5738,16 @@ SPARE_LIST_JS = """() => ({
   toasts: [...document.querySelectorAll('.rk-side .rk-notice')].map(p => p.textContent),
   rows: Object.fromEntries([...document.querySelectorAll('#cableList li[data-cable-item]')].map(li => [li.dataset.cableItem, {
     meta: li.querySelector('.rk-cable-meta')?.textContent ?? '',
-    large: li.dataset.spareLarge === 'true',
-    notes: [...li.querySelectorAll('[data-spare-note]')].map(n => n.textContent)}])),
+    marks: li.querySelectorAll('[data-spare-note], [data-spare-large], .rk-spare-note').length + (li.dataset.spareLarge != null ? 1 : 0),
+    short: [...li.querySelectorAll('[data-spare-short]')].map(n => n.textContent),
+    shortWarns: [...li.querySelectorAll('[data-spare-short]')].every(n => n.classList.contains('rk-warn'))}])),
   titles: Object.fromEntries([...document.querySelectorAll('#paneFront svg [data-cables] [data-cable][data-cable-id]')]
     .map(g => [g.dataset.cableId, g.querySelector('title')?.textContent ?? '']))})"""
 SPARE_TIP_JS = """() => { const t = document.getElementById('cableTip');
   if (!t || t.hidden) return null;
   const r = t.getBoundingClientRect();
   return {id: t.dataset.cableTip ?? null, text: t.textContent, meta: t.querySelector('[data-tip-meta]')?.textContent ?? '',
+          short: t.querySelector('[data-tip-short]')?.textContent ?? null,
           shown: r.width > 0 && r.height > 0 && r.right <= innerWidth && r.bottom <= innerHeight && getComputedStyle(t).display !== 'none'}; }"""
 # A point of the window where the page's own hover finds this cable: on its 2D stroke...
 SPARE_PT_2D_JS = """async id => {
@@ -5783,8 +5790,9 @@ SPARE_PT_3D_JS = """async id => {
 }"""
 
 
-def spare_hover(page, bad, where, find_js, cid, want):
-    """Put the pointer on `cid` and read the label beside it against `want`."""
+def spare_hover(page, bad, where, find_js, cid, want, drag=False):
+    """Put the pointer on `cid` and read the label beside it against `want`. With
+    `drag`, a button held and let go hides it until the pointer next moves."""
     pt = page.evaluate(find_js, cid)
     if not pt:
         bad.append(f"{where}: found no point where the page's hover finds {cid}, so its label was not read")
@@ -5803,12 +5811,28 @@ def spare_hover(page, bad, where, find_js, cid, want):
             bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
         if not tip["shown"]:
             bad.append(f"{where}: {cid}'s hover label is not laid out inside the window: {tip}")
+        asks = want["asks"] and want["asks"][0].upper() + want["asks"][1:] + "."
+        if tip["short"] != asks:
+            bad.append(f"{where}: {cid}'s hover label says {tip['short']!r} of what the route asks for, expected {asks!r}")
+        if drag:
+            page.mouse.down()
+            page.mouse.move(pt[0] + 40, pt[1] + 10, steps=4)
+            page.wait_for_timeout(300)
+            held = page.evaluate(SPARE_TIP_JS)
+            page.mouse.up()
+            page.wait_for_timeout(300)
+            let_go = page.evaluate(SPARE_TIP_JS)
+            if held or let_go:
+                bad.append(f"{where}: the hover label stays through a drag (button down: {held}, let go: {let_go})")
+            page.mouse.move(pt[0] + 1, pt[1] + 1)
+            page.mouse.move(pt[0], pt[1])
+            page.wait_for_timeout(400)
     park_mouse(page)
     if page.evaluate(SPARE_TIP_JS):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
 
 
-@extra("rack.html: each routed cable says its cord and its spare in the list, a cord with more spare than half of it is marked with how much is not drawn, and the hover label carries both in 2D and 3D, in the cable's own unit")
+@extra("rack.html: each routed cable says its cord and its spare in the list with no row marked for it, an entered cord under the size its route asks for warns, and the hover label carries the figures in 2D and 3D, in the cable's own unit")
 def check_rack_cable_spare(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -5831,9 +5855,8 @@ def check_rack_cable_spare(page, base):
             bad.append(f"{cid}: not a routed {cord} m cord: {w}")
     if not (want["c4"]["spare"] > 0 and want["c12"]["spare"] > want["c4"]["spare"]):
         bad.append(f"the 1 m cord on the longer path should have the larger spare: c4 {want['c4']['spare']}, c12 {want['c12']['spare']}")
-    marked = {cid for cid, w in want.items() if w["large"]}
-    if "c12" not in marked or "c4" in marked or len(marked) == 16:
-        bad.append(f"fixture: expected c12's spare over half its cord and c4's not; over half: {sorted(marked)}")
+    if any(w["asks"] for w in want.values()):
+        bad.append(f"fixture: a routed cord is under the size its route asks for: {[c for c, w in want.items() if w['asks']]}")
 
     def read_list(where, ids=None):
         got = page.evaluate(SPARE_LIST_JS)
@@ -5846,10 +5869,13 @@ def check_rack_cable_spare(page, base):
                 continue
             if not row["meta"].endswith(w["text"]):
                 bad.append(f"{where}: {cid} ({w['path_mm']} mm path, {w['measured']} m measured) says {row['meta']!r}, expected it to end {w['text']!r}")
-            if row["large"] != w["large"] or row["notes"] != ([w["note"]] if w["large"] else []):
-                bad.append(f"{where}: {cid}'s spare is {'over' if w['large'] else 'not over'} half its cord ({w['spare']:.4f} of {w['value']} {w['unit']}), "
-                           f"but the row is marked={row['large']} and says {row['notes']}")
-        if len(got["help"]) != 1 or "path" not in got["help"][0] or "not drawn yet" not in got["help"][0]:
+            # NO ROW IS MARKED FOR ITS SPARE: 14 of these 16 cords are more spare than path, and none is a fault.
+            if row["marks"]:
+                bad.append(f"{where}: {cid}'s row carries a spare mark ({row['marks']})")
+            # ...and only an entered cord under the size its route asks for warns.
+            if row["short"] != w["short"] or not row["shortWarns"]:
+                bad.append(f"{where}: {cid} ({w['value']} {w['unit']} {w['source']}, the kit's size {w['stock']} m) warns {row['short']}, expected {w['short']}")
+        if len(got["help"]) != 1 or "path" not in got["help"][0] or not got["help"][0].endswith("is not drawn."):
             bad.append(f"{where}: the list's one line on what the drawing shows is {got['help']}")
         if any("not drawn" in t for t in got["toasts"]):
             bad.append(f"{where}: the spare is said in a notice, not only in the list: {got['toasts']}")
@@ -5892,11 +5918,41 @@ def check_rack_cable_spare(page, base):
         bad.append(f"feet: c12 should read as a 3 ft cord with its spare in feet, is {ft}")
     if ft["text"] == was["text"] or abs(ft["spare"] - (was["spare"] - (1 - 3 * 0.3048))) > 1e-6:
         bad.append(f"feet: a 3 ft cord on the same path should have 0.0856 m less spare than the 1 m cord: {was['spare']} then {ft['spare']}")
+    # 3 ft is under the 1 m the route asks for, with spare left: the row warns.
+    if not (ft["spare"] > 0 and ft["asks"] and ft["asks"].startswith("the route asks for 1 m (")):
+        bad.append(f"feet: a 3 ft cord should still have spare and be under the 1 m its route asks for: {ft}")
     page.click('#cableList [data-cable-row="c12"]')     # let it go: a selected cable dims the rest
     wait_fn(page, "spare: nothing selected", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    # A CORD THAT DOES NOT REACH. c4 is given 0.2 m: less than its path and plugs use.
+    page.click('#cableList [data-cable-row="c4"]')
+    wait_sel(page, "spare: Edit c4", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "spare: c4's form", "#cableForm")
+    page.fill("#cLength", "0.2")
+    page.select_option("#cUnit", "m")
+    page.click("#cSave")
+    wait_fn(page, "spare: c4 saved as 0.2 m", "() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c4').length?.value === 0.2")
+    wait_fn(page, "spare: the routes after c4's edit", ROUTES_CURRENT)
+    wait_fn(page, "spare: c4's row short", "() => /short/.test(document.querySelector('#cableList li[data-cable-item=\"c4\"] .rk-cable-meta')?.textContent ?? '')")
+    want = page.evaluate(SPARE_WANT_JS)
+    ft, short = want["c12"], want["c4"]
+    if not (short["spare"] < 0 and short["text"].startswith("0.2 m cord, ") and short["text"].endswith(" m short")
+            and short["asks"] == "the route asks for 0.5 m"):
+        bad.append(f"short: c4 at 0.2 m should read short of a route that asks for 0.5 m: {short}")
+    page.click('#cableList [data-cable-row="c4"]')
+    wait_fn(page, "spare: nothing selected again", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
     park_mouse(page)
-    read_list("2D list, c12 in feet")
+    read_list("2D list, c12 in feet and c4 short")
     spare_hover(page, bad, "2D hover, c12 in feet", SPARE_PT_2D_JS, "c12", ft)
+    spare_hover(page, bad, "2D hover, c4 short", SPARE_PT_2D_JS, "c4", short)
+    # The agent's text for each: the kit's slack named for what it is against, then the cord, then what the route asks for.
+    for cid in ("c4", "c12"):
+        said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+          return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        w = want[cid]
+        if not re.search(r"; slack -?[\d.]+ (m|ft) against the routed length, which allows [\d.]+ m of dressing at each end; "
+                         + re.escape(f"{w['text']}; {w['asks']} ("), said or ""):
+            bad.append(f"agent: inspect {cid} does not say its slack against the routed length, then {w['text']!r} and {w['asks']!r}: {said!r}")
 
     if webgl_trouble(page):
         print("[check_rack_cable_spare] no WebGL here - checked the 2D half only")
@@ -5907,7 +5963,7 @@ def check_rack_cable_spare(page, base):
     park_mouse(page)
     read_list("3D list")
     for cid in ("c4", "c12"):
-        spare_hover(page, bad, "3D hover", SPARE_PT_3D_JS, cid, want[cid])
+        spare_hover(page, bad, "3D hover", SPARE_PT_3D_JS, cid, want[cid], drag=cid == "c4")
     return bad
 
 

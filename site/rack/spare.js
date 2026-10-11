@@ -17,8 +17,14 @@
 // allowance (0.1 m in kit 0.16.0, route.js DRESSING_ALLOWANCE). It is there so
 // that a routed cord is bought with something to dress it by: it is slack, not
 // cable the route uses, so it counts as spare here. The kit does not export
-// it; it is read as what endAllowance adds on top of the table, so the day the
-// kit drops it (step 4 of #949) this module follows with no edit.
+// it; it is read, for each cable's own media, as what endAllowance adds on top
+// of the table, so the day the kit drops it (step 4 of #949), or gives each
+// media its own, this module follows with no edit.
+//
+// A CORD SHORTER THAN THE ROUTE ASKS FOR. An entered length can be under the
+// stock size the kit would choose for the route (stockLength of its routed
+// length). The cord may still reach, with little or nothing to dress it by,
+// or fall short. Either way that is a signal, and the cable says so: `asks`.
 //
 // NOT THE KIT'S `slack`. queries.js inspect reports `slack` only for a cable
 // whose length was entered, as that length less the routed one, dressing
@@ -34,35 +40,42 @@ import {lengthParts, endKey} from '../../vendor/rack/cable-rules.js';
 const M_PER = {m: 1, ft: 0.3048};
 const round2 = x => Math.round(x * 100) / 100;
 
-/** What the kit adds at each end beyond its sourced table, in metres. */
-export function dressingAllowance() {
-  const media = Object.keys(END_ALLOWANCE_BY_MEDIA)[0];
-  return Math.max(0, endAllowance({media}) - END_ALLOWANCE_BY_MEDIA[media]);
-}
+// The table figure the kit takes for a cable: its media's, or, for a cable
+// with no media or one the table does not know, the copper cord's (route.js
+// endAllowance, UNSET_ALLOWANCE, which the kit does not export).
+const tableFigure = cable => (typeof cable?.media === 'string' && Object.hasOwn(END_ALLOWANCE_BY_MEDIA, cable.media)
+  ? END_ALLOWANCE_BY_MEDIA[cable.media] : END_ALLOWANCE_BY_MEDIA.cat6);
+/** What the kit adds at each end of this cable beyond its sourced table, in
+ *  metres: the dressing allowance, read for the cable's own media. */
+export const dressingAllowance = cable => Math.max(0, endAllowance(cable) - tableFigure(cable));
 
 /** What a routed cable uses of its cord, in metres: its path and what each
  *  end takes. Null for no path. */
-export function usedMetres(path) {
+export function usedMetres(path, cable) {
   const len = pathLength(path);
-  return len && Number.isFinite(len.measured) ? len.measured - 2 * dressingAllowance() : null;
+  return len && Number.isFinite(len.measured) ? len.measured - 2 * dressingAllowance(cable) : null;
 }
 
 /** A cable's spare, or null when it cannot be said: no path (not routed), no
  *  usable length, or a length in a unit other than m or ft.
  *  {value, unit}: the cord as the cable has it; cord, used, spare: metres;
- *  large: the spare is more than half the cord. */
+ *  dressing: what the kit's routed length allows at each end beyond `used`;
+ *  asks: the stock size the route asks for, in metres, when the cord is an
+ *  entered one and shorter than it, else null. */
 export function spareOf(cable, path) {
   const cord = lengthParts(cable?.length);
   if (!cord || !Object.hasOwn(M_PER, cord.unit)) return null;
-  const used = usedMetres(path);
+  const used = usedMetres(path, cable);
   if (used == null) return null;
   const metres = cord.value * M_PER[cord.unit];
-  const spare = metres - used;
-  return {value: cord.value, unit: cord.unit, cord: metres, used, spare, large: spare > metres / 2};
+  const stock = pathLength(path).value;
+  const asks = cable.length.source !== 'routed' && Number.isFinite(stock) && metres < stock - 1e-9 ? stock : null;
+  return {value: cord.value, unit: cord.unit, cord: metres, used, spare: metres - used, dressing: dressingAllowance(cable), asks};
 }
 
 /** Every cable's spare, by id: `paths` is route-context.js routeFacts' Map.
- *  A cable with a loose end is left out: it is not drawn along its path. */
+ *  A cable with a loose end is left out: it is not drawn along its path. The
+ *  caller hands no paths when the ends could not be checked. */
 export function sparesOf(rack, paths, isLoose = () => false) {
   const out = new Map();
   if (!paths) return out;
@@ -89,7 +102,9 @@ export const spareAmount = s => amount(s, s.spare);
 /** "1 m cord, 0.58 m spare"; a cord shorter than what its route uses reads
  *  "0.5 m cord, 0.12 m short". */
 export const spareText = s => `${s.value} ${s.unit} cord, ${spareAmount(s)} ${round2(s.spare / M_PER[s.unit]) < 0 ? 'short' : 'spare'}`;
-/** The sentence for a cord whose spare is more than half of it, else null. */
-export const undrawnText = s => (s.large ? `${spareAmount(s)} of this cord is not drawn: the picture shows its path only.` : null);
+/** "the route asks for 1 m" (in feet too for a cord in feet) when an entered
+ *  cord is shorter than the stock size the kit would choose, else null. */
+export const asksText = s => (s.asks == null ? null
+  : `the route asks for ${round2(s.asks)} m${s.unit === 'ft' ? ` (${round2(s.asks / M_PER.ft)} ft)` : ''}`);
 /** The cable list's one line of explanation. */
-export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here; where it is stored is not drawn yet.';
+export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';

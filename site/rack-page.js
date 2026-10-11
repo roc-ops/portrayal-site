@@ -32,7 +32,7 @@ import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCa
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.js';
-import {sparesOf, looseIn} from './rack/spare.js';
+import {sparesOf, looseIn, asksText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
@@ -668,10 +668,11 @@ function pruneFilter() {
   S.cableFilter = on;
 }
 // EACH CABLE'S SPARE (spare.js), from the paths read for the rack as it is
-// (routesNow): none while they are another rack's, and none for a cable with
-// a loose end, which is not drawn along its path. The list, the 2D titles and
-// the hover label all read this, so they say one figure.
-const sparesNow = () => sparesOf(rack(), routesNow()?.paths ?? null, looseIn(S.cableFacts.ends));
+// (routesNow): none while they are another rack's, none for a cable with a
+// loose end, which is not drawn along its path, and none at all while the ends
+// could not be checked (an end not known to land is not said to have spare).
+// The list, the 2D titles and the hover label all read this, so they say one figure.
+const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesNow()?.paths ?? null, looseIn(S.cableFacts.ends));
 function cableListPanel() {
   const r = rack();
   pruneFilter();
@@ -1169,9 +1170,11 @@ function paintTip() {
     tip = el('div', {id: 'cableTip', class: 'rk-cable-tip', 'aria-hidden': 'true'});
     document.body.append(tip);
   }
-  const r = rack(), meta = cableMeta(c, sparesNow().get(c.id) ?? null);
+  const r = rack(), spare = sparesNow().get(c.id) ?? null, meta = cableMeta(c, spare);
+  const asks = spare ? asksText(spare) : null;
   tip.replaceChildren(el('span', {text: `${endName(r, c.a, uOf)} → ${endName(r, c.b, uOf)}`}),
-                      ...(meta ? [el('span', {'data-tip-meta': 'true', text: meta})] : []));
+                      ...(meta ? [el('span', {'data-tip-meta': 'true', text: meta})] : []),
+                      ...(asks ? [el('span', {'data-tip-short': 'true', text: `${asks[0].toUpperCase()}${asks.slice(1)}.`})] : []));
   tip.dataset.cableTip = c.id;
   tip.hidden = false;
   // beside the pointer, and turned back inside the window at its right and bottom edges
@@ -1179,6 +1182,7 @@ function paintTip() {
   tip.style.left = `${Math.max(4, Math.min(tipAt.x + 14, window.innerWidth - w - 4))}px`;
   tip.style.top = `${Math.max(4, tipAt.y + 16 + hgt > window.innerHeight ? tipAt.y - hgt - 10 : tipAt.y + 16)}px`;
 }
+const hideTip = () => { if (tipAt) { tipAt = null; paintTip(); } };
 let hoverFrame = 0, hoverEv = null;
 function hoverMove(ev, find) {
   if (ev.pointerType === 'touch') return;
@@ -1187,8 +1191,9 @@ function hoverMove(ev, find) {
   hoverFrame = requestAnimationFrame(() => {
     hoverFrame = 0;
     const e = hoverEv;
-    // an orbit or a drag in progress is not a hover
-    if (e.buttons) return;
+    // an orbit or a drag in progress is not a hover, and the label does not
+    // stay behind where it began: it comes back with the next free move
+    if (e.buttons) { hideTip(); return; }
     const t = find(e);
     tipAt = t ? {x: e.clientX, y: e.clientY} : null;
     // over nothing: a row keyboard focus is on is lit again, as on leaving the list
@@ -1205,6 +1210,8 @@ function wireHover() {
     }));
     pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   }
+  // A button going down on either stage (an orbit, a drag, a click) hides the label at once.
+  for (const id of ['paneFront', 'paneRear', 'stage3d']) $(id).addEventListener('pointerdown', hideTip, true);
   const stage = $('stage3d');
   stage.addEventListener('pointermove', ev => hoverMove(ev, e => (S.scene3d ? hoverAt3d(S.scene3d, e) : null)));
   stage.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });

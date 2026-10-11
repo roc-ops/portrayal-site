@@ -9,7 +9,7 @@ import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, 
         matches} from '../../vendor/rack/cable-rules.js';
 import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
-import {spareText, undrawnText, SPARE_HELP} from './spare.js';
+import {spareText, asksText, SPARE_HELP} from './spare.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -117,9 +117,10 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // opens it (onBundleSelect). A rack with no bundles lists exactly as before.
 // SPARE (spare.js): `spares` is sparesOf's Map (cable id -> its spare). A cable
 // in it says its cord and its spare where it said its length ("1 m cord, 0.58
-// m spare"); one whose spare is more than half its cord is marked, with a
-// sentence saying that much of it is not drawn. One line under the count says
-// what the drawing shows. A cable not in it (not routed, a loose end, a length
+// m spare"). No row is marked for having much spare: most cords do. An entered
+// cord shorter than the stock size the route asks for IS a signal, and says so
+// as a warning ("0.5 m cord, 0.03 m spare; the route asks for 1 m"). One line
+// under the count says what the drawing shows. A cable not in it (not routed, a loose end, a length
 // the page cannot convert) says its length as before.
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
 export const cableMeta = (c, spare = null) =>
@@ -155,8 +156,8 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     const spare = spares.get(c.id) ?? null;
     const meta = cableMeta(c, spare);
     if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', ...(spare ? {'data-spare': spareText(spare)} : {}), text: meta}));
-    const undrawn = spare ? undrawnText(spare) : null;
-    if (undrawn) kids.push(el('span', {class: 'rk-spare-note', 'data-spare-note': c.id, text: undrawn}));
+    const asks = spare ? asksText(spare) : null;
+    if (asks) kids.push(el('span', {class: 'rk-warn', 'data-spare-short': c.id, text: `${spareText(spare)}; ${asks}.`}));
     for (const [k, e] of [['a', c.a], ['b', c.b]])
       if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
     for (const w of mismatch(c.media, info(c.a), info(c.b)))
@@ -172,7 +173,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     if (picked) kids.push(el('div', {class: 'rk-actions'}, [
       button('cableEdit', 'Edit', () => onEdit(c.id)),
       button('cableDelete', 'Delete', () => onDelete(c.id)), bundleBtn].filter(Boolean)));
-    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {}), ...(undrawn ? {'data-spare-large': 'true'} : {})}, kids);
+    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {})}, kids);
     li.hidden = !picked && !matches(c, on);
     return li;
   };
