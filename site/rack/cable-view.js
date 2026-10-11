@@ -22,6 +22,7 @@ import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {paneMarks, landedBends} from './route-context.js';
 import {spareText} from './spare.js';
+import {noteStrap, packSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -555,6 +556,15 @@ function drawBundles2d(svg, rack, routes, pane, turn, landed, base) {
                  svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
                  svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
                  svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      // where the pack is, square across the run, for the page to size the strap by (strap-size.js):
+      // each member there, between its places at the stretch's two nodes. Kept beside the bar, not on it.
+      const p0 = pt(hit.stretch.from), p1 = pt(hit.stretch.to);
+      const riders = hit.stretch.members.filter(id => landed.has(id));
+      const there = riders.map(id => {
+        const a = turn(lay.offset(id, hit.stretch.from)), b = turn(lay.offset(id, hit.stretch.to));
+        return [p0[0] + a[0] + (p1[0] + b[0] - p0[0] - a[0]) * hit.f, p0[1] + a[1] + (p1[1] + b[1] - p0[1] - a[1]) * hit.f];
+      });
+      noteStrap(bar, {c, n, members: riders, ...packSpan(there, c, n, WIDTH, hit.stretch.diameter)});
       bars.append(bar);
     }
   }

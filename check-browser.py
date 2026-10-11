@@ -6556,7 +6556,8 @@ PACK_2D_JS = """async () => {
   const env = g.querySelector('[data-envelope]');
   return {stretches, shown: getComputedStyle(env).visibility === 'visible', members: ids, line,
           straps: [...svg.querySelectorAll('[data-strap="b1"]')].map(g => { const l = g.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
-            return {pack: +g.dataset.pack, len: Math.hypot(+l.getAttribute('x2') - +l.getAttribute('x1'), +l.getAttribute('y2') - +l.getAttribute('y1'))}; }),
+            return {pack: +g.dataset.pack, drawn: g.dataset.strapPack == null ? null : +g.dataset.strapPack,
+                    len: Math.hypot(+l.getAttribute('x2') - +l.getAttribute('x1'), +l.getAttribute('y2') - +l.getAttribute('y1'))}; }),
           opacity: Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(n => [n.dataset.cableId, +getComputedStyle(n).opacity]))};
 }"""
 # The pack in the scene: the envelope's pieces (radius, shown, a centre line
@@ -6635,8 +6636,10 @@ def check_rack_bundle_pack(page, base):
         ys = ys[-s["riders"]:]      # the riders are the lowest strokes there (y is down)
         if len(ys) < 2 or ys[-1] - ys[0] < 1.5:
             bad.append(f"2D: along the lacer the members' strokes are at heights {ys}: one line, not a pack")
-    if not g["straps"] or any(abs(st["len"] - (st["pack"] + 4)) > 0.05 for st in g["straps"]):
-        bad.append(f"2D: a strap is not a bar across its pack (its diameter and 2 mm each side): {g['straps']}")
+    # (#190: across the members as they are drawn there, which side by side are never wider than the
+    # pack's diameter, and 2 mm each side; check_rack_strap_size measures that width off the strokes)
+    if not g["straps"] or any(st["drawn"] is None or abs(st["len"] - (st["drawn"] + 4)) > 0.05 or not 3 <= st["drawn"] <= st["pack"] + 0.05 for st in g["straps"]):
+        bad.append(f"2D: a strap is not a bar across its pack (its members there, no wider than its diameter, and 2 mm each side): {g['straps']}")
     # hover and selection show it; a member hovered alone still dims the others
     page.hover('#cableList [data-bundle-row="b1"]')
     page.wait_for_timeout(350)
@@ -17460,6 +17463,137 @@ def check_rack_3d_loading(page, base):
     two = page.evaluate(STRAPS_WITH_CABLES_JS)
     if any(p["straps"] or p["trunks"] for p in two):
         bad.append(f"loose 2D: straps or envelope stretches are drawn for a bundle none of whose cables is drawn along its path: {two}")
+    return bad
+
+
+
+# ── portrayal-site#190: a strap's size on a pane ─────────────────────────
+# Every strap of b1 on the front pane, measured off the drawing itself: its
+# bar at scale and its least bar (pane mm), which way it lies, and the pack it
+# is across - each member's own stroke where it crosses the strap's line, so
+# how wide the members are there square across the run, and which way they run.
+STRAP_SIZE_JS = """() => {
+  const svg = document.querySelector('#paneFront > svg'), vb = svg.viewBox.baseVal, scale = svg.getBoundingClientRect().width / vb.width;
+  const strokes = {};
+  for (const g of svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')) {
+    const p = g.querySelector('path:last-of-type'), L = p.getTotalLength(), pts = [];
+    for (let t = 0; t <= L; t += 0.25) { const q = p.getPointAtLength(t); pts.push([q.x, q.y]); }
+    strokes[g.dataset.cableId] = pts;
+  }
+  const ends = l => ['x1', 'y1', 'x2', 'y2'].map(k => +l.getAttribute(k));
+  return {scale, straps: [...svg.querySelectorAll('[data-strap="b1"]')].map(g => {
+    const core = g.querySelector('line[data-strap-part="core"]:not([data-strap-least])'), least = g.querySelector('line[data-strap-part="core"][data-strap-least]');
+    const rim = g.querySelector('line[data-strap-part="rim"][data-strap-least]');
+    const [x1, y1, x2, y2] = ends(core), len = Math.hypot(x2 - x1, y2 - y1), n = [(x2 - x1) / len, (y2 - y1) / len], d = [-n[1], n[0]], c = [(x1 + x2) / 2, (y1 + y2) / 2];
+    const across = [], runs = [];
+    for (const id of g.dataset.members.split(' ')) {
+      const pts = strokes[id] ?? [];
+      let best = null;
+      pts.forEach((q, k) => { const along = (q[0] - c[0]) * d[0] + (q[1] - c[1]) * d[1], a = (q[0] - c[0]) * n[0] + (q[1] - c[1]) * n[1];
+        if (Math.abs(a) < 40 && (best == null || Math.abs(along) < Math.abs(best.along))) best = {along, a, k}; });
+      if (!best || Math.abs(best.along) > 0.3) continue;
+      across.push(best.a);
+      const p0 = pts[Math.max(0, best.k - 8)], p1 = pts[Math.min(pts.length - 1, best.k + 8)], r = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
+      runs.push(Math.abs(((p1[0] - p0[0]) * n[0] + (p1[1] - p0[1]) * n[1]) / r));
+    }
+    const l2 = ends(least), r2 = ends(rim), lenOf = e => Math.hypot(e[2] - e[0], e[3] - e[1]);
+    return {len, least: lenOf(l2), rim: lenOf(r2), slant: Math.round(Math.atan2(Math.abs(n[0]), Math.abs(n[1])) * 180 / Math.PI), at: (() => { const m = core.getScreenCTM(), q = new DOMPoint(c[0], c[1]).matrixTransform(m); return [q.x, q.y]; })(),
+            riders: across.length, pack: across.length ? Math.max(...across) - Math.min(...across) + 3 : null, mid: across.length ? (Math.max(...across) + Math.min(...across)) / 2 : null,
+            skew: runs.length ? Math.max(...runs) : null, noted: g.dataset.strapPack == null ? null : +g.dataset.strapPack, diameter: +g.dataset.pack,
+            cap: least.getAttribute('stroke-linecap'), thick: [core, least].map(l => [+l.getAttribute('stroke-width'), l.getAttribute('vector-effect')])};
+  })};
+}"""
+
+
+@extra("rack.html: a strap is as long as its pack is wide where it sits - the members there, square across the run, and a small margin, on a diagonal stretch as on a straight one; it lies square across its run; at Fit on a 42U rack it is never under the least size along the run, and across it only up to twice its pack; at 300% it is its true size; and the sheet's straps are the ones they were (#190)")
+def check_rack_strap_size(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # A trunk with a slanted stretch, as a lacer's ring to a lane a few units up is: out of mgr-1's first ring,
+    # onto the left lane at U23, up it to U28. A strap every 2 in puts several on the slant and several on the lane.
+    res = page.evaluate("""() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack',
+      route: [{item: 'i2', via: 'guide-1'}, {lane: 'left-front', ru: 23}, {lane: 'left-front', ru: 28}], straps: {every: {value: 2, unit: 'in'}}})""")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length >= 6 && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.wait_for_timeout(400)
+    page.click('#covers [data-covers-set="off"]')      # the lane is inside a duct: its cover would tint the straps on the page
+    page.click("#zoomFit")
+    page.wait_for_timeout(500)
+    park_mouse(page)
+    fit = page.evaluate(STRAP_SIZE_JS)
+    measured = [s for s in fit["straps"] if s["riders"] >= 2]
+    slanted = [s for s in measured if 10 <= s["slant"] <= 80]
+    if len(measured) < 4 or not slanted or not [s for s in measured if s["slant"] > 80 or s["slant"] < 10]:
+        return bad + [f"fixture: {len(fit['straps'])} straps, {len(measured)} with two or more members measured across them, {len(slanted)} of those on a slant: straight and slanted stretches were not both measured"]
+    if fit["scale"] * 10 >= 6:
+        bad.append(f"fixture: at Fit a 10 mm strap is {fit['scale'] * 10:.1f} px, so the least size was not what was measured")
+    for s in measured:
+        where = f"strap at {s['slant']} degrees, {s['riders']} members"
+        # ACROSS THE PACK: the members there, measured on their own strokes, and 2 mm each side.
+        if not (s["pack"] + 4 - 1.2 <= s["len"] <= s["pack"] + 4 + 1.2):
+            bad.append(f"{where}: its bar is {s['len']:.1f} mm for a pack {s['pack']:.1f} mm wide there (the bundle's diameter is {s['diameter']}); expected the pack and 2 mm each side")
+        if abs(s["mid"]) > 1.2:
+            bad.append(f"{where}: its bar is {s['mid']:.1f} mm off the middle of its pack")
+        # SQUARE ACROSS THE RUN: the members' own strokes cross it at a right angle (within 15 degrees).
+        if s["skew"] > 0.26:
+            bad.append(f"{where}: it is not square across its run (its members run {math.degrees(math.asin(min(1, s['skew']))):.0f} degrees off square)")
+        # THE LEAST SIZE, across: up to the least pixels, and never past twice the pack.
+        pack = s["noted"]
+        if pack is None or abs(pack - s["pack"]) > 1.2:
+            bad.append(f"{where}: the page noted a pack of {pack} mm, measured {s['pack']:.1f}")
+            continue
+        want = max(s["len"], min(7 / fit["scale"], 2 * pack))
+        if abs(s["least"] - want) > 0.05 or s["least"] > max(s["len"], 2 * pack) + 0.05 or s["cap"] != "butt":
+            bad.append(f"{where}: at Fit its least bar is {s['least']:.1f} mm ({s['least'] * fit['scale']:.1f} px, cap {s['cap']}) for a {pack:.1f} mm pack; expected {want:.1f} mm, never over twice the pack")
+        if abs(s["rim"] - (s["least"] + 2 / fit["scale"])) > 0.05:
+            bad.append(f"{where}: its rim is {s['rim']:.1f} mm long round a least bar of {s['least']:.1f}; expected a pixel past each end")
+        # ALONG THE RUN: 10 mm at scale, and the least bar's own non-scaling 7 px.
+        if s["thick"] != [[10, None], [7, "non-scaling-stroke"]]:
+            bad.append(f"{where}: along the run its bars are {s['thick']}; expected 10 mm at scale and 7 px at the least")
+    # on the composited page at Fit, a strap on the straight run is its own colour for the least size along the run
+    # and for no more than twice its pack (and the rim) across it
+    up = max((s for s in measured if s["slant"] > 80 or s["slant"] < 10), key=lambda s: s["riders"])
+    core = rgb_of(page.evaluate("() => getComputedStyle(document.querySelector('#paneFront [data-strap=\"b1\"] line[data-strap-part=\"core\"]')).stroke"))
+    w, h, px = png_pixels(page.screenshot())
+    ext = strap_extent(px, w, h, up["at"], core)
+    along, across_px = (ext[1], ext[0]) if up["slant"] > 45 else (ext[0], ext[1])
+    most = max(up["len"], 2 * up["noted"]) * fit["scale"] + 2
+    if along < 6 or across_px > most:
+        bad.append(f"at Fit: a strap on the straight run is {along} px along the run and {across_px} px across it on the page; expected 6 or more along, and no more than {most:.1f} across")
+    print(f"[check_rack_strap_size] at Fit ({fit['scale']:.2f} px a mm): {len(measured)} straps measured, {len(slanted)} on a slant; bars {sorted({round(s['len'], 1) for s in measured})} mm for packs "
+          f"{sorted({round(s['pack'], 1) for s in measured})} mm (diameter {measured[0]['diameter']}); on the page {along} px along the run, {across_px} across")
+    # AT 300% a strap is its true size: the least bar is no longer than the bar at scale.
+    for _ in range(40):
+        label = page.inner_text("#zoomLevel")
+        if label != "Fit" and int(label.rstrip("%")) >= 300:
+            break
+        page.click("#zoomIn")
+        page.wait_for_timeout(80)
+    page.wait_for_timeout(300)
+    big = page.evaluate(STRAP_SIZE_JS)
+    if big["scale"] < 2.5 * fit["scale"]:
+        bad.append(f"300%: the pane is at {big['scale']:.2f} px a mm, {big['scale'] / fit['scale']:.1f} times Fit")
+    for s, was in zip(big["straps"], fit["straps"]):
+        if abs(s["len"] - was["len"]) > 0.01:
+            bad.append(f"300%: a strap's bar at scale changed with the zoom: {was['len']:.2f} to {s['len']:.2f} mm")
+        if s["least"] > s["len"] + 0.01 and s["least"] * big["scale"] > 7.01:
+            bad.append(f"300%: a strap's least bar is {s['least'] * big['scale']:.1f} px, past its true {s['len'] * big['scale']:.1f} px and the least size")
+    # THE SHEET'S STRAPS ARE THE ONES THEY WERE: each as long as its bundle's diameter there and 4 mm, and nothing of the page's.
+    sheet = page.evaluate("""async () => { const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      return (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf, {faces: ['front']})).data; }""")
+    ns = "{http://www.w3.org/2000/svg}"
+    bars = [g for g in ET.fromstring(sheet.encode("utf-8")).iter(f"{ns}g") if g.get("data-strap") == "b1"]
+    odd = []
+    for g in bars:
+        for l in g:
+            ln = math.hypot(float(l.get("x2")) - float(l.get("x1")), float(l.get("y2")) - float(l.get("y1")))
+            if abs(ln - (float(g.get("data-pack")) + 4)) > 0.01 or (l.get("data-strap-least") is not None and l.get("stroke-linecap") != "square"):
+                odd.append(round(ln, 2))
+    if len(bars) != len(fit["straps"]) or odd or "data-strap-pack" in sheet:
+        bad.append(f"sheet: {len(bars)} straps for the pane's {len(fit['straps'])}, {len(odd)} lines not their diameter and 4 mm ({odd[:4]}), page's note in the file: {'data-strap-pack' in sheet}")
     return bad
 
 

@@ -55,6 +55,7 @@ import {solidsOf} from '../vendor/rack/solids.js';
 import {bundleOfCable} from '../vendor/rack/bundles.js';
 import {loadTree, saveTree, isOpen, peek, LOOSE} from './rack/cable-tree.js';
 import {mountCovers, loadCovers, paintCovers2d, paintCovers3d} from './rack/covers.js';
+import {fitStraps, sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
 const PROBE = new URLSearchParams(location.search).get('probe') === '1';
@@ -379,7 +380,8 @@ function attachManager(id) {
 // (Every place that applies the zoom says its label straight after, so this is
 // also where a side pane's own words are kept readable at the scale it now
 // has: side-elevation.js sizeSideLabels. Size only; nothing is redrawn.)
-const setZoomLabel = () => { $('zoomLevel').textContent = zoomLabel(S.zoom, factorForFit($('panes'), S.svgs[0])); sizeSideLabels(S.svgs); };
+// (and where a strap is kept to its size on screen: strap-size.js sizeStraps, #190)
+const setZoomLabel = () => { $('zoomLevel').textContent = zoomLabel(S.zoom, factorForFit($('panes'), S.svgs[0])); sizeSideLabels(S.svgs); sizeStraps(S.svgs); };
 const setZoom = z => { S.zoom = z; saveZoom(z); applyZoom($('panes'), S.svgs, z); setZoomLabel(); };
 
 // A stored document can be missing (deleted from another tab) or fail to
@@ -1250,6 +1252,7 @@ async function redraw(keepRoutes = false) {
       paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
       paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
+      fitStraps(S.svgs); sizeStraps(S.svgs);
     } else if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       // by the routes read for the rack this draws, never another's
@@ -1262,6 +1265,7 @@ async function redraw(keepRoutes = false) {
       paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
       paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
+      fitStraps(S.svgs); sizeStraps(S.svgs);
     }
     if (S.routePick && !sides) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.

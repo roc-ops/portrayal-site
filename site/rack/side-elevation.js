@@ -54,6 +54,7 @@ import {elevationBox} from './elevation.js';
 import {bundleSummary, STRAP_DRAWN, drawnDiameter} from './bundle-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
+import {noteStrap} from './strap-size.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
         paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
 
@@ -410,6 +411,9 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
                 svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
                 svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
                 svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      // from the side the pack is its circle, as wide as its diameter whichever way the run goes (strap-size.js)
+      const len = Math.hypot(bar.x2 - bar.x1, bar.y2 - bar.y1) || 1;
+      noteStrap(el, {c: bar.at, n: [(bar.x2 - bar.x1) / len, (bar.y2 - bar.y1) / len], members: hit.stretch.members.filter(id => onPane.has(id)), lo: -hit.stretch.diameter / 2, hi: hit.stretch.diameter / 2});
       bars.append(el);
     }
   }
