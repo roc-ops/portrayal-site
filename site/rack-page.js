@@ -455,6 +455,7 @@ function select(sel) { S.sel = sel; render(); }
 // `notes` are what parseDoc said of the bundles it repaired (library.js
 // docNotes): the editor gives them back as its first findings.
 function setDoc(doc, notes = docNotes(doc)) {
+  docsSet++;                 // a bundle command still waiting was for the document before (bundleCommand)
   const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
@@ -721,7 +722,14 @@ const ROUTES_WAIT_MS = 4000;
 const ROUTES_BUSY = 'The cable routes are still being worked out after the last change. Try again in a moment.';
 const NO_ROUTES_HERE = 'The cable routes could not be read, so these cables cannot be bundled here.';
 const routesInHand = () => renderQueued || rendering > 0 || (!!S.routes && S.routes.rack !== rack());
+// A COMMAND THAT WAITED IS FOR THE DOCUMENT IT WAS GIVEN FOR. While it waits
+// another rack can be opened (a file, the library, a new rack: setDoc), and
+// that one usually has a c9 and a c10 as well: the command is then dropped,
+// with no answer and nothing done, never sent to a rack nobody asked about.
+// `docsSet` counts the documents put in; the id is compared as well.
+let docsSet = 0;
 function bundleCommand(cmd, after = res => (res.error ? {error: res.error} : null)) {
+  const forDoc = theDoc().id, forSet = docsSet;
   const send = () => {
     if (!routesNow() && routesInHand()) return {error: ROUTES_BUSY};
     const res = edit(cmd, {say: true, report: false});
@@ -731,13 +739,17 @@ function bundleCommand(cmd, after = res => (res.error ? {error: res.error} : nul
   if (routesNow() || !routesInHand()) return after(send());
   return (async () => {
     const until = Date.now() + ROUTES_WAIT_MS;
-    while (!routesNow() && routesInHand() && Date.now() < until) await new Promise(done => setTimeout(done, 25));
-    return after(send());
+    const moved = () => docsSet !== forSet || theDoc().id !== forDoc;
+    while (!moved() && !routesNow() && routesInHand() && Date.now() < until) await new Promise(done => setTimeout(done, 25));
+    return moved() ? {dropped: true} : after(send());
   })();
 }
 const bundleEdit = cmd => bundleCommand(cmd);
+// A refusal that comes after the wait, when the panel that asked has been
+// redrawn and its own line is gone, is said as the page's notice.
+const lateRefusal = text => { S.notice = {text, kind: 'error'}; renderSoon(); };
 function bundleFormPanel(sel) {
-  return bundleForm({rack: rack(), picked: sel.picked || [], uOf,
+  return bundleForm({rack: rack(), picked: sel.picked || [], uOf, onLate: lateRefusal,
     onCreate: ({cables, label}) => bundleCommand({op: 'bundle.create', cables, ...(label ? {label} : {})}, res => {
       if (res.error) return {error: res.error};
       const id = res.created?.id ?? res.created?.ids?.[0];
@@ -749,7 +761,7 @@ function bundleFormPanel(sel) {
 function bundlePanel(sel) {
   const r = rack(), b = (r.bundles || []).find(x => x.id === sel.id);
   if (!b) { S.sel = null; return homePanel(); }
-  return bundleInspector({rack: r, bundle: b, fact: routesNow()?.bundles?.get(b.id) ?? null, uOf,
+  return bundleInspector({rack: r, bundle: b, fact: routesNow()?.bundles?.get(b.id) ?? null, uOf, onLate: lateRefusal,
     onLabel: label => bundleEdit({op: 'bundle.update', id: b.id, label}),
     onStraps: straps => bundleEdit({op: 'bundle.update', id: b.id, straps}),
     onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
@@ -1755,6 +1767,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.
     bundleCommand: cmd => Promise.resolve(bundleCommand(cmd, res => ({error: res.error ?? null, created: res.created ?? null,
       findings: (res.findings ?? []).map(f => f.text)}))),
+    // Probe only: put another document in, as opening a file or a rack from the library does (setDoc).
+    loadDoc: doc => setDoc(doc),
     undo: () => undoStep(),
     redo: () => redoStep(),
     history: () => ({canUndo: ed.canUndo, canRedo: ed.canRedo, undoSummary: ed.undoSummary, redoSummary: ed.redoSummary}),

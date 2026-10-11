@@ -6544,6 +6544,29 @@ def check_rack_routes_follow_edits(page, base):
         bad.extend(faults)
         state = now
 
+    # A REFUSAL THAT COMES AFTER THE WAIT IS STILL SEEN. The bundle form is
+    # opened on c1 with c9 ticked, on the rack as it was loaded: the kit
+    # refuses that pair (c1 runs with none of the others). Create is clicked in the same turn as an edit, so
+    # the command waits for the redraw, and that redraw rebuilds the side
+    # panel: the form's own error line is gone when the refusal arrives, and
+    # it must come as the page's notice instead.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableBundle")
+    page.check("#bPick-c9")
+    page.evaluate("""() => { window.__rack.apply({op: 'cable.update', id: 'c2', label: 'late'});
+      document.querySelector('#bCreate').click(); }""")
+    try:
+        page.wait_for_function("() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('runs with none of the others')",
+                               timeout=15000)
+    except Exception:
+        shown = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent ?? null")
+        bad.append(f"a bundle refused after its wait, its form redrawn meanwhile: the refusal was shown nowhere (notice {shown!r})")
+    if page.evaluate("() => (window.__rack.doc().racks[0].bundles || []).length"):
+        bad.append("the refused bundle was made")
+    page.keyboard.press("Escape")
+    page.evaluate("() => document.querySelector('#bCancel')?.click()")
+    wait_fn(page, "follow: the routes after the refused bundle", ROUTES_CURRENT)
+
     apply = "c => window.__rack.apply(c)"
     item = "id => window.__rack.doc().racks[0].items.find(i => i.id === id)"
     # a device moved: LEAF-B from U40 to U38, and every cord from it with it
@@ -6568,6 +6591,31 @@ def check_rack_routes_follow_edits(page, base):
            window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
              ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); return {}; }""",
          None, ["c4"], f"() => !('port-52' in ({item})('i1').swaps)")
+
+    # A COMMAND THAT WAITED IS NOT SENT TO ANOTHER RACK. A panel's bundle.create
+    # is issued in the same turn as a move, and before the redraw ends another
+    # document is put in (as opening a file does) that has a c9 and a c10 too.
+    # The command is dropped: it answers `dropped`, and the new rack has no bundle.
+    other = page.evaluate("""async () => {
+      const doc = structuredClone(window.__rack.doc());
+      const next = {...doc, id: `${doc.id}-other`, racks: doc.racks.map(r => ({...r, name: 'Another rack', bundles: []}))};
+      const was = window.__rack.doc().id;
+      window.__rack.apply({op: 'move', id: 'i3', ru: 36});
+      const waiting = window.__rack.bundleCommand({op: 'bundle.create', cables: ['c9', 'c10']});
+      window.__rack.loadDoc(next);
+      const answer = await waiting;
+      const t0 = Date.now();
+      while (!window.__rack.routesCurrent().current && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 50));
+      const now = window.__rack.doc();
+      return {was, id: now.id, name: now.racks[0].name, answer, bundles: (now.racks[0].bundles || []).length,
+              has: ['c9', 'c10'].every(id => now.racks[0].cables.some(c => c.id === id)), current: window.__rack.routesCurrent().current}; }""")
+    if other["id"] == other["was"] or other["name"] != "Another rack" or not other["has"] or not other["current"]:
+        bad.append(f"another document was not put in during the wait, so nothing was tested: {other}")
+    if other["bundles"] or other["answer"] != {"dropped": True}:
+        bad.append(f"a bundle command that waited through a change of document: answered {other['answer']}, and the new rack has "
+                   f"{other['bundles']} bundles; expected it dropped and no bundle made")
+    faults, state = route_follows(page, "after another document", None, ())
+    bad += faults
 
     # THE DOCUMENT MOVES WHILE THE ROUTES ARE READ. A change that is not an
     # undo step (a DCIM setting stored) redraws nothing. Landing while the
