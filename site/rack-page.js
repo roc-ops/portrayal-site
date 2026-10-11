@@ -35,7 +35,7 @@ import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes, bendNotice} from './rack/route-context.js';
+import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -133,36 +133,38 @@ const routesNow = () => (S.routes && S.routes.rack === rack() ? S.routes : null)
 const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null,
   rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
   // and the kit's tight bends (kit 0.17.0): a cable's type can change what it needs with no point moving
-  + JSON.stringify((rf.bendFindings ?? []).map(f => [f.cable, f.at, f.text]))
+  + JSON.stringify((rf.bendsShown ?? []).map(f => [f.cable, f.at, f.text]))
   + bundlesSig(rf) : '');
-// How many times in a row a rebuild has waited for the routes of the rack as
-// it now is (below): past STALE_3D_TRIES it builds without them.
-let stale3d = 0;
-const STALE_3D_TRIES = 12;
+// How long a rebuild waits for the routes of the rack as it now is (below):
+// STALE_3D_TRIES times STALE_3D_MS, then it builds without them.
+const STALE_3D_TRIES = 36, STALE_3D_MS = 100;
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
-  const forRack = rack();
-  // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
-  // edit the routes are read again by render(), which can finish after this
-  // is due: the build then waits its turn again rather than hang the new
-  // rack's cables on the old rack's paths. The old scene goes now, as it
-  // would for a build (and a build still in flight for the old rack is
-  // dropped), so nothing shows a rack that is no longer this one. If the
-  // routes never come (a render that failed is S.routes null, and does not
-  // wait), it builds without them, and the cables hang.
-  if (S.routes && S.routes.rack !== forRack && stale3d < STALE_3D_TRIES) {
-    stale3d++; ++stage3dEpoch; disposeScene3d(); scheduleRebuild3d(); return;
-  }
-  stale3d = 0;
   const mine = ++stage3dEpoch;
   const camera = S.camera3d;
+  // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
+  // edit the routes are read again by render(), which can finish after this
+  // is due: the build then waits for them rather than hang the new rack's
+  // cables on the old rack's paths. The old scene goes first, as it does for
+  // any build, so nothing shows a rack that is no longer this one; a newer
+  // rebuild or a switch to 2D ends the wait, as it ends a build. If the
+  // routes never come (a render that failed is S.routes null, and is not
+  // waited for), it builds without them, and the cables hang.
+  if (S.routes && S.routes.rack !== rack()) {
+    disposeScene3d();
+    for (let k = 0; k < STALE_3D_TRIES && S.routes && S.routes.rack !== rack(); k++) {
+      await new Promise(done => setTimeout(done, STALE_3D_MS));
+      if (mine !== stage3dEpoch || S.mode !== '3d') return;
+    }
+  }
+  const forRack = rack();
   const live = routesNow();
   const sig = routesSig(live);
   disposeScene3d();
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
-    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendFindings ?? null, stage});
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -956,11 +958,14 @@ async function render() {
         // the kit's words (route.js bendFindings), said once per set of them:
         // when a cable, a type or a device changes what is tight, not on every
         // redraw. Both drawings ring the same corners (cable-view.js,
-        // scene3d.js). Nothing is measured on the page.
-        const said = rf.bendFindings.map(f => f.text).join('\n');
+        // scene3d.js). Nothing is measured on the page. Only for a cable
+        // plugged in at both ends (landedBends): one with a loose end is not
+        // drawn along its path, and its notice is that it is not connected.
+        rf.bendsShown = landedBends(rf.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null);
+        const said = rf.bendsShown.map(f => f.text).join('\n');
         if (said !== (S.bendsSaid ?? '')) {
           S.bendsSaid = said;
-          if (said) addNotice(bendNotice(rf.bendFindings), 'note');
+          if (said) addNotice(bendNotice(rf.bendsShown), 'note');
         }
         // Not from facts with a face missing: a port not found there is not a port that is loose.
         if (rf.complete) {
@@ -1735,8 +1740,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       // the kit's own points (kit 0.13-0.15: reach, approach, tray, rest) and what it lies on
       points: p.points.map(q => ({...q})), rests: (p.rests ?? []).map(x => ({...x}))}])) : null),
     bodies: () => (S.routes ? S.routes.bodyFindings.map(f => ({...f})) : null),
-    // The kit's tight bends the page says and rings (route.js bendFindings), as plain data.
-    bends: () => (S.routes ? S.routes.bendFindings.map(f => ({...f})) : null),
+    // The kit's tight bends the page says and rings (route.js bendFindings, for the
+    // cables plugged in at both ends: landedBends), as plain data.
+    bends: () => (S.routes ? (S.routes.bendsShown ?? []).map(f => ({...f})) : null),
     // Are the routes the page holds the ones read for the rack as it is now
     // (routesNow), and is their context one that cannot be changed in place?
     routesCurrent: () => ({current: !!routesNow(), frozen: !!S.routes?.ctx && Object.isFrozen(S.routes.ctx)}),

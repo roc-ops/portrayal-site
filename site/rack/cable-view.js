@@ -21,7 +21,7 @@ import {combOffset, trunkMarks, trunkMembers, strapAt, drawableRuns, bundleSumma
         trunkIndexOf, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
-import {paneMarks} from './route-context.js';
+import {paneMarks, landedBends} from './route-context.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -324,15 +324,18 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   // the kit's own point (`at`, rack mm) on the pane that shows both stops it
   // lies between, with the kit's sentence as its title. Nothing is measured
   // here. A cable this pane draws without a route (no waypoints, nothing to
-  // go round) is ringed on the pane of the end the corner is beside.
-  for (const f of routes?.bendFindings ?? []) {
+  // go round) is ringed on the pane of the end the corner is beside. A cable
+  // with a loose end is not drawn along its path, and is not ringed
+  // (route-context.js landedBends). The ring is the page's (data-pt-ui): a
+  // drawing export leaves it out, and it does not count as the cable drawn.
+  for (const f of landedBends(routes?.bendFindings, rack, e => reasons.get(endKey(e)) != null)) {
     const link = plan.links.find(l => l.id === f.cable), ws = routes.routes?.get(f.cable)?.waypoints ?? [];
     if (!link || !f.stops) continue;
     const here = link.here2d?.[pane] ?? (k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : false));
     if (!f.stops.every(here)) continue;
     const [cx, cy] = detourAt({x: f.at[0], y: f.at[1]});
     const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
-      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-cable-id': f.cable, 'data-pt-ui': '*'});
+      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
     const t = svgEl('title', {});
     t.textContent = f.text;
     ring.append(t);

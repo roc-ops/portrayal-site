@@ -19,6 +19,7 @@ import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
+import {landedBends} from './route-context.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -377,7 +378,9 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
-    return {...drawn, checked: !facts.unchecked, facts, bundles: hung, bendRings: ringBends(scene, drawn, bends)};
+    // (only for a cable plugged in at both ends, as on the panes: route-context.js landedBends)
+    return {...drawn, checked: !facts.unchecked, facts, bundles: hung,
+            bendRings: ringBends(scene, drawn, landedBends(bends, rack, e => loose.has(endKey(e))))};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
     return {failed: true};

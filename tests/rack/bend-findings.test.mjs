@@ -9,7 +9,7 @@
 // path's own `allowance`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {leadStops, bendStops, bendNotice} from '../../site/rack/route-context.js';
+import {leadStops, bendStops, bendNotice, landedBends} from '../../site/rack/route-context.js';
 import * as R from '../../vendor/rack/route.js';
 
 // The lacer of cable-lay.test.mjs: a tray floor 100 mm deep on a panel at U41,
@@ -125,4 +125,17 @@ test('leadStops hands a pane each ring\'s lead points, before the ring or after 
   // a ring the route does not name, and no points at all
   assert.deepEqual(leadStops([other], c1), []);
   assert.deepEqual(leadStops([ring], undefined), []);
+});
+
+test('a tight bend is shown only for a cable plugged in at both ends', () => {
+  const r = rack([cord('aoc'), {...cord('aoc'), id: 'c2', a: {item: 'sw', path: 'p2', view: 'front'}}]);
+  const found = [{cable: 'c1', text: 'one'}, {cable: 'c2', text: 'two'}, {cable: 'gone', text: 'three'}];
+  // nothing loose: every finding of a cable the rack has
+  assert.deepEqual(landedBends(found, r, () => false).map(f => f.cable), ['c1', 'c2']);
+  // c2's a end is in an empty cage: its path is not drawn, so its bend is not shown
+  const loose = e => e.item === 'sw' && e.path === 'p2';
+  assert.deepEqual(landedBends(found, r, loose).map(f => f.cable), ['c1']);
+  // either end
+  assert.deepEqual(landedBends(found, r, e => e.item === 'pp').map(f => f.cable), []);
+  assert.deepEqual(landedBends(null, r, () => false), []);
 });

@@ -476,6 +476,18 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
           endPane: e => endPane(rack, e), bundles, bundleRecords, places};
 }
 
+// A TIGHT BEND IS SHOWN FOR A CABLE THAT IS PLUGGED IN AT BOTH ENDS. The kit
+// lays a path between two ports whether or not anything is seated in them.
+// The page draws a cable with a loose end as an unplugged lead, or not at
+// all, and says why it is not connected; it neither says nor rings a bend of
+// a path it does not draw. `isLoose(end)` is the page's own answer for an end
+// (cable-plugs.js cableFacts: a reason it does not land). The notice, the
+// panes and the 3D scene all take their findings through here, so they agree.
+export function landedBends(findings, rack, isLoose) {
+  const byId = new Map((rack?.cables || []).map(c => [c.id, c]));
+  return (findings || []).filter(f => { const c = byId.get(f.cable); return !!c && !isLoose(c.a) && !isLoose(c.b); });
+}
+
 // THE BEND NOTICE (kit 0.17.0, Portrayal #973): the kit's sentences for the
 // corners of the cables' paths that are short of their bend radius, the first
 // three and how many more. '' when there is none.
