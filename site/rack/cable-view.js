@@ -334,14 +334,17 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     },
   });
   // A trunk node's own point on this pane, before any member's offset: a lane
-  // node on its lane (the bundle's slot), a ring or a tray at the height the
-  // kit rests a cable there (a member's own rest), else where it is drawn.
+  // node on its lane (the bundle's slot), a ring at the height the kit rests a
+  // cable there (a member's own rest), else where it is drawn. NULL WHERE
+  // THIS PANE DOES NOT DRAW THE NODE: the kit's rest height is the rack's,
+  // the same on either pane, so it never places a node by itself - a front
+  // lacer's ring has no point on the rear pane, and no stretch or strap there.
   if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
     for (const id of f.lay.at(i)?.members ?? []) if ((rest = restAt(id, w))) break;
-    return rest ? [p ? p[0] : rest[0], rest[1]] : p;
+    return p && rest ? [p[0], rest[1]] : p;
   });
   drawInFront(svg);
   for (const rec of recs) {
@@ -531,7 +534,7 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
       const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
       const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
       const half = hit.stretch.diameter / 2 + 2;
-      const bar = svgEl('g', {'data-strap': f.id, 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
+      const bar = svgEl('g', {'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
       const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
       const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
       bar.append(svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
@@ -594,6 +597,10 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
     // a selected cable shows the envelope of the bundle it rides
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('on-member', selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId));
+    // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
+    // it, is the one selected, and dimmed with the rest otherwise (rack.css).
+    for (const n of svg.querySelectorAll('[data-strap]'))
+      n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId)));
   }
 }
 

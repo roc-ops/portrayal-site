@@ -5290,6 +5290,25 @@ def check_rack_bundle_2d_rear(page, base):
     page.wait_for_function("() => document.querySelector('#paneRear [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
     if page.evaluate("() => !!document.querySelector('#paneFront [data-bundle-id]')"):
         bad.append("2D: a rear bundle is drawn on the front pane")
+    # NOTHING OF A BUNDLE ON A PANE NONE OF ITS CABLES RUN ON: no strap and no stretch of its envelope.
+    # (The kit's rest height for a ring is the rack's, the same on either pane, and once placed a
+    # rear lacer's ring on the front pane: bars floating over the front of the rack, and in the sheet.)
+    stray = page.evaluate("""() => { const s = document.querySelector('#paneFront svg');
+      return {strokes: s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length,
+              straps: s.querySelectorAll('[data-strap]').length, stretches: s.querySelectorAll('[data-bundle-trunk]').length,
+              rear: document.querySelectorAll('#paneRear svg [data-cables] [data-cable][data-cable-id]').length}; }""")
+    if stray["rear"] != 3 or stray["strokes"]:
+        bad.append(f"2D fixture: the cables are not all on the rear pane alone ({stray}), so a pane with no member stroke was not measured")
+    if stray["straps"] or stray["stretches"]:
+        bad.append(f"2D: the front pane, where no member runs, has {stray['straps']} straps and {stray['stretches']} envelope stretches")
+    sheet = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      return (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf)).data;
+    }""")
+    in_sheet = len(re.findall(r'data-strap="b1"', sheet))
+    kit = page.evaluate("() => window.__rack.bundles()[0].count")
+    if in_sheet != kit:
+        bad.append(f"sheet: {in_sheet} straps drawn on the two faces, the kit counts {kit}")
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
@@ -5489,8 +5508,8 @@ def hover_2d_dims(st, lit_cables, lit_bundles, members=HOVER_MEMBERS):
                 if not (id_ in lit_bundles or rides) and op > 0.2:
                     bad.append(f"{k} should be dimmed, is opacity={op}")
             continue
-        # a strap stays lit under a cable's hover, and dims only when a bundle is lit that is not its own
-        lit = (not lit_bundles or id_[6:] in lit_bundles) if kind == "strap" else (id_ in lit_cables)
+        # a strap goes with its bundle: lit while its bundle, or a cable that rides it, is lit
+        lit = (id_[6:] in lit_bundles or bool(members.get(id_[6:], set()) & set(lit_cables))) if kind == "strap" else (id_ in lit_cables)
         for hot, op in vals:
             if lit and (not hot or op != 1):
                 bad.append(f"{k} should stay lit, is hot={hot} opacity={op}")
@@ -5509,13 +5528,14 @@ def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
                 bad.append(f"3D {k} is {mats}; expected {'shown' if want else 'hidden'} (shown only while the bundle or a member is lit)")
             continue
         if k.startswith("straps-"):
-            b = f"bundle-{k[len('straps-'):]}"
-            dimmed = any(x.startswith("bundle-") for x in lit) and b not in lit
+            b = k[len("straps-"):]
+            # a strap goes with its bundle: lit while its bundle, or a cable that rides it, is lit
+            dimmed = bool(lit) and f"bundle-{b}" not in lit and not any(f"cable-{c}" in lit for c in members.get(b, ()))
             for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
                 if not dimmed and (tr, op, dw) != (tr0, op0, dw0):
-                    bad.append(f"3D {k} should be at full strength (no other bundle is lit), its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
+                    bad.append(f"3D {k} should be at full strength (its bundle or a member is lit), its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
                 if dimmed and (not tr or dw or op > op0 * 0.2 + 1e-6):
-                    bad.append(f"3D {k} should be dimmed (another bundle is lit), its material is {(tr, op, dw)}")
+                    bad.append(f"3D {k} should be dimmed (another cable or bundle is lit), its material is {(tr, op, dw)}")
             continue
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
             if k in lit:
@@ -6249,6 +6269,13 @@ def check_rack_bundle_pack(page, base):
     g = page.evaluate(PACK_2D_JS)
     if not g or not g["stretches"]:
         return bad + ["2D: no envelope stretches for b1 on the front pane"]
+    # ── nothing of the bundle on the rear pane, where none of its cables run (its lacer stretch, ring to
+    # ring, was once placed there by the kit's rest height alone: bars over the rear, and in the sheet) ──
+    stray = page.evaluate("""() => { const s = document.querySelector('#paneRear svg');
+      return {strokes: s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length,
+              straps: s.querySelectorAll('[data-strap]').length, stretches: s.querySelectorAll('[data-bundle-trunk]').length}; }""")
+    if stray["strokes"] or stray["straps"] or stray["stretches"]:
+        bad.append(f"2D: the rear pane, where no member runs, has {stray['straps']} straps and {stray['stretches']} envelope stretches ({stray['strokes']} cable strokes)")
     # ── 2D: hidden by default; members and trunk coincide on every stretch ──
     if g["shown"]:
         bad.append("2D: the envelope shows with nothing hovered or selected")
@@ -6433,7 +6460,7 @@ def strap_extent(px, w, h, at, core):
     return (1 + run(-1, 0) + run(1, 0), 1 + run(0, -1) + run(0, 1))
 
 
-@extra("rack.html: a bundle's straps can be seen - a light strap with a dark rim on a dark stage and a black one with a white rim on a light stage (7 to 1 or better against the stage), never under 6 px on screen at Fit on a 42U rack, at full strength while an unrelated cable is selected or hovered, in the stage's strap colour in 3D, and black on a sheet whatever the stage")
+@extra("rack.html: a bundle's straps can be seen - a light strap with a dark rim on a dark stage and a black one with a white rim on a light stage (7 to 1 or better against the stage), never under 6 px on screen at Fit on a 42U rack, lit with their bundle (a member selected or hovered) and dimmed with it (another cable), in the stage's strap colour in 3D, and black on a sheet whatever the stage")
 def check_rack_straps_seen(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -6474,22 +6501,26 @@ def check_rack_straps_seen(page, base):
             bad.append(f"{tone}: the strap is at opacity {s['opacity']} with nothing selected")
     print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 6 px at Fit")
     page.click('#stagebg .sw[data-c="#101214"]')
-    # An unrelated cable selected, then hovered: the other cables dim, the strap does not.
-    page.click('#cableList [data-cable-row="c4"]')
-    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c4\"].on')", timeout=READY_MS)
-    park_mouse(page)
-    page.wait_for_timeout(300)
-    s = page.evaluate(STRAP_2D_JS)
-    if s["opacity"] != 1 or s["others"].get("c1", 1) > 0.25:
-        bad.append(f"selected: with c4 selected the strap is at {s['opacity']} and c1 at {s['others'].get('c1')}; expected the strap at 1 and c1 dimmed")
-    page.click('#cableList [data-cable-row="c4"]')
-    page.wait_for_function("() => !document.querySelector('#paneFront [data-cable-id].on')", timeout=READY_MS)
-    page.hover('#cableList [data-cable-row="c4"]')
-    page.wait_for_timeout(350)
-    s = page.evaluate(STRAP_2D_JS)
-    if s["opacity"] != 1 or s["others"].get("c1", 1) > 0.25:
-        bad.append(f"hover: with c4 hovered the strap is at {s['opacity']} and c1 at {s['others'].get('c1')}; expected the strap at 1 and c1 dimmed")
-    park_mouse(page)
+    # A STRAP GOES WITH ITS BUNDLE. A cable that rides it selected, then hovered: the strap stays at
+    # full strength. A cable that does not (c4): the strap dims with its bundle's cables.
+    for cable, rides in (("c1", True), ("c4", False)):
+        page.click(f'#cableList [data-cable-row="{cable}"]')
+        page.wait_for_function("c => document.querySelector(`#paneFront [data-cable-id=\"${c}\"].on`)", arg=cable, timeout=READY_MS)
+        park_mouse(page)
+        page.wait_for_timeout(300)
+        s = page.evaluate(STRAP_2D_JS)
+        if (s["opacity"] == 1) != rides or (not rides and s["opacity"] > 0.25):
+            bad.append(f"selected: with {cable} selected the strap is at {s['opacity']}; expected {'full strength' if rides else 'dimmed with its bundle'}")
+        page.click(f'#cableList [data-cable-row="{cable}"]')
+        page.wait_for_function("() => !document.querySelector('#paneFront [data-cable-id].on')", timeout=READY_MS)
+        page.hover(f'#cableList [data-cable-row="{cable}"]')
+        page.wait_for_timeout(350)
+        s = page.evaluate(STRAP_2D_JS)
+        if (s["opacity"] == 1) != rides or (not rides and s["opacity"] > 0.25):
+            bad.append(f"hover: with {cable} hovered the strap is at {s['opacity']}; expected {'full strength' if rides else 'dimmed with its bundle'}")
+        park_mouse(page)
+    if page.evaluate(STRAP_2D_JS)["opacity"] != 1:
+        bad.append("after: with nothing selected or hovered the strap is not back at full strength")
     # ...and it does dim when a bundle is lit that is not its own.
     dim = page.evaluate("""async () => {
       const H = await import('/site/rack/hover.js'), svgs = [...document.querySelectorAll('#paneFront > svg, #paneRear > svg')];
@@ -6520,12 +6551,20 @@ def check_rack_straps_seen(page, base):
     s3 = page.evaluate(STRAP_3D_JS)
     if not s3 or s3["color"] != "#d5d9de":
         bad.append(f"3D: on the black stage a strap is {s3}, expected #d5d9de")
-    page.hover('#cableList [data-cable-row="c4"]')
+    page.hover('#cableList [data-cable-row="c1"]')
     page.wait_for_timeout(350)
     s3 = page.evaluate(STRAP_3D_JS)
     if not s3 or s3["transparent"] or s3["opacity"] != 1:
-        bad.append(f"3D: with an unrelated cable hovered a strap is dimmed: {s3}")
+        bad.append(f"3D: with a cable that rides its bundle hovered a strap is dimmed: {s3}")
+    page.hover('#cableList [data-cable-row="c4"]')
+    page.wait_for_timeout(350)
+    s3 = page.evaluate(STRAP_3D_JS)
+    if not s3 or not s3["transparent"] or s3["opacity"] > 0.2:
+        bad.append(f"3D: with an unrelated cable hovered a strap is not dimmed with its bundle: {s3}")
     park_mouse(page)
+    s3 = page.evaluate(STRAP_3D_JS)
+    if not s3 or s3["transparent"] or s3["opacity"] != 1:
+        bad.append(f"3D: with nothing hovered a strap is not back at full strength: {s3}")
     page.click('#stagebg .sw[data-c="#ffffff"]')
     page.wait_for_timeout(300)
     s3 = page.evaluate(STRAP_3D_JS)
@@ -6680,14 +6719,19 @@ PIN_STATE_JS = """() => {
     const env = svg.querySelector('[data-bundle-id="b1"] [data-envelope]');
     out.envelope2 = !!env && getComputedStyle(env).visibility === 'visible';
     out.hovering = svg.classList.contains('cable-hover');
+    const strap = svg.querySelector('[data-strap="b1"]');
+    if (strap) { let op = 1; for (let n = strap; n && n !== svg.parentNode; n = n.parentNode) op *= +getComputedStyle(n).opacity; out.strap2 = Math.round(op * 100) / 100; }
   }
   out.pressed = [...document.querySelectorAll('#cableList [aria-pressed="true"]')].map(b => b.dataset.cableRow ?? b.dataset.bundleRow);
   out.panel = !!document.getElementById('bundlePanel');
+  out.pin = document.getElementById('bPin')?.getAttribute('aria-pressed') ?? null;
   const w = window.__rack.scene()?.three?.scene, g = w?.getObjectByName('patch-cables');
   if (g && !document.getElementById('stage3d').hidden) {
     out.three = {};
     for (const c of g.children) { const m = c.children.find(o => o.isMesh).material; out.three[c.name.slice(6)] = [m.transparent, Math.round(m.opacity * 1000) / 1000]; }
     out.envelope3 = (w.getObjectByName('bundle-b1')?.children ?? []).filter(o => o.userData.envelope).map(o => o.visible);
+    const band = (w.getObjectByName('bundle-b1')?.children ?? []).find(o => o.userData.strap);
+    out.strap3 = band ? [band.material.transparent, Math.round(band.material.opacity * 1000) / 1000] : null;
   }
   return out;
 }"""
@@ -6712,6 +6756,12 @@ def pin_wrong(st, lit, envelope, where):
             bad.append(f"{where}: 3D {c} should be dimmed, its material is transparent={tr} opacity={op}")
     if st.get("three") is not None and (not st.get("envelope3") or any(v != envelope for v in st["envelope3"])):
         bad.append(f"{where}: 3D b1's envelope is {st.get('envelope3')}, expected {'shown' if envelope else 'hidden'}")
+    # b1's straps go with b1: lit while it or a cable that rides it is pinned (or nothing is), dimmed with it otherwise
+    rides = not lit or bool(set(lit) & {"c1", "c2", "c3"})
+    if st.get("two") and "strap2" in st and ((st["strap2"] == 1) != rides or (not rides and st["strap2"] > 0.25)):
+        bad.append(f"{where}: 2D b1's strap is at opacity {st['strap2']}, expected {'full strength' if rides else 'dimmed with its bundle'}")
+    if st.get("three") is not None and st.get("strap3") and (st["strap3"] == [False, 1]) != rides:
+        bad.append(f"{where}: 3D b1's strap is {st['strap3']}, expected {'full strength' if rides else 'dimmed with its bundle'}")
     return bad
 
 
@@ -6842,6 +6892,45 @@ def check_rack_pinned_highlight(page, base):
     park_mouse(page)
     page.wait_for_timeout(300)
     see({"c1", "c2", "c3"}, True, "2D, b1's row clicked")
+    # THE PANEL'S OWN PIN: its row is behind the panel, so the panel says it is pinned and can put it down and take it up
+    if state()["pin"] != "true":
+        bad.append(f"panel: the bundle panel's pin control reads aria-pressed={state()['pin']!r} while its bundle is pinned")
+    else:
+        page.click("#bPin")
+        page.wait_for_function("() => document.getElementById('bPin')?.getAttribute('aria-pressed') === 'false'", timeout=READY_MS)
+        park_mouse(page)
+        page.wait_for_timeout(300)
+        see(None, False, "2D, unpinned by the panel's control")
+        if not state()["panel"]:
+            bad.append("panel: unpinning closed the bundle panel")
+        page.click("#bPin")
+        page.wait_for_function("() => document.getElementById('bPin')?.getAttribute('aria-pressed') === 'true'", timeout=READY_MS)
+        park_mouse(page)
+        page.wait_for_timeout(300)
+        see({"c1", "c2", "c3"}, True, "2D, pinned again by the panel's control")
+    # A BUNDLE COMMAND WHILE IT IS PINNED: the pin stays, and follows the bundle's members
+    n0 = page.evaluate("() => window.__rack.bundles()[0].count")
+    page.fill("#bEvery", "6")
+    page.press("#bEvery", "Enter")
+    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n && document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
+                           arg=n0, timeout=READY_MS)
+    park_mouse(page)
+    page.wait_for_timeout(300)
+    see({"c1", "c2", "c3"}, True, "2D, b1 pinned, after its strap spacing changed")
+    page.click("#bAdd")
+    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members.length === 4 && window.__rack.routesCurrent().current"
+                           " && document.querySelector('#paneFront [data-bundle-id=\"b1\"]')?.dataset.members.split(' ').length === 4", timeout=READY_MS)
+    park_mouse(page)
+    page.wait_for_timeout(300)
+    see({"c1", "c2", "c3", "c4"}, True, "2D, b1 pinned, after c4 was added to it")
+    page.click("#bPeel-c4")
+    page.wait_for_function("() => window.__rack.doc().racks[0].bundles[0].members.length === 3 && window.__rack.routesCurrent().current"
+                           " && document.querySelector('#paneFront [data-bundle-id=\"b1\"]')?.dataset.members.split(' ').length === 3", timeout=READY_MS)
+    park_mouse(page)
+    page.wait_for_timeout(300)
+    see({"c1", "c2", "c3"}, True, "2D, b1 pinned, after c4 was peeled out of it")
+    if not state()["panel"] or state()["pin"] != "true":
+        bad.append(f"panel: after the bundle's commands the panel is {'open' if state()['panel'] else 'closed'} with its pin {state()['pin']!r}")
     page.click("#headFront")
     put_down("() => !document.getElementById('bundlePanel')")
     park_mouse(page)
@@ -6853,9 +6942,22 @@ def check_rack_pinned_highlight(page, base):
     ring = page.evaluate("() => { const a = document.activeElement; return [a?.dataset?.cableRow ?? null, a?.getAttribute('aria-pressed'), getComputedStyle(a).outlineStyle]; }")
     if ring[:2] != ["c1", "true"] or ring[2] == "none":
         bad.append(f"keyboard: after Enter on c1's row the focused row is {ring[0]!r}, aria-pressed {ring[1]!r}, outline {ring[2]!r}; expected c1, pressed, ringed")
-    page.evaluate("() => document.activeElement?.blur()")
     park_mouse(page)
     see({"c1"}, True, "keyboard, Enter on c1's row")
+    # Escape puts it down altogether: focus is still on the row, and must not light it again as a hover
+    page.keyboard.press("Escape")
+    put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    page.wait_for_timeout(400)
+    if page.evaluate("() => document.activeElement?.dataset?.cableRow ?? null") != "c1":
+        bad.append("keyboard: Escape moved focus off c1's row, so focus on the row was not what was tried")
+    see(None, False, "keyboard, Escape with focus still on c1's row")
+    if state().get("hovering"):
+        bad.append("keyboard: after Escape the pane is still in hover, from the focus left on the row")
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c1\"].on')", timeout=READY_MS)
+    page.evaluate("() => document.activeElement?.blur()")
+    park_mouse(page)
+    see({"c1"}, True, "keyboard, Enter on c1's row again")
     page.focus('#cableList [data-cable-row="c1"]')
     page.keyboard.press("Space")
     put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
@@ -6890,6 +6992,116 @@ def check_rack_pinned_highlight(page, base):
     doc = json.dumps(page.evaluate("() => window.__rack.doc()"))
     if "pinned" in doc or '"sel"' in doc:
         bad.append("saved: the rack document carries the pin")
+    return bad
+
+
+# WHAT A DOWNLOAD HOLDS OF A BUNDLE, pinned: a change to it should fail here
+# and be made on purpose. The GLB as its JSON chunk's nodes and each strap's
+# colour, with a digest of the whole file.
+BUNDLE_GLB_JS = """async () => {
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+  const out = await X.modelFile(window.__rack.scene(), window.__rack.doc().racks[0], 'glb', (await C.loadCatalog('/assets/dist/')).chassisOf);
+  const buf = out.data instanceof ArrayBuffer ? out.data : await new Response(out.data).arrayBuffer();
+  const dv = new DataView(buf), len = dv.getUint32(12, true);
+  const j = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, len)));
+  const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const names = j.nodes.map(n => n.name || '');
+  const sha = async b => [...new Uint8Array(await crypto.subtle.digest('SHA-256', b))].map(x => x.toString(16).padStart(2, '0')).join('');
+  // every material and every image in the file: what a stage could have coloured
+  const paint = await sha(new TextEncoder().encode(JSON.stringify([j.materials, (j.images || []).map(i => [i.mimeType, j.bufferViews[i.bufferView]?.byteLength])])));
+  const imgs = await Promise.all((j.images || []).map(i => { const v = j.bufferViews[i.bufferView]; return sha(new Uint8Array(buf, 20 + len + 8 + (v.byteOffset || 0), v.byteLength)); }));
+  const colour = n => { const m = j.materials[j.meshes[n.mesh].primitives[0].material], c = m.pbrMetallicRoughness?.baseColorFactor ?? [1, 1, 1, 1];
+    // glTF colours are linear: back to sRGB bytes
+    return c.slice(0, 3).map(v => Math.round(255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055))); };
+  return {hash, bytes: buf.byteLength, paint, images: imgs.sort().join(' '), nodes: names.length, cables: names.filter(n => /^cable-c\\d+$/.test(n)).sort(),
+          straps: j.nodes.filter(n => /^bundle-b1-strap-\\d+$/.test(n.name || '')).map(colour),
+          trunks: names.filter(n => /-trunk$/.test(n)).length, bundle: names.includes('bundle-b1')};
+}"""
+
+
+@extra("rack.html: what a download holds of a bundle - the sheet and the GLB carry its members and the kit's count of straps in fixed ink, never its envelope; the sheet carries the in-front layer; and the GLB is the same file from a dark stage and a light one")
+def check_rack_bundle_downloads(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    kit = page.evaluate("() => window.__rack.bundles()[0].count")
+    if kit < 2:
+        return bad + [f"fixture: the kit counts {kit} straps, so a count was not what was measured"]
+    # ── the sheet, both faces, from the dark stage with the bundle hovered (so its envelope shows on the page) ──
+    page.click('#stagebg .sw[data-c="#101214"]')
+    page.hover('#cableList [data-bundle-row="b1"]')
+    page.wait_for_timeout(350)
+    sheet = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      return (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf)).data;
+    }""")
+    park_mouse(page)
+    ns = "{http://www.w3.org/2000/svg}"
+    panes = {s.get("data-pane"): s for s in ET.fromstring(sheet.encode("utf-8")).findall(f"{ns}svg")}
+    if sorted(panes) != ["front", "rear"]:
+        return bad + [f"sheet: its panes are {sorted(panes)}"]
+    def held(pane):
+        nodes = list(pane.iter())
+        return {"cables": sorted({n.get("data-cable-id") for n in nodes if n.get("data-cable") and n.get("data-cable-id")}),
+                "straps": [n for n in nodes if n.get("data-strap") == "b1"],
+                "envelope": sum(1 for n in nodes if n.get("data-envelope") is not None or n.get("data-bundle-trunk") is not None),
+                "front": [k.get("data-front") for g in pane if g.get("data-in-front") is not None for k in g],
+                "bundle": sum(1 for n in nodes if n.get("data-bundle-id") == "b1")}
+    f, r = held(panes["front"]), held(panes["rear"])
+    if f["cables"] != ["c1", "c2", "c3", "c4"] or r["cables"]:
+        bad.append(f"sheet: the front face draws cables {f['cables']} and the rear {r['cables']}; expected all four on the front alone")
+    if len(f["straps"]) != kit or r["straps"]:
+        bad.append(f"sheet: {len(f['straps'])} straps on the front face and {len(r['straps'])} on the rear; the kit counts {kit}, all on the front")
+    ink = sorted({(l.get("data-strap-part"), l.get("stroke")) for g in f["straps"] for l in g})
+    if ink != [("core", "#1b1d20"), ("rim", "#ffffff")] or any(len(list(g)) != 4 for g in f["straps"]):
+        bad.append(f"sheet: a strap is not four lines in fixed ink (a black core, a white rim): {ink}, {[len(list(g)) for g in f['straps']]} lines")
+    if f["envelope"] or r["envelope"]:
+        bad.append(f"sheet: it carries the bundle's envelope ({f['envelope']} nodes on the front, {r['envelope']} on the rear)")
+    if (f["front"].count("ring"), f["front"].count("cover")) != (5, 2) or r["front"]:
+        bad.append(f"sheet: the front face's in-front layer holds {f['front']} and the rear's {r['front']}; expected 5 ring legs and 2 covers on the front")
+    if webgl_trouble(page):
+        print("[check_rack_bundle_downloads] no WebGL here - the GLB was not checked")
+        return bad
+    # ── the GLB, from the dark stage and from the light one ──
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the downloads' scene", tubes=True)
+    page.evaluate("() => window.__rack.scene().settled?.()")
+    dark = page.evaluate(BUNDLE_GLB_JS)
+    page.click('#stagebg .sw[data-c="#ffffff"]')
+    page.wait_for_timeout(400)
+    light = page.evaluate(BUNDLE_GLB_JS)
+    again = page.evaluate(BUNDLE_GLB_JS)
+    page.click('#stagebg .sw[data-c="#101214"]')
+    for name, g in (("dark", dark), ("light", light)):
+        if g["cables"] != ["cable-c1", "cable-c2", "cable-c3", "cable-c4"] or not g["bundle"]:
+            bad.append(f"GLB ({name} stage): its cables are {g['cables']} and bundle-b1 is {'there' if g['bundle'] else 'missing'}")
+        if len(g["straps"]) != kit or any(c != [27, 29, 32] for c in g["straps"]):
+            bad.append(f"GLB ({name} stage): {len(g['straps'])} straps coloured {g['straps']}; the kit counts {kit}, each #1b1d20")
+        if g["trunks"]:
+            bad.append(f"GLB ({name} stage): it carries {g['trunks']} envelope tubes")
+    # THE SAME FILE FROM EITHER STAGE. Two GLBs of one scene are not the same bytes (the exporter's own
+    # stamp differs from one export to the next: `again` is a second export from the light stage), so
+    # what is compared is everything a stage could have coloured, and the size: every material, every
+    # image's bytes, the node count and the file's length.
+    same = lambda a, b: (a["bytes"], a["paint"], a["images"], a["nodes"]) == (b["bytes"], b["paint"], b["images"], b["nodes"])
+    if not same(light, again):
+        bad.append("GLB: two exports of one scene from one stage differ in their materials, images, nodes or length, so the stages could not be compared")
+    elif not same(dark, light):
+        bad.append(f"GLB: the file from the dark stage is not the file from the light stage (length {dark['bytes']} and {light['bytes']}, "
+                   f"materials {'the same' if dark['paint'] == light['paint'] else 'differ'}, images {'the same' if dark['images'] == light['images'] else 'differ'})")
+    if dark["hash"] == light["hash"]:
+        print("[check_rack_bundle_downloads] the GLBs from the two stages are the same bytes")
+    if (dark["cables"], dark["straps"], dark["trunks"]) != (light["cables"], light["straps"], light["trunks"]):
+        bad.append("GLB: its bundle content differs between the dark stage and the light one")
+    # on the page the strap is the stage's own colour again, once the file is written
+    after = page.evaluate(STRAP_3D_JS)
+    if not after or after["color"] != "#d5d9de":
+        bad.append(f"GLB: after the export the scene's strap is {after}, expected the dark stage's #d5d9de again")
     return bad
 
 

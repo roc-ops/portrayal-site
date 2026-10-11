@@ -144,9 +144,10 @@
 /* STRAPS. A strap is black on a light stage and a light neutral on a dark one,
    each with a rim of the other tone (stage.js STRAP_PAINT, which a test holds
    these to), so it is seen on either stage and against every cable colour.
-   It does not dim with the cables: a selected cable's focus leaves it alone,
-   and under a hover it dims only when another BUNDLE is the one lit
-   (hover.js paintHover2d keeps it .hot otherwise). */
+   A strap goes with its bundle: it stays lit while its bundle, or a cable
+   that rides it, is the one selected or hovered (.on, .hot), and dims with
+   the rest when another cable or bundle is. */
+.cable-focus [data-strap]:not(.on) { opacity: 0.18; }
 .rk-panes[data-stage="light"] [data-strap] [data-strap-part="core"] { stroke: #1b1d20; }
 .rk-panes[data-stage="light"] [data-strap] [data-strap-part="rim"] { stroke: #ffffff; }
 .rk-panes[data-stage="dark"] [data-strap] [data-strap-part="core"] { stroke: #d5d9de; }
@@ -197,6 +198,8 @@
 .rk-side .rk-cables .rk-warn { margin: 0; }
 .rk-side .rk-cables li.rk-bundled { padding-left: 0.9rem; border-left: 2px solid var(--pt-line); }
 .rk-side .rk-cables [data-bundle-row] { text-align: left; font-weight: 600; }
+.rk-side .rk-bundle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.rk-side .rk-bundle-title button[aria-pressed="true"] { border-color: var(--pt-brass); color: var(--pt-brass); }
 .rk-side .rk-bundle-picks { display: grid; gap: 0.25rem; border: 0; padding: 0; margin: 0 0 0.6rem; font-size: 0.85rem; }
 .rk-side .rk-bundle-members { list-style: none; padding: 0; margin: 0 0 0.6rem; display: grid; gap: 0.5rem; font-size: 0.85rem; }
 .rk-side .rk-bundle-members li { display: grid; gap: 0.2rem; }
