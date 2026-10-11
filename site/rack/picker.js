@@ -67,7 +67,8 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   let state = {query: '', vendor: ALL, fitsOnly: true, device: null, cfgByRef: {}, ...pick};
   if (!points.includes(state.at)) state.at = points.includes(`left-${face}`) ? `left-${face}` : points[0];
   if (state.side !== 'right') state.side = 'left';
-  if (state.half !== 'upper') state.half = 'lower';
+  // the half chosen is this unit's: another unit starts on its lower half again
+  if (state.half !== 'upper' || state.halfAt !== ru) state.half = 'lower';
   const setState = patch => { state = {...state, ...patch}; onState(patch); };
 
   const afterQuery = () => { const ws = wordsOf(state.query); return live.filter(e => ws.every(w => hay(e).includes(w))); };
@@ -140,7 +141,7 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
     // the half chosen last time may be taken here: start on the one that fits
     if (mayHalf(entry) && whole && !fitFor(entry).ok) {
       const other = HALVES.find(h => fitFor(entry, h).ok);
-      if (other) { setState({half: other}); half.value = other; }
+      if (other) { setState({half: other, halfAt: ru}); half.value = other; }
     }
     const f = fitFor(entry);
     fitLine.textContent = !f.ok ? f.reason
@@ -195,7 +196,7 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   at.addEventListener('change', () => { setState({at: at.value}); redraw(); });
   between.addEventListener('change', () => setState({between: between.checked}));
   side.addEventListener('change', () => { setState({side: side.value}); redraw(); });
-  half.addEventListener('change', () => { setState({half: half.value}); redraw(); });
+  half.addEventListener('change', () => { setState({half: half.value, halfAt: ru}); redraw(); });
 
   redraw();
   queueMicrotask(() => query.focus());

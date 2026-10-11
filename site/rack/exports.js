@@ -705,7 +705,8 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   // gives the same bytes.
   const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   return {name: `${fileStem(rack.name)}-${nautobot ? 'nautobot' : 'netbox'}-import.zip`, data: await makeZip(entries, day),
-          type: 'application/zip', notes: readme.notes, files};
+          // a rack the kit screened out is said on the page too, in the kit's sentence (rack-page.js exportStatus: `left`)
+          type: 'application/zip', notes: readme.notes, files, ...(rackLeft.length ? {left: rackLeft} : {})};
 }
 
 // THE BILL OF MATERIALS (spec §8): each device by configuration, each

@@ -172,6 +172,7 @@ import { rasterize } from './site/raster.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 import { firstDevice } from './site/featured.js';
+import { positionControl } from './vendor/positions.js';
 
 // A first visit opens on a populated device, not on the first in the index
 // (roc-ops/portrayal-site#19): site/featured.js is the one rule, shared with
@@ -657,6 +658,15 @@ function writeLocation() {
 }
 shell.on('change', writeLocation);
 shell.on('load', writeLocation);
+
+// A PART THAT SLIDES (Portrayal #950, kit 0.20.0): the kit's control for a
+// device that declares an adjustment (the FS DIN rail shelves' rail-setback),
+// above the tree. It writes through shell.setFields and holds no rule of its
+// own, so the position is in state.cfgFields with every other field:
+// writeLocation puts it in the link (`fields=`) and the 3D viewer takes it
+// with the rest (mode3d.js). mode3d.js says which stage is showing by emitting
+// `mode` on the shell. A device that declares none gets no control.
+positionControl(shell, {threeD: () => !EMBED});
 
 // THE DEVICE AS THE READER CONFIGURED IT, as a file. The same configuredFace
 // the showcase and the Rack Builder export through, handed this page's swaps

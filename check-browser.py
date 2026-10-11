@@ -5806,17 +5806,21 @@ def check_rack_hover_dims(page, base):
 # metre. The cable list says each cord and its spare, and in one line what the
 # drawing shows; no row is marked for having much spare. A cable under the
 # pointer says the same two figures beside it, in 2D and in 3D. A length
-# entered in feet says both in feet. An entered cord shorter than what its
-# route needs (the kit's routed length) says so as a warning, whether it still
-# reaches (0.5 m on c16's route) or falls short (0.2 m on c4's); a 3 ft cord on
-# c12's route, which needs about 0.62 m, does not, though the kit would pick 1 m.
+# entered in feet says both in feet. An entered cord under what its route
+# needs (the kit's `need`: rack file version 4, kit 0.22.0) says so as a
+# warning (0.2 m on c4's route); one that meets the need has spare and no
+# warning, however little (0.5 m on c16's route, which needs about 0.4 m; a
+# 3 ft cord on c12's). Until 0.22.0 the need held the 0.2 m of end play, so
+# 0.5 m on c16's route warned "without dressing room".
 #
-# THE EXPECTED SPARE is worked here from the page's own kit output, by another
-# road than spare.js takes: each path's points added up (window.__rack.paths),
-# and the kit's sourced table figure at each end (END_ALLOWANCE_BY_MEDIA),
-# taken from the cord's length. spare.js takes the kit's routed length less the
-# dressing allowance. No figure is written down here, so a plug drawn deeper
-# moves both.
+# THE EXPECTED SPARE is worked here by another road than spare.js takes, which
+# asks the kit's spareOf: each path's points added up (window.__rack.paths),
+# what is inside the port at each end (END_ALLOWANCE_BY_MEDIA) and the maker's
+# short tolerance, taken from the cord's length. THE KIT'S OWN (spareOf, by
+# the page's route context) is read beside it, and the two must agree: this is
+# where a page that still took the dressing as `endAllowance` less the table
+# would say 0.2 m less spare for every cord. No figure is written down here,
+# so a plug drawn deeper moves both.
 SPARE_WANT_JS = """async () => {
   const R = await import('/vendor/rack/route.js');
   const rack = window.__rack.doc().racks[0], paths = window.__rack.paths() || {};
@@ -5828,15 +5832,18 @@ SPARE_WANT_JS = """async () => {
     for (let k = 1; k < p.points.length; k++)
       mm += Math.hypot(p.points[k].x - p.points[k - 1].x, p.points[k].y - p.points[k - 1].y, p.points[k].z - p.points[k - 1].z);
     const unit = l.unit ?? 'm', cord = l.value * PER[unit];
-    const spare = cord - (mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media]);
+    const need = mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media] + R.shortTolerance(c, cord);
+    const spare = cord - need;
+    const kit = R.spareOf(rack, c, window.__rack.routeContext());
     // said so that rounding never flatters the cord: a spare down, a shortfall and a need up
     const dn = x => Math.floor(x * 100 + 1e-6) / 100, up = x => Math.ceil(x * 100 - 1e-6) / 100;
     const shown = spare < -1e-9 ? -up(-spare / PER[unit]) : dn(Math.max(0, spare) / PER[unit]);
-    // a length that is not the page's own measurement, under the kit's routed length for this path
-    const under = l.source !== 'routed' && cord < p.measured - 1e-9;
-    const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : under ? 'spare without dressing room' : 'spare'}`;
-    const asks = under ? `the route needs ${up(p.measured / PER[unit])} ${unit}` : null;
-    out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, path_mm: Math.round(mm), spare,
+    // a length that is not the page's own measurement, under what the cord must at least be
+    const under = l.source !== 'routed' && cord < need - 1e-9;
+    const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : 'spare'}`;
+    const asks = under ? `the route needs ${up(need / PER[unit])} ${unit}` : null;
+    out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, need, path_mm: Math.round(mm), spare,
+      kit: kit && {spare: kit.spare_m, need: kit.need_m, stock: kit.stock_m, end_play: kit.end_play_m}, end_play: R.END_PLAY_M,
       text, asks, short: asks ? [`${text}; ${asks}.`] : []};
   }
   return out;
@@ -5979,6 +5986,16 @@ def check_rack_cable_spare(page, base):
         bad.append(f"the 1 m cord on the longer path should have the larger spare: c4 {want['c4']['spare']}, c12 {want['c12']['spare']}")
     if any(w["asks"] for w in want.values()):
         bad.append(f"fixture: a routed cord is under the size its route asks for: {[c for c, w in want.items() if w['asks']]}")
+    # THE SPARE IS THE KIT'S: for every cord, the figure worked here from the path is the kit's spareOf, its need
+    # the kit's need, and a routed cord has its end play in the spare (to the 10 mm stock break), not taken off it.
+    for cid, w in want.items():
+        k = w["kit"]
+        if not k or abs(k["spare"] - w["spare"]) > 1e-9 or abs(k["need"] - w["need"]) > 1e-9 or k["stock"] != w["value"]:
+            bad.append(f"{cid}: the kit's spareOf is {k}, the path gives spare {w['spare']} and need {w['need']} for a {w['value']} m cord")
+        if w["spare"] < 2 * w["end_play"] - 0.01 - 1e-9:
+            bad.append(f"{cid}: a routed cord with {w['spare']:.4f} m spare has less than its end play ({2 * w['end_play']} m, less the 10 mm break)")
+        if abs(w["measured"] - (w["need"] + 2 * w["end_play"])) > 1e-9:
+            bad.append(f"{cid}: the kit's measured ({w['measured']}) is not its need ({w['need']}) and the end play at both ends")
 
     def read_list(where, ids=None):
         got = page.evaluate(SPARE_LIST_JS)
@@ -6058,15 +6075,16 @@ def check_rack_cable_spare(page, base):
         wait_fn(page, f"spare: {cid}'s row says {seen!r}", "([id, t]) => (document.querySelector(`#cableList li[data-cable-item=\"${id}\"] .rk-cable-meta`)?.textContent ?? '').includes(t)", arg=[cid, seen])
         page.click(f'#cableList [data-cable-row="{cid}"]')
         wait_fn(page, "spare: nothing selected again", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
-    # A CORD THAT REACHES BUT IS UNDER WHAT ITS ROUTE NEEDS. c16 is given 0.5 m: its route needs more.
-    give("c16", 0.5, "without dressing room")
+    # A CORD THAT MEETS THE NEED WITH LESS THAN THE END PLAY TO SPARE. c16 is given 0.5 m: its route needs about
+    # 0.4 m, so it reaches, with under 0.2 m of spare. It has that spare and no warning (the kit's need is met).
+    give("c16", 0.5, " m spare")
     # A CORD THAT DOES NOT REACH. c4 is given 0.2 m: less than its path and plugs use.
     give("c4", 0.2, "short")
     want = page.evaluate(SPARE_WANT_JS)
     ft, tight, short = want["c12"], want["c16"], want["c4"]
-    if not (tight["spare"] > 0 and tight["measured"] > 0.5 and tight["text"].startswith("0.5 m cord, ")
-            and tight["text"].endswith(" m spare without dressing room") and (tight["asks"] or "").startswith("the route needs 0.")):
-        bad.append(f"tight: c16 at 0.5 m should have spare and be under what its route needs: {tight}")
+    if not (0 < tight["spare"] < 2 * tight["end_play"] and tight["measured"] > 0.5 > tight["need"] and tight["text"].startswith("0.5 m cord, ")
+            and tight["text"].endswith(" m spare") and tight["asks"] is None and tight["short"] == []):
+        bad.append(f"tight: c16 at 0.5 m should meet its need with less than the end play to spare, and not warn: {tight}")
     if not (short["spare"] < 0 and short["text"].startswith("0.2 m cord, ") and short["text"].endswith(" m short")
             and (short["asks"] or "").startswith("the route needs 0.")):
         bad.append(f"short: c4 at 0.2 m should read short of what its route needs: {short}")
@@ -6082,25 +6100,26 @@ def check_rack_cable_spare(page, base):
     wait_sel(page, "spare: the list after the press", '#cableList [data-cable-row="c4"]')
     wait_fn(page, "spare: the routes after the press", ROUTES_CURRENT)
     park_mouse(page)
-    # A CORD UNDER THE NEED BY LESS THAN A DISPLAYED STEP. c12's route needs about 0.6232 m; at
-    # 0.62 m it warns, and the need it names is rounded up, so it reads more than the cord.
-    give("c12", 0.62, "without dressing room")
+    # A CORD UNDER THE NEED BY LESS THAN A DISPLAYED STEP. c12's route needs about 0.4232 m; a cord cut to the
+    # centimetre under that is short, and the need it names is rounded up, so it reads more than the cord.
+    near = math.floor(want["c12"]["need"] * 100) / 100
+    give("c12", near, "short")
     want = page.evaluate(SPARE_WANT_JS)
     hair = want["c12"]
     m = re.fullmatch(r"the route needs ([\d.]+) m", hair["asks"] or "")
-    if not (0.62 < hair["measured"] < 0.63) or not m or float(m.group(1)) <= 0.62:
-        bad.append(f"rounding: c12 at 0.62 m on a route needing {hair['measured']} m should name a need over 0.62 m: {hair}")
-    read_list("2D list, c12 at 0.62 m")
-    spare_hover(page, bad, "2D hover, c12 at 0.62 m", SPARE_PT_2D_JS, "c12", hair)
-    # The agent's text for each: the kit's slack named for what it is against, then the cord, then what the route asks for.
+    if not (near < hair["need"] < near + 0.01) or not m or float(m.group(1)) <= near or not hair["text"].endswith(" m short"):
+        bad.append(f"rounding: c12 at {near} m on a route needing {hair['need']} m should be short and name a need over {near} m: {hair}")
+    read_list(f"2D list, c12 at {near} m")
+    spare_hover(page, bad, f"2D hover, c12 at {near} m", SPARE_PT_2D_JS, "c12", hair)
+    # The agent's text for each: its need on the length (the kit's, 0.22.0), then the cord, then what the route asks for.
     for cid in ("c4", "c16", "c12"):
         said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
           return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
         w = want[cid]
         tail = f"{w['text']}; {w['asks']} (" if w["asks"] else f"{w['text']} ("
-        if not re.search(r"; slack -?[\d.]+ (m|ft) against the routed length, which allows [\d.]+ m of dressing at each end; "
-                         + re.escape(tail), said or ""):
-            bad.append(f"agent: inspect {cid} does not say its slack against the routed length, then {tail!r}: {said!r}")
+        if not re.search(r"length [\d.]+ (m|ft) \(entered\), needs [\d.]+ m; routed [\d.]+ m, stock size [\d.]+ m; "
+                         + re.escape(tail), said or "") or "dressing" in (said or "") or "against the routed length" in (said or ""):
+            bad.append(f"agent: inspect {cid} does not say its length with its need, then {tail!r}: {said!r}")
 
     if webgl_trouble(page):
         print("[check_rack_cable_spare] no WebGL here - checked the 2D half only")
@@ -6981,9 +7000,11 @@ def check_rack_half_unit(page, base):
         bad.append(f"2D: the XCU's face runs y {top:.3f} to {top + x['h']:.3f}; the lower half of U20 is {bottom(x) - RU / 2:.3f} to {bottom(x):.3f}")
     if abs((top + x["h"] / 2) - (bottom(x) - RU / 4)) > 1e-6:
         bad.append(f"2D: the XCU's face is not centred in the lower half of its unit (centre {top + x['h'] / 2:.4f}, the half's {bottom(x) - RU / 4:.4f})")
-    # its ear: as tall as the body, where the body is, with one screw a side at the lowest hole
-    if len(x["flanges"]) != 2 or any(abs(y - top) > 1e-6 or abs(h - x["h"]) > 1e-6 for y, h in x["flanges"]):
-        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected two from y {top:.3f}, {x['h']} tall")
+    # its ear: as tall as the half unit it fills (the kit's itemBox lo to hi; it was as tall as the body,
+    # 22.2 of the half's 22.225 mm), with one screw a side at the one hole that half holds (the kit's holesIn)
+    half_top = bottom(x) - RU / 2
+    if len(x["flanges"]) != 2 or any(abs(y - half_top) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in x["flanges"]):
+        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected two from y {half_top:.3f}, {RU / 2} tall (the lower half of U20)")
     if len(x["screws"]) != 2 or any(abs(cy - (bottom(x) - 6.35)) > 1e-6 for cy in x["screws"]):
         bad.append(f"2D: the XCU's screws are at {x['screws']}, expected one a side at {bottom(x) - 6.35:.3f} (6.35 mm above the unit's bottom)")
     # its port: the cable leaves it inside the body, and the kit's height for the port is in the lower half too
@@ -6999,13 +7020,14 @@ def check_rack_half_unit(page, base):
     # ── 2D: the 1U and the 2U device are exactly where the centred formula has always put them ──
     for it, u in ((one, 1), (two, 2)):
         was = (H - (it["ru"] - 1 + u) * RU) + (u * RU - it["h"]) / 2 - it["y0"]
-        if it["ty"] != was:
+        # (to 1e-9 mm: the place is the kit's itemBox now, the same sum in another order, and differs in the last bit)
+        if abs(it["ty"] - was) > 1e-9:
             bad.append(f"2D: the {u}U {it['ref']} is at y {it['ty']!r}, it was at {was!r}")
         t0, t1 = H - (it["ru"] - 1 + u) * RU, H - (it["ru"] - 1) * RU
-        if len(it["flanges"]) != 2 or any(y != t0 or h != t1 - t0 for y, h in it["flanges"]):
+        if len(it["flanges"]) != 2 or any(abs(y - t0) > 1e-9 or abs(h - (t1 - t0)) > 1e-9 for y, h in it["flanges"]):
             bad.append(f"2D: the {u}U {it['ref']}'s ear flanges are {it['flanges']}, they were two from {t0}, {t1 - t0} tall")
         want = sorted([H - (it["ru"] - 1 + k) * RU - dy for k in range(u) for dy in (6.35, 38.10)] * 2)
-        if sorted(it["screws"]) != want:
+        if len(it["screws"]) != len(want) or any(abs(a - b) > 1e-9 for a, b in zip(sorted(it["screws"]), want)):
             bad.append(f"2D: the {u}U {it['ref']}'s screws are at {sorted(it['screws'])}, they were at {want}")
     if webgl_trouble(page):
         print("[check_rack_half_unit] no WebGL here - the 3D half was not checked")
@@ -7020,22 +7042,27 @@ def check_rack_half_unit(page, base):
     # the two views agree: the body's place above the unit's bottom is the same
     if abs((lo - base_y) - (bottom(x) - (top + x["h"]))) > 1e-6:
         bad.append(f"2D and 3D: the XCU's body is {bottom(x) - (top + x['h']):.4f} mm above its unit's bottom in 2D and {lo - base_y:.4f} in 3D")
-    if len(x3["flanges"]) != 2 or any(abs(y - x3["y"]) > 1e-6 or abs(h - x3["h"]) > 1e-6 for y, h in x3["flanges"]):
-        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected two at {x3['y']:.3f}, {x3['h']} tall")
+    # (over the half it fills, 2 mm clear, as a whole unit's is 4.5 mm clear of its span; it was as tall as the body)
+    if len(x3["flanges"]) != 2 or any(abs(y - (base_y + RU / 4)) > 1e-6 or abs(h - (RU / 2 - 2)) > 1e-6 for y, h in x3["flanges"]):
+        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected two at {base_y + RU / 4:.3f}, {RU / 2 - 2} tall")
     if len(x3["heads"]) != 2 or any(abs(y - (base_y + 6.35)) > 1e-6 for y in x3["heads"]):
         bad.append(f"3D: the XCU's screw heads are at {x3['heads']}, expected one a side at {base_y + 6.35:.3f}")
     if t["port"] is None or not lo <= t["port"] <= hi or abs(t["port"] - ya) > 1.0:
         bad.append(f"3D: the XCU's port is at y {t['port']}, the kit's height for it is {ya:.2f} and its body runs {lo:.2f} to {hi:.2f}")
     for key, it, u in (("i2", one, 1), ("i3", two, 2)):
         d = t[key]
-        was = (it["ru"] - 1) * RU + d["h"] / 2
-        if d["y"] != was:
-            bad.append(f"3D: the {u}U {it['ref']} is at y {d['y']!r}, it was at {was!r} (standing on the bottom of its unit)")
+        # CENTRED IN ITS SPAN, as the kit's itemBox and its solids have it (rack file version 4, decision 2): it
+        # stood on the bottom of its lowest unit, (u x RU - h) / 2 lower. The 2D face and the 3D body now agree.
         mid = (it["ru"] - 1) * RU + u * RU / 2
-        if len(d["flanges"]) != 2 or any(y != mid or h != u * RU - 4.5 for y, h in d["flanges"]):
+        if abs(d["y"] - mid) > 1e-9:
+            bad.append(f"3D: the {u}U {it['ref']} is at y {d['y']!r}, the middle of its span is {mid!r}")
+        top2d = H - (it["ty"] + it["y0"] + it["h"] / 2)      # the 2D face's middle, mm above the bottom of the rails
+        if abs(d["y"] - top2d) > 1e-6:
+            bad.append(f"2D and 3D: the {u}U {it['ref']}'s body is centred at {top2d:.4f} in 2D and {d['y']:.4f} in 3D")
+        if len(d["flanges"]) != 2 or any(abs(y - mid) > 1e-9 or abs(h - (u * RU - 4.5)) > 1e-9 for y, h in d["flanges"]):
             bad.append(f"3D: the {u}U {it['ref']}'s ear flanges are {d['flanges']}, they were two at {mid}, {u * RU - 4.5} tall")
         want = sorted([(it["ru"] - 1) * RU + k * RU + dy for k in range(u) for dy in (6.35, 38.10)] * 2)
-        if sorted(d["heads"]) != want:
+        if len(d["heads"]) != len(want) or any(abs(a - b) > 1e-9 for a, b in zip(sorted(d["heads"]), want)):
             bad.append(f"3D: the {u}U {it['ref']}'s screw heads are at {sorted(d['heads'])}, they were at {want}")
     return bad
 
@@ -8643,7 +8670,7 @@ LEAD_3D_JS = """leads => {
 }"""
 
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c4 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c2, c3, c4, c7 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -8678,8 +8705,11 @@ def check_rack_cable_lay(page, base):
         # ...and the stock size each rounds up to: c4 (0.4936 m) and c8 (0.4883,
         # which was 0.5158 and a 1 m cord on kit 0.15.0) are 0.5 m cords; every
         # other cord is past the 0.5 m break and is a 1 m cord.
-        want = 0.5 if cid in ("c4", "c8") else 1
-        if p["value"] != want:
+        # THE STOCK BREAK (kit 0.22.0, Portrayal #983): a cord up to 10 mm short of full end play is still chosen,
+        # so c2 (0.5015 m), c3 (0.5050) and c7 (0.5017), each within 10 mm over the break, drop from 1 m to 0.5 m.
+        # No measured length moved. Held as the rule too: a 0.5 m cord exactly where the measure is at most 0.51 m.
+        want = 0.5 if cid in ("c2", "c3", "c4", "c7", "c8") else 1
+        if p["value"] != want or (p["value"] == 0.5) != ((p["measured"] or 9) <= 0.51 + 1e-9):
             bad.append(f"{cid}: a {p['value']} m cord for {p['measured']} m measured, not {want} m")
         if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
             bad.append(f"{cid}: the kit does not rest it on a ring's sill: {p.get('rests')}")
@@ -15837,8 +15867,27 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule: named {dl.suggested_filename!r}")
     cols, rows, text = read_csv(dl)
     if cols != ["id", "cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
-                "length", "length_unit", "route", "bundle", "length_source", "status", "notes"]:
+                "length", "length_unit", "route", "bundle", "length_source", "status", "notes",
+                # rack file version 4 (kit 0.22.0): three columns appended after the last, so none read by position moves
+                "spare", "stored", "straps"]:
         bad.append(f"cable schedule: columns {cols}")
+    # THE THREE NEW CELLS ARE THE KIT'S: each cable's spare (slack.js slackOf, by the page's route context) to
+    # the centimetre, where it is stored in the kit's words, and no strap for a cable tied nowhere. A cable with
+    # a loose end has none. And the one line that totals the spare.
+    kit = page.evaluate("""async () => {
+      const S = await import('/vendor/rack/slack.js'), rack = window.__rack.doc().racks[0], ctx = window.__rack.routeContext();
+      const out = {line: S.spareLine(rack, ctx), cells: {}};
+      for (const c of rack.cables) { const s = S.slackOf(rack, c, ctx);
+        out.cells[c.id] = s ? {spare: String(Math.round(s.spare.spare_m * 100) / 100), stored: S.storedText(rack, c, s)} : null; }
+      return out;
+    }""")
+    for r in rows:
+        k = kit["cells"].get(r["id"]) if r.get("status") == "connected" else {"spare": "", "stored": ""}
+        if not k or (r.get("spare"), r.get("stored"), r.get("straps")) != (k["spare"], k["stored"], ""):
+            bad.append(f"cable schedule: {r['id']} says spare {r.get('spare')!r}, stored {r.get('stored')!r}, straps {r.get('straps')!r}; the kit gives {k}")
+        if r.get("status") == "connected" and not (float(r["spare"] or 0) > 0 and r["stored"].endswith(" at the ends")):
+            bad.append(f"cable schedule: {r['id']} is connected and says no spare: {r}")
+    rows = [{k: v for k, v in r.items() if k not in ("spare", "stored", "straps")} for r in rows]
     want = [
         {"id": "c1", "cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
@@ -15855,10 +15904,11 @@ def check_rack_export_cable_schedule(page, base):
     if rows != want:
         bad.append(f"cable schedule: rows {rows}")
     notes = [l for l in text.partition("\r\nNotes\r\n")[2].split("\r\n") if l]
-    if notes != ["\"Devices that share a label are named as the device import names them: demarc-i3, demarc-i4.\""]:
-        bad.append(f"cable schedule: the notes section reads {notes}")
-    # One note in the notes section and one row with notes: two in the file.
-    if status != notes_status(2):
+    if notes != ["\"Devices that share a label are named as the device import names them: demarc-i3, demarc-i4.\"", kit["line"]] \
+            or not re.fullmatch(r"Spare: [\d.]+ m; \d+ cords? not placed\.", kit["line"]):
+        bad.append(f"cable schedule: the notes section reads {notes}; the kit's spare line is {kit['line']!r}")
+    # Two notes in the notes section (the second the kit's spare line, since 0.22.0) and one row with notes: three in the file.
+    if status != notes_status(3):
         bad.append(f"cable schedule: the status reads {status!r}")
     if "not in this export yet" in text:
         bad.append("cable schedule: it says cables are not in this export")
@@ -16456,14 +16506,22 @@ def check_rack_export_drawio_cables(page, base):
                          "purpose": o.get("portrayal-purpose"), "length": o.get("portrayal-length"),
                          "source": o.find("mxCell").get("source"), "target": o.find("mxCell").get("target"),
                          "style": o.find("mxCell").get("style")} for o in d["edges"]}
+    # THE LABEL STATES THE SPARE AFTER THE LENGTH (kit 0.22.0: "2 m, 1.01 m spare"); the length attribute stays
+    # the length. The spare is the kit's (route.js spareOf, by the page's route context), to the centimetre.
+    sp = page.evaluate("""async () => {
+      const R = await import('/vendor/rack/route.js'), rack = window.__rack.doc().racks[0], ctx = window.__rack.routeContext();
+      return Object.fromEntries(rack.cables.map(c => { const s = R.spareOf(rack, c, ctx); return [c.id, s ? `${Math.round(s.spare_m * 100) / 100} m` : null]; }));
+    }""")
+    if not all(sp.get(c) and re.fullmatch(r"0?[\d.]+ m", sp[c]) for c in ("c1", "c2")):
+        return bad + [f"draw.io cables: the kit gives no spare for c1 and c2: {sp}"]
     want = {
         # Both ends in the front cabinet: a seated card's port is a cell like any other.
-        "cable-c1": {"label": "A1 · 2 m", "cable": "c1", "media": "os2", "purpose": "uplink", "length": "2 m",
+        "cable-c1": {"label": f"A1 · 2 m, {sp['c1']} spare", "cable": "c1", "media": "os2", "purpose": "uplink", "length": "2 m",
                      "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
                      "style": style.format(colors["os2"])},
         # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
         # c2 measures 1.503 m on kit 0.15.0, 3 mm over the 1.5 m break (portrayal-site#166)
-        "cable-c2": {"label": "2 m", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "2 m",
+        "cable-c2": {"label": f"2 m, {sp['c2']} spare", "cable": "c2", "media": "cat6a", "purpose": "management", "length": "2 m",
                      "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
                      "style": style.format(colors["cat6a"])}}
     if got != want:
@@ -16505,7 +16563,7 @@ def check_rack_export_drawio_cables(page, base):
         bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
     if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
         bad.append(f"draw.io cables: a cable with no media is styled {odd['style'][-30:]!r}, media {odd['media']!r}")
-    if odd["label"] != '<b>&" · 2 m':
+    if not re.fullmatch(r'<b>&" · 2 m, [\d.]+ m spare', odd["label"] or ""):
         bad.append(f"draw.io cables: a cable's label is not its own text: {odd['label']!r}")
     return bad
 
@@ -17786,6 +17844,615 @@ def check_rack_dcim_acceptance_kits(page, base):
     if not any("32766.5 m is written as 32767 m" in n for n in notes):
         bad.append(f"acceptance rack: the README does not say 32766.5 m became 32767 m: {notes}")
     return bad
+
+
+from collections import Counter
+
+# ── RACK FILE VERSION 4 (kit 0.22.0, Portrayal #1018) ─────────────────────
+# What the Rack Builder does with half-unit positions, a version-3 file, the
+# keys of version 4 it keeps and does not draw, the three kinds of strap, the
+# span-over-ports finding, a rack name NetBox would refuse, and the Explorer's
+# position control. Every expected figure is asked of the kit in the page (the
+# vendored modules, by the page's own route context), never written down.
+V4_ITEMBOX_JS = """async () => {
+  const F = await import('/vendor/rack/fit.js'), C = await import('/vendor/rack/catalog.js'), RL = await import('/vendor/rack/rails.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices, chassisOf = ref => cat[ref] ?? null;
+  const rack = window.__rack.doc().racks[0], H = rack.frame.heightRU * RL.RU, out = {H, RU: RL.RU, items: {}, used: 0};
+  for (const it of rack.items) {
+    const box = F.itemBox(rack, it, chassisOf);
+    out.items[it.id] = {ru: it.ru, ref: it.ref, units: F.itemUnits(it, chassisOf), lo: box.lo, hi: box.hi, mid: (box.lo + box.hi) / 2,
+      holes: RL.holesIn(box.lo, box.hi), fits: F.fits(rack, it, chassisOf, {ignoreId: it.id})};
+    out.used += F.itemUnits(it, chassisOf);
+  }
+  return out;
+}"""
+V4_2D_JS = """() => {
+  const svg = document.querySelector('#paneFront svg'), out = {items: {}, targets: [], summary: document.querySelector('#side p.rk-muted')?.textContent ?? ''};
+  for (const g of svg.querySelectorAll('[data-item-id][data-panel="mounted"]')) {
+    const m = /translate\\(([-\\d.e]+) ([-\\d.e]+)\\)/.exec(g.getAttribute('transform') || ''), face = g.querySelector('[data-class="chassis"]');
+    const ears = svg.querySelector(`.rk-ears[data-ears-for="${g.dataset.itemId}"]`);
+    out.items[g.dataset.itemId] = {ty: m ? +m[2] : null, h: face ? +face.getAttribute('height') : null, y0: face ? (+face.getAttribute('y') || 0) : 0,
+      flanges: [...(ears?.querySelectorAll('rect') ?? [])].map(r => [+r.getAttribute('y'), +r.getAttribute('height')]),
+      screws: [...(ears?.querySelectorAll('circle') ?? [])].map(c => +c.getAttribute('cy'))};
+  }
+  out.targets = [...svg.querySelectorAll('rect[data-u][data-half]')].map(r => [r.dataset.u, r.dataset.half, +r.getAttribute('height')]);
+  return out;
+}"""
+V4_SIDE_JS = """() => Object.fromEntries([...document.querySelectorAll('svg[data-pane="left"] [data-item-id][data-box]')]
+  .map(g => [g.dataset.itemId, g.dataset.box.split(' ').map(Number)]))"""
+V4_3D_JS = """() => { const w = window.__rack.scene().three.scene, out = {};
+  w.traverse(o => { const m = /^(device|ears)-(.+)$/.exec(o.name || ''); if (!m) return;
+    out[m[2]] = out[m[2]] || {};
+    if (m[1] === 'device') { out[m[2]].y = o.position.y; out[m[2]].z = o.position.z; }
+    else out[m[2]].heads = o.children.filter(c => c.geometry?.type === 'CylinderGeometry').map(c => c.position.y); });
+  return out; }"""
+
+
+def _click_u(page, pane, u):
+    sel = f'#pane{pane} svg rect[data-u="{u}"]'
+    page.evaluate("s => document.querySelector(s).scrollIntoView({block: 'center'})", sel)
+    b = page.locator(sel).bounding_box()
+    page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+
+
+def _items(page):
+    return {i["id"]: i["ru"] for i in page.evaluate("() => window.__rack.doc().racks[0].items.map(i => ({id: i.id, ru: i.ru}))")}
+
+
+@extra("rack.html: two half-unit panels in one unit - placed from the picker on a chosen half (by keyboard), the free half a target of its own, a whole-unit device refused there in the kit's sentence, dragged between halves, moved by the arrow keys in half steps, counted as one unit, undone; and 2D, the side pane and 3D stand each where the kit's itemBox does, one screw an ear at the hole its half holds")
+def check_rack_two_half_units(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("async () => { const M = await import('/vendor/rack/model.js'); window.__rack.replaceRack(M.newRack({name: 'Two halves'})); }")
+    wait_fn(page, "halves: the empty rack", "() => window.__rack.doc().racks[0].name === 'Two halves' && document.querySelectorAll('#paneFront svg rect[data-u]').length === 42")
+    # 1. AN EMPTY UNIT IS ONE TARGET; the picker offers a half-unit panel both of its halves. Chosen by keyboard.
+    if page.evaluate("() => document.querySelectorAll('#paneFront svg rect[data-half]').length"):
+        bad.append("an empty rack offers half targets")
+    _click_u(page, "Front", 12)
+    wait_sel(page, "halves: the picker", "#catQuery")
+    page.fill("#catQuery", "XCU10")
+    wait_fn(page, "halves: the XCU10 is listed", "() => document.querySelectorAll('#catDevice option').length === 1")
+    if not page.is_visible("#catHalf") or page.inner_text("#catFit") != "Fits here: the lower half of U12.":
+        bad.append(f"picker: a half-unit panel in U12 is not offered the lower half first: {page.inner_text('#catFit')!r}, half control shown {page.is_visible('#catHalf')}")
+    # (a native select, named and in the tab order: the keyboard reaches it as it reaches the rail and upright choices)
+    ctl = page.evaluate("() => { const s = document.getElementById('catHalf'); s.focus(); return [s.tagName, s.disabled, s.getAttribute('aria-label'), document.activeElement === s, [...s.options].map(o => o.textContent)]; }")
+    if ctl != ["SELECT", False, "Half of the unit", True, ["lower half of U12", "upper half of U12"]]:
+        bad.append(f"picker: the half is not a named native select the keyboard reaches: {ctl}")
+    page.select_option("#catHalf", "upper")
+    wait_fn(page, "halves: the upper half chosen", "() => document.getElementById('catHalf').value === 'upper' && document.getElementById('catFit').textContent === 'Fits here: the upper half of U12.'")
+    page.click("#catPlace")
+    wait_fn(page, "halves: the first panel placed", "() => window.__rack.doc().racks[0].items.length === 1")
+    if _items(page) != {"i1": 12.5}:
+        bad.append(f"picker: the panel placed on the upper half of U12 is at {_items(page)}")
+    # 2. THE FREE HALF IS A TARGET OF ITS OWN, half a unit tall.
+    wait_fn(page, "halves: the free half's target", "() => document.querySelectorAll('#paneFront svg rect[data-half]').length === 1")
+    g = page.evaluate(V4_2D_JS)
+    if g["targets"] != [["12", "lower", 22.225]]:
+        bad.append(f"targets: with the upper half of U12 taken, the half targets are {g['targets']}, expected the lower half of U12, 22.225 tall")
+    # 3. A SECOND PANEL, on the lower half of U14 (the picker's first choice); its unit's upper half becomes a target.
+    _click_u(page, "Front", 14)
+    wait_sel(page, "halves: the picker again", "#catQuery")
+    page.fill("#catQuery", "XCU10")
+    wait_fn(page, "halves: the XCU10 is listed again", "() => document.querySelectorAll('#catDevice option').length === 1")
+    wait_fn(page, "halves: the lower half is offered again", "() => document.getElementById('catFit').textContent === 'Fits here: the lower half of U14.'")
+    page.click("#catPlace")
+    wait_fn(page, "halves: the second panel placed", "() => window.__rack.doc().racks[0].items.length === 2")
+    if _items(page) != {"i1": 12.5, "i2": 14}:
+        bad.append(f"picker: the second panel is at {_items(page)}, expected i2 on the lower half of U14")
+    # 4. A WHOLE-UNIT DEVICE ON A HALF IS REFUSED, in the kit's own sentence, and is not placed.
+    wait_fn(page, "halves: U14's upper half is a target", "() => !!document.querySelector('#paneFront svg rect[data-u=\"14.5\"][data-half=\"upper\"]')")
+    _click_u(page, "Front", "14.5")
+    wait_sel(page, "halves: the picker on a half", "#catQuery")
+    head = page.inner_text(".rk-picker h3")
+    if not head.startswith("The upper half of U14 · front"):
+        bad.append(f"picker: a half picked as one is headed {head!r}")
+    page.uncheck("#catFitsOnly")
+    page.fill("#catQuery", "AS7726-32X")
+    wait_fn(page, "halves: the switch is listed", "() => document.querySelectorAll('#catDevice option').length >= 1")
+    kit = page.evaluate("""async () => { const F = await import('/vendor/rack/fit.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices, r = window.__rack.doc().racks[0];
+      return [F.fits(r, {ref: 'as7726-32x', face: 'front', ru: 14.5}, x => cat[x]), F.fits(r, {ref: 'as7726-32x', face: 'front', ru: 12}, x => cat[x])]; }""")
+    said = page.inner_text("#catFit")
+    if kit[0]["ok"] or said != kit[0]["reason"] or "its ears meet the rail holes only at a whole unit" not in said or "U14.5 is a half unit" not in said:
+        bad.append(f"refusal: a 1U switch on the upper half of U14 reads {said!r}; the kit says {kit[0]}")
+    page.click("#catPlace")
+    page.wait_for_timeout(400)
+    if len(_items(page)) != 2:
+        bad.append(f"refusal: the refused switch was placed: {_items(page)}")
+    # ...and in the free lower half of U12, a whole unit it cannot have: "Taken by", the kit's.
+    page.keyboard.press("Escape")
+    _click_u(page, "Front", 12)
+    wait_sel(page, "halves: the picker on U12's lower half", "#catQuery")
+    page.uncheck("#catFitsOnly")
+    page.fill("#catQuery", "AS7726-32X")
+    wait_fn(page, "halves: the switch is listed for U12", "() => document.querySelectorAll('#catDevice option').length >= 1")
+    said = page.inner_text("#catFit")
+    if kit[1]["ok"] or said != kit[1]["reason"] or not said.startswith("Taken by "):
+        bad.append(f"refusal: a 1U switch in U12, whose upper half is taken, reads {said!r}; the kit says {kit[1]}")
+    page.keyboard.press("Escape")
+    # 5. DRAGGED ONTO THE FREE HALF OF A HALF-TAKEN UNIT: i2 from the lower half of U14 to the lower half of U12.
+    src = page.locator('#paneFront svg [data-item-id="i2"][data-panel="mounted"] [data-class="chassis"]').first.bounding_box()
+    dst = page.locator('#paneFront svg rect[data-u="12"][data-half="lower"]').bounding_box()
+    sx, sy, dy = src["x"] + src["width"] / 2, src["y"] + src["height"] / 2, dst["y"] + dst["height"] / 2
+    page.mouse.move(sx, sy)
+    page.mouse.down()
+    page.mouse.move(sx, sy + 8, steps=2)
+    page.mouse.move(sx, dy, steps=6)
+    page.wait_for_timeout(150)
+    drop = page.evaluate("() => { const r = document.querySelector('#paneFront svg rect.rk-drop'); return r ? +r.getAttribute('height') : null; }")
+    page.mouse.up()
+    wait_fn(page, "halves: the drag's move", "() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2').ru !== 14")
+    if _items(page) != {"i1": 12.5, "i2": 12} or drop is None or abs(drop - (22.225 - 1)) > 1e-6:
+        bad.append(f"drag: i2 dropped on the lower half of U12 is at {_items(page)} (the preview was {drop} tall, expected half a unit)")
+    wait_fn(page, "halves: the panes after the drag", "() => document.querySelectorAll('#paneFront svg [data-item-id][data-panel=\"mounted\"]').length === 2 && !document.querySelector('#paneFront svg rect[data-half]')")
+    # 6. ONE UNIT BETWEEN THEM, and each where the kit's itemBox stands it, with one screw at the hole its half holds.
+    k, g = page.evaluate(V4_ITEMBOX_JS), page.evaluate(V4_2D_JS)
+    H, RU = k["H"], k["RU"]
+    for iid, half in (("i1", "upper"), ("i2", "lower")):
+        ki, gi = k["items"][iid], g["items"].get(iid)
+        if not ki["fits"]["ok"] or abs(ki["hi"] - ki["lo"] - RU / 2) > 1e-9 or len(ki["holes"]) != 1:
+            bad.append(f"kit: {iid} on the {half} half: {ki}")
+        if not gi or abs((H - (gi["ty"] + gi["y0"] + gi["h"] / 2)) - ki["mid"]) > 1e-6:
+            bad.append(f"2D: {iid}'s face is centred {H - (gi['ty'] + gi['y0'] + gi['h'] / 2) if gi else None} mm up; the kit's itemBox is centred at {ki['mid']}")
+            continue
+        if len(gi["flanges"]) != 2 or any(abs((H - y - h) - ki["lo"]) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in gi["flanges"]):
+            bad.append(f"2D: {iid}'s ear flanges {gi['flanges']} are not its half, {ki['lo']} to {ki['hi']}")
+        if len(gi["screws"]) != 2 or any(abs((H - cy) - ki["holes"][0]) > 1e-6 for cy in gi["screws"]):
+            bad.append(f"2D: {iid}'s screws are at {[H - cy for cy in gi['screws']]}, the kit's hole for its half is at {ki['holes']}")
+    if abs(k["items"]["i1"]["holes"][0] - (11 * RU + 38.10)) > 1e-6 or abs(k["items"]["i2"]["holes"][0] - (11 * RU + 6.35)) > 1e-6:
+        bad.append(f"kit: the two halves of U12 do not hold the unit's two outer holes: {k['items']['i1']['holes']}, {k['items']['i2']['holes']}")
+    # 7. THE ARROW KEYS, half a unit at a time: i2 is selected by the drop. Up is taken (the kit says by whom); down twice is U11.
+    wait_fn(page, "halves: i2 selected", "() => !!document.querySelector('#paneFront svg [data-item-id=\"i2\"].rk-selected, #iLabel')")
+    page.keyboard.press("ArrowUp")
+    wait_fn(page, "halves: the refused step is said", "() => /Taken by /.test(document.getElementById('side').textContent)")
+    if _items(page)["i2"] != 12:
+        bad.append(f"keys: ArrowUp into the taken half moved i2 to {_items(page)['i2']}")
+    page.keyboard.press("ArrowDown")
+    wait_fn(page, "halves: half a unit down", "() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2').ru === 11.5")
+    page.keyboard.press("ArrowDown")
+    wait_fn(page, "halves: a whole unit down", "() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2').ru === 11")
+    # 8. UNDO takes each step back.
+    page.evaluate("() => window.__rack.undo()")
+    wait_fn(page, "halves: one step undone", "() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2').ru === 11.5")
+    page.evaluate("() => window.__rack.undo()")
+    wait_fn(page, "halves: two steps undone", "() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2').ru === 12")
+    # ...and the two are one unit of the rack between them, as the kit counts and the page's summary says.
+    page.keyboard.press("Escape")
+    wait_fn(page, "halves: the rack's summary", "() => / used on the rails/.test(document.getElementById('side').textContent)")
+    summary = page.inner_text("#side")
+    if k["used"] != 1 or "2 devices · 1U used on the rails" not in summary:
+        bad.append(f"summary: two half-unit panels in one unit use {k['used']}U by the kit; the page says {summary[:120]!r}")
+    # 9. THE SIDE PANE AND 3D stand each where 2D and the kit do.
+    page.click('#view2d [data-view="sides"]')
+    wait_fn(page, "halves: the side pair", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-item-id][data-box]').length === 2")
+    side = page.evaluate(V4_SIDE_JS)
+    for iid in ("i1", "i2"):
+        b = side.get(iid)
+        if not b or abs((H - (b[1] + b[3] / 2)) - k["items"][iid]["mid"]) > 1e-3:
+            bad.append(f"side: {iid}'s box {b} is not centred at the kit's {k['items'][iid]['mid']}")
+    page.click('#view2d [data-view="faces"]')
+    wait_fn(page, "halves: the faces again", "() => !!document.querySelector('#paneFront svg[data-pane=\"front\"]')")
+    if webgl_trouble(page):
+        print("[check_rack_two_half_units] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the two halves")
+    t = page.evaluate(V4_3D_JS)
+    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    for iid in ("i1", "i2"):
+        ki, d = k["items"][iid], t.get(iid) or {}
+        if d.get("y") is None or abs(d["y"] - ki["mid"]) > 1e-6 or abs(d["y"] - (solids[iid]["y0"] + solids[iid]["y1"]) / 2) > 1e-6:
+            bad.append(f"3D: {iid}'s body is centred at {d.get('y')}; the kit's itemBox at {ki['mid']} and its solid at {(solids[iid]['y0'] + solids[iid]['y1']) / 2}")
+        if sorted(d.get("heads") or []) != [ki["holes"][0]] * 2 and any(abs(y - ki["holes"][0]) > 1e-6 for y in d.get("heads") or [0]) or len(d.get("heads") or []) != 2:
+            bad.append(f"3D: {iid}'s screw heads are at {d.get('heads')}, expected one a side at {ki['holes'][0]}")
+    return bad
+
+
+# A version-3 file as the page saved one, with a key this page does not know at
+# each level: the document, the rack, the frame, an item, a cable.
+V3_FIXTURE = {**CABLE_FIXTURE, "version": 3, "id": "doc-v3-kept", "docLater": {"a": 1}}
+V3_FIXTURE["racks"] = [{**CABLE_FIXTURE["racks"][0], "name": "Version 3 kept", "rackLater": "kept",
+                        "frame": {**CABLE_FIXTURE["racks"][0]["frame"], "frameLater": 7},
+                        "items": [{**i, "itemLater": f"asset-{n}"} for n, i in enumerate(CABLE_FIXTURE["racks"][0]["items"])],
+                        "cables": [{**c, "cableLater": True} for c in CABLE_FIXTURE["racks"][0]["cables"]]}]
+# Every key of version 4 the page keeps: a first unit, a frame setback, round
+# holes, a rail width and options; an item set back, one upside down, one
+# rolled a quarter turn, one on a half unit, one held by another; a part
+# beside the rack hung on brackets, in a channel, with states and readings.
+V4_FIXTURE = {
+    "format": "portrayal-rack", "version": 4, "id": "doc-v4-all", "laterDocKey": {"kept": True},
+    "racks": [{"id": "r1", "name": "Version 4 all", "laterRackKey": "kept",
+               "frame": {"kind": "four-post", "heightRU": 45, "numbering": "bottom-up", "holes": {"style": "round", "thread": None},
+                         "railDepth": 740, "usableDepth": 1000, "ref": None, "startU": 5, "setback": 12, "width": 19,
+                         "options": {"door": "mesh"}, "laterFrameKey": 7},
+               "items": [
+                   {"id": "i1", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "sw-setback", "ru": 40, "face": "front", "turned": False, "swaps": {}, "fields": {}, "setback": 50, "laterItemKey": "asset-9"},
+                   {"id": "i2", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "sw-upside-down", "ru": 38, "face": "front", "turned": False, "swaps": {}, "fields": {}, "roll": 180},
+                   {"id": "i3", "ref": "xcu", "cfg": "xcu10-21ic", "label": "xcu-upper", "ru": 36.5, "face": "front", "turned": False, "swaps": {}, "fields": {}},
+                   {"id": "i4", "ref": "xcu", "cfg": "xcu10-21ic", "label": "xcu-quarter", "ru": 20, "face": "front", "turned": False, "swaps": {}, "fields": {}, "roll": 90},
+                   {"id": "i5", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "sw-held", "ru": 30, "face": "front", "turned": False, "swaps": {}, "fields": {}, "heldBy": {"item": "i1", "at": "shelf"}}],
+               "zeroU": [
+                   {"id": "z1", "ref": "evma8365x", "cfg": "base", "label": "pdu-a", "at": "left-rear", "offsetMm": 133.35, "heldBy": {"parts": ["z9"]}, "channel": "c2",
+                    "states": {"outlet-a2": "off", "outlet-a7": "off", "not-a-part": "off"},
+                    "readings": {"source": "snmp", "at": "2026-10-11T12:00:00Z", "values": {"outlet-a1": {"value": 1.2, "unit": "A"}}}}],
+               "cables": [], "bundles": []}]}
+
+
+def _saved(page):
+    """The rack file as Export > Rack file writes it, less the two keys that are the session's."""
+    dl = export_file(page, "json")
+    doc = json.loads(pathlib.Path(dl.path()).read_text())
+    return {k: v for k, v in doc.items() if k not in ("id", "updatedAt")}
+
+
+def _diff(a, b, at=""):
+    """Every difference between two JSON values, as sentences."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = []
+        for k in sorted(set(a) | set(b)):
+            if k not in a: out.append(f"added {at}/{k}")
+            elif k not in b: out.append(f"lost {at}/{k}")
+            else: out += _diff(a[k], b[k], f"{at}/{k}")
+        return out
+    if isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+        return [d for i, (x, y) in enumerate(zip(a, b)) for d in _diff(x, y, f"{at}[{i}]")]
+    return [] if a == b else [f"changed {at}: {json.dumps(a)[:80]} -> {json.dumps(b)[:80]}"]
+
+
+@extra("rack.html: a version-3 rack opens and is saved as version 4 with nothing lost - every key the page does not know kept at each level, each routed length's `measured` become its `need` - and the browser's stored copy opens again after a reload")
+def check_rack_v3_saves_v4(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base, V3_FIXTURE)
+    wait_fn(page, "v3: the routes", ROUTES_CURRENT)
+    page.wait_for_timeout(600)
+    got = _saved(page)
+    if got.get("version") != 4 or page.evaluate("async () => (await import('/vendor/rack/model.js')).VERSION") != 4:
+        bad.append(f"v3: saved as version {got.get('version')}")
+    want = {k: v for k, v in V3_FIXTURE.items() if k not in ("id", "updatedAt")}
+    # what a version-4 save changes of it, and nothing else: the version; a routed length is measured again and
+    # holds `need` where it held `measured` (its value may move a stock size); defaults the reader fills in
+    def norm(doc):
+        doc = json.loads(json.dumps(doc))
+        doc.pop("version", None)
+        for c in doc["racks"][0].get("cables", []):
+            if (c.get("length") or {}).get("source") == "routed":
+                c["length"] = {"source": "routed"}
+        return doc
+    diffs = [d for d in _diff(norm(want), norm(got)) if not d.startswith("added ")]
+    if diffs:
+        bad.append(f"v3: saved as version 4, the file differs beyond its version and its routed lengths: {diffs[:8]}")
+    for path in ("docLater", "racks.0.rackLater", "racks.0.frame.frameLater", "racks.0.items.0.itemLater", "racks.0.cables.0.cableLater"):
+        v = got
+        for seg in path.split("."):
+            v = (v[int(seg)] if seg.isdigit() else v.get(seg)) if v is not None else None
+        if v is None:
+            bad.append(f"v3: the unknown key {path} was dropped")
+    routed = [c["length"] for c in got["racks"][0]["cables"] if (c.get("length") or {}).get("source") == "routed"]
+    if not routed or any("measured" in l or not isinstance(l.get("need"), (int, float)) for l in routed):
+        bad.append(f"v3: a routed length should hold `need` and no `measured` once saved: {routed}")
+    # THE BROWSER'S COPY OPENS AGAIN: stored as version 4 by this page, read back by it after a reload.
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    wait_fn(page, "v3: the stored rack reopened", "() => window.__rack.doc().racks[0].name === 'Version 3 kept'")
+    again = page.evaluate("() => window.__rack.doc()")
+    if again.get("version") != 4 or again["racks"][0].get("rackLater") != "kept" or len(again["racks"][0]["items"]) != len(V3_FIXTURE["racks"][0]["items"]):
+        bad.append(f"v3: the stored copy reopened as version {again.get('version')} with {len(again['racks'][0]['items'])} items")
+    return bad
+
+
+@extra("rack.html: a version-4 file carrying startU, setbacks, round holes, a roll, a held item, a PDU hung on brackets, states and readings opens with no error, is saved with nothing lost, numbers its units from startU, stands a set-back device where the kit's solids do, draws a quarter-rolled item as an outline, and says the kit's notices for what it keeps and does not draw")
+def check_rack_v4_keys_kept(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_fixture(page, base, V4_FIXTURE)
+    wait_fn(page, "v4: the notices", "() => /Mounted upside down/.test(document.getElementById('side').textContent)")
+    lost = _diff({k: v for k, v in V4_FIXTURE.items() if k not in ("id", "updatedAt")}, _saved(page))
+    if lost:
+        bad.append(f"v4: saved again, the file differs: {lost[:8]}")
+    # THE NOTICES: the kit's own sentences, for what it keeps and does not act on, and the page's for what it does not draw.
+    kit = page.evaluate("""async () => {
+      const F = await import('/vendor/rack/fit.js'), C = await import('/vendor/rack/catalog.js'), Z = await import('/vendor/rack/zero-u.js'), S = await import('/vendor/rack/states.js'), X = await import('/vendor/rack/export-data.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices, chassisOf = ref => cat[ref] ?? null, r = window.__rack.doc().racks[0];
+      const slots = await C.loadSlots('/assets/dist/', [...r.items.map(i => i.ref), ...r.zeroU.map(z => z.ref)]);
+      const ctx = {chassisOf, slotsOf: slots.slotsOf, compByRef: slots.compByRef};
+      return {frame: F.frameNotices(r, chassisOf), hang: Z.hangNotices(r, ctx), state: S.stateNotices(r, ctx), roll: X.rollNote(r.items[1]),
+              setback: [F.setbackOf(r, r.items[0], chassisOf), F.setbackOf(r, r.items[2], chassisOf)]}; }""")
+    said = page.inner_text("#side")
+    if not kit["frame"] or not kit["hang"] or not kit["state"] or kit["roll"] != "Mounted upside down.":
+        return bad + [f"v4 fixture: the kit has no notice of one kind for it: {kit}"]
+    for text in kit["frame"] + kit["hang"] + kit["state"]:
+        if text not in said:
+            bad.append(f"v4: the kit's notice is not on the page: {text!r}")
+    if "sw-upside-down: Mounted upside down. It is fitted, routed and exported that way, and drawn upright here." not in said \
+            or "outlet states or readings: they are kept in the file" not in said:
+        bad.append(f"v4: the page does not say what it draws upright or does not draw: {said[-600:]!r}")
+    # WHAT IT CAN DRAW, DRAWN RIGHT: the units number from startU, the holes are round, a quarter-rolled item is an outline.
+    two = page.evaluate("""() => { const svg = document.querySelector('#paneFront svg');
+      const nums = [...svg.querySelectorAll('[data-rail-num="left"]')].map(t => +t.textContent);
+      return {lo: Math.min(...nums), hi: Math.max(...nums), round: svg.querySelectorAll('circle[data-rail-hole]').length, square: svg.querySelectorAll('rect[data-rail-hole]').length,
+              quarter: (() => { const g = svg.querySelector('[data-item-id="i4"]'); return g ? {rolled: g.dataset.rolled, drawing: !!g.querySelector('[data-class="chassis"]'), text: g.textContent} : null; })(),
+              bar: document.getElementById('frameBtn')?.parentNode.textContent ?? ''}; }""")
+    if (two["lo"], two["hi"]) != (5, 49) or two["square"] or two["round"] != 45 * 3 * 2:
+        bad.append(f"v4: the rail numbers run {two['lo']} to {two['hi']} (startU 5, 45U) with {two['round']} round and {two['square']} square holes")
+    if not two["quarter"] or two["quarter"]["rolled"] != "90" or two["quarter"]["drawing"] or "rolled a quarter turn" not in two["quarter"]["text"]:
+        bad.append(f"v4: the quarter-rolled panel is not an outline: {two['quarter']}")
+    if kit["setback"] != [50, 12]:
+        bad.append(f"v4 fixture: the kit's setbacks are {kit['setback']}, expected the item's 50 and the frame's 12")
+    if webgl_trouble(page):
+        print("[check_rack_v4_keys_kept] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the version-4 rack")
+    t = page.evaluate(V4_3D_JS)
+    faceZ = page.evaluate("() => window.__rack.scene().metrics().faceZ")
+    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    for iid in ("i1", "i2", "i3", "i5"):
+        b, d = solids[iid], t.get(iid) or {}
+        if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > 1e-6:
+            bad.append(f"3D: {iid} is at depth {None if d.get('z') is None else d['z'] - faceZ:.3f}, height {d.get('y')}; the kit's solid is centred at depth {(b['z0'] + b['z1']) / 2:.3f}, height {(b['y0'] + b['y1']) / 2:.3f}")
+    if abs(solids["i1"]["z1"] - (-50)) > 1e-6 or abs(solids["i3"]["z1"] - (-12)) > 1e-6:
+        bad.append(f"kit: the set-back faces are at {solids['i1']['z1']} and {solids['i3']['z1']}, expected 50 and 12 mm behind the rail")
+    return bad
+
+
+# The strap rack: the cable-lay rack (its lacer's tray states tie slots) with
+# its first six cords combed into a bundle.
+STRAP_STATE_JS = """async () => {
+  const B = await import('/vendor/rack/bundles.js'), X = await import('/vendor/rack/export-data.js'), SO = await import('/vendor/rack/solids.js'), V = await import('/site/rack/bundle-view.js');
+  const rack = window.__rack.doc().racks[0], ctx = window.__rack.routeContext();
+  const out = {bundles: window.__rack.bundles(), ties: window.__rack.tieStraps(), anchors: window.__rack.anchors(), drawn19: V.strapDrawn({width_mm: 19}), drawnOf: {}};
+  for (const w of B.STRAP_WIDTHS_MM) out.drawnOf[w] = V.strapDrawn({width_mm: w});
+  out.trays = SO.traysOf(rack, ctx).map(t => ({item: t.item, via: t.via, top: t.top, under: t.under, run: t.run, ties: t.ties}));
+  const dom = sel => [...document.querySelectorAll(sel)].map(n => ({strap: n.dataset.strap, kind: n.dataset.strapKind, width: +n.dataset.strapWidth, members: n.dataset.members,
+    core: +n.querySelector('[data-strap-part="core"]:not([data-strap-least])').getAttribute('stroke-width'),
+    at: (l => [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2])(n.querySelector('line'))}));
+  out.front = dom('#paneFront svg [data-strap]'); out.rear = dom('#paneRear svg [data-strap]');
+  out.rows = [...document.querySelectorAll('#cableList [data-bundle-row]')].map(b => b.closest('li')?.textContent ?? b.textContent);
+  out.side = document.getElementById('side').textContent;
+  return out;
+}"""
+
+
+@extra("rack.html: every strap the kit returns is drawn - a bundle's spacing and breakout straps and the tie straps of single cables, each of its kind, at its width, in 2D, the side pane and 3D - and the bundle's line and the BOM's strap line count them by kind, as the kit does")
+def check_rack_strap_kinds(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    BOM_KIT = """async () => { const X = await import('/vendor/rack/export-data.js'), B = await import('/vendor/rack/bundles.js'), RC = await import('/site/rack/route-context.js');
+      const rack = window.__rack.doc().racks[0], ctx = window.__rack.routeContext();
+      const bctx = RC.withCableTypes({route: ctx}, await RC.cableTypes());
+      const rows = X.strapBomRows(X.bundleExports(rack, bctx), {anchors: B.anchorsOf(rack, bctx)}), bare = X.strapBomRows(X.bundleExports(rack, bctx));
+      return {rows, bare, totals: B.strapTotals(rack, bctx)}; }"""
+    THREE = """() => { const out = []; window.__rack.scene().three.scene.traverse(o => { if (o.isMesh && o.userData.strap)
+      out.push({bundle: o.userData.strap.bundle ?? null, tie: o.userData.strap.tie ?? null, kind: o.userData.strap.kind, width: o.userData.strap.width_mm, len: o.geometry.parameters.height, at: [o.position.x, o.position.y]}); }); return out; }"""
+    SIDE = """() => [...document.querySelectorAll('svg[data-pane="left"] [data-strap]')].map(n => ({strap: n.dataset.strap, kind: n.dataset.strapKind, width: +n.dataset.strapWidth}))"""
+
+    def bom_line(where):
+        dl = export_file(page, "bom")
+        cols, rows, text = read_csv(dl)
+        line = [r for r in rows if "strap" in " ".join(str(v) for v in r.values()).lower()]
+        kit = page.evaluate(BOM_KIT)
+        if len(line) != 1 or len(kit["rows"]) != 1 or [str(v) for v in line[0].values()] != [str(kit["rows"][0].get(c, "") if kit["rows"][0].get(c) is not None else "") for c in cols] \
+                or "length to suit" not in " ".join(str(v) for v in line[0].values()):
+            bad.append(f"{where}: the BOM's strap line is {line}; the kit's is {kit['rows']} (its totals {kit['totals']})")
+        return kit
+
+    # ── A BUNDLE DOWN A LANE: spacing straps, and one before each point where a cable leaves ──
+    open_front_fixture(page, base, COVER_FIXTURE, cables=6)
+    wait_fn(page, "straps: the bundle's routes", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 1 && document.querySelectorAll('#paneFront svg [data-strap]').length > 0")
+    page.wait_for_timeout(400)
+    s = page.evaluate(STRAP_STATE_JS)
+    b = s["bundles"][0]
+    kinds = b["kinds"] or {}
+    if not b["count"] or b["count"] != sum(kinds.values()) or not kinds.get("breakout") or not kinds.get("spacing"):
+        return bad + [f"straps fixture: the kit gives the bundle {b['count']} straps, {kinds}: the check needs spacing and breakout straps"]
+    mine = [x for x in s["front"] if x["strap"] == b["id"]]
+    got, seen = Counter(x["kind"] for x in mine), Counter(x["kind"] for x in b["straps"])
+    if got != seen or sum(got.values()) != b["count"] or dict(seen) != {k: v for k, v in kinds.items() if v}:
+        bad.append(f"2D: the bundle's bars are {dict(got)}; the kit's straps are {dict(seen)} ({b['count']} in all, {kinds})")
+    if sorted((x["kind"], x["width"]) for x in mine) != sorted((x["kind"], x["width_mm"]) for x in b["straps"]):
+        bad.append(f"2D: the bars' kinds and widths {sorted((x['kind'], x['width']) for x in mine)} are not the kit's {sorted((x['kind'], x['width_mm']) for x in b['straps'])}")
+    for x in s["front"]:
+        if abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
+            bad.append(f"2D: a {x['width']} mm {x['kind']} strap is drawn {x['core']} wide, expected {s['drawnOf'][str(int(x['width']))]}")
+    if abs(s["drawn19"] - 10) > 1e-9 or not (s["drawnOf"]["12"] < s["drawnOf"]["19"] < s["drawnOf"]["25"]):
+        bad.append(f"2D: the drawn widths are {s['drawnOf']}: a 19 mm strap should be the 10 it was, 12 narrower and 25 wider")
+    # THE WORDS: the bundle's line says its straps by kind, and never the total as a spacing count.
+    want = f"{b['count']} straps ({kinds['spacing']} every 12 in, {kinds['breakout']} where a cable leaves)"
+    if want not in s["side"] or re.search(rf"\\b{b['count']} straps every 12 in", s["side"]):
+        bad.append(f"words: the bundle's line should say {want!r}; the panel reads {[l for l in s['side'].splitlines() if 'strap' in l]}")
+    kit = bom_line("bundle")
+    if kit["totals"]["total"] != b["count"] or (kit["totals"]["spacing"], kit["totals"]["breakout"]) != (kinds["spacing"], kinds["breakout"]):
+        bad.append(f"BOM: the kit's strap totals {kit['totals']} are not the bundle's {kinds}")
+    page.click('#view2d [data-view="sides"]')
+    wait_fn(page, "straps: the side pair's cables", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-cables] [data-cable-id]').length > 0")
+    side = page.evaluate(SIDE)
+    if Counter(x["kind"] for x in side if x["strap"] == b["id"]) != seen or any(not x["width"] for x in side):
+        bad.append(f"side: the bundle's bars are {dict(Counter(x['kind'] for x in side))}; the kit's straps, all on a lane the side sees along, are {dict(seen)}")
+    page.click('#view2d [data-view="faces"]')
+    wait_fn(page, "straps: the faces again", "() => !!document.querySelector('#paneFront svg[data-pane=\"front\"]')")
+    gl = not webgl_trouble(page)
+    if gl:
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: the bundle's straps", tubes=True)
+        three = page.evaluate(THREE)
+        if Counter(x["kind"] for x in three if x["bundle"] == b["id"]) != seen:
+            bad.append(f"3D: the bundle's bands are {dict(Counter(x['kind'] for x in three))}; the kit's straps are {dict(seen)}")
+        if any(abs(x["len"] - 12 * x["width"] / 19) > 1e-9 for x in three):
+            bad.append(f"3D: a band is not as long as its width asks: {[(x['width'], x['len']) for x in three][:6]}")
+        page.click('#mode [data-mode="2d"]')
+
+    # ── SINGLE CABLES ON A LACER'S TRAY: one tie strap at each tie slot a cord is tied at ──
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "straps: the reference rack's routes", "() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].cables.length === 16")
+    wait_fn(page, "straps: the tie straps drawn", "() => document.querySelectorAll('#paneFront svg [data-strap^=\"tie:\"]').length > 0")
+    s = page.evaluate(STRAP_STATE_JS)
+    if not s["ties"] or len(s["ties"]) != len([a for a in s["anchors"] if not a["bundles"]]):
+        return bad + [f"straps fixture: the kit's tie slots are {s['anchors']}; the page's tie straps {s['ties']}"]
+    ties2d = [x for x in s["front"] if (x["strap"] or "").startswith("tie:")]
+    H = rack["frame"]["heightRU"] * 44.45
+    if len(ties2d) != len(s["ties"]) or any(x["kind"] != "anchor" for x in ties2d) or s["rear"]:
+        bad.append(f"2D: {len(ties2d)} tie straps drawn on the front and {len(s['rear'])} on the rear; the kit's single-cable tie slots are {len(s['ties'])}, on a front lacer")
+    for m in s["ties"]:
+        tray = next(t for t in s["trays"] if t["item"] == m["item"] and t["via"] == m["via"])
+        slot = tray["ties"][m["tie"]]
+        x = next((x for x in ties2d if x["strap"] == f"tie:{m['item']}|{m['via']}|{m['tie']}"), None)
+        face = tray["under"] if m["held"] else tray["top"]
+        if not x or abs(x["at"][0] - (450.85 / 2 + (slot["x0"] + slot["x1"]) / 2)) > 1e-6 or abs((H - x["at"][1]) - face) > 5 + 1e-6 \
+                or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
+            bad.append(f"2D: the tie strap at {m['item']} {m['via']} slot {m['tie']} is {x}; its slot is at x {(slot['x0'] + slot['x1']) / 2}, the plate's face at {face}")
+    kit = bom_line("tie straps")
+    if kit["bare"] or kit["totals"]["anchor"] != len(s["ties"]) or kit["totals"]["total"] != len(s["ties"]):
+        bad.append(f"BOM: with no bundle, the strap line counts the single cables' {len(s['ties'])} tie slots only when handed them: without, {kit['bare']}; totals {kit['totals']}")
+    page.click('#view2d [data-view="sides"]')
+    wait_fn(page, "straps: the side pair's cables again", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-cables] [data-cable-id]').length > 0")
+    side = page.evaluate(SIDE)
+    if sorted(x["strap"] for x in side) != sorted(f"tie:{m['item']}|{m['via']}|{m['tie']}" for m in s["ties"]) or any(x["kind"] != "anchor" for x in side):
+        bad.append(f"side: the tie straps drawn are {side}; the kit's slots {[(m['item'], m['via'], m['tie']) for m in s['ties']]}")
+    page.click('#view2d [data-view="faces"]')
+    wait_fn(page, "straps: the faces once more", "() => !!document.querySelector('#paneFront svg[data-pane=\"front\"]')")
+    if not gl:
+        print("[check_rack_strap_kinds] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tie straps", tubes=True)
+    ties3 = [x for x in page.evaluate(THREE) if x["tie"]]
+    if len(ties3) != len(s["ties"]) or any(x["kind"] != "anchor" for x in ties3):
+        bad.append(f"3D: {len(ties3)} tie straps, the kit's single-cable tie slots are {len(s['ties'])}")
+    for m in s["ties"]:
+        x = next((x for x in ties3 if x["tie"] == f"{m['item']}|{m['via']}|{m['tie']}"), None)
+        if not x or abs(x["at"][0] - m["at"]["x"]) > 1e-6 or abs(x["at"][1] - m["at"]["y"]) > 5 + 1e-6 or abs(x["len"] - 12 * m["width_mm"] / 19) > 1e-9:
+            bad.append(f"3D: the tie strap of slot {m['tie']} is {x}, its slot at {m['at']}")
+    return bad
+
+
+# Eleven copper cords down one lane to a switch at the top, with no horizontal
+# manager: each runs from the lane across the switch's face to its port.
+COVER_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), K = await import('/vendor/rack/cable-rules.js');
+  let r = M.newRack({name: 'Span over ports'});
+  ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: 'f2b', ru: 42, face: 'front', label: 'MGMT-SW1'}));
+  for (let k = 0; k < 6; k++) ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: 'f2b', ru: 41 - k, face: 'front', label: `SW${k + 2}`}));
+  for (let k = 0; k < 6; k++) ({rack: r} = K.withCable(r, {a: {item: `i${k + 2}`, path: 'mgmt', view: 'front'}, b: {item: 'i1', path: `port-${k + 1}`, view: 'front'}, media: 'cat6', purpose: 'management'}));
+  return {...r, bundles: [{id: 'b1', number: 1, label: 'MGMT', members: r.cables.map(c => ({cable: c.id})), route: [{lane: 'left-front', ru: 36}, {lane: 'left-front', ru: 42}]}]};
+}"""
+
+
+@extra("rack.html: a span that crosses in front of other ports is said in the cable schedule, in the kit's own sentence, which says only cabled ports were judged; and each tight bend the page rings is in its cable's notes there")
+def check_rack_cover_findings(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_front_fixture(page, base, COVER_FIXTURE, cables=6)
+    wait_fn(page, "covers: the routes", ROUTES_CURRENT)
+    kit = page.evaluate("""async () => { const R = await import('/vendor/rack/route.js');
+      const rack = window.__rack.doc().racks[0], ctx = window.__rack.routeContext(), name = id => rack.items.find(i => i.id === id)?.label ?? id;
+      return {covers: R.coverFindings(rack, ctx, name).map(f => ({cable: f.cable, text: f.text, judged: f.judged, count: f.count})),
+              bends: R.bendFindings(rack, ctx, name).map(f => ({cable: f.cable, text: f.text})), boxes: typeof ctx.portBoxesOf}; }""")
+    if not kit["covers"]:
+        return bad + ["covers fixture: the kit finds no span in front of other ports here"]
+    dl = export_file(page, "cables")
+    cols, rows, text = read_csv(dl)
+    by = {r["id"]: r for r in rows}
+    for f in kit["covers"]:
+        if f["text"] not in (by.get(f["cable"]) or {}).get("notes", ""):
+            bad.append(f"covers: {f['cable']}'s notes are {(by.get(f['cable']) or {}).get('notes')!r}, without the kit's {f['text']!r}")
+        # until the page hands the kit every port (portBoxesOf: a later change), only cabled ports are judged, and the sentence says so
+        if kit["boxes"] == "undefined" and (f["judged"] != "cabled" or not f["text"].endswith("Only ports that hold a cable were judged.")):
+            bad.append(f"covers: {f['cable']}'s finding does not say which ports were judged: {f}")
+    clean = [r["id"] for r in rows if "crosses in front of" in r.get("notes", "") and r["id"] not in {f["cable"] for f in kit["covers"]}]
+    if clean:
+        bad.append(f"covers: {clean} say a span the kit does not find")
+    for f in kit["bends"]:
+        if f["text"] not in (by.get(f["cable"]) or {}).get("notes", ""):
+            bad.append(f"bends: {f['cable']}'s notes lack the kit's {f['text']!r}")
+    return bad
+
+
+@extra("rack.html: a rack whose name NetBox would refuse gets no rack file in its NetBox kit, never a header alone, and the kit's reason is in the README and said on the page")
+def check_rack_dcim_long_name(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    long = "R" + "x" * 100            # 101 characters: NetBox allows 100
+    fx = json.loads(json.dumps(EXPORT_FIXTURE))
+    fx["racks"][0]["name"] = long
+    fx["racks"][0]["dcim"] = {"site": "lab", "role": "leaf"}
+    open_fixture(page, base, fx)
+    kit = page.evaluate("""async () => { const X = await import('/vendor/rack/export-data.js'), r = window.__rack.doc().racks[0];
+      const got = X.rackImportRows({rack: r, dcim: r.dcim}); return {rows: got.rows.length, left: (got.left || []).map(l => l.reason)}; }""")
+    if kit["rows"] != 0 or len(kit["left"]) != 1 or "NetBox allows 100" not in kit["left"][0]:
+        return bad + [f"long name fixture: the kit's rack rows for a 101 character name are {kit}"]
+    dl, z = export_kit(page, "netbox")
+    status = export_status(page)
+    racks = [n for n in z["names"] if "rack" in n.lower() and n.endswith(".csv")]
+    if racks:
+        bad.append(f"long name: the kit holds a rack file with no rack in it: {racks} ({z['zip'][racks[0]][:80]!r})")
+    readme = " ".join(z["zip"].get("README.txt", "").split())
+    if " ".join(kit["left"][0].split())[:60] not in readme:
+        bad.append(f"long name: the README does not carry the kit's reason {kit['left'][0][:80]!r}")
+    if not any(n.endswith("devices.csv") for n in z["names"]):
+        bad.append(f"long name: the kit lost its device file: {z['names']}")
+    said = page.evaluate("() => document.getElementById('side').textContent + ' ' + (document.getElementById('exportStatus')?.textContent ?? '')")
+    if " ".join(kit["left"][0].split())[:60] not in " ".join(said.split()):
+        bad.append(f"long name: the reason is not said on the page after the export; the status reads {status!r}")
+    # a rack NetBox takes still has its rack file, of one row
+    fx["racks"][0]["name"] = "Short name"
+    open_fixture(page, base, fx)
+    dl, z = export_kit(page, "netbox")
+    racks = [n for n in z["names"] if "rack" in n.lower() and n.endswith(".csv")]
+    if len(racks) != 1 or len([l for l in z["zip"][racks[0]].splitlines() if l.strip()]) != 2:
+        bad.append(f"long name: a rack with a short name has rack files {racks}")
+    return bad
+
+
+@extra("explorer.html: a device that declares a part that slides (the DIN rail shelf) has the kit's position control above its tree - a stop button moves the panel on every face and writes the link, a value outside the range is refused in the kit's sentence, a link carries the position back - and a device that declares none has no control")
+def check_explorer_position_control(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=dinrail2u&view=top", wait_until="load")
+    wait_sel(page, "positions: the control", "#positions input[type=range]")
+    wait_fn(page, "positions: the top face", "() => document.querySelectorAll('#stage [data-moves-with], [data-moves-with]').length > 0")
+    c = page.evaluate("""() => { const p = document.getElementById('positions');
+      return {range: [p.querySelector('input[type=range]').min, p.querySelector('input[type=range]').max, p.querySelector('input[type=range]').value],
+              stops: [...p.querySelectorAll('button')].map(b => b.textContent.trim()), tree: !!(p.compareDocumentPosition(document.querySelector('#tree, .tree, [data-tree]') || p) & Node.DOCUMENT_POSITION_FOLLOWING)}; }""")
+    if c["range"] != ["51.2", "271.2", "161.2"] or c["stops"][:3] != ["front", "middle", "rear"]:
+        bad.append(f"positions: the DINRAIL2U's control is {c}, expected a range of 51.2 to 271.2 at 161.2 with front, middle and rear")
+    moved = "() => [...document.querySelectorAll('[data-moves-with]')].map(n => n.getAttribute('transform') || '').join('|')"
+    before = page.evaluate(moved)
+    page.locator("#positions button", has_text="rear").click()
+    wait_fn(page, "positions: the link carries the stop", "() => /fields=rail-panel[:~]rail-setback~271\\.2/.test(decodeURIComponent(location.search))")
+    after = page.evaluate(moved)
+    if after == before or "translate" not in after:
+        bad.append(f"positions: the rear stop moved nothing on the top face: {before[:80]!r} then {after[:80]!r}")
+    if page.input_value("#positions input[type=number]") != "271.2":
+        bad.append(f"positions: the number box reads {page.input_value('#positions input[type=number]')!r} at the rear stop")
+    num = page.locator("#positions input[type=number]")
+    num.fill("300")
+    num.press("Enter")
+    wait_fn(page, "positions: the refusal", "() => (document.querySelector('#positions [role=status]')?.textContent || '').length > 0")
+    said = page.evaluate("() => document.querySelector('#positions [role=status]').textContent")
+    if said != "rail-setback on DINRAIL2U takes 51.2 to 271.2 mm. 300 is outside it." or page.evaluate(moved) != after:
+        bad.append(f"positions: 300 mm reads {said!r}, and the panel {'moved' if page.evaluate(moved) != after else 'stayed'}")
+    # A LINK CARRIES THE VALUE BACK.
+    page.goto(f"{base}/explorer.html?device=dinrail2u&view=top&fields=rail-panel~rail-setback~100", wait_until="load")
+    wait_sel(page, "positions: the control from a link", "#positions input[type=number]")
+    wait_fn(page, "positions: the link's value", "() => document.querySelector('#positions input[type=number]').value === '100'")
+    # NO CONTROL for a device that declares none.
+    page.goto(f"{base}/explorer.html?device=as7726-32x", wait_until="load")
+    page.wait_for_timeout(1500)
+    if page.evaluate("() => { const p = document.getElementById('positions'); return !!p && !p.hidden && p.querySelectorAll('input, button').length > 0; }"):
+        bad.append("positions: a device that declares no adjustment has a position control")
+    return bad
+
 
 
 def main():
