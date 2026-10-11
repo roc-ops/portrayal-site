@@ -60,7 +60,8 @@ export function strapKinds(b) {
 // millimetre; no maker's sheet is held for them. Each strap straps() returns
 // carries its `width_mm`: STRAP_WIDE_MM for a pack WIDE_PACK_MM across or
 // more, STRAP_BASE_MM otherwise, and the narrowest that fits where two peel
-// points leave less room than that between them.
+// points leave less room than that between them. An anchor is no wider than
+// its tie slot is long (slotFit). WIDE_PACK_MM is a figure of this build.
 export const STRAP_WIDTHS_MM = [12, 19, 25];
 export const STRAP_BASE_MM = 19;
 export const STRAP_WIDE_MM = 25;
@@ -80,8 +81,8 @@ export const STRAP_CLEAR_MM = 5;
 // - a spacing strap already in a short gap serves, and one within
 //   BREAKOUT_MERGE_MM of where a breakout strap would go in a long gap, on
 //   the same side, serves as it;
-// - the gap at either end of the trunk, where the members fan out, gets none
-//   when it has less than BREAKOUT_MERGE_MM of riding.
+// - the gap at either end of the trunk, where the members fan out, is a gap
+//   like any other: it takes a strap wherever one fits with its clearance.
 // At a pitch of one unit (44.45 mm) every cable so gets a strap before it
 // leaves; at two units and over, one each side of each peel point.
 export const BREAKOUT_MM = 25;
@@ -472,9 +473,6 @@ export function straps(rack, b, ctx = {}) {
       const A = groups[k - 1], B = groups[k], lo = A[1], hi = B[0], gap = hi - lo;
       const ride = spans.filter(([x, y]) => x <= lo + 1e-9 && y >= hi - 1e-9);
       if (ride.length < 2) continue;
-      // the gap at either end of the trunk, where the members fan out to their
-      // ports: with less than BREAKOUT_MERGE_MM of riding it gets none
-      if ((k === 1 || k === groups.length - 1) && gap < BREAKOUT_MERGE_MM - 1e-9) continue;
       const here = spacing.filter(a => a >= lo - 1e-9 && a <= hi + 1e-9);
       if (gap >= BREAKOUT_TWO_MM - 1e-9) {
         // room for one at each end, each unless a spacing strap is near it
@@ -495,13 +493,17 @@ export function straps(rack, b, ctx = {}) {
     }
   }
   // anchor straps: each tray with tie slots the trunk lies on
-  const anchors = [];
+  const anchors = [], misfits = [];
   if (want.anchors) {
     const trays = traysOf(rack, ctx.route);
     L.trunk.forEach((w, k) => {
       const t = w.lane ? null : trays.find(x => x.item === w.item && x.via === w.via);
       const tie = t ? nearestTie(t, stretchMiddle(t, pts[k - 1], pts[k], pts[k + 1])) : null;
-      if (tie != null) anchors.push({a: cum[k], item: w.item, via: w.via, tie, w: baseWidth(cum[k])});
+      if (tie == null) return;
+      // the strap goes through the slot, so it is no wider than the slot is long
+      const fit = slotFit(t, tie, baseWidth(cum[k]));
+      if (fit != null) anchors.push({a: cum[k], item: w.item, via: w.via, tie, w: fit});
+      else misfits.push(`${bundleName(b)} is not tied at ${labelIn(rack, w.item)} ${w.via}: tie slot ${tie + 1} is ${round1(slotLong(t, tie))} mm long, and the narrowest strap is ${STRAP_WIDTHS_MM[0]} mm wide.`);
     });
   }
   const place = a => {
@@ -515,7 +517,9 @@ export function straps(rack, b, ctx = {}) {
                 ...anchors.map(x => ({kind: 'anchor', ...place(x.a), width_mm: x.w, item: x.item, via: x.via, tie: x.tie}))]
     .sort((p, q) => p.along_mm - q.along_mm);
   return {every, count: list.length, kinds: {spacing: spacing.length, breakout: breakout.length, anchor: anchors.length},
-          widths: widthCounts(list.map(x => x.width_mm)), straps: list, runs: runs.map(([s, e]) => [round1(s), round1(e)])};
+          widths: widthCounts(list.map(x => x.width_mm)), straps: list, runs: runs.map(([s, e]) => [round1(s), round1(e)]),
+          // a tie slot too short for any strap: said, and no strap is counted there
+          notes: misfits};
 }
 
 // How many straps of each width: {19: 6, 12: 2}.
@@ -532,6 +536,12 @@ function stretchMiddle(t, prev, at, next) {
 }
 // The tie slot of a tray nearest a place along it: its index in `ties`, the
 // lower index where two are as near; null for a tray with none.
+// A STRAP GOES THROUGH ITS TIE SLOT, so it is no wider than the slot is long:
+// slotFit is the widest stock width that is neither over `want` nor over the
+// long side of the slot, or null when even the narrowest does not go through.
+const slotLong = (t, tie) => { const s = t.ties[tie]; return Math.max(s.x1 - s.x0, s.z1 - s.z0); };
+const slotFit = (t, tie, want) => [...STRAP_WIDTHS_MM].reverse().find(w => w <= want && w <= slotLong(t, tie) + 1e-9) ?? null;
+const labelIn = (rack, id) => (rack.items || []).find(i => i.id === id)?.label || id;
 function nearestTie(t, where) {
   const [lo, hi] = t.run === 'z' ? ['z0', 'z1'] : ['x0', 'x1'];
   let best = null, gap = Infinity;
@@ -574,7 +584,18 @@ export function anchorsOf(rack, ctx = {}) {
     if (b.members.length >= 2 && strapKinds(b).anchors)
       for (const m of b.members) trunkTrays.set(m.cable, (b.route || []).filter(w => w.item).map(w => `${w.item}|${w.via}`));
   }
-  for (const s of cableSlots(rack, rc, trunkTrays)) for (const i of s.ties) at(s.item, s.via, i).cables.push(s.cable);
+  let trays = [];
+  try { trays = traysOf(rack, rc); } catch { trays = []; }
+  for (const s of cableSlots(rack, rc, trunkTrays)) for (const i of s.ties) {
+    // a slot no strap goes through ties nothing, unless a bundle is tied there
+    const t = trays.find(x => x.item === s.item && x.via === s.via);
+    const fit = t ? slotFit(t, i, STRAP_BASE_MM) : STRAP_BASE_MM;
+    const key = `${s.item}|${s.via}|${i}`;
+    if (fit == null && !out.has(key)) continue;
+    const slot = at(s.item, s.via, i);
+    if (!slot.bundles.length && fit != null) slot.width_mm = fit;
+    slot.cables.push(s.cable);
+  }
   return [...out.values()];
 }
 // The tie slots each single cable is strapped at, a tray at a time:

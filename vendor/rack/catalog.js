@@ -44,7 +44,9 @@ export const meteringOf = pduClass => (Object.hasOwn(METERING, pduClass) ? METER
 // configuration an entry names (its default when it names none): what the
 // device measures, what each placed part can be set to (`states`), the slots it
 // offers a hanging part and the mount points it hangs by, each as its
-// configs.json states it. `slots` is what loadSlots answered for the device;
+// configs.json states it. `names` is the name a DCIM knows a settable part by
+// where that is not its path (an outlet `outlet-a2` is A2), {} when the
+// catalogue gives none. `slots` is what loadSlots answered for the device;
 // null when that is not loaded or it has no such configuration.
 export function configFacts(slots, cfg) {
   if (!slots || slots.error) return null;
@@ -52,7 +54,7 @@ export function configFacts(slots, cfg) {
   const c = (slots.configs || []).find(k => k.name === name);
   if (!c) return null;
   return {config: c.name, pduClass: slots['pdu-class'] ?? null, metering: meteringOf(slots['pdu-class']),
-          states: c.states || {}, slots: c.slots || [], mountPoints: c['mount-points'] || []};
+          states: c.states || {}, names: c.names || {}, slots: c.slots || [], mountPoints: c['mount-points'] || []};
 }
 
 export async function loadSlots(dist, refs = []) {

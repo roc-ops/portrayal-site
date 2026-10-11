@@ -7,7 +7,7 @@
 
 import {positionOf, uLabel, zeroUOf, bundlesOf, bundleName, firstU, railWidth, RAIL_WIDTH_IN, holderOf, rollOf} from './model.js';
 import {routeText, trunkRoute} from './route.js';
-import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMeet} from './fit.js';
+import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMeet, isQuarter} from './fit.js';
 import {zeroUEntries, whereText, hungText} from './zero-u.js';
 import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts} from './bundles.js';
 export {positionOf};
@@ -328,7 +328,7 @@ export function bundleExports(rack, ctx = {}) {
             limit_at: size?.limitBy?.text ?? null, limit_estimated: !!size?.limitBy?.estimated,
             bend_mm: bend?.radius_mm ?? null, bend_by: bend?.by ?? null,
             bend_checked: !!bend && !bend.unchecked?.length,
-            warnings: [...check.warnings], notes: [...check.notes]};
+            warnings: [...check.warnings], notes: [...check.notes, ...(drawn && st?.notes ? st.notes : [])]};
   });
 }
 
@@ -440,13 +440,17 @@ export function mountNotes(items, chassisOf, frame) {
   return out;
 }
 // WHAT IS SET OFF on one entry, as the one line a device comment carries
-// ("Outlets off: outlet-a2, outlet-a7."): '' when nothing is. `states` is
-// what states.js statesFor answers for the entry, so only what the part
-// declares is named, by the path the rack file names it by. A part that is
-// no outlet is in a line of its own ("Off: psu-1.").
-export function offNote(states) {
+// ("Outlets off: A2, A7."): '' when nothing is. `states` is what states.js
+// statesFor answers for the entry, so only what the part declares is named.
+// `names` is what configFacts answers as `names` for its device: the name
+// the device-type export gives each part, from the one source, so a comment
+// names an outlet as the DCIM lists it. A part the catalogue gives no name is
+// named by its path. A part that is no outlet is in a line of its own
+// ("Off: psu-1.").
+export function offNote(states, names = null) {
   const off = Object.entries(states || {}).filter(([, s]) => s === 'off').map(([p]) => p);
-  const outlets = off.filter(p => /^outlet\b/.test(p)), rest = off.filter(p => !/^outlet\b/.test(p));
+  const nameOf = p => (names && Object.hasOwn(names, p) && typeof names[p] === 'string' && names[p] ? names[p] : p);
+  const outlets = off.filter(p => /^outlet\b/.test(p)).map(nameOf), rest = off.filter(p => !/^outlet\b/.test(p)).map(nameOf);
   return [outlets.length ? `Outlets off: ${outlets.join(', ')}.` : '', rest.length ? `Off: ${rest.join(', ')}.` : ''].filter(Boolean).join(' ');
 }
 
@@ -801,10 +805,12 @@ export function uniqueNames(items) {
 //   NetBox 4.7 and Nautobot 3.2 source; "believed" is the model field as
 //   remembered, confirmed at the boundary by the acceptance run.
 export const DCIM_LIMITS = {
-  // NetBox Device.name is a 64-character field, unique ignoring case (believed;
-  // the model source says only "unique per site and tenant"). Nautobot's own limit
-  // is not stated in its model source, so this NetBox limit is applied to both.
+  // NetBox Device.name is a 64-character field (seen on NetBox 4.7.2).
+  // Nautobot's is 255 (seen on Nautobot 3.2.6); the NetBox limit is applied
+  // to both, so one rack names its devices alike in either.
   deviceName: 64,
+  // NetBox Rack.name is a 100-character field (seen on NetBox 4.7.2).
+  rackName: 100,
   // Cable.label (100) and Cable.description (200, PrimaryModel), NetBox v4.7.2
   // (facts: 251458b8, dcim/models/cables.py and netbox/models/__init__.py).
   // Nautobot's label is held to the same 100 here; its cable has no
@@ -851,10 +857,18 @@ export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
 // refuse every device. `left` lists each device left out, with the sentence
 // the README carries:
 //   - a device with no device type (the type is a required column), on both;
-//   - on NetBox only, the later-placed of two devices that share a U front
+//   - on NetBox, the later-placed of two devices that share a U front
 //     and rear while either type is full depth. The rack's own order is the
-//     order they were placed. Nautobot 3.2 accepts such a pair, so its file
-//     keeps both.
+//     order they were placed.
+// NAUTOBOT REFUSES SUCH A PAIR TOO, and one refused row rolls its whole file
+// back (tried on Nautobot 3.2.6: `Device.clean`, nautobot/dcim/models/
+// devices.py lines 804-818, asks `Rack.get_available_units`, racks.py lines
+// 302 and 349, which counts a full-depth device on the other face; the same
+// rule as NetBox, netbox/dcim/models/racks.py lines 551 and 597). This file
+// said for a long time that Nautobot accepts the pair, and wrote both. Its
+// file now keeps the later device in the rack with no position and no face,
+// as it keeps the second of two in one whole unit, and the comment says where
+// it is.
 // NAUTOBOT STORES WHOLE RACK UNITS (docs/rack-file-v4-design.md section 2.7),
 // so there each item has a whole-unit span: from floor(p) to
 // ceil(p + units) - 1, where p is its position. Items are taken by their
@@ -870,8 +884,10 @@ export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
 // `statesOf(entry)` gives what an item or a part beside the rack is set to
 // (states.js statesFor with the facts of its device): what is off goes in
 // its comment, in both files, since neither device import has a column for
-// it. Without it no state is written. A reading is in neither file.
-export function deviceImportRows({rack, items: given, types, target = 'netbox', dcim = {}, why = new Map(), chassisOf = null, statesOf = null}) {
+// it. Without it no state is written. `namesOf(entry)` gives the names the
+// catalogue has for its parts (configFacts().names), so an outlet is named
+// as the device type names it. A reading is in neither file.
+export function deviceImportRows({rack, items: given, types, target = 'netbox', dcim = {}, why = new Map(), chassisOf = null, statesOf = null, namesOf = null}) {
   const items = given.map(it => (it.u != null ? it : {...it, u: chassisOf ? itemUnits(it, chassisOf) : 1}));
   const T = TARGET_NAME[target] || 'NetBox';
   const names = uniqueNames(items);
@@ -915,7 +931,10 @@ export function deviceImportRows({rack, items: given, types, target = 'netbox', 
     const order = kept.filter(it => !offRails(it.mount) && !(holderOf(it) != null && it.mount != null)).map((it, k) => ({it, k})).sort((a, b) => a.it.ru - b.it.ru || a.k - b.k);
     for (const {it} of order) {
       const [lo, hi] = wholeSpan(it);
-      const met = placed.find(o => o.face === it.face && wholeSpan(o)[0] <= hi && lo <= wholeSpan(o)[1]);
+      // on its own face any device there; on the other face one that fills the
+      // depth, or any when this one does
+      const met = placed.find(o => wholeSpan(o)[0] <= hi && lo <= wholeSpan(o)[1]
+        && (o.face === it.face || types.get(it.id).isFullDepth || types.get(o.id).isFullDepth));
       if (met) unplaced.set(it.id, met); else placed.push(it);
     }
   }
@@ -933,6 +952,13 @@ export function deviceImportRows({rack, items: given, types, target = 'netbox', 
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
     if (rollNote(it)) notes.push(rollNote(it));
+    // A QUARTER TURN TAKES MORE UNITS THAN THE DEVICE TYPE HAS: the row is the
+    // type at the unit its turned box starts in, so a DCIM shows the others
+    // free. The comment says which it fills, for the importer to reserve.
+    if (isQuarter(it) && it.mount !== 'rack-face' && !isZeroUPart({mount: it.mount})) {
+      const own = chassisOf ? unitsOf(chassisOf(it.ref)) : null;
+      notes.push(`Turned, it occupies ${unitsText(rack.frame, it.ru, it.u)} on the rack${own != null ? `; the device type is ${own}U` : ''}.`);
+    }
     // A part beside the rack (zeroUImportItems) and a manager on the rail face
     // take no position and no face: where each is goes in the comment.
     const beside = isZeroUPart({mount: it.mount});
@@ -962,12 +988,13 @@ export function deviceImportRows({rack, items: given, types, target = 'netbox', 
     const none = zeroU || held || unplaced.has(it.id);
     if (target === 'nautobot' && !zeroU && !held) {
       const met = unplaced.get(it.id), where = unitsText(rack.frame, it.ru, uOf(it));
-      if (met) notes.push(`In ${where}, ${it.ru > met.ru ? 'above' : 'with'} ${names.get(met.id).name}; no position, since Nautobot stores whole rack units.`);
+      if (met && met.face !== it.face) notes.push(`In ${where} on the ${it.face}, opposite ${names.get(met.id).name}; no position, since Nautobot refuses two devices in one unit, front and rear, while either type is full depth.`);
+      else if (met) notes.push(`In ${where}, ${it.ru > met.ru ? 'above' : 'with'} ${names.get(met.id).name}; no position, since Nautobot stores whole rack units.`);
       else if (!Number.isInteger(it.ru) || !Number.isInteger(uOf(it)))
         notes.push(`Occupies ${where} (${uOf(it)}U). Nautobot stores whole rack units.`);
     }
     let off = '';
-    try { off = typeof statesOf === 'function' ? offNote(statesOf(it)) : ''; } catch { off = ''; }
+    try { off = typeof statesOf === 'function' ? offNote(statesOf(it), typeof namesOf === 'function' ? namesOf(it) : null) : ''; } catch { off = ''; }
     if (off) notes.push(off);
     if (firstU(rack.frame) !== 1)
       notes.push(`${none ? '' : `U${position} on the rack. `}The rack numbers its units from ${firstU(rack.frame)}, and a unit named here is its label; the ${T} import counts from 1.`);
@@ -996,8 +1023,11 @@ export const NETBOX_RACK_WIDTHS = [10, 19, 21, 23];
 export function rackImportRows({rack, dcim = {}}) {
   const f = rack.frame, width = railWidth(f), known = NETBOX_RACK_WIDTHS.includes(width), said = [];
   if (firstU(f) !== 1)
-    said.push(`Its units are numbered from ${firstU(f)} on the rack. The NetBox rack import takes no starting unit, so this rack and the positions in the devices file count from 1. Leave its starting unit at 1 in NetBox; if it is set to ${firstU(f)}, raise every device position by ${firstU(f) - 1}.`);
+    said.push(`Its units are numbered from ${firstU(f)} on the rack. The NetBox rack import takes no starting unit, so this rack and the positions in the devices file count from 1. Leave its starting unit at 1 in NetBox. To set it to ${firstU(f)} there, go in this order, since NetBox refuses a starting unit above a device and a position past the top: raise each device below U${firstU(f)} by ${firstU(f) - 1}, set the starting unit, then raise the rest by ${firstU(f) - 1}.`);
   if (!known) said.push(`Its rails are ${width} in wide, which the NetBox rack import does not take; 19 is written.`);
+  // a name NetBox would refuse is not written: the file would be refused whole
+  if (charCount(rack.name) > DCIM_LIMITS.rackName)
+    return {columns: NETBOX_RACK_COLUMNS, rows: [], left: [{reason: `${cutTo(rack.name, 24)}... is not in the rack file: its name is ${charCount(rack.name)} characters, and NetBox allows ${DCIM_LIMITS.rackName}. Shorten the name of the rack and export again; the devices file names it too.`}]};
   const row = {site: String(dcim?.site ?? '').trim(), name: rack.name, status: 'planned',
     width: known ? width : RAIL_WIDTH_IN, u_height: f.heightRU, desc_units: f.numbering === 'top-down' ? 'true' : 'false'};
   return said.length ? {columns: [...NETBOX_RACK_COLUMNS, 'comments'], rows: [{...row, comments: said.join(' ')}]}

@@ -1051,9 +1051,21 @@ function cableLay(rack, args, ctx) {
   const it = itemOf(rack, where.item);
   if (!it) return {error: `${where.item} is not in the rack.`};
   const name = `${it.label || it.id} ${where.via}`;
+  // the pathway must be one the routes know on the device: a ring or a duct
+  // the page draws, or a tray; with no routes known it is recorded as given
+  const pinning = args.position != null || args.face != null;
+  let trays = [];
+  if (ctx.route) { try { trays = traysOf(rack, ctx.route).filter(x => x.item === where.item); } catch { trays = []; } }
+  if (pinning && ctx.route) {
+    let guides = [];
+    try { guides = typeof ctx.route.guidesOf === 'function' ? ctx.route.guidesOf(where.item) || [] : []; } catch { guides = []; }
+    const ids = [...new Set([...guides.map(g => g.via), ...trays.map(t => t.via)])].sort();
+    if (!ids.includes(where.via))
+      return {error: ids.length ? `${it.label || it.id} has no ring, duct or tray called ${where.via}. It has: ${ids.join(', ')}.`
+                                : `${it.label || it.id} has no rings, ducts or trays.`};
+  }
   if (args.face != null && ctx.route) {
-    let t = null;
-    try { t = traysOf(rack, ctx.route).find(x => x.item === where.item && x.via === where.via) || null; } catch { t = null; }
+    const t = trays.find(x => x.via === where.via) || null;
     if (!t) return {error: `${name} is no tray, so a cable has no face to lie on there.`};
     const held = t.flipped ? 'top' : 'underside';
     if (args.face === held && !t.ties.length)
@@ -1069,6 +1081,19 @@ function cableLay(rack, args, ctx) {
   const keep = entry.position != null || entry.face != null;
   const next = old ? had.flatMap(e => (e === old ? (keep ? [entry] : []) : [e])) : keep ? [...had, entry] : had;
   if (same(next, had)) return unchanged(rack);
+  // A FACE THE ROUTE DOES NOT TAKE IS REFUSED, as cable.slack refuses a tray
+  // that is not on the route: the cable must rest on the tray, and on the
+  // face asked, once the entry is written.
+  if (args.face != null && ctx.route) {
+    const laid = {...c, lay: next};
+    let path = null;
+    try { path = routePath({...rack, cables: rack.cables.map(x => (x.id === id ? laid : x))}, laid, ctx.route); } catch { path = null; }
+    if (path) {
+      const rest = (path.rests || []).find(x => x.kind === 'tray' && x.item === where.item && x.via === where.via);
+      if (!rest) return {error: `${name} is not on the route of ${c.id}.`};
+      if (rest.face !== args.face) return {error: `${c.id} cannot be held to the ${args.face} of ${name} along its stretch there, so it stays on the ${rest.face}.`};
+    }
+  }
   const {lay: _l, ...bare} = c;
   const said = [entry.face != null ? `on the ${entry.face}` : null, entry.position != null ? `at position ${entry.position}` : null].filter(Boolean).join(', ');
   return done({...rack, cables: rack.cables.map(x => (x.id === id ? (next.length ? {...c, lay: next} : bare) : x))},
