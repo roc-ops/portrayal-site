@@ -136,13 +136,21 @@
 /* Bundles (portrayal-site#142). A bundle is its members; its ENVELOPE (the
    band at its diameter, cable-view.js drawBundles2d) is hidden until the
    bundle, or a cable that rides it, is hovered or selected. A selected
-   bundle's envelope is outlined in brass. A selected cable's focus dims the
-   straps too. */
+   bundle's envelope is outlined in brass. */
 [data-bundle-id] [data-envelope] { visibility: hidden; }
 [data-bundle-id]:is(.hot, .hot-member, .on, .on-member) [data-envelope] { visibility: visible; }
-.cable-focus [data-bundle-straps] { opacity: 0.35; }
 [data-bundle-id].on [data-envelope-rim] { opacity: 1; }
 [data-bundle-id].on [data-envelope-rim] path { stroke: var(--pt-brass); }
+/* STRAPS. A strap is black on a light stage and a light neutral on a dark one,
+   each with a rim of the other tone (stage.js STRAP_PAINT, which a test holds
+   these to), so it is seen on either stage and against every cable colour.
+   It does not dim with the cables: a selected cable's focus leaves it alone,
+   and under a hover it dims only when another BUNDLE is the one lit
+   (hover.js paintHover2d keeps it .hot otherwise). */
+.rk-panes[data-stage="light"] [data-strap] [data-strap-part="core"] { stroke: #1b1d20; }
+.rk-panes[data-stage="light"] [data-strap] [data-strap-part="rim"] { stroke: #ffffff; }
+.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="core"] { stroke: #d5d9de; }
+.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="rim"] { stroke: #0b0c0d; }
 /* HOVER (#169): a cable or bundle under the pointer, on the stage or in the
    list, stays lit and every other one dims (site/rack/hover.js). It outranks
    a selection's focus and the filter's ghosts while it lasts, and takes

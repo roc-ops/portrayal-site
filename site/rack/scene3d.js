@@ -17,7 +17,7 @@ import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
-import {labelsFor} from './stage.js';
+import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
 import {landedBends} from './route-context.js';
 
@@ -301,7 +301,10 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     g.userData.bundle = f.id; g.userData.members = [...(f.members ?? [])];
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
                                                    depthWrite: false});
-    const strapMat = new THREE.MeshStandardMaterial({color: 0x24282d, roughness: 0.8});
+    // a strap in the stage's own strap colour (stage.js strapPaint): black on a
+    // light stage, a light neutral on a dark one, where black is not seen
+    const strapMat = new THREE.MeshStandardMaterial({color: new THREE.Color(strapPaint(facts.stage ?? '#101214').core), roughness: 0.8});
+    strapMat.userData.strap = true;
     // THE TRUNK'S CORNERS AT THE BUNDLE'S RADIUS (portrayal-site#164): the
     // kit's bundle radius (bundleCheck `bend.radius_mm`, its largest member's)
     // rounds each corner by a true arc (bend3d.js); with none known the
@@ -388,6 +391,16 @@ async function hangBundles(scene, rack, facts, boxes = null) {
   }
   world.add(group);
   return {group, bundles: out, tight: drawnTight};
+}
+
+// THE STRAPS TURN WITH THE STAGE, as the rail labels do: every strap band's
+// material takes the stage's strap colour (a dimmed one keeps its dimming:
+// only the colour is set).
+function paintStraps3d(scene, stage) {
+  const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
+  if (!group) return;
+  const color = strapPaint(stage).core;
+  group.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
@@ -490,7 +503,7 @@ function ringBends(scene, drawn, bends) {
 // `bends` are the kit's tight bends (route.js bendFindings, through
 // route-context.js): each is ringed where the kit puts it (ringBends), and
 // `bendRings` lists the rings drawn.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null, bends = null) {
+async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null, bends = null, stage = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const {THREE} = scene.three, faceZ = scene.metrics().faceZ;
   try {
@@ -522,7 +535,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx}, drawn.boxes);
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
@@ -605,13 +618,14 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
     });
-    built.setStage = c => { built.setBackground(c); built.setLabelColors(labelsFor(c)); };
+    built.stageColor = stage;
+    built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
     await built.build();
     placeZeroU(built, sideParts, chassisOf);
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

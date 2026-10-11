@@ -44,15 +44,19 @@ export function litFor(rack, target) {
   return null;
 }
 
-/** 2D: dim every cable, tag, band and strap on `svgs` but the lit ones; null restores. */
+/** 2D: dim every cable, tag and band on `svgs` but the lit ones, and the straps of every bundle but a lit one; null restores. */
 export function paintHover2d(svgs, lit) {
   for (const svg of svgs) {
     if (!svg) continue;
     svg.classList.toggle('cable-hover', !!lit);
     for (const n of svg.querySelectorAll('[data-cable-id]'))
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
-    for (const n of svg.querySelectorAll('[data-bundle-id], [data-strap]'))
-      n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId ?? n.dataset.strap));
+    for (const n of svg.querySelectorAll('[data-bundle-id]'))
+      n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId));
+    // A STRAP IS NOT DIMMED WITH UNRELATED CABLES: it stays lit under a cable's
+    // hover, and dims only when a bundle is lit and it is not that bundle's.
+    for (const n of svg.querySelectorAll('[data-strap]'))
+      n.classList.toggle('hot', !!lit && (!lit.bundles.size || lit.bundles.has(n.dataset.strap)));
     // a member under the pointer shows the envelope of the bundle it rides (rack.css)
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot-member', !!lit && (n.dataset.members || '').split(' ').some(id => lit.cables.has(id)));
@@ -84,8 +88,10 @@ function apply3d(world, lit) {
     if (!group) continue;
     for (const g of group.children) {
       const dim = !!lit && !lit[key].has(g.name.slice(prefix.length));
-      // (a bundle's envelope is shown or hidden, never dimmed: paintEnvelopes3d)
-      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim && !o.userData.envelope); });
+      // (a bundle's envelope is shown or hidden, never dimmed: paintEnvelopes3d;
+      // and its straps dim only when another bundle is the one lit, as in 2D)
+      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material))
+        dimMaterial(m, dim && !o.userData.envelope && (!o.userData.strap || lit.bundles.size > 0)); });
     }
   }
 }

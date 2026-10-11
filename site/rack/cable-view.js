@@ -18,6 +18,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {bundleSummary, STRAP_DRAWN, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
+import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {paneMarks, landedBends} from './route-context.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
@@ -456,14 +457,19 @@ export function drawInFront(svg) {
 //     It is the page's, not the drawing's (data-pt-ui): a sheet leaves it out.
 //   - THE STRAPS: a bar across the pack at each of the kit's positions
 //     (bundles.js straps: a trunk segment and how far along it), as long as
-//     the pack is thick there. Always drawn, and a sheet keeps them.
+//     the pack is thick there. Always drawn, and a sheet keeps them. A strap
+//     is a group of four lines: a rim under a core at its true size (10 mm
+//     along the run), and the same pair again as non-scaling strokes of
+//     STRAP_MIN_PX, so at Fit on a tall rack it is never under that on
+//     screen, along the run or across it. Its attributes are the paper's
+//     paint (a black strap, a white rim); on the page rack.css paints it for
+//     the stage (stage.js STRAP_PAINT), so it is seen on a dark stage too.
 //   - a ring round a corner too tight for the bundle's bend radius.
 // A stretch of the trunk on the other face is not drawn here, nor are its
 // straps. They go in the cables' layer and take no click.
 // `turn(v)` turns a rack offset to this pane's axes; `base(e, f, i)` is trunk
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
-const STRAP = '#24282d';
 const BEND_WARN = '#d9822b';
 function drawBundles2d(svg, rack, routes, pane, turn, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
@@ -525,9 +531,14 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
       const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
       const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
       const half = hit.stretch.diameter / 2 + 2;
-      bars.append(svgEl('line', {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half,
-        x2: c[0] + n[0] * half, y2: c[1] + n[1] * half, stroke: STRAP, 'stroke-width': STRAP_DRAWN,
-        'data-strap': f.id, 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}));
+      const bar = svgEl('g', {'data-strap': f.id, 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
+      const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
+      const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
+      bar.append(svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
+                 svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
+                 svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
+                 svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      bars.append(bar);
     }
   }
   if (!bands.childElementCount) return;

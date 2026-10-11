@@ -5170,7 +5170,7 @@ BAND_GEO = """([pane, id]) => {
   return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
           ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
           shown: getComputedStyle(g.querySelector('[data-envelope]')).visibility === 'visible',
-          strapXs: [...s.querySelectorAll(`[data-strap="${id}"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
+          strapXs: [...s.querySelectorAll(`[data-strap="${id}"] > line:not([data-strap-least])[data-strap-part="core"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
 }"""
 
 
@@ -5428,9 +5428,13 @@ HOVER_3D_STATE = """() => {
     for (const g of w.getObjectByName(name)?.children ?? []) {
       const id = g.name.slice(prefix.length), mats = new Set(), env = [];
       // a bundle's envelope is shown or hidden, never dimmed: its tubes are read apart from the rest
-      g.traverse(o => { if (!o.isMesh) return; if (o.userData.envelope) { env.push(o.visible); return; } for (const m of [].concat(o.material)) mats.add(m); });
-      out[prefix + id] = [...mats].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
-      if (prefix === 'bundle-') out['envelope-' + id] = env;
+      // ...and its straps too: they dim only when another bundle is the one lit
+      const straps = new Set();
+      g.traverse(o => { if (!o.isMesh) return; if (o.userData.envelope) { env.push(o.visible); return; }
+        for (const m of [].concat(o.material)) (o.userData.strap ? straps : mats).add(m); });
+      const read = set => [...set].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
+      if (prefix === 'cable-' || mats.size) out[prefix + id] = read(mats);
+      if (prefix === 'bundle-') { out['envelope-' + id] = env; out['straps-' + id] = read(straps); }
     }
   }
   return out;
@@ -5485,7 +5489,8 @@ def hover_2d_dims(st, lit_cables, lit_bundles, members=HOVER_MEMBERS):
                 if not (id_ in lit_bundles or rides) and op > 0.2:
                     bad.append(f"{k} should be dimmed, is opacity={op}")
             continue
-        lit = (id_[6:] in lit_bundles) if kind == "strap" else (id_ in lit_cables)
+        # a strap stays lit under a cable's hover, and dims only when a bundle is lit that is not its own
+        lit = (not lit_bundles or id_[6:] in lit_bundles) if kind == "strap" else (id_ in lit_cables)
         for hot, op in vals:
             if lit and (not hot or op != 1):
                 bad.append(f"{k} should stay lit, is hot={hot} opacity={op}")
@@ -5502,6 +5507,15 @@ def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
             want = f"bundle-{b}" in lit or any(f"cable-{c}" in lit for c in members.get(b, ()))
             if not mats or any(v != want for v in mats):
                 bad.append(f"3D {k} is {mats}; expected {'shown' if want else 'hidden'} (shown only while the bundle or a member is lit)")
+            continue
+        if k.startswith("straps-"):
+            b = f"bundle-{k[len('straps-'):]}"
+            dimmed = any(x.startswith("bundle-") for x in lit) and b not in lit
+            for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
+                if not dimmed and (tr, op, dw) != (tr0, op0, dw0):
+                    bad.append(f"3D {k} should be at full strength (no other bundle is lit), its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
+                if dimmed and (not tr or dw or op > op0 * 0.2 + 1e-6):
+                    bad.append(f"3D {k} should be dimmed (another bundle is lit), its material is {(tr, op, dw)}")
             continue
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
             if k in lit:
@@ -5661,8 +5675,8 @@ def check_rack_hover_dims(page, base):
     settle_scene(page, "3D: the hover rack's scene", tubes=True)
     park_mouse(page)
     base3 = page.evaluate(HOVER_3D_STATE)
-    if not base3.get("bundle-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
-        return bad + [f"3D: no tubes for b1 or c4, or no envelope for b1: {sorted(base3)}"]
+    if not base3.get("straps-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
+        return bad + [f"3D: no tubes for c4, or no straps or no envelope for b1: {sorted(base3)}"]
     if any(base3["envelope-b1"]):
         bad.append("3D: b1's envelope shows with nothing hovered or selected")
 
@@ -6185,8 +6199,8 @@ PACK_2D_JS = """async () => {
   });
   const env = g.querySelector('[data-envelope]');
   return {stretches, shown: getComputedStyle(env).visibility === 'visible', members: ids, line,
-          straps: [...svg.querySelectorAll('[data-strap="b1"]')].map(l => ({pack: +l.dataset.pack,
-            len: Math.hypot(+l.getAttribute('x2') - +l.getAttribute('x1'), +l.getAttribute('y2') - +l.getAttribute('y1'))})),
+          straps: [...svg.querySelectorAll('[data-strap="b1"]')].map(g => { const l = g.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+            return {pack: +g.dataset.pack, len: Math.hypot(+l.getAttribute('x2') - +l.getAttribute('x1'), +l.getAttribute('y2') - +l.getAttribute('y1'))}; }),
           opacity: Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(n => [n.dataset.cableId, +getComputedStyle(n).opacity]))};
 }"""
 # The pack in the scene: the envelope's pieces (radius, shown, a centre line
@@ -6381,6 +6395,143 @@ def check_rack_bundle_pack(page, base):
         bad.append(f"peel: a member's line crosses another's trunk line below the top: {crossings}")
     if not all(len(g["line"][c]) > 50 for c in g["members"]):
         bad.append("peel: a member has no stroke on the front pane, so its crossings were not measured")
+    return bad
+
+
+# A strap on the front pane: where its middle is on the page, its core's
+# computed colour, the stage's, and its opacity through every ancestor.
+STRAP_2D_JS = """() => {
+  const svg = document.querySelector('#paneFront svg'), g = svg.querySelector('[data-strap="b1"]');
+  if (!g) return null;
+  const core = g.querySelector('line[data-strap-part="core"]:not([data-strap-least])'), m = core.getScreenCTM();
+  const p = new DOMPoint((+core.getAttribute('x1') + +core.getAttribute('x2')) / 2, (+core.getAttribute('y1') + +core.getAttribute('y2')) / 2).matrixTransform(m);
+  let opacity = 1;
+  for (let n = g; n && n !== svg.parentNode; n = n.parentNode) opacity *= +getComputedStyle(n).opacity;
+  return {at: [p.x, p.y], core: getComputedStyle(core).stroke, rim: getComputedStyle(g.querySelector('[data-strap-part="rim"]')).stroke,
+          stage: getComputedStyle(document.getElementById('panes')).backgroundColor, opacity: Math.round(opacity * 100) / 100,
+          parts: [...g.children].map(l => [l.dataset.strapPart, l.hasAttribute('data-strap-least'), l.getAttribute('vector-effect')]),
+          scale: Math.hypot(m.a, m.b), n: svg.querySelectorAll('[data-strap="b1"]').length,
+          others: Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(n => [n.dataset.cableId, +getComputedStyle(n).opacity]))};
+}"""
+STRAP_3D_JS = """() => {
+  const g = window.__rack.scene().three.scene.getObjectByName('bundle-b1'), s = g?.children.find(o => o.userData.strap);
+  return s ? {color: '#' + s.material.color.getHexString(), transparent: s.material.transparent, opacity: s.material.opacity} : null;
+}"""
+
+
+def strap_extent(px, w, h, at, core):
+    """How many pixels of the strap's own colour run through `at`, across and down the page."""
+    near = lambda c: max(abs(a - b) for a, b in zip(c, core)) <= 40
+    x0, y0 = int(at[0]), int(at[1])
+    if not (0 <= x0 < w and 0 <= y0 < h) or not near(px(x0, y0)):
+        return (0, 0)
+    def run(dx, dy):
+        n, x, y = 0, x0 + dx, y0 + dy
+        while 0 <= x < w and 0 <= y < h and near(px(x, y)):
+            n, x, y = n + 1, x + dx, y + dy
+        return n
+    return (1 + run(-1, 0) + run(1, 0), 1 + run(0, -1) + run(0, 1))
+
+
+@extra("rack.html: a bundle's straps can be seen - a light strap with a dark rim on a dark stage and a black one with a white rim on a light stage (7 to 1 or better against the stage), never under 6 px on screen at Fit on a 42U rack, at full strength while an unrelated cable is selected or hovered, in the stage's strap colour in 3D, and black on a sheet whatever the stage")
+def check_rack_straps_seen(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.click("#zoomFit")
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    ratios = {}
+    for stage, tone, want in (("#101214", "dark", ("#d5d9de", "#0b0c0d")), ("#ffffff", "light", ("#1b1d20", "#ffffff"))):
+        page.click(f'#stagebg .sw[data-c="{stage}"]')
+        page.wait_for_timeout(300)
+        page.evaluate("() => document.querySelector('#paneFront [data-strap=\"b1\"]').scrollIntoView({block: 'center', inline: 'center'})")
+        page.wait_for_timeout(200)
+        s = page.evaluate(STRAP_2D_JS)
+        if not s:
+            return bad + [f"{tone}: no strap for b1 on the front pane"]
+        core, rim, ground = rgb_of(s["core"]), rgb_of(s["rim"]), rgb_of(s["stage"])
+        if (core, rim) != (rgb_of(want[0]), rgb_of(want[1])) or ground != rgb_of(stage):
+            bad.append(f"{tone}: the strap is {core} with a {rim} rim on a {ground} stage, expected {want} on {stage}")
+        ratios[tone] = contrast_ratio(core, ground)
+        if ratios[tone] < 7:
+            bad.append(f"{tone}: the strap's contrast with the stage is {ratios[tone]:.1f} to 1, under 7")
+        if [p[:2] for p in s["parts"]] != [["rim", False], ["rim", True], ["core", False], ["core", True]] or any(p[1] and p[2] != "non-scaling-stroke" for p in s["parts"]):
+            bad.append(f"{tone}: a strap is not a rim and a core at its true size and again at its least: {s['parts']}")
+        # on the composited page, at Fit: the strap's own colour, at least 6 px along the run and across it
+        w, h, px = png_pixels(page.screenshot())
+        ext = strap_extent(px, w, h, s["at"], core)
+        if s["scale"] * 10 >= 6:
+            bad.append(f"{tone} fixture: at Fit a 10 mm strap is {s['scale'] * 10:.1f} px, so the least size was not what was measured")
+        if min(ext) < 6:
+            bad.append(f"{tone}: at Fit the strap is {ext[0]} x {ext[1]} px of its own colour on the page, under 6 (a 10 mm bar is {s['scale'] * 10:.1f} px here)")
+        if s["opacity"] != 1:
+            bad.append(f"{tone}: the strap is at opacity {s['opacity']} with nothing selected")
+    print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 6 px at Fit")
+    page.click('#stagebg .sw[data-c="#101214"]')
+    # An unrelated cable selected, then hovered: the other cables dim, the strap does not.
+    page.click('#cableList [data-cable-row="c4"]')
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c4\"].on')", timeout=READY_MS)
+    park_mouse(page)
+    page.wait_for_timeout(300)
+    s = page.evaluate(STRAP_2D_JS)
+    if s["opacity"] != 1 or s["others"].get("c1", 1) > 0.25:
+        bad.append(f"selected: with c4 selected the strap is at {s['opacity']} and c1 at {s['others'].get('c1')}; expected the strap at 1 and c1 dimmed")
+    page.click('#cableList [data-cable-row="c4"]')
+    page.wait_for_function("() => !document.querySelector('#paneFront [data-cable-id].on')", timeout=READY_MS)
+    page.hover('#cableList [data-cable-row="c4"]')
+    page.wait_for_timeout(350)
+    s = page.evaluate(STRAP_2D_JS)
+    if s["opacity"] != 1 or s["others"].get("c1", 1) > 0.25:
+        bad.append(f"hover: with c4 hovered the strap is at {s['opacity']} and c1 at {s['others'].get('c1')}; expected the strap at 1 and c1 dimmed")
+    park_mouse(page)
+    # ...and it does dim when a bundle is lit that is not its own.
+    dim = page.evaluate("""async () => {
+      const H = await import('/site/rack/hover.js'), svgs = [...document.querySelectorAll('#paneFront > svg, #paneRear > svg')];
+      H.paintHover2d(svgs, {cables: new Set(), bundles: new Set(['another'])});
+      await new Promise(r => setTimeout(r, 300));
+      const op = +getComputedStyle(document.querySelector('#paneFront [data-strap="b1"]')).opacity;
+      H.paintHover2d(svgs, null);
+      return op;
+    }""")
+    if dim > 0.2:
+        bad.append(f"hover: with another bundle lit the strap is at {dim}, expected dimmed")
+    # A sheet is paper: a black strap with a white rim, whatever the stage (dark here).
+    sheet = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      return (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf, {faces: ['front']})).data;
+    }""")
+    ns = "{http://www.w3.org/2000/svg}"
+    bars = [g for g in ET.fromstring(sheet.encode("utf-8")).iter(f"{ns}g") if g.get("data-strap") == "b1"]
+    paint = sorted({(l.get("data-strap-part"), l.get("stroke")) for g in bars for l in g})
+    if not bars or paint != [("core", "#1b1d20"), ("rim", "#ffffff")]:
+        bad.append(f"sheet: {len(bars)} straps, painted {paint}; expected a black core and a white rim")
+    if webgl_trouble(page):
+        print("[check_rack_straps_seen] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the straps' scene", tubes=True)
+    park_mouse(page)
+    s3 = page.evaluate(STRAP_3D_JS)
+    if not s3 or s3["color"] != "#d5d9de":
+        bad.append(f"3D: on the black stage a strap is {s3}, expected #d5d9de")
+    page.hover('#cableList [data-cable-row="c4"]')
+    page.wait_for_timeout(350)
+    s3 = page.evaluate(STRAP_3D_JS)
+    if not s3 or s3["transparent"] or s3["opacity"] != 1:
+        bad.append(f"3D: with an unrelated cable hovered a strap is dimmed: {s3}")
+    park_mouse(page)
+    page.click('#stagebg .sw[data-c="#ffffff"]')
+    page.wait_for_timeout(300)
+    s3 = page.evaluate(STRAP_3D_JS)
+    if not s3 or s3["color"] != "#1b1d20":
+        bad.append(f"3D: on the white stage a strap is {s3}, expected #1b1d20")
+    page.click('#stagebg .sw[data-c="#101214"]')
     return bad
 
 
