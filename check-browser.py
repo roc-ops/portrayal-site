@@ -7135,6 +7135,36 @@ def check_rack_pinned_highlight(page, base):
         bad.append(f"2D: hovering c1 while c4 is pinned shows c1 at {h['c1'][1]} and c4 at {h['c4'][1]}; expected c1 lit and c4 dimmed for the while")
     park_mouse(page)
     see({"c4"}, False, "2D, the pointer gone from c1")
+    # THE HOVER LABEL BESIDE THE POINTER (#cableTip) and the pin live together: over another cable's
+    # stroke the label says that cable, as ever, and the pin holds; over the pinned cable's own
+    # stroke there is no label (it is selected, and its pressed row says it all).
+    on_stroke = """async id => {
+      const H = await import('/site/rack/hover.js'), svg = document.querySelector('#paneFront > svg');
+      for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)) {
+        const L = p.getTotalLength(), m = p.getScreenCTM();
+        for (let f = 0.1; f < 0.95; f += 0.03) {
+          const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(m), el = document.elementFromPoint(s.x, s.y);
+          if (!el?.closest('#paneFront')) continue;
+          const t = H.hoverAt2d(svg, {clientX: s.x, clientY: s.y, target: el});
+          if (t?.kind === 'cable' && t.id === id) return [s.x, s.y];
+        }
+      }
+      return null; }"""
+    tip = "() => { const t = document.getElementById('cableTip'); return t && !t.hidden ? t.dataset.cableTip : null; }"
+    at1, at4 = page.evaluate(on_stroke, "c1"), page.evaluate(on_stroke, "c4")
+    if not at1 or not at4:
+        bad.append(f"label: found no point on c1's stroke ({at1}) or on c4's ({at4}) to hover")
+    else:
+        page.mouse.move(at1[0], at1[1])
+        page.wait_for_timeout(400)
+        if page.evaluate(tip) != "c1":
+            bad.append(f"label: over c1's stroke with c4 pinned the hover label names {page.evaluate(tip)!r}, expected c1")
+        page.mouse.move(at4[0], at4[1])
+        page.wait_for_timeout(400)
+        if page.evaluate(tip) is not None:
+            bad.append(f"label: over the pinned cable's own stroke the hover label shows ({page.evaluate(tip)!r})")
+        park_mouse(page)
+        see({"c4"}, False, "2D, after the pointer was over c1's stroke and c4's")
     # a click on a control does not put it down: the zoom, then the stage's swatch
     page.click("#zoomIn")
     page.click("#zoomFit")

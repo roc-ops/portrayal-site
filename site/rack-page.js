@@ -1271,7 +1271,10 @@ function setHover(target) {
 let tipAt = null;
 function paintTip() {
   let tip = $('cableTip');
-  const h = S.hover, c = h?.kind === 'cable' && h.from === 'stage' && tipAt ? rack().cables.find(x => x.id === h.id) : null;
+  // (not for the cable that is pinned: it is selected, its row in the list is
+  // pressed and says all of this, and the label would sit on the cable the
+  // reader pinned to follow)
+  const h = S.hover, c = h?.kind === 'cable' && h.from === 'stage' && tipAt && h.id !== selectedCable() ? rack().cables.find(x => x.id === h.id) : null;
   if (!c) { if (tip) { tip.hidden = true; tip.removeAttribute('data-cable-tip'); } return; }
   if (!tip) {
     tip = el('div', {id: 'cableTip', class: 'rk-cable-tip', 'aria-hidden': 'true'});
