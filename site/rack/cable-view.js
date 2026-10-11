@@ -190,7 +190,9 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   const restAt = (id, w) => {
     const p = routes?.paths?.get(id);
     const rested = (p?.rests ?? []).some(x => (x.kind === 'ring' || x.kind === 'tray') && x.item === w.item && x.via === w.via);
-    const qs = rested ? p.points.filter(q => q.item === w.item && q.via === w.via && q.at !== 'approach') : [];
+    // (not its approach points, which stand off the ring along its run, nor a
+    // lead point, kit 0.17.0, which is level with the stop before the ring)
+    const qs = rested ? p.points.filter(q => q.item === w.item && q.via === w.via && q.at !== 'approach' && q.at !== 'lead') : [];
     if (!qs.length) return null;
     return detourAt({x: qs.reduce((a, q) => a + q.x, 0) / qs.length, y: qs.reduce((a, q) => a + q.y, 0) / qs.length});
   };
@@ -238,12 +240,21 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       const here = k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : at[k] != null);
       const after = k => { for (const d of detours) if (d.after === k && here(k) && here(k + 1))
         for (const q of d.points) { pts.push(detourAt(q)); rings.push(null); } };
+      // A LEAD POINT (kit 0.17.0, #973: route-context.js leadStops) is a point
+      // of the path like any other: where the kit leads the cable square onto
+      // a ring's run, the pane draws the point it turns at, before the ring's
+      // own or after it, when it places that ring. A ring's mark is null there.
+      const leads = routes.leads?.get(link.id) ?? [];
+      const lead = (k, before) => { for (const l of leads) if (l.at === k && l.before === before)
+        for (const q of l.points) { pts.push(detourAt(q)); rings.push(null); } };
       after(-1);
       at.forEach((p, k) => {
         // A waypoint this pane cannot place is dropped, and its mark with it.
-        if (p) { pts.push(p); rings.push(turned?.[k] ?? null); }
+        if (p) { lead(k, true); pts.push(p); rings.push(turned?.[k] ?? null); lead(k, false); }
         after(k);
       });
+      // which stops this pane places, for a tight bend's ring (below)
+      link.here2d = {...link.here2d, [pane]: here};
       if (pts.length) {
         link.via2d = {[pane]: pts};
         if (turned) link.rings2d = {[pane]: rings};
@@ -307,6 +318,25 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
     }
     const title = rec.g?.querySelector('title');
     if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
+  }
+  // A CORNER SHORT OF ITS CABLE'S BEND RADIUS (kit 0.17.0, Portrayal #973:
+  // route.js bendFindings, through route-context.js) is ringed where it is:
+  // the kit's own point (`at`, rack mm) on the pane that shows both stops it
+  // lies between, with the kit's sentence as its title. Nothing is measured
+  // here. A cable this pane draws without a route (no waypoints, nothing to
+  // go round) is ringed on the pane of the end the corner is beside.
+  for (const f of routes?.bendFindings ?? []) {
+    const link = plan.links.find(l => l.id === f.cable), ws = routes.routes?.get(f.cable)?.waypoints ?? [];
+    if (!link || !f.stops) continue;
+    const here = link.here2d?.[pane] ?? (k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : false));
+    if (!f.stops.every(here)) continue;
+    const [cx, cy] = detourAt({x: f.at[0], y: f.at[1]});
+    const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-cable-id': f.cable, 'data-pt-ui': '*'});
+    const t = svgEl('title', {});
+    t.textContent = f.text;
+    ring.append(t);
+    svg.append(ring);
   }
   // A pathway filled past its limit, and a manager with more cables through it
   // than it states, are outlined where this pane draws them.

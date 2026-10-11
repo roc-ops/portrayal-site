@@ -35,7 +35,7 @@ import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes} from './rack/route-context.js';
+import {routeFacts, routeNotes, withCableTypes, bendNotice} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -114,6 +114,17 @@ function disposeScene3d() {
 // Does the rack have a routed cable (a resolved route with waypoints)? Only then are the
 // gutters widened (spec 7); a cable with no route draws as before.
 const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
+// THE ROUTES ARE ONE RACK'S (kit 0.17.0, Portrayal #973). S.routes is what the
+// last render read for the rack it drew: its paths, and the route context
+// they were measured with, which the kit keeps its decisions against. A
+// reader that pairs them with the rack as it is NOW (a bundle command, the
+// notes of the cable list, the 3D build, a route being picked) takes them
+// from here, and gets null while they are another rack's: after an edit,
+// until the render it started has read the routes again. Nothing is then
+// worked out from the old context. A change that is not a step (the routed
+// lengths, the DCIM settings) swaps the rack object and nothing a route
+// reads, and re-points them (keepRoutes).
+const routesNow = () => (S.routes && S.routes.rack === rack() ? S.routes : null);
 // The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
 // And the detours (kit 0.11.0, #949): a body moved can take a cable round it with no waypoint changing.
 // And the kit's points (portrayal-site#166): the scene draws each routed cable
@@ -121,18 +132,37 @@ const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.
 // waypoint changing.
 const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null,
   rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
+  // and the kit's tight bends (kit 0.17.0): a cable's type can change what it needs with no point moving
+  + JSON.stringify((rf.bendFindings ?? []).map(f => [f.cable, f.at, f.text]))
   + bundlesSig(rf) : '');
+// How many times in a row a rebuild has waited for the routes of the rack as
+// it now is (below): past STALE_3D_TRIES it builds without them.
+let stale3d = 0;
+const STALE_3D_TRIES = 12;
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
+  const forRack = rack();
+  // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
+  // edit the routes are read again by render(), which can finish after this
+  // is due: the build then waits its turn again rather than hang the new
+  // rack's cables on the old rack's paths. The old scene goes now, as it
+  // would for a build (and a build still in flight for the old rack is
+  // dropped), so nothing shows a rack that is no longer this one. If the
+  // routes never come (a render that failed is S.routes null, and does not
+  // wait), it builds without them, and the cables hang.
+  if (S.routes && S.routes.rack !== forRack && stale3d < STALE_3D_TRIES) {
+    stale3d++; ++stage3dEpoch; disposeScene3d(); scheduleRebuild3d(); return;
+  }
+  stale3d = 0;
   const mine = ++stage3dEpoch;
   const camera = S.camera3d;
-  const forRack = rack();
-  const sig = routesSig(S.routes);
+  const live = routesNow();
+  const sig = routesSig(live);
   disposeScene3d();
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, paths: S.routes?.paths ?? null, ctx: S.routes?.ctx ?? null, bundles: bundles3d(S.routes),
-    bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
+    routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendFindings ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -149,7 +179,7 @@ async function rebuild3d() {
   S.scene3dRoutes = sig;
   // Routes are resolved by render(), after an edit: if they settled while
   // this was building, the scene was hung by the old ones.
-  if (routesSig(S.routes) !== sig) scheduleRebuild3d();
+  if (routesSig(routesNow()) !== sig) scheduleRebuild3d();
   // A scene built without its cables' faces has no plugs and marks no loose
   // end: 2D says so (render), and so does 3D, once until a build is checked.
   if (built.rackCables && built.rackCables.checked === false) {
@@ -343,7 +373,9 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
 const bundling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => typeof c?.op === 'string' && c.op.startsWith('bundle.'));
 // The cable types come from the page's own load, or from the routes' when the
 // page's has not finished (route-context.js withCableTypes, portrayal-site#164).
-const bundleCtx = () => withCableTypes(S.routes?.ctx ? {route: S.routes.ctx} : {}, cableTypes ?? S.routes?.types ?? null);
+// Only the context read for the rack as it is now (routesNow): a command sent
+// before the render after an edit has read the routes again goes without one.
+const bundleCtx = () => { const now = routesNow(); return withCableTypes(now?.ctx ? {route: now.ctx} : {}, cableTypes ?? S.routes?.types ?? null); };
 // The published cable types (cable-types.json), loaded once; null until then,
 // or when they cannot be read (a bundle's size then counts each cable by its
 // media, as fill does, and says it is an estimate).
@@ -395,6 +427,8 @@ function onChange(ev) {
   // discarded by modelExport's guard, as for any change.
   if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
   else scheduleRebuild3d();
+  // What is not a step changes nothing a route reads: the routes stay this rack's.
+  if (!ev.step) keepRoutes(ev.before, ev.after);
   // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
@@ -407,6 +441,12 @@ function onChange(ev) {
 function keepScene(prev, next) {
   if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = next;
 }
+// The routes read for the old rack object are the new one's too, but only if
+// they were current for the old one (as keepScene, for a change that is not a
+// step: onChange).
+function keepRoutes(prev, next) {
+  if (S.routes && S.routes.rack === prev) S.routes = {...S.routes, rack: next};
+}
 function select(sel) { S.sel = sel; render(); }
 // `notes` are what parseDoc said of the bundles it repaired (library.js
 // docNotes): the editor gives them back as its first findings.
@@ -414,6 +454,7 @@ function setDoc(doc, notes = docNotes(doc)) {
   const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
+  S.bendsSaid = '';          // nor its tight bends: this document's are said once of their own
   for (const f of findings) addNotice(f.text, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
@@ -556,7 +597,7 @@ function editRoute(cableId, list, text) {
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
-  const res = S.routes?.routes.get(cable.id);
+  const res = routesNow()?.routes.get(cable.id);
   const nameOf = id => itemById(id)?.label ?? id;
   const frame = rack().frame;
   const list = cable.routeEdited ? cable.route ?? [] : res?.waypoints ?? [];
@@ -589,7 +630,7 @@ function routePanel(cable) {
 // Pick targets for a route being edited: every pathway the pane draws, and a
 // lane target per U on each gutter (the rear pane mirrors the sides).
 function drawRoutePicking() {
-  const r = rack(), ctx = S.routes?.ctx;
+  const r = rack(), ctx = routesNow()?.ctx;
   for (const svg of S.svgs) {
     const view = svg.dataset.pane, targets = [];
     if (ctx) for (const it of r.items) for (const g of ctx.guidesOf(it.id)) {
@@ -625,7 +666,9 @@ function cableListPanel() {
   pruneFilter();
   const on = S.cableFilter;
   // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
-  const notes = S.routes ? routeNotes(r, S.routes, nameOfId) : [];
+  // (the routes read for this rack: routesNow)
+  const now = routesNow();
+  const notes = now ? routeNotes(r, now, nameOfId) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     ...bundleListHooks(),
     onFilter: next => {
@@ -654,7 +697,7 @@ function cableListPanel() {
 // routing context (bundleCtx). The drawings, the list and the 3D scene read
 // routeFacts' `bundles` (bundle-view.js bundleFacts).
 const selectedBundle = () => (S.sel?.kind === 'bundle' ? S.sel.id : null);
-const bundleListHooks = () => ({bundles: S.routes?.bundles ?? null, selectedBundle: selectedBundle(),
+const bundleListHooks = () => ({bundles: routesNow()?.bundles ?? null, selectedBundle: selectedBundle(),
   onBundleSelect: id => select(selectedBundle() === id ? null : {kind: 'bundle', id}),
   onBundleNew: id => select({kind: 'bundle-form', picked: [id]})});
 // A bundle command from a panel: a refusal is shown beside the control, not as a notice.
@@ -673,7 +716,7 @@ function bundleFormPanel(sel) {
 function bundlePanel(sel) {
   const r = rack(), b = (r.bundles || []).find(x => x.id === sel.id);
   if (!b) { S.sel = null; return homePanel(); }
-  return bundleInspector({rack: r, bundle: b, fact: S.routes?.bundles?.get(b.id) ?? null, uOf,
+  return bundleInspector({rack: r, bundle: b, fact: routesNow()?.bundles?.get(b.id) ?? null, uOf,
     onLabel: label => bundleEdit({op: 'bundle.update', id: b.id, label}),
     onStraps: straps => bundleEdit({op: 'bundle.update', id: b.id, straps}),
     onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
@@ -908,6 +951,17 @@ async function render() {
       else if (theDoc() === at) {
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
+        // THE BEND NOTICE (kit 0.17.0, Portrayal #973): each corner of a
+        // cable's path with less room than its own installed bend radius, in
+        // the kit's words (route.js bendFindings), said once per set of them:
+        // when a cable, a type or a device changes what is tight, not on every
+        // redraw. Both drawings ring the same corners (cable-view.js,
+        // scene3d.js). Nothing is measured on the page.
+        const said = rf.bendFindings.map(f => f.text).join('\n');
+        if (said !== (S.bendsSaid ?? '')) {
+          S.bendsSaid = said;
+          if (said) addNotice(bendNotice(rf.bendFindings), 'note');
+        }
         // Not from facts with a face missing: a port not found there is not a port that is loose.
         if (rf.complete) {
           // onChange saves it and keeps the scene; the drawing below shows the length just kept.
@@ -917,6 +971,7 @@ async function render() {
       }
     } else {
       S.routes = null;
+      S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
@@ -955,7 +1010,8 @@ async function render() {
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
-      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes);
+      // by the routes read for the rack this draws, never another's
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes?.rack === r ? S.routes : null);
       // A long cable's loop and a low lead's tag reach below the rack: both
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
@@ -1679,6 +1735,13 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       // the kit's own points (kit 0.13-0.15: reach, approach, tray, rest) and what it lies on
       points: p.points.map(q => ({...q})), rests: (p.rests ?? []).map(x => ({...x}))}])) : null),
     bodies: () => (S.routes ? S.routes.bodyFindings.map(f => ({...f})) : null),
+    // The kit's tight bends the page says and rings (route.js bendFindings), as plain data.
+    bends: () => (S.routes ? S.routes.bendFindings.map(f => ({...f})) : null),
+    // Are the routes the page holds the ones read for the rack as it is now
+    // (routesNow), and is their context one that cannot be changed in place?
+    routesCurrent: () => ({current: !!routesNow(), frozen: !!S.routes?.ctx && Object.isFrozen(S.routes.ctx)}),
+    // Probe only: the route context the page's routes were read with (the object itself, to tell one from the next).
+    routeContext: () => S.routes?.ctx ?? null,
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),

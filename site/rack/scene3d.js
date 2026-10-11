@@ -33,7 +33,9 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // route.js routePath, measured once by route-context.js routeFacts, with
 // each plug's reach (the plug's cable-point z, kit 0.13.0), each ring's
 // approach, entry and exit on its sill (kit 0.14.0 and 0.15.0), a tray's
-// stretch, each free span's rest and each detour. The scene is in the rack's
+// stretch, each free span's rest, each detour and each lead point (kit
+// 0.17.0: `at: 'lead'`, where a turn is given its room - a point of the
+// path like the others, and drawn as one). The scene is in the rack's
 // own axes with the front rail plane at metrics().faceZ, so a point in rack
 // mm is (x, y, faceZ + z). Nothing is placed here: no ring centre, no lead,
 // no spread. Cables through one ring share its sill point, as the kit lays a
@@ -120,7 +122,9 @@ const STRAP_BAND = 12;   // mm along the run: a strap as drawn
 function trunkStop(THREE, rack, w, members, paths, ctx, at, rt = 0) {
   let own = [];
   if (!w.lane) for (const id of members) {
-    own = (paths?.get(id)?.points ?? []).filter(q => q.item === w.item && q.via === w.via);
+    // (not a member's lead point, kit 0.17.0: that is the member's own way
+    // to the ring from the stop before it, not a point of the ring's)
+    own = (paths?.get(id)?.points ?? []).filter(q => q.item === w.item && q.via === w.via && q.at !== 'lead');
     if (own.length) break;
   }
   if (!own.length) {
@@ -303,12 +307,41 @@ function cornerWhere(rack, link, pts, c, faceZ) {
   return `at U${ru}, ${Math.abs(dz)} mm ${dz >= 0 ? 'in front of' : 'behind'} the front rails`;
 }
 
+// A WARNING RING ROUND EACH CORNER SHORT OF ITS CABLE'S BEND RADIUS (kit
+// 0.17.0, Portrayal #973). The corners are the kit's findings, each at the
+// kit's own point (`at`, rack mm: the scene's (x, y, faceZ + z)); nothing is
+// measured here. A ring goes in its cable's group, so it dims and lights with
+// the cable, and carries `userData.bendFinding` (the kit's sentence, and
+// where): a GLB or USDZ is written with these rings hidden (hover.js
+// withoutBendRings).
+// Returns [{cable, at: Vector3, text}], one per ring drawn.
+export const BEND_RING = 0xd9822b;
+function ringBends(scene, drawn, bends) {
+  const {THREE} = scene.three, at = inScene(THREE, scene.metrics().faceZ), out = [];
+  const count = new Map();
+  for (const f of bends ?? []) {
+    const tube = (drawn.tubes || []).find(t => t.link.id === f.cable && t.mesh);
+    if (!tube || !Array.isArray(f.at)) continue;
+    const k = count.get(f.cable) ?? 0; count.set(f.cable, k + 1);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: BEND_RING}));
+    ring.position.copy(at({x: f.at[0], y: f.at[1], z: f.at[2]}));
+    ring.name = `cable-${f.cable}-bend-${k}`;
+    ring.userData.bendFinding = {cable: f.cable, text: f.text, at: [...f.at]};
+    tube.mesh.add(ring);
+    out.push({cable: f.cable, at: ring.position.clone(), text: f.text});
+  }
+  return out;
+}
 // Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
 // `facts` the cables were hung by (an export's notes read those, so they
 // describe this scene and not a later reading), or {failed: true} when the
 // cables could not be drawn: the rack still stands, and an export of it says so.
-// `tight` lists every corner drawn tighter than its radius, as sentences.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null) {
+// `tight` lists every corner drawn tighter than its radius, as sentences:
+// the drawing's own account of its arcs, kept in the scene and said nowhere.
+// `bends` are the kit's tight bends (route.js bendFindings, through
+// route-context.js): each is ringed where the kit puts it (ringBends), and
+// `bendRings` lists the rings drawn.
+async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null, bends = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const {THREE} = scene.three, faceZ = scene.metrics().faceZ;
   try {
@@ -344,7 +377,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
-    return {...drawn, checked: !facts.unchecked, facts, bundles: hung};
+    return {...drawn, checked: !facts.unchecked, facts, bundles: hung, bendRings: ringBends(scene, drawn, bends)};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
     return {failed: true};
@@ -361,8 +394,10 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // its route context (a bundle's lane stops are the kit's pointOf), or null.
 // `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
+// `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
+// or null: each is ringed where the kit puts it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
-                                              ctx = null, bundles = null, bendOf = null, stage = '#101214'}) {
+                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214'}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -425,7 +460,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
