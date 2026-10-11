@@ -63,6 +63,8 @@ import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearS
 // and what says it is a separate part in front is drawn round it at full
 // strength: a dashed outline, a light hatch across it, and its name.
 export const NEAR_OPACITY = 0.2;
+// What a part beside the far side keeps of its own: behind every body, and seen past them.
+export const FAR_OPACITY = 0.3;
 // The least a pane's own words measure on screen, in CSS px (sizeSideLabels).
 export const LABEL_MIN_PX = {num: 9, word: 11, part: 11};
 // A PLUG AS A BLOCK. Its length is the kit's (the plug's reach). Its height is
@@ -205,7 +207,10 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   };
 
   // FARTHEST FIRST: the parts beside the far side, then every item by how near it is.
-  for (const p of parts.filter(x => !x.near)) out.append(await zeroUGroup(p));
+  // A part beside the FAR side is behind everything, the whole rack's width
+  // away: it is drawn fainter than a body (FAR_OPACITY), on either stage, so
+  // it does not join the near part in front of it into one solid column.
+  for (const p of parts.filter(x => !x.near)) { const g = await zeroUGroup(p); g.setAttribute('opacity', String(FAR_OPACITY)); g.dataset.sideFar = 'true'; out.append(g); }
   const drawn = await Promise.all(paintOrder(pane, bodies).map(async ({it, c, span}) => {
     const whole = it.u ?? Math.max(1, c.ru ?? 1);
     // above the floor: the item's bottom, and the body centred in the span the front pane centres it in
@@ -222,6 +227,11 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
 
   // THE POSTS on the near side, in front of every body between the rails, with the U numbers.
   const posts = svgEl('g', {'data-side-posts': pane, 'pointer-events': 'none'});
+  // THE U NUMBERS ARE OVER EVERYTHING but the selection ring: a part beside
+  // the near side stands in front of the front posts, and its fingers ran
+  // through the numbers. Each number has a rim of the post's own metal, so it
+  // reads on whatever it lies over. Appended after the near parts, below.
+  const nums = svgEl('g', {'data-side-nums': pane, 'pointer-events': 'none'});
   for (const p of postsOf(frame)) {
     const a = sideX(pane, p.z0), b = sideX(pane, p.z1), x0 = Math.min(a, b), w = Math.abs(b - a);
     posts.append(svgEl('rect', {x: x0, y: 0, width: w, height: totalH, fill: METAL.rail, stroke: METAL.railLine,
@@ -230,10 +240,11 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
       const yBottom = totalH - i * RU;
       posts.append(svgEl('line', {x1: x0, y1: yBottom - RU, x2: x0 + w, y2: yBottom - RU, stroke: METAL.railLine, 'stroke-width': 0.8}));
       const t = svgEl('text', {x: x0 + w / 2, y: yBottom - RU / 2 + 4, 'text-anchor': 'middle',
-        'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 500, fill: METAL.num, 'data-side-num': p.at,
+        'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 500, fill: METAL.num, stroke: METAL.rail, 'stroke-width': 3, 'paint-order': 'stroke',
+        'stroke-linejoin': 'round', 'data-side-num': p.at,
         'data-side-label': 'num', 'data-mid': String(yBottom - RU / 2)});
       t.textContent = String(uLabel(frame, 1 + i));
-      posts.append(t);
+      nums.append(t);
     }
   }
   out.append(posts);
@@ -273,6 +284,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
     near.append(mark);
   }
   out.append(near);
+  out.append(nums);
 
   // The selection ring is drawn, not styled, as on the front pane, and last.
   for (const b of rings) out.append(svgEl('rect', {x: b.x - 3, y: b.y - 1.5, width: b.w + 6, height: b.h + 3, rx: 3, fill: 'none',

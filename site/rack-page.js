@@ -1026,6 +1026,17 @@ function flushDcimDraft() {
   storeDcimDraft();
   S.dcimDraft = null;
 }
+// PROBE ONLY: a redraw held open at a named point. S.probeHold is set only by
+// window.__rack.holdRedraw, which exists only under ?probe=1; without it this
+// is one null test at each point and no await, so a redraw runs exactly as it
+// did. The first redraw to reach the named point waits there until
+// releaseRedraw; later redraws pass (a check holds an edit's redraw and lets
+// the redraw of what it does next run past it). The points:
+//   'routes' - the faces are read and the routes are about to be: the page
+//              still holds the routes and facts of the rack before the edit;
+//   'drawn'  - the routes are set for the rack as it is, and the facts just
+//              read are not stored yet (they are stored when the panes are).
+const probeHeld = at => { const h = S.probeHold; if (!h || h.at !== at || h.taken) return null; h.taken = true; h.reach(); return h.gate; };
 // How many redraws are running: a bundle command waits for one (bundleCommand).
 let rendering = 0;
 // `keepRoutes` (a switch of pair, setView): the rack has not changed, so what
@@ -1094,6 +1105,7 @@ async function redraw(keepRoutes = false) {
     if (kept) { /* the routes are this rack's, as the last redraw read them */ }
     else if (r.cables.length) {
       const at = theDoc();
+      if (S.probeHold) { const held = probeHeld('routes'); if (held) await held; }
       const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
@@ -1137,6 +1149,7 @@ async function redraw(keepRoutes = false) {
       S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
+    if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     const zeroU = zeroUEntries(r, chassisOf);
@@ -2015,6 +2028,11 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     failExport: what => failExport(what),
     // Probe only: make reading the cables' faces fail, to see the page without it.
     failCableFacts: on => { S.probeFactsFail = !!on; },
+    // Probe only: hold the next redraw that reaches `at` ('routes' or 'drawn': probeHeld) until releaseRedraw;
+    // heldRedraw resolves when one is being held there. One hold at a time; releaseRedraw ends it.
+    holdRedraw: at => { const h = {at, taken: false}; h.gate = new Promise(open => { h.open = open; }); h.reached = new Promise(reach => { h.reach = reach; }); S.probeHold = h; },
+    heldRedraw: () => S.probeHold?.reached ?? Promise.resolve(),
+    releaseRedraw: () => { const h = S.probeHold; S.probeHold = null; h?.open(); },
     // Probe only: the 3D scene's own read of the cables' faces fails.
     failSceneFacts: on => { S.probeSceneFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per

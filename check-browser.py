@@ -7684,6 +7684,12 @@ SIDE_BODIES_JS = """async () => {
       return {inside: n.x0 >= v.x && n.x1 <= v.x + v.width && n.y1 <= v.y + v.height,
               bodies: [...svg.querySelectorAll('[data-item-id] [data-side-hit]')].filter(h => over(n, inPane(h))).length,
               cables: [...svg.querySelectorAll('[data-cables] [data-cable] path')].filter(c => over(n, inPane(c))).length}; });
+    // a part beside the far side is fainter than a body; the U numbers are painted over every part, each with a rim
+    p.far = [...svg.querySelectorAll(':scope > [data-zerou-id]')].map(g => [g.dataset.zerouId, +getComputedStyle(g).opacity]);
+    p.bodyOpacity = [...svg.querySelectorAll(':scope > [data-item-id]')].map(g => +getComputedStyle(g).opacity);
+    const kids = [...svg.children], numsAt = kids.findIndex(n => n.dataset.sideNums), last = sel => kids.reduce((m, n, i) => (n.matches(sel) ? i : m), -1);
+    p.numsOver = numsAt > last('[data-side-near]') && numsAt > last('[data-zerou-id], [data-item-id]') && numsAt > last('[data-side-posts]');
+    p.numRim = [...new Set([...svg.querySelectorAll('[data-side-num]')].map(t => `${t.getAttribute('stroke')} ${t.getAttribute('paint-order')}`))];
     p.hatch = (l => (l ? [+l.getAttribute('stroke-width'), +l.closest('pattern').getAttribute('width')] : null))(svg.querySelector('pattern[id^="rk-side-hatch"] line'));
     p.extent = (() => { const r = svg.querySelector('[data-side-extent]'); return r ? [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')] : null; })();
     p.words = Object.fromEntries([...svg.querySelectorAll('[data-side-word]')].map(t => [t.dataset.sideWord, +t.getAttribute('x')]));
@@ -7793,6 +7799,13 @@ def check_rack_side_placement(page, base):
     nl = L["near"]
     if len(nl) != 1 or nl[0]["id"] != "z1" or not (0.1 <= nl[0]["opacity"] <= 0.4) or not nl[0]["hatch"] or not nl[0]["dashed"] or "duct-1" not in (nl[0]["label"] or "") or nl[0]["events"] != "none":
         bad.append(f"left pane: the manager beside the near side is {nl}; expected z1 see-through, hatched, outlined, named, its marks taking no pointer")
+    # THE PART BESIDE THE FAR SIDE is behind everything and fainter than a body, so the two managers of a rack do not read as one solid column
+    if R["far"] != [["z1", 0.3]] or L["far"] or any(o != 1 for o in R["bodyOpacity"] + L["bodyOpacity"]):
+        bad.append(f"the right pane's far part is {R['far']} (the left pane's {L['far']}) and the bodies are at {sorted(set(R['bodyOpacity'] + L['bodyOpacity']))}; expected z1 at 0.3 from the right, none from the left, every body at 1")
+    # THE U NUMBERS are over every part, with a rim of the post's metal: a near part's fingers do not run through them
+    for name, p in (("left", L), ("right", R)):
+        if not p["numsOver"] or p["numRim"] != ["#B9BFC6 stroke"]:
+            bad.append(f"{name} pane: the U numbers are {'over' if p['numsOver'] else 'under'} the parts and posts, with rim {p['numRim']}; expected over them, rimmed in the post's metal")
     # its name is under the rack, inside the pane, over no body and no cable at Fit; the hatch is thin and wide apart
     if L["nameOver"] != [{"inside": True, "bodies": 0, "cables": 0}]:
         bad.append(f"left pane: the near part's name is {L['nameOver']}; expected inside the pane and over no body or cable")
@@ -8235,14 +8248,16 @@ def check_rack_side_exports_same(page, base):
 
 
 # FRESH AFTER AN EDIT (#187). A switch of pair draws from the faces and routes
-# the page already holds, and only when they were read for the rack as it is
+# the page already holds, and only when both were read for the rack as it is
 # (rack-page.js redraw `kept`: S.routes.rack and S.factsRack are this very rack
-# object). The case that tells: an edit, and the switch pressed while that
-# edit's redraw is still reading. Kept without the identity test, the switch
-# drew the rack before the edit and left it so: "the routes are not known yet",
-# old lengths, old cables, until the next edit. Each case here is an edit, the
-# switch a few milliseconds later (and once after everything settled), and then
-# the same document loaded afresh: the two must be drawn and said the same.
+# object). The cases that tell are a switch pressed inside an edit's redraw.
+# They are not left to timing, which a fast machine wins: the redraw is HELD at
+# a named point (the page's probe hook, probeHeld) while the switch is pressed
+# and drawn. Held while the routes are read, a rule without the routes' rack
+# test draws the rack before the edit and leaves it so. Held after the routes
+# are set and before the facts are stored, a rule without the facts' rack test
+# draws this rack's routes with the facts of the rack before. Each case ends
+# with the same document loaded afresh: the two must be drawn and said the same.
 SIDE_FRESH_JS = """() => ({
   current: window.__rack.routesCurrent().current,
   pair: [...document.querySelectorAll('#panes > section > div > svg')].map(s => s.dataset.pane),
@@ -8258,7 +8273,7 @@ SIDE_SETTLED = """() => window.__rack.routesCurrent().current && !document.getEl
   && document.querySelectorAll('#panes > section > div > svg').length === 2 && !document.getElementById('panes').hidden"""
 
 
-@extra("rack.html: a switch of pair pressed while an edit is still being redrawn shows the rack as it now is - after a move, a turn and a cable removed and added, at 5, 40 and 150 ms and once settled, the drawings, the cable list and the routes are those of the same document loaded afresh - and a new cable's picked ends dropped by the switch leave no plug behind (#187)")
+@extra("rack.html: a switch of pair pressed while an edit is still being redrawn shows the rack as it now is - after a move, a turn and a cable removed and added, with the edit's redraw held while its routes are read, held after they are set and before its facts are stored, and once settled, the drawings, the cable list, the facts and the routes are those of the same document loaded afresh - and a new cable's picked ends dropped by the switch leave nothing behind (#187)")
 def check_rack_side_fresh_after_edit(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -8279,12 +8294,17 @@ def check_rack_side_fresh_after_edit(page, base):
         ("a cable removed and added", ["() => window.__rack.apply({op: 'cable.remove', id: 'c3'})",
                                        "() => window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'port-5', view: 'front'}, b: {item: 'i3', path: 'port-5', view: 'front'}, media: 'cat6a'})"]),
     ]
-    tried = 0
+    # WHERE THE SWITCH LANDS IS HELD, NOT TIMED (rack-page.js probeHeld): the edit's redraw is held open at a named point, the
+    # switch is pressed and drawn, and only then is the held redraw let go.
+    #   'routes': the routes are being read. The page holds the routes and the facts of the rack before the edit.
+    #   'drawn':  the routes are set for the rack as it is, and its facts are not stored yet: routes current, facts stale.
+    #   None:     no hold; the switch is pressed once the edit has settled.
     for k, (what, cmds) in enumerate(edits):
-        for n, delay in enumerate((5, 40, 150, None)):
+        for n, hold in enumerate(("routes", "drawn", None)):
             # from one pair to the other, turn about: the edit is made in `start`, and the switch is to `to`
             start, to = (("faces", "sides") if (k + n) % 2 == 0 else ("sides", "faces"))
-            where = f"{what}, the switch to {'Left / Right' if to == 'sides' else 'Front / Rear'} {f'{delay} ms' if delay is not None else 'once settled'} after it"
+            when = {"routes": "while its routes are being read", "drawn": "after its routes are set and before its facts are stored", None: "once it has settled"}[hold]
+            where = f"{what}, the switch to {'Left / Right' if to == 'sides' else 'Front / Rear'} {when}"
             if page.evaluate("() => window.__rack.view()") != start:
                 page.click(f'#view2d [data-view="{start}"]')
             page.evaluate("r => window.__rack.replaceRack(r)", fixture)
@@ -8295,21 +8315,33 @@ def check_rack_side_fresh_after_edit(page, base):
                 if r and r.get("error"):
                     bad.append(f"{where}: refused: {r['error']}")
                 settle(f"{where} (first step)")
-            if delay is None:
+            if hold is None:
                 r = page.evaluate(cmds[-1])
                 settle(f"{where} (the edit)")
                 page.click(f'#view2d [data-view="{to}"]')
+                page.wait_for_function(SIDE_DRAWN if to == "sides" else FACES_DRAWN, timeout=READY_MS)
             else:
-                # the edit and the click in one task of the page, `delay` apart: the edit's redraw is reading while the switch lands
-                r = page.evaluate("""async ([cmd, delay, to]) => { const r = (0, eval)(`(${cmd})`)(); await new Promise(done => setTimeout(done, delay));
-                  const busy = !window.__rack.routesCurrent().current; document.querySelector(`#view2d [data-view="${to}"]`).click(); return {error: r?.error ?? null, busy}; }""", [cmds[-1], delay, to])
-                if delay <= 40 and not r.get("busy"):
-                    print(f"[check_rack_side_fresh_after_edit] {where}: the edit's redraw had already finished, so the switch did not land inside it")
-                else:
-                    tried += 1 if delay <= 40 else 0
+                # the edit, with its redraw held at the point; the page's state there is read, to know the window is the one named
+                r = page.evaluate("""async ([cmd, hold]) => { window.__rack.holdRedraw(hold); const r = (0, eval)(`(${cmd})`)();
+                  const reached = await Promise.race([window.__rack.heldRedraw().then(() => true), new Promise(done => setTimeout(() => done(false), 15000))]);
+                  return {error: r?.error ?? null, reached, current: window.__rack.routesCurrent().current}; }""", [cmds[-1], hold])
+                if not r.get("reached"):
+                    page.evaluate("() => window.__rack.releaseRedraw()")
+                    bad.append(f"{where}: the edit's redraw was never held there, so the case was not tried")
+                    continue
+                # while the routes are read the page's routes are the old rack's; once they are set they are this rack's
+                if r["current"] != (hold == "drawn"):
+                    bad.append(f"{where}: held there, the page's routes are {'this' if r['current'] else 'not this'} rack's; the hold is not at the point it names")
+                page.click(f'#view2d [data-view="{to}"]')
+                # the switch's own redraw runs past the held one and draws the pair asked for
+                try:
+                    page.wait_for_function(SIDE_DRAWN if to == "sides" else FACES_DRAWN, timeout=20000)
+                    page.wait_for_function("() => !document.getElementById('panes').hasAttribute('aria-busy')", timeout=20000)
+                except Exception:
+                    bad.append(f"{where}: with the edit's redraw held, the switch did not draw the pair asked for")
+                page.evaluate("() => window.__rack.releaseRedraw()")
             if r and r.get("error"):
                 bad.append(f"{where}: refused: {r['error']}")
-            page.wait_for_function(SIDE_DRAWN if to == "sides" else FACES_DRAWN, timeout=READY_MS)
             settle(where)
             got = page.evaluate(SIDE_FRESH_JS)
             # the same document, loaded afresh, in the same pair
@@ -8326,8 +8358,9 @@ def check_rack_side_fresh_after_edit(page, base):
                     n_diff = (sum(1 for a, b in zip(sum(got[key], []), sum(want[key], [])) if a != b) if key in ("cables", "bodies") else None)
                     bad.append(f"{where}: {said} differ from the same document loaded afresh"
                                + (f" ({n_diff} drawings)" if n_diff is not None else f" ({str(got[key])[:120]} against {str(want[key])[:120]})"))
-    if tried < 3:
-        bad.append(f"only {tried} of the 6 quick switches landed while the edit's redraw was reading: the case was not tried")
+    # without the probe's hold set, nothing of it is in a redraw's way: the page holds none now
+    if page.evaluate("() => window.__rack.heldRedraw() instanceof Promise && (window.__rack.releaseRedraw(), true)") is not True:
+        bad.append("the probe's hold could not be cleared")
     # ── A NEW CABLE IN HAND, dropped by the switch: the plugs seated for its two picked ends go with it ──
     page.click('#view2d [data-view="faces"]')
     page.evaluate("r => window.__rack.replaceRack(r)", fixture)
