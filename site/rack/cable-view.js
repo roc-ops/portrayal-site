@@ -21,6 +21,7 @@ import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {paneMarks, landedBends} from './route-context.js';
+import {spareText} from './spare.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -158,7 +159,9 @@ export function pillText(text) {
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
 // `routes` is S.routes: its routes (cable id -> waypoints), the ring marks
 // for them (cable id -> one per waypoint, route.js ringMarks) and fill.
-export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
+// `spares` is spare.js sparesOf's Map: a cable in it names its cord and its
+// spare in its title, as its row in the list does.
+export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = null) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
@@ -359,7 +362,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
       rec.g.removeAttribute('data-pt-ui');
     }
     const title = rec.g?.querySelector('title');
-    if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
+    const spare = spares?.get(c.id);
+    if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}${spare ? ` · ${spareText(spare)}` : ''}`;
   }
   // A CORNER SHORT OF ITS CABLE'S BEND RADIUS (kit 0.17.0, Portrayal #973:
   // route.js bendFindings, through route-context.js) is ringed where it is:

@@ -196,6 +196,15 @@
 .rk-side .rk-cables [data-cable-row]:focus-visible, .rk-side .rk-cables [data-bundle-row]:focus-visible {
   outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 .rk-side .rk-cables .rk-warn { margin: 0; }
+/* What a hovered cable is, beside the pointer on either stage (rack-page.js
+   paintTip). It takes no pointer, so it never ends the hover it describes. */
+.rk-cable-tip { position: fixed; z-index: 18; max-width: 22rem; padding: 0.3rem 0.5rem; pointer-events: none;
+  display: grid; gap: 0.1rem; font: 0.8rem/1.3 var(--pt-font-body); color: var(--pt-ink);
+  background: var(--pt-surface, var(--pt-ground)); border: 1px solid var(--pt-line); border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.rk-cable-tip[hidden] { display: none; }
+.rk-cable-tip span + span { color: var(--pt-ink-muted); }
+.rk-cable-tip span[data-tip-short] { color: var(--pt-warn); }
 .rk-side .rk-cables li.rk-bundled { padding-left: 0.9rem; border-left: 2px solid var(--pt-line); }
 .rk-side .rk-cables [data-bundle-row] { text-align: left; font-weight: 600; }
 .rk-side .rk-bundle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
