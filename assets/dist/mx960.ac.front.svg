@@ -1,0 +1,1864 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.1mm" height="704.9mm" viewBox="0 0 441.1 704.9" data-device="mx960" data-view="front" data-weight-max-kg="169.64" data-power-typical-w="6520" data-power-envelope="unstated" data-power-typical-scope="AC typical power draw from the MX Series family datasheet, which names no configuration, ambient or side; DC 6670 W" data-base-system-w="50" data-cooling-system-w="640 W high-capacity at full speed (450 W typical at normal speed); normal-capacity 600 W (400 W typical) - Table 95" data-max-thermal-output="AC 27,007 BTU/h (7920 W); DC 18,987 BTU/h (5568 W) (Table 84; provisioning ceiling)">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/mx960-craft@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx960-craft@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/mx960-craft@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx960-craft@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/mx960-craft@'] .state-yellow { --led-color: #f5a623; }
+</style>
+  <metadata>{"device":"Juniper MX960","device-version":"5.0.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/rj45-eth@1":"1.2.0","juniper/dpc-r-4xge-xfp@3":"3.0.0","juniper/dpce-r-40ge-sfp@2":"2.1.0","juniper/mx960-blank@1":"1.1.0","juniper/mx960-craft@2":"2.0.0","juniper/re-s-1300@2":"2.0.0","juniper/scb-mx@3":"3.0.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.1","std/usb-a@1":"1.3.0","std/xfp@1":"1.0.0"},"source-sha256":"e1d027c8ec84333ab12f1762068c1182b8a30e772de600a61c234a6e39e53340","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX960" x="0" y="0" width="441.1" height="704.9" rx="1.2" fill="#3a3e43" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-holes" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="441.1" height="8" rx="0.6" fill="#33373c" />
+    <rect id="plate-1" data-kind="plate" x="0" y="56" width="441.1" height="89" rx="0.6" fill="#2b2f33" />
+    <rect id="plate-2" data-kind="plate" x="0" y="563" width="441.1" height="35" rx="0.6" fill="#2b2f33" />
+    <rect id="holes-field-0" data-kind="holes-field" x="12" y="606" width="417.1" height="92" rx="0.6" fill="url(#portrayal-holes)" />
+  </g>
+  <g id="craft" data-path="craft" data-class="bay" data-group="craft" data-group-role="management" data-rel-pos="0" data-for="chassis">
+    <title>craft</title>
+    <rect id="craft--opening" x="0.05" y="8" width="441" height="48" fill="#101214" />
+    <g id="craft--module" data-path="craft/module" data-class="display" data-behaviour="fills" data-ref="juniper/mx960-craft@2:2.0.0" data-model="MX960 Craft Interface" data-power-absent="not-published" data-states="absent" transform="translate(220.55,32) translate(-220.5,-24)">
+      <title>craft--module</title>
+      <rect id="craft--module--face" x="0" y="0" width="441.0" height="48.0" rx="0.8" fill="#33373c" stroke="#26292d" stroke-width="0.5" />
+      <rect x="0" y="24.5" width="441.0" height="1.2" fill="#7bc7e0" />
+      <g id="craft--module--silkscreen">
+        <g id="craft--module--t57-silkscreen">
+          <text x="14.0" y="9.0" font-family="Arial" font-size="4.6" fill="#f0f1f2" text-anchor="start">JUNIPER</text>
+        </g>
+        <g id="craft--module--t58-silkscreen">
+          <text x="52.0" y="9.0" font-family="Arial" font-size="4.0" fill="#c7ccd1" text-anchor="start">MX960</text>
+        </g>
+        <g id="craft--module--t59-silkscreen">
+          <text x="100.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">PEM</text>
+        </g>
+        <g id="craft--module--t60-silkscreen">
+          <text x="113.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">0  1  2  3</text>
+        </g>
+        <g id="craft--module--t61-silkscreen">
+          <text x="146.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">FAN</text>
+        </g>
+        <g id="craft--module--t62-silkscreen">
+          <text x="196.0" y="5.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">MASTER</text>
+        </g>
+        <g id="craft--module--t63-silkscreen">
+          <text x="196.0" y="9.5" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">ONLINE</text>
+        </g>
+        <g id="craft--module--t64-silkscreen">
+          <text x="196.0" y="14.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">OFFLINE</text>
+        </g>
+        <g id="craft--module--t65-silkscreen">
+          <text x="186.0" y="19.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">RE 0</text>
+        </g>
+        <g id="craft--module--t66-silkscreen">
+          <text x="212.0" y="19.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">RE 1</text>
+        </g>
+        <g id="craft--module--t67-silkscreen">
+          <text x="305.0" y="12.5" font-family="Arial" font-size="1.3" fill="#26292d" text-anchor="middle">ACO/LT</text>
+        </g>
+        <g id="craft--module--t68-silkscreen">
+          <text x="345.0" y="4.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">YELLOW ALARM</text>
+        </g>
+        <g id="craft--module--t69-silkscreen">
+          <text x="385.0" y="4.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">RED ALARM</text>
+        </g>
+        <g id="craft--module--t70-silkscreen">
+          <text x="345.0" y="16.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">NC  C  NO</text>
+        </g>
+        <g id="craft--module--t71-silkscreen">
+          <text x="385.0" y="16.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">NC  C  NO</text>
+        </g>
+        <g id="craft--module--t72-silkscreen">
+          <text x="428.0" y="9.0" font-family="Arial" font-size="1.2" fill="#c7ccd1" text-anchor="middle">RUNNING</text>
+        </g>
+        <g id="craft--module--t73-silkscreen">
+          <text x="428.0" y="12.0" font-family="Arial" font-size="1.2" fill="#c7ccd1" text-anchor="middle">JUNOS</text>
+        </g>
+      </g>
+      <g id="craft--module--pem-lamps">
+        <circle id="craft--module--led-pem-0" cx="108.5" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-pem-0" data-class="led" data-states="green red off" />
+        <circle id="craft--module--led-pem-1" cx="111.9" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-pem-1" data-class="led" data-states="green red off" />
+        <circle id="craft--module--led-pem-2" cx="115.3" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-pem-2" data-class="led" data-states="green red off" />
+        <circle id="craft--module--led-pem-3" cx="118.7" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-pem-3" data-class="led" data-states="green red off" />
+        <circle id="craft--module--led-fan" cx="146.0" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fan" data-class="led" data-states="green red off" />
+      </g>
+      <g id="craft--module--re-lamps">
+        <circle id="craft--module--led-re0-0" cx="186.0" cy="4.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re0-0" data-class="led" data-states="green off" />
+        <circle id="craft--module--led-re0-1" cx="186.0" cy="9.1" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re0-1" data-class="led" data-states="green off" />
+        <circle id="craft--module--led-re0-2" cx="186.0" cy="13.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re0-2" data-class="led" data-states="red off" />
+        <circle id="craft--module--led-re1-0" cx="212.0" cy="4.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re1-0" data-class="led" data-states="green off" />
+        <circle id="craft--module--led-re1-1" cx="212.0" cy="9.1" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re1-1" data-class="led" data-states="green off" />
+        <circle id="craft--module--led-re1-2" cx="212.0" cy="13.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-re1-2" data-class="led" data-states="red off" />
+      </g>
+      <g id="craft--module--alarm">
+        <path id="craft--module--led-yellow-alarm" d="M 262.0 6.0 l 4.4 7.8 l -8.8 0 Z" fill="var(--led-color, #f2c93c)" stroke="#8f7714" stroke-width="0.4" data-path="craft/module/led-yellow-alarm" data-class="led" data-states="yellow off" />
+        <circle id="craft--module--led-red-alarm" cx="283.0" cy="10.0" r="4.2" fill="var(--led-color, #c94f4f)" stroke="#8f2f2f" stroke-width="0.4" data-path="craft/module/led-red-alarm" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-aco" cx="305.0" cy="8.0" r="3.4" fill="#d7dadd" stroke="#8a8f95" stroke-width="0.4" />
+        <rect x="332.0" y="6.5" width="26.0" height="7.0" rx="0.8" fill="#3f7a3f" stroke="#2a522a" stroke-width="0.4" />
+        <rect x="372.0" y="6.5" width="26.0" height="7.0" rx="0.8" fill="#3f7a3f" stroke="#2a522a" stroke-width="0.4" />
+      </g>
+      <g id="craft--module--slots">
+        <circle id="craft--module--led-ok-0" cx="11.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-0" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-0" cx="21.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-0" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-0" cx="16.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t1-silkscreen">
+          <text x="16.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">0</text>
+        </g>
+        <g id="craft--module--t2-silkscreen">
+          <text x="11.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t3-silkscreen">
+          <text x="21.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t4-silkscreen">
+          <text x="16.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-1" cx="43.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-1" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-1" cx="53.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-1" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-1" cx="48.05" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t5-silkscreen">
+          <text x="48.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">1</text>
+        </g>
+        <g id="craft--module--t6-silkscreen">
+          <text x="43.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t7-silkscreen">
+          <text x="53.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t8-silkscreen">
+          <text x="48.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-2" cx="74.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-2" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-2" cx="84.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-2" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-2" cx="79.45" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t9-silkscreen">
+          <text x="79.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">2</text>
+        </g>
+        <g id="craft--module--t10-silkscreen">
+          <text x="74.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t11-silkscreen">
+          <text x="84.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t12-silkscreen">
+          <text x="79.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-3" cx="105.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-3" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-3" cx="115.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-3" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-3" cx="110.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t13-silkscreen">
+          <text x="110.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">3</text>
+        </g>
+        <g id="craft--module--t14-silkscreen">
+          <text x="105.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t15-silkscreen">
+          <text x="115.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t16-silkscreen">
+          <text x="110.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-4" cx="137.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-4" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-4" cx="147.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-4" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-4" cx="142.25" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t17-silkscreen">
+          <text x="142.25" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">4</text>
+        </g>
+        <g id="craft--module--t18-silkscreen">
+          <text x="137.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t19-silkscreen">
+          <text x="147.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t20-silkscreen">
+          <text x="142.25" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-5" cx="168.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-5" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-5" cx="178.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-5" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-5" cx="173.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t21-silkscreen">
+          <text x="173.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">5</text>
+        </g>
+        <g id="craft--module--t22-silkscreen">
+          <text x="168.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t23-silkscreen">
+          <text x="178.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t24-silkscreen">
+          <text x="173.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-6" cx="200.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-6" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-6" cx="210.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-6" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-6" cx="205.05" cy="38.5" r="2.6" fill="#7bc7e0" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t25-silkscreen">
+          <text x="205.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">0</text>
+        </g>
+        <g id="craft--module--t26-silkscreen">
+          <text x="200.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t27-silkscreen">
+          <text x="210.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t28-silkscreen">
+          <text x="205.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-7" cx="231.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-7" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-7" cx="241.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-7" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-7" cx="236.45" cy="38.5" r="2.6" fill="#7bc7e0" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t29-silkscreen">
+          <text x="236.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">1</text>
+        </g>
+        <g id="craft--module--t30-silkscreen">
+          <text x="231.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t31-silkscreen">
+          <text x="241.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t32-silkscreen">
+          <text x="236.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-8" cx="262.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-8" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-8" cx="272.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-8" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-8" cx="267.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t33-silkscreen">
+          <text x="267.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">6</text>
+        </g>
+        <g id="craft--module--t34-silkscreen">
+          <text x="262.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t35-silkscreen">
+          <text x="272.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t36-silkscreen">
+          <text x="267.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-9" cx="294.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-9" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-9" cx="304.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-9" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-9" cx="299.25" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t37-silkscreen">
+          <text x="299.25" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">7</text>
+        </g>
+        <g id="craft--module--t38-silkscreen">
+          <text x="294.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t39-silkscreen">
+          <text x="304.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t40-silkscreen">
+          <text x="299.25" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-10" cx="325.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-10" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-10" cx="335.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-10" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-10" cx="330.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t41-silkscreen">
+          <text x="330.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">8</text>
+        </g>
+        <g id="craft--module--t42-silkscreen">
+          <text x="325.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t43-silkscreen">
+          <text x="335.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t44-silkscreen">
+          <text x="330.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-11" cx="357.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-11" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-11" cx="367.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-11" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-11" cx="362.05" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t45-silkscreen">
+          <text x="362.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">9</text>
+        </g>
+        <g id="craft--module--t46-silkscreen">
+          <text x="357.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t47-silkscreen">
+          <text x="367.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t48-silkscreen">
+          <text x="362.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-12" cx="388.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-12" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-12" cx="398.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-12" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-12" cx="393.45" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t49-silkscreen">
+          <text x="393.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">10</text>
+        </g>
+        <g id="craft--module--t50-silkscreen">
+          <text x="388.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t51-silkscreen">
+          <text x="398.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t52-silkscreen">
+          <text x="393.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+        <circle id="craft--module--led-ok-13" cx="419.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-ok-13" data-class="led" data-states="green blinking off" />
+        <circle id="craft--module--led-fail-13" cx="429.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="craft/module/led-fail-13" data-class="led" data-states="red off" />
+        <circle id="craft--module--btn-13" cx="424.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+        <g id="craft--module--t53-silkscreen">
+          <text x="424.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">11</text>
+        </g>
+        <g id="craft--module--t54-silkscreen">
+          <text x="419.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+        </g>
+        <g id="craft--module--t55-silkscreen">
+          <text x="429.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+        </g>
+        <g id="craft--module--t56-silkscreen">
+          <text x="424.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="fpc0" data-path="fpc0" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="0">
+    <title>fpc0</title>
+    <rect id="fpc0--opening" x="4.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc0--module" data-path="fpc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(19.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc0--module</title>
+      <rect id="fpc0--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc0--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc0--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc1" data-path="fpc1" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="1">
+    <title>fpc1</title>
+    <rect id="fpc1--opening" x="35.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc1--module" data-path="fpc1/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-r-40ge-sfp@2:2.1.0" data-lifecycle-note="EOL per PSN-TSB16810; modelled because it is the card the reference photograph carries" data-model="DPCE-R-40GE-SFP" data-power-draw-max-w="335" data-sfp="40" data-states="ok fail absent" transform="translate(50.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc1--module</title>
+      <rect id="fpc1--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc1--module--lever-left" data-path="fpc1/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <circle id="fpc1--module--led-ok-fail" cx="32.3" cy="21.4" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+      <g id="fpc1--module--lever-right" data-path="fpc1/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc1--module--indicator-panels">
+        <rect x="46.21" y="3.4" width="12.5" height="22.5" rx="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <rect x="219.81" y="3.4" width="12.5" height="22.5" rx="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="23.449999999999996" r="0.8" fill="#33373c" />
+      </g>
+      <g id="fpc1--module--silkscreen">
+        <g id="fpc1--module--v53-silkscreen">
+          <text x="32.3" y="15.8" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(270 32.3 15.8)">OK/FAIL</text>
+        </g>
+        <g id="fpc1--module--t54-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">DPC 40xGE</text>
+        </g>
+      </g>
+      <g id="fpc1--module--port-0-0" data-path="fpc1/module/port-0-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(59.55,4.5)">
+        <title>fpc1--module--port-0-0</title>
+        <rect id="fpc1--module--port-0-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-0/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-2" data-path="fpc1/module/port-0-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(73.84,4.5)">
+        <title>fpc1--module--port-0-2</title>
+        <rect id="fpc1--module--port-0-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-2/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-4" data-path="fpc1/module/port-0-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(88.13,4.5)">
+        <title>fpc1--module--port-0-4</title>
+        <rect id="fpc1--module--port-0-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-4/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-6" data-path="fpc1/module/port-0-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(102.42,4.5)">
+        <title>fpc1--module--port-0-6</title>
+        <rect id="fpc1--module--port-0-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-6/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-8" data-path="fpc1/module/port-0-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(116.71,4.5)">
+        <title>fpc1--module--port-0-8</title>
+        <rect id="fpc1--module--port-0-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-8/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-1" data-path="fpc1/module/port-0-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(59.55,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-0-1</title>
+        <rect id="fpc1--module--port-0-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-1/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-3" data-path="fpc1/module/port-0-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(73.84,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-0-3</title>
+        <rect id="fpc1--module--port-0-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-3/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-5" data-path="fpc1/module/port-0-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(88.13,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-0-5</title>
+        <rect id="fpc1--module--port-0-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-5/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-7" data-path="fpc1/module/port-0-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(102.42,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-0-7</title>
+        <rect id="fpc1--module--port-0-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-7/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-0-9" data-path="fpc1/module/port-0-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(116.71,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-0-9</title>
+        <rect id="fpc1--module--port-0-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-0-9/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-0-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-0-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-0-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-0" data-path="fpc1/module/port-1-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(134.16,4.5)">
+        <title>fpc1--module--port-1-0</title>
+        <rect id="fpc1--module--port-1-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-0/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-2" data-path="fpc1/module/port-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(148.46,4.5)">
+        <title>fpc1--module--port-1-2</title>
+        <rect id="fpc1--module--port-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-2/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-4" data-path="fpc1/module/port-1-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(162.75,4.5)">
+        <title>fpc1--module--port-1-4</title>
+        <rect id="fpc1--module--port-1-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-4/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-6" data-path="fpc1/module/port-1-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(177.04,4.5)">
+        <title>fpc1--module--port-1-6</title>
+        <rect id="fpc1--module--port-1-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-6/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-8" data-path="fpc1/module/port-1-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(191.33,4.5)">
+        <title>fpc1--module--port-1-8</title>
+        <rect id="fpc1--module--port-1-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-8/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-1" data-path="fpc1/module/port-1-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(134.16,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-1-1</title>
+        <rect id="fpc1--module--port-1-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-1/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-3" data-path="fpc1/module/port-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(148.46,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-1-3</title>
+        <rect id="fpc1--module--port-1-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-3/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-5" data-path="fpc1/module/port-1-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(162.75,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-1-5</title>
+        <rect id="fpc1--module--port-1-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-5/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-7" data-path="fpc1/module/port-1-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(177.04,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-1-7</title>
+        <rect id="fpc1--module--port-1-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-7/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-1-9" data-path="fpc1/module/port-1-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(191.33,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-1-9</title>
+        <rect id="fpc1--module--port-1-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-1-9/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-1-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-1-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-1-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-0" data-path="fpc1/module/port-2-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(232.85,4.5)">
+        <title>fpc1--module--port-2-0</title>
+        <rect id="fpc1--module--port-2-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-0/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-2" data-path="fpc1/module/port-2-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(247.14,4.5)">
+        <title>fpc1--module--port-2-2</title>
+        <rect id="fpc1--module--port-2-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-2/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-4" data-path="fpc1/module/port-2-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(261.43,4.5)">
+        <title>fpc1--module--port-2-4</title>
+        <rect id="fpc1--module--port-2-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-4/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-6" data-path="fpc1/module/port-2-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(275.73,4.5)">
+        <title>fpc1--module--port-2-6</title>
+        <rect id="fpc1--module--port-2-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-6/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-8" data-path="fpc1/module/port-2-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(290.02,4.5)">
+        <title>fpc1--module--port-2-8</title>
+        <rect id="fpc1--module--port-2-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-8/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-1" data-path="fpc1/module/port-2-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(232.85,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-2-1</title>
+        <rect id="fpc1--module--port-2-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-1/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-3" data-path="fpc1/module/port-2-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(247.14,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-2-3</title>
+        <rect id="fpc1--module--port-2-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-3/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-5" data-path="fpc1/module/port-2-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(261.43,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-2-5</title>
+        <rect id="fpc1--module--port-2-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-5/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-7" data-path="fpc1/module/port-2-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(275.73,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-2-7</title>
+        <rect id="fpc1--module--port-2-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-7/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-2-9" data-path="fpc1/module/port-2-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(290.02,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-2-9</title>
+        <rect id="fpc1--module--port-2-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-2-9/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-2-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-2-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-2-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-0" data-path="fpc1/module/port-3-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(307.17,4.5)">
+        <title>fpc1--module--port-3-0</title>
+        <rect id="fpc1--module--port-3-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-0/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-2" data-path="fpc1/module/port-3-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(321.46,4.5)">
+        <title>fpc1--module--port-3-2</title>
+        <rect id="fpc1--module--port-3-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-2/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-4" data-path="fpc1/module/port-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(335.75,4.5)">
+        <title>fpc1--module--port-3-4</title>
+        <rect id="fpc1--module--port-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-4/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-6" data-path="fpc1/module/port-3-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(350.04,4.5)">
+        <title>fpc1--module--port-3-6</title>
+        <rect id="fpc1--module--port-3-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-6/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-8" data-path="fpc1/module/port-3-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(364.33,4.5)">
+        <title>fpc1--module--port-3-8</title>
+        <rect id="fpc1--module--port-3-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-8/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-1" data-path="fpc1/module/port-3-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(307.17,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-3-1</title>
+        <rect id="fpc1--module--port-3-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-1/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-3" data-path="fpc1/module/port-3-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(321.46,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-3-3</title>
+        <rect id="fpc1--module--port-3-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-3/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-5" data-path="fpc1/module/port-3-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(335.75,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-3-5</title>
+        <rect id="fpc1--module--port-3-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-5/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-7" data-path="fpc1/module/port-3-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(350.04,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-3-7</title>
+        <rect id="fpc1--module--port-3-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-7/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc1--module--port-3-9" data-path="fpc1/module/port-3-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(364.33,16.5) rotate(180 7.125 5.2)">
+        <title>fpc1--module--port-3-9</title>
+        <rect id="fpc1--module--port-3-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc1/module/port-3-9/opening" data-class="cutout" />
+        <rect id="fpc1--module--port-3-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc1--module--port-3-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc1--module--port-3-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc2" data-path="fpc2" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="2">
+    <title>fpc2</title>
+    <rect id="fpc2--opening" x="66.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc2--module" data-path="fpc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(81.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc2--module</title>
+      <rect id="fpc2--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc2--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc2--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc3" data-path="fpc3" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="3">
+    <title>fpc3</title>
+    <rect id="fpc3--opening" x="97.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc3--module" data-path="fpc3/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-r-40ge-sfp@2:2.1.0" data-lifecycle-note="EOL per PSN-TSB16810; modelled because it is the card the reference photograph carries" data-model="DPCE-R-40GE-SFP" data-power-draw-max-w="335" data-sfp="40" data-states="ok fail absent" transform="translate(112.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc3--module</title>
+      <rect id="fpc3--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc3--module--lever-left" data-path="fpc3/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <circle id="fpc3--module--led-ok-fail" cx="32.3" cy="21.4" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+      <g id="fpc3--module--lever-right" data-path="fpc3/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc3--module--indicator-panels">
+        <rect x="46.21" y="3.4" width="12.5" height="22.5" rx="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="50.92" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="53.03" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="55.13" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="57.24" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="59.35" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <rect x="219.81" y="3.4" width="12.5" height="22.5" rx="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="5.6" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="8.149999999999999" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="10.7" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="13.25" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="15.799999999999999" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="18.35" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="20.9" r="0.8" fill="#33373c" />
+        <circle cx="225.43" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="227.54" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="229.64" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="231.75" cy="23.449999999999996" r="0.8" fill="#33373c" />
+        <circle cx="233.85" cy="23.449999999999996" r="0.8" fill="#33373c" />
+      </g>
+      <g id="fpc3--module--silkscreen">
+        <g id="fpc3--module--v53-silkscreen">
+          <text x="32.3" y="15.8" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(270 32.3 15.8)">OK/FAIL</text>
+        </g>
+        <g id="fpc3--module--t54-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">DPC 40xGE</text>
+        </g>
+      </g>
+      <g id="fpc3--module--port-0-0" data-path="fpc3/module/port-0-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(59.55,4.5)">
+        <title>fpc3--module--port-0-0</title>
+        <rect id="fpc3--module--port-0-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-0/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-2" data-path="fpc3/module/port-0-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(73.84,4.5)">
+        <title>fpc3--module--port-0-2</title>
+        <rect id="fpc3--module--port-0-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-2/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-4" data-path="fpc3/module/port-0-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(88.13,4.5)">
+        <title>fpc3--module--port-0-4</title>
+        <rect id="fpc3--module--port-0-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-4/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-6" data-path="fpc3/module/port-0-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(102.42,4.5)">
+        <title>fpc3--module--port-0-6</title>
+        <rect id="fpc3--module--port-0-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-6/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-8" data-path="fpc3/module/port-0-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(116.71,4.5)">
+        <title>fpc3--module--port-0-8</title>
+        <rect id="fpc3--module--port-0-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-8/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-1" data-path="fpc3/module/port-0-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(59.55,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-0-1</title>
+        <rect id="fpc3--module--port-0-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-1/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-3" data-path="fpc3/module/port-0-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(73.84,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-0-3</title>
+        <rect id="fpc3--module--port-0-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-3/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-5" data-path="fpc3/module/port-0-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(88.13,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-0-5</title>
+        <rect id="fpc3--module--port-0-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-5/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-7" data-path="fpc3/module/port-0-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(102.42,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-0-7</title>
+        <rect id="fpc3--module--port-0-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-7/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-0-9" data-path="fpc3/module/port-0-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(116.71,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-0-9</title>
+        <rect id="fpc3--module--port-0-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-0-9/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-0-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-0-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-0-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-0" data-path="fpc3/module/port-1-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(134.16,4.5)">
+        <title>fpc3--module--port-1-0</title>
+        <rect id="fpc3--module--port-1-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-0/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-2" data-path="fpc3/module/port-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(148.46,4.5)">
+        <title>fpc3--module--port-1-2</title>
+        <rect id="fpc3--module--port-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-2/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-4" data-path="fpc3/module/port-1-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(162.75,4.5)">
+        <title>fpc3--module--port-1-4</title>
+        <rect id="fpc3--module--port-1-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-4/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-6" data-path="fpc3/module/port-1-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(177.04,4.5)">
+        <title>fpc3--module--port-1-6</title>
+        <rect id="fpc3--module--port-1-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-6/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-8" data-path="fpc3/module/port-1-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(191.33,4.5)">
+        <title>fpc3--module--port-1-8</title>
+        <rect id="fpc3--module--port-1-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-8/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-1" data-path="fpc3/module/port-1-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(134.16,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-1-1</title>
+        <rect id="fpc3--module--port-1-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-1/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-3" data-path="fpc3/module/port-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(148.46,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-1-3</title>
+        <rect id="fpc3--module--port-1-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-3/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-5" data-path="fpc3/module/port-1-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(162.75,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-1-5</title>
+        <rect id="fpc3--module--port-1-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-5/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-7" data-path="fpc3/module/port-1-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(177.04,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-1-7</title>
+        <rect id="fpc3--module--port-1-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-7/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-1-9" data-path="fpc3/module/port-1-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(191.33,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-1-9</title>
+        <rect id="fpc3--module--port-1-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-1-9/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-1-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-1-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-1-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-0" data-path="fpc3/module/port-2-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(232.85,4.5)">
+        <title>fpc3--module--port-2-0</title>
+        <rect id="fpc3--module--port-2-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-0/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-2" data-path="fpc3/module/port-2-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(247.14,4.5)">
+        <title>fpc3--module--port-2-2</title>
+        <rect id="fpc3--module--port-2-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-2/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-4" data-path="fpc3/module/port-2-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(261.43,4.5)">
+        <title>fpc3--module--port-2-4</title>
+        <rect id="fpc3--module--port-2-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-4/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-6" data-path="fpc3/module/port-2-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(275.73,4.5)">
+        <title>fpc3--module--port-2-6</title>
+        <rect id="fpc3--module--port-2-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-6/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-8" data-path="fpc3/module/port-2-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(290.02,4.5)">
+        <title>fpc3--module--port-2-8</title>
+        <rect id="fpc3--module--port-2-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-8/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-1" data-path="fpc3/module/port-2-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(232.85,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-2-1</title>
+        <rect id="fpc3--module--port-2-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-1/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-3" data-path="fpc3/module/port-2-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(247.14,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-2-3</title>
+        <rect id="fpc3--module--port-2-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-3/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-5" data-path="fpc3/module/port-2-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(261.43,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-2-5</title>
+        <rect id="fpc3--module--port-2-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-5/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-7" data-path="fpc3/module/port-2-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(275.73,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-2-7</title>
+        <rect id="fpc3--module--port-2-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-7/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-2-9" data-path="fpc3/module/port-2-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(290.02,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-2-9</title>
+        <rect id="fpc3--module--port-2-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-2-9/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-2-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-2-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-2-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-0" data-path="fpc3/module/port-3-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(307.17,4.5)">
+        <title>fpc3--module--port-3-0</title>
+        <rect id="fpc3--module--port-3-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-0/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-2" data-path="fpc3/module/port-3-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(321.46,4.5)">
+        <title>fpc3--module--port-3-2</title>
+        <rect id="fpc3--module--port-3-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-2/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-4" data-path="fpc3/module/port-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(335.75,4.5)">
+        <title>fpc3--module--port-3-4</title>
+        <rect id="fpc3--module--port-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-4/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-6" data-path="fpc3/module/port-3-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(350.04,4.5)">
+        <title>fpc3--module--port-3-6</title>
+        <rect id="fpc3--module--port-3-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-6/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-8" data-path="fpc3/module/port-3-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(364.33,4.5)">
+        <title>fpc3--module--port-3-8</title>
+        <rect id="fpc3--module--port-3-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-8/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-1" data-path="fpc3/module/port-3-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(307.17,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-3-1</title>
+        <rect id="fpc3--module--port-3-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-1/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-3" data-path="fpc3/module/port-3-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(321.46,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-3-3</title>
+        <rect id="fpc3--module--port-3-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-3/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-5" data-path="fpc3/module/port-3-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(335.75,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-3-5</title>
+        <rect id="fpc3--module--port-3-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-5/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-7" data-path="fpc3/module/port-3-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(350.04,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-3-7</title>
+        <rect id="fpc3--module--port-3-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-7/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+      <g id="fpc3--module--port-3-9" data-path="fpc3/module/port-3-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(364.33,16.5) rotate(180 7.125 5.2)">
+        <title>fpc3--module--port-3-9</title>
+        <rect id="fpc3--module--port-3-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="fpc3/module/port-3-9/opening" data-class="cutout" />
+        <rect id="fpc3--module--port-3-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+        <rect id="fpc3--module--port-3-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc3--module--port-3-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc4" data-path="fpc4" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="4">
+    <title>fpc4</title>
+    <rect id="fpc4--opening" x="128.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc4--module" data-path="fpc4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(143.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc4--module</title>
+      <rect id="fpc4--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc4--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc4--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc5" data-path="fpc5" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="5">
+    <title>fpc5</title>
+    <rect id="fpc5--opening" x="159.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc5--module" data-path="fpc5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(174.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc5--module</title>
+      <rect id="fpc5--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc5--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc5--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="scb0" data-path="scb0" data-class="bay" data-group="scbs" data-group-role="service" data-rel-pos="0">
+    <title>scb0</title>
+    <rect id="scb0--opening" x="190.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="scb0--module" data-path="scb0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/scb-mx@3:3.0.0" data-model="SCB-MX" data-power-draw-max-w="185" data-power-draw-typical-w="155" data-states="ok fail absent" transform="translate(205.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>scb0--module</title>
+      <rect id="scb0--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="scb0--module--re" data-path="scb0/module/re" data-class="bay">
+        <rect id="scb0--module--re--opening" x="91.44" y="1.0" width="271.9" height="27.5" fill="#bfc3c7" />
+        <g id="scb0--module--re--module" data-path="scb0/module/re/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/re-s-1300@2:2.0.0" data-cpu="1.3 GHz" data-lifecycle-note="EOL per TSB16556; modelled because it is the RE the reference photograph carries" data-memory="2 GB" data-model="RE-S-1300-2048" data-power-draw-max-w="90" data-states="ok fail absent" transform="translate(91.44,1.0)">
+          <title>scb0--module--re--module</title>
+          <rect id="scb0--module--re--module--face" x="0" y="0" width="271.9" height="27.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+          <g id="scb0--module--re--module--latch" data-path="scb0/module/re/module/latch" data-class="latch">
+            <rect x="1.0" y="6.0" width="5.0" height="16.0" rx="1.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+          </g>
+          <g id="scb0--module--re--module--captive-screw-right">
+            <circle cx="266.4" cy="10.5" r="3.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+            <path d="M 264.9 10.5 L 267.9 10.5 M 266.4 9.0 L 266.4 12.0" stroke="#3a3e43" stroke-width="0.5" />
+          </g>
+          <g id="scb0--module--re--module--lamps">
+            <circle id="scb0--module--re--module--led-hdd" cx="42.7" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb0--module--re--module--led-master" cx="47.6" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb0--module--re--module--led-ok-fail" cx="42.7" cy="16.4" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb0--module--re--module--led-online" cx="47.6" cy="16.4" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb0--module--re--module--btn-online" cx="87.4" cy="14.6" r="1.9" fill="#26292d" stroke="#565b60" stroke-width="0.35" />
+            <circle id="scb0--module--re--module--btn-reset" cx="97.0" cy="16.2" r="1.1" fill="#17191c" />
+          </g>
+          <g id="scb0--module--re--module--silkscreen">
+            <g id="scb0--module--re--module--t41-silkscreen">
+              <text x="12.0" y="8.6" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">RE-S-1300</text>
+            </g>
+            <g id="scb0--module--re--module--t42-silkscreen">
+              <text x="40.7" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">HDD</text>
+            </g>
+            <g id="scb0--module--re--module--t43-silkscreen">
+              <text x="49.6" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">MASTER</text>
+            </g>
+            <g id="scb0--module--re--module--t44-silkscreen">
+              <text x="40.7" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">OK/FAIL</text>
+            </g>
+            <g id="scb0--module--re--module--t45-silkscreen">
+              <text x="49.6" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">ONLINE</text>
+            </g>
+            <g id="scb0--module--re--module--t46-silkscreen">
+              <text x="87.4" y="9.6" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">ONLINE/</text>
+            </g>
+            <g id="scb0--module--re--module--t47-silkscreen">
+              <text x="87.4" y="11.3" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+            </g>
+            <g id="scb0--module--re--module--t48-silkscreen">
+              <text x="100.5" y="16.8" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="start">RESET</text>
+            </g>
+            <g id="scb0--module--re--module--t49-silkscreen">
+              <text x="170.0" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">USB</text>
+            </g>
+            <g id="scb0--module--re--module--t50-silkscreen">
+              <text x="187.9" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">AUX</text>
+            </g>
+            <g id="scb0--module--re--module--t51-silkscreen">
+              <text x="205.3" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
+            </g>
+            <g id="scb0--module--re--module--t52-silkscreen">
+              <text x="222.8" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">ETHERNET</text>
+            </g>
+          </g>
+          <g id="scb0--module--re--module--usb" data-path="scb0/module/re/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(164.0,11.5) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+            <title>scb0--module--re--module--usb</title>
+            <rect id="scb0--module--re--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="scb0/module/re/module/usb/opening" data-class="cutout" />
+            <rect id="scb0--module--re--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+          </g>
+          <g id="scb0--module--re--module--aux" data-path="scb0/module/re/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary console" data-media="rj45-serial" transform="translate(180,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb0--module--re--module--aux</title>
+            <path id="scb0--module--re--module--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb0--module--re--module--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb0--module--re--module--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb0/module/re/module/aux/opening" data-class="cutout" />
+            <g id="scb0--module--re--module--aux--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="scb0--module--re--module--console" data-path="scb0/module/re/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(197.4,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb0--module--re--module--console</title>
+            <path id="scb0--module--re--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb0--module--re--module--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb0--module--re--module--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb0/module/re/module/console/opening" data-class="cutout" />
+            <g id="scb0--module--re--module--console--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="scb0--module--re--module--ethernet" data-path="scb0/module/re/module/ethernet" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="fxp0 out-of-band management" data-media="rj45" transform="translate(214.9,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb0--module--re--module--ethernet</title>
+            <g id="scb0--module--re--module--ethernet--jack" data-path="scb0/module/re/module/ethernet/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+              <title>scb0--module--re--module--ethernet--jack</title>
+              <path id="scb0--module--re--module--ethernet--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="scb0--module--re--module--ethernet--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="scb0--module--re--module--ethernet--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb0/module/re/module/ethernet/jack/opening" data-class="cutout" />
+              <g id="scb0--module--re--module--ethernet--jack--pins" fill="#a8873c">
+                <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+                <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+                <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+                <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+                <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+                <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+                <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+                <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+              </g>
+              <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+            </g>
+            <path id="scb0--module--re--module--ethernet--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <rect id="scb0--module--re--module--ethernet--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb0/module/re/module/ethernet/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+            <rect id="scb0--module--re--module--ethernet--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb0/module/re/module/ethernet/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+            <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+        </g>
+      </g>
+      <g id="scb0--module--lever-left" data-path="scb0/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="scb0--module--lever-right" data-path="scb0/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="scb0--module--lamps">
+        <circle id="scb0--module--led-ok-fail" cx="33.87" cy="8.0" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="scb0--module--led-fabric-only" cx="41.09" cy="8.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="scb0--module--led-fabric-active" cx="48.31" cy="8.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="scb0--module--silkscreen">
+        <g id="scb0--module--v37-silkscreen">
+          <text x="33.87" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 33.87 16.5)">OK/FAIL</text>
+        </g>
+        <g id="scb0--module--v38-silkscreen">
+          <text x="41.09" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 41.09 16.5)">FABRIC ONLY</text>
+        </g>
+        <g id="scb0--module--v39-silkscreen">
+          <text x="48.31" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 48.31 16.5)">FABRIC ACTIVE</text>
+        </g>
+        <g id="scb0--module--t40-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.2" fill="#3a3e43" text-anchor="start">SCB-MX</text>
+        </g>
+      </g>
+      <g id="scb0--module--panel-screws">
+        <circle cx="85.3" cy="9.3" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="369.7" cy="8.0" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="scb1" data-path="scb1" data-class="bay" data-group="scbs" data-group-role="service" data-rel-pos="1">
+    <title>scb1</title>
+    <rect id="scb1--opening" x="221.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="scb1--module" data-path="scb1/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/scb-mx@3:3.0.0" data-model="SCB-MX" data-power-draw-max-w="185" data-power-draw-typical-w="155" data-states="ok fail absent" transform="translate(236.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>scb1--module</title>
+      <rect id="scb1--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="scb1--module--re" data-path="scb1/module/re" data-class="bay">
+        <rect id="scb1--module--re--opening" x="91.44" y="1.0" width="271.9" height="27.5" fill="#bfc3c7" />
+        <g id="scb1--module--re--module" data-path="scb1/module/re/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/re-s-1300@2:2.0.0" data-cpu="1.3 GHz" data-lifecycle-note="EOL per TSB16556; modelled because it is the RE the reference photograph carries" data-memory="2 GB" data-model="RE-S-1300-2048" data-power-draw-max-w="90" data-states="ok fail absent" transform="translate(91.44,1.0)">
+          <title>scb1--module--re--module</title>
+          <rect id="scb1--module--re--module--face" x="0" y="0" width="271.9" height="27.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+          <g id="scb1--module--re--module--latch" data-path="scb1/module/re/module/latch" data-class="latch">
+            <rect x="1.0" y="6.0" width="5.0" height="16.0" rx="1.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+          </g>
+          <g id="scb1--module--re--module--captive-screw-right">
+            <circle cx="266.4" cy="10.5" r="3.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+            <path d="M 264.9 10.5 L 267.9 10.5 M 266.4 9.0 L 266.4 12.0" stroke="#3a3e43" stroke-width="0.5" />
+          </g>
+          <g id="scb1--module--re--module--lamps">
+            <circle id="scb1--module--re--module--led-hdd" cx="42.7" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb1--module--re--module--led-master" cx="47.6" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb1--module--re--module--led-ok-fail" cx="42.7" cy="16.4" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb1--module--re--module--led-online" cx="47.6" cy="16.4" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+            <circle id="scb1--module--re--module--btn-online" cx="87.4" cy="14.6" r="1.9" fill="#26292d" stroke="#565b60" stroke-width="0.35" />
+            <circle id="scb1--module--re--module--btn-reset" cx="97.0" cy="16.2" r="1.1" fill="#17191c" />
+          </g>
+          <g id="scb1--module--re--module--silkscreen">
+            <g id="scb1--module--re--module--t41-silkscreen">
+              <text x="12.0" y="8.6" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">RE-S-1300</text>
+            </g>
+            <g id="scb1--module--re--module--t42-silkscreen">
+              <text x="40.7" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">HDD</text>
+            </g>
+            <g id="scb1--module--re--module--t43-silkscreen">
+              <text x="49.6" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">MASTER</text>
+            </g>
+            <g id="scb1--module--re--module--t44-silkscreen">
+              <text x="40.7" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">OK/FAIL</text>
+            </g>
+            <g id="scb1--module--re--module--t45-silkscreen">
+              <text x="49.6" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">ONLINE</text>
+            </g>
+            <g id="scb1--module--re--module--t46-silkscreen">
+              <text x="87.4" y="9.6" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">ONLINE/</text>
+            </g>
+            <g id="scb1--module--re--module--t47-silkscreen">
+              <text x="87.4" y="11.3" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+            </g>
+            <g id="scb1--module--re--module--t48-silkscreen">
+              <text x="100.5" y="16.8" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="start">RESET</text>
+            </g>
+            <g id="scb1--module--re--module--t49-silkscreen">
+              <text x="170.0" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">USB</text>
+            </g>
+            <g id="scb1--module--re--module--t50-silkscreen">
+              <text x="187.9" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">AUX</text>
+            </g>
+            <g id="scb1--module--re--module--t51-silkscreen">
+              <text x="205.3" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
+            </g>
+            <g id="scb1--module--re--module--t52-silkscreen">
+              <text x="222.8" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">ETHERNET</text>
+            </g>
+          </g>
+          <g id="scb1--module--re--module--usb" data-path="scb1/module/re/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(164.0,11.5) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+            <title>scb1--module--re--module--usb</title>
+            <rect id="scb1--module--re--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="scb1/module/re/module/usb/opening" data-class="cutout" />
+            <rect id="scb1--module--re--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+          </g>
+          <g id="scb1--module--re--module--aux" data-path="scb1/module/re/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary console" data-media="rj45-serial" transform="translate(180,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb1--module--re--module--aux</title>
+            <path id="scb1--module--re--module--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb1--module--re--module--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb1--module--re--module--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb1/module/re/module/aux/opening" data-class="cutout" />
+            <g id="scb1--module--re--module--aux--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="scb1--module--re--module--console" data-path="scb1/module/re/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(197.4,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb1--module--re--module--console</title>
+            <path id="scb1--module--re--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb1--module--re--module--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="scb1--module--re--module--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb1/module/re/module/console/opening" data-class="cutout" />
+            <g id="scb1--module--re--module--console--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="scb1--module--re--module--ethernet" data-path="scb1/module/re/module/ethernet" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="fxp0 out-of-band management" data-media="rj45" transform="translate(214.9,7.15)" data-group="mgmt" data-group-role="management">
+            <title>scb1--module--re--module--ethernet</title>
+            <g id="scb1--module--re--module--ethernet--jack" data-path="scb1/module/re/module/ethernet/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+              <title>scb1--module--re--module--ethernet--jack</title>
+              <path id="scb1--module--re--module--ethernet--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="scb1--module--re--module--ethernet--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="scb1--module--re--module--ethernet--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scb1/module/re/module/ethernet/jack/opening" data-class="cutout" />
+              <g id="scb1--module--re--module--ethernet--jack--pins" fill="#a8873c">
+                <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+                <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+                <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+                <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+                <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+                <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+                <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+                <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+              </g>
+              <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+            </g>
+            <path id="scb1--module--re--module--ethernet--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <rect id="scb1--module--re--module--ethernet--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb1/module/re/module/ethernet/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+            <rect id="scb1--module--re--module--ethernet--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb1/module/re/module/ethernet/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+            <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+        </g>
+      </g>
+      <g id="scb1--module--lever-left" data-path="scb1/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="scb1--module--lever-right" data-path="scb1/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="scb1--module--lamps">
+        <circle id="scb1--module--led-ok-fail" cx="33.87" cy="8.0" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="scb1--module--led-fabric-only" cx="41.09" cy="8.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="scb1--module--led-fabric-active" cx="48.31" cy="8.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="scb1--module--silkscreen">
+        <g id="scb1--module--v37-silkscreen">
+          <text x="33.87" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 33.87 16.5)">OK/FAIL</text>
+        </g>
+        <g id="scb1--module--v38-silkscreen">
+          <text x="41.09" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 41.09 16.5)">FABRIC ONLY</text>
+        </g>
+        <g id="scb1--module--v39-silkscreen">
+          <text x="48.31" y="16.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 48.31 16.5)">FABRIC ACTIVE</text>
+        </g>
+        <g id="scb1--module--t40-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.2" fill="#3a3e43" text-anchor="start">SCB-MX</text>
+        </g>
+      </g>
+      <g id="scb1--module--panel-screws">
+        <circle cx="85.3" cy="9.3" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="369.7" cy="8.0" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc6" data-path="fpc6" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="6">
+    <title>fpc6</title>
+    <rect id="fpc6--opening" x="252.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc6--module" data-path="fpc6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(267.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc6--module</title>
+      <rect id="fpc6--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc6--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc6--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc7" data-path="fpc7" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="7">
+    <title>fpc7</title>
+    <rect id="fpc7--opening" x="283.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc7--module" data-path="fpc7/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpc-r-4xge-xfp@3:3.0.0" data-lifecycle-note="EOL per PSN-TSB14931; modelled because it is the card the reference photograph carries" data-model="DPC-R-4XGE-XFP" data-power-draw-max-w="310" data-xfp-10g="4" data-states="ok fail absent" transform="translate(298.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc7--module</title>
+      <rect id="fpc7--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc7--module--lever-left" data-path="fpc7/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc7--module--lever-right" data-path="fpc7/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc7--module--lamps">
+        <circle id="fpc7--module--led-ok-fail" cx="32.3" cy="21.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-0-tunnel" cx="83.75" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-0-link" cx="88.80" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-1-tunnel" cx="159.90" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-1-link" cx="164.95" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-2-tunnel" cx="236.00" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-2-link" cx="241.05" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-3-tunnel" cx="312.00" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc7--module--led-port-3-link" cx="317.05" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="fpc7--module--silkscreen">
+        <g id="fpc7--module--v55-silkscreen">
+          <text x="32.3" y="12.7" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 32.3 12.7)">OK/FAIL</text>
+        </g>
+        <g id="fpc7--module--p00-silkscreen">
+          <text x="81.44" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 81.44 22.6)">PORT 0/0</text>
+        </g>
+        <g id="fpc7--module--p01-silkscreen">
+          <text x="84.99" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 84.99 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc7--module--p02-silkscreen">
+          <text x="90.04" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 90.04 17.9)">LINK</text>
+        </g>
+        <g id="fpc7--module--p10-silkscreen">
+          <text x="157.59" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 157.59 22.6)">PORT 1/0</text>
+        </g>
+        <g id="fpc7--module--p11-silkscreen">
+          <text x="161.14" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 161.14 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc7--module--p12-silkscreen">
+          <text x="166.19" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 166.19 17.9)">LINK</text>
+        </g>
+        <g id="fpc7--module--p20-silkscreen">
+          <text x="233.69" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 233.69 22.6)">PORT 2/0</text>
+        </g>
+        <g id="fpc7--module--p21-silkscreen">
+          <text x="237.24" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 237.24 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc7--module--p22-silkscreen">
+          <text x="242.29" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 242.29 17.9)">LINK</text>
+        </g>
+        <g id="fpc7--module--p30-silkscreen">
+          <text x="309.69" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 309.69 22.6)">PORT 3/0</text>
+        </g>
+        <g id="fpc7--module--p31-silkscreen">
+          <text x="313.24" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 313.24 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc7--module--p32-silkscreen">
+          <text x="318.29" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 318.29 17.9)">LINK</text>
+        </g>
+        <g id="fpc7--module--t68-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">DPC-R-4XGE</text>
+        </g>
+      </g>
+      <g id="fpc7--module--port-0" data-path="fpc7/module/port-0" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(95.8,14.0)">
+        <title>fpc7--module--port-0</title>
+        <rect id="fpc7--module--port-0--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc7/module/port-0/opening" data-class="cutout" />
+        <rect id="fpc7--module--port-0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc7--module--port-0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc7--module--port-0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc7--module--port-1" data-path="fpc7/module/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(171.95,14.0)">
+        <title>fpc7--module--port-1</title>
+        <rect id="fpc7--module--port-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc7/module/port-1/opening" data-class="cutout" />
+        <rect id="fpc7--module--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc7--module--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc7--module--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc7--module--port-2" data-path="fpc7/module/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(248.05,14.0)">
+        <title>fpc7--module--port-2</title>
+        <rect id="fpc7--module--port-2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc7/module/port-2/opening" data-class="cutout" />
+        <rect id="fpc7--module--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc7--module--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc7--module--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc7--module--port-3" data-path="fpc7/module/port-3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(324.05,14.0)">
+        <title>fpc7--module--port-3</title>
+        <rect id="fpc7--module--port-3--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc7/module/port-3/opening" data-class="cutout" />
+        <rect id="fpc7--module--port-3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc7--module--port-3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc7--module--port-3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc8" data-path="fpc8" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="8">
+    <title>fpc8</title>
+    <rect id="fpc8--opening" x="314.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc8--module" data-path="fpc8/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(329.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc8--module</title>
+      <rect id="fpc8--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc8--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc8--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc9" data-path="fpc9" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="9">
+    <title>fpc9</title>
+    <rect id="fpc9--opening" x="345.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc9--module" data-path="fpc9/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpc-r-4xge-xfp@3:3.0.0" data-lifecycle-note="EOL per PSN-TSB14931; modelled because it is the card the reference photograph carries" data-model="DPC-R-4XGE-XFP" data-power-draw-max-w="310" data-xfp-10g="4" data-states="ok fail absent" transform="translate(360.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc9--module</title>
+      <rect id="fpc9--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc9--module--lever-left" data-path="fpc9/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc9--module--lever-right" data-path="fpc9/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="fpc9--module--lamps">
+        <circle id="fpc9--module--led-ok-fail" cx="32.3" cy="21.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-0-tunnel" cx="83.75" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-0-link" cx="88.80" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-1-tunnel" cx="159.90" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-1-link" cx="164.95" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-2-tunnel" cx="236.00" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-2-link" cx="241.05" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-3-tunnel" cx="312.00" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="fpc9--module--led-port-3-link" cx="317.05" cy="20.3" r="1.5" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="fpc9--module--silkscreen">
+        <g id="fpc9--module--v55-silkscreen">
+          <text x="32.3" y="12.7" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle" transform="rotate(270 32.3 12.7)">OK/FAIL</text>
+        </g>
+        <g id="fpc9--module--p00-silkscreen">
+          <text x="81.44" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 81.44 22.6)">PORT 0/0</text>
+        </g>
+        <g id="fpc9--module--p01-silkscreen">
+          <text x="84.99" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 84.99 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc9--module--p02-silkscreen">
+          <text x="90.04" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 90.04 17.9)">LINK</text>
+        </g>
+        <g id="fpc9--module--p10-silkscreen">
+          <text x="157.59" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 157.59 22.6)">PORT 1/0</text>
+        </g>
+        <g id="fpc9--module--p11-silkscreen">
+          <text x="161.14" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 161.14 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc9--module--p12-silkscreen">
+          <text x="166.19" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 166.19 17.9)">LINK</text>
+        </g>
+        <g id="fpc9--module--p20-silkscreen">
+          <text x="233.69" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 233.69 22.6)">PORT 2/0</text>
+        </g>
+        <g id="fpc9--module--p21-silkscreen">
+          <text x="237.24" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 237.24 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc9--module--p22-silkscreen">
+          <text x="242.29" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 242.29 17.9)">LINK</text>
+        </g>
+        <g id="fpc9--module--p30-silkscreen">
+          <text x="309.69" y="22.6" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 309.69 22.6)">PORT 3/0</text>
+        </g>
+        <g id="fpc9--module--p31-silkscreen">
+          <text x="313.24" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 313.24 17.9)">TUNNEL</text>
+        </g>
+        <g id="fpc9--module--p32-silkscreen">
+          <text x="318.29" y="17.9" font-family="Arial" font-size="2.6" fill="#3a3e43" text-anchor="start" transform="rotate(270 318.29 17.9)">LINK</text>
+        </g>
+        <g id="fpc9--module--t68-silkscreen">
+          <text x="11.4" y="25.5" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">DPC-R-4XGE</text>
+        </g>
+      </g>
+      <g id="fpc9--module--port-0" data-path="fpc9/module/port-0" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(95.8,14.0)">
+        <title>fpc9--module--port-0</title>
+        <rect id="fpc9--module--port-0--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc9/module/port-0/opening" data-class="cutout" />
+        <rect id="fpc9--module--port-0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc9--module--port-0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc9--module--port-0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc9--module--port-1" data-path="fpc9/module/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(171.95,14.0)">
+        <title>fpc9--module--port-1</title>
+        <rect id="fpc9--module--port-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc9/module/port-1/opening" data-class="cutout" />
+        <rect id="fpc9--module--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc9--module--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc9--module--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc9--module--port-2" data-path="fpc9/module/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(248.05,14.0)">
+        <title>fpc9--module--port-2</title>
+        <rect id="fpc9--module--port-2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc9/module/port-2/opening" data-class="cutout" />
+        <rect id="fpc9--module--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc9--module--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc9--module--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+      <g id="fpc9--module--port-3" data-path="fpc9/module/port-3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(324.05,14.0)">
+        <title>fpc9--module--port-3</title>
+        <rect id="fpc9--module--port-3--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fpc9/module/port-3/opening" data-class="cutout" />
+        <rect id="fpc9--module--port-3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+        <rect id="fpc9--module--port-3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+        <rect id="fpc9--module--port-3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc10" data-path="fpc10" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="10">
+    <title>fpc10</title>
+    <rect id="fpc10--opening" x="376.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc10--module" data-path="fpc10/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(391.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc10--module</title>
+      <rect id="fpc10--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc10--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc10--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc11" data-path="fpc11" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="11">
+    <title>fpc11</title>
+    <rect id="fpc11--opening" x="407.3" y="155.15" width="29.5" height="396" fill="#101214" />
+    <g id="fpc11--module" data-path="fpc11/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx960-blank@1:1.1.0" data-model="DPC-SCB-BLANK" data-states="absent" transform="translate(422.05,353.15) rotate(90) translate(-206.75,-14.75)">
+      <title>fpc11--module</title>
+      <rect id="fpc11--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc11--module--knob-left">
+        <rect x="5.35" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="13.4" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+      <g id="fpc11--module--knob-right">
+        <rect x="389.15" y="10.55" width="19.0" height="8.4" rx="4.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <rect x="398.3" y="11.85" width="1.8" height="5.8" rx="0.9" fill="#2b2f33" />
+      </g>
+    </g>
+  </g>
+</svg>

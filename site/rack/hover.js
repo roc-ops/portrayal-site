@@ -105,6 +105,17 @@ export async function holdUndimmed(scene, fn) {
   }
 }
 
+/** Run `fn` with the cables' bend rings (scene3d.js ringBends) out of sight,
+ *  then show them again. A warning is the page's, not the rack's: share.js
+ *  leaves a hidden mesh out of a GLB or USDZ, so the file never carries one. */
+export async function withoutBendRings(scene, fn) {
+  const rings = [];
+  if (typeof scene?.three?.scene?.traverse === 'function')
+    scene.three.scene.traverse(o => { if (o.userData?.bendFinding && o.visible) rings.push(o); });
+  for (const r of rings) r.visible = false;
+  try { return await fn(); } finally { for (const r of rings) r.visible = true; }
+}
+
 /** The hover target under a pointer on a 2D pane: a tag (it takes the
  *  pointer), else a cable's stroke, else a bundle's band. Strokes are
  *  click-through (pointer-events: none), so they are found by geometry. */

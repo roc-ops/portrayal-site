@@ -35,7 +35,7 @@ import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes} from './rack/route-context.js';
+import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -113,7 +113,19 @@ function disposeScene3d() {
 // than the edit that changed them, so sameCables3d alone cannot see them).
 // Does the rack have a routed cable (a resolved route with waypoints)? Only then are the
 // gutters widened (spec 7); a cable with no route draws as before.
-const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.waypoints?.length);
+// (the routes of the rack as it is: routesNow, below)
+const hasRoutes = () => [...(routesNow()?.routes.values() ?? [])].some(x => x.waypoints?.length);
+// THE ROUTES ARE ONE RACK'S (kit 0.17.0, Portrayal #973). S.routes is what the
+// last render read for the rack it drew: its paths, and the route context
+// they were measured with, which the kit keeps its decisions against. A
+// reader that pairs them with the rack as it is NOW (a bundle command, the
+// notes of the cable list, the 3D build, a route being picked) takes them
+// from here, and gets null while they are another rack's: after an edit,
+// until the render it started has read the routes again. Nothing is then
+// worked out from the old context. A change that is not a step (the routed
+// lengths, the DCIM settings) swaps the rack object and nothing a route
+// reads, and re-points them (keepRoutes).
+const routesNow = () => (S.routes && S.routes.rack === rack() ? S.routes : null);
 // The ring marks too (Portrayal #930): a ring's way through can turn with no waypoint changing.
 // And the detours (kit 0.11.0, #949): a body moved can take a cable round it with no waypoint changing.
 // And the kit's points (portrayal-site#166): the scene draws each routed cable
@@ -121,18 +133,40 @@ const hasRoutes = () => !!S.routes && [...S.routes.routes.values()].some(x => x.
 // waypoint changing.
 const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id, r.waypoints, rf.marks?.get(id) ?? null,
   rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
+  // and the kit's tight bends (kit 0.17.0): a cable's type can change what it needs with no point moving
+  + JSON.stringify((rf.bendsShown ?? []).map(f => [f.cable, f.at, f.text]))
   + bundlesSig(rf) : '');
+// How long a rebuild waits for the routes of the rack as it now is (below):
+// STALE_3D_TRIES times STALE_3D_MS, then it builds without them.
+const STALE_3D_TRIES = 36, STALE_3D_MS = 100;
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
   const camera = S.camera3d;
+  // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
+  // edit the routes are read again by render(), which can finish after this
+  // is due: the build then waits for them rather than hang the new rack's
+  // cables on the old rack's paths. The old scene goes first, as it does for
+  // any build, so nothing shows a rack that is no longer this one; a newer
+  // rebuild or a switch to 2D ends the wait, as it ends a build. A redraw
+  // that could not read the routes, or failed before it drew, leaves
+  // S.routes null (render), which is not waited for; if the routes of this
+  // rack still never come, it builds without them, and the cables hang.
+  if (S.routes && S.routes.rack !== rack()) {
+    disposeScene3d();
+    for (let k = 0; k < STALE_3D_TRIES && S.routes && S.routes.rack !== rack(); k++) {
+      await new Promise(done => setTimeout(done, STALE_3D_MS));
+      if (mine !== stage3dEpoch || S.mode !== '3d') return;
+    }
+  }
   const forRack = rack();
-  const sig = routesSig(S.routes);
+  const live = routesNow();
+  const sig = routesSig(live);
   disposeScene3d();
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
-    routes: S.routes?.routes ?? null, paths: S.routes?.paths ?? null, ctx: S.routes?.ctx ?? null, bundles: bundles3d(S.routes),
-    bendOf: (S.routes?.types ?? cableTypes)?.bendOf ?? null, stage});
+    routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -149,7 +183,7 @@ async function rebuild3d() {
   S.scene3dRoutes = sig;
   // Routes are resolved by render(), after an edit: if they settled while
   // this was building, the scene was hung by the old ones.
-  if (routesSig(S.routes) !== sig) scheduleRebuild3d();
+  if (routesSig(routesNow()) !== sig) scheduleRebuild3d();
   // A scene built without its cables' faces has no plugs and marks no loose
   // end: 2D says so (render), and so does 3D, once until a build is checked.
   if (built.rackCables && built.rackCables.checked === false) {
@@ -343,7 +377,9 @@ function edit(cmds, {say = false, report = true, quiet = false} = {}) {
 const bundling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => typeof c?.op === 'string' && c.op.startsWith('bundle.'));
 // The cable types come from the page's own load, or from the routes' when the
 // page's has not finished (route-context.js withCableTypes, portrayal-site#164).
-const bundleCtx = () => withCableTypes(S.routes?.ctx ? {route: S.routes.ctx} : {}, cableTypes ?? S.routes?.types ?? null);
+// Only the context read for the rack as it is now (routesNow): a command sent
+// before the render after an edit has read the routes again goes without one.
+const bundleCtx = () => { const now = routesNow(); return withCableTypes(now?.ctx ? {route: now.ctx} : {}, cableTypes ?? S.routes?.types ?? null); };
 // The published cable types (cable-types.json), loaded once; null until then,
 // or when they cannot be read (a bundle's size then counts each cable by its
 // media, as fill does, and says it is an estimate).
@@ -395,6 +431,8 @@ function onChange(ev) {
   // discarded by modelExport's guard, as for any change.
   if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
   else scheduleRebuild3d();
+  // What is not a step changes nothing a route reads: the routes stay this rack's.
+  if (!ev.step) keepRoutes(ev.before, ev.after);
   // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
@@ -407,13 +445,21 @@ function onChange(ev) {
 function keepScene(prev, next) {
   if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = next;
 }
+// The routes read for the old rack object are the new one's too, but only if
+// they were current for the old one (as keepScene, for a change that is not a
+// step: onChange).
+function keepRoutes(prev, next) {
+  if (S.routes && S.routes.rack === prev) S.routes = {...S.routes, rack: next};
+}
 function select(sel) { S.sel = sel; render(); }
 // `notes` are what parseDoc said of the bundles it repaired (library.js
 // docNotes): the editor gives them back as its first findings.
 function setDoc(doc, notes = docNotes(doc)) {
+  docsSet++;                 // a bundle command still waiting was for the document before (bundleCommand)
   const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
+  S.bendsSaid = '';          // nor its tight bends: this document's are said once of their own
   for (const f of findings) addNotice(f.text, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
@@ -556,7 +602,7 @@ function editRoute(cableId, list, text) {
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
-  const res = S.routes?.routes.get(cable.id);
+  const res = routesNow()?.routes.get(cable.id);
   const nameOf = id => itemById(id)?.label ?? id;
   const frame = rack().frame;
   const list = cable.routeEdited ? cable.route ?? [] : res?.waypoints ?? [];
@@ -589,7 +635,7 @@ function routePanel(cable) {
 // Pick targets for a route being edited: every pathway the pane draws, and a
 // lane target per U on each gutter (the rear pane mirrors the sides).
 function drawRoutePicking() {
-  const r = rack(), ctx = S.routes?.ctx;
+  const r = rack(), ctx = routesNow()?.ctx;
   for (const svg of S.svgs) {
     const view = svg.dataset.pane, targets = [];
     if (ctx) for (const it of r.items) for (const g of ctx.guidesOf(it.id)) {
@@ -625,7 +671,11 @@ function cableListPanel() {
   pruneFilter();
   const on = S.cableFilter;
   // Fill, capacity and gone-waypoint warnings, from the routes resolved for this render.
-  const notes = S.routes ? routeNotes(r, S.routes, nameOfId) : [];
+  // (the routes read for this rack: routesNow)
+  const now = routesNow();
+  // ...and each tight bend the page rings, in the kit's sentence: the notice
+  // says them once, and here they stay, beside the ring and body findings.
+  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? []}) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     ...bundleListHooks(),
     onFilter: next => {
@@ -654,26 +704,64 @@ function cableListPanel() {
 // routing context (bundleCtx). The drawings, the list and the 3D scene read
 // routeFacts' `bundles` (bundle-view.js bundleFacts).
 const selectedBundle = () => (S.sel?.kind === 'bundle' ? S.sel.id : null);
-const bundleListHooks = () => ({bundles: S.routes?.bundles ?? null, selectedBundle: selectedBundle(),
+const bundleListHooks = () => ({bundles: routesNow()?.bundles ?? null, selectedBundle: selectedBundle(),
   onBundleSelect: id => select(selectedBundle() === id ? null : {kind: 'bundle', id}),
   onBundleNew: id => select({kind: 'bundle-form', picked: [id]})});
 // A bundle command from a panel: a refusal is shown beside the control, not as a notice.
-const bundleEdit = cmd => { const res = edit(cmd, {say: true, report: false}); return res.error ? {error: res.error} : null; };
+// A BUNDLE COMMAND FROM A PERSON WAITS FOR THE RACK'S ROUTES. Right after an
+// edit the routes are being read again (render), and until they are the page
+// has none for the rack as it is (routesNow). Sent then, a command would be
+// refused by the kit for want of a route nobody can type here, or go through
+// "not checked" for something that is checked a moment later. So it waits for
+// the redraw in hand, up to ROUTES_WAIT_MS, and is sent with this rack's
+// routes. With the routes current it is sent at once, and answers at once.
+// Only if they still have not come is it refused, in the page's own words.
+// A rack whose routes cannot be read at all (S.routes null, nothing in hand)
+// is as before: the kit makes what it can and says it is not checked.
+const ROUTES_WAIT_MS = 4000;
+const ROUTES_BUSY = 'The cable routes are still being worked out after the last change. Try again in a moment.';
+const NO_ROUTES_HERE = 'The cable routes could not be read, so these cables cannot be bundled here.';
+const routesInHand = () => renderQueued || rendering > 0 || (!!S.routes && S.routes.rack !== rack());
+// A COMMAND THAT WAITED IS FOR THE DOCUMENT IT WAS GIVEN FOR. While it waits
+// another rack can be opened (a file, the library, a new rack: setDoc), and
+// that one usually has a c9 and a c10 as well: the command is then dropped,
+// with no answer and nothing done, never sent to a rack nobody asked about.
+// `docsSet` counts the documents put in; the id is compared as well.
+let docsSet = 0;
+function bundleCommand(cmd, after = res => (res.error ? {error: res.error} : null)) {
+  const forDoc = theDoc().id, forSet = docsSet;
+  const send = () => {
+    if (!routesNow() && routesInHand()) return {error: ROUTES_BUSY};
+    const res = edit(cmd, {say: true, report: false});
+    // the kit's refusal asks for a route; the form has no such field
+    return !routesNow() && cmd.op === 'bundle.create' && /routes are not known/.test(res.error ?? '') ? {error: NO_ROUTES_HERE} : res;
+  };
+  if (routesNow() || !routesInHand()) return after(send());
+  return (async () => {
+    const until = Date.now() + ROUTES_WAIT_MS;
+    const moved = () => docsSet !== forSet || theDoc().id !== forDoc;
+    while (!moved() && !routesNow() && routesInHand() && Date.now() < until) await new Promise(done => setTimeout(done, 25));
+    return moved() ? {dropped: true} : after(send());
+  })();
+}
+const bundleEdit = cmd => bundleCommand(cmd);
+// A refusal that comes after the wait, when the panel that asked has been
+// redrawn and its own line is gone, is said as the page's notice.
+const lateRefusal = text => { S.notice = {text, kind: 'error'}; renderSoon(); };
 function bundleFormPanel(sel) {
-  return bundleForm({rack: rack(), picked: sel.picked || [], uOf,
-    onCreate: ({cables, label}) => {
-      const res = edit({op: 'bundle.create', cables, ...(label ? {label} : {})}, {say: true, report: false});
+  return bundleForm({rack: rack(), picked: sel.picked || [], uOf, onLate: lateRefusal,
+    onCreate: ({cables, label}) => bundleCommand({op: 'bundle.create', cables, ...(label ? {label} : {})}, res => {
       if (res.error) return {error: res.error};
       const id = res.created?.id ?? res.created?.ids?.[0];
       select(id ? {kind: 'bundle', id} : null);
       return null;
-    },
+    }),
     onCancel: () => select(null)});
 }
 function bundlePanel(sel) {
   const r = rack(), b = (r.bundles || []).find(x => x.id === sel.id);
   if (!b) { S.sel = null; return homePanel(); }
-  return bundleInspector({rack: r, bundle: b, fact: S.routes?.bundles?.get(b.id) ?? null, uOf,
+  return bundleInspector({rack: r, bundle: b, fact: routesNow()?.bundles?.get(b.id) ?? null, uOf, onLate: lateRefusal,
     onLabel: label => bundleEdit({op: 'bundle.update', id: b.id, label}),
     onStraps: straps => bundleEdit({op: 'bundle.update', id: b.id, straps}),
     onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
@@ -859,7 +947,13 @@ function flushDcimDraft() {
   storeDcimDraft();
   S.dcimDraft = null;
 }
+// How many redraws are running: a bundle command waits for one (bundleCommand).
+let rendering = 0;
 async function render() {
+  rendering++;
+  try { return await redraw(); } finally { rendering--; }
+}
+async function redraw() {
   flushDcimDraft();
   const mine = ++S.draws;
   pruneCable();
@@ -905,9 +999,34 @@ async function render() {
       const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
-      else if (theDoc() === at) {
+      // THE RACK MOVED WHILE ITS FACES AND ROUTES WERE READ, and nothing has
+      // asked for another redraw (a change that is not a step redraws nothing:
+      // a DCIM setting stored): these routes are another rack's and are not
+      // kept, so they are read again now, for the rack as it is. Left alone,
+      // the page held the routes of a rack before until the next redraw:
+      // cables drawn unrouted, and a 3D build waiting for routes that no
+      // redraw was going to read. `r` is the rack this redraw began with.
+      else if (rack() !== r || theDoc() !== at) { renderSoon(); return; }
+      else {
+        // (before the scene's signature is compared: it counts the bends
+        // shown, and the scene's own was taken with them set)
+        rf.bendsShown = landedBends(rf.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null);
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
+        // THE BEND NOTICE (kit 0.17.0, Portrayal #973): each corner of a
+        // cable's path with less room than its own installed bend radius, in
+        // the kit's words (route.js bendFindings), said once per set of them:
+        // when a cable, a type or a device changes what is tight, not on every
+        // redraw. Both drawings ring the same corners (cable-view.js,
+        // scene3d.js). Nothing is measured on the page. Only for a cable
+        // plugged in at both ends (landedBends): one with a loose end is not
+        // drawn along its path, and its notice is that it is not connected.
+        // The sentences stay in the cable list's notes (cableListPanel).
+        const said = rf.bendsShown.map(f => f.text).join('\n');
+        if (said !== (S.bendsSaid ?? '')) {
+          S.bendsSaid = said;
+          if (said) addNotice(bendNotice(rf.bendsShown), 'note');
+        }
         // Not from facts with a face missing: a port not found there is not a port that is loose.
         if (rf.complete) {
           // onChange saves it and keeps the scene; the drawing below shows the length just kept.
@@ -917,6 +1036,7 @@ async function render() {
       }
     } else {
       S.routes = null;
+      S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
@@ -928,6 +1048,8 @@ async function render() {
       laneGap: hasRoutes() ? LANE_GAP : 0, zeroU, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null})));
   } catch (err) {
     if (mine !== S.draws) return;
+    // routes read for a rack before this one are not this rack's: nothing waits for them
+    if (S.routes && S.routes.rack !== rack()) S.routes = null;
     console.warn('[portrayal] the rack elevation failed to draw', err);
     $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_DRAW}));
     return;
@@ -955,7 +1077,8 @@ async function render() {
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
-      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes);
+      // by the routes read for the rack this draws, never another's
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes?.rack === r ? S.routes : null);
       // A long cable's loop and a low lead's tag reach below the rack: both
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
@@ -1641,6 +1764,11 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       if (undoable) S.saidStep = undoable.text;
     },
     apply: cmds => edit(cmds),
+    // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.
+    bundleCommand: cmd => Promise.resolve(bundleCommand(cmd, res => ({error: res.error ?? null, created: res.created ?? null,
+      findings: (res.findings ?? []).map(f => f.text)}))),
+    // Probe only: put another document in, as opening a file or a rack from the library does (setDoc).
+    loadDoc: doc => setDoc(doc),
     undo: () => undoStep(),
     redo: () => redoStep(),
     history: () => ({canUndo: ed.canUndo, canRedo: ed.canRedo, undoSummary: ed.undoSummary, redoSummary: ed.redoSummary}),
@@ -1679,6 +1807,14 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       // the kit's own points (kit 0.13-0.15: reach, approach, tray, rest) and what it lies on
       points: p.points.map(q => ({...q})), rests: (p.rests ?? []).map(x => ({...x}))}])) : null),
     bodies: () => (S.routes ? S.routes.bodyFindings.map(f => ({...f})) : null),
+    // The kit's tight bends the page says and rings (route.js bendFindings, for the
+    // cables plugged in at both ends: landedBends), as plain data.
+    bends: () => (S.routes ? (S.routes.bendsShown ?? []).map(f => ({...f})) : null),
+    // Are the routes the page holds the ones read for the rack as it is now
+    // (routesNow), and is their context one that cannot be changed in place?
+    routesCurrent: () => ({current: !!routesNow(), frozen: !!S.routes?.ctx && Object.isFrozen(S.routes.ctx)}),
+    // Probe only: the route context the page's routes were read with (the object itself, to tell one from the next).
+    routeContext: () => S.routes?.ctx ?? null,
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),

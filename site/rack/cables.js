@@ -271,13 +271,6 @@ function tubeEnds(THREE, mesh) {
   });
 }
 
-// A ring round each corner drawn tighter than its bend radius. OFF
-// (portrayal-site#164, and still since #166 drew the tubes through the kit's
-// points): whether they come back is decided on the kit's own bend findings.
-// The scene keeps its flags (`tight`) either way; the GLB and USDZ never
-// carry these rings.
-const BEND_RINGS = false;
-
 // Every link of the plan as a tube in `scene` (rack3d.js's scene API). Returns
 // {tubes, anchors, boxes, group}: per link {link, i, mesh, loose, points,
 // starts} - `loose` naming the sides that did not land; with one of them
@@ -394,15 +387,11 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // Where each connector's run begins, measured off the drawn geometry: a
     // strand's first ring, or the main tube's first or last.
     const starts = [...tubeEnds(THREE, main), ...strands.map(s => tubeEnds(THREE, s)[0])];
-    // The corners drawn tighter than the radius (bend3d.js), and, when
-    // BEND_RINGS is on, a warning ring round the tube at each.
+    // The corners this drawing rounded tighter than the radius (bend3d.js):
+    // its own account of its arcs, kept as `tight` and ringed nowhere. The
+    // warning rings are the kit's tight bends, drawn by the Rack Builder
+    // (scene3d.js ringBends, kit 0.17.0).
     const tight = bent ? bent.corners.filter(c => c.short_mm > 0) : [];
-    if (BEND_RINGS) for (const [k, c] of tight.entries()) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: 0xd9822b}));
-      ring.position.copy(c.at);
-      ring.name = `cable-${link.id ?? i}-bend-${k}`;
-      g.add(ring);
-    }
     tubes.push({link, i, mesh: g, loose, points: pts, starts, dangling, routed, ...(reachGap ? {reachGap} : {}),
                 ...(bent ? {bend: {radius_mm: bent.radius, corners: bent.corners, length_mm: bent.getLength(),
                                    polyline_mm: bent.polyline, extended_mm: extended}, tight} : {})});

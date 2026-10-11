@@ -7,7 +7,7 @@
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces} from './bundle-view.js';
-import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, orientMarks} from '../../vendor/rack/route.js';
+import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindings, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
 import {portPathOf, mergeSeats, endKey} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
@@ -242,6 +242,61 @@ export function detourStops(waypoints, detours) {
   return out;
 }
 
+// THE LEAD POINTS OF A PATH, by the ring they stand beside (kit 0.17.0,
+// Portrayal #973, docs/cable-lay-design.md 3.4). Where a cable comes to a
+// ring from behind its approach point the kit leads it square: level with the
+// stop before, to a point beside the approach point (`at: 'lead'`, with the
+// ring's `item` and `via`), and from there onto the run. The 3D scene draws
+// every point of the path, so a lead point is one more of them; the panes
+// place a ring by its own drawing, so they are handed each ring's lead points
+// to draw before it or after it, as they are handed the detours:
+// [{at, before, points}], `at` an index into `waypoints`, `before` whether the
+// points come before the ring's own (the cable's way in) or after it (its way
+// out), `points` in rack mm. The kit's points are in the route's order, so a
+// ring passed twice is matched in turn. A lead point straight out of a plug
+// (`end`, no item) is along z, which an elevation sees end on: it is the
+// port's own point there, and is not listed.
+export function leadStops(waypoints, points) {
+  const out = [];
+  let w = -1, entered = false;
+  const next = q => waypoints.findIndex((x, i) => i > w && sameStop(x, q));
+  for (const q of points || []) {
+    if (!q.item || !q.via) continue;
+    // the next stop that names this ring: the first of its points, or its
+    // entry (or face) again once this visit has been through
+    const again = w >= 0 && sameStop(waypoints[w], q) && entered && (q.at === 'entry' || q.at === 'face');
+    if (w < 0 || !sameStop(waypoints[w], q) || again) {
+      const k = next(q);
+      if (k < 0) { if (!again) continue; } else { w = k; entered = false; }
+    }
+    if (q.at !== 'lead') { if (q.at !== 'approach') entered = true; continue; }
+    const before = !entered, last = out.at(-1);
+    if (last && last.at === w && last.before === before) last.points.push({x: q.x, y: q.y, z: q.z});
+    else out.push({at: w, before, points: [{x: q.x, y: q.y, z: q.z}]});
+  }
+  return out;
+}
+
+// WHERE A TIGHT BEND IS, by the waypoints it lies between (kit 0.17.0,
+// route.js bendFindings: `between: [from, to]`, each {end: 'a'}, a waypoint,
+// or {end: 'b'}), as indices into `waypoints` (-1: end a; waypoints.length:
+// end b), for the panes: a ring is drawn round the corner on the pane that
+// places both. null where a stop is not among the waypoints.
+export function bendStops(waypoints, finding) {
+  // null: a stop the route does not have (never -1, which is end a)
+  const idx = (s, from) => {
+    if (s?.end === 'a') return -1;
+    if (s?.end === 'b') return waypoints.length;
+    const k = s ? waypoints.findIndex((w, i) => i >= from && sameStop(w, s)) : -1;
+    return k < 0 ? null : k;
+  };
+  const [a, b] = finding?.between || [];
+  const i = idx(a, 0);
+  if (i == null) return null;
+  const j = idx(b, Math.max(0, i));
+  return j == null ? null : [i, j];
+}
+
 // THE PLUG'S REACH (kit 0.13.0, Portrayal #960): how far, in mm, the far end
 // of what is seated at an end stands out of its panel - the `z` of relief.js
 // cablePoints on the panel as the page draws it, with the derived plugs laid
@@ -327,10 +382,18 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     }
     guides.set(it.id, dedupeGuides(list));
   }));
-  const channels = await ducts;
+  // EVERYTHING THE CONTEXT READS IS IN HAND BEFORE IT IS MADE (kit 0.17.0,
+  // Portrayal #973): the kit keeps what it decides for a cable per rack,
+  // context and cable, so a context is made whole, once, and never changed.
+  // One is built here on every call, from the rack and the drawings as they
+  // are now, and frozen: a device moved, a cable's type changed, a port
+  // swapped or a plug's reach read is a new call and a new context, and
+  // writing to this one throws. Nothing it closes over (the guides, the
+  // ports, the channels, the reaches) is written to after this line.
+  const [channels, types, reachOf] = await Promise.all([ducts, typesReady, plugReaches(rack, given)]);
   const itemOf = id => rack.items.find(i => i.id === id);
   const port = end => ports.get(`${end.item}|${end.view === 'rear' ? 'rear' : 'front'}|${portPathOf(end.path)}`) ?? null;
-  const ctx = {
+  const ctx = Object.freeze({
     chassisOf,
     guidesOf: id => guides.get(id) ?? [],
     portX: end => port(end)?.x ?? null,
@@ -344,18 +407,20 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // null. The kit's fill and capacityOver count the cables through it, and a
     // bundle's size check reads it, so the page does not count them itself.
     zeroUAperture: z => channels.get(z?.id) ?? null,
-  };
-  // EACH CABLE'S DIAMETER (kit 0.11.0, #949): a pass-through must fit it and
-  // a detour keeps clear of a body by its radius, so the route context carries
-  // the cable types' lookup, as the bundles' context does.
-  // AND HOW IT HANGS AND RESTS (kit 0.14.0): a free span by its own type's
-  // drape (`typeOf`) and no tighter than its installed bend radius (`bendOf`),
-  // and each end from the far end of its seated plug (`plugReachOf`, kit
-  // 0.13.0), so every length the page shows is the kit's, measured the way
-  // the 3D scene draws it.
-  const [types, reachOf] = await Promise.all([typesReady, plugReaches(rack, given)]);
-  if (types) Object.assign(ctx, {diameterOf: types.diameterOf, typeOf: types.typeOf, bendOf: types.bendOf});
-  ctx.plugReachOf = end => reachOf.get(endKey(end)) ?? null;
+    // EACH CABLE'S DIAMETER (kit 0.11.0, #949): a pass-through must fit it and
+    // a detour keeps clear of a body by its radius, so the route context carries
+    // the cable types' lookup, as the bundles' context does.
+    // AND HOW IT HANGS, RESTS AND BENDS: a free span by its own type's drape
+    // (`typeOf`, kit 0.14.0) and no tighter than its installed bend radius
+    // (`bendOf`), which is also the radius every turn of its path is given
+    // room for and judged by (kit 0.17.0: each cable by its own type's, never
+    // one figure for the rack). Without the cable types the kit takes each
+    // cable's media's figure.
+    ...(types ? {diameterOf: types.diameterOf, typeOf: types.typeOf, bendOf: types.bendOf} : {}),
+    // Each end from the far end of its seated plug (kit 0.13.0), so every
+    // length the page shows is the kit's, measured the way the 3D scene draws it.
+    plugReachOf: end => reachOf.get(endKey(end)) ?? null,
+  });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   // THE PATH OF EACH CABLE, measured once (route.js routePath): its length,
   // its ring marks and its detours all come from this one reading.
@@ -374,11 +439,20 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // body, after the waypoint each one follows, so both drawings go round the
   // body the way the length was measured (detourStops).
   const detours = new Map((rack.cables || []).map(c => [c.id, detourStops(routes.get(c.id).waypoints, paths.get(c.id)?.detours)]));
+  // THE LEAD POINTS (kit 0.17.0, #973), beside the ring each one stands at,
+  // for the panes (leadStops); the 3D scene reads them off the path itself.
+  const leads = new Map((rack.cables || []).map(c => [c.id, leadStops(routes.get(c.id).waypoints, paths.get(c.id)?.points)]));
   // A ring a route would enter and leave by one face, and a body a route
   // still crosses after its detours: shown with fill and capacity.
   const labelOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
   const rings = ringFindings(rack, ctx, labelOf);
   const bodies = bodyFindings(rack, ctx, labelOf);
+  // THE TIGHT BENDS ARE THE KIT'S (kit 0.17.0, #973: route.js bendFindings):
+  // each corner of a cable's path with less room than its own installed bend
+  // radius, with the kit's sentence and where it is (`at`, rack mm). The
+  // page's notice says them and both drawings ring them; nothing here
+  // measures a bend. `stops` is where the panes look for it (bendStops).
+  const bends = bendFindings(rack, ctx, labelOf).map(f => ({...f, stops: bendStops(routes.get(f.cable)?.waypoints ?? [], f)}));
   // THE BUNDLES (portrayal-site#142): each one's size check and straps from the
   // kit, with the cable types' diameters and bend radii (loaded once a page;
   // without them the kit counts each cable by its media), and where each
@@ -395,9 +469,31 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // read ctx.zeroUAperture, so each is listed once, by the kit.
   // `types` goes with them, so a bundle command sent before the page's own
   // load of the cable types has finished still checks the bend (bundleCtx).
-  return {ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, fill: fill(rack, ctx),
-          over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, lengths, endPane: e => endPane(rack, e),
-          bundles, bundleRecords, places};
+  // `rack` is the rack these were read from: a reader that holds them beside a
+  // rack asks whether it is still that one (rack-page.js routesNow).
+  return {rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: fill(rack, ctx),
+          over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
+          endPane: e => endPane(rack, e), bundles, bundleRecords, places};
+}
+
+// A TIGHT BEND IS SHOWN FOR A CABLE THAT IS PLUGGED IN AT BOTH ENDS. The kit
+// lays a path between two ports whether or not anything is seated in them.
+// The page draws a cable with a loose end as an unplugged lead, or not at
+// all, and says why it is not connected; it neither says nor rings a bend of
+// a path it does not draw. `isLoose(end)` is the page's own answer for an end
+// (cable-plugs.js cableFacts: a reason it does not land). The notice, the
+// panes and the 3D scene all take their findings through here, so they agree.
+export function landedBends(findings, rack, isLoose) {
+  const byId = new Map((rack?.cables || []).map(c => [c.id, c]));
+  return (findings || []).filter(f => { const c = byId.get(f.cable); return !!c && !isLoose(c.a) && !isLoose(c.b); });
+}
+
+// THE BEND NOTICE (kit 0.17.0, Portrayal #973): the kit's sentences for the
+// corners of the cables' paths that are short of their bend radius, the first
+// three and how many more. '' when there is none.
+export function bendNotice(findings, most = 3) {
+  const said = (findings || []).map(f => f.text).filter(Boolean);
+  return said.length > most ? `${said.slice(0, most).join(' ')} And ${said.length - most} more.` : said.join(' ');
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone
@@ -407,9 +503,13 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
 // 0.11.0). The cable list and the exports' notes both read this, so they say
 // the same things. `bodies: false` leaves the bodies out, for the cable
 // schedule, which writes each into its own cable's row instead.
-export function routeNotes(rack, facts, nameOf = id => id, {bodies = true} = {}) {
+// `bends` are the tight bends to list after them, each the kit's sentence
+// (route.js bendFindings): the page gives the ones it rings (landedBends).
+// The exports give none; their notes do not carry bends yet.
+export function routeNotes(rack, facts, nameOf = id => id, {bodies = true, bends = []} = {}) {
   if (!facts) return [];
   const rings = facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
   const crossed = !bodies ? [] : facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
-  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text)];
+  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text),
+          ...(bends || []).map(f => f.text)];
 }

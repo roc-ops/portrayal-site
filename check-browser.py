@@ -5420,6 +5420,11 @@ def hover_fixture(page, base):
       return r;
     }""")
     page.evaluate("r => window.__rack.replaceRack(r)", r)
+    # A bundle command reads the routes of the rack as it is (rack-page.js
+    # routesNow, kit 0.17.0): wait for the render after the replace to have
+    # read them. Sent sooner it is refused, never worked out from the routes
+    # of the rack before (check_rack_routes_follow_edits holds that).
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
     res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
     page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]')"
                            " && document.querySelector('#paneFront [data-cable-id=\"c4\"]')"
@@ -6093,8 +6098,36 @@ def load_rack_3d_ready(page, base, rack):
 
 CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
 
+# How near a cable's drawn line passes each of its lead points (rack mm in,
+# pane mm out): {cable: the furthest of its lead points from its stroke}.
+LEAD_2D_JS = """async leads => {
+  const {RU, OPENING} = await import('/vendor/rack/rails.js');
+  const svg = document.querySelector('#paneFront svg'), H = window.__rack.doc().racks[0].frame.heightRU * RU;
+  const inv = svg.getScreenCTM().inverse(), out = {};
+  for (const [id, qs] of Object.entries(leads)) {
+    const g = svg.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
+    if (!g) { out[id] = null; continue; }
+    const pts = [];
+    for (const p of g.querySelectorAll('path')) {
+      const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+      for (let t = 0; t <= L; t += 0.2) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+    }
+    out[id] = pts.length ? Math.max(...qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))) : null;
+  }
+  return out;
+}"""
+# The same in the scene: the furthest of a cable's lead points from the nearest vertex of its tube's polyline.
+LEAD_3D_JS = """leads => {
+  const s = window.__rack.scene(), faceZ = s.metrics().faceZ, out = {};
+  for (const [id, qs] of Object.entries(leads)) {
+    const t = (s.rackCables?.tubes ?? []).find(x => x.link.id === id && x.routed);
+    out[id] = t?.points?.length ? Math.max(...qs.map(q => Math.min(...t.points.map(v => Math.hypot(v.x - q.x, v.y - q.y, v.z - (faceZ + q.z)))))) : null;
+  }
+  return out;
+}"""
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.49-0.57 m, lower 0.61-0.68 m) with no lane, no ring and no body findings, and no 3D tube passes through the tray or a ring's part")
+
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c4 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -6114,12 +6147,24 @@ def check_rack_cable_lay(page, base):
         vias = [(g["item"], g["via"], g["passed"]) for g in p["rings"]]
         if not vias or any(i != "i4" or v not in ("guide-3", "guide-4", "guide-5") or not ok for i, v, ok in vias):
             bad.append(f"{cid}: not through rings 3, 4 or 5 of the lacer, each passed: {vias}")
-        # the kit's lengths (0.15.0): from each plug's reach (an optic's 32.5 mm,
+        # the kit's lengths (0.18.0): from each plug's reach (an optic's 32.5 mm,
         # the panel's duplex plug 13.7), resting on the ring's sill, over the
-        # tray's front edge for the lower leaf
-        lo, hi = (0.49, 0.57) if int(cid[1:]) <= 8 else (0.61, 0.68)
+        # tray's front edge for the lower leaf. Read off the kit's own output
+        # on this rack: the upper leaf's cords measure 0.4883 to 0.5211 m (they
+        # were 0.4970 to 0.5655 on kit 0.15.0) and the lower leaf's 0.5769 to
+        # 0.6470 (0.6167 to 0.6671). Two things moved them: the end allowance is
+        # per media since 0.16.0 (an LC cord adds 113.1 mm an end, not 150, so
+        # each is 73.8 mm shorter), and since 0.17.0 a path leaves room for its
+        # bends (each is about 10 to 104 mm longer here, by where its turns stand).
+        lo, hi = (0.48, 0.53) if int(cid[1:]) <= 8 else (0.57, 0.65)
         if not (lo - 1e-9 <= (p["measured"] or 0) <= hi + 1e-9):
             bad.append(f"{cid}: measured {p['measured']} m, not {lo}-{hi} m")
+        # ...and the stock size each rounds up to: c4 (0.4936 m) and c8 (0.4883,
+        # which was 0.5158 and a 1 m cord on kit 0.15.0) are 0.5 m cords; every
+        # other cord is past the 0.5 m break and is a 1 m cord.
+        want = 0.5 if cid in ("c4", "c8") else 1
+        if p["value"] != want:
+            bad.append(f"{cid}: a {p['value']} m cord for {p['measured']} m measured, not {want} m")
         if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
             bad.append(f"{cid}: the kit does not rest it on a ring's sill: {p.get('rests')}")
         if p["crossings"]:
@@ -6128,12 +6173,38 @@ def check_rack_cable_lay(page, base):
         bad.append(f"ring findings: {ring_found}")
     if bodies:
         bad.append(f"crosses-body findings: {bodies}")
+    # the kit finds room for every bend here (kit 0.17.0), so nothing is said or ringed
+    bends = page.evaluate("() => window.__rack.bends()")
+    if bends:
+        bad.append(f"tight-bend findings: {[b['text'] for b in bends]}")
     warn = page.evaluate("() => [...document.querySelectorAll('[data-route-warning]')].map(p => p.textContent)")
     if any("passes through" in w or "same face" in w for w in warn):
         bad.append(f"cable list: a ring or body warning is shown: {warn}")
+    # A LEAD POINT IS DRAWN AS A POINT OF THE PATH (kit 0.17.0, Portrayal #973).
+    # Four cords of the upper leaf (c1, c2, c5, c6) stand behind their ring's
+    # approach point, and the kit leads each square to it: level with its plug
+    # to a lead point beside the approach point, then onto the run. In 2D the
+    # pane's line turns at that point: joined straight from the plug to the
+    # ring it would pass some 30 mm from it; routed2d rounds a corner by 4, so
+    # the stroke comes within 4 of the vertex.
+    leads = {cid: [q for q in p["points"] if q["at"] == "lead" and q.get("item")] for cid, p in paths.items()}
+    leads = {cid: qs for cid, qs in leads.items() if qs}
+    if not leads:
+        bad.append("lead points: the kit leads no cord of this rack square to its ring, so none was checked")
+    off2d = page.evaluate(LEAD_2D_JS, leads)
+    for cid, d in sorted(off2d.items()):
+        if d is None or d > 4.0 + 1e-6:
+            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within the corner's 4 mm")
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
+    # ...and in 3D the tube's own polyline has a vertex there.
+    off3d = page.evaluate(LEAD_3D_JS, leads)
+    for cid, d in sorted(off3d.items()):
+        if d is None or d > 1e-3:
+            bad.append(f"3D: {cid}'s tube has no vertex at its lead point (nearest {d} mm)")
+    if set(off2d) != set(leads) or set(off3d) != set(leads):
+        bad.append(f"lead points: measured {sorted(off2d)} in 2D and {sorted(off3d)} in 3D of {sorted(leads)}")
     # The cords from the leaf below leave their plugs below the tray and rise
     # to its rings: each is drawn out past the tray's front edge and back in,
     # as a lead is dressed by hand (not straight up through the floor).
@@ -6147,6 +6218,488 @@ def check_rack_cable_lay(page, base):
     if len(front) != 8 or short:
         bad.append(f"3D: the LEAF-B cords are not drawn out past the tray's front edge (mm beyond it): {front}")
     return bad
+
+
+# THE BEND NOTICE AND THE WARNING RINGS (Portrayal #973, kit 0.17.0). The kit
+# lays every path with room for its cable's bend radius and reports what its
+# rules found no room for (route.js bendFindings). The page says those
+# sentences once per set of them and rings each corner where the kit puts it,
+# in both views; it measures no bend itself. On the reference cable-lay rack
+# the kit finds none, so nothing is said and nothing is ringed. The finding
+# here is a real one, made by an edit: the cord from LEAF-B port 49 becomes
+# an AOC to LEAF-A port 49 (an AOC head seated in each cage, c1 removed to
+# free the port). Its head stands 64.8 mm out of the cage, so on its way round
+# the tray's front edge to the lacer's ring it turns three times with less
+# room than the 30 mm an AOC needs.
+# What is expected is the kit's own output, read two ways: the findings the
+# page holds, and the findings of a context built afresh in the page for the
+# same rack (BEND_FRESH_JS). NOT VACUOUS: it fails unless the edit produces
+# findings, each in the kit's words, for c9, an AOC, at 30 mm.
+AOC_HEAD = "fs/qsfp28-aoc@1"
+BEND_SENTENCE_RE = re.compile(r"^c\d+ (turns [\d.]+ degrees (at|between) .+ with room for an? [\d.]+ mm bend; "
+                              r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
+                              r"|doubles back .+, with no room for a bend; the cable \([\w-]+\) needs [\d.]+ mm)\.$")
+# The page's routes are the ones read for the rack as it is now.
+ROUTES_CURRENT = "() => window.__rack.routesCurrent().current"
+BEND_FRESH_JS = """async () => {
+  const RC = await import('/site/rack/route-context.js'), C = await import('/vendor/rack/catalog.js');
+  const {RU, OPENING} = await import('/vendor/rack/rails.js');
+  const rack = window.__rack.doc().racks[0];
+  const fresh = await RC.routeFacts(rack, (await C.loadCatalog('/assets/dist/')).chassisOf);
+  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point});
+  const page = (window.__rack.bends() || []).map(plain);
+  return {page, fresh: fresh.bendFindings.map(plain), notice: RC.bendNotice(fresh.bendFindings),
+    said: document.querySelector('.rk-side .rk-notice')?.textContent ?? '',
+    // where a pane draws a rack point: x from the opening's middle (mirrored on the rear), y down from the top
+    want2d: page.map(f => [OPENING / 2 + f.at[0], rack.frame.heightRU * RU - f.at[1]]),
+    rings2d: [...document.querySelectorAll('#paneFront svg [data-bend-finding], #paneRear svg [data-bend-finding]')].map(c => ({
+      pane: c.closest('svg').dataset.pane, cable: c.dataset.bendFinding, at: [+c.getAttribute('cx'), +c.getAttribute('cy')],
+      title: c.querySelector('title')?.textContent ?? '', ui: c.getAttribute('data-pt-ui')})),
+    // the cable list's notes: where the sentences stay, for the keyboard and a screen reader
+    listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
+    media: Object.fromEntries(rack.cables.map(c => [c.id, c.media]))};
+}"""
+BEND_RINGS_3D_JS = """async () => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const faceZ = s.metrics().faceZ, found = [];
+  s.three.scene.updateMatrixWorld(true);
+  s.three.scene.traverse(o => { if (/^cable-.+-bend-\\d+$/.test(o.name)) {
+    const p = o.getWorldPosition(o.position.clone());
+    found.push({name: o.name, parent: o.parent?.name ?? null, visible: o.visible, mesh: !!o.isMesh,
+                at: [p.x, p.y, p.z - faceZ], finding: o.userData?.bendFinding ?? null}); } });
+  return {rings: found, listed: (s.rackCables?.bendRings ?? []).map(r => ({cable: r.cable, text: r.text, at: [r.at.x, r.at.y, r.at.z - faceZ]})),
+          tubes: (s.rackCables?.tubes ?? []).filter(t => t.mesh).map(t => t.link.id)};
+}"""
+
+
+def aoc_between_the_leaves(rack):
+    """The cable-lay rack with c9 as an AOC from LEAF-B port 49 to LEAF-A port 49: an AOC head in each cage, c1 gone."""
+    out = json.loads(json.dumps(rack))
+    for it in out["items"]:
+        if it["id"] in ("i1", "i3"):
+            it["swaps"] = {**it["swaps"], "port-49": AOC_HEAD}
+    out["cables"] = [c for c in out["cables"] if c["id"] != "c1"]
+    for c in out["cables"]:
+        if c["id"] == "c9":
+            c["media"] = "aoc"
+            c["b"] = {"item": "i1", "path": "port-49", "view": "front"}
+    return out
+
+
+def near(a, b, eps=0.05):
+    return len(a) == len(b) and all(abs(x - y) <= eps for x, y in zip(a, b))
+
+
+@extra("rack.html: bend notice - the reference cable-lay rack has no tight bend, so nothing is said or ringed; an AOC run between the leaves gives the kit's own findings, said once in the notice and ringed at each finding's point in 2D and 3D, never in a GLB, not for a cable with a loose end, and gone again on undo")
+def check_rack_bend_notice(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "bend notice: the reference rack's routes", ROUTES_CURRENT)
+
+    # 1. THE REFERENCE RACK: the kit reports no tight bend, so the page says none and rings none.
+    ref = page.evaluate(BEND_FRESH_JS)
+    if ref["page"] or ref["fresh"]:
+        bad.append(f"reference rack: the kit reports tight bends: {[f['text'] for f in ref['page'] + ref['fresh']]}")
+    if "bend" in ref["said"] or ref["rings2d"] or any("bend" in n for n in ref["listed"]):
+        bad.append(f"reference rack: a bend is said, listed or ringed with no finding: notice {ref['said']!r}, "
+                   f"list {ref['listed']}, {len(ref['rings2d'])} rings")
+    if webgl_trouble(page):
+        print("[check_rack_bend_notice] WebGL unavailable - the 3D rings were not exercised")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "bend notice: the reference rack's scene", tubes=True)
+        ref3d = page.evaluate(BEND_RINGS_3D_JS)
+        if ref3d["rings"] or ref3d["listed"] or len(ref3d["tubes"]) != 16:
+            bad.append(f"reference rack in 3D: {len(ref3d['rings'])} bend rings on {len(ref3d['tubes'])} tubes; expected none on 16")
+        page.click('#mode [data-mode="2d"]')
+
+    # 2. A REAL FINDING, by an edit: the AOC between the leaves.
+    page.evaluate("r => window.__rack.replaceRack(r)", aoc_between_the_leaves(rack))
+    wait_fn(page, "bend notice: the edited rack's routes",
+            "() => window.__rack.routesCurrent().current && (window.__rack.bends() || []).length > 0")
+    wait_sel(page, "bend notice: the notice", ".rk-side .rk-notice")
+    got = page.evaluate(BEND_FRESH_JS)
+    finds = got["page"]
+    if got["media"].get("c9") != "aoc" or "c1" in got["media"]:
+        return bad + [f"the edit did not land: {got['media']}"]
+    if len(finds) < 2:
+        return bad + [f"the AOC gives {len(finds)} findings; expected at least two tight bends: {finds}"]
+    for f in finds:
+        if f["cable"] != "c9" or f["need_mm"] != 30 or not BEND_SENTENCE_RE.match(f["text"]) or "(aoc) needs 30 mm" not in f["text"]:
+            bad.append(f"a finding is not the kit's sentence for c9, an AOC, at 30 mm: {f}")
+        if not f["room_mm"] < f["need_mm"]:
+            bad.append(f"a finding has room for its bend: {f}")
+    # the page's findings are the kit's for this rack, from a context built afresh
+    if [(f["text"], f["at"]) for f in finds] != [(f["text"], f["at"]) for f in got["fresh"]]:
+        bad.append(f"the page's findings are not the kit's for this rack: {finds} vs {got['fresh']}")
+    # the notice is those sentences, and nothing else (three or fewer, each in full)
+    if got["said"] != got["notice"] or (len(finds) <= 3 and got["said"] != " ".join(f["text"] for f in finds)):
+        bad.append(f"the notice is {got['said']!r}, not the kit's sentences {got['notice']!r}")
+    # THE SENTENCES STAY IN THE CABLE LIST'S NOTES, each once, where the ring
+    # and body findings are: the notice goes with the next redraw.
+    if [n for n in got["listed"] if "needs 30 mm" in n] != [f["text"] for f in finds]:
+        bad.append(f"the cable list's notes are {got['listed']}; expected the kit's sentences {[f['text'] for f in finds]}")
+    # 2D: one ring per finding on the front pane (both stops are there), at the finding's point, titled with its sentence
+    rings = got["rings2d"]
+    if [r["pane"] for r in rings] != ["front"] * len(finds):
+        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {len(finds)} on the front pane")
+    for r, f, want in zip(rings, finds, got["want2d"]):
+        if r["cable"] != "c9" or r["title"] != f["text"] or not near(r["at"], want):
+            bad.append(f"2D: a ring at {r['at']} titled {r['title']!r}; expected {want} for {f['text']!r}")
+        if r["ui"] != "*":
+            bad.append("2D: a bend ring is not marked as page UI (data-pt-ui), so a drawing export would carry it")
+    # said once: another redraw (a label, which no route reads) does not say it again
+    res = page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', label: 'said once'})")
+    if res.get("error"):
+        bad.append(f"relabelling c2 was refused: {res['error']}")
+    wait_fn(page, "bend notice: the relabel drawn",
+            "() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].cables.find(c => c.id === 'c2').label === 'said once'"
+            " && !(document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('needs 30 mm')")
+    again = page.evaluate("""() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length,
+      listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent).filter(t => t.includes('needs 30 mm'))})""")
+    if again["n"] != len(finds) or again["bends"] != len(finds):
+        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {len(finds)} still")
+    if again["listed"] != [f["text"] for f in finds]:
+        bad.append(f"after a redraw, with the notice gone, the cable list's notes are {again['listed']}; expected the sentences still")
+
+    if webgl_trouble(page):
+        return bad
+    # 3D: a ring in the cable's own group at each finding's point, and none in the file
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "bend notice: the AOC rack's scene", tubes=True)
+    got3d = page.evaluate(BEND_RINGS_3D_JS)
+    if len(got3d["rings"]) != len(finds) or len(got3d["listed"]) != len(finds):
+        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {len(finds)}")
+    for k, (r, f) in enumerate(zip(got3d["rings"], finds)):
+        if r["name"] != f"cable-c9-bend-{k}" or r["parent"] != "cable-c9" or not r["visible"] or not r["mesh"]:
+            bad.append(f"3D: ring {k} is {r['name']!r} in {r['parent']!r}, visible {r['visible']}; expected cable-c9-bend-{k} in cable-c9")
+        if not near(r["at"], f["at"], 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
+            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {f['at']} for {f['text']!r}")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if glb[:4] != b"glTF":
+        bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB")
+    else:
+        names = [n.get("name") or "" for n in json.loads(glb[20:20 + int.from_bytes(glb[12:16], "little")].decode("utf-8"))["nodes"]]
+        if "cable-c9" not in names:
+            bad.append("GLB: the file has no cable-c9 node, so it says nothing about its rings")
+        if any("-bend-" in n for n in names):
+            bad.append(f"GLB: the file carries warning rings: {[n for n in names if '-bend-' in n]}")
+    back = page.evaluate(BEND_RINGS_3D_JS)
+    if [r["visible"] for r in back["rings"]] != [True] * len(finds):
+        bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
+    # A REDRAW THAT CHANGES NOTHING KEEPS THE SCENE. The scene is rebuilt when
+    # the routes' signature changes, and the signature counts the bends shown:
+    # compared before they were set, it differed on every redraw of a rack
+    # with a tight bend, and each one tore the scene down and built it again.
+    # Selecting a cable row is a redraw and no edit.
+    settle_scene(page, "bend notice: the scene before a redraw", tubes=True)
+    kept = page.evaluate_handle("() => window.__rack.scene()")
+    page.click('#cableList [data-cable-row="c2"]')
+    wait_fn(page, "bend notice: c2's row selected", "() => !!document.querySelector('#cableList [data-cable-row=\"c2\"][aria-pressed=\"true\"]')")
+    page.wait_for_timeout(1500)   # past the 300 ms rebuild debounce, and into any build it started
+    if not page.evaluate("s => !!s && window.__rack.scene() === s", kept):
+        bad.append("3D: selecting a cable row, which edits nothing, replaced the scene of a rack with a tight bend")
+    page.click('#cableList [data-cable-row="c2"]')   # let it go again
+
+    # A CABLE WITH A LOOSE END IS NOT DRAWN ALONG ITS PATH, so its bends are
+    # neither said nor ringed: take the AOC head out of LEAF-A's cage. The
+    # kit still lays a path between the two ports and still finds it tight
+    # (the fresh context says so); the page says only that it is not connected.
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
+        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-49'))} : i))}); }""")
+    wait_fn(page, "bend notice: the head taken out",
+            "() => window.__rack.routesCurrent().current && !('port-49' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
+            " && Object.values(window.__rack.cableFacts().reasons).some(Boolean)")
+    page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+    settle_scene(page, "bend notice: the loose AOC's scene", tubes=True)
+    loose = page.evaluate(BEND_FRESH_JS)
+    loose3d = page.evaluate(BEND_RINGS_3D_JS)
+    if not [f for f in loose["fresh"] if f["cable"] == "c9"]:
+        bad.append("loose end: the kit no longer finds c9's path tight, so nothing was withheld")
+    if loose["page"] or loose3d["rings"] or loose3d["listed"] or "needs 30 mm" in loose["said"] or any("needs 30 mm" in n for n in loose["listed"]):
+        bad.append(f"loose end: a bend of a cable that is not connected is shown: {len(loose['page'])} findings, "
+                   f"{len(loose3d['rings'])} rings in 3D, notice {loose['said']!r}, list {loose['listed']}")
+
+    # 3. UNDO: the reference rack again, and with it no finding, no ring, no sentence.
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    page.evaluate("() => { window.__rack.undo(); window.__rack.undo(); window.__rack.undo(); }")
+    wait_fn(page, "bend notice: undone",
+            "() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].cables.length === 16 && window.__rack.bends().length === 0")
+    page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+    settle_scene(page, "bend notice: the undone rack's scene", tubes=True)
+    gone = page.evaluate(BEND_RINGS_3D_JS)
+    said = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent || ''")
+    notes = page.evaluate("() => [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent)")
+    if gone["rings"] or gone["listed"] or "needs 30 mm" in said or any("needs 30 mm" in n for n in notes):
+        bad.append(f"undone: {len(gone['rings'])} rings left in 3D, notice {said!r}, list {notes}")
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "bend notice: the undone rack in 2D",
+            "() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 16")
+    left = page.evaluate("() => document.querySelectorAll('[data-bend-finding]').length")
+    if left:
+        bad.append(f"undone: {left} bend rings left in 2D")
+    return bad
+
+
+# THE ROUTE FOLLOWS THE RACK (Portrayal #973, kit 0.17.0). The kit keeps what
+# it decides for a cable per rack, context and cable, so a page that reused a
+# context after what it reads had changed would show a path placed for the
+# rack as it was. The page builds a new context on every reading of the
+# routes, frozen, and holds its routes beside the rack they were read from.
+# Here the reference rack is edited four ways: a device moved, a cable's end
+# moved to another port, a cable's type changed, and an optic taken out of a
+# cage (the plug's reach). After each, the paths the page holds are compared,
+# point for point, with the paths of a context built afresh in the page for
+# the rack as it now is, and must be the ones the edit changes; the context
+# must be a new, frozen object; the pane must have redrawn the cable. Then, in
+# 3D, a device is moved and every tube must start at its plug's reach point
+# again (a scene hung by the old paths would start two rack units off).
+# NOT VACUOUS: each edit must change at least one path, and name the cable.
+ROUTE_FOLLOW_JS = """async () => {
+  const RC = await import('/site/rack/route-context.js'), C = await import('/vendor/rack/catalog.js');
+  const rack = window.__rack.doc().racks[0];
+  const fresh = await RC.routeFacts(rack, (await C.loadCatalog('/assets/dist/')).chassisOf);
+  const r2 = v => Math.round(v * 100) / 100;
+  const pts = p => (p ? p.points.map(q => [q.at, r2(q.x), r2(q.y), r2(q.z)]) : null);
+  const page = window.__rack.paths() || {};
+  const ctx = window.__rack.routeContext();
+  window.__ctxSeen ??= [];
+  const isNew = !!ctx && !window.__ctxSeen.includes(ctx);
+  window.__ctxSeen.push(ctx);
+  // a write to the context must not change it in place (it is frozen: a
+  // module's write throws, and this one, outside strict mode, does nothing)
+  const was = ctx?.bendOf;
+  try { ctx.bendOf = () => 1; } catch { /* frozen */ }
+  const wrote = !ctx || ctx.bendOf !== was;
+  return {page: Object.fromEntries(Object.entries(page).map(([id, p]) => [id, pts(p)])),
+    fresh: Object.fromEntries([...fresh.paths].map(([id, p]) => [id, pts(p)])),
+    lengths: Object.fromEntries(Object.entries(page).map(([id, p]) => [id, [p?.measured ?? null, p?.value ?? null]])),
+    freshLengths: Object.fromEntries([...fresh.lengths].map(([id, l]) => [id, [l?.measured ?? null, l?.value ?? null]])),
+    stored: Object.fromEntries(rack.cables.map(c => [c.id, c.length?.source === 'routed' ? c.length.value : null])),
+    current: window.__rack.routesCurrent(), isNew, wrote, bendOf: typeof ctx?.bendOf,
+    drawn: Object.fromEntries([...document.querySelectorAll('#paneFront svg [data-cables] [data-cable][data-cable-id]')]
+      .map(g => [g.dataset.cableId, [...g.querySelectorAll('path')].map(p => p.getAttribute('d')).join('|')]))};
+}"""
+
+
+def route_follows(page, label, before, expect):
+    """The page's paths against a fresh context's, after an edit: problems, and the reading."""
+    got = page.evaluate(ROUTE_FOLLOW_JS)
+    bad = []
+    if not got["current"]["current"] or not got["current"]["frozen"] or got["wrote"]:
+        bad.append(f"{label}: the routes are current {got['current']['current']}, their context frozen {got['current']['frozen']}, written to {got['wrote']}")
+    if not got["isNew"]:
+        bad.append(f"{label}: the routes were read with a context already used for the rack as it was")
+    if got["bendOf"] != "function":
+        bad.append(f"{label}: the context has no bendOf, so no cable is judged by its own type's radius")
+    stale = sorted(c for c in got["fresh"] if got["page"].get(c) != got["fresh"][c])
+    if stale or set(got["page"]) != set(got["fresh"]):
+        bad.append(f"{label}: the page's paths are not the kit's for the rack as it is: {stale or sorted(set(got['page']) ^ set(got['fresh']))}")
+    if got["lengths"] != got["freshLengths"]:
+        bad.append(f"{label}: the page's lengths are not the kit's for the rack as it is")
+    off = sorted(c for c, (_, value) in got["freshLengths"].items() if got["stored"].get(c) != value)
+    if off:
+        bad.append(f"{label}: the stored routed lengths did not follow: {[(c, got['stored'].get(c), got['freshLengths'][c][1]) for c in off]}")
+    if before is not None:
+        moved = sorted(c for c in got["page"] if before["page"].get(c) != got["page"][c])
+        if not set(expect) <= set(moved):
+            bad.append(f"{label}: the paths that changed are {moved}; expected at least {sorted(expect)}")
+        same = sorted(c for c in expect if before["drawn"].get(c) == got["drawn"].get(c))
+        if same:
+            bad.append(f"{label}: the pane still draws {same} as before the edit")
+    return bad, got
+
+
+@extra("rack.html: routes follow edits - after a device moves, a cable end moves to another port, a cable's type changes or an optic leaves its cage, the page's paths are the kit's for the rack as it is, read with a new frozen context, redrawn in 2D, and in 3D every tube starts at its plug again")
+def check_rack_routes_follow_edits(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "follow: the reference rack's routes", ROUTES_CURRENT)
+    faults, state = route_follows(page, "the reference rack", None, ())
+    bad += faults
+    lower = [f"c{i}" for i in range(9, 17)]
+
+    def edit(label, js, arg, expect, done):
+        nonlocal state
+        res = page.evaluate(js, arg)
+        if isinstance(res, dict) and res.get("error"):
+            bad.append(f"{label}: refused: {res['error']}")
+            return
+        wait_fn(page, f"follow: {label}", f"() => window.__rack.routesCurrent().current && ({done})()")
+        # the pane is redrawn after the routes are read: wait for the drawing of the first cable expected to change
+        page.wait_for_function(
+            "([id, was]) => { const g = document.querySelector(`#paneFront svg [data-cables] [data-cable][data-cable-id=\"${id}\"]`);"
+            " return !!g && [...g.querySelectorAll('path')].map(p => p.getAttribute('d')).join('|') !== was; }",
+            arg=[expect[0], state["drawn"].get(expect[0])], timeout=READY_MS)
+        faults, now = route_follows(page, label, state, expect)
+        bad.extend(faults)
+        state = now
+
+    # A REFUSAL THAT COMES AFTER THE WAIT IS STILL SEEN. The bundle form is
+    # opened on c1 with c9 ticked, on the rack as it was loaded: the kit
+    # refuses that pair (c1 runs with none of the others). Create is clicked in the same turn as an edit, so
+    # the command waits for the redraw, and that redraw rebuilds the side
+    # panel: the form's own error line is gone when the refusal arrives, and
+    # it must come as the page's notice instead.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableBundle")
+    page.check("#bPick-c9")
+    page.evaluate("""() => { window.__rack.apply({op: 'cable.update', id: 'c2', label: 'late'});
+      document.querySelector('#bCreate').click(); }""")
+    try:
+        page.wait_for_function("() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('runs with none of the others')",
+                               timeout=15000)
+    except Exception:
+        shown = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent ?? null")
+        bad.append(f"a bundle refused after its wait, its form redrawn meanwhile: the refusal was shown nowhere (notice {shown!r})")
+    if page.evaluate("() => (window.__rack.doc().racks[0].bundles || []).length"):
+        bad.append("the refused bundle was made")
+    page.keyboard.press("Escape")
+    page.evaluate("() => document.querySelector('#bCancel')?.click()")
+    wait_fn(page, "follow: the routes after the refused bundle", ROUTES_CURRENT)
+
+    apply = "c => window.__rack.apply(c)"
+    item = "id => window.__rack.doc().racks[0].items.find(i => i.id === id)"
+    # a device moved: LEAF-B from U40 to U38, and every cord from it with it
+    edit("LEAF-B moved to U38", apply, {"op": "move", "id": "i3", "ru": 38}, lower,
+         f"() => ({item})('i3').ru === 38")
+    # a cable's end moved to another port: c16's panel end to a free LC of the panel in another bay
+    free = page.evaluate("""async () => { const r = window.__rack.doc().racks[0];
+      const bay = r.cables.find(c => c.id === 'c16').b.path.split('/')[0];
+      const ports = await window.__rack.query.freePorts('i2');
+      const lc = (Array.isArray(ports) ? ports : []).filter(p => p.view === 'front' && /\\/module\\/lc\\d+$/.test(p.path));
+      return (lc.find(p => p.path.split('/')[0] !== bay) ?? {}).path ?? null; }""")
+    if not free:
+        bad.append("a free LC port of the panel in another bay was not found, so no cable end was moved")
+    else:
+        edit(f"c16's end moved to {free}", apply, {"op": "cable.update", "id": "c16", "b": {"item": "i2", "path": free, "view": "front"}},
+             ["c16"], f"() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c16').b.path === {json.dumps(free)}")
+    # a cable's type changed: c12 from OM4 to a Cat 6A cord, which is thicker, stiffer to hang and has its own radius
+    edit("c12's type changed to cat6a", apply, {"op": "cable.update", "id": "c12", "media": "cat6a"}, ["c12"],
+         "() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c12').media === 'cat6a'")
+    # an optic taken out of its cage: c4's plug no longer stands where the optic held it
+    edit("the optic left LEAF-A port 52", """() => { const r = window.__rack.doc().racks[0];
+           window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
+             ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); return {}; }""",
+         None, ["c4"], f"() => !('port-52' in ({item})('i1').swaps)")
+
+    # A COMMAND THAT WAITED IS NOT SENT TO ANOTHER RACK. A panel's bundle.create
+    # is issued in the same turn as a move, and before the redraw ends another
+    # document is put in (as opening a file does) that has a c9 and a c10 too.
+    # The command is dropped: it answers `dropped`, and the new rack has no bundle.
+    other = page.evaluate("""async () => {
+      const doc = structuredClone(window.__rack.doc());
+      const next = {...doc, id: `${doc.id}-other`, racks: doc.racks.map(r => ({...r, name: 'Another rack', bundles: []}))};
+      const was = window.__rack.doc().id;
+      window.__rack.apply({op: 'move', id: 'i3', ru: 36});
+      const waiting = window.__rack.bundleCommand({op: 'bundle.create', cables: ['c9', 'c10']});
+      window.__rack.loadDoc(next);
+      const answer = await waiting;
+      const t0 = Date.now();
+      while (!window.__rack.routesCurrent().current && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 50));
+      const now = window.__rack.doc();
+      return {was, id: now.id, name: now.racks[0].name, answer, bundles: (now.racks[0].bundles || []).length,
+              has: ['c9', 'c10'].every(id => now.racks[0].cables.some(c => c.id === id)), current: window.__rack.routesCurrent().current}; }""")
+    if other["id"] == other["was"] or other["name"] != "Another rack" or not other["has"] or not other["current"]:
+        bad.append(f"another document was not put in during the wait, so nothing was tested: {other}")
+    if other["bundles"] or other["answer"] != {"dropped": True}:
+        bad.append(f"a bundle command that waited through a change of document: answered {other['answer']}, and the new rack has "
+                   f"{other['bundles']} bundles; expected it dropped and no bundle made")
+    faults, state = route_follows(page, "after another document", None, ())
+    bad += faults
+
+    # THE DOCUMENT MOVES WHILE THE ROUTES ARE READ. A change that is not an
+    # undo step (a DCIM setting stored) redraws nothing. Landing while the
+    # redraw after a move is still reading the routes, it used to leave the
+    # page holding the routes of the rack before the move, with no redraw in
+    # hand to read them again. The move's redraw starts on the next
+    # microtask; the setting is stored one microtask later, long before any
+    # drawing is read. The routes must become the rack's own.
+    res = page.evaluate("""async () => {
+      const moved = window.__rack.apply({op: 'move', id: 'i3', ru: 37});
+      await Promise.resolve();
+      const set = window.__rack.apply({op: 'dcim', site: 'Lab 4', role: 'leaf'});
+      return {moved: moved.error ?? null, set: set.error ?? null, current: window.__rack.routesCurrent().current}; }""")
+    if res["moved"] or res["set"] or res["current"]:
+        bad.append(f"a setting stored during the redraw after a move: {res}; expected both to land with the routes not yet read")
+    try:
+        page.wait_for_function("() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].items.find(i => i.id === 'i3').ru === 37",
+                               timeout=20000)
+    except Exception:
+        bad.append("a setting stored during the redraw after a move left the page holding the routes of the rack before it")
+    else:
+        faults, state = route_follows(page, "after a setting stored during the redraw", None, ())
+        bad += faults
+
+    # A COMMAND THAT READS THE ROUTES never takes the last rack's. The page's
+    # own apply, in the same turn as an edit, has no context for the rack as
+    # it is: the kit refuses a bundle and says the routes are not known, where
+    # the page used to hand it the context of the rack before the edit.
+    # A PERSON'S BUNDLE COMMAND (a panel's: bundleCommand) waits for the redraw
+    # in hand and is then sent with the new rack's routes: made, and checked,
+    # never "not checked ... the routes are not known here". So for create,
+    # and for add after another move.
+    both = page.evaluate("""async () => {
+      const moved = window.__rack.apply({op: 'move', id: 'i3', ru: 39});
+      const cur = window.__rack.routesCurrent().current;
+      const raw = window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']});
+      const made = await window.__rack.bundleCommand({op: 'bundle.create', cables: ['c9', 'c10']});
+      const ru = window.__rack.doc().racks[0].items.find(i => i.id === 'i3').ru, route = (window.__rack.doc().racks[0].bundles || [])[0]?.route ?? null;
+      const moved2 = window.__rack.apply({op: 'move', id: 'i3', ru: 38});
+      const cur2 = window.__rack.routesCurrent().current;
+      const added = await window.__rack.bundleCommand({op: 'bundle.add', id: made.created?.id ?? made.created?.ids?.[0], cables: ['c11']});
+      return {moved: moved.error ?? null, current: cur, raw: raw.error ?? null, made, ru, route,
+              moved2: moved2.error ?? null, current2: cur2, added,
+              members: (window.__rack.doc().racks[0].bundles || []).map(b => b.members.map(m => m.cable))}; }""")
+    if both["moved"] or both["current"] or "routes" not in (both["raw"] or ""):
+        bad.append(f"a bundle applied in the same turn as a move: the move {both['moved']!r}, routes current {both['current']}, "
+                   f"the kit answered {both['raw']!r}; expected a refusal that says the routes are not known")
+    unchecked = lambda r: [t for t in (r.get("findings") or []) if "not checked" in t or "not known" in t]
+    # (made with a trunk worked out from the routes, which only a route context gives)
+    if both["made"]["error"] or both["ru"] != 39 or not both["route"] or unchecked(both["made"]):
+        bad.append(f"a panel's bundle.create sent in the same turn as a move: {both['made']}, trunk {both['route']}; "
+                   "expected it made, its trunk worked out from the moved rack's routes, and checked")
+    if both["moved2"] or both["current2"] or both["added"]["error"] or unchecked(both["added"]) or both["members"] != [["c9", "c10", "c11"]]:
+        bad.append(f"a panel's bundle.add sent in the same turn as a move: {both['added']}, routes current before {both['current2']}, "
+                   f"members {both['members']}; expected c11 added, with the moved rack's routes, and checked")
+    if both["made"]["error"]:
+        return bad            # no bundle to wait for: what went wrong is said above
+    wait_fn(page, "follow: the bundle", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 1")
+
+    if webgl_trouble(page):
+        print("[check_rack_routes_follow_edits] WebGL unavailable - the 3D rebuild was not exercised")
+        return bad
+    # IN 3D: the scene is hung by the routes of the rack as it is. Each tube
+    # starts at the kit's reach point for its plug (reachGap, mm, a and b);
+    # hung by the paths of the rack before the move, the cords of LEAF-B
+    # would start two rack units, 88.9 mm, from their plugs.
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "follow: the scene", tubes=True)
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    res = page.evaluate(apply, {"op": "move", "id": "i3", "ru": 40})
+    if res.get("error"):
+        return bad + [f"3D: moving LEAF-B back was refused: {res['error']}"]
+    page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+    settle_scene(page, "follow: the scene after the move", tubes=True)
+    wait_fn(page, "follow: the routes after the move", ROUTES_CURRENT)
+    gaps = page.evaluate("""() => { const s = window.__rack.scene();
+      const ru = window.__rack.doc().racks[0].items.find(i => i.id === 'i3').ru;
+      return {ru, tubes: (s.rackCables.tubes || []).filter(t => t.routed).map(t => [t.link.id, t.reachGap ?? null])}; }""")
+    far = [(c, g) for c, g in gaps["tubes"] if not g or any(v is None or v > 2.0 for v in g)]
+    if gaps["ru"] != 40 or len(gaps["tubes"]) < 14 or far:
+        bad.append(f"3D: after LEAF-B moved to U{gaps['ru']}, {len(gaps['tubes'])} routed tubes, and these do not start at "
+                   f"their plugs' reach points (mm apart, a and b): {far}")
+    faults, _ = route_follows(page, "3D: after the move", None, ())
+    return bad + faults
 
 
 # THE CORDS CLEAR THE RINGS (portrayal-site#166, Portrayal #968). A D-ring is
@@ -6274,7 +6827,8 @@ PDU_RACK_JS = """async () => {
 # a corner the drawing flagged as too tight for its legs, and no tighter than
 # the radius it flagged; each flag is true (bend_faults) and in the kit's
 # bend-check words, and kept in the scene, not said in the page's notice
-# (the notice stays off, portrayal-site#164 and #166); and each tube's length is its polyline's less exactly
+# (what the notice says is the kit's own findings, check_rack_bend_notice: a
+# flag here is the drawing's account of its arcs); and each tube's length is its polyline's less exactly
 # what rounding took off, R(2 tan(theta/2) - theta) a corner. NOT VACUOUS: it
 # fails without 16 rounded tubes at OM4's radius, without enough samples, or
 # without a corner drawn at the full radius.
@@ -6431,8 +6985,9 @@ def check_rack_bend_radius_3d(page, base):
         bad.append(f"3D: {b['cable']}'s tube bends at {b['r']} mm near {b['at']}, under its {b['need']} mm radius: {b['why']}")
     if got["flagged"] != len(got["tight"]):
         bad.append(f"3D: {got['flagged']} corners flagged but {len(got['tight'])} said")
-    # The flags are the scene's (rackCables.tight), not the page's to say yet
-    # (portrayal-site#164 and #166: the notice stays off until it is decided).
+    # The flags are the scene's (rackCables.tight), never the page's to say:
+    # the notice says the kit's findings (kit 0.17.0, check_rack_bend_notice),
+    # which are worded without "in 3D" and are none on this rack.
     if got["tight"] and BEND_FLAG_RE.search(got["notice"]):
         bad.append(f"3D: the page says a bend flag: {got['notice']!r}")
     for t in got["tight"]:
