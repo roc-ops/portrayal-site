@@ -11652,7 +11652,9 @@ def check_rack_cable_list(page, base):
         return bad + [f"cable list: the rows are {list(by)}"]
     if by["c2"]["text"] != "leaf-1 (U14) mgmt-eth → demarc (U14) port-2-1":
         bad.append(f"cable list: c2 reads {by['c2']['text']!r}")
-    if by["c1"]["meta"] != "A1 · OS2 single-mode fiber · uplink · 2 m":
+    # c1 is routed and lands at both ends, so its 2 m is said as a cord with its
+    # spare (spare.js; the figure is check_rack_cable_spare's to hold).
+    if not re.fullmatch(r"A1 · OS2 single-mode fiber · uplink · 2 m cord, \d+(\.\d+)? m spare", by["c1"]["meta"]):
         bad.append(f"cable list: c1's details read {by['c1']['meta']!r}")
     if by["c3"]["loose"] != {"a": "Loose end A: port-2 holds no optic."} or by["c1"]["loose"] or by["c2"]["loose"]:
         bad.append(f"cable list: the loose ends are {[(r['id'], r['loose']) for r in got['rows']]}")
