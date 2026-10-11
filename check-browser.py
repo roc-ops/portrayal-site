@@ -17989,6 +17989,26 @@ def check_rack_two_half_units(page, base):
     if _items(page) != {"i1": 12.5, "i2": 12} or drop is None or abs(drop - (22.225 - 1)) > 1e-6:
         bad.append(f"drag: i2 dropped on the lower half of U12 is at {_items(page)} (the preview was {drop} tall, expected half a unit)")
     wait_fn(page, "halves: the panes after the drag", "() => document.querySelectorAll('#paneFront svg [data-item-id][data-panel=\"mounted\"]').length === 2 && !document.querySelector('#paneFront svg rect[data-half]')")
+    # ...AND BY HALF A UNIT: i1 up from the upper half of U12 to the lower half of U13, then back down onto the
+    # free upper half of U12, whose lower half i2 holds. A drag that stepped by whole units could do neither.
+    def drag_half(iid, halves_up, want, what):
+        box = page.locator(f'#paneFront svg [data-item-id="{iid}"][data-panel="mounted"] [data-class="chassis"]').first.bounding_box()
+        unit = page.locator('#paneFront svg rect[data-u="20"]').bounding_box()["height"]
+        x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.move(x, y - 6 if halves_up > 0 else y + 6, steps=2)
+        page.mouse.move(x, y - halves_up * unit / 2, steps=6)
+        page.wait_for_timeout(150)
+        page.mouse.up()
+        try:
+            wait_fn(page, f"halves: {what}", "([id, ru]) => window.__rack.doc().racks[0].items.find(i => i.id === id).ru === ru", arg=[iid, want], timeout=8000)
+        except RuntimeError:
+            bad.append(f"drag: {what}: {iid} is at {_items(page)[iid]}, expected {want}")
+        page.wait_for_timeout(500)
+    drag_half("i1", 1, 13, "i1 up half a unit")
+    drag_half("i1", -1, 12.5, "i1 back onto the free upper half of U12")
+    wait_fn(page, "halves: the panes after the half drags", "() => document.querySelectorAll('#paneFront svg [data-item-id][data-panel=\"mounted\"]').length === 2 && !document.querySelector('#paneFront svg rect[data-half]')")
     # 6. ONE UNIT BETWEEN THEM, and each where the kit's itemBox stands it, with one screw at the hole its half holds.
     k, g = page.evaluate(V4_ITEMBOX_JS), page.evaluate(V4_2D_JS)
     H, RU = k["H"], k["RU"]
@@ -18005,7 +18025,9 @@ def check_rack_two_half_units(page, base):
             bad.append(f"2D: {iid}'s screws are at {[H - cy for cy in gi['screws']]}, the kit's hole for its half is at {ki['holes']}")
     if abs(k["items"]["i1"]["holes"][0] - (11 * RU + 38.10)) > 1e-6 or abs(k["items"]["i2"]["holes"][0] - (11 * RU + 6.35)) > 1e-6:
         bad.append(f"kit: the two halves of U12 do not hold the unit's two outer holes: {k['items']['i1']['holes']}, {k['items']['i2']['holes']}")
-    # 7. THE ARROW KEYS, half a unit at a time: i2 is selected by the drop. Up is taken (the kit says by whom); down twice is U11.
+    sel = page.locator('#paneFront svg [data-item-id="i2"][data-panel="mounted"] [data-class="chassis"]').first.bounding_box()
+    page.mouse.click(sel["x"] + sel["width"] / 2, sel["y"] + sel["height"] / 2)
+    # 7. THE ARROW KEYS, half a unit at a time: i2 is selected. Up is taken (the kit says by whom); down twice is U11.
     wait_fn(page, "halves: i2 selected", "() => !!document.querySelector('#paneFront svg [data-item-id=\"i2\"].rk-selected, #iLabel')")
     page.keyboard.press("ArrowUp")
     wait_fn(page, "halves: the refused step is said", "() => /Taken by /.test(document.getElementById('side').textContent)")
