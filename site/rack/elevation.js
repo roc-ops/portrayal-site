@@ -198,6 +198,15 @@ function sidedTransform(it, view, w, h, y) {
   return `translate(${x} ${y})${turn}`;
 }
 
+// THE PANE'S BOX, before any room for cables: the rails, a gutter each side
+// (the lane gap when cables are routed) and, with parts beside the rack, room
+// for them. The side panes take its top and height (side-elevation.js), so a
+// U is at one height in every pane.
+export function elevationBox(frame, zeroU = [], baseRU = 1, laneGap = 0) {
+  const g = Math.max(6, laneGap), totalH = frame.heightRU * RU;
+  return zeroU.length ? zeroUBox(zeroU, frame, baseRU, g) : {x: -RAIL_W - g, y: -18, w: OPENING + RAIL_W * 2 + g * 2, h: totalH + 30};
+}
+
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
                                      placeholders = true, ears = false, metal = false, paper = false, laneGap = 0,
@@ -206,10 +215,9 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
   const totalH = frame.heightRU * RU;
   // Lanes (cable routing spec §7): with routed cables the gutter beside each
   // rail widens to the lane gap, so a run up the side has room.
-  const g = Math.max(6, laneGap);
-  const box = zeroU.length ? zeroUBox(zeroU, frame, baseRU, g) : null;
+  const box = elevationBox(frame, zeroU, baseRU, laneGap);
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
-    viewBox: box ? `${box.x} ${box.y} ${box.w} ${box.h}` : `${-RAIL_W - g} -18 ${OPENING + RAIL_W * 2 + g * 2} ${totalH + 30}`});
+    viewBox: `${box.x} ${box.y} ${box.w} ${box.h}`});
   drawRails(out, frame, baseRU, totalH, C);
   let zStyled = false;
   for (const z of zeroU.filter(x => zeroUShown(x, view))) {
