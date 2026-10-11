@@ -57,6 +57,7 @@ import {loadTree, saveTree, isOpen, peek, LOOSE} from './rack/cable-tree.js';
 import {mountCovers, loadCovers, paintCovers2d, paintCovers3d} from './rack/covers.js';
 
 const $ = id => document.getElementById(id);
+const PROBE = new URLSearchParams(location.search).get('probe') === '1';
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
@@ -193,7 +194,8 @@ async function rebuild3d() {
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
-    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers});
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
+    ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -2044,7 +2046,7 @@ const agentContext = agentContextFor({
   routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
-if (new URLSearchParams(location.search).get('probe') === '1') {
+if (PROBE) {
   window.__rack = {ready, doc: () => ed.getDoc(), flush: () => S.save.flush(), scene: () => S.scene3d,
     // Probe only: put a rack in as one undo step, as any edit that changes the rack under the page does.
     replaceRack: (next, undoable) => {
@@ -2057,6 +2059,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     view: () => S.view,
     // Probe only: the covers setting ('on', 'see' or 'off').
     covers: () => S.covers,
+    // Probe only: the 3D scene being built, from before its first device (scene() answers only once it is hung).
+    loadingScene: () => S.probeLoading ?? null,
     redraw: () => render(),
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),

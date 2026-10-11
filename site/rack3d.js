@@ -668,6 +668,38 @@ export function createRackScene(container, opts = {}) {
     if (sheet) for (const m of mats) m.visible = false;
     group.add(body);
     meshes.forEach(m => group.add(m));
+    // A SHEET BODY STANDS AS A PLAIN BOX UNTIL ITS DETAIL ARRIVES
+    // (`opts.standIn`, portrayal-site#190). Everything a sheet part is made
+    // of is built by the relief pass below, which is not awaited: until it
+    // lands the part is not there at all, and whatever a host hangs in or on
+    // it (the Rack Builder's lane cables and their straps, in a vertical
+    // manager) hangs in the air. So its box, which is there already as the
+    // frame its relief is built in, is shown at once: plain and see-through,
+    // a body that is still being built. The first face of detail hides it
+    // again, exactly as it was, and that is before complete() resolves.
+    // IT IS THE BOX ITSELF, WITH ITS OWN MATERIALS LENT, not a second mesh: a
+    // new mesh, geometry or material would take an id, and a USDZ names its
+    // parts by those, so every file after would differ by a number. No other
+    // caller passes the option.
+    let stoodIn = null;
+    if (sheet && opts.standIn) {
+      stoodIn = mats.map(m => ({m, own: {visible: m.visible, map: m.map, color: m.color.getHex(), transparent: m.transparent, opacity: m.opacity,
+                                         alphaTest: m.alphaTest, depthWrite: m.depthWrite}}));
+      for (const {m} of stoodIn) {
+        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.transparent = true; m.opacity = 0.35; m.alphaTest = 0; m.depthWrite = false;
+        m.needsUpdate = true;
+      }
+      body.userData.standIn = true;
+    }
+    const dropStandIn = () => {
+      if (!stoodIn) return;
+      for (const {m, own} of stoodIn) {
+        m.visible = own.visible; m.map = own.map; m.color.setHex(own.color); m.transparent = own.transparent; m.opacity = own.opacity;
+        m.alphaTest = own.alphaTest; m.depthWrite = own.depthWrite; m.needsUpdate = true;
+      }
+      delete body.userData.standIn;
+      stoodIn = null;
+    };
 
     const ruHeight = Math.max(1, Math.round(H / RU));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
@@ -744,6 +776,10 @@ export function createRackScene(container, opts = {}) {
     }
     scene.add(group);
     mounted.push({entry, group, tag, ears});
+    // A HOST THAT STANDS A MOUNT SOMEWHERE OF ITS OWN (`opts.onMount`) does it
+    // here, before the mount is ever drawn, not after the whole stack is
+    // built: the Rack Builder's parts beside the rack (rack/scene3d.js).
+    opts.onMount?.({id: entry.id ?? null, ref: entry.ref, group});
 
     // The faces nobody is looking at yet, plus the underside. Deliberately not
     // awaited: build() resolves once every device is standing, so the scrim
@@ -772,6 +808,7 @@ export function createRackScene(container, opts = {}) {
         // between. The Rack Builder reads the covers off it (rack/covers.js).
         // No other caller passes it, and nothing here changes without it.
         if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
+        if (per.length) dropStandIn();
         const i = MAT_SLOT[F.view], cv = faceCv[F.view];
         if (cv && body.material[i] && !sheet) {
           const prev = body.material[i];
@@ -780,6 +817,7 @@ export function createRackScene(container, opts = {}) {
           prev.dispose();
         }
       }
+      dropStandIn();   // a part whose drawing builds nothing is not left as a box
     })());
     return group;
   }

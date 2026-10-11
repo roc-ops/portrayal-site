@@ -342,7 +342,12 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   // THIS PANE DOES NOT DRAW THE NODE: the kit's rest height is the rack's,
   // the same on either pane, so it never places a node by itself - a front
   // lacer's ring has no point on the rear pane, and no stretch or strap there.
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, (e, f, i) => {
+  // A BUNDLE IS DRAWN WHERE ITS CABLES ARE (#190): a cable with a loose end is
+  // not drawn along its path (it hangs as a lead from the end that lands), so
+  // it holds up no stretch of its bundle and no strap. `landed` is the cables
+  // this pane draws along their paths.
+  const landed = new Set(plan.links.filter((link, i) => !loose(i, 'from') && !loose(i, 'to')).map(link => link.id));
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, landed, (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
@@ -474,11 +479,15 @@ export function drawInFront(svg) {
 //   - a ring round a corner too tight for the bundle's bend radius.
 // A stretch of the trunk on the other face is not drawn here, nor are its
 // straps. They go in the cables' layer and take no click.
+// NOR WHERE NONE OF ITS CABLES IS DRAWN: a stretch is drawn only where a member
+// that rides it is drawn along its path (`landed`: a cable with a loose end is
+// not), and a strap only on such a stretch. Without this a bundle whose device
+// was removed left its straps up the lane with no cable in them.
 // `turn(v)` turns a rack offset to this pane's axes; `base(e, f, i)` is trunk
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, base) {
+function drawBundles2d(svg, rack, routes, pane, turn, landed, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -490,6 +499,7 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
     const pt = i => { if (!pts.has(i)) pts.set(i, base(lay.T[i], f, i)); return pts.get(i); };
     // a stretch's two ends on this pane: its nodes' points, moved to its pack's middle
     const ends = st => {
+      if (!st.members.some(id => landed.has(id))) return null;
       const p = pt(st.from), q = pt(st.to);
       if (!p || !q) return null;
       const a = turn(st.c0), b = turn(st.c1);
@@ -603,8 +613,12 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
       n.classList.toggle('on-member', selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId));
     // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
     // it, is the one selected, and dimmed with the rest otherwise (rack.css).
-    for (const n of svg.querySelectorAll('[data-strap]'))
-      n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId)));
+    // ...and it fades with them: a strap whose bundle's cables are all left out by the filter is a ghost too.
+    for (const n of svg.querySelectorAll('[data-strap]')) {
+      const ids = (n.dataset.members || '').split(' ').filter(Boolean);
+      n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && ids.includes(selectedId)));
+      n.classList.toggle('ghost', ids.length > 0 && ids.every(id => out.has(id) && !lit(id)));
+    }
   }
 }
 

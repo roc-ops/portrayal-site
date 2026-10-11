@@ -17338,6 +17338,131 @@ def check_rack_covers(page, base):
     return bad
 
 
+
+# ── portrayal-site#190: nothing floats while the 3D scene loads ──────────
+# One sample a frame of the scene as it is being built: is the duct there, where,
+# how many of its meshes would be drawn (and whether one is its stand-in box),
+# and how many cable tubes and strap bands would be.
+LOADING_SAMPLER_JS = """() => {
+  window.__frames = []; window.__sampling = true;
+  const t0 = performance.now();
+  const drawn = o => { for (let n = o; n; n = n.parent) if (!n.visible) return false; return [].concat(o.material).some(m => m && m.visible !== false); };
+  const tick = () => {
+    const s = window.__rack.loadingScene(), T = s?.three?.scene;
+    if (T) {
+      const g = T.getObjectByName('device-z1'), pc = T.getObjectByName('patch-cables'), cb = T.getObjectByName('cable-bundles');
+      let body = 0, standIn = 0, tubes = 0, straps = 0;
+      g?.traverse(o => { if (o.isMesh && drawn(o)) { body++; if (o.userData.standIn) standIn++; } });
+      pc?.traverse(o => { if (o.isMesh && drawn(o)) tubes++; });
+      cb?.traverse(o => { if (o.isMesh && o.userData.strap && drawn(o)) straps++; });
+      window.__frames.push({t: Math.round(performance.now() - t0), device: !!g, x: g ? Math.round(g.position.x * 10) / 10 : null, body, standIn, tubes, straps});
+    }
+    if (window.__sampling) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}"""
+STRAPS_WITH_CABLES_JS = """() => [...document.querySelectorAll('#panes svg[data-pane]')].map(s => ({pane: s.dataset.pane,
+  straps: [...s.querySelectorAll('[data-strap]')].map(g => (g.dataset.members || '').split(' ').filter(id => s.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"] path`)).length),
+  trunks: s.querySelectorAll('[data-bundle-trunk]').length}))"""
+
+
+@extra("rack.html: nothing floats while the 3D scene loads - with the vertical manager's files held back, no frame has a cable or a strap without the manager's body (a plain box of its size until its detail arrives, stood beside the rail from the first frame), the box is gone once the scene is complete, and a strap is never drawn where none of its bundle's cables is, in 2D or 3D (#190)")
+def check_rack_3d_loading(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1400, "height": 900})
+    # the manager's own files come late: every one of them is held for a moment
+    held = []
+    def late(route):
+        held.append(route.request.url.rsplit("/", 1)[-1])
+        time.sleep(0.25)
+        route.continue_()
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # a second manager, at the other rail: the first is then mounted while another device is still to be built
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, zeroU: [...r.zeroU, {id: 'z2', ref: 'cmv-sfd42u9w', cfg: 'base', label: 'duct-2', at: 'right-front', offsetMm: 0}]}); }""")
+    wait_fn(page, "loading: the second manager", "() => document.querySelector('#paneFront [data-zerou-id=\"z2\"]') && window.__rack.routesCurrent().current")
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    # 2D: every strap on a pane has a member of its bundle drawn on that pane.
+    two = page.evaluate(STRAPS_WITH_CABLES_JS)
+    if not any(p["straps"] for p in two) or any(n == 0 for p in two for n in p["straps"]):
+        bad.append(f"2D: straps and the members drawn with them, per pane: {two}; expected straps, each with a member drawn")
+    if webgl_trouble(page):
+        print("[check_rack_3d_loading] WebGL unavailable - not exercised")
+        return bad
+    page.route("**/assets/dist/cmv-sfd42u9w*", late)
+    page.evaluate(LOADING_SAMPLER_JS)
+    t0 = time.time()
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "loading: the 3D scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.wait_for_timeout(300)
+    frames = page.evaluate("() => { window.__sampling = false; return window.__frames; }")
+    page.unroute("**/assets/dist/cmv-sfd42u9w*")
+    if not held:
+        bad.append("loading: none of the manager's files was asked for while the scene loaded, so nothing was held back")
+    with_cables = [f for f in frames if f["tubes"] or f["straps"]]
+    if len(frames) < 10 or not with_cables or not any(f["straps"] for f in frames):
+        return bad + [f"loading: {len(frames)} frames sampled, {len(with_cables)} with cables, {sum(1 for f in frames if f['straps'])} with straps: the load was not measured"]
+    final = frames[-1]
+    # NO FRAME HAS A CABLE OR A STRAP WITHOUT THE MANAGER'S BODY...
+    bare = [f for f in with_cables if not f["body"]]
+    if bare:
+        bad.append(f"loading: {len(bare)} of {len(with_cables)} frames with cables have no body for the vertical manager, the first at {bare[0]['t']} ms: {bare[0]}")
+    # ...AND THE BODY IS WHERE THE MANAGER STANDS from its first frame, never at the middle of the rack.
+    astray = [f for f in frames if f["device"] and f["body"] and abs(f["x"] - final["x"]) > 0.5]
+    if astray or abs(final["x"]) < 200:
+        bad.append(f"loading: the manager's body is drawn at x {sorted({f['x'] for f in astray})} in {len(astray)} frames before it stands at {final['x']}")
+    # a strap goes on with its cables or after them, never before
+    if any(f["straps"] and not f["tubes"] for f in frames):
+        bad.append("loading: a frame has straps and no cable")
+    boxed = [f for f in frames if f["standIn"]]
+    if not boxed:
+        bad.append("loading: the manager never stood as a plain box, so the frames before its detail were not what was measured")
+    if final["standIn"] or final["body"] < 50:
+        bad.append(f"loading: the settled scene has {final['standIn']} stand-in boxes and {final['body']} meshes of the manager")
+    left = page.evaluate("""() => { const out = []; window.__rack.scene().three.scene.traverse(o => {
+      if (o.userData?.standIn || /^standin/.test(o.name || '')) out.push(o.name || 'a stand-in');
+      // a sheet part's own box is not drawn once its detail stands: every material of it is hidden again
+      if (o.isMesh && o.parent?.name === 'device-z1' && o.geometry.type === 'BoxGeometry' && o.geometry.parameters.height > 1800 && [].concat(o.material).some(m => m.visible)) out.push('the box of device-z1'); });
+      return out; }""")
+    if left:
+        bad.append(f"loading: stand-in boxes are still in the settled scene (a download would carry them): {left}")
+    first_body = next((f["t"] for f in frames if f["body"]), None)
+    first_cable, first_detail = with_cables[0]["t"], next((f["t"] for f in frames if f["body"] and not f["standIn"]), None)
+    print(f"[check_rack_3d_loading] {len(frames)} frames in {time.time() - t0:.1f} s, {len(held)} of the manager's files held; its box from {first_body} ms, cables from {first_cable} ms, "
+          f"its detail from {first_detail} ms; {len(boxed)} frames with the box, {sum(1 for f in with_cables if f['standIn'])} of them with cables")
+    # A BUNDLE WHOSE CABLES ALL HANG LOOSE has no strap, in the scene or on the panes: its far device removed, cables kept.
+    res = page.evaluate("() => window.__rack.apply({op: 'remove', id: 'i3', cables: 'keep'})")
+    if res.get("error"):
+        return bad + [f"loose: refused: {res['error']}"]
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    try:
+        page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+        settle_scene(page, "loading: the scene with the far device removed")
+    except Exception as e:
+        return bad + [f"loose: {str(e).splitlines()[0]}"]
+    loose3 = page.evaluate("""() => { const T = window.__rack.scene().three.scene, cb = T.getObjectByName('cable-bundles'); let straps = 0, trunks = 0;
+      cb?.traverse(o => { if (o.isMesh && o.userData.strap) straps++; if (o.isMesh && o.userData.envelope) trunks++; });
+      return {straps, trunks, loose: Object.values(window.__rack.cableFacts().reasons).filter(Boolean).length, bundles: window.__rack.doc().racks[0].bundles.length}; }""")
+    if loose3["loose"] < 3 or loose3["bundles"] != 1:
+        bad.append(f"loose: the fixture has {loose3['loose']} loose ends and {loose3['bundles']} bundles, so a bundle of loose cables was not what was measured")
+    if loose3["straps"] or loose3["trunks"]:
+        bad.append(f"loose 3D: {loose3['straps']} straps and {loose3['trunks']} envelope pieces hang for a bundle none of whose cables is drawn along its path")
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "loose: the panes again", "() => document.querySelector('#paneFront svg [data-cables] [data-cable-id]') && window.__rack.routesCurrent().current")
+    page.wait_for_timeout(400)
+    two = page.evaluate(STRAPS_WITH_CABLES_JS)
+    if any(p["straps"] or p["trunks"] for p in two):
+        bad.append(f"loose 2D: straps or envelope stretches are drawn for a bundle none of whose cables is drawn along its path: {two}")
+    return bad
+
+
 # THE SHARDS. On CI's two CPUs the whole pass had grown to twenty minutes, most
 # of it software-rendered 3D, and no check waits on another: each opens its own
 # page. So CI runs it as n jobs side by side, `--shard i/n`, and this is how
