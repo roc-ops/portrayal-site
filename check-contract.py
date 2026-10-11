@@ -1725,7 +1725,7 @@ check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, r
 # @portrayal/kit) and the components README the first two send people to. A
 # path is as written after the host; the bare host is "" and is the front page.
 _README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json",
-                 "schemas/v2/rack.schema.json"]
+                 "schemas/v2/rack.schema.json", "schemas/v3/rack.schema.json"]
 _READMES = ["README.md", "kit/README.md", "library/components/README.md"]
 _PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w-]|\.\w)(/[^\s)\"'<>\]`]*)?")
 
