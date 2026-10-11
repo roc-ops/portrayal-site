@@ -1835,37 +1835,46 @@ check(_sn >= len(_PUBLISHED) and set(_PUBLISHED) <= set(_schemas) and not _sf,
       f"{_sf}")
 for _rel in _schemas:
     check(_rel not in _sf, f"{_rel}: its $id is the URL it is served at", _sf.get(_rel, ""))
-# THE CHECK ABOVE CAN FAIL: a copy of the folder with one fault put in it is
-# caught, by name, for each way a published schema stops resolving.
+# THE CHECK ABOVE CAN FAIL: a folder of its own making, seven small schemas
+# under the published names, with one fault put in at a time; each is caught
+# by name. Nothing here reads publish/schemas/, so a published file that goes
+# missing is reported by the check above and not by a traceback from this one.
 def _schema_mutants():
     out = {}
     with _tf.TemporaryDirectory() as _d:
         _root = Path(_d) / "schemas"
-        _clean = lambda: (_sh.rmtree(_root, ignore_errors=True), _sh.copytree(HERE / "publish" / "schemas", _root))
+        _doc = lambda rel: json.dumps({"$id": f"https://portrayal.dev/{rel}", "type": "object"})
+
+        def _clean():
+            _sh.rmtree(_root, ignore_errors=True)
+            for rel in _PUBLISHED:
+                f = _root / rel[len("schemas/"):]
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text(_doc(rel))
         _served = lambda: {"schemas/" + p.relative_to(_root).as_posix(): p for p in _root.rglob("*.json")}
         _clean(); _all = _served()
-        out["clean"] = schema_faults(_root, _all)[0]
-        _doc = json.loads((_root / "v1" / "lab.schema.json").read_text())
-        (_root / "v1" / "lab.schema.json").write_text(json.dumps({**_doc, "$id": "https://portrayal.dev/schemas/v2/lab.schema.json"}))
-        out["wrong $id"] = schema_faults(_root, _all)[0]
-        _clean(); (_root / "v3").mkdir(); (_root / "v3" / "new.schema.json").write_text(json.dumps(_doc))
-        out["added with another label's $id"] = schema_faults(_root, _served())[0]
+        out["clean"] = schema_faults(_root, _all)
+        (_root / "v1" / "lab.schema.json").write_text(_doc("schemas/v2/lab.schema.json"))
+        out["wrong $id"] = schema_faults(_root, _all)
+        _clean(); (_root / "v3").mkdir(); (_root / "v3" / "new.schema.json").write_text(_doc("schemas/v1/lab.schema.json"))
+        out["added with another label's $id"] = schema_faults(_root, _served())
         _clean(); (_root / "v1" / "marks.schema.json").write_text("{")
-        out["does not parse"] = schema_faults(_root, _all)[0]
-        _clean(); (_root / "v1" / "new.schema.json").write_text(json.dumps({"$id": "https://portrayal.dev/schemas/v1/new.schema.json"}))
-        out["not added"] = schema_faults(_root, _all)[0]
+        out["does not parse"] = schema_faults(_root, _all)
+        _clean(); (_root / "v1" / "new.schema.json").write_text(_doc("schemas/v1/new.schema.json"))
+        out["not added"] = schema_faults(_root, _all)
         _clean(); (_root / "v2" / "rack.schema.json").unlink()
-        out["served and gone"] = schema_faults(_root, _all)[0]
+        out["served and gone"] = schema_faults(_root, _all)
     return out
 
 
 import shutil as _sh
 _sm_ = _schema_mutants()
-_want = {"clean": [], "wrong $id": ["schemas/v1/lab.schema.json"],
-         "added with another label's $id": ["schemas/v3/new.schema.json"],
-         "does not parse": ["schemas/v1/marks.schema.json"], "not added": ["schemas/v1/new.schema.json"],
-         "served and gone": ["schemas/v2/rack.schema.json"]}
-check({k: sorted(v) for k, v in _sm_.items()} == _want,
+_n = len(_PUBLISHED)
+_want = {"clean": ([], _n), "wrong $id": (["schemas/v1/lab.schema.json"], _n),
+         "added with another label's $id": (["schemas/v3/new.schema.json"], _n + 1),
+         "does not parse": (["schemas/v1/marks.schema.json"], _n), "not added": (["schemas/v1/new.schema.json"], _n + 1),
+         "served and gone": (["schemas/v2/rack.schema.json"], _n - 1)}
+check({k: (sorted(v[0]), v[1]) for k, v in _sm_.items()} == _want,
       "the published-schema check fails a wrong $id, a file that does not parse, one never added and one that went away",
       f"{_sm_}")
 # ROBOTS.TXT (RFC 9309): a real group, not only comments. Cloudflare's managed
