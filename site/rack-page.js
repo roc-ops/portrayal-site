@@ -54,6 +54,7 @@ import {stopCentre} from './rack/scene3d.js';
 import {solidsOf} from '../vendor/rack/solids.js';
 import {bundleOfCable} from '../vendor/rack/bundles.js';
 import {loadTree, saveTree, isOpen, peek, LOOSE} from './rack/cable-tree.js';
+import {mountCovers, loadCovers, paintCovers2d, paintCovers3d} from './rack/covers.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -86,6 +87,7 @@ function loadView() {
 function saveView(v) { try { localStorage.setItem(VIEW_KEY, v); } catch { /* forgets */ } }
 const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
   dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), view: loadView(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
+  covers: loadCovers(),   // the covers of the parts beside the rack: 'on', 'see' or 'off' (covers.js); the reader's, never the rack's
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   hover: null,       // {kind: 'cable'|'bundle', id, from: 'stage'|'list'}: what the pointer is over (#169)
@@ -191,7 +193,7 @@ async function rebuild3d() {
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
-    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage});
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -205,6 +207,8 @@ async function rebuild3d() {
   paintSelected3d(built, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(now));
   // A swatch picked while this was building found no scene to tell.
   if (S.stage !== stage) built.setStage?.(S.stage);
+  // ...and so did a covers setting picked then.
+  if (built.covers !== S.covers) paintCovers3d(built, S.covers);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
   S.scene3dRoutes = sig;
   // Routes are resolved by render(), after an edit: if they settled while
@@ -251,6 +255,16 @@ function setStage(c) {
   $('panes').style.setProperty('--rk-stage', c);
   $('panes').dataset.stage = stageTone(c);
   S.scene3d?.setStage?.(c);
+}
+// THE COVERS ARE THE READER'S TOO (#190, covers.js): on, see-through or off,
+// one setting for the panes (either pair) and the scene, remembered in this
+// browser. The panes follow an attribute and rack.css; the scene on screen is
+// told, and every one built after it is built with it. Nothing is redrawn,
+// and no download reads it.
+function setCovers(state) {
+  S.covers = state;
+  paintCovers2d($('panes'), state);
+  paintCovers3d(S.scene3d, state);
 }
 // Which container is shown. Both the `hidden` property AND an explicit
 // inline `display` are set on the one being hidden: `.rk-panes` sets its own
@@ -1884,6 +1898,7 @@ async function bootInner() {
   });
   document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
   setStage(mountStage($('stagebg'), setStage).get());
+  setCovers(mountCovers($('covers'), setCovers).get());
   $('mode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
@@ -2040,6 +2055,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     apply: cmds => edit(cmds),
     // Probe only: which pair the panes show ('faces' or 'sides'), and a redraw that resolves when it has drawn.
     view: () => S.view,
+    // Probe only: the covers setting ('on', 'see' or 'off').
+    covers: () => S.covers,
     redraw: () => render(),
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),

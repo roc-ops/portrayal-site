@@ -20,6 +20,7 @@ import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
 import {landedBends} from './route-context.js';
+import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -556,12 +557,16 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
 // `paths` is routeFacts' cable id -> routePath (the kit's points), and `ctx`
 // its route context (a bundle's lane stops are the kit's pointOf), or null.
+// `covers` is the reader's setting for the covers of the parts beside the rack
+// (covers.js: 'on', 'see' or 'off'); the page changes it on a built scene with
+// covers.js paintCovers3d.
 // `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
-                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214'}) {
+                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214',
+                                              covers = COVERS_DEFAULT}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -604,6 +609,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // rack3d.js) is not a cost a 2D-only visit should pay - the showcase's own
   // mount3d (site/showcase/rack.js) makes the same choice for the same
   // reason.
+  // WHICH PARTS OF EACH PART BESIDE THE RACK ARE ITS COVER (covers.js), read
+  // off its drawings before anything is built, so a cover takes the reader's
+  // setting in the task its meshes arrive in (onFace, below).
+  const coverPaths = new Map(await Promise.all(sideParts.map(async z => [z.id, await coverPathsOf(z.ref, z.cfg)])));
   const {guard3d} = await import('../webgl.js');
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
@@ -617,8 +626,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       stack, heightRU: frame.heightRU, recess: 0,
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
+      onFace: ({id, meshes}) => takeCovers(built, meshes, coverPaths.get(id)),
     });
     built.stageColor = stage;
+    built.covers = covers;
     built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
     await built.build();
     placeZeroU(built, sideParts, chassisOf);

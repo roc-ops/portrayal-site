@@ -17093,6 +17093,251 @@ def check_rack_cable_tree(page, base):
     return bad
 
 
+
+# ── portrayal-site#190: covers on, see-through or off ────────────────────
+# The covers of the duct on the front pane: the copy laid over the cables, the
+# cover under them, a point on the bundle's run up the lane inside the duct
+# (page pixels) and a point on the cover clear of every cable.
+COVERS_2D_JS = """() => {
+  const svg = document.querySelector('#paneFront > svg'), z = svg.querySelector('[data-zerou-id="z1"]');
+  const copies = [...svg.querySelectorAll('[data-in-front] [data-front="cover"]')], own = [...z.querySelectorAll('[data-group="cover"]')];
+  const css = n => { const c = getComputedStyle(n); return [Math.round(+c.opacity * 100) / 100, c.visibility]; };
+  const box = z.getBoundingClientRect();
+  // the lane run: a point of c2's stroke inside the duct, at the middle of its height there
+  const pts = [];
+  for (const p of svg.querySelectorAll('[data-cables] [data-cable][data-cable-id="c2"] path')) {
+    const L = p.getTotalLength(), m = p.getScreenCTM();
+    for (let t = 0; t <= L; t += 1) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m);
+      if (w.x > box.left && w.x < box.right) pts.push([w.x, w.y]); }
+  }
+  pts.sort((a, b) => a[1] - b[1]);
+  const lane = pts.length ? pts[Math.floor(pts.length / 2)] : null;
+  return {state: document.getElementById('panes').dataset.covers, pressed: [...document.querySelectorAll('#covers [aria-pressed="true"]')].map(b => b.dataset.coversSet),
+          buttons: [...document.querySelectorAll('#covers [data-covers-set]')].map(b => [b.dataset.coversSet, b.getAttribute('aria-label')]),
+          copies: copies.map(css), own: own.map(css), lane, clear: lane ? [box.left + box.width * 0.82, lane[1]] : null,
+          stored: localStorage.getItem('portrayal.rack.covers'), search: location.search, selected: z.classList.contains('rk-selected'),
+          hot: [...svg.querySelectorAll('[data-cables] [data-cable].hot')].map(n => n.dataset.cableId)};
+}"""
+# The covers in the scene: how many meshes, whether they show, their materials' see-through state, and
+# where the bundle's run inside the duct is on the page, with the camera put straight in front of it.
+COVERS_3D_JS = """aim => {
+  const s = window.__rack.scene(), T = s.three, ms = s.coverMeshes ?? [];
+  const mats = ms.flatMap(o => [].concat(o.material));
+  // the run's own point on the page, read where the camera is now (it eases after it is put somewhere)
+  const tube = s.rackCables.tubes.find(t => t.link.id === 'c2'), g = T.scene.getObjectByName('device-z1');
+  const box = new T.THREE.Box3().setFromObject(g), inside = tube.points.filter(q => q.x > box.min.x && q.x < box.max.x);
+  // (the middle of its straight run up the lane: between its highest point in the duct and the lowest at that x)
+  const top = inside.reduce((m, q) => (q.y > m.y ? q : m)), foot = inside.filter(q => Math.abs(q.x - top.x) < 1 && Math.abs(q.z - top.z) < 1).reduce((m, q) => (q.y < m.y ? q : m));
+  const p = top.clone().add(foot).multiplyScalar(0.5);
+  if (aim) { T.controls.target.copy(p); T.camera.position.set(p.x, p.y, p.z + 600); T.controls.update(); }
+  T.camera.updateMatrixWorld();
+  T.camera.matrixWorldInverse.copy(T.camera.matrixWorld).invert();
+  const v = p.clone().project(T.camera), r = T.renderer.domElement.getBoundingClientRect();
+  const at = [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height];
+  return {n: ms.length, shown: ms.filter(o => o.visible).length, setting: s.covers,
+          mats: [...new Set(mats.map(m => [m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite, m.alphaToCoverage, m.alphaTest].join('/')))].sort(),
+          others: (() => { let n = 0; T.scene.getObjectByName('device-z1').traverse(o => { if (o.isMesh && !ms.includes(o) && o.visible) n++; }); return n; })(), at};
+}"""
+# A MODEL FILE, AS WHAT IT HOLDS. Two GLBs of one scene are not the same bytes:
+# the exporter encodes its textures side by side and writes them in the order
+# they finish. So a file is compared by what is in it, in an order of its own:
+# every image's digest; every material with each texture it names put down as
+# that image's digest; and every node with its name, its place, and its mesh as
+# those materials and the size and bounds of its geometry. A USDZ is a zip of
+# stored entries: its size and its entries' sizes.
+MODEL_HASH_JS = """async kind => {
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+  const out = await X.modelFile(window.__rack.scene(), window.__rack.doc().racks[0], kind, (await C.loadCatalog('/assets/dist/')).chassisOf);
+  const buf = out.data instanceof ArrayBuffer ? out.data : await new Response(out.data).arrayBuffer();
+  const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  const sha = async b => hex(await crypto.subtle.digest('SHA-256', b)), text = v => new TextEncoder().encode(JSON.stringify(v));
+  const dv = new DataView(buf);
+  if (kind !== 'glb') {
+    const sizes = [];
+    for (let i = 0; i + 30 < buf.byteLength;) {
+      if (dv.getUint32(i, true) !== 0x04034b50) break;
+      const size = dv.getUint32(i + 18, true);
+      sizes.push(size);
+      i += 30 + dv.getUint16(i + 26, true) + dv.getUint16(i + 28, true) + size;
+    }
+    return {bytes: buf.byteLength, entries: sizes.length, sizes: await sha(text(sizes.sort((a, b) => a - b)))};
+  }
+  const len = dv.getUint32(12, true), j = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, len)));
+  const imgs = await Promise.all((j.images || []).map(i => { const v = j.bufferViews[i.bufferView]; return sha(new Uint8Array(buf, 20 + len + 8 + (v.byteOffset || 0), v.byteLength)); }));
+  const tex = v => (v && typeof v === 'object' ? (Array.isArray(v) ? v.map(tex) : Object.fromEntries(Object.entries(v).map(([k, x]) =>
+    [k, x && typeof x === 'object' && typeof x.index === 'number' && /Texture$/i.test(k) ? {...x, index: imgs[j.textures[x.index].source]} : tex(x)]))) : v);
+  const mats = (j.materials || []).map(m => JSON.stringify(tex(m)));
+  const acc = i => { const a = j.accessors[i]; return [a.count, a.type, a.componentType, a.min, a.max]; };
+  const nodes = j.nodes.map(n => JSON.stringify([n.name ?? '', n.extras ?? null, n.translation, n.rotation, n.scale, n.matrix, (n.children || []).length,
+    n.mesh == null ? null : j.meshes[n.mesh].primitives.map(p => [mats[p.material] ?? null, p.mode, p.indices == null ? null : acc(p.indices),
+      Object.entries(p.attributes).sort().map(([k, i]) => [k, acc(i)])])]));
+  return {bytes: buf.byteLength, nodes: j.nodes.length, materials: mats.length, images: imgs.length,
+          nodesHash: await sha(text([...nodes].sort())), materialsHash: await sha(text([...mats].sort())), imagesHash: await sha(text([...imgs].sort())),
+          hidden: j.nodes.filter(n => /cover/.test(n.name || '')).length,
+          faded: (j.materials || []).filter(m => { const a = m.pbrMetallicRoughness?.baseColorFactor?.[3]; return a != null && a < 0.99; }).length};
+}"""
+SHEET_HASH_JS = """async () => {
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+  const text = (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf, {date: new Date(2026, 0, 2)})).data;
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return {hash: [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, '0')).join(''), covers: (text.match(/data-front="cover"/g) || []).length, opacity: /data-front="cover"[^>]*opacity="0.34"/.test(text)};
+}"""
+
+
+def colour_gap(a, b):
+    return max(abs(x - y) for x, y in zip(a, b))
+
+
+@extra("rack.html: covers on, see-through or off - one control for the panes (both pairs) and the scene, see-through to begin with and remembered in the browser, never in the rack or the URL; on hides the run inside a vertical manager, see-through shows it through the cover, off draws no cover; the manager is still selected by a click and the cable inside still hovered; and the sheet, the GLB and the USDZ are the same files whatever it says (#190)")
+def check_rack_covers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.click("#zoomFit")
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    st = page.evaluate(COVERS_2D_JS)
+    # THE CONTROL: three settings, see-through to begin with, nothing stored until the reader picks.
+    if [b[0] for b in st["buttons"]] != ["on", "see", "off"] or not all(b[1] and b[1].startswith("Covers ") for b in st["buttons"]):
+        bad.append(f"control: its buttons are {st['buttons']}")
+    if (st["state"], st["pressed"], st["stored"]) != ("see", ["see"], None):
+        bad.append(f"control: to begin with the panes are {st['state']!r}, pressed {st['pressed']}, stored {st['stored']!r}; expected see-through and nothing stored")
+    if not st["copies"] or not st["own"] or not st["lane"]:
+        return bad + [f"fixture: the front pane has {len(st['copies'])} cover copies, {len(st['own'])} covers and lane point {st['lane']}"]
+    doc0, sheet0 = page.evaluate("() => JSON.stringify(window.__rack.doc())"), page.evaluate(SHEET_HASH_JS)
+    if not sheet0["covers"] or not sheet0["opacity"]:
+        bad.append(f"sheet: the sheet has {sheet0['covers']} cover copies (see-through: {sheet0['opacity']}), so it could not show a change")
+    want2d = {"on": ([1, "visible"], [1, "visible"]), "see": ([0.34, "visible"], [1, "visible"]), "off": ([0.34, "hidden"], [1, "hidden"])}
+    seen = {}
+    for state in ("on", "off", "see"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(250)
+        st = page.evaluate(COVERS_2D_JS)
+        copy, own = want2d[state]
+        if (st["state"], st["pressed"], st["stored"]) != (state, [state], state):
+            bad.append(f"2D {state}: the panes are {st['state']!r}, pressed {st['pressed']}, stored {st['stored']!r}")
+        if any(c != copy for c in st["copies"]) or any(c != own for c in st["own"]):
+            bad.append(f"2D {state}: the copies over the cables are {st['copies']} and the covers under them {st['own']}; expected {copy} and {own}")
+        if st["search"] != "?probe=1":
+            bad.append(f"2D {state}: the setting reached the URL: {st['search']!r}")
+        # on the composited page: the run inside the duct, and the cover beside it
+        w, h, px = png_pixels(page.screenshot())
+        seen[state] = (px(*st["lane"]), px(*st["clear"]))
+        # THE CABLE INSIDE IS STILL HOVERED, whatever stands in front of it...
+        page.mouse.move(*st["lane"])
+        page.wait_for_timeout(350)
+        hot = page.evaluate(COVERS_2D_JS)["hot"]
+        if not hot or not set(hot) <= {"c1", "c2", "c3"}:
+            bad.append(f"2D {state}: the pointer on the run inside the duct lit {hot}, expected a member of the bundle")
+        park_mouse(page)
+        # ...AND THE MANAGER IS STILL SELECTED by a click on it, cover or no cover.
+        page.mouse.click(*st["clear"])
+        try:
+            wait_fn(page, f"2D {state}: a click on the duct selects it", "() => document.querySelector('#paneFront [data-zerou-id=\"z1\"].rk-selected') && document.getElementById('zRemove')", timeout=8000)
+        except RuntimeError as e:
+            bad.append(str(e))
+        page.keyboard.press("Escape")
+        wait_fn(page, f"2D {state}: the duct put down", "() => !document.querySelector('#paneFront [data-zerou-id=\"z1\"].rk-selected')")
+        park_mouse(page)
+        sheet = page.evaluate(SHEET_HASH_JS)
+        if sheet != sheet0:
+            bad.append(f"sheet {state}: the sheet is not the file it was with the covers see-through: {sheet} against {sheet0}")
+    # ON hides the run; OFF shows it at its own colour and no cover beside it; SEE-THROUGH is between the two.
+    lane = {k: v[0] for k, v in seen.items()}
+    clear = {k: v[1] for k, v in seen.items()}
+    if colour_gap(lane["on"], clear["on"]) > 12:
+        bad.append(f"2D on: the run inside the duct still shows through the cover: {lane['on']} beside {clear['on']}")
+    if colour_gap(lane["off"], lane["on"]) < 60 or colour_gap(clear["off"], clear["on"]) < 4:
+        bad.append(f"2D off: the run is {lane['off']} (on: {lane['on']}) and the duct beside it {clear['off']} (on: {clear['on']}); expected the cable's own colour and no cover")
+    if not (colour_gap(lane["see"], lane["on"]) > 25 and colour_gap(lane["see"], lane["off"]) > 25):
+        bad.append(f"2D see-through: the run is {lane['see']}, expected between on {lane['on']} and off {lane['off']}")
+    print(f"[check_rack_covers] 2D, the run inside the duct: on {lane['on']}, see-through {lane['see']}, off {lane['off']}")
+    # FROM THE SIDE the cover is the strip the drawing marks: there with on and see-through, gone with off.
+    to_sides(page, cables=4)
+    side = "() => [...document.querySelectorAll('#panes svg[data-side] [data-zerou-id] [data-kind=\"cover\"]')].map(n => getComputedStyle(n).visibility)"
+    for state, want in (("off", "hidden"), ("on", "visible"), ("see", "visible")):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        got = page.evaluate(side)
+        if not got or set(got) != {want}:
+            bad.append(f"sides {state}: the cover strips are {sorted(set(got))} ({len(got)} of them), expected {want}")
+    to_faces(page)
+    # REMEMBERED IN THE BROWSER, not in the rack: off, a reload, and it is still off.
+    page.click('#covers [data-covers-set="off"]')
+    if page.evaluate("() => JSON.stringify(window.__rack.doc())") != doc0:
+        bad.append("rack: the setting changed the rack document")
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    wait_fn(page, "covers: the panes after a reload", "() => document.querySelector('#paneFront [data-in-front] [data-front=\"cover\"]') && window.__rack.routesCurrent().current")
+    st = page.evaluate(COVERS_2D_JS)
+    if (st["state"], st["pressed"]) != ("off", ["off"]) or any(c[1] != "hidden" for c in st["copies"] + st["own"]):
+        bad.append(f"remembered: after a reload the panes are {st['state']!r}, pressed {st['pressed']}, covers {st['copies']} {st['own']}")
+
+    # 3D. A scene built with the covers off never shows one; the control then restyles it in place.
+    if webgl_trouble(page):
+        print("[check_rack_covers] WebGL unavailable - 3D not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "covers: the 3D scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    scene = page.evaluate_handle("() => window.__rack.scene()")
+    st = page.evaluate(COVERS_3D_JS, True)
+    if st["n"] < 2 or st["shown"] or st["setting"] != "off" or st["others"] < 10:
+        bad.append(f"3D off: {st['shown']} of {st['n']} cover meshes show in a scene built with the covers off (setting {st['setting']!r}, {st['others']} other meshes of the duct show)")
+    page.wait_for_timeout(1500)
+    shots, built = {}, None
+    for state in ("off", "on", "see", "on", "off", "see"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(700)
+        st3 = page.evaluate(COVERS_3D_JS, False)
+        if state == "on":
+            # as built, and the same again after a see-through spell
+            if built is not None and st3["mats"] != built:
+                bad.append(f"3D on: after see-through the covers' materials are {st3['mats']}, not as they were built {built}")
+            built = st3["mats"]
+            if st3["shown"] != st3["n"] or any(m.split("/")[1] != "1" or m.split("/")[2] != "true" for m in st3["mats"]):
+                bad.append(f"3D on: {st3['shown']} of {st3['n']} cover meshes show, materials {st3['mats']}; expected every one at full strength and writing depth")
+        elif state == "see":
+            if st3["shown"] != st3["n"] or not all(m.startswith("true/0.3/false/false/") for m in st3["mats"]) or len(st3["mats"]) < 1:
+                bad.append(f"3D see-through: {st3['shown']} of {st3['n']} cover meshes show, materials {st3['mats']}; expected every one blended at 0.3 and writing no depth")
+        elif st3["shown"]:
+            bad.append(f"3D off: {st3['shown']} of {st3['n']} cover meshes show")
+        if st3["others"] != st["others"]:
+            bad.append(f"3D {state}: {st3['others']} other meshes of the duct show, {st['others']} before: the setting touched more than the covers")
+        w, h, px = png_pixels(page.screenshot())
+        shots[state] = px(*st3["at"])
+        hov = page.evaluate("""async at => { const H = await import('/site/rack/hover.js'); return H.hoverAt3d(window.__rack.scene(), {clientX: at[0], clientY: at[1]}); }""", st3["at"])
+        if not hov or hov.get("id") not in ("c1", "c2", "c3", "c4", "b1"):
+            bad.append(f"3D {state}: the pointer on the run inside the duct finds {hov}, expected a cable that runs there or their bundle")
+        for kind in ("glb", "usdz"):
+            got = page.evaluate(MODEL_HASH_JS, kind)
+            shots.setdefault(kind, {})[state] = got
+        after = page.evaluate(COVERS_3D_JS, False)
+        if (after["shown"], after["mats"]) != (st3["shown"], st3["mats"]):
+            bad.append(f"3D {state}: after a download the covers are not as the setting has them ({after['shown']} show, {after['mats']})")
+    if colour_gap(shots["on"], shots["off"]) < 60 or not (colour_gap(shots["see"], shots["on"]) > 20 and colour_gap(shots["see"], shots["off"]) > 8):
+        bad.append(f"3D: on the page the run inside the duct is {shots['on']} with the covers on, {shots['see']} see-through and {shots['off']} off")
+    print(f"[check_rack_covers] 3D, the run inside the duct: on {shots['on']}, see-through {shots['see']}, off {shots['off']}")
+    for kind in ("glb", "usdz"):
+        files = shots[kind]
+        if len({json.dumps(v, sort_keys=True) for v in files.values()}) != 1:
+            bad.append(f"{kind.upper()}: the file differs with the covers setting: {files}")
+    glb = shots["glb"]["on"]
+    if glb.get("faded") or glb["nodes"] < 20:
+        bad.append(f"GLB: {glb['faded']} see-through materials in a file of {glb['nodes']} nodes; a cover in a file is as it was built")
+    if page.evaluate("s => window.__rack.scene() !== s", scene):
+        bad.append("3D: the scene was rebuilt for a covers setting")
+    print(f"[check_rack_covers] GLB {glb['bytes']} bytes, {glb['nodes']} nodes, {glb['materials']} materials, {glb['images']} images (nodes {glb['nodesHash'][:12]}, materials {glb['materialsHash'][:12]}, images {glb['imagesHash'][:12]}): the same on, see-through and off; USDZ {shots['usdz']['on']['bytes']} bytes, {shots['usdz']['on']['entries']} entries, the same")
+    return bad
+
+
 # THE SHARDS. On CI's two CPUs the whole pass had grown to twenty minutes, most
 # of it software-rendered 3D, and no check waits on another: each opens its own
 # page. So CI runs it as n jobs side by side, `--shard i/n`, and this is how

@@ -15,6 +15,7 @@
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {drawElevation, panelFor} from './elevation.js';
 import {holdUndimmed, withoutBendRings, withFileStraps} from './hover.js';
+import {withCoversAsBuilt} from './covers.js';
 import {STRAP_PAINT} from './stage.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
@@ -387,8 +388,9 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
             // never the hover's dimming (#169): the file is the rack, not the pointer;
             // nor a tight bend's warning ring (kit 0.17.0): that is the page's to show
+            // nor the reader's setting for the covers (#190): every cover is in the file as it was built
             data: await holdUndimmed(scene, () => withoutBendRings(scene, () => withFileStraps(scene, STRAP_PAINT.light.core,
-              () => (usdz ? scene.toUSDZ() : scene.toGLB())))),
+              () => withCoversAsBuilt(scene, () => (usdz ? scene.toUSDZ() : scene.toGLB()))))),
             type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary',
             ...(usdz ? {notes: [], left: notes, leftText: 'USDZ carries no notes; the GLB does.'} : {notes})};
   } finally {

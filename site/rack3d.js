@@ -767,6 +767,11 @@ export function createRackScene(container, opts = {}) {
           D, bodyBoxMesh: null});
         if (mine !== epoch) return;
         per.forEach(m => { group.add(m); meshes.push(m); });
+        // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
+        // in the same task the meshes join the device, so nothing is drawn
+        // between. The Rack Builder reads the covers off it (rack/covers.js).
+        // No other caller passes it, and nothing here changes without it.
+        if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
         const i = MAT_SLOT[F.view], cv = faceCv[F.view];
         if (cv && body.material[i] && !sheet) {
           const prev = body.material[i];
