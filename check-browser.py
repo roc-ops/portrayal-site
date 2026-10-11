@@ -7477,6 +7477,47 @@ def check_rack_side_cables(page, base):
     through = [(a, b) for a, b in zip(R["cables"]["c2"]["pts"], R["cables"]["c2"]["pts"][1:]) if a[0] <= 0.01 and b[0] >= rd - 0.01]
     if len(through) != 1 or abs(through[0][0][1] - through[0][1][1]) > 0.01:
         bad.append(f"c2 (front to rear): {len(through)} of its legs run from the front rail plane to the rear one; expected one, level")
+    # ── a bundle from the side: its straps and envelope with its members, and none where no member is drawn ──
+    res = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c3'], label: 'pair'})")
+    if res and res.get("error"):
+        bad.append(f"the bundle was not made: {res['error']}")
+    else:
+        BUN = """() => [...document.querySelectorAll('#panes svg[data-side]')].map(s => ({straps: [...s.querySelectorAll('[data-strap]')].map(g => [g.dataset.strap, g.dataset.members,
+          Math.round(+getComputedStyle(g).opacity * 100) / 100]), stretches: s.querySelectorAll('[data-bundle-trunk]').length,
+          env: [...s.querySelectorAll('[data-envelope]')].map(e => getComputedStyle(e).visibility), drawn: s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length}))"""
+        page.wait_for_function("() => document.querySelectorAll('#panes svg[data-side] [data-strap]').length >= 2 && window.__rack.routesCurrent().current", timeout=READY_MS)
+        park_mouse(page)
+        b0 = page.evaluate(BUN)
+        for pane, v in zip(("left", "right"), b0):
+            if not v["straps"] or not v["stretches"] or any(m[1] != "c1 c3" for m in v["straps"]) or any(e != "hidden" for e in v["env"]):
+                bad.append(f"the bundle, {pane} pane: straps {v['straps']}, {v['stretches']} stretches, envelope {v['env']}; expected straps naming c1 and c3, stretches, and the envelope hidden until hovered or selected")
+        # c2 pinned: the straps of a bundle it does not ride dim with the rest; a member pinned keeps them lit and shows the envelope
+        page.click('#cableList [data-cable-row="c2"]')
+        page.wait_for_function("() => document.querySelector('#paneRear [data-cable-id=\"c2\"].on')", timeout=READY_MS)
+        park_mouse(page)
+        b1 = page.evaluate(BUN)
+        if any(m[2] > 0.25 for v in b1 for m in v["straps"]):
+            bad.append(f"c2 pinned: the other bundle's straps are at {[m[2] for v in b1 for m in v['straps']]}; expected dimmed with the rest")
+        page.click('#cableList [data-cable-row="c1"]')
+        page.wait_for_function("() => document.querySelector('#paneRear [data-cable-id=\"c1\"].on')", timeout=READY_MS)
+        park_mouse(page)
+        b2 = page.evaluate(BUN)
+        if any(m[2] != 1 for v in b2 for m in v["straps"]) or any(e != "visible" for v in b2 for e in v["env"]):
+            bad.append(f"c1 pinned: its bundle's straps are at {[m[2] for v in b2 for m in v['straps']]} and its envelope {[v['env'] for v in b2]}; expected lit and shown")
+        page.keyboard.press("Escape")
+        page.wait_for_function("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')", timeout=READY_MS)
+        # a member's end made loose (its port's device gone from under it): the cables not drawn take the bundle's drawing with them
+        page.evaluate("() => window.__rack.failCableFacts(false)")
+        page.evaluate("""() => { const r = structuredClone(window.__rack.doc().racks[0]);
+          for (const c of r.cables) if (c.id !== 'c2') c.b = {...c.b, path: c.b.path + '-none'};
+          window.__rack.replaceRack(r); }""")
+        page.wait_for_function("() => window.__rack.routesCurrent().current && [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length === 1)", timeout=READY_MS)
+        b3 = page.evaluate(BUN)
+        if any(v["straps"] or v["stretches"] for v in b3):
+            bad.append(f"c1 and c3 not drawn (a loose end each): their bundle still has {[(len(v['straps']), v['stretches']) for v in b3]} straps and stretches on the side panes")
+        page.evaluate("() => window.__rack.undo()")
+        page.wait_for_function("() => window.__rack.routesCurrent().current && [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length === 3)", timeout=READY_MS)
+        page.wait_for_timeout(400)
     # ── hover: a point of c2's own stroke, in the right pane ──
     spot = page.evaluate(SIDE_POINT_JS, ["right", "c2"])
     if not spot:

@@ -268,6 +268,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   // THE BUNDLES: the envelope stretch by stretch between the trunk's nodes,
   // each as thick as the members that ride it, hidden until its bundle or a
   // member is hovered or selected (rack.css); and the straps, always.
+  const onPane = new Set(drawn);
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
   const bars = svgEl('g', {'data-bundle-straps': pane, 'pointer-events': 'none'});
   for (const f of routes.bundles?.values() ?? []) {
@@ -292,8 +293,14 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     const rims = svgEl('g', {'data-envelope-rim': f.id, opacity: 0.4}), fills = svgEl('g', {opacity: 0.7});
     env.append(rims, fills);
     let here = 0;
+    // NO BUNDLE DRAWING WHERE NONE OF ITS CABLES IS DRAWN (the front pane's
+    // rule, cable-view.js): a stretch is drawn only where a member that rides
+    // it is drawn on this pane, and a strap only on such a stretch. From the
+    // side every landed cable is on both panes, so what this leaves out is a
+    // stretch whose riders all have a loose end.
+    const shown = st => st.members.some(id => onPane.has(id));
     for (const st of lay.stretches) {
-      const p = pt(st.from), q = pt(st.to);
+      const p = shown(st) ? pt(st.from) : null, q = p && pt(st.to);
       if (!p || !q) continue;
       here++;
       const d = `M${n3(p[0])} ${n3(p[1])} L${n3(q[0])} ${n3(q[1])}`;
@@ -305,7 +312,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     g.append(env);
     bands.append(g);
     for (const s of f.straps?.straps ?? []) {
-      const hit = lay.stretchAt(s), p = hit && pt(hit.stretch.from), q = hit && pt(hit.stretch.to);
+      const hit = lay.stretchAt(s), on = hit && shown(hit.stretch), p = on && pt(hit.stretch.from), q = on && pt(hit.stretch.to);
       const bar = p && q ? strapBar(p, q, hit.f, hit.stretch.diameter / 2 + 2) : null;
       // a strap on a run across the rack is seen end on: counted, not drawn here
       if (!bar) continue;
