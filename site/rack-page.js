@@ -16,6 +16,7 @@ import {loadCableTypes} from '../vendor/rack/cable-types.js';
 import {frameForm} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
+import {projectionIdRefusal} from './rack/part-path.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
 import {el, svgY} from './rack/dom.js';
@@ -427,7 +428,9 @@ async function explore(id) {
 // the frame form's echoed change event (see onFrame) must not redraw, or it
 // would wipe the notice the first pass just showed.
 function edit(cmds, {say = false, report = true, quiet = false} = {}) {
-  const res = ed.apply(cmds, {origin: 'ui', ...(bundling(cmds) ? {ctx: bundleCtx()} : {})});
+  // (an end given a drawing id is refused here, with the path to use: part-path.js)
+  const idNo = projectionIdRefusal(cmds);
+  const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(bundling(cmds) ? {ctx: bundleCtx()} : {})});
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }

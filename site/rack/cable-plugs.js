@@ -19,8 +19,10 @@ import {configuredFace, components, findComp, DIST} from './face.js';
 import {jdist} from '../../vendor/dist.js';
 import {faceCages} from '../../vendor/swap.js';
 import {endKey, plugSeats, connectorOf, looseReason, holderPath} from '../../vendor/rack/cable-rules.js';
+import {partSel, pathOfProjectionId} from './part-path.js';
 
-const at = (root, path) => root.querySelector(`[data-path="${CSS.escape(path)}"]`);
+// (a part by its path, as its own drawing or as the projection of a seated module's back: part-path.js)
+const at = (root, path) => root.querySelector(partSel(path));
 const refOf = el => (el?.getAttribute('data-ref') || '').split(':')[0];
 // A part as it is named in a reason: its model, or its ref's name in capitals.
 function partName(list, ref) {
@@ -55,10 +57,17 @@ function readEnd(end, item, panel, list) {
   const bay = holderPath(end.path);
   const card = bay ? at(root, `${bay}/module`) : null;
   const facts = {item: true, drawing: true, port: isPort, cage: slot?.kind === 'cage', occupied: !!occupant,
-                 holder: bay ? {path: bay, part: card ? partName(list, refOf(card)) : null} : null};
+                 // (a projection carries no ref of its own: the part seated in the bay is the item's swap there)
+                 holder: bay ? {path: bay, part: card ? partName(list, refOf(card) || (item.swaps || {})[bay] || '') : null} : null};
   const info = connectorOf({attrs: occupant ? (findComp(list, refOf(occupant))?.attrs || {}) : null,
                             portMedia: port?.getAttribute('data-media') || '', iface: slot?.interface || ''});
-  return {facts, info, seats: isPort ? plugSeats(end.path, slots, item.swaps || {}) : {}};
+  // A DRAWING ID IS NOT A PATH. The back of a seated module is drawn as a
+  // projection whose ids are the drawing's own ("bay-1-rear--b01"); the port
+  // is addressed by its path there. An end given an id is not connected, and
+  // is told the path to use.
+  const meant = !port ? pathOfProjectionId(root, end.path) : null;
+  return {facts, info, seats: isPort ? plugSeats(end.path, slots, item.swaps || {}) : {},
+          ...(meant ? {reason: `${end.path} is a drawing id, not a port: the port is ${meant} on the ${end.view === 'rear' ? 'rear' : 'front'}.`} : {})};
 }
 
 // What the page falls back to when reading the cables' faces fails: no plugs,
@@ -109,7 +118,7 @@ export async function cableFacts(rack, extra = []) {
     if (out.ends.has(k)) continue;
     const item = items.get(end.item) || null;
     const got = readEnd(end, item, item ? await panelOf(item, end.view) : null, list);
-    out.ends.set(k, {facts: got.facts, info: got.info, reason: looseReason(end, got.facts)});
+    out.ends.set(k, {facts: got.facts, info: got.info, reason: got.reason ?? looseReason(end, got.facts)});
     // seats is keyed by ITEM, as item.swaps is: a front-panel end's plugs and a
     // rear-panel end's share one map, and mergeSeats lays it over both panels.
     if (item && hasCable.has(k)) out.seats[item.id] = {...(out.seats[item.id] || {}), ...got.seats};

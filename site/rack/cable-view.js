@@ -19,6 +19,7 @@ import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
+import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {paneMarks, landedBends} from './route-context.js';
 import {spareText} from './spare.js';
@@ -115,7 +116,7 @@ const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.esca
 // A port's box in the pane's own user space, or null when the pane does not
 // draw it. `svg` must be in the document and laid out (getScreenCTM).
 export function portBox(svg, itemId, path) {
-  const port = panelGroup(svg, itemId)?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+  const port = panelGroup(svg, itemId)?.querySelector(partSel(path));
   if (!port) return null;
   const b = port.getBBox();
   const m = svg.getScreenCTM().inverse().multiply(port.getScreenCTM());
@@ -604,12 +605,13 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
 export function portAt(target, group) {
   let hit = null;
   for (let n = target; n && n !== group; n = n.parentNode) {
-    const p = n.getAttribute?.('data-path');
+    // (its path, as its own drawing or as the projection of a seated module's back: part-path.js)
+    const p = pathOfEl(n);
     if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
   }
   if (hit == null) return null;
   const path = portPathOf(hit);
-  return group.querySelector(`[data-path="${CSS.escape(path)}"][data-class="port"]`) ? path : null;
+  return group.querySelector(partSel(path, '[data-class="port"]')) ? path : null;
 }
 
 // A brass outline round a picked port, in the pane's own layer: screen UI

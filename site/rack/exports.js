@@ -290,7 +290,9 @@ export async function drawioFile(rack, chassisOf) {
     const mounted = await Promise.all(lists[pane].map(async it => {
       const f = await faceOf(it, panelFor(it, pane));
       // The port cells this cabinet will hold, as the vendor picks them (cls 'port', by path).
-      for (const p of f?.ports || []) if (p.cls === 'port') ports.add(`${it.id}|${pane}|${p.path || p.id}`);
+      // (not the ports of a seated module's back: the kit's diagram makes their cells by drawing id until #1019 is
+      // vendored, so a cable to one is a note in the file, never an edge to a cell that is not there)
+      for (const p of f?.ports || []) if (p.cls === 'port' && !p.projected) ports.add(`${it.id}|${pane}|${p.path || p.id}`);
       // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
       return {id: idFor.get(`${it.id}|${pane}`), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
               faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};

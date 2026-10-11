@@ -11,6 +11,7 @@ import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {spareFor, spareText, needsText} from './spare.js';
+import {projectionIdRefusal} from './part-path.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -333,6 +334,9 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           if (ed.rack() === rack) break;
         }
         if (x.error) return refuse(`${at(x.index)} was refused: ${x.error} Nothing was changed.`);
+        // an end given a drawing id (the back of a seated module is a projection) is refused with the path to use
+        const idNo = projectionIdRefusal(x.commands);
+        if (idNo) return refuse(`${idNo} Nothing was changed.`);
         const res = dry_run ? ed.preview(x.commands, {ctx}) : ed.apply(x.commands, {origin: 'agent', ctx});
         if (res.error) return refuse(`${at(x.from[res.index ?? 0] ?? 0)} was refused: ${res.error} Nothing was changed.`);
         if (res.noop) return say('Nothing changed: the rack already looks like that.');

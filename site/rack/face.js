@@ -148,8 +148,21 @@ async function build({ref, cfg, view, swaps, fields, turned}) {
     text = new XMLSerializer().serializeToString(root);
   }
   const {vb, zones} = readSvg(text);
-  const ports = portsOf(zones, {bays: true});
+  // THE BACK OF A SEATED MODULE is a projection: its ports carry their path
+  // as `data-of` and the kit's zones (0.22.0) give each its drawing id as
+  // `path` ("bay-1-rear--b01"). A port is addressed by its path on either
+  // face (part-path.js), so each such port is given the path it projects,
+  // and `projected`, here, for every reader of a face's ports: the free-ports
+  // list, the route context, the cable pickers.
+  const ports = withProjectedPaths(text, portsOf(zones, {bays: true}));
   return deepFreeze({ref, cfg, view: shown, text, vb, zones, ports, seat});
+}
+
+function withProjectedPaths(text, ports) {
+  if (!text.includes('data-of=')) return ports;
+  const root = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+  const of = new Map([...root.querySelectorAll('[data-of][id]')].filter(n => !n.hasAttribute('data-path')).map(n => [n.id, n.getAttribute('data-of')]));
+  return ports.map(p => (of.has(p.id) && (p.path == null || p.path === p.id) ? {...p, path: of.get(p.id), projected: true} : p));
 }
 
 // Freezes the result AND everything reachable inside it - `vb` (an array of

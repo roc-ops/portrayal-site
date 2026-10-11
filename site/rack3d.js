@@ -884,7 +884,7 @@ export function createRackScene(container, opts = {}) {
         // instead of starting inside the metal.
         normal: new THREE.Vector3(0, 0, 1).applyEuler(rot)
           .applyQuaternion(group.getWorldQuaternion(new THREE.Quaternion())).normalize(),
-        view, path: el.getAttribute?.('data-path') ?? null, id: el.id || null,
+        view, path: el.getAttribute?.('data-path') ?? el.getAttribute?.('data-of') ?? null, id: el.id || null,
         mm: {x: r.x, y: r.y, w: r.w, h: r.h},
         ref: entry.ref, ru: entry.ru, label: entry.label,
       };
@@ -892,7 +892,8 @@ export function createRackScene(container, opts = {}) {
     return null;
   }
   const portAnchor = (which, path, o = {}) => (path
-    ? elementAnchor(which, doc => doc.svg.querySelector(`[data-path="${CSS.escape(path)}"]`), o)
+    // (as its own drawing, or as the projection of a seated module's back, whose parts carry their path as data-of)
+    ? elementAnchor(which, doc => doc.svg.querySelector(`[data-path="${CSS.escape(path)}"], [data-of="${CSS.escape(path)}"]`), o)
     : Promise.resolve(null));
   // WHERE A NAMED PART OF A MANAGER IS (spec §8), for routing in piece 2: a
   // ring is `guide-1` to `guide-5`, on the FHD-CMP5DR's top view (its front

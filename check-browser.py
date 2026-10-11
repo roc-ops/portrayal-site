@@ -18477,6 +18477,114 @@ def check_explorer_position_control(page, base):
 
 
 
+# A seated FHD adapter panel (its back is drawn on the rear face as a
+# projection) over a switch with three optics: one cord from the BACK of the
+# panel's first adapter to the switch, one from its FRONT.
+REAR_PORT_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), K = await import('/vendor/rack/cable-rules.js');
+  let r = M.newRack({name: 'Rear of a module'});
+  ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: 'base', ru: 20, face: 'front', label: 'panel', swaps: {'bay-1': 'fs/fhd-fap12lcd-os2@1'}}));
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: 'ac-f2b', ru: 18, face: 'front', label: 'leaf',
+    swaps: {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2', 'port-3': 'generic/qsfp-lc@2'}}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'bay-1/module/b01', view: 'rear'}, b: {item: 'i2', path: 'port-1', view: 'front'}, media: 'os2'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'bay-1/module/lc01', view: 'front'}, b: {item: 'i2', path: 'port-2', view: 'front'}, media: 'os2'}));
+  return r;
+}"""
+
+
+@extra("rack.html: a cable to a port on the BACK of a module seated in a bay (the rear of an FHD adapter panel) attaches by its path with view rear - not loose, routed rear to front, measured, drawn at the port in the rear pane, the side pane and 3D, beside one on the front of the same adapter - the free-ports list offers paths and never a drawing id, an id is refused with the path to use, and the rear port is picked by a click in the rear pane")
+def check_rack_rear_module_port(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(REAR_PORT_FIXTURE))
+    wait_fn(page, "rear port: the routes", "() => window.__rack.routesCurrent().current && Object.keys(window.__rack.paths() || {}).length === 2")
+    wait_fn(page, "rear port: both cords drawn", "() => document.querySelectorAll('#paneRear svg [data-cables] [data-cable-id=\"c1\"]').length > 0 && document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id=\"c2\"]').length > 0")
+    wait_fn(page, "rear port: the routed lengths", "() => window.__rack.doc().racks[0].cables.every(c => c.length?.source === 'routed')")
+    st = page.evaluate("""() => { const d = window.__rack.doc().racks[0], f = window.__rack.cableFacts(), p = window.__rack.paths();
+      const rear = document.querySelector('#paneRear svg'), port = rear.querySelector('[data-item-id="i1"] [data-of="bay-1/module/b01"]');
+      const box = el => { const b = el.getBBox(), m = rear.getScreenCTM().inverse().multiply(el.getScreenCTM()); const q = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2).matrixTransform(m); return [q.x, q.y]; };
+      const start = id => [...rear.querySelectorAll(`[data-cables] [data-cable-id="${id}"] path`)].map(n => { const a = n.getPointAtLength(0), z = n.getPointAtLength(n.getTotalLength()), m = rear.getScreenCTM().inverse().multiply(n.getScreenCTM());
+        return [a, z].map(q => { const w = new DOMPoint(q.x, q.y).matrixTransform(m); return [w.x, w.y]; }); }).flat();
+      return {reasons: f.reasons, lengths: d.cables.map(c => c.length), ends: Object.fromEntries(Object.entries(p).map(([id, x]) => [id, x.points.filter(q => q.at === 'a' || q.at === 'b').map(q => [q.at, q.x, q.y, q.z])])),
+              measured: Object.fromEntries(Object.entries(p).map(([id, x]) => [id, x.measured])), port: port ? box(port) : null, c1: start('c1'),
+              frontHas: [...document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]')].map(n => n.dataset.cableId), depth: d.frame.railDepth}; }""")
+    for k in ("i1|rear|bay-1/module/b01", "i2|front|port-1", "i1|front|bay-1/module/lc01", "i2|front|port-2"):
+        if k not in st["reasons"] or st["reasons"][k] is not None:
+            bad.append(f"rear port: the end {k} is not connected: {st['reasons'].get(k, 'not read')!r}")
+    if any(not l or l.get("source") != "routed" or not l.get("need") or not l.get("value") for l in st["lengths"]):
+        bad.append(f"rear port: the two cords are not measured: {st['lengths']}")
+    a = next((q for q in st["ends"].get("c1", []) if q[0] == "a"), None)
+    b = next((q for q in st["ends"].get("c1", []) if q[0] == "b"), None)
+    # rear to front: its a end is behind the front rail plane, deep in the rack at the back of the panel; its b end at the switch's face
+    if not a or not b or not (a[3] < -100) or not (b[3] > -1) or not (st["measured"]["c1"] > st["measured"]["c2"]):
+        bad.append(f"rear port: c1 should run from the back of the panel (z well behind the rails) to the switch's face, and be longer than the front cord: ends {st['ends'].get('c1')}, measured {st['measured']}")
+    # drawn at the port in the rear pane: one of its strokes ends within the adapter's box (9.3 x 13.8 mm)
+    if not st["port"] or not any(abs(q[0] - st["port"][0]) < 8 and abs(q[1] - st["port"][1]) < 10 for q in st["c1"]):
+        bad.append(f"rear port: c1 is not drawn at the back of the adapter in the rear pane: the port is at {st['port']}, its strokes end at {st['c1'][:6]}")
+    # THE FREE PORTS are offered as paths, on either face, never as a drawing id; the two cabled adapters' ports are taken.
+    free = page.evaluate("async () => { const f = await window.__rack.query.freePorts('i1'); return (f.ports ?? f).map(p => [p.path, p.view]); }")
+    ids = [p for p in free if "-rear--" in p[0] or ("/" not in p[0] and p[0].startswith("bay-") and p[0] != "bay-1" and "rear" in p[0])]
+    if ids or ["bay-1/module/b02", "rear"] not in free or ["bay-1/module/lc02", "front"] not in free \
+            or ["bay-1/module/b01", "rear"] in free or ["bay-1/module/lc01", "front"] in free:
+        bad.append(f"rear port: the free ports of the panel are {free[:8]}... with drawing ids {ids[:4]}")
+    # A DRAWING ID IS REFUSED, with the path to use; nothing is added.
+    no = page.evaluate("() => { const r = window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'bay-1-rear--b02', view: 'rear'}, b: {item: 'i2', path: 'port-3', view: 'front'}, media: 'os2'}); return r.error ?? null; }")
+    if not no or "is a drawing id, not a port" not in no or '{path: "bay-1/module/b02", view: "rear"}' not in no or len(page.evaluate("() => window.__rack.doc().racks[0].cables")) != 2:
+        bad.append(f"rear port: a cable to the id bay-1-rear--b02 answered {no!r}")
+    # PICKED BY A CLICK in the rear pane: Cable mode, the back of the second adapter, then the switch's third port.
+    page.click("#cableBtn")
+    wait_fn(page, "rear port: Cable mode", "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'true'")
+    def click_part(pane, sel):
+        bx = page.evaluate("""([p, s]) => { const el = document.querySelector(`#pane${p} svg ${s}`); if (!el) return null;
+          el.scrollIntoView({block: 'center', inline: 'center'}); const r = el.getBoundingClientRect(); return {x: r.x, y: r.y, width: r.width, height: r.height}; }""", [pane, sel])
+        if not bx or not bx["width"]:
+            raise RuntimeError(f"rear port: {sel} is not drawn on the {pane.lower()} pane")
+        page.mouse.click(bx["x"] + bx["width"] / 2, bx["y"] + bx["height"] / 2)
+    click_part("Rear", '[data-item-id="i1"] [data-of="bay-1/module/b02"]')
+    wait_fn(page, "rear port: the first end picked", "() => !!document.querySelector('#paneRear svg .rk-end-pick')")
+    click_part("Front", '[data-item-id="i2"] [data-path="port-3"]')
+    wait_sel(page, "rear port: the new cable's form", "#cableForm")
+    page.click("#cSave")
+    wait_fn(page, "rear port: the picked cable added", "() => window.__rack.doc().racks[0].cables.length === 3")
+    c3 = page.evaluate("() => window.__rack.doc().racks[0].cables[2]")
+    if (c3["a"], c3["b"]) != ({"item": "i1", "path": "bay-1/module/b02", "view": "rear"}, {"item": "i2", "path": "port-3", "view": "front"}):
+        bad.append(f"rear port: the cable picked by click is {c3['a']} to {c3['b']}")
+    page.click("#cableBtn")
+    wait_fn(page, "rear port: the picked cable's routes", "() => window.__rack.routesCurrent().current && Object.keys(window.__rack.paths() || {}).length === 3")
+    wait_fn(page, "rear port: the picked cable lands", "() => { const r = window.__rack.cableFacts().reasons; return r['i1|rear|bay-1/module/b02'] === null && r['i2|front|port-3'] === null; }")
+    # THE SIDE PANE draws it from the back of the panel, and 3D hangs a tube that starts there.
+    page.click('#view2d [data-view="sides"]')
+    wait_fn(page, "rear port: the side pair's cables", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-cables] [data-cable-id]').length >= 3")
+    side = page.evaluate("""() => { const svg = document.querySelector('svg[data-pane="left"]'); const out = {};
+      for (const g of svg.querySelectorAll('[data-cables] [data-cable-id]')) { const ps = [...g.querySelectorAll('path')]; let lo = Infinity, hi = -Infinity;
+        for (const n of ps) { const m = svg.getScreenCTM().inverse().multiply(n.getScreenCTM()); for (const t of [0, n.getTotalLength()]) { const q = n.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); lo = Math.min(lo, w.x); hi = Math.max(hi, w.x); } }
+        out[g.dataset.cableId] = [lo, hi]; }
+      return out; }""")
+    # on the left pane X is depth: the rear cord reaches deep behind the rails, the front cord does not
+    if "c1" not in side or "c2" not in side or not (min(abs(v) for v in side["c1"]) < 60 and max(abs(v) for v in side["c1"]) > 100) or max(abs(v) for v in side["c2"]) > 100:
+        bad.append(f"rear port: from the side, c1 should run from behind the panel to the front and c2 stay in front: depths {side}")
+    page.click('#view2d [data-view="faces"]')
+    wait_fn(page, "rear port: the faces again", "() => !!document.querySelector('#paneFront svg[data-pane=\"front\"]')")
+    if webgl_trouble(page):
+        print("[check_rack_rear_module_port] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the rear cord", tubes=True)
+    three = page.evaluate("""async () => { const s = window.__rack.scene(), faceZ = s.metrics().faceZ;
+      const port = await s.portAnchor({id: 'i1'}, 'bay-1/module/b01', {view: 'rear'});
+      const g = s.three.scene.getObjectByName('cable-c1'); let n = 0, lo = Infinity; if (g) g.traverse(o => { if (o.isMesh && o.geometry?.boundingBox !== undefined) { o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); n++; lo = Math.min(lo, b.min.z); } });
+      return {port: port ? [port.position.x, port.position.y, port.position.z - faceZ, port.path] : null, meshes: n, back: lo - faceZ}; }""")
+    if not three["port"] or three["port"][3] != "bay-1/module/b01" or not (three["port"][2] < -100) or not three["meshes"] or three["back"] > three["port"][2] + 5:
+        bad.append(f"3D: the rear port's anchor is {three['port']}, and c1's tube ({three['meshes']} meshes) reaches back to {three['back']} (it must reach the port, behind the rails)")
+    return bad
+
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
