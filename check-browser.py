@@ -6893,6 +6893,590 @@ def check_rack_pinned_highlight(page, base):
     return bad
 
 
+# ── THE SIDE PAIR (portrayal-site#187) ────────────────────────────────────
+# One switch beside 2D/3D turns the two panes from the rack's faces (Front,
+# Rear) to its sides (Left, Right): site/rack/side-elevation.js. The fixture
+# has what a side view has to get right: a device on the front rails, one on
+# the rear rails, one turned, a lacer bolted over a device, a vertical manager
+# beside the left front upright, two patches between ports of the front face
+# (through the lacer and up a lane) and one cable from the front to the rear.
+SIDE_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.newRack({name: 'Sides'});
+  const sw = {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default};
+  ({rack: r} = M.withItem(r, {...sw, ru: 20, face: 'front', label: 'sw-front'}));
+  ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face: 'front', label: 'mgr-1', on: 'i1', unit: 1}));
+  ({rack: r} = M.withItem(r, {...sw, ru: 30, face: 'front', label: 'sw-top'}));
+  ({rack: r} = M.withItem(r, {...sw, ru: 26, face: 'rear', label: 'sw-rear'}));
+  ({rack: r} = M.withItem(r, {ref: 'dcs500', cfg: 'ac-f2b', ru: 10, face: 'front', turned: true, label: 'sw-turned'}));
+  r = {...r, zeroU: [{id: 'z1', ref: 'cmv-sfd42u9w', cfg: 'base', label: 'duct-1', at: 'left-front', offsetMm: 0}]};
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'port-1', view: 'front'}, media: 'cat6a'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-2', view: 'front'}, b: {item: 'i4', path: 'port-2', view: 'front'}, media: 'cat6'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-3', view: 'front'}, b: {item: 'i3', path: 'port-3', view: 'front'}, media: 'cat6a'}));
+  return r;
+}"""
+SIDE_DRAWN = """() => { const s = [...document.querySelectorAll('#panes > section > div > svg')];
+  return s.length === 2 && s[0].dataset.pane === 'left' && s[1].dataset.pane === 'right' && !document.getElementById('panes').hidden; }"""
+FACES_DRAWN = """() => { const s = [...document.querySelectorAll('#panes > section > div > svg')];
+  return s.length === 2 && s[0].dataset.pane === 'front' && s[1].dataset.pane === 'rear' && !document.getElementById('panes').hidden; }"""
+
+
+def open_side_fixture(page, base, cables=3):
+    """The side fixture, drawn in Front / Rear with its routes read."""
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(SIDE_FIXTURE))
+    page.wait_for_function("n => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id][data-cable]').length >= 1"
+                           " && Object.keys(window.__rack.paths() || {}).length === n && window.__rack.routesCurrent().current",
+                           arg=cables, timeout=READY_MS)
+    page.wait_for_timeout(400)
+
+
+def to_sides(page, cables=3):
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    if cables:
+        page.wait_for_function("n => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-cables] [data-cable-id][data-cable]').length === n)",
+                               arg=cables, timeout=READY_MS)
+    page.wait_for_timeout(300)
+
+
+def to_faces(page):
+    page.click('#view2d [data-view="faces"]')
+    page.wait_for_function(FACES_DRAWN, timeout=READY_MS)
+    page.wait_for_timeout(300)
+
+
+# What the page shows of the pair: the switch, the headings, each pane's own
+# kind, the buttons round it, and what is stored.
+SIDE_SWITCH_JS = """() => ({
+  view: window.__rack.view(),
+  pressed: Object.fromEntries([...document.querySelectorAll('#view2d [data-view]')].map(b => [b.dataset.view, [b.getAttribute('aria-pressed'), b.classList.contains('on')]])),
+  group: [document.getElementById('view2d').getAttribute('role'), document.getElementById('view2d').getAttribute('aria-label'),
+          [...document.querySelectorAll('#view2d [data-view]')].map(b => [b.tagName, b.textContent.trim()])],
+  heads: [document.getElementById('headFront').textContent, document.getElementById('headRear').textContent],
+  labelled: [...document.querySelectorAll('#panes > section')].map(s => s.getAttribute('aria-labelledby')),
+  panes: [...document.querySelectorAll('#panes > section > div > svg')].map(s => s.dataset.pane),
+  shown: !document.getElementById('panes').hidden,
+  switchInert: document.getElementById('view2d').inert, switchSeen: getComputedStyle(document.getElementById('view2d')).visibility,
+  stored: localStorage.getItem('portrayal.rack.view'), url: location.href,
+  cable: [document.getElementById('cableBtn').disabled, document.getElementById('cableBtn').title, document.getElementById('cableBtn').getAttribute('aria-pressed')],
+  note: document.getElementById('sidesNote')?.textContent ?? null,
+})"""
+
+
+@extra("rack.html: one switch beside 2D/3D turns both panes from Front / Rear to Left / Right and back, with headings and pressed states that follow, is remembered across a reload in this browser, and is in neither the rack file nor the URL (#187)")
+def check_rack_side_switch(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    st = lambda: page.evaluate(SIDE_SWITCH_JS)
+
+    def expect(s, view, where):
+        heads, panes = (["Left", "Right"], ["left", "right"]) if view == "sides" else (["Front", "Rear"], ["front", "rear"])
+        other = "faces" if view == "sides" else "sides"
+        if s["view"] != view or s["panes"] != panes:
+            bad.append(f"{where}: the panes are {s['panes']} and the page's view is {s['view']!r}; expected {panes}, {view!r}")
+        if s["heads"] != heads:
+            bad.append(f"{where}: the headings read {s['heads']}, expected {heads}")
+        if s["pressed"].get(view) != ["true", True] or s["pressed"].get(other) != ["false", False]:
+            bad.append(f"{where}: the switch's buttons are {s['pressed']}; expected {view} pressed and {other} not")
+    s0 = st()
+    expect(s0, "faces", "at first")
+    if s0["group"][0] != "group" or not s0["group"][1] or s0["group"][2] != [["BUTTON", "Front / Rear"], ["BUTTON", "Left / Right"]]:
+        bad.append(f"the switch is {s0['group']}; expected a labelled group of two buttons, Front / Rear and Left / Right")
+    if s0["labelled"] != ["headFront", "headRear"]:
+        bad.append(f"the panes are labelled by {s0['labelled']}, expected their headings")
+    if s0["stored"] not in (None, "faces") or s0["note"]:
+        bad.append(f"at first: stored view {s0['stored']!r}, side note {s0['note']!r}; expected neither")
+    # beside the 2D/3D switch: its neighbour in the bar
+    beside = page.evaluate("() => document.getElementById('view2d').nextElementSibling?.id")
+    if beside != "mode":
+        bad.append(f"the switch's next neighbour in the bar is #{beside}, expected #mode")
+    to_sides(page)
+    s1 = st()
+    expect(s1, "sides", "after Left / Right")
+    if s1["stored"] != "sides":
+        bad.append(f"after Left / Right: this browser stores {s1['stored']!r}, expected 'sides'")
+    if "sides" in s1["url"].split("rack.html")[1] or "view" in s1["url"].split("rack.html")[1]:
+        bad.append(f"after Left / Right: the URL is {s1['url']}; the view is not kept there")
+    doc = page.evaluate("() => window.__rack.doc()")
+    keys = set(doc) | set(doc["racks"][0]) | set(doc["racks"][0]["frame"])
+    if keys & {"view", "view2d", "pair", "sides"} or '"sides"' in json.dumps(doc):
+        bad.append(f"after Left / Right: the rack document carries the view ({sorted(keys)})")
+    # the two panes are both side panes, one of each, never one face and one side
+    kinds = page.evaluate("() => [...document.querySelectorAll('#panes svg[data-pane]')].map(s => [s.dataset.pane, s.dataset.side ?? null, s.querySelectorAll('[data-side-post]').length, s.querySelectorAll('rect.rk-u').length])")
+    if kinds != [["left", "true", 2, 0], ["right", "true", 2, 0]]:
+        bad.append(f"after Left / Right: the panes are {kinds}; expected a left and a right side pane, each with its two posts and no U target")
+    # remembered across a reload
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    try:
+        page.wait_for_function(SIDE_DRAWN, timeout=20000)
+    except Exception:
+        pass
+    expect(st(), "sides", "after a reload")
+    # 3D keeps the switch's place, out of use, and comes back to the pair it left
+    if webgl_trouble(page):
+        print("[check_rack_side_switch] no WebGL here - the 3D half was not checked")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        page.wait_for_function("() => document.getElementById('panes').hidden", timeout=READY_MS)
+        s3 = st()
+        if not s3["switchInert"] or s3["switchSeen"] != "hidden":
+            bad.append(f"3D: the Front / Rear | Left / Right switch is inert={s3['switchInert']} visibility={s3['switchSeen']}; expected out of use, keeping its place")
+        page.click('#mode [data-mode="2d"]')
+        page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+        expect(st(), "sides", "back from 3D")
+    to_faces(page)
+    s2 = st()
+    expect(s2, "faces", "after Front / Rear")
+    if s2["stored"] != "faces" or s2["note"] or s2["cable"][0]:
+        bad.append(f"after Front / Rear: stored {s2['stored']!r}, side note {s2['note']!r}, Cable disabled={s2['cable'][0]}; expected 'faces', no note, Cable in use")
+    us = page.evaluate("() => ['front', 'rear'].map(f => document.querySelectorAll(`svg[data-pane=\"${f}\"] rect.rk-u`).length)")
+    if us != [42, 42]:
+        bad.append(f"after Front / Rear: U targets {us}, expected [42, 42]")
+    return bad
+
+
+# Each body a side pane draws, measured off the page: the box of its drawing
+# on the pane (its backing rect, through its own transform), which of its
+# drawings is shown, the posts, the U numbers, and the kit's solids.
+SIDE_BODIES_JS = """async () => {
+  const {RU} = await import('/vendor/rack/rails.js');
+  const rack = window.__rack.doc().racks[0], H = rack.frame.heightRU * RU, out = {RU, H, frame: rack.frame, panes: {}, kit: {}};
+  for (const s of window.__rack.solids()) {
+    const b = out.kit[s.item] ??= {n: 0, z0: Infinity, z1: -Infinity, y0: Infinity, y1: -Infinity};
+    b.n++; b.z0 = Math.min(b.z0, s.box.z0); b.z1 = Math.max(b.z1, s.box.z1); b.y0 = Math.min(b.y0, s.box.y0); b.y1 = Math.max(b.y1, s.box.y1);
+  }
+  for (const svg of document.querySelectorAll('#panes svg[data-side]')) {
+    const inv = svg.getScreenCTM().inverse();
+    const boxOf = el => { const b = el.getBBox(), m = inv.multiply(el.getScreenCTM());
+      const c = [[b.x, b.y], [b.x + b.width, b.y + b.height], [b.x, b.y + b.height], [b.x + b.width, b.y]].map(([x, y]) => new DOMPoint(x, y).matrixTransform(m));
+      return {x0: Math.min(...c.map(p => p.x)), x1: Math.max(...c.map(p => p.x)), y0: Math.min(...c.map(p => p.y)), y1: Math.max(...c.map(p => p.y))}; };
+    const p = out.panes[svg.dataset.pane] = {bodies: {}, order: [], vb: svg.getAttribute('viewBox').split(' ').map(Number)};
+    for (const g of svg.querySelectorAll('[data-item-id], [data-zerou-id]')) {
+      const id = g.dataset.itemId ?? g.dataset.zerouId, hit = g.querySelector('[data-side-hit]');
+      // where the drawing's own x = 0 edge lands: the front of a right drawing, the rear of a left one
+      const m = inv.multiply(hit.getScreenCTM()), b0 = hit.getBBox(), o = new DOMPoint(b0.x, b0.y).matrixTransform(m);
+      p.bodies[id] = {...boxOf(hit), view: g.dataset.sideView, turn: g.dataset.sideTurn === 'true', origin: o.x,
+                      marks: g.querySelectorAll('rect, path, circle, line').length, near: !!g.closest('[data-side-near]')};
+      p.order.push(id);
+    }
+    p.posts = [...svg.querySelectorAll('[data-side-post]')].map(r => [r.dataset.sidePost, +r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')]);
+    p.nums = [...svg.querySelectorAll('[data-side-num="front"]')].map(t => [t.textContent, +t.getAttribute('y')]);
+    p.extent = (() => { const r = svg.querySelector('[data-side-extent]'); return r ? [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')] : null; })();
+    p.words = Object.fromEntries([...svg.querySelectorAll('[data-side-word]')].map(t => [t.dataset.sideWord, +t.getAttribute('x')]));
+    p.layers = [...svg.children].map(n => n.dataset.sidePosts ? 'posts' : n.dataset.cables ? 'cables' : n.dataset.sideNear ? 'near' : n.dataset.itemId ? `item:${n.dataset.itemId}` : n.dataset.zerouId ? `part:${n.dataset.zerouId}` : null).filter(Boolean);
+  }
+  // the front pane's own U rows, for the one U scale: drawn while hidden is not possible, so from the rule itself
+  return out;
+}"""
+
+
+@extra("rack.html: in Left / Right each body's own side drawing sits at the depth and height the kit's solidsOf gives - a device on the front rails, one on the rear rails, a turned one, a lacer and a vertical manager - the two panes are mirror placements, the posts stand at the rail planes with the U numbers on the front pane's scale, and nearer bodies are painted over farther ones (#187)")
+def check_rack_side_placement(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    # the front pane's U rows, read before the switch: the side panes keep its scale and its top
+    rows = page.evaluate("""() => { const svg = document.querySelector('#paneFront svg[data-pane="front"]');
+      return {vb: svg.getAttribute('viewBox').split(' ').map(Number),
+              nums: [...svg.querySelectorAll('[data-rail-num="left"]')].map(t => [t.textContent, +t.getAttribute('y')])}; }""")
+    to_sides(page)
+    d = page.evaluate(SIDE_BODIES_JS)
+    H, RU, rd, deep = d["H"], d["RU"], d["frame"]["railDepth"], d["frame"]["usableDepth"]
+    L, R = d["panes"].get("left"), d["panes"].get("right")
+    if not L or not R:
+        return bad + [f"the side panes are {list(d['panes'])}, expected left and right"]
+    eps = 0.05
+    # what each body is, and which of its own drawings each pane shows: its own side on that side when it looks out of the front
+    want = {"i1": ("a device on the front rails", "left", "right"), "i3": ("a device on the front rails", "left", "right"),
+            "i4": ("a device on the rear rails", "right", "left"), "i5": ("a turned device", "right", "left"),
+            "i2": ("a lacer on the front rails", "left", "right"), "z1": ("a vertical manager at the left front upright", "left", "right")}
+    exact = {"i1", "i3", "i4", "i5"}
+    for bid, (what, lview, rview) in want.items():
+        kit, l, r = d["kit"].get(bid), L["bodies"].get(bid), R["bodies"].get(bid)
+        if not kit or not l or not r:
+            bad.append(f"{bid} ({what}): kit box {bool(kit)}, drawn in the left pane {bool(l)}, in the right pane {bool(r)}")
+            continue
+        if (l["view"], r["view"]) != (lview, rview):
+            bad.append(f"{bid} ({what}): the left pane shows its {l['view']} drawing and the right pane its {r['view']}; expected {lview} and {rview}")
+        if l["marks"] < 2 or r["marks"] < 2:
+            bad.append(f"{bid} ({what}): its drawing has {l['marks']} and {r['marks']} marks: it is a box, not its side drawing")
+        # depth: the right pane's x is the depth back from the front rail plane (-z); the left pane's is z
+        rz, lz = (-r["x1"], -r["x0"]), (l["x0"], l["x1"])
+        if abs(rz[0] - lz[0]) > eps or abs(rz[1] - lz[1]) > eps:
+            bad.append(f"{bid} ({what}): the two panes are not mirror placements: depth {lz} from the left, {rz} from the right")
+        if abs(l["y0"] - r["y0"]) > eps or abs(l["y1"] - r["y1"]) > eps:
+            bad.append(f"{bid} ({what}): at different heights in the two panes: {l['y0']}..{l['y1']} and {r['y0']}..{r['y1']}")
+        # height: the pane's y runs down from the rack's top
+        y = (H - l["y1"], H - l["y0"])
+        if bid in exact:
+            if abs(lz[0] - kit["z0"]) > eps or abs(lz[1] - kit["z1"]) > eps:
+                bad.append(f"{bid} ({what}): drawn at depth {lz[0]:.2f}..{lz[1]:.2f}, the kit's solid is at {kit['z0']:.2f}..{kit['z1']:.2f}")
+            # as tall as the kit's solid, centred in the units it takes (the front pane's rule): within the gap that leaves of the kit's bottom
+            units = 2 if bid == "i5" else 1
+            slack = (units * RU - (kit["y1"] - kit["y0"])) / 2 + eps
+            if abs((y[1] - y[0]) - (kit["y1"] - kit["y0"])) > eps or abs(y[0] - kit["y0"]) > slack or y[0] < kit["y0"] - eps:
+                bad.append(f"{bid} ({what}): drawn at height {y[0]:.2f}..{y[1]:.2f}, the kit's solid is at {kit['y0']:.2f}..{kit['y1']:.2f}")
+        else:
+            # a sheet part's solids are its plates: they lie inside its drawing (a plate's thickness aside), which shares their outer face and their height
+            if kit["z0"] < lz[0] - 3 or kit["z1"] > lz[1] + 3 or kit["y0"] < y[0] - 3 or kit["y1"] > y[1] + 3:
+                bad.append(f"{bid} ({what}): the kit's plates {kit['z0']:.2f}..{kit['z1']:.2f} deep, {kit['y0']:.2f}..{kit['y1']:.2f} high are outside its drawing {lz[0]:.2f}..{lz[1]:.2f}, {y[0]:.2f}..{y[1]:.2f}")
+            face = (lz[1], kit["z1"]) if bid == "i2" else (lz[0], kit["z0"])
+            if abs(face[0] - face[1]) > eps or abs(y[0] - kit["y0"]) > 0.5 or abs(y[1] - kit["y1"]) > 0.5:
+                bad.append(f"{bid} ({what}): its drawing ends at depth {face[0]:.2f} and spans {y[0]:.2f}..{y[1]:.2f}; the kit's plates end at {face[1]:.2f} and span {kit['y0']:.2f}..{kit['y1']:.2f}")
+        # its own front is where its front is: a right drawing starts at its front, a left drawing ends there
+        for pane, b in (("left", l), ("right", r)):
+            if abs(b["origin"] - b["x0"]) > eps:
+                bad.append(f"{bid} ({what}): in the {pane} pane its drawing is turned or mirrored (its own x = 0 is at {b['origin']:.2f}, its box starts at {b['x0']:.2f})")
+    # the rack's rules in numbers: front on the rail plane, the rear device against the rear rails, the turned one's body behind the front rails
+    k = d["kit"]
+    if k.get("i1") and (abs(k["i1"]["z1"]) > eps or abs(k["i4"]["z0"] + rd) > eps or abs(k["i5"]["z1"]) > eps):
+        bad.append(f"the kit's solids are not where the fixture expects: i1 {k['i1']}, i4 {k['i4']}, i5 {k['i5']}")
+    # the posts: 34 mm behind each rail plane, the same in both panes mirrored; the rack's depth from the front rail back
+    if sorted(R["posts"]) != [["front", 0, 34], ["rear", rd - 34, rd]] or sorted(L["posts"]) != [["front", -34, 0], ["rear", -rd, -rd + 34]]:
+        bad.append(f"the posts are at {R['posts']} (right) and {L['posts']} (left); expected the front pair behind the front rail plane and the rear pair {rd} mm back")
+    if R["extent"] != [0, deep] or L["extent"] != [-deep, 0]:
+        bad.append(f"the rack's depth is drawn {R['extent']} and {L['extent']}, expected {deep} mm back from the front rail plane")
+    if not (R["words"].get("front") == 0 and R["words"].get("rear") == deep and L["words"].get("front") == 0 and L["words"].get("rear") == -deep):
+        bad.append(f"FRONT and REAR are at {R['words']} and {L['words']}")
+    # the front of the rack is at the right pane's left and the left pane's right
+    if not (R["vb"][0] < 0 < deep < R["vb"][0] + R["vb"][2] and L["vb"][0] < -deep < 0 < L["vb"][0] + L["vb"][2]) or abs(L["vb"][2] - R["vb"][2]) > eps or abs(L["vb"][0] + R["vb"][0] + R["vb"][2]) > eps:
+        bad.append(f"the panes' boxes are {L['vb']} and {R['vb']}; expected mirrored boxes of one width holding the whole depth")
+    # one U scale and one top for all four panes: the numbers on the front post at the front pane's own heights
+    for name, p in (("left", L), ("right", R)):
+        if p["nums"] != rows["nums"] or len(p["nums"]) != 42:
+            bad.append(f"{name} pane: the U numbers on its front post are not at the front pane's heights ({p['nums'][:2]} against {rows['nums'][:2]}, {len(p['nums'])} of them)")
+        if p["vb"][1] != rows["vb"][1]:
+            bad.append(f"{name} pane: its box starts at y {p['vb'][1]}, the front pane's at {rows['vb'][1]}")
+    # nearer over farther: from the left the manager beside the left upright is in front of everything, from the right behind it
+    lo, ro = L["layers"], R["layers"]
+    if not (lo.index("near") > lo.index("cables") > lo.index("posts") > max(i for i, n in enumerate(lo) if n.startswith("item:")) and L["bodies"]["z1"]["near"]):
+        bad.append(f"left pane: painted in the order {lo}; expected the devices, the posts, the cables, then the manager beside the near side")
+    if not (ro[0] == "part:z1" and not R["bodies"]["z1"]["near"]):
+        bad.append(f"right pane: painted in the order {ro}; expected the manager beside the far side first")
+    # the lacer is wider than a device, so nearer from either side: after the device it is bolted over
+    for name, p in (("left", L), ("right", R)):
+        if p["order"].index("i2") < p["order"].index("i1"):
+            bad.append(f"{name} pane: the lacer is painted before the device it is bolted over")
+    return bad
+
+
+# A side pane's cables, off the page: each one's drawn points (in pane mm),
+# whether it is lit, the envelope, and the label beside the pointer.
+SIDE_CABLES_JS = """() => {
+  const out = {panes: {}, pressed: [...document.querySelectorAll('#cableList [aria-pressed="true"]')].map(b => b.dataset.cableRow ?? b.dataset.bundleRow),
+               tip: (t => (t && !t.hidden ? t.textContent : null))(document.getElementById('sideTip')), paths: {}};
+  const P = window.__rack.paths() || {};
+  for (const [id, p] of Object.entries(P)) out.paths[id] = p ? p.points.map(q => [q.x, q.y, q.z]) : null;
+  for (const svg of document.querySelectorAll('#panes > section > div > svg')) {
+    const p = out.panes[svg.dataset.pane] = {cables: {}, hover: svg.classList.contains('cable-hover'), focus: svg.classList.contains('cable-focus')};
+    for (const g of svg.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id]')) {
+      const path = g.querySelector('path:last-of-type');
+      const pts = (path.getAttribute('d').match(/-?[\\d.]+ -?[\\d.]+/g) || []).map(s => s.split(' ').map(Number));
+      p.cables[g.dataset.cableId] = {pts, on: g.classList.contains('on'), hot: g.classList.contains('hot'), opacity: Math.round(+getComputedStyle(g).opacity * 100) / 100,
+                                     stroke: path.getAttribute('stroke'), events: getComputedStyle(g).pointerEvents};
+    }
+  }
+  return out;
+}"""
+# A point of a cable's stroke on a pane, in page pixels, that no other cable's stroke is under.
+SIDE_POINT_JS = """([pane, id]) => {
+  const svg = document.querySelector(`#panes svg[data-pane="${pane}"]`), mine = svg.querySelector(`[data-cable-id="${id}"] path:last-of-type`);
+  const others = [...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id] path')].filter(p => p.closest('[data-cable-id]').dataset.cableId !== id);
+  const L = mine.getTotalLength(), m = mine.getScreenCTM();
+  for (let k = 1; k < 200; k++) {
+    const q = mine.getPointAtLength(L * k / 200), s = new DOMPoint(q.x, q.y).matrixTransform(m);
+    if (others.some(o => o.isPointInStroke(new DOMPoint(s.x, s.y).matrixTransform(o.getScreenCTM().inverse())))) continue;
+    const r = svg.getBoundingClientRect();
+    if (s.x > r.left + 2 && s.x < r.right - 2 && s.y > r.top + 2 && s.y < r.bottom - 2) return [s.x, s.y];
+  }
+  return null;
+}"""
+
+
+def side_lit_wrong(st, lit, where):
+    bad = []
+    for pane, p in st["panes"].items():
+        for c, v in p["cables"].items():
+            if lit and c in lit and v["opacity"] != 1:
+                bad.append(f"{where}: {pane} pane, {c} should be lit, is at opacity {v['opacity']}")
+            if lit and c not in lit and v["opacity"] > 0.25:
+                bad.append(f"{where}: {pane} pane, {c} should be dimmed, is at opacity {v['opacity']}")
+            if not lit and v["opacity"] != 1:
+                bad.append(f"{where}: {pane} pane, {c} should be as drawn, is at opacity {v['opacity']}")
+    return bad
+
+
+@extra("rack.html: in Left / Right a cable is the kit's own points dropped onto depth and height - a patch between two front ports stays in front of the front rail plane, a run up a lane is a vertical on it, a front-to-rear cable is drawn through the rack - in its own colour, mirrored in the two panes; hovering one dims the rest and names it, and a pinned cable stays pinned through Front / Rear, Left / Right and 3D (#187)")
+def check_rack_side_cables(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    colours = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#paneFront svg [data-cables] [data-cable][data-cable-id]')].map(g =>
+      [g.dataset.cableId, g.querySelector('path:last-of-type').getAttribute('stroke')]))""")
+    to_sides(page)
+    park_mouse(page)
+    st = page.evaluate(SIDE_CABLES_JS)
+    L, R = st["panes"].get("left"), st["panes"].get("right")
+    if not L or not R or set(L["cables"]) != {"c1", "c2", "c3"} or set(R["cables"]) != {"c1", "c2", "c3"}:
+        return bad + [f"the side panes draw {({k: sorted(v['cables']) for k, v in st['panes'].items()})}, expected c1, c2 and c3 on each"]
+    H, rd = 42 * 44.45, 740
+    for c in ("c1", "c2", "c3"):
+        kit = st["paths"][c]
+        l, r = L["cables"][c]["pts"], R["cables"][c]["pts"]
+        # mirror images: the left pane's x is the right pane's, negated
+        if len(l) != len(r) or any(abs(a[0] + b[0]) > 0.01 or abs(a[1] - b[1]) > 0.01 for a, b in zip(l, r)):
+            bad.append(f"{c}: its strokes in the two panes are not mirror images ({l[:3]} against {r[:3]})")
+        # the kit's points, every one, in order: (depth back from the front rail, height down from the top), runs across the rack seen end on
+        want = []
+        for x, y, z in kit:
+            q = [round(-z, 3), round(H - y, 3)]
+            if not want or abs(want[-1][0] - q[0]) > 1e-6 or abs(want[-1][1] - q[1]) > 1e-6:
+                want.append(q)
+        if len(want) != len(r) or any(abs(a[0] - b[0]) > 0.01 or abs(a[1] - b[1]) > 0.01 for a, b in zip(want, r)):
+            bad.append(f"{c}: the right pane draws {len(r)} points {r[:4]}...; the kit's path gives {len(want)}, {want[:4]}...")
+        if R["cables"][c]["stroke"] != colours.get(c) or L["cables"][c]["stroke"] != colours.get(c):
+            bad.append(f"{c}: drawn {R['cables'][c]['stroke']} from the side, {colours.get(c)} on the front pane")
+        if R["cables"][c]["events"] != "none":
+            bad.append(f"{c}: its stroke takes the pointer ({R['cables'][c]['events']}); a click under it is the device's")
+    # c1 and c3: two ports of the front face. Never behind the front rail plane, and its run up the lane is a vertical on that plane
+    for c in ("c1", "c3"):
+        xs = [p[0] for p in R["cables"][c]["pts"]]
+        if max(xs) > 0.01 or min(xs) > -10:
+            bad.append(f"{c} (front port to front port): its depth runs {min(xs):.1f}..{max(xs):.1f} mm back from the front rail plane; expected in front of it and out to its plug")
+        pts = R["cables"][c]["pts"]
+        vert = [abs(b[1] - a[1]) for a, b in zip(pts, pts[1:]) if abs(a[0]) < 0.01 and abs(b[0]) < 0.01]
+        if not vert or max(vert) < 300:
+            bad.append(f"{c}: no vertical run on the front rail plane (its lane) is drawn; the longest is {max(vert) if vert else 0:.0f} mm")
+    # c2: from a front port to the device on the rear rails. Drawn through the rack, from in front of the front plane to behind the rear one
+    xs = [p[0] for p in R["cables"]["c2"]["pts"]]
+    if min(xs) > -10 or max(xs) < rd:
+        bad.append(f"c2 (front to rear): its depth runs {min(xs):.1f}..{max(xs):.1f}; expected from in front of the front rail plane to the rear rail plane at {rd} and its plug beyond")
+    through = [(a, b) for a, b in zip(R["cables"]["c2"]["pts"], R["cables"]["c2"]["pts"][1:]) if a[0] <= 0.01 and b[0] >= rd - 0.01]
+    if len(through) != 1 or abs(through[0][0][1] - through[0][1][1]) > 0.01:
+        bad.append(f"c2 (front to rear): {len(through)} of its legs run from the front rail plane to the rear one; expected one, level")
+    # ── hover: a point of c2's own stroke, in the right pane ──
+    spot = page.evaluate(SIDE_POINT_JS, ["right", "c2"])
+    if not spot:
+        return bad + ["found no point of c2's stroke in the right pane that is clear of the other cables"]
+    page.mouse.move(spot[0] - 30, spot[1] - 30)
+    page.mouse.move(spot[0], spot[1], steps=3)
+    page.wait_for_timeout(450)
+    h = page.evaluate(SIDE_CABLES_JS)
+    bad += side_lit_wrong(h, {"c2"}, "hovering c2 in the right pane")
+    if not h["panes"]["left"]["hover"]:
+        bad.append("hovering c2 in the right pane: the left pane is not dimmed with it")
+    if not h["tip"] or "sw-front" not in h["tip"] or "sw-rear" not in h["tip"]:
+        bad.append(f"hovering c2: the label beside the pointer reads {h['tip']!r}; expected it to name c2's two ends")
+    park_mouse(page)
+    h = page.evaluate(SIDE_CABLES_JS)
+    bad += side_lit_wrong(h, None, "the pointer gone")
+    if h["tip"]:
+        bad.append(f"the pointer gone: the label still reads {h['tip']!r}")
+    # ── a click on the stroke pins it; it survives every switch of view ──
+    page.mouse.click(spot[0], spot[1])
+    page.wait_for_function("() => document.querySelector('#paneRear [data-cable-id=\"c2\"].on')", timeout=READY_MS)
+    park_mouse(page)
+    p = page.evaluate(SIDE_CABLES_JS)
+    bad += side_lit_wrong(p, {"c2"}, "c2 clicked in the right pane")
+    if p["pressed"] != ["c2"]:
+        bad.append(f"c2 clicked in the right pane: the pressed rows are {p['pressed']}")
+    # the same click again leaves it pinned
+    spot = page.evaluate(SIDE_POINT_JS, ["right", "c2"])
+    page.mouse.click(spot[0], spot[1])
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    if page.evaluate(SIDE_CABLES_JS)["pressed"] != ["c2"]:
+        bad.append("c2 clicked again: it was put down; a click on the pinned cable keeps it")
+    to_faces(page)
+    park_mouse(page)
+    f = page.evaluate(SIDE_CABLES_JS)
+    bad += side_lit_wrong(f, {"c2"}, "c2 pinned, in Front / Rear")
+    if f["pressed"] != ["c2"]:
+        bad.append(f"c2 pinned, in Front / Rear: the pressed rows are {f['pressed']}")
+    to_sides(page)
+    park_mouse(page)
+    bad += side_lit_wrong(page.evaluate(SIDE_CABLES_JS), {"c2"}, "c2 pinned, back in Left / Right")
+    if webgl_trouble(page):
+        print("[check_rack_side_cables] no WebGL here - the 3D half was not checked")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: the side fixture's scene", tubes=True)
+        park_mouse(page)
+        three = page.evaluate("""() => { const g = window.__rack.scene()?.three?.scene?.getObjectByName('patch-cables'), out = {};
+          for (const c of g?.children ?? []) { const m = c.children.find(o => o.isMesh).material; out[c.name.slice(6)] = [m.transparent, Math.round(m.opacity * 1000) / 1000]; }
+          return out; }""")
+        if three.get("c2") != [False, 1] or not all(v[0] and v[1] < 0.2 for k, v in three.items() if k != "c2") or len(three) != 3:
+            bad.append(f"c2 pinned, in 3D: the tubes' materials are {three}; expected c2 at full strength and the others dimmed")
+        page.click('#mode [data-mode="2d"]')
+        page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+        page.wait_for_function("() => document.querySelector('#paneRear [data-cable-id=\"c2\"].on')", timeout=READY_MS)
+        park_mouse(page)
+        b = page.evaluate(SIDE_CABLES_JS)
+        bad += side_lit_wrong(b, {"c2"}, "c2 pinned, back from 3D in Left / Right")
+        if b["pressed"] != ["c2"]:
+            bad.append(f"c2 pinned, back from 3D: the pressed rows are {b['pressed']}")
+    # a click on empty pane puts it down, as everywhere
+    empty = page.evaluate("""() => { const svg = document.querySelector('#paneRear > svg'), r = svg.getBoundingClientRect();
+      for (const [fx, fy] of [[0.5, 0.004], [0.3, 0.004], [0.7, 0.004]]) { const x = r.left + r.width * fx, y = r.top + r.height * fy;
+        if (document.elementFromPoint(x, y) === svg) return [x, y]; } return null; }""")
+    if not empty:
+        bad.append("found no empty point of the right pane to click")
+    else:
+        page.mouse.click(empty[0], empty[1])
+        try:
+            page.wait_for_function("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')", timeout=5000)
+        except Exception:
+            bad.append("a click on empty pane did not put the pinned cable down")
+        park_mouse(page)
+        bad += side_lit_wrong(page.evaluate(SIDE_CABLES_JS), None, "after a click on empty pane")
+    return bad
+
+
+@extra("rack.html: Left / Right is for looking - a click selects a device, a part or a cable and rings it; nothing can be dragged, moved with the arrow keys, placed or cabled there; Cable is off and says why, a new cable in hand is dropped on the way in, and the panel says what the pair is for (#187)")
+def check_rack_side_view_only(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    # Cable mode on, with an end picked, in Front / Rear
+    page.click("#cableBtn")
+    page.wait_for_selector("#cableHelp", timeout=READY_MS)
+    if page.get_attribute("#cableBtn", "aria-pressed") != "true":
+        bad.append("Front / Rear: the Cable button did not turn on")
+    to_sides(page)
+    s = page.evaluate(SIDE_SWITCH_JS)
+    if s["cable"][0] is not True or s["cable"][2] != "false" or "Front / Rear" not in s["cable"][1]:
+        bad.append(f"Left / Right: the Cable button is disabled={s['cable'][0]}, pressed={s['cable'][2]}, title {s['cable'][1]!r}; expected off, not pressed, saying cables are added in Front / Rear")
+    if page.query_selector("#cableHelp") or page.evaluate("() => document.getElementById('panes').classList.contains('rk-cabling')"):
+        bad.append("Left / Right: Cable mode is still on")
+    if not s["note"] or "Front / Rear" not in s["note"]:
+        bad.append(f"Left / Right: the panel's note reads {s['note']!r}; expected it to say the pair is for looking and where to edit")
+    targets = page.evaluate("() => [document.querySelectorAll('#panes rect.rk-u').length, document.querySelectorAll('#panes [data-u]').length, document.querySelectorAll('#panes [data-pick]').length]")
+    if targets != [0, 0, 0]:
+        bad.append(f"Left / Right: the panes hold {targets} U targets, U rows and pick targets; expected none")
+    before = page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0])")
+    hist = page.evaluate("() => window.__rack.history().undoSummary")
+    # a click on a device selects it, and rings it
+    box = page.evaluate("""() => { const r = document.querySelector('#paneRear svg [data-item-id="i5"] [data-side-hit]').getBoundingClientRect();
+      return [r.left + r.width * 0.7, r.top + r.height / 2, r.height]; }""")
+    page.mouse.click(box[0], box[1])
+    try:
+        page.wait_for_function("() => document.querySelectorAll('#panes .rk-sel-ring').length === 2 && document.querySelector('#paneRear [data-item-id=\"i5\"].rk-selected')", timeout=8000)
+    except Exception:
+        bad.append("a click on the turned device did not select and ring it in both panes")
+    if not page.query_selector("#side #iRemove"):
+        bad.append("a click on the turned device did not open its panel")
+    # the arrow keys do not move it (in Front / Rear they move a selected device a unit at a time)
+    page.keyboard.press("ArrowUp")
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(400)
+    if page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0])") != before:
+        bad.append("the arrow keys moved a device selected in Left / Right")
+    if not page.query_selector('#paneRear [data-item-id="i5"].rk-selected'):
+        bad.append("after the arrow keys the device is no longer the selection, so they were not tried on it")
+    # a press and a move on it does not start a drag, and does not move it
+    page.mouse.move(box[0], box[1])
+    page.mouse.down()
+    page.mouse.move(box[0], box[1] - box[2] * 3, steps=8)
+    drag_ui = page.evaluate("() => !!document.getElementById('dragStatus') || !!document.querySelector('.rk-dragging, .rk-drag-ghost, [data-drag-ghost]')")
+    page.mouse.up()
+    page.wait_for_timeout(400)
+    if drag_ui:
+        bad.append("a press and a move on a device started a drag")
+    after = page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0])")
+    if after != before or page.evaluate("() => window.__rack.history().undoSummary") != hist:
+        bad.append("after a click, the arrow keys and a drag on a device in Left / Right the rack changed")
+    # (the press and release above ended on empty pane: the device is selected again for its panel)
+    page.mouse.click(box[0], box[1])
+    page.wait_for_selector("#side #iMove", timeout=READY_MS)
+    # Move, from its panel, says where moving is done
+    if page.query_selector("#iMove"):
+        page.click("#iMove")
+        page.wait_for_selector("#moveHelp", timeout=READY_MS)
+        if "Front / Rear" not in page.inner_text("#moveHelp"):
+            bad.append(f"Move, in Left / Right, reads {page.inner_text('#moveHelp')!r}")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+    # the part beside the rack, in the pane it is nearest in
+    zb = page.evaluate("""() => { const r = document.querySelector('#paneFront svg [data-zerou-id="z1"] [data-side-hit]').getBoundingClientRect();
+      return [r.left + r.width * 0.8, r.top + r.height * 0.9]; }""")
+    page.mouse.click(zb[0], zb[1])
+    try:
+        page.wait_for_function("() => document.querySelector('#paneFront [data-zerou-id=\"z1\"].rk-selected')", timeout=8000)
+    except Exception:
+        bad.append("a click on the vertical manager did not select it")
+    # a click on empty pane puts a selected part down, and places nothing
+    empty = page.evaluate("""() => { const svg = document.querySelector('#paneRear > svg'), r = svg.getBoundingClientRect();
+      for (const [fx, fy] of [[0.5, 0.004], [0.3, 0.004]]) { const x = r.left + r.width * fx, y = r.top + r.height * fy;
+        if (document.elementFromPoint(x, y) === svg) return [x, y]; } return null; }""")
+    if empty:
+        page.mouse.click(empty[0], empty[1])
+        try:
+            page.wait_for_function("() => !document.querySelector('#panes .rk-selected') && !document.querySelector('#panes .rk-sel-ring')", timeout=8000)
+        except Exception:
+            bad.append("a click on empty pane did not put the selected part down")
+    # a click inside the rack's depth where nothing stands opens no picker
+    hole = page.evaluate("""() => { const svg = document.querySelector('#paneRear > svg'), m = svg.getScreenCTM(), p = new DOMPoint(400, 42 * 44.45 - 2.5 * 44.45).matrixTransform(m);
+      return document.elementFromPoint(p.x, p.y) === svg ? [p.x, p.y] : null; }""")
+    if not hole:
+        bad.append("found no empty unit inside the rack's depth to click")
+    else:
+        page.mouse.click(hole[0], hole[1])
+        page.wait_for_timeout(400)
+        if page.query_selector("#catQuery") or page.query_selector("#catPlace"):
+            bad.append("a click on an empty unit in Left / Right opened the picker")
+    if page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0])") != before:
+        bad.append("the rack changed in Left / Right")
+    # the Cable button takes no click
+    page.evaluate("() => document.getElementById('cableBtn').click()")
+    page.wait_for_timeout(300)
+    if page.query_selector("#cableHelp"):
+        bad.append("Left / Right: a click on the Cable button turned Cable mode on")
+    # back in Front / Rear everything is in use again: the Cable button, and a drag that moves
+    to_faces(page)
+    if page.is_disabled("#cableBtn") or page.get_attribute("#cableBtn", "title"):
+        bad.append("back in Front / Rear the Cable button is still off")
+    return bad
+
+
+@extra("rack.html: the sheet (.svg) and the draw.io file are byte for byte the same whether the panes show Front / Rear or Left / Right, and hold no side view (#187)")
+def check_rack_side_exports_same(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    grab = lambda kind: pathlib.Path(export_file(page, kind).path()).read_bytes()
+    faces = {k: grab(k) for k in ("sheet-svg", "drawio")}
+    to_sides(page)
+    menu = page.evaluate("() => { document.querySelector('#exportMenu > summary').click(); const v = [...document.querySelectorAll('#exportItems [data-export]')].map(b => [b.dataset.export, b.textContent]); document.querySelector('#exportMenu > summary').click(); return v; }")
+    if any("left" in k or "right" in k or "side" in k.lower() or "Left" in t or "Right" in t for k, t in menu):
+        bad.append(f"Left / Right: the Export menu offers a side view: {menu}")
+    sides = {k: grab(k) for k in ("sheet-svg", "drawio")}
+    for k in faces:
+        if len(faces[k]) < 2000:
+            bad.append(f"{k}: the file is {len(faces[k])} bytes: nothing was compared")
+        if faces[k] != sides[k]:
+            bad.append(f"{k}: the file exported from Left / Right ({len(sides[k])} bytes) is not the one exported from Front / Rear ({len(faces[k])} bytes)")
+        if b'data-pane="left"' in sides[k] or b'data-side' in sides[k]:
+            bad.append(f"{k}: the file holds a side pane")
+    if page.evaluate("() => window.__rack.view()") != "sides" or not page.evaluate(SIDE_DRAWN):
+        bad.append("after the exports the panes no longer show Left / Right")
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that

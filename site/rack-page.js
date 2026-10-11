@@ -48,6 +48,9 @@ import {writeHint} from './rack/agent-hint.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
 import {zeroUInspector, sideControl} from './rack/zero-u-panel.js';
+import {drawSideElevation, drawSideCables, roomForSideCables, sideTipText} from './rack/side-elevation.js';
+import {stopCentre} from './rack/scene3d.js';
+import {solidsOf} from '../vendor/rack/solids.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -63,8 +66,23 @@ function loadMode() {
   catch { return '2d'; }
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
+// WHICH PAIR THE TWO PANES SHOW IN 2D (portrayal-site#187): the rack's faces
+// (front and rear) or its sides (left and right). The reader's, remembered in
+// this browser as the mode is; never in the rack file and never in the URL.
+const VIEW_KEY = 'portrayal.rack.view';
+const PAIRS = {faces: ['Front', 'Rear'], sides: ['Left', 'Right']};
+// What the side pair is for, said where 3D says the like of itself.
+const SIDES_NOTE = 'Left and Right show the rack from its sides: click to select. Devices are placed and moved, and cables added, in Front / Rear.';
+const CABLES_SIDES = 'Cables are added in Front / Rear. Switch to Front / Rear to add one.';
+const MOVE_SIDES = 'Devices are moved in Front / Rear. Switch to Front / Rear to move it. Esc stops moving.';
+const PICK_SIDES = 'A waypoint is picked in Front / Rear. Switch to Front / Rear to add one.';
+function loadView() {
+  try { return localStorage.getItem(VIEW_KEY) === 'sides' ? 'sides' : 'faces'; }
+  catch { return 'faces'; }
+}
+function saveView(v) { try { localStorage.setItem(VIEW_KEY, v); } catch { /* forgets */ } }
 const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
+  dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), view: loadView(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   hover: null,       // {kind: 'cable'|'bundle', id, from: 'stage'|'list'}: what the pointer is over (#169)
@@ -209,7 +227,13 @@ function paintMode() {
     b.classList.toggle('on', b.dataset.mode === S.mode);
     b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
   }
+  for (const b of document.querySelectorAll('#view2d [data-view]')) {
+    b.classList.toggle('on', b.dataset.view === S.view);
+    b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
+  }
 }
+// Is the side pair what the panes show (2D, Left / Right)?
+const sidesShown = () => S.mode === '2d' && S.view === 'sides';
 // THE STAGE IS THE READER'S, as in the Explorer and Annotate: picked from the
 // swatches, remembered (stage.js), and the ground in both views. In 2D it is
 // the panes' background, with the site's light or dark palette laid over them
@@ -236,9 +260,16 @@ function showMode() {
   // removed - so the 2D/3D switch beside them never moves when it is used.
   $('rkZoom').style.visibility = is3d ? 'hidden' : '';
   $('rkZoom').inert = is3d;
+  // The Front / Rear | Left / Right switch is 2D's: in 3D it keeps its place
+  // the same way, so the 2D/3D switch beside it does not move either.
+  $('view2d').style.visibility = is3d ? 'hidden' : '';
+  $('view2d').inert = is3d;
   // Cable mode needs the panes (Phase 2 ruling 7): in 3D the button is off, and says why.
-  $('cableBtn').disabled = is3d;
-  $('cableBtn').title = is3d ? CABLES_3D : '';
+  // And it needs the faces: the side pair is for looking, so there it is off too (#187).
+  const sides = !is3d && S.view === 'sides';
+  $('cableBtn').disabled = is3d || sides;
+  $('cableBtn').title = is3d ? CABLES_3D : sides ? CABLES_SIDES : '';
+  $('panes').dataset.view = S.view;
   $('stage3d').hidden = !is3d;
   $('stage3d').style.display = is3d ? '' : 'none';
 }
@@ -266,6 +297,25 @@ function setMode(m) {
   // whatever was drawn there while hidden never got a real height - this is
   // what makes the panes come back to life rather than blank.
   render();
+}
+// FRONT / REAR OR LEFT / RIGHT (#187): one switch for both panes. The side
+// pair is view-only, as 3D is: Cable mode ends here, a new cable not yet
+// added goes with it, and so does a pick of an empty U (there is none to
+// click from the side). A cable, a bundle, a device or a part selected stays
+// selected, so a pinned highlight is carried across.
+function setView(v) {
+  if ((v !== 'faces' && v !== 'sides') || v === S.view) return;
+  S.view = v;
+  saveView(v);
+  paintMode();
+  if (v === 'sides') {
+    if (pendingEnds().length || S.sel?.kind === 'u') S.sel = null;
+    S.cable = {on: false, a: null};
+    S.routePick = null;
+    paintCableMode();
+  }
+  showMode();
+  if (S.mode === '2d') render();
 }
 const rack = () => ed.rack();
 const theDoc = () => ed.getDoc();
@@ -481,7 +531,7 @@ function paintCableMode() {
   $('panes').classList.toggle('rk-cabling', S.cable.on);
 }
 function setCableMode(on) {
-  S.cable = {on: !!on && S.mode === '2d', a: null};
+  S.cable = {on: !!on && S.mode === '2d' && S.view === 'faces', a: null};
   // Entering clears the selection; leaving drops a new cable not yet added.
   if (S.cable.on || (S.sel?.kind === 'cable-form' && !S.sel.id)) S.sel = null;
   paintCableMode();
@@ -780,6 +830,8 @@ const homePanel = () => el('div', {}, [
   // In 3D the cables are drawn and the list still selects, edits and deletes;
   // a selected cable is not lit in the scene, and a cable is added in 2D.
   S.mode === '3d' ? el('p', {id: 'cable3dNote', class: 'rk-muted', role: 'status', text: CABLES_3D}) : null,
+  // The side pair says what it is for, as 3D says where cables are added (#187).
+  sidesShown() ? el('p', {id: 'sidesNote', class: 'rk-muted', role: 'status', text: SIDES_NOTE}) : null,
   cableListPanel()].filter(Boolean));
 
 // Undo and Redo walk the editor's history (spec §3.3); onChange says what was
@@ -964,6 +1016,8 @@ async function redraw() {
   if (S.routeSel && S.routeSel.cableId !== formOf) S.routeSel = null;
   if (S.cableDraft && S.cableDraft.id !== formOf) S.cableDraft = null;
   // Picking belongs to one open cable form, outside Cable mode.
+  // (nor from the side: there is no ring, duct or gutter to click there, and the page says so)
+  if (S.routePick && sidesShown()) { S.routePick = null; addNotice(PICK_SIDES, 'note'); }
   if (S.routePick && (S.cable.on || S.sel?.kind !== 'cable-form' || S.sel.id !== S.routePick.cableId
       || !rack().cables.some(c => c.id === S.routePick.cableId))) S.routePick = null;
   let r = rack();
@@ -973,11 +1027,12 @@ async function redraw() {
   // The heading stays one line ("Front" / "Rear") so both panes' SVGs start
   // at the same top edge; the frame summary that used to wrap it onto two
   // lines lives in the top bar instead, beside the rack name.
-  $('headFront').textContent = 'Front';
-  $('headRear').textContent = 'Rear';
+  // The pair the panes show names them (#187): Front and Rear, or Left and Right.
+  const sides = S.view === 'sides';
+  [$('headFront').textContent, $('headRear').textContent] = PAIRS[S.view];
   $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' || S.sel?.kind === 'remove' ? S.sel.id : null;
-  let front, rear, facts;
+  let front, rear, facts, sideCables = null;
   try {
     // PLUGS ARE DERIVED, NEVER STORED: a cabled end is drawn with the plug its
     // port takes, laid over the item's own swaps for this drawing only. The
@@ -1043,7 +1098,13 @@ async function redraw() {
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     const zeroU = zeroUEntries(r, chassisOf);
-    [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
+    // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
+    // from the same items, parts and routes. Nothing in it is a target for
+    // placing, moving or cabling.
+    if (sides) [front, rear] = await Promise.all(['left', 'right'].map(pane => drawSideElevation({
+      rack: r, items, zeroU, pane, chassisOf, selectedId, cabled: r.cables.length > 0,
+      laneGap: hasRoutes() ? LANE_GAP : 0, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null})));
+    else [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
       laneGap: hasRoutes() ? LANE_GAP : 0, zeroU, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null, chassisOf})));
@@ -1066,7 +1127,7 @@ async function redraw() {
   // below reads their viewBox; with none they are exactly as they were.
   const cabled = r.cables.length > 0;
   const routed = hasRoutes();
-  if (cabled) for (const svg of S.svgs) widenForCables(svg, routed);
+  if (cabled && !sides) for (const svg of S.svgs) widenForCables(svg, routed);
   // #panes is hidden while in 3D (showMode()) - applyZoom measures its own
   // column width to fit into, and a hidden element measures 0, which is what
   // left every SVG at height:0 once the panes came back. Skipped here, this
@@ -1076,7 +1137,19 @@ async function redraw() {
     setZoomLabel();
     // Cables are measured off the laid-out panes (getScreenCTM), so they are
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
-    if (cabled) {
+    if (cabled && sides) {
+      // The cables from the side: the kit's points for each, dropped onto
+      // depth and height (side-elevation.js). They need no laid-out pane, but
+      // the panes grow for them, so the zoom is applied again when they do.
+      const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
+      const live = S.routes?.rack === r ? S.routes : null;
+      const centreOf = (w, rt) => stopCentre(r, w, live?.ctx, rt);
+      sideCables = S.svgs.map(svg => drawSideCables(svg, r, live, reasons, {uOf, centreOf}));
+      if (roomForSideCables(S.svgs, sideCables)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
+      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: selectedBundle(), on: S.cableFilter});
+      paintBundles(S.svgs, selectedBundle());
+      paintHover2d(S.svgs, litFor(r, S.hover));
+    } else if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       // by the routes read for the rack this draws, never another's
       for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes?.rack === r ? S.routes : null);
@@ -1088,7 +1161,7 @@ async function redraw() {
       paintBundles(S.svgs, selectedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
     }
-    if (S.routePick) drawRoutePicking();
+    if (S.routePick && !sides) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
     for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
       const it = itemById(e.item);
@@ -1131,7 +1204,7 @@ function summary() {
       `${side.length ? ` · ${side.length} beside the rack` : ''}.`}),
     ...warnings.map(({i, f}) => el('p', {class: 'rk-error', text: `${i.label} at U${positionOf(r.frame, i.ru, uOf(i))}: ${f.reason}`})),
     ...sideWarnings.map(({z, f}) => el('p', {class: 'rk-error', text: `${z.label} at ${z.at}: ${f.reason}`})),
-    el('p', {class: 'rk-muted', text: 'Click an empty U on either face to place a device there.'}),
+    ...(sidesShown() ? [] : [el('p', {class: 'rk-muted', text: 'Click an empty U on either face to place a device there.'})]),
   ]);
 }
 
@@ -1145,6 +1218,26 @@ function setHover(target) {
   const lit = litFor(rack(), target);
   paintHover2d(S.svgs, lit);
   if (S.scene3d) paintHover3d(S.scene3d, lit);
+  if (!target || target.from !== 'stage') hideSideTip();
+}
+// THE HOVER LABEL OF A SIDE PANE (#187): what is under the pointer there, in
+// words, beside the pointer (side-elevation.js sideTipText). The front pane
+// names a cable by its tags; a side pane has none, and many cables lie on one
+// another in it. Shown only over a side pane, for a cable or a bundle.
+function hideSideTip() { const tip = $('sideTip'); if (tip) tip.hidden = true; }
+function showSideTip(ev, target) {
+  const tip = $('sideTip');
+  if (!tip) return;
+  const text = sidesShown() && target ? sideTipText(rack(), routesNow(), target, uOf) : '';
+  if (!text) { tip.hidden = true; return; }
+  tip.textContent = text;
+  tip.hidden = false;
+  const box = $('panes').getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  // beside the pointer, kept inside the panes
+  const x = Math.min(Math.max(box.left + 4, ev.clientX + 14), Math.max(box.left + 4, box.right - w - 4));
+  const y = ev.clientY + 18 + h > box.bottom ? ev.clientY - h - 10 : ev.clientY + 18;
+  tip.style.left = `${Math.round(x)}px`;
+  tip.style.top = `${Math.round(y)}px`;
 }
 let hoverFrame = 0, hoverEv = null;
 function hoverMove(ev, find) {
@@ -1199,9 +1292,11 @@ function wireHover() {
     const pane = $(id);
     pane.addEventListener('pointermove', ev => hoverMove(ev, e => {
       const svg = pane.querySelector(':scope > svg');
-      return svg ? hoverAt2d(svg, e) : null;
+      const t = svg ? hoverAt2d(svg, e) : null;
+      showSideTip(e, t);
+      return t;
     }));
-    pane.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
+    pane.addEventListener('pointerleave', ev => { hideSideTip(); if (ev.pointerType !== 'touch' && S.hover?.from === 'stage') setHover(focusHover()); });
   }
   const stage = $('stage3d');
   stage.addEventListener('pointermove', ev => hoverMove(ev, e => (S.scene3d ? hoverAt3d(S.scene3d, e) : null)));
@@ -1306,7 +1401,8 @@ function renderSide() {
     if (!it) { S.sel = null; body = homePanel(); }
     else body = el('div', {}, [
       el('h3', {text: `Move ${it.label}`}),
-      el('p', {class: 'rk-muted', text: 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
+      el('p', {id: 'moveHelp', class: 'rk-muted', text: sidesShown() ? MOVE_SIDES
+        : 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
   } else {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
@@ -1406,7 +1502,28 @@ function renderSide() {
   if (S.hover?.from === 'focus') setHover(focusHover());
 }
 
+// A CLICK ON A SIDE PANE SELECTS, and does nothing else (#187): a cable or a
+// bundle under the pointer (found by geometry, as its hover is: a stroke takes
+// no click), else the part beside the rack or the device clicked. A click on
+// nothing puts a selected device or part down; a pinned cable or bundle is put
+// down by wirePin, as everywhere.
+function onSideClick(ev) {
+  const svg = ev.currentTarget.querySelector(':scope > svg');
+  const hit = svg ? hoverAt2d(svg, ev) : null;
+  if (hit) {
+    // the pinned one clicked again stays pinned: a new selection object, so wirePin does not take it for a click on nothing
+    if (S.sel?.kind === hit.kind && S.sel.id === hit.id) { S.sel = {...S.sel}; return; }
+    return select({kind: hit.kind, id: hit.id});
+  }
+  const zpart = ev.target.closest('[data-zerou-id]');
+  if (zpart) return select({kind: 'zerou', id: zpart.dataset.zerouId});
+  const item = ev.target.closest('[data-item-id]');
+  if (item) return select({kind: 'item', id: item.dataset.itemId});
+  if (S.sel?.kind === 'item' || S.sel?.kind === 'zerou') select(null);
+}
+
 function onPaneClick(ev) {
+  if (sidesShown()) return onSideClick(ev);
   if (drag?.consumeClick()) return; // this drag's own trailing click (some engines fire one), not a fresh click
   // Picking a waypoint: only a pick target takes the click (one mode at a time;
   // Cable mode and Move mode cannot be on while a form is picking).
@@ -1633,7 +1750,8 @@ async function bootInner() {
     setStatus: text => { const s = $('dragStatus'); if (s) s.textContent = text; },
   });
   // The drag controller is off in Cable mode: a press on a port must stay a click.
-  const press = ev => { if (!S.cable.on && !S.routePick) drag.onPointerDown(ev); };
+  // And off in the side pair: nothing is moved from the side (#187).
+  const press = ev => { if (!S.cable.on && !S.routePick && !sidesShown()) drag.onPointerDown(ev); };
   $('paneFront').addEventListener('pointerdown', press);
   $('paneRear').addEventListener('pointerdown', press);
   $('cableBtn').addEventListener('click', () => setCableMode(!S.cable.on));
@@ -1659,6 +1777,10 @@ async function bootInner() {
   $('mode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
+  });
+  $('view2d').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-view]');
+    if (b) setView(b.dataset.view);
   });
   $('zoomOut').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, -1)));
   $('zoomIn').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, 1)));
@@ -1728,7 +1850,8 @@ async function bootInner() {
     const back = S.sel?.kind === 'remove' ? S.sel.id : id;
     if (ev.key === 'Escape' && S.sel?.kind === 'remove') S.focusNext = 'iRemove';
     if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && (S.sel.kind === 'move' || S.sel.kind === 'remove') ? {kind: 'item', id: back} : null); }
-    else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
+    // (not from the side: the side pair moves nothing, #187)
+    else if (id && !sidesShown() && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
       const cur = itemById(id);
       if (cur) {
         ev.preventDefault();
@@ -1801,6 +1924,11 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
       if (undoable) S.saidStep = undoable.text;
     },
     apply: cmds => edit(cmds),
+    // Probe only: which pair the panes show ('faces' or 'sides'), and a redraw that resolves when it has drawn.
+    view: () => S.view,
+    redraw: () => render(),
+    // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
+    solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),
     // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.
     bundleCommand: cmd => Promise.resolve(bundleCommand(cmd, res => ({error: res.error ?? null, created: res.created ?? null,
       findings: (res.findings ?? []).map(f => f.text)}))),

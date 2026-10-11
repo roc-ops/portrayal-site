@@ -192,7 +192,7 @@ function trunkStop(THREE, rack, w, members, paths, ctx, at, rt = 0) {
 // to the pack's centre, box: the opening, across: the axis across its run}.
 // The trunk and its members are laid by this one rule, so the members are
 // inside the trunk wherever it is drawn.
-function stopCentre(rack, w, ctx, rt) {
+export function stopCentre(rack, w, ctx, rt) {
   const open = rt > 0 && !w.lane ? openingOf(rack, w, ctx) : null;
   if (!open) return null;
   const b = open.box, across = open.run === 'x' ? 'z' : 'x';

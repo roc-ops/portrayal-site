@@ -25,6 +25,17 @@
 #mode button:hover { background: var(--control-hover); border-color: var(--control-line); }
 #mode button.on { background: var(--on-bg); border-color: var(--accent); color: var(--on-ink); }
 #mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+/* FRONT / REAR | LEFT / RIGHT (#187): which pair of the rack's sides the two
+   panes show, beside the 2D/3D switch and dressed as it is (site/mode3d.js
+   MODE3D_CSS and the rules above), so the two read as one row of switches. */
+#view2d { display: flex; gap: 0.2rem; }
+#view2d button { font: inherit; font-family: system-ui, sans-serif; font-size: 0.78rem; background: var(--control); color: var(--ink);
+  border: 1px solid var(--control-line); padding: 0.26rem 0.5rem; cursor: pointer; border-radius: 0; white-space: nowrap; }
+#view2d button:first-child { border-radius: 6px 0 0 6px; }
+#view2d button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+#view2d button:hover { background: var(--control-hover); border-color: var(--control-line); }
+#view2d button.on { background: var(--on-bg); border-color: var(--accent); color: var(--on-ink); }
+#view2d button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 #stagebg { display: flex; align-items: center; gap: 0.25rem; }
 #stagebg .sw { width: 0.95rem; height: 0.95rem; border-radius: 3px; cursor: pointer; padding: 0;
   min-width: 0; border: 1px solid var(--control-line); }
@@ -161,6 +172,12 @@
 .cable-hover [data-cable].hot, .cable-hover [data-cable-tag].hot,
 .cable-hover [data-bundle-id]:is(.hot, .hot-member), .cable-hover [data-strap].hot { opacity: 1; }
 .cable-hover [data-bundles], .cable-hover [data-bundle-straps] { opacity: 1; }
+/* THE HOVER LABEL OF A SIDE PANE (#187; rack-page.js showSideTip): beside the
+   pointer, over the panes, never taking the pointer. */
+.rk-side-tip { position: fixed; z-index: 30; max-width: 28rem; padding: 0.25rem 0.5rem; pointer-events: none;
+  font: 500 0.78rem var(--pt-font-mono); color: var(--pt-ink); background: var(--pt-surface);
+  border: 1px solid var(--pt-line); border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.rk-side-tip[hidden] { display: none; }
 .cable-tag { cursor: pointer; pointer-events: all; }
 .cable-tag rect { fill: var(--pt-surface); stroke: var(--pt-line); }
 .cable-tag text { font: 500 11px var(--pt-font-mono); fill: var(--pt-ink); }
