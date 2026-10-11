@@ -305,6 +305,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   });
   if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, (w, bid) =>
     wayPoint(svg, w, pane, rack.frame, w.lane ? bundleSlot(bid, w.lane) : 0, ductX));
+  drawInFront(svg);
   for (const rec of recs) {
     const c = cables[rec.i];
     for (const n of [rec.g, rec.tag]) if (n) n.setAttribute('data-cable-id', c.id);
@@ -357,6 +358,54 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null) {
   return recs;
 }
 
+
+// WHAT STANDS IN FRONT OF THE CABLES. The cable layer is appended after every
+// face, so a cable painted over everything, while in the 3D scene it runs
+// behind a lacer's D-ring front legs and inside a vertical manager's duct,
+// behind its cover. The panes agree with the scene: the parts the library
+// marks as in front are painted again in a layer straight after the cables
+// (under the tags, which are controls):
+//   - a mounted item's ring ends (`<via>-end`, data-kind="ring"), opaque;
+//   - a zero-U part's cover groups (data-group="cover"), see-through, so the
+//     run up the lane still reads behind a cover that is plainly there.
+// Nothing else: a device the library gives no such mark is left as it was.
+// Each is a COPY, placed by the transform its original has on the pane, and a
+// copy is paint only: it carries no id, no data-* of the drawing's (a second
+// `guide-1-end` would answer wayEl and the route's pick targets) and no
+// pointer-events of its own, and the layer takes no pointer, so a click or a
+// hover goes through to the original underneath, as before. It is part of the
+// drawing, so a sheet keeps it (exports.js draws its cables through here).
+export const COVER_OPACITY = 0.34;
+function bare(node) {
+  for (const n of [node, ...node.querySelectorAll('*')]) {
+    if (n.localName === 'title' || n.localName === 'metadata') { n.remove(); continue; }
+    for (const a of [...n.attributes]) if (a.name === 'id' || a.name === 'pointer-events' || a.name === 'tabindex' || a.name.startsWith('data-')) n.removeAttribute(a.name);
+  }
+  return node;
+}
+export function drawInFront(svg) {
+  svg.querySelector(':scope > [data-in-front]')?.remove();
+  const layer = svg.querySelector(':scope > [data-cables]');
+  if (!layer) return null;
+  const over = svgEl('g', {'data-in-front': svg.dataset.pane, 'pointer-events': 'none'});
+  const inv = svg.getScreenCTM().inverse();
+  const put = (el, kind, owner, opacity) => {
+    // its place on the pane: its parent's frame (its own transform comes along with the copy)
+    const m = inv.multiply(el.parentNode.getScreenCTM());
+    const n = v => Math.round(v * 1e6) / 1e6;
+    const g = svgEl('g', {transform: `matrix(${n(m.a)} ${n(m.b)} ${n(m.c)} ${n(m.d)} ${n(m.e)} ${n(m.f)})`, 'data-front': kind, 'data-front-of': owner,
+                          ...(opacity < 1 ? {opacity} : {})});
+    g.append(bare(el.cloneNode(true)));
+    over.append(g);
+  };
+  for (const g of svg.querySelectorAll(':scope > [data-item-id][data-panel="mounted"]'))
+    for (const el of g.querySelectorAll('[data-kind="ring"][id$="-end"]')) put(el, 'ring', g.dataset.itemId, 1);
+  for (const z of svg.querySelectorAll(':scope > [data-zerou-id]'))
+    for (const el of z.querySelectorAll('[data-group="cover"]')) put(el, 'cover', z.dataset.zerouId, COVER_OPACITY);
+  if (!over.childElementCount) return null;
+  layer.after(over);
+  return over;
+}
 
 // THE BUNDLES ON THIS PANE (portrayal-site#142; design section 6). Each drawn
 // bundle's trunk is one band as wide as the bundle (the kit's size check),

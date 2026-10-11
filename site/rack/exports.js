@@ -199,7 +199,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
           console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
-          pane.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]').forEach(n => n.remove());
+          pane.querySelectorAll(':scope > [data-cables], :scope > [data-in-front], :scope > [data-cable-tags]').forEach(n => n.remove());
           failed.push(pane.dataset.pane);
           after.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet; tags on the other face may point at runs that are not drawn.`);
         }

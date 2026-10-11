@@ -5880,6 +5880,207 @@ def check_rack_bundle_3d(page, base):
     return bad
 
 
+# ── the rack's drawing: what is in front of a cable, a bundle's pack, its
+# straps, and a half-unit body ───────────────────────────────────────────────
+def png_pixels(data):
+    """A PNG screenshot's pixels, with nothing but zlib: (width, height, at(x, y) -> (r, g, b))."""
+    import struct
+    import zlib
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("not a PNG")
+    pos, idat, w = 8, b"", None
+    while pos < len(data):
+        n, kind = struct.unpack(">I4s", data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + n]
+        if kind == b"IHDR":
+            w, h, depth, ctype, _, _, lace = struct.unpack(">IIBBBBB", body)
+            if depth != 8 or ctype not in (2, 6) or lace:
+                raise ValueError(f"PNG of depth {depth}, colour type {ctype}, interlace {lace}")
+        elif kind == b"IDAT":
+            idat += body
+        pos += 12 + n
+    bpp = 4 if ctype == 6 else 3
+    raw, stride, rows, prev = zlib.decompress(idat), w * bpp, [], bytearray(w * bpp)
+    for y in range(h):
+        f, line = raw[y * (stride + 1)], bytearray(raw[y * (stride + 1) + 1:(y + 1) * (stride + 1)])
+        for i in range(stride):
+            a = line[i - bpp] if i >= bpp else 0
+            b, c = prev[i], (prev[i - bpp] if i >= bpp else 0)
+            if f == 1:
+                line[i] = (line[i] + a) & 255
+            elif f == 2:
+                line[i] = (line[i] + b) & 255
+            elif f == 3:
+                line[i] = (line[i] + ((a + b) >> 1)) & 255
+            elif f == 4:
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        rows.append(line)
+        prev = line
+    return w, h, lambda x, y: tuple(rows[int(y)][int(x) * bpp:int(x) * bpp + 3])
+
+
+def rgb_of(color):
+    """'#rrggbb' or 'rgb(r, g, b)' as a tuple."""
+    m = re.fullmatch(r"#([0-9a-fA-F]{6})", color.strip())
+    if m:
+        return tuple(int(m.group(1)[i:i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(float(v)) for v in re.findall(r"[\d.]+", color)[:3])
+
+
+def contrast_ratio(a, b):
+    """WCAG contrast of two sRGB colours, 1 to 21."""
+    def lum(c):
+        ch = [v / 255 for v in c]
+        ch = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in ch]
+        return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+    hi, lo = max(lum(a), lum(b)), min(lum(a), lum(b))
+    return (hi + 0.05) / (lo + 0.05)
+
+
+# A switch with a lacer on it (rings), a second switch ten units up and a
+# vertical manager beside the left front upright (a duct with covers); four
+# cords between the switches, which the kit routes through the lacer's rings
+# and up the duct.
+FRONT_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.newRack({name: 'In front'});
+  ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 20, face: 'front', label: 'sw-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face: 'front', label: 'mgr-1', on: 'i1', unit: 1}));
+  ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 30, face: 'front', label: 'sw-2'}));
+  r = {...r, zeroU: [{id: 'z1', ref: 'cmv-sfd42u9w', cfg: 'base', label: 'duct-1', at: 'left-front', offsetMm: 0}]};
+  for (const p of ['port-1', 'port-2', 'port-3', 'port-24'])
+    ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: p, view: 'front'}, media: 'cat6a'}));
+  return r;
+}"""
+
+
+def open_front_fixture(page, base, fixture=FRONT_FIXTURE, cables=4):
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(fixture))
+    page.wait_for_function("n => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= n"
+                           " && window.__rack.routesCurrent().current", arg=cables, timeout=READY_MS)
+    page.wait_for_timeout(400)
+
+
+# Where c1's drawn stroke crosses a ring leg and a cover, in page pixels, with
+# the paints that meet there; and the pane's layers in document order.
+IN_FRONT_JS = """() => {
+  const svg = document.querySelector('#paneFront svg');
+  const kids = [...svg.children], at = sel => kids.findIndex(k => k.matches(sel));
+  const layer = svg.querySelector(':scope > [data-in-front]');
+  const inside = layer ? [layer, ...layer.querySelectorAll('*')] : [];
+  const carried = inside.flatMap(n => [...n.attributes].map(a => a.name))
+    .filter(a => a === 'id' || a === 'tabindex' || (a.startsWith('data-') && !/^data-(in-front|front|front-of)$/.test(a)));
+  const own = inside.slice(1).filter(n => n.hasAttribute('pointer-events')).length;
+  const stroke = svg.querySelector('[data-cables] [data-cable-id="c1"] path:last-of-type');
+  const pts = [];
+  for (const p of svg.querySelectorAll('[data-cables] [data-cable-id="c1"] path')) {
+    const m = p.getScreenCTM(), L = p.getTotalLength();
+    for (let t = 0; t <= L; t += 0.25) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+  }
+  const within = (r, pad) => pts.filter(q => q[0] > r.left + pad && q[0] < r.right - pad && q[1] > r.top + pad && q[1] < r.bottom - pad);
+  const mid = list => list[Math.floor(list.length / 2)] ?? null;
+  const ring = svg.querySelector('[data-item-id="i2"][data-panel="mounted"] [id="guide-1-end"]');
+  const plate = svg.querySelector('[data-zerou-id="z1"] [data-group="cover"] [id$="--plate"]');
+  const rr = ring.getBoundingClientRect(), pr = plate.getBoundingClientRect();
+  // on the cover: well inside its plate, on the part of it the page shows
+  const seen = q => { const e = document.elementFromPoint(q[0], q[1]); return !!e && svg.contains(e); };
+  const onCover = within(pr, 6).filter(seen);
+  return {order: {cables: at('[data-cables]'), front: at('[data-in-front]'), tags: at('[data-cable-tags]'),
+                  last: Math.max(...kids.map((k, i) => (k.matches('[data-item-id], [data-zerou-id], .rk-ears') ? i : -1)))},
+          rings: layer ? layer.querySelectorAll(':scope > [data-front="ring"][data-front-of="i2"]').length : 0,
+          covers: layer ? layer.querySelectorAll(':scope > [data-front="cover"][data-front-of="z1"]').length : 0,
+          coverOpacity: layer ? [...layer.querySelectorAll(':scope > [data-front="cover"]')].map(g => +getComputedStyle(g).opacity) : [],
+          ringOpacity: layer ? [...layer.querySelectorAll(':scope > [data-front="ring"]')].map(g => +getComputedStyle(g).opacity) : [],
+          layerPointer: layer?.getAttribute('pointer-events') ?? null, carried, own,
+          ringIds: svg.querySelectorAll('[id="guide-1-end"]').length, coverIds: svg.querySelectorAll('[id="cover-1"]').length,
+          ids: svg.querySelectorAll('[id]').length,
+          cable: stroke.getAttribute('stroke'), ringFill: ring.getAttribute('fill'), plateFill: plate.getAttribute('fill'),
+          onRing: mid(within(rr, 1.5)), onCover: mid(onCover),
+          ringFree: [rr.left + rr.width / 2, rr.top + 4], coverFree: [pr.left + pr.width * 0.8, pr.top + pr.height * 0.6],
+          top: [document.elementFromPoint(rr.left + rr.width / 2, rr.top + 4)?.id ?? null,
+                document.elementFromPoint(pr.left + pr.width * 0.8, pr.top + pr.height * 0.6)?.closest('[data-zerou-id]')?.dataset.zerouId ?? null]};
+}"""
+
+
+@extra("rack.html: in 2D a lacer's ring legs and a vertical manager's cover paint above the cables, as the 3D scene stands them (the cover see-through), as copies with no id that take no pointer; clicks still reach the parts underneath, and the sheet keeps the same order")
+def check_rack_cables_behind(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base)
+    for _ in range(3):
+        page.click("#zoomIn")
+        page.wait_for_timeout(150)
+    page.evaluate("() => document.querySelector('#paneFront svg [data-u=\"22\"]').scrollIntoView({block: 'center', inline: 'center'})")
+    page.wait_for_timeout(500)
+    g = page.evaluate(IN_FRONT_JS)
+    o = g["order"]
+    if not (o["last"] < o["cables"] < o["front"] < o["tags"]):
+        bad.append(f"order: the pane's layers are not faces, cables, in-front, tags: {o}")
+    if (g["rings"], g["covers"]) != (5, 2):
+        bad.append(f"in front: {g['rings']} ring legs and {g['covers']} covers copied, expected the lacer's 5 and the duct's 2")
+    if g["carried"] or g["own"] or g["layerPointer"] != "none":
+        bad.append(f"in front: a copy carries {sorted(set(g['carried']))}, {g['own']} pointer-events of its own; the layer's is {g['layerPointer']!r}")
+    if (g["ringIds"], g["coverIds"]) != (1, 1):
+        bad.append(f"ids: guide-1-end is in the pane {g['ringIds']} times and cover-1 {g['coverIds']} times, expected once each")
+    if any(abs(v - 1) > 1e-6 for v in g["ringOpacity"]) or any(not 0.25 <= v <= 0.45 for v in g["coverOpacity"]):
+        bad.append(f"paint: ring legs at {g['ringOpacity']} and covers at {g['coverOpacity']}, expected opaque legs and covers about a third opaque")
+    # The composited page: on a ring leg the cable is hidden; under the cover it shows through.
+    if not g["onRing"] or not g["onCover"]:
+        return bad + [f"pixels: c1's stroke was not found crossing a ring leg ({g['onRing']}) and the cover ({g['onCover']})"]
+    _, _, px = png_pixels(page.screenshot())
+    cable, ring, plate = rgb_of(g["cable"]), rgb_of(g["ringFill"]), rgb_of(g["plateFill"])
+    far = lambda a, b: max(abs(x - y) for x, y in zip(a, b))
+    got_ring, got_cover = px(*g["onRing"]), px(*g["onCover"])
+    if far(got_ring, ring) > 12:
+        bad.append(f"pixels: where c1 crosses a ring leg the page shows {got_ring}, not the leg's {ring} (the cable is {cable})")
+    blend = tuple(round(0.34 * p + 0.66 * c) for p, c in zip(plate, cable))
+    if far(got_cover, blend) > 30 or far(got_cover, cable) < 25 or far(got_cover, plate) < 25:
+        bad.append(f"pixels: where c1 runs behind the cover the page shows {got_cover}; expected near {blend}, between the cable's {cable} and the plate's {plate}")
+    # The originals still take the pointer: a click on a ring leg selects its manager, one on the cover the duct.
+    if g["top"] != ["guide-1-end", "z1"]:
+        bad.append(f"pointer: the element under a ring leg and under the cover is {g['top']}, expected the original guide-1-end and z1's")
+    page.mouse.click(*g["ringFree"])
+    page.wait_for_function("() => document.querySelector('#paneFront [data-item-id=\"i2\"].rk-selected')", timeout=READY_MS)
+    if page.locator("#paneFront svg .rk-sel-ring").count() != 1:
+        bad.append("selection: no selection ring after a click on a ring leg")
+    page.wait_for_timeout(300)
+    cov = page.evaluate(IN_FRONT_JS)["coverFree"]
+    page.mouse.click(*cov)
+    page.wait_for_function("() => document.querySelector('#paneFront [data-zerou-id=\"z1\"].rk-selected')", timeout=READY_MS)
+    # The sheet: the same layers in the same order, and still one of each id.
+    sheet = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+      return (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf, {faces: ['front']})).data;
+    }""")
+    ns = "{http://www.w3.org/2000/svg}"
+    pane = ET.fromstring(sheet.encode("utf-8")).find(f"{ns}svg")
+    kids = list(pane)
+    idx = lambda key: next((i for i, k in enumerate(kids) if k.get(key) is not None), -1)
+    faces = max((i for i, k in enumerate(kids) if k.get("data-item-id") or k.get("data-zerou-id")), default=-1)
+    if not (faces < idx("data-cables") < idx("data-in-front") < idx("data-cable-tags")):
+        bad.append(f"sheet: its layers are faces {faces}, cables {idx('data-cables')}, in-front {idx('data-in-front')}, tags {idx('data-cable-tags')}")
+    else:
+        front = kids[idx("data-in-front")]
+        kinds = [k.get("data-front") for k in front]
+        if (kinds.count("ring"), kinds.count("cover")) != (5, 2):
+            bad.append(f"sheet: its in-front layer holds {kinds}")
+        if any(n.get("id") for n in front.iter()):
+            bad.append("sheet: a copy in its in-front layer carries an id")
+        if [k.get("opacity") for k in front if k.get("data-front") == "cover"] != ["0.34"] * 2:
+            bad.append(f"sheet: its covers are not see-through: {[k.get('opacity') for k in front]}")
+    for name in ("guide-1-end", "cover-1"):
+        if sum(1 for n in pane.iter() if n.get("id") == name) != 1:
+            bad.append(f"sheet: {name} is in the file {sum(1 for n in pane.iter() if n.get('id') == name)} times")
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that
