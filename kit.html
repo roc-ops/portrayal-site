@@ -105,7 +105,7 @@
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
           code beside each result is the file that just ran it. This page documents
-          <code>@portrayal/kit</code> <span data-kit-version="0.18.0">0.18.0</span>.
+          <code>@portrayal/kit</code> <span data-kit-version="0.22.0">0.22.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -120,6 +120,7 @@
           <a href="#outlets">An outlet and its lamp</a>
           <a href="#annotate">Annotate and export</a>
           <a href="#shell">The Explorer shell</a>
+          <a href="#positions">A part that slides</a>
           <a href="#rack">A rack, by commands</a>
           <a href="#bundles">Bundles</a>
           <a href="#files">Getting the files</a>
@@ -294,7 +295,45 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="rack" data-modules="rack/catalog rack/model rack/rails rack/fit rack/zero-u rack/managers rack/cable-rules rack/route rack/route-path rack/solids rack/cable-geometry rack/export-data rack/dcim-rules rack/validate rack/commands rack/history rack/editor rack/queries">
+          <section class="kit-sec" id="positions" data-modules="positions">
+            <h2>A part that slides</h2>
+            <p>A device may declare a part that slides, such as a DIN rail panel on
+              slotted brackets (since 0.19.0). The compiled drawing says what moves: the
+              root of every face carries <code>data-adjustments</code>, and each member
+              node <code>data-moves-with</code> and <code>data-moves-by</code>. The FS
+              DINRAIL2U and DINRAIL4U declare one, <code>rail-setback</code>, how far
+              the rail panel stands behind the ears.</p>
+            <p><strong>A position is a field.</strong> It is held at the path of the
+              adjustment's carrier, under the adjustment's id, in the map every other
+              field is in, so a <code>fields=</code> link carries it and the 3D viewer
+              takes it with <code>setFields</code>. A value is a number in mm or the
+              name of a stop; what is kept is the number, rounded to 0.1 mm. A value
+              that is not a position is not applied, and <code>setFields</code> answers
+              why in a sentence (it returns <code>{refused: [...]}</code> for every call
+              since 0.19.0). An empty value puts the part back where the drawing was
+              built.</p>
+            <p><strong>The control</strong> (since 0.20.0). <code>positionControl(shell,
+              opts)</code> in <code>positions</code> is the control
+              <a href="explorer.html?device=dinrail2u">the Explorer</a> mounts above its
+              tree: for each adjustment of the device on screen, a slider over the
+              range in steps of 0.1 mm, a number box, a button for each named stop and
+              a reset. It writes through <code>shell.setFields</code> and holds no rule
+              of its own. A view that cannot show the motion names the views that do.
+              The page says which stage is showing by emitting <code>mode</code> on the
+              shell; in 3D each position is a scene to rebuild, so the value is written
+              when the slider is let go.</p>
+            <pre class="kit-snippet"><code>import {positionControl} from '@portrayal/kit/positions';
+
+// shell: the shell mounted above
+positionControl(shell, {threeD: () => true});     // {el, refresh}; opts.before: where it goes
+shell.emit('mode', '3d');                         // the page says which stage is showing
+
+shell.setFields('rail-panel', {'rail-setback': 'rear'});   // a stop, or a number in mm
+// ?fields=rail-panel~rail-setback~271.2
+shell.setFields('rail-panel', {'rail-setback': '300'});
+// {refused: [{path, key, value, reason: 'rail-setback on DINRAIL2U takes 51.2 to 271.2 mm. 300 is outside it.'}]}</code></pre>
+          </section>
+          <section class="kit-sec" id="rack" data-modules="rack/catalog rack/model rack/rails rack/fit rack/zero-u rack/managers rack/cable-rules rack/route rack/route-path rack/solids rack/cable-geometry rack/export-data rack/dcim-rules rack/validate rack/commands rack/history rack/editor rack/queries rack/slack rack/states">
             <h2>A rack, by commands</h2>
             <p>The <code>rack/</code> modules are the <a href="rack.html">Rack Builder</a>'s
               rules without its page. They read no DOM and fetch nothing but the
@@ -461,20 +500,18 @@ const path = routePath(rack, cable, route);
 // path.points: a, reach, [lead | approach, entry, exit, approach | tray | rest | detour | lane]..., reach, b
 // path.rests:  [{kind: 'ring', item, via} | {kind: 'tray', item, via, face, role} | {kind: 'body', item, part}]</code></pre>
             <h3>The end allowance and room for the bends</h3>
-            <p><strong>The end allowance</strong> (since 0.16.0). A routed length is the
-              path plus an allowance at each end, by the cable's media: only what is
-              physically there and not in the path, the part of the plug inside the
-              port and half the maker's short tolerance.
-              <code>END_ALLOWANCE_BY_MEDIA</code> is that table in meters an end (its name
-              since 0.18.0): 0.0131 for LC fiber, 0.0345 for copper and a cable with no
-              media, 0.025 for a DAC and 0.0524 for an AOC. Until a tray can hold slack
-              the kit adds a temporary dressing allowance of 0.1 m an end on top, for
-              every media. <code>endAllowance(cable)</code> is the two together, what a
-              length adds an end, <code>routePath</code> returns it as
-              <code>allowance</code>, and <code>pathLength</code> adds it. The single
-              <code>END_ALLOWANCE_M</code> of 0.15 m an end is gone, so routed lengths
-              changed in 0.16.0 on every routed cable: 73.8 mm shorter for LC fiber, 31
-              for copper, 50 for a DAC, and 4.8 mm longer for an AOC.</p>
+            <p><strong>The end allowance</strong> (since 0.16.0). A routed length counts,
+              beside the path, what is inside the port at each end, by the cable's
+              media. <code>END_ALLOWANCE_BY_MEDIA</code> is that table in meters an end
+              (its name since 0.18.0), and since rack file version 4 it holds the part
+              of the plug inside the port and nothing else: 0.0131 for LC fiber, 0.0095
+              for copper and a cable with no media, 0 for a DAC and 0.0524 for an AOC.
+              <code>endAllowance(cable)</code> is that figure and <code>routePath</code>
+              returns it as <code>allowance</code>. The maker's short tolerance and the
+              0.1 m an end of dressing the table and the allowance once held are named
+              on their own now, <code>shortTolerance</code> and <code>END_PLAY_M</code>
+              (<a href="#rack-v4">below</a>): a page that took the dressing as
+              <code>endAllowance</code> less the table gets 0.</p>
             <p><strong>Room for the bends</strong> (since 0.17.0). The path is the cable,
               so its corners are its bends, and <code>routePath</code> places its points
               for the cable's own installed bend radius (<code>ctx.bendOf(cable)</code>,
@@ -499,23 +536,123 @@ const path = routePath(rack, cable, route);
               page can mark it where it is. The measure is <code>cornersOf(points,
               {share: 'need'})</code> in <code>rack/route-path</code>: the room a corner's
               legs leave it, a leg between two corners shared by what each turn uses of
-              it. <code>inspect</code> and <code>describe</code> do not carry these findings
-              yet.</p>
+it. Since 0.21.0 <code>inspect</code> of a cable carries them as
+              <code>route.bends</code>, <code>describe</code> counts them in its
+              <code>Findings:</code> line, and <code>cableScheduleRows</code> takes them
+              as <code>bends</code> for a cable's notes.</p>
+            <p><strong>A span in front of other ports</strong> (since 0.21.0). With no
+              horizontal manager a cable runs from its lane to its port across the faces
+              between. <code>routePath</code> returns <code>covers</code>, each port such
+              a span passes in front of, and <code>coverFindings(rack, ctx, nameOf)</code>
+              gives one finding a cable, with the ports by device and the advice to add a
+              horizontal cable manager. It warns and never refuses. A context that
+              supplies <code>portBoxesOf(itemId)</code>, every port of a device as
+              <code>[{path, view, x, y, w?, h?}]</code> in the frame <code>portX</code> and
+              <code>portY</code> use, has every port judged; without it only the ports
+              that hold a cable are, and the sentence says so. Since 0.21.0 a cable is
+              also laid from both ends and one lay kept, so a reader on the context
+              (<code>plugReachOf</code>, <code>trayFaceOf</code>, <code>bendOf</code>,
+              <code>diameterOf</code>) can be handed the same cable with <code>a</code>
+              and <code>b</code> exchanged: key what it answers on the end, not on
+              which of the two the cable calls <code>a</code>.</p>
             <pre class="kit-snippet"><code>import {routePath, pathLength, endAllowance, END_ALLOWANCE_BY_MEDIA, bendFindings} from '@portrayal/kit/rack/route';
 import {cornersOf} from '@portrayal/kit/rack/route-path';
 
 const path = routePath(rack, cable, route);       // route: a context built for the rack as it is now
-const length = pathLength(path);                  // {measured, value, ...}: the path plus 2 * path.allowance
-path.allowance === endAllowance(cable);           // END_ALLOWANCE_BY_MEDIA[cable.media] + 0.1 m of dressing
+const length = pathLength(path);                  // {value, need, measured}: the stock size, the need, and the need plus the end play
+path.allowance === endAllowance(cable);           // END_ALLOWANCE_BY_MEDIA[cable.media]: what is inside the port
 for (const b of path.bends) console.warn(b.cable, b.at, b.room_mm, b.need_mm);
 for (const f of bendFindings(rack, route, id => labelOf(id))) console.warn(f.text);
 const corners = cornersOf(path.points, {share: 'need'});   // [{angle_deg, legs_mm, room_mm}]</code></pre>
+            <h3 id="rack-v4">Rack file version 4</h3>
+            <p>The rack file is <strong>version 4</strong>. A version 1, 2 or 3 file opens
+              as it was and is saved as version 4; a reader older than this refuses a
+              version 4 file. Its schema is
+              <a href="https://portrayal.dev/schemas/v3/rack.schema.json"><code>/schemas/v3/rack.schema.json</code></a>.
+              The reader keeps a key it does not know at every level of the file.</p>
+            <p><strong>Half units.</strong> A position (<code>ru</code> on an item) is a
+              whole unit or a half, counted bottom-up from 1: 12 is the bottom of U12
+              and 12.5 its middle. <code>rack/fit</code> owns what follows from one:
+              <code>unitsOf(chassis)</code>, a device's height in halves;
+              <code>spanOf(item, chassisOf)</code>, the half-open <code>[lo, hi)</code> it
+              fills; <code>itemBox(rack, item, chassisOf)</code>, <code>{y0, y1, h, lo,
+              hi}</code> in mm above the bottom of the rails, the body centered in its
+              span, always, which is where a drawing stands it; and
+              <code>spanText</code>, the span in words ("the lower half of U7").
+              <code>heightOf</code>, the <code>u</code> of <code>itemsWithU</code> and
+              <code>freeUs</code> answer in halves, and <code>positionOf</code> and
+              <code>uText</code> in <code>rack/model</code> give "U12.5". <code>span</code>,
+              the closed whole-unit pair, is removed. A device of a whole number of
+              units is refused at a half position, in a sentence: its ears meet no hole
+              there. <code>holesIn(lo, hi)</code> in <code>rack/rails</code> gives the
+              rail holes an ear between two heights can use, for a page that draws
+              ears.</p>
+            <p><strong>The lengths of a cable, named</strong> (<code>rack/route</code>). The
+              <em>need</em> is the path, what is inside the two ports and the maker's
+              short tolerance (<code>needOf</code>, <code>shortTolerance</code>); the
+              <em>stock</em> is the length bought; the <em>spare</em> is stock less
+              need; the <em>end play</em> is the part of the spare that stays in the
+              curves into the ports, <code>END_PLAY_M</code> (0.1 m) an end; and what is
+              left is to store. <code>spareOf(rack, cable, ctx)</code> gives all of them
+              in meters. <code>pathLength</code> answers <code>need</code> beside
+              <code>value</code> and <code>measured</code>, and
+              <code>stockLength(need)</code> still chooses a cord up to
+              <code>BREAK_TOL_M</code> (10 mm) short of full end play. A cable keeps
+              <code>length.need</code> where it kept <code>measured</code>.</p>
+            <p><strong>Where the spare is</strong> (<code>rack/slack</code>). A cable takes
+              <code>slack</code>, a list of where its spare is stored, in a tray it rests
+              on or at an end (<code>cable.slack</code>, <code>cable.slack.clear</code>).
+              <code>slackOf</code> resolves it against the route, <code>storedText</code>
+              words it, <code>slackFindings</code> says what is wrong
+              (<code>spare-unplaced</code>, <code>spare-short</code>,
+              <code>spare-over</code>, <code>spare-off-route</code>),
+              <code>spareLine</code> is one line for a rack, and
+              <code>spareExports(rack, ctx)</code> is what the exports take:
+              <code>cableScheduleRows</code> fills its <code>spare</code> and
+              <code>stored</code> columns from <code>{spare}</code> and its last column,
+              <code>straps</code>, from <code>{straps: strapTexts(rack, ctx)}</code>.
+              Spare is recorded and listed, not drawn, and the kit places none itself.</p>
+            <p><strong>The frame and what stands in it.</strong> A frame takes
+              <code>startU</code>, the number of its first unit, and <code>setback</code>;
+              an item takes <code>setback</code>, <code>roll</code> (90, 180 or 270
+              degrees clockwise as seen from its face) and <code>heldBy</code>.
+              <code>setbackOf(rack, item, chassisOf)</code> is how far a faceplate stands
+              behind its rail: the item's, else the device's default ear position, else
+              the frame's, else flush. <code>facePoint</code> turns a point of a face as
+              drawn into the rack, through <code>face</code>, <code>turned</code> and
+              <code>roll</code>. <code>frameNotices(rack, chassisOf)</code> gives a sentence
+              for each key the kit keeps and does not yet act on.</p>
+            <p><strong>States and readings</strong> (<code>rack/states</code>). An item
+              and a part beside the rack take <code>states</code> and
+              <code>readings</code> (<code>state.set</code>, <code>readings.set</code>).
+              <code>statesFor(entry, facts)</code> is the <code>{path: state}</code> map
+              to hand a drawing, an outlet's state carried to its lamps;
+              <code>readingsFor</code> is <code>{source, at, badges}</code>; and
+              <code>stateNotices(rack, ctx)</code> names what is kept and not applied.
+              A zero-U PDU hangs on brackets with <code>zerou.hang</code>, and
+              <code>hangNotices</code> in <code>rack/zero-u</code> says what is wrong
+              with one. A page calls the notice functions once it has loaded the parts
+              lists; the editor cannot, since it holds none.</p>
+            <pre class="kit-snippet"><code>import {itemBox, spanOf, spanText, unitsOf, fits} from '@portrayal/kit/rack/fit';
+import {holesIn} from '@portrayal/kit/rack/rails';
+import {spareOf, END_PLAY_M} from '@portrayal/kit/rack/route';
+import {spareExports} from '@portrayal/kit/rack/slack';
+
+const upper = {...item, ru: 12.5};                 // a half-unit panel in the upper half of U12
+spanOf(upper, chassisOf);                          // [12.5, 13)
+const box = itemBox(rack, upper, chassisOf);       // {y0, y1, h, lo, hi} in mm above the bottom of the rails
+holesIn(box.lo, box.hi);                           // the one rail hole that half holds
+fits(rack, {ref: 'a-1u-switch', face: 'front', ru: 12.5}, chassisOf).reason;
+// "... is 1U; its ears meet the rail holes only at a whole unit, and U12.5 is a half unit."
+
+const s = spareOf(rack, cable, route);             // {need_m, stock_m, spare_m, end_play_m, to_store_m, pinned}
+const spare = spareExports(rack, route);           // {byCable, line, bom}: hand it to the exports as {spare}</code></pre>
             <h3>The rack modules</h3>
             <table class="kit-mods">
               <thead><tr><th>module</th><th>what it does</th></tr></thead>
               <tbody>
                 <tr><td><code>rack/catalog</code></td><td><code>loadCatalog(dist)</code>: the rack catalog and the <code>chassisOf(ref)</code> lookup everything else takes; <code>loadSlots(dist, refs)</code>: the bays, cages and parts <code>fit</code> and <code>field</code> check against.</td></tr>
-                <tr><td><code>rack/model</code></td><td>The rack file: <code>newDoc</code>, <code>parseDoc</code>, <code>serialize</code>, and edits that return a new rack (<code>withItem</code>, <code>withFrame</code>, ...). Files are version 3 since 0.7.0; older ones are read as they were.</td></tr>
+                <tr><td><code>rack/model</code></td><td>The rack file: <code>newDoc</code>, <code>parseDoc</code>, <code>serialize</code>, and edits that return a new rack (<code>withItem</code>, <code>withFrame</code>, ...). Files are version 4 since 0.22.0; older ones are read as they were and saved as version 4. <code>positionOf</code>, <code>uText</code>, <code>firstU</code>, <code>rollOf</code>, <code>holderOf</code>.</td></tr>
                 <tr><td><code>rack/editor</code></td><td><code>createRackEditor</code>: a rack document edited by commands, with undo, redo and change events.</td></tr>
                 <tr><td><code>rack/commands</code></td><td>Every edit as a named, validated command (<code>COMMANDS</code>), and <code>apply</code> for a batch.</td></tr>
                 <tr><td><code>rack/history</code></td><td>Undo and redo as snapshots, as the editor keeps them.</td></tr>
@@ -531,6 +668,8 @@ const corners = cornersOf(path.points, {share: 'need'});   // [{angle_deg, legs_
                 <tr><td><code>rack/cable-geometry</code></td><td>The 3D path (<code>routePoints3d</code>), cable and plug colors, and the lead and sag figures the drawings share.</td></tr>
                 <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column, and each body a route crosses in its cable's notes), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), the device-import data, and the drawing sheet's title block (<code>titleLines</code>, which names the host it was drawn with as <code>source</code>).</td></tr>
                 <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README (<code>kitReadme</code>; a host passes its own <code>source</code>, where its DCIM settings are as <code>settingsAt</code>, and the script's <code>scriptUrl</code>).</td></tr>
+                <tr><td><code>rack/slack</code></td><td>Where a cable's spare is stored: <code>slackOf</code>, <code>storedText</code>, <code>slackFindings</code>, <code>spareLine</code>, <code>spareBomLine</code>, and <code>spareExports</code>, which the exports take.</td></tr>
+                <tr><td><code>rack/states</code></td><td>What an entry is set to: <code>statesFor</code> (the map to hand a drawing), <code>readingsFor</code> and <code>stateNotices</code>.</td></tr>
                 <tr><td><code>rack/validate</code></td><td><code>validate(schema, value)</code>, the small JSON Schema validator the commands use, and <code>same</code>.</td></tr>
               </tbody>
             </table>
@@ -588,11 +727,11 @@ const corners = cornersOf(path.points, {share: 'need'});   // [{angle_deg, legs_
               <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
               three.js is a peer dependency, needed only for 3D:</p>
             <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
-            <p class="kit-note" data-kit-unpublished>This page documents kit 0.18.0, which is
+            <p class="kit-note" data-kit-unpublished>This page documents kit 0.22.0, which is
               not on npm yet: npm's latest is <span data-kit-npm="0.2.0">0.2.0</span>.
               The rack and bundle modules, and everything else added since 0.2.0, are
               in the unpublished version only, so <code>npm install</code> gets a kit
-              without them, and the CDN map below returns 404s. Until 0.18.0 is
+              without them, and the CDN map below returns 404s. Until 0.22.0 is
               published, use the files from a
               <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> checkout's
               <code>kit/</code> folder, or this site's own vendored copy
@@ -605,23 +744,27 @@ const corners = cornersOf(path.points, {share: 'need'});   // [{angle_deg, legs_
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/shell.js",
-    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/ears2d.js",
-    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/states.js",
-    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/catalog.js",
-    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/model.js",
-    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/editor.js",
-    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/queries.js",
-    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/route.js",
-    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/route-path.js",
-    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/solids.js",
-    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/bundles.js",
-    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/export-data.js",
-    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/cable-types.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/shell.js",
+    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/ears2d.js",
+    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/states.js",
+    "@portrayal/kit/positions": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/positions.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/catalog.js",
+    "@portrayal/kit/rack/fit": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/fit.js",
+    "@portrayal/kit/rack/rails": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/rails.js",
+    "@portrayal/kit/rack/slack": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/slack.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/route.js",
+    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/route-path.js",
+    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/solids.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/export-data.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.22.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }

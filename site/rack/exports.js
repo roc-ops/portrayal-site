@@ -663,10 +663,16 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
                                unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
 
   const rows = {devices: dev.rows.length, modules: mod.rows.length, cables: cab.rows.length};
+  const rackLeft = [];
   if (!nautobot) {
+    // A RACK THE KIT SCREENS OUT (kit 0.22.0: a name NetBox would refuse) gives
+    // no row and says why (`left`). No rack file is written then: a file of a
+    // header alone imports nothing and reads as if it had. The reason goes
+    // with what else was left out, into the README and the page's notes.
     const r = rackImportRows({rack, dcim});
     rows.rack = r.rows.length;
-    add(F.rack, toCsv(r.columns, r.rows));
+    rackLeft.push(...(r.left ?? []).map(l => l.reason).filter(Boolean));
+    if (r.rows.length) add(F.rack, toCsv(r.columns, r.rows));
   }
   add(F.devices, toCsv(dev.columns, dev.rows));
   add(F.modules, toCsv(mod.columns, mod.rows));
@@ -684,7 +690,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   const notes = [...renamed, ...ctx.notes, ...cab.notes];
   if (!ctx.items.length) notes.unshift('This rack has no devices, so there is nothing to import.');
   const readme = kitReadme({target, rack, date, dcim, typeFiles, manufacturers, rows, script,
-                            left: [...ctx.causes, ...left, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),
+                            left: [...ctx.causes, ...left, ...rackLeft, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),
                             scriptUrl: scriptHref(), source: SOURCE, settingsAt: SETTINGS_AT});
   add('README.txt', readme.text);
   // The entries are dated with the export's DAY, the one the README prints: the same rack on the same day
