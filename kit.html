@@ -105,7 +105,7 @@
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
           code beside each result is the file that just ran it. This page documents
-          <code>@portrayal/kit</code> <span data-kit-version="0.15.0">0.15.0</span>.
+          <code>@portrayal/kit</code> <span data-kit-version="0.18.0">0.18.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -360,6 +360,14 @@ const d = routed2d(points, 4, front);             // an SVG path through each ri
               uses a plain one, which routes by the gutters alone. A page that draws
               the plugs gives <code>plugReachOf(end, cable)</code> as well, and the cable
               types' <code>typeOf</code> and <code>bendOf</code> (below).</p>
+            <p><strong>Build a new context when what it reads changes.</strong> Since
+              0.17.0 the kit keeps what it decides for a cable (the side of a route,
+              where its turns are given room) per rack, context and cable, because
+              every reader of a path asks for it again and the search is the costly
+              part. A context changed in place can therefore give a path placed for
+              what it read before. When a device moves, a cable's type changes, a port
+              is swapped or a plug's reach is read, make a new context object and
+              route with that; freeze it if you want a stray write to throw.</p>
             <p><strong>A ring holds a cord that only reaches into it.</strong> A route that
               would enter and leave a ring by one face is a hook, not drawn through the
               ring and reported by <code>ringFindings</code>. Since 0.12.0 there is one
@@ -450,8 +458,58 @@ const {diameterOf, typeOf, bendOf} = await loadCableTypes(dist);
 const route = {chassisOf, guidesOf, portX, portY, diameterOf, typeOf, bendOf,
                plugReachOf: (end, cable) => reachOfPlugSeatedAt(end)};  // mm, or null for the default
 const path = routePath(rack, cable, route);
-// path.points: a, reach, [approach, entry, exit, approach | tray | rest | detour | lane]..., reach, b
+// path.points: a, reach, [lead | approach, entry, exit, approach | tray | rest | detour | lane]..., reach, b
 // path.rests:  [{kind: 'ring', item, via} | {kind: 'tray', item, via, face, role} | {kind: 'body', item, part}]</code></pre>
+            <h3>The end allowance and room for the bends</h3>
+            <p><strong>The end allowance</strong> (since 0.16.0). A routed length is the
+              path plus an allowance at each end, by the cable's media: only what is
+              physically there and not in the path, the part of the plug inside the
+              port and half the maker's short tolerance.
+              <code>END_ALLOWANCE_BY_MEDIA</code> is that table in meters an end (its name
+              since 0.18.0): 0.0131 for LC fiber, 0.0345 for copper and a cable with no
+              media, 0.025 for a DAC and 0.0524 for an AOC. Until a tray can hold slack
+              the kit adds a temporary dressing allowance of 0.1 m an end on top, for
+              every media. <code>endAllowance(cable)</code> is the two together, what a
+              length adds an end, <code>routePath</code> returns it as
+              <code>allowance</code>, and <code>pathLength</code> adds it. The single
+              <code>END_ALLOWANCE_M</code> of 0.15 m an end is gone, so routed lengths
+              changed in 0.16.0 on every routed cable: 73.8 mm shorter for LC fiber, 31
+              for copper, 50 for a DAC, and 4.8 mm longer for an AOC.</p>
+            <p><strong>Room for the bends</strong> (since 0.17.0). The path is the cable,
+              so its corners are its bends, and <code>routePath</code> places its points
+              for the cable's own installed bend radius (<code>ctx.bendOf(cable)</code>,
+              else its media's). Where the route turns onto a ring's run the approach
+              point stands the bend radius from the band; a cable whose port stands
+              behind that point is led square to it through a <strong>lead point</strong>
+              (<code>at: 'lead'</code>, with the ring's <code>item</code> and <code>via</code>),
+              and one whose first turn needs more leg than its plug gives runs straight
+              on out of it to a lead point with its <code>end</code>. A detour stands two
+              bend radii from each end (<code>detour</code>'s <code>room</code> option), and
+              a free span hangs only as deep as the corners beside it have room for.
+              Draw a lead point as any other point of the path. Routed lengths grew in
+              0.17.0 on every routed cable that turns at a ring, goes round a body or
+              hangs.</p>
+            <p>What the kit's rules find no room for is still routed, and is said. The
+              path's <code>bends</code> lists each corner short of the radius, as
+              <code>{kind: 'tight-bend', cable, point, between, at, angle_deg, legs_mm,
+              room_mm, need_mm, short_mm}</code>, and
+              <code>bendFindings(rack, ctx, nameOf)</code> gives them for the whole rack
+              with a sentence, as <code>bodyFindings</code> does for crossings. It warns
+              and never refuses. <code>at</code> is the corner in rack millimeters, so a
+              page can mark it where it is. The measure is <code>cornersOf(points,
+              {share: 'need'})</code> in <code>rack/route-path</code>: the room a corner's
+              legs leave it, a leg between two corners shared by what each turn uses of
+              it. <code>inspect</code> and <code>describe</code> do not carry these findings
+              yet.</p>
+            <pre class="kit-snippet"><code>import {routePath, pathLength, endAllowance, END_ALLOWANCE_BY_MEDIA, bendFindings} from '@portrayal/kit/rack/route';
+import {cornersOf} from '@portrayal/kit/rack/route-path';
+
+const path = routePath(rack, cable, route);       // route: a context built for the rack as it is now
+const length = pathLength(path);                  // {measured, value, ...}: the path plus 2 * path.allowance
+path.allowance === endAllowance(cable);           // END_ALLOWANCE_BY_MEDIA[cable.media] + 0.1 m of dressing
+for (const b of path.bends) console.warn(b.cable, b.at, b.room_mm, b.need_mm);
+for (const f of bendFindings(rack, route, id => labelOf(id))) console.warn(f.text);
+const corners = cornersOf(path.points, {share: 'need'});   // [{angle_deg, legs_mm, room_mm}]</code></pre>
             <h3>The rack modules</h3>
             <table class="kit-mods">
               <thead><tr><th>module</th><th>what it does</th></tr></thead>
@@ -467,9 +525,9 @@ const path = routePath(rack, cable, route);
                 <tr><td><code>rack/zero-u</code></td><td>The parts beside the rack: where each stands, as words (<code>whereText</code>) and as x (<code>zeroUX</code>), and each placeable entry (<code>zeroUEntries</code>).</td></tr>
                 <tr><td><code>rack/managers</code></td><td>Cable managers: the <code>placement</code> of one onto the device behind it, and moving one.</td></tr>
                 <tr><td><code>rack/cable-rules</code></td><td>Which two ports may be joined, <code>withCable</code>, media and lengths.</td></tr>
-                <tr><td><code>rack/route</code></td><td><code>resolveRoute</code>, <code>routePath</code> (with each plug's reach point, each ring's approach points, a tray's stretch and each free span's rest, and <code>rests</code>), <code>trayOf</code>, <code>PLUG_REACH</code>, <code>routedLength</code>, <code>ringMarks</code>, <code>orientMarks</code>, <code>reverseMarks</code>, <code>laneXAt</code>, pathway <code>fill</code>, <code>ringFindings</code> and <code>bodyFindings</code>.</td></tr>
-                <tr><td><code>rack/solids</code></td><td>The solid bodies a route may not pass through: <code>solidsOf</code> (since 0.15.0 with a ring's legs, bar, seat and hook, <code>ring/&lt;id&gt;/&lt;part&gt;</code>), <code>legCrossings</code>, <code>detour</code>, <code>CLEAR</code>, the clearance a detour keeps, and <code>traysOf</code>, the trays a cable lies on.</td></tr>
-                <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>).</td></tr>
+                <tr><td><code>rack/route</code></td><td><code>resolveRoute</code>, <code>routePath</code> (with each plug's reach point, each ring's approach points, each lead point, a tray's stretch and each free span's rest, and <code>rests</code>, <code>bends</code> and <code>allowance</code>), <code>trayOf</code>, <code>PLUG_REACH</code>, <code>endAllowance</code>, <code>END_ALLOWANCE_BY_MEDIA</code>, <code>routedLength</code>, <code>pathLength</code>, <code>ringMarks</code>, <code>orientMarks</code>, <code>reverseMarks</code>, <code>laneXAt</code>, pathway <code>fill</code>, <code>ringFindings</code>, <code>bodyFindings</code> and <code>bendFindings</code>.</td></tr>
+                <tr><td><code>rack/solids</code></td><td>The solid bodies a route may not pass through: <code>solidsOf</code> (since 0.15.0 with a ring's legs, bar, seat and hook, <code>ring/&lt;id&gt;/&lt;part&gt;</code>), <code>legCrossings</code>, <code>detour</code> (since 0.17.0 with <code>room</code>, far enough out for the bends at each end), <code>CLEAR</code>, the clearance a detour keeps, and <code>traysOf</code>, the trays a cable lies on.</td></tr>
+                <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>, and <code>cornersOf</code>, the room each corner of a path leaves a bend).</td></tr>
                 <tr><td><code>rack/cable-geometry</code></td><td>The 3D path (<code>routePoints3d</code>), cable and plug colors, and the lead and sag figures the drawings share.</td></tr>
                 <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column, and each body a route crosses in its cable's notes), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), the device-import data, and the drawing sheet's title block (<code>titleLines</code>, which names the host it was drawn with as <code>source</code>).</td></tr>
                 <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README (<code>kitReadme</code>; a host passes its own <code>source</code>, where its DCIM settings are as <code>settingsAt</code>, and the script's <code>scriptUrl</code>).</td></tr>
@@ -503,7 +561,11 @@ const path = routePath(rack, cable, route);
               gives a bundle's <code>bend</code> as <code>{radius_mm, by, unchecked, points,
               violations}</code>; it is <code>null</code> only without the routes.
               <code>cornersOf</code> and <code>bendCheck</code> are exported for a page that
-              draws them.</p>
+              draws them (<code>cornersOf</code> lives in <code>rack/route-path</code> since
+              0.17.0, and <code>rack/bundles</code> still exports it). A cable outside a
+              bundle, and a member's lead to its port, are not checked here: each
+              cable's own path is, by <code>routePath</code>'s <code>bends</code> and
+              <code>bendFindings</code>.</p>
             <p>For the exports, <code>bundleExports(rack, ctx)</code> in
               <code>rack/export-data</code> measures every bundle once: its members, length,
               strap count, size and bend. Pass it to the cable schedule as
@@ -526,11 +588,11 @@ const path = routePath(rack, cable, route);
               <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
               three.js is a peer dependency, needed only for 3D:</p>
             <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
-            <p class="kit-note" data-kit-unpublished>This page documents kit 0.15.0, which is
+            <p class="kit-note" data-kit-unpublished>This page documents kit 0.18.0, which is
               not on npm yet: npm's latest is <span data-kit-npm="0.2.0">0.2.0</span>.
               The rack and bundle modules, and everything else added since 0.2.0, are
               in the unpublished version only, so <code>npm install</code> gets a kit
-              without them, and the CDN map below returns 404s. Until 0.15.0 is
+              without them, and the CDN map below returns 404s. Until 0.18.0 is
               published, use the files from a
               <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> checkout's
               <code>kit/</code> folder, or this site's own vendored copy
@@ -543,23 +605,23 @@ const path = routePath(rack, cable, route);
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/shell.js",
-    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/ears2d.js",
-    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/states.js",
-    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/catalog.js",
-    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/model.js",
-    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/editor.js",
-    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/queries.js",
-    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/route.js",
-    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/route-path.js",
-    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/solids.js",
-    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/bundles.js",
-    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/export-data.js",
-    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.15.0/rack/cable-types.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/shell.js",
+    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/ears2d.js",
+    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/states.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/catalog.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/route.js",
+    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/route-path.js",
+    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/solids.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/export-data.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.18.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }

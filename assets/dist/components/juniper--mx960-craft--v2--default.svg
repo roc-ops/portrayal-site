@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.0mm" height="48.0mm" viewBox="0 0 441.0 48.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/mx960-craft@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx960-craft@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/mx960-craft@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx960-craft@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/mx960-craft@'] .state-yellow { --led-color: #f5a623; }</style>
+  <g id="mx960-craft" data-path="mx960-craft" data-class="display" data-behaviour="fills" data-ref="juniper/mx960-craft@2:2.0.0" data-model="MX960 Craft Interface" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>mx960-craft</title>
+    <rect id="mx960-craft--face" x="0" y="0" width="441.0" height="48.0" rx="0.8" fill="#33373c" stroke="#26292d" stroke-width="0.5" />
+    <rect x="0" y="24.5" width="441.0" height="1.2" fill="#7bc7e0" />
+    <g id="mx960-craft--silkscreen">
+      <g id="mx960-craft--t57-silkscreen">
+        <text x="14.0" y="9.0" font-family="Arial" font-size="4.6" fill="#f0f1f2" text-anchor="start">JUNIPER</text>
+      </g>
+      <g id="mx960-craft--t58-silkscreen">
+        <text x="52.0" y="9.0" font-family="Arial" font-size="4.0" fill="#c7ccd1" text-anchor="start">MX960</text>
+      </g>
+      <g id="mx960-craft--t59-silkscreen">
+        <text x="100.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">PEM</text>
+      </g>
+      <g id="mx960-craft--t60-silkscreen">
+        <text x="113.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">0  1  2  3</text>
+      </g>
+      <g id="mx960-craft--t61-silkscreen">
+        <text x="146.0" y="6.5" font-family="Arial" font-size="1.2" fill="#e8eaec" text-anchor="middle">FAN</text>
+      </g>
+      <g id="mx960-craft--t62-silkscreen">
+        <text x="196.0" y="5.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">MASTER</text>
+      </g>
+      <g id="mx960-craft--t63-silkscreen">
+        <text x="196.0" y="9.5" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">ONLINE</text>
+      </g>
+      <g id="mx960-craft--t64-silkscreen">
+        <text x="196.0" y="14.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="start">OFFLINE</text>
+      </g>
+      <g id="mx960-craft--t65-silkscreen">
+        <text x="186.0" y="19.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">RE 0</text>
+      </g>
+      <g id="mx960-craft--t66-silkscreen">
+        <text x="212.0" y="19.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">RE 1</text>
+      </g>
+      <g id="mx960-craft--t67-silkscreen">
+        <text x="305.0" y="12.5" font-family="Arial" font-size="1.3" fill="#26292d" text-anchor="middle">ACO/LT</text>
+      </g>
+      <g id="mx960-craft--t68-silkscreen">
+        <text x="345.0" y="4.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">YELLOW ALARM</text>
+      </g>
+      <g id="mx960-craft--t69-silkscreen">
+        <text x="385.0" y="4.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">RED ALARM</text>
+      </g>
+      <g id="mx960-craft--t70-silkscreen">
+        <text x="345.0" y="16.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">NC  C  NO</text>
+      </g>
+      <g id="mx960-craft--t71-silkscreen">
+        <text x="385.0" y="16.5" font-family="Arial" font-size="1.0" fill="#e8eaec" text-anchor="middle">NC  C  NO</text>
+      </g>
+      <g id="mx960-craft--t72-silkscreen">
+        <text x="428.0" y="9.0" font-family="Arial" font-size="1.2" fill="#c7ccd1" text-anchor="middle">RUNNING</text>
+      </g>
+      <g id="mx960-craft--t73-silkscreen">
+        <text x="428.0" y="12.0" font-family="Arial" font-size="1.2" fill="#c7ccd1" text-anchor="middle">JUNOS</text>
+      </g>
+    </g>
+    <g id="mx960-craft--pem-lamps">
+      <circle id="mx960-craft--led-pem-0" cx="108.5" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-pem-0" data-class="led" data-states="green red off" />
+      <circle id="mx960-craft--led-pem-1" cx="111.9" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-pem-1" data-class="led" data-states="green red off" />
+      <circle id="mx960-craft--led-pem-2" cx="115.3" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-pem-2" data-class="led" data-states="green red off" />
+      <circle id="mx960-craft--led-pem-3" cx="118.7" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-pem-3" data-class="led" data-states="green red off" />
+      <circle id="mx960-craft--led-fan" cx="146.0" cy="9.5" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fan" data-class="led" data-states="green red off" />
+    </g>
+    <g id="mx960-craft--re-lamps">
+      <circle id="mx960-craft--led-re0-0" cx="186.0" cy="4.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re0-0" data-class="led" data-states="green off" />
+      <circle id="mx960-craft--led-re0-1" cx="186.0" cy="9.1" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re0-1" data-class="led" data-states="green off" />
+      <circle id="mx960-craft--led-re0-2" cx="186.0" cy="13.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re0-2" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--led-re1-0" cx="212.0" cy="4.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re1-0" data-class="led" data-states="green off" />
+      <circle id="mx960-craft--led-re1-1" cx="212.0" cy="9.1" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re1-1" data-class="led" data-states="green off" />
+      <circle id="mx960-craft--led-re1-2" cx="212.0" cy="13.6" r="0.7" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-re1-2" data-class="led" data-states="red off" />
+    </g>
+    <g id="mx960-craft--alarm">
+      <path id="mx960-craft--led-yellow-alarm" d="M 262.0 6.0 l 4.4 7.8 l -8.8 0 Z" fill="var(--led-color, #f2c93c)" stroke="#8f7714" stroke-width="0.4" data-path="mx960-craft/led-yellow-alarm" data-class="led" data-states="yellow off" />
+      <circle id="mx960-craft--led-red-alarm" cx="283.0" cy="10.0" r="4.2" fill="var(--led-color, #c94f4f)" stroke="#8f2f2f" stroke-width="0.4" data-path="mx960-craft/led-red-alarm" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-aco" cx="305.0" cy="8.0" r="3.4" fill="#d7dadd" stroke="#8a8f95" stroke-width="0.4" />
+      <rect x="332.0" y="6.5" width="26.0" height="7.0" rx="0.8" fill="#3f7a3f" stroke="#2a522a" stroke-width="0.4" />
+      <rect x="372.0" y="6.5" width="26.0" height="7.0" rx="0.8" fill="#3f7a3f" stroke="#2a522a" stroke-width="0.4" />
+    </g>
+    <g id="mx960-craft--slots">
+      <circle id="mx960-craft--led-ok-0" cx="11.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-0" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-0" cx="21.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-0" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-0" cx="16.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t1-silkscreen">
+        <text x="16.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">0</text>
+      </g>
+      <g id="mx960-craft--t2-silkscreen">
+        <text x="11.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t3-silkscreen">
+        <text x="21.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t4-silkscreen">
+        <text x="16.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-1" cx="43.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-1" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-1" cx="53.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-1" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-1" cx="48.05" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t5-silkscreen">
+        <text x="48.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">1</text>
+      </g>
+      <g id="mx960-craft--t6-silkscreen">
+        <text x="43.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t7-silkscreen">
+        <text x="53.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t8-silkscreen">
+        <text x="48.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-2" cx="74.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-2" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-2" cx="84.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-2" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-2" cx="79.45" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t9-silkscreen">
+        <text x="79.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">2</text>
+      </g>
+      <g id="mx960-craft--t10-silkscreen">
+        <text x="74.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t11-silkscreen">
+        <text x="84.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t12-silkscreen">
+        <text x="79.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-3" cx="105.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-3" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-3" cx="115.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-3" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-3" cx="110.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t13-silkscreen">
+        <text x="110.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">3</text>
+      </g>
+      <g id="mx960-craft--t14-silkscreen">
+        <text x="105.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t15-silkscreen">
+        <text x="115.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t16-silkscreen">
+        <text x="110.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-4" cx="137.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-4" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-4" cx="147.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-4" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-4" cx="142.25" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t17-silkscreen">
+        <text x="142.25" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">4</text>
+      </g>
+      <g id="mx960-craft--t18-silkscreen">
+        <text x="137.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t19-silkscreen">
+        <text x="147.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t20-silkscreen">
+        <text x="142.25" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-5" cx="168.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-5" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-5" cx="178.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-5" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-5" cx="173.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t21-silkscreen">
+        <text x="173.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">5</text>
+      </g>
+      <g id="mx960-craft--t22-silkscreen">
+        <text x="168.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t23-silkscreen">
+        <text x="178.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t24-silkscreen">
+        <text x="173.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-6" cx="200.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-6" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-6" cx="210.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-6" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-6" cx="205.05" cy="38.5" r="2.6" fill="#7bc7e0" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t25-silkscreen">
+        <text x="205.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">0</text>
+      </g>
+      <g id="mx960-craft--t26-silkscreen">
+        <text x="200.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t27-silkscreen">
+        <text x="210.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t28-silkscreen">
+        <text x="205.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-7" cx="231.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-7" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-7" cx="241.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-7" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-7" cx="236.45" cy="38.5" r="2.6" fill="#7bc7e0" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t29-silkscreen">
+        <text x="236.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">1</text>
+      </g>
+      <g id="mx960-craft--t30-silkscreen">
+        <text x="231.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t31-silkscreen">
+        <text x="241.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t32-silkscreen">
+        <text x="236.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-8" cx="262.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-8" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-8" cx="272.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-8" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-8" cx="267.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t33-silkscreen">
+        <text x="267.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">6</text>
+      </g>
+      <g id="mx960-craft--t34-silkscreen">
+        <text x="262.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t35-silkscreen">
+        <text x="272.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t36-silkscreen">
+        <text x="267.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-9" cx="294.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-9" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-9" cx="304.25" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-9" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-9" cx="299.25" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t37-silkscreen">
+        <text x="299.25" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">7</text>
+      </g>
+      <g id="mx960-craft--t38-silkscreen">
+        <text x="294.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t39-silkscreen">
+        <text x="304.25" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t40-silkscreen">
+        <text x="299.25" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-10" cx="325.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-10" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-10" cx="335.65" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-10" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-10" cx="330.65" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t41-silkscreen">
+        <text x="330.65" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">8</text>
+      </g>
+      <g id="mx960-craft--t42-silkscreen">
+        <text x="325.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t43-silkscreen">
+        <text x="335.65" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t44-silkscreen">
+        <text x="330.65" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-11" cx="357.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-11" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-11" cx="367.05" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-11" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-11" cx="362.05" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t45-silkscreen">
+        <text x="362.05" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">9</text>
+      </g>
+      <g id="mx960-craft--t46-silkscreen">
+        <text x="357.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t47-silkscreen">
+        <text x="367.05" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t48-silkscreen">
+        <text x="362.05" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-12" cx="388.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-12" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-12" cx="398.45" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-12" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-12" cx="393.45" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t49-silkscreen">
+        <text x="393.45" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">10</text>
+      </g>
+      <g id="mx960-craft--t50-silkscreen">
+        <text x="388.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t51-silkscreen">
+        <text x="398.45" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t52-silkscreen">
+        <text x="393.45" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+      <circle id="mx960-craft--led-ok-13" cx="419.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-ok-13" data-class="led" data-states="green blinking off" />
+      <circle id="mx960-craft--led-fail-13" cx="429.85" cy="32.0" r="0.8" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="mx960-craft/led-fail-13" data-class="led" data-states="red off" />
+      <circle id="mx960-craft--btn-13" cx="424.85" cy="38.5" r="2.6" fill="#f0f1f2" stroke="#565b61" stroke-width="0.3" />
+      <g id="mx960-craft--t53-silkscreen">
+        <text x="424.85" y="39.6" font-family="Arial" font-size="1.6" fill="#26292d" text-anchor="middle">11</text>
+      </g>
+      <g id="mx960-craft--t54-silkscreen">
+        <text x="419.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OK</text>
+      </g>
+      <g id="mx960-craft--t55-silkscreen">
+        <text x="429.85" y="29.2" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">FAIL</text>
+      </g>
+      <g id="mx960-craft--t56-silkscreen">
+        <text x="424.85" y="45.5" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ONLINE</text>
+      </g>
+    </g>
+  </g>
+</svg>

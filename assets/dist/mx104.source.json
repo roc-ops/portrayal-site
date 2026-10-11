@@ -46,6 +46,11 @@
  "format": 1,
  "gaps": [
   {
+   "reason": "needs-photo",
+   "wanted": "a close photograph of the fixed panel's right end - the front photograph shows an ESD jack at about (379, 5) and a two-hole plate at about x 406-422, y 5, neither drawn; the fixed panel was otherwise re-placed at 5.0.0 (provenance.fixed-panel,",
+   "what": "fixed-panel-right-end"
+  },
+  {
    "reason": "sources-disagree",
    "wanted": "a corrected MX104 physical table - the module rows scramble width/depth/height (a MIC listed 15.9 cm wide when the photographed face measures 168.8 mm, roc-ops/Portrayal#261; PSU axes likewise); faces are photo-sized and marked approximate.",
    "what": "vendor-table-axes"
@@ -155,7 +160,8 @@
    "note": "photo - medium grey face and rear"
   },
   "fixed-panel": {
-   "note": "photo - ALARM DB-15 at the left, four fixed XE SFP+ cages at centres 97.8-140.6 silkscreened 2/0/0-2/0/3, SYS OK lamp and ONLINE/OFFLINE button, EXT REF CLOCK and ToD RJ45s at 269.9/285.5, the 1PPS / 10 MHz IN-OUT SMB quad inline at 311.5-334.2, and the junos badge"
+   "confidence": "photo-measured",
+   "note": "the MX104 front photograph on the checked scale (#901): x = (px - 74.5) / 3.090 over the 437.0 mm body, y = (px - 8.5) / 3.067 down the 154.7 mm height (the issue's 3.061 is the same reading from a different edge pixel). The panel's lower edge meets the upper MIC plates at y 42.4. ALARM DB-15 shell 36.0-55.4 x 21.6-32.4. The four XE SFP+ cages are DISCRETE cages on a 17.2 mm pitch, each in its own bezel, not a ganged row: centres 98.0, 115.3, 132.4, 149.5 at y 28.2 (bezels 90.4-157.1 by 22.9-33.5), legends 2/0/0-2/0/3 above each and XE over a bracket at 123.8, so they are std/sfp, not std/sfp-ganged. ONLINE/OFFLINE button at (166.8, 30.0) with its legend under it, SYS OK lamp at (176.5, 24.6) under its legend. EXT REF CLOCK and TOD RJ45s centred at 271.0 and 286.9, y 12.3. The 1PPS and 10 MHz SMBs at 307.8, 315.7, 323.9, 331.7, y 13.2. Until 5.0.0 the cages were ganged at 14.25 from 97.8 (the last 8.9 mm left of the photograph's) at y 25.2, and the button and lamp sat about 11 and 20 mm left of where the photograph puts them. NOT DRAWN, and seen at the panel's right end: an ESD jack at about (379, 5) and a two-hole plate at about (406-422, 5) - follow-ups, not part of this re-placement"
   },
   "ground-stud-pitch": {
    "confidence": "datasheet",
@@ -175,6 +181,10 @@
   "other-faces": {
    "note": "left face carries the estimated fan-tray band (side-mounted cooling per the guide); other faces rail-band estimates. Axis conventions per viewer3d.js as the siblings"
   },
+  "pem-re-band": {
+   "confidence": "photo-measured",
+   "note": "the MX104 front photograph on the scale above (#901). The band starts at y 105.5 (the issue read 105.2). The supply plates run x 7.0-113.8 and 114.7-221.5, y 105.5-153.7; the 103.7 x 45.0 supply contract is centred on each (pem0 at 8.55, pem1 at 116.25, y 107.1), which leaves the contract about 3 mm smaller than the photographed plate each way - a matter for juniper/mx104-psu-dc, not the bays. The Routing Engines run x 222.2-363.9 (141.7 against the 145.0 contract, centred at 220.55), RE1 from y 105.6 and RE0 from 129.0, RE legends at x 366.5 beside them; the plain side cover takes the rest of the right end, x 365.5-437.0 from the fixed panel down. Until 5.0.0 pem1 sat 8 mm right of its plate, both REs 36 mm right of theirs (over the side cover), and the band started at 108.7."
+  },
   "populated-with": {
    "note": "photo - slot 1/0 and 0/1 carry MIC-3D-20GE-SFP, slot 1/1 the MIC-3D-4CHOC3-1OC12-CE, slot 0/0 the MIC-3D-2XGE-XFP; both RE bays carry the slim MX104 RE and both PSU bays the DC supply. Defaults reproduce that configuration"
   },
@@ -186,7 +196,7 @@
    "note": "photo - a plain panel with the two-hole earthing plate at the bottom centre; nothing else. The fan tray and air filter are SIDE-mounted per the guide (Figure 7/8) and appear on the left face as an estimated band"
   },
   "scale": {
-   "note": "photo - the front photograph is isotropic at 3.087 px/mm once the brackets are excluded (aspect with brackets matches the 48.7 cm over-brackets figure). Rows: fixed panel 0-44.4, MIC rows 44.4-76.5 and 76.5-108.5, PSU/RE band to 154.7. A FIRST READING put the RE rows at 13.9 mm - too thin to hold their photographed RJ45s - and the row boundary was re-derived; positions are single-pass and approximate to ~2 mm throughout"
+   "note": "photo - the front photograph is isotropic, 3.090 px/mm across (body px 74.5-1425.0) and 3.067 down (px 8.5-483.0), cross-checked on the ganged-SFP pitch (#261, #901). Rows: fixed panel 0-42.4, the MIC rows (mic-bays), and the PSU/RE band from 105.5 (pem-re-band). A FIRST READING put the RE rows at 13.9 mm - too thin to hold their photographed RJ45s - and the row boundary was re-derived; positions are single-pass and approximate to ~2 mm throughout"
   },
   "sources": {
    "note": "MX104 Hardware Guide, the MX104 datasheet, and the image-library photographs mx104-front-high and mx104-rear-high. No mechanical drawing was available"
@@ -198,7 +208,7 @@
    "title": "Juniper MX104 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "4.0.0",
+ "version": "5.0.0",
  "views": {
   "bottom": {
    "panel": {
@@ -356,8 +366,8 @@
        "juniper/mx104-psu-dc@1"
       ],
       "at": [
-       9.7,
-       108.7
+       8.55,
+       107.1
       ],
       "default": "juniper/mx104-psu-dc@1",
       "group": "psus",
@@ -373,8 +383,8 @@
        "juniper/mx104-psu-dc@1"
       ],
       "at": [
-       123.1,
-       108.7
+       116.25,
+       107.1
       ],
       "default": "juniper/mx104-psu-dc@1",
       "group": "psus",
@@ -390,8 +400,8 @@
        "juniper/mx104-re@1"
       ],
       "at": [
-       258.0,
-       108.2
+       220.55,
+       105.6
       ],
       "default": "juniper/mx104-re@1",
       "group": "res",
@@ -407,8 +417,8 @@
        "juniper/mx104-re@1"
       ],
       "at": [
-       258.0,
-       131.2
+       220.55,
+       129.0
       ],
       "default": "juniper/mx104-re@1",
       "group": "res",
@@ -423,48 +433,48 @@
     "placements": [
      {
       "at": [
-       90.68,
-       20.0
+       90.75,
+       23.2
       ],
       "group": "xe",
       "id": "xe-0",
-      "ref": "std/sfp-ganged@1",
+      "ref": "std/sfp@1",
       "rel-pos": 0
      },
      {
       "at": [
-       104.93,
-       20.0
+       108.05,
+       23.2
       ],
       "group": "xe",
       "id": "xe-1",
-      "ref": "std/sfp-ganged@1",
+      "ref": "std/sfp@1",
       "rel-pos": 1
      },
      {
       "at": [
-       119.18,
-       20.0
+       125.15,
+       23.2
       ],
       "group": "xe",
       "id": "xe-2",
-      "ref": "std/sfp-ganged@1",
+      "ref": "std/sfp@1",
       "rel-pos": 2
      },
      {
       "at": [
-       133.43,
-       20.0
+       142.25,
+       23.2
       ],
       "group": "xe",
       "id": "xe-3",
-      "ref": "std/sfp-ganged@1",
+      "ref": "std/sfp@1",
       "rel-pos": 3
      },
      {
       "at": [
-       261,
-       8.4
+       263.1,
+       5.7
       ],
       "attrs": {
        "function": "external reference clock",
@@ -477,8 +487,8 @@
      },
      {
       "at": [
-       278,
-       8.4
+       279.0,
+       5.7
       ],
       "attrs": {
        "function": "time of day",
@@ -491,8 +501,8 @@
      },
      {
       "at": [
-       309.09,
-       10.09
+       305.38,
+       10.79
       ],
       "attrs": {
        "function": "1PPS input"
@@ -504,8 +514,8 @@
      },
      {
       "at": [
-       316.29,
-       10.09
+       313.28,
+       10.79
       ],
       "attrs": {
        "function": "1PPS output"
@@ -517,8 +527,8 @@
      },
      {
       "at": [
-       324.59,
-       10.09
+       321.48,
+       10.79
       ],
       "attrs": {
        "function": "10 MHz input"
@@ -530,8 +540,8 @@
      },
      {
       "at": [
-       331.79,
-       10.09
+       329.28,
+       10.79
       ],
       "attrs": {
        "function": "10 MHz output"
@@ -543,8 +553,8 @@
      },
      {
       "at": [
-       155.0,
-       21.0
+       175.5,
+       23.6
       ],
       "description": "SYS OK - green when the system is up (guide table)",
       "for": "chassis",
@@ -562,8 +572,8 @@
      },
      {
       "at": [
-       153.8,
-       28.0
+       165.0,
+       28.2
       ],
       "attrs": {
        "function": "online/offline"
@@ -580,63 +590,63 @@
     "cutouts": [
      {
       "at": [
-       33.0,
-       18.5
+       36.0,
+       21.6
       ],
       "id": "alarm",
       "size": [
-       18.0,
-       9.0
+       19.4,
+       10.8
       ]
      },
      {
       "at": [
-       90.68,
-       20.0
+       90.75,
+       23.2
       ],
       "id": "xe-0",
       "size": [
-       14.25,
-       10.4
+       14.5,
+       10.0
       ]
      },
      {
       "at": [
-       104.93,
-       20.0
+       108.05,
+       23.2
       ],
       "id": "xe-1",
       "size": [
-       14.25,
-       10.4
+       14.5,
+       10.0
       ]
      },
      {
       "at": [
-       119.18,
-       20.0
+       125.15,
+       23.2
       ],
       "id": "xe-2",
       "size": [
-       14.25,
-       10.4
+       14.5,
+       10.0
       ]
      },
      {
       "at": [
-       133.43,
-       20.0
+       142.25,
+       23.2
       ],
       "id": "xe-3",
       "size": [
-       14.25,
-       10.4
+       14.5,
+       10.0
       ]
      },
      {
       "at": [
-       154.8,
-       20.8
+       175.3,
+       23.4
       ],
       "id": "led-sys-ok",
       "shape": "circle",
@@ -647,8 +657,8 @@
      },
      {
       "at": [
-       153.8,
-       28.0
+       165.0,
+       28.2
       ],
       "id": "btn-online",
       "shape": "circle",
@@ -659,8 +669,8 @@
      },
      {
       "at": [
-       261,
-       8.4
+       263.1,
+       5.7
       ],
       "id": "ext-ref-clock",
       "size": [
@@ -670,8 +680,8 @@
      },
      {
       "at": [
-       278,
-       8.4
+       279.0,
+       5.7
       ],
       "id": "tod",
       "size": [
@@ -681,8 +691,8 @@
      },
      {
       "at": [
-       309.09,
-       10.09
+       305.38,
+       10.79
       ],
       "id": "clk-1pps-in",
       "shape": "circle",
@@ -693,8 +703,8 @@
      },
      {
       "at": [
-       316.29,
-       10.09
+       313.28,
+       10.79
       ],
       "id": "clk-1pps-out",
       "shape": "circle",
@@ -705,8 +715,8 @@
      },
      {
       "at": [
-       324.59,
-       10.09
+       321.48,
+       10.79
       ],
       "id": "clk-10mhz-in",
       "shape": "circle",
@@ -717,8 +727,8 @@
      },
      {
       "at": [
-       331.79,
-       10.09
+       329.28,
+       10.79
       ],
       "id": "clk-10mhz-out",
       "shape": "circle",
@@ -738,19 +748,19 @@
       "rx": 0.0,
       "size": [
        437.0,
-       44.4
+       42.4
       ]
      },
      {
       "at": [
-       370.0,
-       44.4
+       365.5,
+       42.4
       ],
       "fill": "#84888d",
       "rx": 0.8,
       "size": [
-       67.0,
-       64.1
+       71.5,
+       112.3
       ]
      }
     ]
@@ -759,8 +769,8 @@
     {
      "anchor": "start",
      "at": [
-      12.0,
-      10.0
+      7.4,
+      11.5
      ],
      "fill": "#f0f1f2",
      "font-size": 3.8,
@@ -781,8 +791,8 @@
     {
      "anchor": "start",
      "at": [
-      44.0,
-      10.0
+      40.3,
+      11.8
      ],
      "fill": "#f0f1f2",
      "font-size": 3.0,
@@ -792,8 +802,8 @@
     {
      "anchor": "middle",
      "at": [
-      42.0,
-      32.5
+      45.5,
+      36.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.6,
@@ -803,8 +813,8 @@
     {
      "anchor": "middle",
      "at": [
-      115.5,
-      13.0
+      123.8,
+      17.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.8,
@@ -814,8 +824,8 @@
     {
      "anchor": "middle",
      "at": [
-      97.8,
-      16.6
+      98.0,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -825,8 +835,8 @@
     {
      "anchor": "middle",
      "at": [
-      112.1,
-      16.6
+      115.3,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -836,8 +846,8 @@
     {
      "anchor": "middle",
      "at": [
-      126.3,
-      16.6
+      132.4,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -847,8 +857,8 @@
     {
      "anchor": "middle",
      "at": [
-      140.6,
-      16.6
+      149.5,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -856,10 +866,10 @@
      "text": "2/0/3"
     },
     {
-     "anchor": "start",
+     "anchor": "middle",
      "at": [
-      162,
-      22.46
+      176.5,
+      21.3
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -867,10 +877,10 @@
      "text": "SYS OK"
     },
     {
-     "anchor": "start",
+     "anchor": "middle",
      "at": [
-      160.0,
-      31.5
+      167,
+      34.6
      ],
      "fill": "#e8eaec",
      "font-size": 1.4,
@@ -878,10 +888,10 @@
      "text": "ONLINE"
     },
     {
-     "anchor": "start",
+     "anchor": "middle",
      "at": [
-      160.0,
-      33.6
+      167,
+      36.9
      ],
      "fill": "#e8eaec",
      "font-size": 1.4,
@@ -891,8 +901,8 @@
     {
      "anchor": "middle",
      "at": [
-      269.9,
-      26.6
+      271.0,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.4,
@@ -902,8 +912,8 @@
     {
      "anchor": "middle",
      "at": [
-      269.9,
-      28.7
+      271.0,
+      23.9
      ],
      "fill": "#e8eaec",
      "font-size": 1.4,
@@ -913,8 +923,8 @@
     {
      "anchor": "middle",
      "at": [
-      285.9,
-      27.6
+      286.9,
+      21.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.4,
@@ -924,8 +934,8 @@
     {
      "anchor": "middle",
      "at": [
-      315.1,
-      6.4
+      311.75,
+      6.6
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -938,8 +948,8 @@
     {
      "anchor": "middle",
      "at": [
-      330.61,
-      6.4
+      327.79,
+      6.6
      ],
      "fill": "#e8eaec",
      "font-size": 1.5,
@@ -952,8 +962,8 @@
     {
      "anchor": "middle",
      "at": [
-      311.5,
-      19.0
+      307.8,
+      18.7
      ],
      "fill": "#e8eaec",
      "font-size": 1.3,
@@ -963,8 +973,8 @@
     {
      "anchor": "middle",
      "at": [
-      318.7,
-      19.0
+      315.7,
+      18.7
      ],
      "fill": "#e8eaec",
      "font-size": 1.3,
@@ -974,8 +984,8 @@
     {
      "anchor": "middle",
      "at": [
-      327.0,
-      19.0
+      323.9,
+      18.7
      ],
      "fill": "#e8eaec",
      "font-size": 1.3,
@@ -985,8 +995,8 @@
     {
      "anchor": "middle",
      "at": [
-      334.2,
-      19.0
+      331.7,
+      18.7
      ],
      "fill": "#e8eaec",
      "font-size": 1.3,
@@ -996,8 +1006,8 @@
     {
      "anchor": "middle",
      "at": [
-      365.0,
-      10.0
+      361.0,
+      11.7
      ],
      "fill": "#f0f1f2",
      "font-size": 3.0,
@@ -1049,10 +1059,10 @@
      "text": "0/1"
     },
     {
-     "anchor": "middle",
+     "anchor": "start",
      "at": [
-      430.0,
-      118.0
+      366.5,
+      124.4
      ],
      "fill": "#e8eaec",
      "font-size": 1.8,
@@ -1060,10 +1070,10 @@
      "text": "RE1"
     },
     {
-     "anchor": "middle",
+     "anchor": "start",
      "at": [
-      430.0,
-      141.0
+      366.5,
+      144.0
      ],
      "fill": "#e8eaec",
      "font-size": 1.8,

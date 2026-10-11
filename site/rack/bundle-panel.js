@@ -57,7 +57,7 @@ export const unbundled = rack => (rack.cables || []).filter(c => !bundleOfCable(
 // A NEW BUNDLE: tick the cables that run together. `picked` are ticked to
 // begin with (the cable selected in the list). onCreate({cables, label})
 // answers {error} to show here, or nothing.
-export function bundleForm({rack, picked = [], uOf, onCreate, onCancel}) {
+export function bundleForm({rack, picked = [], uOf, onCreate, onCancel, onLate = null}) {
   const free = unbundled(rack);
   const err = el('p', {id: 'bError', class: 'rk-error', role: 'alert'});
   const boxes = free.map(c => {
@@ -80,8 +80,14 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel}) {
     ev.preventDefault();
     const cables = [...form.querySelectorAll('[data-bundle-pick]')].filter(b => b.checked).map(b => b.dataset.bundlePick);
     if (cables.length < 2) { err.textContent = 'Tick two or more cables.'; return; }
+    // (an answer may come a moment later: a command sent just after an edit
+    // waits for the rack's routes. By then a redraw may have replaced this
+    // form, and a refusal written here would be seen by nobody: it goes to
+    // the page's notice, onLate.)
+    const show = res => { err.textContent = res?.error ?? ''; };
     const res = onCreate({cables, label: label.value.trim()});
-    err.textContent = res?.error ?? '';
+    if (typeof res?.then === 'function') res.then(late => (late?.error && !err.isConnected ? onLate?.(late.error) : show(late)));
+    else show(res);
   });
   return form;
 }
@@ -91,9 +97,15 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel}) {
 // on, or altogether), cables to add, and dissolving it. Each callback answers
 // {error} to show here, or nothing.
 const UNITS = ['in', 'mm'];
-export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onAdd, onPeel, onRemove, onClose}) {
+export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onAdd, onPeel, onRemove, onClose, onLate = null}) {
   const err = el('p', {id: 'bError', class: 'rk-error', role: 'alert'});
-  const say = res => { err.textContent = res?.error ?? ''; };
+  // (an answer may come a moment later: a command sent just after an edit
+  // waits for the rack's routes. A refusal that comes after a redraw has
+  // replaced this panel goes to the page's notice, onLate.)
+  const say = res => {
+    if (typeof res?.then === 'function') res.then(late => (late?.error && !err.isConnected ? onLate?.(late.error) : say(late)));
+    else err.textContent = res?.error ?? '';
+  };
   const label = el('input', {id: 'bLabel', type: 'text', value: bundle.label || ''});
   label.addEventListener('change', () => say(onLabel(label.value.trim())));
   const every = bundle.straps && 'every' in bundle.straps ? bundle.straps.every : {value: 12, unit: 'in'};
