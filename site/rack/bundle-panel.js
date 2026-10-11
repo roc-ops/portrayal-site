@@ -97,7 +97,12 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel, onLate =
 // on, or altogether), cables to add, and dissolving it. Each callback answers
 // {error} to show here, or nothing.
 const UNITS = ['in', 'mm'];
-export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onAdd, onPeel, onRemove, onClose, onLate = null}) {
+// PINNED: while the panel is open its bundle is the page's selection, so its
+// members, straps and envelope stay lit and the rest dim (hover.js). The list
+// row that would put it down is behind this panel, so the panel says so and
+// carries the control: `pinned` and `onPin` (a toggle; the panel stays open).
+export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onAdd, onPeel, onRemove, onClose, onLate = null,
+                                 pinned = true, onPin = null}) {
   const err = el('p', {id: 'bError', class: 'rk-error', role: 'alert'});
   // (an answer may come a moment later: a command sent just after an edit
   // waits for the rack's routes. A refusal that comes after a redraw has
@@ -148,8 +153,10 @@ export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onA
   const free = unbundled(rack);
   const pick = el('select', {id: 'bAddPick', 'aria-label': 'Cable to add'}, free.map(c => el('option', {value: c.id, text: c.id})));
   const add = free.length ? el('div', {class: 'rk-actions'}, [pick, button('bAdd', 'Add to bundle', () => say(onAdd([pick.value])))]) : null;
+  const pin = onPin ? button('bPin', pinned ? 'Pinned' : 'Pin highlight', onPin,
+    {'aria-pressed': String(pinned), title: pinned ? 'Highlighted on the rack. Click to stop highlighting it.' : 'Highlight this bundle on the rack.'}) : null;
   return el('div', {id: 'bundlePanel', class: 'rk-cable-form rk-bundle'}, [
-    el('h3', {text: fact?.name ?? bundle.id}),
+    el('div', {class: 'rk-bundle-title'}, [el('h3', {text: fact?.name ?? bundle.id}), pin].filter(Boolean)),
     el('p', {class: 'rk-muted', 'data-bundle-summary': bundle.id, text: fact ? bundleSummary(fact) : `${bundle.members.length} cables`}),
     el('p', {class: 'rk-bundle-findings'}, bundleFindings(fact)),
     field('Label', label),

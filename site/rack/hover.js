@@ -54,7 +54,7 @@ export function litFor(rack, target) {
   return null;
 }
 
-/** 2D: dim every cable, tag and band on `svgs` but the lit ones, and the straps of every bundle but a lit one; null restores. */
+/** 2D: dim every cable, tag and band on `svgs` but the lit ones, and every strap but those of a lit bundle or of a lit cable's bundle; null restores. */
 export function paintHover2d(svgs, lit) {
   for (const svg of svgs) {
     if (!svg) continue;
@@ -63,10 +63,10 @@ export function paintHover2d(svgs, lit) {
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId));
-    // A STRAP IS NOT DIMMED WITH UNRELATED CABLES: it stays lit under a cable's
-    // hover, and dims only when a bundle is lit and it is not that bundle's.
+    // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
+    // it, is lit, and dimmed with the rest otherwise.
     for (const n of svg.querySelectorAll('[data-strap]'))
-      n.classList.toggle('hot', !!lit && (!lit.bundles.size || lit.bundles.has(n.dataset.strap)));
+      n.classList.toggle('hot', !!lit && (lit.bundles.has(n.dataset.strap) || (n.dataset.members || '').split(' ').some(id => lit.cables.has(id))));
     // a member under the pointer shows the envelope of the bundle it rides (rack.css)
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot-member', !!lit && (n.dataset.members || '').split(' ').some(id => lit.cables.has(id)));
@@ -99,9 +99,10 @@ function apply3d(world, lit) {
     for (const g of group.children) {
       const dim = !!lit && !lit[key].has(g.name.slice(prefix.length));
       // (a bundle's envelope is shown or hidden, never dimmed: paintEnvelopes3d;
-      // and its straps dim only when another bundle is the one lit, as in 2D)
+      // and its straps go with it: lit while it, or a cable that rides it, is lit)
+      const rides = !!lit && (g.userData.members ?? []).some(id => lit.cables.has(id));
       g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material))
-        dimMaterial(m, dim && !o.userData.envelope && (!o.userData.strap || lit.bundles.size > 0)); });
+        dimMaterial(m, dim && !o.userData.envelope && !(o.userData.strap && rides)); });
     }
   }
 }
@@ -154,6 +155,20 @@ export async function holdUndimmed(scene, fn) {
     if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
     paintEnvelopes3d(scene);
   }
+}
+
+// A FILE'S STRAPS ARE ONE COLOUR, WHATEVER THE STAGE. On the page a strap
+// turns with the stage so it can be seen (stage.js STRAP_PAINT); a GLB or USDZ
+// is the rack, not the page, and must be the same file from a dark stage and
+// a light one, as the sheet is. It is written with every strap in the sheet's
+// ink, a black strap (STRAP_PAINT.light.core): what a hook-and-loop strap is,
+// and what reads on the light-grey ground model viewers open on.
+export async function withFileStraps(scene, color, fn) {
+  const mats = new Map();
+  if (typeof scene?.three?.scene?.traverse === 'function')
+    scene.three.scene.traverse(o => { if (o.isMesh && o.userData?.strap && !mats.has(o.material)) mats.set(o.material, o.material.color.getHex()); });
+  for (const m of mats.keys()) m.color.set(color);
+  try { return await fn(); } finally { for (const [m, c] of mats) m.color.setHex(c); }
 }
 
 /** Run `fn` with the cables' bend rings (scene3d.js ringBends) out of sight,

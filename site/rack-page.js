@@ -195,7 +195,7 @@ async function rebuild3d() {
   const now = rack();
   S.scene3d = built;
   paintHover3d(built, litFor(now, S.hover));
-  paintSelected3d(built, {cable: selectedCable(), bundle: selectedBundle()}, pinnedLit(now));
+  paintSelected3d(built, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(now));
   // A swatch picked while this was building found no scene to tell.
   if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
@@ -502,7 +502,7 @@ function keepScene(prev, next) {
 function keepRoutes(prev, next) {
   if (S.routes && S.routes.rack === prev) S.routes = {...S.routes, rack: next};
 }
-function select(sel) { S.sel = sel; render(); }
+function select(sel) { S.sel = sel; S.pinOff = false; render(); }
 // `notes` are what parseDoc said of the bundles it repaired (library.js
 // docNotes): the editor gives them back as its first findings.
 function setDoc(doc, notes = docNotes(doc)) {
@@ -732,7 +732,7 @@ function cableListPanel() {
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
-      paintCables(S.svgs, rack(), {selectedId: selectedCable(), bundleId: selectedBundle(), on: next});
+      paintCables(S.svgs, rack(), {selectedId: selectedCable(), bundleId: pinnedBundle(), on: next});
     },
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
@@ -755,6 +755,8 @@ function cableListPanel() {
 // routing context (bundleCtx). The drawings, the list and the 3D scene read
 // routeFacts' `bundles` (bundle-view.js bundleFacts).
 const selectedBundle = () => (S.sel?.kind === 'bundle' ? S.sel.id : null);
+// The bundle whose highlight is pinned: the selected one, unless its panel's pin is off.
+const pinnedBundle = () => (S.pinOff ? null : selectedBundle());
 const bundleListHooks = () => ({bundles: routesNow()?.bundles ?? null, selectedBundle: selectedBundle(),
   onBundleSelect: id => select(selectedBundle() === id ? null : {kind: 'bundle', id}),
   onBundleNew: id => select({kind: 'bundle-form', picked: [id]})});
@@ -818,7 +820,9 @@ function bundlePanel(sel) {
     onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
     onPeel: (cable, at) => bundleEdit({op: 'bundle.peel', id: b.id, cable, ...(at ? {at} : {})}),
     onRemove: () => { S.sel = null; edit({op: 'bundle.remove', id: b.id}, {say: true}); },
-    onClose: () => select(null)});
+    onClose: () => select(null),
+    // the panel's own pin control: its row in the list is behind the panel
+    pinned: !S.pinOff, onPin: () => { S.pinOff = !S.pinOff; S.focusNext = 'bPin'; render(); }});
 }
 // What the 3D scene reads of the bundles, and its rebuild signature's share.
 const bundles3d = rf => (rf?.bundles?.size ? {bundles: rf.bundles, places: rf.places} : null);
@@ -1146,8 +1150,8 @@ async function redraw() {
       const centreOf = (w, rt) => stopCentre(r, w, live?.ctx, rt);
       sideCables = S.svgs.map(svg => drawSideCables(svg, r, live, reasons, {uOf, centreOf}));
       if (roomForSideCables(S.svgs, sideCables)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
-      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: selectedBundle(), on: S.cableFilter});
-      paintBundles(S.svgs, selectedBundle());
+      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
+      paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
     } else if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
@@ -1157,8 +1161,8 @@ async function redraw() {
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
       if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
-      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: selectedBundle(), on: S.cableFilter});
-      paintBundles(S.svgs, selectedBundle());
+      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
+      paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
     }
     if (S.routePick && !sides) drawRoutePicking();
@@ -1171,7 +1175,7 @@ async function redraw() {
   renderSide();
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
-  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: selectedBundle()}, pinnedLit(rack()));
+  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -1260,7 +1264,7 @@ function hoverMove(ev, find) {
 // in both views, through an orbit, a redraw and a switch of view, until it is
 // put down. There is no second state: this is S.sel, read as a hover target.
 const pinnedLit = r => {
-  const cable = selectedCable(), bundle = selectedBundle();
+  const cable = selectedCable(), bundle = pinnedBundle();
   return litFor(r, cable != null ? {kind: 'cable', id: cable} : bundle != null ? {kind: 'bundle', id: bundle} : null);
 };
 // PUT DOWN BY A CLICK ON NOTHING: on empty stage, or on the page's own
@@ -1274,7 +1278,7 @@ const CLICK_SLOP = 4, CLICK_MS = 500;
 const NOT_NOTHING = 'button, a, input, select, textarea, label, summary, details, dialog, [role="button"], [tabindex], #side, .rk-lens, .rk-lens-backdrop';
 function wirePin() {
   let down = null;
-  document.addEventListener('pointerdown', ev => { down = {x: ev.clientX, y: ev.clientY, t: performance.now(), sel: S.sel}; }, true);
+  document.addEventListener('pointerdown', ev => { S.focusQuiet = false; down = {x: ev.clientX, y: ev.clientY, t: performance.now(), sel: S.sel}; }, true);
   document.addEventListener('click', ev => {
     const d = down;
     down = null;
@@ -1322,7 +1326,10 @@ function wireHover() {
   });
 }
 // The row keyboard focus is on, as a hover target, or null.
+// (not straight after Escape put a pin down with focus still on its row: the
+// row would light it again as a hover; the next key or press ends that)
 function focusHover() {
+  if (S.focusQuiet) return null;
   const t = hoverAtFocus($('side'));
   return t ? {...t, from: 'focus'} : null;
 }
@@ -1849,6 +1856,10 @@ async function bootInner() {
     // Esc in the move or remove panel goes back to the device, as Cancel does.
     const back = S.sel?.kind === 'remove' ? S.sel.id : id;
     if (ev.key === 'Escape' && S.sel?.kind === 'remove') S.focusNext = 'iRemove';
+    // Escape puts a pinned cable or bundle down altogether: keyboard focus left
+    // on its row must not light it again as a hover (focusHover).
+    S.focusQuiet = ev.key === 'Escape' && (S.sel?.kind === 'cable' || S.sel?.kind === 'bundle');
+    if (S.focusQuiet && S.hover?.from === 'focus') setHover(null);
     if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && (S.sel.kind === 'move' || S.sel.kind === 'remove') ? {kind: 'item', id: back} : null); }
     // (not from the side: the side pair moves nothing, #187)
     else if (id && !sidesShown() && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {

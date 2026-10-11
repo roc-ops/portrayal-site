@@ -309,7 +309,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       const bar = p && q ? strapBar(p, q, hit.f, hit.stretch.diameter / 2 + 2) : null;
       // a strap on a run across the rack is seen end on: counted, not drawn here
       if (!bar) continue;
-      const el = svgEl('g', {'data-strap': f.id, 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
+      const el = svgEl('g', {'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
       const xy = {x1: n3(bar.x1), y1: n3(bar.y1), x2: n3(bar.x2), y2: n3(bar.y2)};
       const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
       el.append(svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
