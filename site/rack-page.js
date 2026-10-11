@@ -34,7 +34,7 @@ import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
-import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
+import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
@@ -177,6 +177,7 @@ async function rebuild3d() {
   const now = rack();
   S.scene3d = built;
   paintHover3d(built, litFor(now, S.hover));
+  paintSelected3d(built, {cable: selectedCable(), bundle: selectedBundle()});
   // A swatch picked while this was building found no scene to tell.
   if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
@@ -1096,6 +1097,8 @@ async function redraw() {
   }
   renderSide();
   paintAgentMark();
+  // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
+  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: selectedBundle()});
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows

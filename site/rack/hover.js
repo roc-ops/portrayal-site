@@ -53,6 +53,9 @@ export function paintHover2d(svgs, lit) {
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
     for (const n of svg.querySelectorAll('[data-bundle-id], [data-strap]'))
       n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId ?? n.dataset.strap));
+    // a member under the pointer shows the envelope of the bundle it rides (rack.css)
+    for (const n of svg.querySelectorAll('[data-bundle-id]'))
+      n.classList.toggle('hot-member', !!lit && (n.dataset.members || '').split(' ').some(id => lit.cables.has(id)));
   }
 }
 
@@ -81,9 +84,34 @@ function apply3d(world, lit) {
     if (!group) continue;
     for (const g of group.children) {
       const dim = !!lit && !lit[key].has(g.name.slice(prefix.length));
-      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim); });
+      // (a bundle's envelope is shown or hidden, never dimmed: paintEnvelopes3d)
+      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim && !o.userData.envelope); });
     }
   }
+}
+
+// A BUNDLE'S ENVELOPE IN 3D (scene3d.js hangBundles: the see-through tube at
+// its diameter) is hidden until the bundle, or a cable that rides it, is
+// hovered or selected, as in 2D. The hover is the scene's `hoverLit`, the
+// selection its `selected` ({cable, bundle}, from paintSelected3d). While an
+// export holds the scene (holdUndimmed) every envelope is hidden, so no file
+// carries one.
+export function paintEnvelopes3d(scene) {
+  const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
+  if (!group) return;
+  const lit = scene.hoverLit ?? null, sel = scene.selected ?? null;
+  for (const g of group.children) {
+    const id = g.userData.bundle, members = g.userData.members ?? [];
+    const on = !scene.hoverHeld && ((!!lit && (lit.bundles.has(id) || members.some(m => lit.cables.has(m))))
+      || (!!sel && (sel.bundle === id || (sel.cable != null && members.includes(sel.cable)))));
+    for (const o of g.children) if (o.userData.envelope) o.visible = on;
+  }
+}
+/** 3D: which cable or bundle is selected ({cable, bundle}, either null), for the envelopes. */
+export function paintSelected3d(scene, sel) {
+  if (!scene?.three) return;
+  scene.selected = sel && (sel.cable != null || sel.bundle != null) ? {cable: sel.cable ?? null, bundle: sel.bundle ?? null} : null;
+  paintEnvelopes3d(scene);
 }
 
 /** 3D: dim every tube in `scene` (scene3d.js's) but the lit ones; null restores.
@@ -92,6 +120,7 @@ export function paintHover3d(scene, lit) {
   if (!scene?.three) return;
   scene.hoverLit = lit;
   if (!scene.hoverHeld) apply3d(scene.three.scene, lit);
+  paintEnvelopes3d(scene);
 }
 
 /** Run `fn` with the scene undimmed, then dim it again as the hover is by then. */
@@ -99,9 +128,11 @@ export async function holdUndimmed(scene, fn) {
   if (!scene?.three) return fn();
   scene.hoverHeld = (scene.hoverHeld || 0) + 1;
   apply3d(scene.three.scene, null);
+  paintEnvelopes3d(scene);
   try { return await fn(); } finally {
     scene.hoverHeld -= 1;
     if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? null);
+    paintEnvelopes3d(scene);
   }
 }
 
@@ -149,13 +180,23 @@ export function hoverAt3d(scene, ev) {
   if (!r.width || !r.height) return null;
   const ray = new THREE.Raycaster();
   ray.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), camera);
+  // A bundle's envelope is a see-through sleeve round its members, shown or
+  // not: a ray that meets a cable or a strap after passing through it is on
+  // that cable or strap (a member under the pointer is hovered alone, as in
+  // 2D, where a cable's stroke outranks the band). Through an envelope and
+  // nothing else, it is on the bundle.
+  let sleeve = null;
   for (const hit of ray.intersectObjects(targets, true)) {
     for (let o = hit.object; o && o.parent; o = o.parent) {
       const [name, prefix, key] = GROUPS.find(([n]) => n === o.parent.name) ?? [];
-      if (name) return {kind: key === 'cables' ? 'cable' : 'bundle', id: o.name.slice(prefix.length)};
+      if (!name) continue;
+      const target = {kind: key === 'cables' ? 'cable' : 'bundle', id: o.name.slice(prefix.length)};
+      if (!hit.object.userData.envelope) return target;
+      sleeve ??= target;
+      break;
     }
   }
-  return null;
+  return sleeve;
 }
 
 /** The hover target a side-panel row names: a cable row or a bundle header. */

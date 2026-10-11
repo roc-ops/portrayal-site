@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {memberStretch, combOffset, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
+import {memberStretch, trunkLay, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
         trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes, peelText} from '../../site/rack/bundle-view.js';
+
+import {elementsOf} from '../../vendor/rack/bundle-route.js';
+import {newRack} from '../../vendor/rack/model.js';
 
 const ring = (via) => ({item: 'i2', via});
 const lane = (ru) => ({lane: 'left-front', ru});
@@ -18,14 +21,86 @@ test('memberStretch falls back to the stored trunk when the join is not a waypoi
   assert.deepEqual(memberStretch(route, bundle), [0, 2]);
 });
 
-test('combOffset spreads members symmetrically inside the diameter, never further apart than the width', () => {
-  const at = index => combOffset({index, n: 3, diameter: 9}, 3);
-  assert.deepEqual([0, 1, 2].map(at), [-3, 0, 3]);
-  // a tight bundle: centres spread over the diameter less one width
-  assert.deepEqual([0, 1, 2].map(index => combOffset({index, n: 3, diameter: 7}, 3)), [-2, 0, 2]);
-  // under two widths, the drawn diameter (drawnDiameter) is the band's: 6 for a 3 mm stroke
-  assert.deepEqual([0, 1].map(index => combOffset({index, n: 2, diameter: 5}, 3)), [-1.5, 1.5]);
-  assert.equal(combOffset({index: 0, n: 1, diameter: 9}, 3), 0);
+// THE LAY OF A BUNDLE (trunkLay). A lane up the left of the rack, U31 to U36:
+// `far` rides all of it, `mid` joins at U33 and `near` at U35, each from a
+// port on the rack's side of the lane (x greater), and all leave at the top.
+const LANE_X = -271.425;
+const laidFact = (members, trunk = [lane(31), lane(36)], diameter = 11.6) => ({id: 'b1', drawn: true, diameter,
+  members: members.map(m => m.cable), check: {layout: {trunk, T: elementsOf(trunk), members}}});
+const laidPaths = spec => new Map(Object.entries(spec).map(([id, [ay, by]]) => [id, {points: [
+  {x: 100, y: ay, z: 0, at: 'a'}, {x: 100, y: by, z: 0, at: 'b'}]}]));
+const laidRack = {...newRack({name: 'lay'}), cables: ['far', 'mid', 'near'].map(id => ({id, media: 'cat6'}))};
+const laidCtx = {chassisOf: () => null, guidesOf: () => []};
+const peel = () => {
+  const T = elementsOf([lane(31), lane(36)]), at = u => T.findIndex(e => e.kind === 'n' && e.u === u);
+  const members = [{cable: 'far', ji: at(31), li: at(36)}, {cable: 'mid', ji: at(33), li: at(36)}, {cable: 'near', ji: at(35), li: at(36)}];
+  const lay = trunkLay(laidRack, laidFact(members), {paths: laidPaths({far: [1350, 1600], mid: [1440, 1600], near: [1530, 1600]}), ctx: laidCtx, width: 3});
+  return {lay, at};
+};
+
+test('trunkLay: the member that leaves the others first sits on the side it leaves toward', () => {
+  const {lay, at} = peel();
+  // the lane runs up, so "across" is toward the left (x less); the ports are to the right
+  assert.deepEqual(lay.across(at(33)), {x: -1, y: 0});
+  assert.deepEqual(lay.order, ['near', 'mid', 'far'], 'the last to join is nearest the rack, the first furthest out');
+  const x = (id, u) => lay.offset(id, at(u)).x;
+  assert.ok(x('near', 35) > x('mid', 35) && x('mid', 35) > x('far', 35));
+  // each runs straight: one offset at every unit it rides
+  for (const [id, from] of [['far', 31], ['mid', 33], ['near', 35]])
+    for (let u = from; u <= 36; u++) assert.equal(x(id, u), x(id, 36), `${id} at U${u}`);
+  // side by side, a drawn width apart at most, inside the largest diameter
+  assert.equal(lay.pitch, 3);
+  assert.ok(x('near', 36) - x('far', 36) + 3 <= lay.diameter + 1e-9);
+  assert.equal(lay.offset('near', at(33)), null, 'a member has no place where it does not ride');
+});
+
+test('trunkLay: each stretch is as thick as the members that ride it, by the kit\'s rule', () => {
+  const {lay, at} = peel();
+  const tenth = v => Math.round(v * 10) / 10, two = tenth(Math.sqrt(2 * 36 / 0.8)), three = tenth(Math.sqrt(3 * 36 / 0.8));
+  const by = Object.fromEntries(lay.stretches.map(s => [`${lay.T[s.from].u}-${lay.T[s.to].u}`, s]));
+  assert.deepEqual(Object.keys(by), ['33-34', '34-35', '35-36'], 'no envelope where one cable rides alone');
+  assert.ok(Math.abs(by['33-34'].diameter - two) < 1e-9 && Math.abs(by['35-36'].diameter - three) < 1e-9);
+  assert.deepEqual(by['33-34'].members, ['mid', 'far']);
+  // the envelope is about its own members' middle
+  const mid = s => (lay.offset(s.members[0], s.from).x + lay.offset(s.members.at(-1), s.from).x) / 2;
+  for (const s of lay.stretches) assert.ok(Math.abs(s.c0.x - mid(s)) < 1e-9);
+  assert.equal(lay.at(at(31)).diameter, 6, 'one cable: its own diameter, never under two drawn widths');
+  // a strap is on the stretch its place along the trunk falls in
+  const hit = lay.stretchAt({segment: 0, t: 0.9});
+  assert.equal(`${lay.T[hit.stretch.from].u}-${lay.T[hit.stretch.to].u}`, '35-36');
+  assert.ok(Math.abs(hit.f - 0.5) < 1e-9);
+  assert.equal(lay.stretchAt({segment: 0, t: 0.1}), null);
+});
+
+test('trunkLay: where a member between two others has gone, the rest close up about their middle', () => {
+  const T = elementsOf([lane(31), lane(36)]), at = u => T.findIndex(e => e.kind === 'n' && e.u === u);
+  // `mid` leaves at U33 toward the left, though it sits between the other two
+  const members = [{cable: 'far', ji: at(31), li: at(36)}, {cable: 'mid', ji: at(31), li: at(33)}, {cable: 'near', ji: at(31), li: at(36)}];
+  const lay = trunkLay(laidRack, laidFact(members), {paths: null, ctx: laidCtx, width: 3});
+  assert.deepEqual(lay.order, ['far', 'mid', 'near'], 'with nothing to pull them, the bundle\'s own order');
+  const x = (id, u) => lay.offset(id, at(u)).x;
+  assert.deepEqual([x('far', 32), x('mid', 32), x('near', 32)], [3, 0, -3]);
+  assert.deepEqual([x('far', 35), x('near', 35)], [1.5, -1.5]);
+});
+
+test('trunkLay: at a ring the pack stands on the floor, and in 3D every member is inside the circle', () => {
+  const trunk = [ring('guide-1'), lane(20), lane(22)], T = elementsOf(trunk);
+  const members = ['far', 'mid', 'near'].map(cable => ({cable, ji: 0, li: T.length - 1}));
+  const ringPts = [{x: -202, y: 857, z: 76, at: 'entry', item: 'i2', via: 'guide-1'}, {x: -209, y: 857, z: 76, at: 'exit', item: 'i2', via: 'guide-1'}];
+  const paths = new Map(['far', 'mid', 'near'].map(id => [id, {points: [{x: -100, y: 870, z: 0, at: 'a'}, ...ringPts, {x: 0, y: 950, z: 0, at: 'b'}]}]));
+  const lay = trunkLay(laidRack, laidFact(members, trunk), {paths, ctx: laidCtx, width: 3});
+  assert.equal(lay.run(0), 'x');
+  const ys = ['far', 'mid', 'near'].map(id => lay.offset(id, 0)).map(v => v.y).sort((a, b) => a - b);
+  assert.deepEqual(ys, [0, 3, 6], 'the lowest member is where the kit rests a cable, the others above it');
+  assert.ok(['far', 'mid', 'near'].every(id => lay.offset(id, 0).x === 0));
+  for (const i of lay.nodes) {
+    const R = (lay.at(i).diameter - 3) / 2;
+    const places = lay.at(i).members.map(id => lay.pack(id, i));
+    for (const p of places) assert.ok(Math.hypot(p.u, p.v) <= R + 1e-9);
+    // in the lay's order across the run
+    for (let k = 1; k < places.length; k++) assert.ok(places[k].u >= places[k - 1].u);
+  }
+  assert.equal(trunkLay(laidRack, {...laidFact(members, trunk), drawn: false}, {}), null);
 });
 
 test('trunkMarks takes a riding member\'s ring mark, turned when it runs the trunk from its far end', () => {

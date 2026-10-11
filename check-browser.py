@@ -5106,10 +5106,13 @@ def open_bundle_rack(page, base, face="front"):
                            timeout=READY_MS)
 
 
-# The band of a bundle on a pane, measured: its stroke width, the x of its
-# vertical run on the lane, how near it passes the ring's end rect centre, and
-# how far it hooks back along x near that ring; the straps drawn; and, per
-# member, its stroke's x at a height (U29) above any peel point.
+# The envelope of a bundle on a pane, measured: its stroke width, the x of its
+# vertical run on the lane, how far the furthest member's stroke is from the
+# envelope's end at the ring (`ringGap`: the envelope is about the members'
+# pack there, at the height the kit rests them, not at the middle of the ring's
+# drawing), and how far it hooks back along x near that ring; whether it shows;
+# the straps drawn; and, per member, its stroke's x at a height (U29) above any
+# peel point.
 BAND_GEO = """([pane, id]) => {
   const s = document.querySelector(`#${pane} svg`);
   const g = s.querySelector(`[data-cables] [data-bundle-id="${id}"]`);
@@ -5129,7 +5132,18 @@ BAND_GEO = """([pane, id]) => {
   let ringGap = null, back = null;
   if (end) {
     const eb = end.getBoundingClientRect(), c = new DOMPoint(eb.left + eb.width / 2, eb.top + eb.height / 2).matrixTransform(inv);
-    ringGap = Math.min(...pts.map(q => Math.hypot(q[0] - c.x, q[1] - c.y)));
+    // the envelope's end at the ring, and how far each member's stroke passes from it
+    const endPt = pts.reduce((a, q) => (Math.hypot(q[0] - c.x, q[1] - c.y) < Math.hypot(a[0] - c.x, a[1] - c.y) ? q : a), pts[0]);
+    const gaps = [];
+    for (const id of (g.dataset.members || '').split(' ').filter(Boolean)) {
+      let best = Infinity;
+      for (const p of s.querySelectorAll(`[data-cables] [data-cable-id="${id}"] path`)) {
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 0.25) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); best = Math.min(best, Math.hypot(w.x - endPt[0], w.y - endPt[1])); }
+      }
+      gaps.push(best);
+    }
+    ringGap = gaps.length ? Math.max(...gaps) : null;
     const near = pts.filter(q => Math.abs(q[0] - c.x) <= 20 && Math.abs(q[1] - c.y) <= 30).map(q => q[0]);
     if (near.length > 1) {
       const dir = Math.sign(near.at(-1) - near[0]) || 1;
@@ -5155,6 +5169,7 @@ BAND_GEO = """([pane, id]) => {
   }
   return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
           ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
+          shown: getComputedStyle(g.querySelector('[data-envelope]')).visibility === 'visible',
           strapXs: [...s.querySelectorAll(`[data-strap="${id}"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
 }"""
 
@@ -5190,8 +5205,12 @@ def check_rack_bundle_2d_front(page, base):
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
     if not (geo["laneX"] < -26) or geo["span"] < 400:
         bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
-    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
-        bad.append(f"2D: the band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    # At the ring the envelope is about the pack: every member's centre line within its half width less half a stroke.
+    if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
+        bad.append(f"2D: at guide-1 a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
+    # The bundle is selected (its panel is open), so its envelope shows.
+    if not geo["shown"]:
+        bad.append("2D: the selected bundle's envelope is not shown")
     if geo["straps"] != f["count"] or geo["straps"] < 2:
         bad.append(f"2D: {geo['straps']} straps drawn, the kit counts {f['count']}")
     # Combed inside the band: every member's run at U29 within the band's half width (plus a stroke).
@@ -5276,8 +5295,11 @@ def check_rack_bundle_2d_rear(page, base):
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
     if not (geo["laneX"] < -26) or geo["span"] < 400:
         bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
-    if geo["ringGap"] is None or geo["ringGap"] > 1.5:
-        bad.append(f"2D: the rear band passes {geo['ringGap']} from guide-1's end centre, over 1.5")
+    if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
+        bad.append(f"2D: at guide-1 on the rear pane a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
+    # Nothing is hovered or selected: the envelope is drawn, and hidden.
+    if geo["shown"]:
+        bad.append("2D: the rear bundle's envelope shows with nothing hovered or selected")
     if geo["back"] is None or geo["back"] > 0.05:
         bad.append(f"2D: the rear band hooks back {geo['back']} mm along x at guide-1 (pane flip lost?)")
     if geo["straps"] != f["count"]:
@@ -5393,7 +5415,9 @@ HOVER_2D_STATE = """() => {
       const kind = n.matches('[data-cable-tag]') ? 'tag' : n.matches('[data-strap]') ? 'strap' : n.matches('[data-bundle-id]') ? 'band' : 'cable';
       const k = `${pane}:${kind}:${id}`;
       const op = +getComputedStyle(n).opacity;
-      (out[k] ||= []).push([n.classList.contains('hot'), Math.round(op * 100) / 100]);
+      const env = kind === 'band' ? n.querySelector('[data-envelope]') : null;
+      (out[k] ||= []).push([n.classList.contains('hot'), Math.round(op * 100) / 100,
+                            ...(kind === 'band' ? [!!env && getComputedStyle(env).visibility === 'visible'] : [])]);
     }
   }
   return out;
@@ -5402,9 +5426,11 @@ HOVER_3D_STATE = """() => {
   const w = window.__rack.scene().three.scene, out = {};
   for (const [name, prefix] of [['patch-cables', 'cable-'], ['cable-bundles', 'bundle-']]) {
     for (const g of w.getObjectByName(name)?.children ?? []) {
-      const id = g.name.slice(prefix.length), mats = new Set();
-      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) mats.add(m); });
+      const id = g.name.slice(prefix.length), mats = new Set(), env = [];
+      // a bundle's envelope is shown or hidden, never dimmed: its tubes are read apart from the rest
+      g.traverse(o => { if (!o.isMesh) return; if (o.userData.envelope) { env.push(o.visible); return; } for (const m of [].concat(o.material)) mats.add(m); });
       out[prefix + id] = [...mats].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
+      if (prefix === 'bundle-') out['envelope-' + id] = env;
     }
   }
   return out;
@@ -5433,8 +5459,13 @@ def hover_fixture(page, base):
     return res
 
 
-def hover_2d_dims(st, lit_cables, lit_bundles):
-    """What is wrong with a 2D state for a hover lighting these."""
+HOVER_MEMBERS = {"b1": {"c1", "c2", "c3"}}
+
+
+def hover_2d_dims(st, lit_cables, lit_bundles, members=HOVER_MEMBERS):
+    """What is wrong with a 2D state for a hover lighting these. A bundle's
+    envelope shows while the bundle is lit or a cable that rides it is; with
+    neither, its group is dimmed and the envelope hidden."""
     bad = []
     if not st.get("front:pane"):
         bad.append("the front pane is not in hover (no .cable-hover)")
@@ -5442,7 +5473,19 @@ def hover_2d_dims(st, lit_cables, lit_bundles):
         if k.endswith(":pane"):
             continue
         _, kind, id_ = k.split(":", 2)
-        lit = (id_[6:] in lit_bundles) if kind == "strap" else (id_ in lit_bundles) if kind == "band" else (id_ in lit_cables)
+        if kind == "band":
+            rides = bool(members.get(id_, set()) & set(lit_cables))
+            for hot, op, shown in vals:
+                if hot != (id_ in lit_bundles):
+                    bad.append(f"{k} is hot={hot} with bundles {sorted(lit_bundles)} lit")
+                if shown != (id_ in lit_bundles or rides):
+                    bad.append(f"{k}'s envelope is {'shown' if shown else 'hidden'}; expected it shown only while the bundle or a member is lit")
+                if (id_ in lit_bundles or rides) and op != 1:
+                    bad.append(f"{k} should be at full strength, is opacity={op}")
+                if not (id_ in lit_bundles or rides) and op > 0.2:
+                    bad.append(f"{k} should be dimmed, is opacity={op}")
+            continue
+        lit = (id_[6:] in lit_bundles) if kind == "strap" else (id_ in lit_cables)
         for hot, op in vals:
             if lit and (not hot or op != 1):
                 bad.append(f"{k} should stay lit, is hot={hot} opacity={op}")
@@ -5451,9 +5494,15 @@ def hover_2d_dims(st, lit_cables, lit_bundles):
     return bad
 
 
-def hover_3d_dims(st, base3, lit):
+def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
     bad = []
     for k, mats in st.items():
+        if k.startswith("envelope-"):
+            b = k[len("envelope-"):]
+            want = f"bundle-{b}" in lit or any(f"cable-{c}" in lit for c in members.get(b, ()))
+            if not mats or any(v != want for v in mats):
+                bad.append(f"3D {k} is {mats}; expected {'shown' if want else 'hidden'} (shown only while the bundle or a member is lit)")
+            continue
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
             if k in lit:
                 if (tr, op, dw) != (tr0, op0, dw0):
@@ -5480,6 +5529,8 @@ def check_rack_hover_dims(page, base):
     base2 = page.evaluate(HOVER_2D_STATE)
     if not any(k.startswith("front:band:b1") for k in base2) or "front:cable:c4" not in base2:
         return bad + [f"fixture: no band for b1 or no stroke for c4 on the front pane: {sorted(base2)}"]
+    if any(shown for _, _, shown in base2["front:band:b1"]):
+        bad.append("2D: b1's envelope shows with nothing hovered or selected")
 
     # 2D, the stage: a point on c4's own stroke, over no other cable.
     pt = page.evaluate("""() => {
@@ -5610,8 +5661,10 @@ def check_rack_hover_dims(page, base):
     settle_scene(page, "3D: the hover rack's scene", tubes=True)
     park_mouse(page)
     base3 = page.evaluate(HOVER_3D_STATE)
-    if not base3.get("bundle-b1") or not base3.get("cable-c4"):
-        return bad + [f"3D: no tubes for b1 or c4: {sorted(base3)}"]
+    if not base3.get("bundle-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
+        return bad + [f"3D: no tubes for b1 or c4, or no envelope for b1: {sorted(base3)}"]
+    if any(base3["envelope-b1"]):
+        bad.append("3D: b1's envelope shows with nothing hovered or selected")
 
     # 3D, the stage: a point on c4's tube that a ray reaches first.
     pt = page.evaluate("""() => {
@@ -5680,14 +5733,15 @@ def check_rack_hover_dims(page, base):
         if (node >= 0) walk(node);
         return seen.map(m => [m.alphaMode ?? 'OPAQUE', m.pbrMetallicRoughness?.baseColorFactor?.[3] ?? 1]);
       };
-      return {c4: mats('cable-c4'), c1: mats('cable-c1'), b1: mats('bundle-b1-trunk')};
+      return {c4: mats('cable-c4'), c1: mats('cable-c1'), b1: mats('bundle-b1-trunk'), strap: mats('bundle-b1-strap-0')};
     }""")
-    if not glb["c4"] or not glb["b1"]:
-        bad.append(f"GLB mid-hover: no c4 or b1 trunk to read: {glb}")
-    if any(a != "OPAQUE" or op != 1 for a, op in glb["c4"] + glb["c1"]):
-        bad.append(f"GLB mid-hover: a cable's material is dimmed in the file: c4 {glb['c4']}, c1 {glb['c1']}")
-    if any(abs(op - 0.45) > 1e-3 for _, op in glb["b1"]):
-        bad.append(f"GLB mid-hover: the bundle jacket is not at its own 0.45: {glb['b1']}")
+    if not glb["c4"] or not glb["strap"]:
+        bad.append(f"GLB mid-hover: no c4 or b1 strap to read: {glb}")
+    if any(a != "OPAQUE" or op != 1 for a, op in glb["c4"] + glb["c1"] + glb["strap"]):
+        bad.append(f"GLB mid-hover: a cable's or a strap's material is dimmed in the file: c4 {glb['c4']}, c1 {glb['c1']}, strap {glb['strap']}")
+    # The envelope is the page's, shown for the hover: the file is the rack, and carries none.
+    if glb["b1"]:
+        bad.append(f"GLB mid-hover: the bundle's envelope is in the file: {glb['b1']}")
     bad += [f"3D after the GLB, still over b1's row: {m}" for m in hover_3d_dims(page.evaluate(HOVER_3D_STATE), base3, lit_b)]
     park_mouse(page)
     if page.evaluate(HOVER_3D_STATE) != base3:
@@ -6078,6 +6132,255 @@ def check_rack_cables_behind(page, base):
     for name in ("guide-1-end", "cover-1"):
         if sum(1 for n in pane.iter() if n.get("id") == name) != 1:
             bad.append(f"sheet: {name} is in the file {sum(1 for n in pane.iter() if n.get('id') == name)} times")
+    return bad
+
+
+# Three cords from the middle of a switch through two of its lacer's rings and
+# up the left lane to a second switch, and one from its left end through the
+# last ring only: a bundle of the four rides a stretch along the lacer, a
+# corner and a lane.
+PACK_FIXTURE = FRONT_FIXTURE.replace("['port-1', 'port-2', 'port-3', 'port-24']", "['port-25', 'port-26', 'port-27', 'port-1']").replace("'In front'", "'Pack'")
+# Five switches, U31 to U35, each with a cord to a sixth at U40, bundled up the
+# left lane: the members join one unit after another, so the trunk grows
+# upward and each cord peels off the pack toward its own switch.
+PEEL_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), K = await import('/vendor/rack/cable-rules.js');
+  let r = M.newRack({name: 'Peels'});
+  ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: 'f2b', ru: 40, face: 'front', label: 'mgmt'}));
+  for (let u = 35; u >= 31; u--) ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: 'f2b', ru: u, face: 'front', label: `sw-${u}`}));
+  for (let k = 2; k <= 6; k++)
+    ({rack: r} = K.withCable(r, {a: {item: `i${k}`, path: 'mgmt', view: 'front'}, b: {item: 'i1', path: `port-${k - 1}`, view: 'front'}, media: 'cat6'}));
+  return {...r, bundles: [{id: 'b1', number: 1, label: 'MGMT', members: r.cables.map(c => ({cable: c.id})),
+                          route: [{lane: 'left-front', ru: 31}, {lane: 'left-front', ru: 40}]}]};
+}"""
+
+# The pack on the front pane, in pane mm: each envelope stretch (its line, its
+# width, how many ride it, the kit's diameter for that many of this rack's
+# cables, and how far the furthest member's stroke passes from five points
+# along it), whether the envelope shows, each member's stroke as points, and
+# the straps.
+PACK_2D_JS = """async () => {
+  const B = await import('/vendor/rack/bundles.js');
+  const svg = document.querySelector('#paneFront svg'), inv = svg.getScreenCTM().inverse();
+  const g = svg.querySelector('[data-cables] [data-bundle-id="b1"]');
+  if (!g) return null;
+  const ids = (g.dataset.members || '').split(' ').filter(Boolean);
+  const line = {};
+  for (const id of ids) {
+    const pts = [];
+    // the cable's own run, not the short strands into a duplex pair
+    const p = [...svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)].sort((a, b) => b.getTotalLength() - a.getTotalLength())[0];
+    if (p) { const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+      for (let t = 0; t <= L; t += 0.2) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); } }
+    line[id] = pts;
+  }
+  const d = window.__rack.doc().racks[0], dOf = window.__rack.routeContext().diameterOf;
+  const one = dOf ? dOf(d.cables[0]) : null;
+  const stretches = [...g.querySelectorAll('[data-bundle-trunk]')].map(p => {
+    const [x0, y0, x1, y1] = p.getAttribute('d').match(/-?[\\d.]+(?:e-?\\d+)?/g).map(Number), n = +p.dataset.riders;
+    const reach = [0.1, 0.3, 0.5, 0.7, 0.9].map(f => { const c = [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f];
+      // the riders are the n members nearest this point; the furthest of them is the pack's reach
+      return ids.map(id => Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1])))).sort((a, b) => a - b)[n - 1]; });
+    return {x0, y0, x1, y1, width: +p.getAttribute('stroke-width'), riders: n, kit: one ? Math.max(6, Math.round(B.bundleDiameter(Array(n).fill(one)) * 10) / 10) : null, reach: Math.max(...reach)};
+  });
+  const env = g.querySelector('[data-envelope]');
+  return {stretches, shown: getComputedStyle(env).visibility === 'visible', members: ids, line,
+          straps: [...svg.querySelectorAll('[data-strap="b1"]')].map(l => ({pack: +l.dataset.pack,
+            len: Math.hypot(+l.getAttribute('x2') - +l.getAttribute('x1'), +l.getAttribute('y2') - +l.getAttribute('y1'))})),
+          opacity: Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(n => [n.dataset.cableId, +getComputedStyle(n).opacity]))};
+}"""
+# The pack in the scene: the envelope's pieces (radius, shown, a centre line
+# as points), each member's tube as points, the ring openings the kit places,
+# and the straps.
+PACK_3D_JS = """async () => {
+  const S = await import('/vendor/rack/solids.js');
+  const s = window.__rack.scene(), w = s.three.scene, fz = s.metrics().faceZ, g = w.getObjectByName('bundle-b1');
+  if (!g) return null;
+  const r1 = v => Math.round(v * 100) / 100;
+  const env = g.children.filter(o => o.userData.envelope).map(o => ({radius: o.geometry.parameters.radius, shown: o.visible, riders: o.userData.envelope.riders,
+    line: o.geometry.parameters.path.getSpacedPoints(Math.max(20, Math.ceil(o.geometry.parameters.path.getLength() / 2))).map(p => [r1(p.x), r1(p.y), r1(p.z - fz)])}));
+  const tubes = {};
+  for (const t of s.rackCables.tubes) {
+    const path = t.mesh?.children?.[0]?.geometry?.parameters?.path;
+    if (path) tubes[t.link.id] = path.getSpacedPoints(Math.ceil(path.getLength() / 2)).map(p => [r1(p.x), r1(p.y), r1(p.z - fz)]);
+  }
+  let rings = [];
+  try { rings = S.traysOf(window.__rack.doc().racks[0], window.__rack.routeContext()).flatMap(t => t.rings.map(o => ({item: t.item, via: o.via, run: o.run, box: o.box}))); } catch { rings = []; }
+  return {env, tubes, rings, members: g.userData.members,
+          straps: g.children.filter(o => o.userData.strap).map(o => ({radius: o.geometry.parameters.radiusTop, pack: o.userData.strap.diameter}))};
+}"""
+
+
+def segments_cross(p, q, r, s):
+    """Do segments pq and rs cross at a point inside both?"""
+    def side(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+    d1, d2, d3, d4 = side(r, s, p), side(r, s, q), side(p, q, r), side(p, q, s)
+    return d1 * d2 < 0 and d3 * d4 < 0
+
+
+@extra("rack.html: a bundle is its members - packed inside its diameter along the whole trunk in 2D and 3D, standing on a ring's sill, as thick on each stretch as the cables that ride it, the first to leave on the side it leaves toward; its envelope shows only on hover or selection, and its straps are round the pack")
+def check_rack_bundle_pack(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3', 'c4'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"create: refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]') && window.__rack.routesCurrent().current",
+                           timeout=READY_MS)
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    g = page.evaluate(PACK_2D_JS)
+    if not g or not g["stretches"]:
+        return bad + ["2D: no envelope stretches for b1 on the front pane"]
+    # ── 2D: hidden by default; members and trunk coincide on every stretch ──
+    if g["shown"]:
+        bad.append("2D: the envelope shows with nothing hovered or selected")
+    flat = [s for s in g["stretches"] if abs(s["y1"] - s["y0"]) < 0.5 and abs(s["x1"] - s["x0"]) > 20]
+    up = [s for s in g["stretches"] if abs(s["x1"] - s["x0"]) < 0.5 and abs(s["y1"] - s["y0"]) > 20]
+    if not flat or not up:
+        bad.append(f"2D fixture: the bundle has no stretch along the lacer ({len(flat)}) or none up the lane ({len(up)}), so the pack was not measured there")
+    for s in g["stretches"]:
+        where = f"the stretch ({s['x0']:.0f}, {s['y0']:.0f}) to ({s['x1']:.0f}, {s['y1']:.0f}) with {s['riders']} riding"
+        if s["kit"] is None or abs(s["width"] - s["kit"]) > 0.05:
+            bad.append(f"2D: {where} is {s['width']} wide, not the kit's {s['kit']} for that many")
+        # every rider's centre line within the half width less half a 3 mm stroke: its whole stroke is inside
+        if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+            bad.append(f"2D: on {where} a member's stroke is {s['reach']:.2f} mm from its line, outside the half width {s['width'] / 2:.2f}")
+    # along the lacer the members are apart, not on one line: the pack has height there
+    if flat:
+        s = max(flat, key=lambda s: s["riders"])
+        xm = (s["x0"] + s["x1"]) / 2
+        ys = sorted(min(q, key=lambda q: abs(q[0] - xm))[1] for q in (g["line"][c] for c in g["members"])
+                    if q and min(abs(p[0] - xm) for p in q) < 1)
+        ys = ys[-s["riders"]:]      # the riders are the lowest strokes there (y is down)
+        if len(ys) < 2 or ys[-1] - ys[0] < 1.5:
+            bad.append(f"2D: along the lacer the members' strokes are at heights {ys}: one line, not a pack")
+    if not g["straps"] or any(abs(st["len"] - (st["pack"] + 4)) > 0.05 for st in g["straps"]):
+        bad.append(f"2D: a strap is not a bar across its pack (its diameter and 2 mm each side): {g['straps']}")
+    # hover and selection show it; a member hovered alone still dims the others
+    page.hover('#cableList [data-bundle-row="b1"]')
+    page.wait_for_timeout(350)
+    if not page.evaluate(PACK_2D_JS)["shown"]:
+        bad.append("2D: the envelope does not show while the bundle's row is hovered")
+    page.hover('#cableList [data-cable-row="c2"]')
+    page.wait_for_timeout(350)
+    h = page.evaluate(PACK_2D_JS)
+    if not h["shown"]:
+        bad.append("2D: the envelope does not show while a member's row is hovered")
+    if h["opacity"].get("c2") != 1 or any(v > 0.2 for k, v in h["opacity"].items() if k != "c2"):
+        bad.append(f"2D: a member hovered alone does not dim the others: {h['opacity']}")
+    park_mouse(page)
+    if page.evaluate(PACK_2D_JS)["shown"]:
+        bad.append("2D: the envelope still shows after the pointer left")
+    page.click('#cableList [data-cable-row="c1"]')
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c1\"].on')", timeout=READY_MS)
+    park_mouse(page)
+    if not page.evaluate(PACK_2D_JS)["shown"]:
+        bad.append("2D: the envelope does not show while a member is selected")
+    page.click('#cableList [data-cable-row="c1"]')
+    page.wait_for_function("() => !document.querySelector('#paneFront [data-cable-id].on')", timeout=READY_MS)
+    page.click('#cableList [data-bundle-row="b1"]')
+    page.wait_for_selector("#bundlePanel", timeout=READY_MS)
+    park_mouse(page)
+    if not page.evaluate(PACK_2D_JS)["shown"]:
+        bad.append("2D: the envelope does not show while the bundle is selected")
+    # ── 3D, with the bundle still selected ──
+    if webgl_trouble(page):
+        print("[check_rack_bundle_pack] no WebGL here - the 3D half was not checked")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: the pack's scene", tubes=True)
+        park_mouse(page)
+        t = page.evaluate(PACK_3D_JS)
+        if not t or not t["env"]:
+            return bad + ["3D: no envelope tube for b1 in the scene"]
+        if not all(e["shown"] for e in t["env"]):
+            bad.append("3D: the envelope does not show while the bundle is selected")
+        page.click("#bDone")      # the panel closed: nothing selected
+        page.wait_for_function("() => !document.querySelector('#bundlePanel')", timeout=READY_MS)
+        park_mouse(page)
+        if any(e["shown"] for e in page.evaluate(PACK_3D_JS)["env"]):
+            bad.append("3D: the envelope shows with nothing hovered or selected")
+        page.hover('#cableList [data-cable-row="c2"]')
+        page.wait_for_timeout(350)
+        if not all(e["shown"] for e in page.evaluate(PACK_3D_JS)["env"]):
+            bad.append("3D: the envelope does not show while a member's row is hovered")
+        park_mouse(page)
+        page.hover('#cableList [data-bundle-row="b1"]')
+        page.wait_for_timeout(350)
+        if not all(e["shown"] for e in page.evaluate(PACK_3D_JS)["env"]):
+            bad.append("3D: the envelope does not show while the bundle's row is hovered")
+        park_mouse(page)
+        # Along the lacer, between its last two rings: every member inside the envelope there, the
+        # envelope standing on the ring's sill, and the members apart.
+        rings = sorted((r for r in t["rings"] if r["item"] == "i2" and r["via"] in ("guide-1", "guide-2")), key=lambda r: r["box"]["x0"])
+        if len(rings) != 2:
+            bad.append(f"3D fixture: the kit places {len(rings)} of the lacer's guide-1 and guide-2 openings, expected both")
+        else:
+            x_lo, x_hi, sill = rings[0]["box"]["x1"] + 2, rings[1]["box"]["x0"] - 2, rings[0]["box"]["y0"]
+            dist = lambda a, b: sum((u - v) ** 2 for u, v in zip(a, b)) ** 0.5
+            centre = [(p, e["radius"]) for e in t["env"] for p in e["line"] if x_lo <= p[0] <= x_hi]
+            # (near the sill: the same cords pass over this stretch again ten units up, at the second switch)
+            riding = {c: [p for p in pts if x_lo <= p[0] <= x_hi and abs(p[1] - sill) < 40] for c, pts in t["tubes"].items() if c in ("c1", "c2", "c3")}
+            if not centre or any(not v for v in riding.values()):
+                bad.append(f"3D: no envelope ({len(centre)} points) or a member with no tube between the two rings: {{c: len(v) for c, v in riding.items()}}")
+            else:
+                worst = max((min(dist(p, c) - (r - 1.5) for c, r in centre), cid) for cid, pts in riding.items() for p in pts)
+                # (a millimetre, a third of a tube's width: the trunk and each member round their corners on their own arcs)
+                if worst[0] > 1.0:
+                    bad.append(f"3D: between the rings {worst[1]}'s tube is {worst[0]:.2f} mm outside the envelope")
+                # at the rings themselves the envelope's underside is on the sill
+                at_ring = [c[1] - r for c, r in centre if c[0] - x_lo < 6 or x_hi - c[0] < 6]
+                if not at_ring or abs(min(at_ring) - sill) > 0.75:
+                    bad.append(f"3D: the envelope's underside at the rings is at y {min(at_ring) if at_ring else None}, the sill is at {sill}")
+                mid = (x_lo + x_hi) / 2
+                spots = [min(pts, key=lambda p: abs(p[0] - mid)) for pts in riding.values()]
+                close = [(a, b) for i, a in enumerate(spots) for b in spots[i + 1:] if dist(a[1:], b[1:]) < 1]
+                if close:
+                    bad.append(f"3D: midway along the lacer two members share one line: {close}")
+        if not t["straps"] or any(abs(st["radius"] - (st["pack"] / 2 + 1.5)) > 0.01 for st in t["straps"]):
+            bad.append(f"3D: a strap is not a band round its pack (its radius and 1.5 mm): {t['straps']}")
+    # ── the trunk thins as cables peel off, and no peel crosses the cables that ride on ──
+    open_front_fixture(page, base, PEEL_FIXTURE, cables=5)
+    page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]')", timeout=READY_MS)
+    g = page.evaluate(PACK_2D_JS)
+    met = page.evaluate("() => window.__rack.bundles()[0]")
+    if not g or not g["stretches"]:
+        return bad + ["peel: no envelope stretches on the front pane"]
+    by_y = sorted(g["stretches"], key=lambda s: -max(s["y0"], s["y1"]))     # lowest on the rack first
+    riders = [s["riders"] for s in by_y]
+    if riders != sorted(riders) or riders[0] != 2 or riders[-1] != 5:
+        bad.append(f"peel: going up, the stretches hold {riders} cables; expected 2 at the bottom growing to all 5")
+    for s in (by_y[0], by_y[-1]):
+        if s["kit"] is None or abs(s["width"] - s["kit"]) > 0.05:
+            bad.append(f"peel: the stretch with {s['riders']} riding is {s['width']} wide, not the kit's {s['kit']} for the members left")
+    if abs(by_y[-1]["width"] - met["diameter"]) > 0.05 or not by_y[0]["width"] < by_y[-1]["width"] - 3:
+        bad.append(f"peel: the trunk is {by_y[0]['width']} wide at its thin end and {by_y[-1]['width']} at its thick end; the kit's size is {met['diameter']}")
+    for s in g["stretches"]:
+        if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+            bad.append(f"peel: with {s['riders']} riding a member's stroke is {s['reach']:.2f} mm from the stretch's line, outside the half width {s['width'] / 2:.2f}")
+    # Each member's trunk line is its run in the gutter (x left of the rail);
+    # its peel is where it leaves the gutter for its own switch, below the top
+    # stretch's end, where all five turn in to the top switch together.
+    top = min(min(s["y0"], s["y1"]) for s in g["stretches"])
+    crossings = []
+    for a in g["members"]:
+        peel = [q for q in g["line"][a] if q[1] > top + 15]
+        for b in g["members"]:
+            if a == b:
+                continue
+            trunk = [q for q in g["line"][b] if q[0] < -26 and q[1] > top + 15]
+            hit = any(segments_cross(peel[i], peel[i + 5], trunk[j], trunk[j + 5])
+                      for i in range(0, len(peel) - 5, 5) for j in range(0, len(trunk) - 5, 5))
+            if hit:
+                crossings.append((a, b))
+    if crossings:
+        bad.append(f"peel: a member's line crosses another's trunk line below the top: {crossings}")
+    if not all(len(g["line"][c]) > 50 for c in g["members"]):
+        bad.append("peel: a member has no stroke on the front pane, so its crossings were not measured")
     return bad
 
 

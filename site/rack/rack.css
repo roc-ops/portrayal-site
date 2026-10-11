@@ -133,10 +133,16 @@
 [data-cables] [data-cable] { pointer-events: none; transition: opacity 120ms; }
 .cable-focus [data-cable]:not(.on), .cable-focus [data-cable-tag]:not(.on) { opacity: 0.18; }
 [data-cable].ghost, [data-cable-tag].ghost { opacity: 0.12; }
-/* Bundles (portrayal-site#142): a selected cable's focus dims the bands and
-   straps too; a selected bundle's band is outlined in brass. */
-.cable-focus [data-bundles], .cable-focus [data-bundle-straps] { opacity: 0.35; }
-[data-bundle-id].on path:not([data-bundle-trunk]) { stroke: var(--pt-brass); stroke-opacity: 1; }
+/* Bundles (portrayal-site#142). A bundle is its members; its ENVELOPE (the
+   band at its diameter, cable-view.js drawBundles2d) is hidden until the
+   bundle, or a cable that rides it, is hovered or selected. A selected
+   bundle's envelope is outlined in brass. A selected cable's focus dims the
+   straps too. */
+[data-bundle-id] [data-envelope] { visibility: hidden; }
+[data-bundle-id]:is(.hot, .hot-member, .on, .on-member) [data-envelope] { visibility: visible; }
+.cable-focus [data-bundle-straps] { opacity: 0.35; }
+[data-bundle-id].on [data-envelope-rim] { opacity: 1; }
+[data-bundle-id].on [data-envelope-rim] path { stroke: var(--pt-brass); }
 /* HOVER (#169): a cable or bundle under the pointer, on the stage or in the
    list, stays lit and every other one dims (site/rack/hover.js). It outranks
    a selection's focus and the filter's ghosts while it lasts, and takes
@@ -145,7 +151,7 @@
 .cable-hover [data-cable]:not(.hot), .cable-hover [data-cable-tag]:not(.hot),
 .cable-hover [data-bundle-id]:not(.hot), .cable-hover [data-strap]:not(.hot) { opacity: 0.15; }
 .cable-hover [data-cable].hot, .cable-hover [data-cable-tag].hot,
-.cable-hover [data-bundle-id].hot, .cable-hover [data-strap].hot { opacity: 1; }
+.cable-hover [data-bundle-id]:is(.hot, .hot-member), .cable-hover [data-strap].hot { opacity: 1; }
 .cable-hover [data-bundles], .cable-hover [data-bundle-straps] { opacity: 1; }
 .cable-tag { cursor: pointer; pointer-events: all; }
 .cable-tag rect { fill: var(--pt-surface); stroke: var(--pt-line); }

@@ -10,7 +10,7 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, packOffset} from './bundle-view.js';
+import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
@@ -46,8 +46,17 @@ const inScene = (THREE, faceZ) => q => new THREE.Vector3(q.x, q.y, faceZ + q.z);
 // reach points included, the ports left out: the tube starts at the plugs).
 // A cable with no waypoints and nothing to go round is not routed, and
 // hangs as it always has.
-function kitPointsFor(THREE, faceZ, paths, routes, places = null) {
+// `bundles` is routeFacts' Map of bundle facts, each with its lay
+// (bundle-view.js trunkLay), and `places` each member's stretch; `rack` and
+// `ctx` place a ring's opening (stopCentre).
+function kitPointsFor(THREE, faceZ, paths, routes, places = null, bundles = null, rack = null, ctx = null) {
   const at = inScene(THREE, faceZ);
+  const centres = new Map();
+  const centreOf = (w, rt) => {
+    const k = `${w.item}|${w.via}|${rt}`;
+    if (!centres.has(k)) centres.set(k, rack ? stopCentre(rack, w, ctx, rt) : null);
+    return centres.get(k);
+  };
   return async link => {
     const p = paths?.get(link.id), ws = routes?.get(link.id)?.waypoints;
     if (!p?.points?.length || (!ws?.length && !p.detours?.length)) return {points: []};
@@ -57,21 +66,61 @@ function kitPointsFor(THREE, faceZ, paths, routes, places = null) {
     const reach = ['a', 'b'].map(e => p.points.find(q => q.at === 'reach' && q.end === e)).map(q => (q ? at(q) : null));
     const inner = p.points.filter(q => q.at !== 'a' && q.at !== 'b' && q.at !== 'reach');
     const pts = inner.map(q => Object.assign(at(q), {kitAt: q.at}));
-    // A BUNDLE'S MEMBER (portrayal-site#142) is combed inside its bundle where
-    // it runs up a lane with it (bundle-view.js packOffset, across the lane:
-    // x and z), so the members show side by side in the trunk. At a ring or a
-    // tray each lies where the kit lays it, on the sill: the lay of several
-    // there is the kit's (cable-lay step 5).
-    const place = places?.get(link.id);
-    if (place && ws?.length) {
-      const [du, dv] = packOffset(place, WIDTH);
+    // A BUNDLE'S MEMBER (portrayal-site#142) is packed inside its bundle along
+    // the whole of its ride (bundle-view.js trunkLay `pack`: its place in the
+    // circle of the bundle's diameter where it is, in the bundle's own order
+    // across the run). On a lane the circle is about the kit's lane point. At
+    // a ring or a tray whose opening the kit places it stands ON the floor,
+    // where the trunk is laid (stopCentre: its radius over the opening's
+    // lowest inside edge), so every point the kit gives the member there - its
+    // approach, its entry and its exit - is that centre plus its place, kept
+    // inside the opening by its own radius. A ring the kit places no opening
+    // for keeps the kit's points as the circle's centre. A member's lead point
+    // is its own way to the ring, and is left where the kit put it.
+    const place = places?.get(link.id), lay = place ? bundles?.get(place.bundle)?.lay ?? null : null;
+    if (place && lay && ws?.length) {
+      const rides = n => n >= place.stretch[0] && n <= place.stretch[1];
+      const r = WIDTH / 2;
+      // how far each packed point was moved from the kit's, for the spans between
+      const moved = new Map(), kit = pts.map(v => v.clone());
       let w = 0;
       inner.forEach((q, k) => {
-        if (q.at !== 'lane') return;
-        while (w < ws.length && !ws[w].lane) w++;
-        if (w < ws.length && w >= place.stretch[0] && w <= place.stretch[1]) { pts[k].x += du; pts[k].z += dv; }
-        w++;
+        if (q.at === 'lane') {
+          while (w < ws.length && !ws[w].lane) w++;
+          const o = w < ws.length && rides(w) ? lay.pack(link.id, lay.indexOf(ws[w])) : null;
+          if (o) { pts[k].x += o.x; pts[k].y += o.y; pts[k].z += o.z; moved.set(k, pts[k].clone().sub(kit[k])); }
+          w++;
+          return;
+        }
+        if (!q.item || !q.via || q.at === 'lead') return;
+        const n = ws.findIndex((x, m) => rides(m) && !x.lane && x.item === q.item && x.via === q.via);
+        if (n < 0) return;
+        const i = lay.indexOf(ws[n]), o = lay.pack(link.id, i), node = lay.at(i);
+        if (!o || !node) return;
+        const c = centreOf(ws[n], node.diameter / 2);
+        const b = c ? c.at(q) : q;
+        const v = {x: b.x + o.x, y: b.y + o.y, z: b.z + o.z};
+        if (c) {
+          const [lo, hi] = [c.box[`${c.across}0`] + r, c.box[`${c.across}1`] - r];
+          if (lo <= hi) v[c.across] = Math.min(hi, Math.max(lo, v[c.across]));
+          if (c.box.y0 + r <= c.box.y1 - r) v.y = Math.min(c.box.y1 - r, Math.max(c.box.y0 + r, v.y));
+        }
+        pts[k] = Object.assign(at(v), {kitAt: q.at});
+        moved.set(k, pts[k].clone().sub(kit[k]));
       });
+      // BETWEEN TWO PACKED STOPS the kit's points (a free span's rest, a
+      // tray's stretch, a detour) are one line for every member: each is moved
+      // by what its two stops were, in proportion along the points between, so
+      // the members stay a pack across the span and none of them jumps to a
+      // shared line and back.
+      const packed = [...moved.keys()].sort((a, b) => a - b);
+      for (let n = 0; n + 1 < packed.length; n++) {
+        const [i, j] = [packed[n], packed[n + 1]];
+        for (let k = i + 1; k < j; k++) {
+          if (inner[k].at === 'lead') continue;
+          pts[k].add(moved.get(i).clone().lerp(moved.get(j), (k - i) / (j - i)));
+        }
+      }
     }
     return {points: pts, reach, kit: true};
   };
@@ -135,15 +184,53 @@ function trunkStop(THREE, rack, w, members, paths, ctx, at, rt = 0) {
     try { p = ctx ? pointOf(rack, w, ctx) : null; } catch { p = null; }
     own = p ? [p] : [];
   }
-  const open = rt > 0 && !w.lane && own.length ? openingOf(rack, w, ctx) : null;
-  if (!open) return own.map(at);
+  const c = own.length ? stopCentre(rack, w, ctx, rt) : null;
+  return c ? own.map(q => at(c.at(q))) : own.map(at);
+}
+// WHERE A PACK OF RADIUS `rt` IS LAID AT A RING (the rule above), or null where
+// the kit places no opening for the waypoint: {at: q => the kit's point q moved
+// to the pack's centre, box: the opening, across: the axis across its run}.
+// The trunk and its members are laid by this one rule, so the members are
+// inside the trunk wherever it is drawn.
+function stopCentre(rack, w, ctx, rt) {
+  const open = rt > 0 && !w.lane ? openingOf(rack, w, ctx) : null;
+  if (!open) return null;
   const b = open.box, across = open.run === 'x' ? 'z' : 'x';
   const lo = b[`${across}0`], hi = b[`${across}1`];
   const rail = (rack.items.find(i => i.id === w.item)?.face === 'rear')
     ? -(rack.frame.kind === 'two-post' ? 0 : Number(rack.frame.railDepth) || 0) : 0;
   const c = hi - lo <= 2 * rt || across === 'x' ? (lo + hi) / 2
     : Math.abs(lo - rail) <= Math.abs(hi - rail) ? lo + rt : hi - rt;
-  return own.map(q => at({...q, y: b.y0 + rt, [across]: c}));
+  return {at: q => ({...q, y: b.y0 + rt, [across]: c}), box: b, across};
+}
+// BETWEEN TWO TRUNK WAYPOINTS, k and k + 1, the kit lays a cable through
+// points of its own: along a tray's floor, over a free span's rest, round a
+// body. The members are drawn through them (kitPointsFor), each moved as its
+// two stops were, so the trunk goes through them too, moved as ITS two stops
+// were from the kit's points there (`pts`: the trunk's centre at each
+// waypoint). Taken from the first member whose path runs from one waypoint
+// straight to the other; [] when none does, or the kit adds no point there.
+function trunkSpan(trunk, k, members, paths, toScene, pts) {
+  const RUmm = RU;
+  const at = (P, w) => P.map((q, i) => i).filter(i => (w.lane ? P[i].at === 'lane' && Math.abs(P[i].y - (w.ru - 0.5) * RUmm) < 1e-6
+    : P[i].item === w.item && P[i].via === w.via && P[i].at !== 'lead'));
+  for (const id of members) {
+    const P = paths?.get(id)?.points;
+    if (!P?.length) continue;
+    const a = at(P, trunk[k]), b = at(P, trunk[k + 1]);
+    if (!a.length || !b.length) continue;
+    let mid, i, j;
+    if (Math.max(...a) < Math.min(...b)) { [i, j] = [Math.max(...a), Math.min(...b)]; mid = P.slice(i + 1, j); }
+    else if (Math.max(...b) < Math.min(...a)) { [j, i] = [Math.max(...b), Math.min(...a)]; mid = P.slice(j + 1, i).reverse(); }
+    else continue;
+    // (another stop, or a lead of the member's own, between them: it does not run straight from one to the other)
+    if (mid.some(q => q.item || q.at === 'lead' || q.at === 'lane' || q.at === 'reach' || q.end)) continue;
+    if (!mid.length) return [];
+    const mean = list => list.reduce((s, n) => s.add(toScene(P[n])), toScene({x: 0, y: 0, z: 0}).set(0, 0, 0)).multiplyScalar(1 / list.length);
+    const d0 = pts[k].clone().sub(mean(a)), d1 = pts[k + 1].clone().sub(mean(b));
+    return mid.map((q, n) => toScene(q).add(d0.clone().lerp(d1, (n + 1) / (mid.length + 1))));
+  }
+  return [];
 }
 // The opening of a ring a waypoint names, where the kit places it ({run, box}), or null.
 function openingOf(rack, w, ctx) {
@@ -151,6 +238,43 @@ function openingOf(rack, w, ctx) {
   try { trays = ctx?.chassisOf ? traysOf(rack, ctx) : []; } catch { trays = []; }
   for (const t of trays) if (t.item === w.item) { const o = t.rings.find(x => x.via === w.via); if (o) return o; }
   return null;
+}
+// A PART OF A CURVE, from u0 to u1 of its length (0 to 1), as a curve of its own.
+function CurvePart(THREE, curve, u0, u1) {
+  const part = new THREE.Curve();
+  part.getPoint = (t, target) => curve.getPointAt(Math.min(1, Math.max(0, u0 + (u1 - u0) * t)), target);
+  return part;
+}
+// THE ENVELOPE'S PIECES ALONG ONE RUN OF THE TRUNK: [{u0, u1, diameter, riders,
+// whole}], `u` along the run's curve. Each stretch of the lay (two nodes next
+// to each other with two or more members riding both) is found on the curve by
+// the point nearest each node; stretches of one diameter that meet are one
+// piece. `whole` when one piece covers the run from end to end: the caller
+// then draws the run's own curve. Without a lay, the whole run at `D`.
+function envelopePieces(THREE, lay, run, pts, curve, D) {
+  if (!lay) return [{u0: 0, u1: 1, diameter: D, riders: null, whole: true}];
+  const first = run.from, last = run.from + run.points.length - 1;
+  const samples = curve.getSpacedPoints(Math.max(200, Math.ceil(curve.getLength() / 2)));
+  const uOf = i => {
+    const e = lay.T[i], k = e.seg;
+    if (k < first || k > last || (e.t > 0 && k + 1 > last)) return null;
+    const p = e.t > 0 ? pts[k].clone().lerp(pts[k + 1], e.t) : pts[k];
+    if (k === first && !(e.t > 0)) return 0;
+    if (k === last) return 1;
+    let best = 0, d = Infinity;
+    samples.forEach((q, n) => { const x = q.distanceToSquared(p); if (x < d) { d = x; best = n; } });
+    return best / (samples.length - 1);
+  };
+  const out = [];
+  for (const st of lay.stretches) {
+    const [u0, u1] = [uOf(st.from), uOf(st.to)];
+    if (u0 == null || u1 == null || !(Math.abs(u1 - u0) > 1e-6)) continue;
+    const [a, b] = u0 < u1 ? [u0, u1] : [u1, u0], prev = out.at(-1);
+    if (prev && Math.abs(prev.diameter - st.diameter) < 1e-6 && Math.abs(prev.u1 - a) < 1e-6) { prev.u1 = b; prev.riders = Math.max(prev.riders, st.members.length); }
+    else out.push({u0: a, u1: b, diameter: st.diameter, riders: st.members.length, whole: false});
+  }
+  if (out.length === 1 && out[0].u0 === 0 && out[0].u1 === 1) out[0].whole = true;
+  return out;
 }
 // The bodies a trunk of radius `rt` is kept out of: a ring's part and a
 // zero-U part met by the trunk's tube (grown by its radius), the rest as they are.
@@ -165,11 +289,16 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     if (!f.drawn || !L?.trunk?.length) continue;
     // one point per trunk waypoint (the middle of its stop), for the straps
     // and the bend marks; the tube runs through every point of each stop
-    const D = drawnDiameter(f.diameter, WIDTH);
-    const stops = L.trunk.map(w => trunkStop(THREE, rack, w, f.members ?? [], facts.paths, facts.ctx, toScene, D / 2));
+    // THE PACK IS AS THICK AS THE MEMBERS THERE (bundle-view.js trunkLay): at
+    // each trunk waypoint the trunk is laid at the diameter of the members
+    // present, so it rests on a ring's sill at its own size there.
+    const D = drawnDiameter(f.diameter, WIDTH), lay = f.lay ?? null;
+    const sizeAt = w => lay?.at(lay.indexOf(w))?.diameter ?? D;
+    const stops = L.trunk.map(w => trunkStop(THREE, rack, w, f.members ?? [], facts.paths, facts.ctx, toScene, sizeAt(w) / 2));
     const pts = stops.map(q => (q.length ? q.reduce((a, b) => a.add(b), new THREE.Vector3()).multiplyScalar(1 / q.length) : null));
     const inside = trunkInside(boxes, D / 2);
     const g = new THREE.Group(); g.name = `bundle-${f.id}`;
+    g.userData.bundle = f.id; g.userData.members = [...(f.members ?? [])];
     const jacket = new THREE.MeshStandardMaterial({color: 0x8b939c, roughness: 0.7, transparent: true, opacity: 0.45,
                                                    depthWrite: false});
     const strapMat = new THREE.MeshStandardMaterial({color: 0x24282d, roughness: 0.8});
@@ -180,7 +309,11 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     const R = f.check?.bend?.radius_mm > 0 ? f.check.bend.radius_mm : null;
     const runs = [];
     for (const run of drawableRuns(pts)) {
-      const path = run.points.flatMap((_, k) => stops[run.from + k]);
+      // through every point of each stop, and between two stops the points the
+      // kit lays a member through there (trunkSpan), so the trunk lies on a
+      // tray as its members do
+      const path = run.points.flatMap((_, k) => [...stops[run.from + k],
+        ...(k + 1 < run.points.length ? trunkSpan(L.trunk, run.from + k, f.members ?? [], facts.paths, toScene, pts) : [])]);
       let curve;
       if (R != null) curve = clearCurve(THREE, path, R, inside);
       else {
@@ -194,22 +327,37 @@ async function hangBundles(scene, rack, facts, boxes = null) {
         curve = new THREE.CatmullRomCurve3(smooth, false, 'centripetal');
       }
       runs.push(curve);
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve,
-        R != null ? Math.max(40, Math.ceil(curve.getLength() / 3)) : Math.max(40, curve.points.length * 12), D / 2, 16, false), jacket);
-      tube.name = `bundle-${f.id}-trunk`;
-      tube.renderOrder = 1;
-      g.add(tube);
+      // THE ENVELOPE: the bundle's diameter as a see-through tube along this
+      // run, in pieces, each as thick as the members that ride it (the lay's
+      // stretches; neighbours of one size are one piece), so it thins as
+      // cables peel off. NOT SHOWN until the bundle or one of its members is
+      // hovered or selected (hover.js paintEnvelopes3d), and a hidden mesh is
+      // left out of a GLB or USDZ (share.js). A bundle with one size along the
+      // whole run is one tube on the run's own curve, as it always was.
+      for (const piece of envelopePieces(THREE, lay, run, pts, curve, D)) {
+        const path = piece.whole ? curve : new CurvePart(THREE, curve, piece.u0, piece.u1);
+        const len = piece.whole ? curve.getLength() : curve.getLength() * (piece.u1 - piece.u0);
+        const tube = new THREE.Mesh(new THREE.TubeGeometry(path,
+          R != null || !piece.whole ? Math.max(piece.whole ? 40 : 4, Math.ceil(len / 3)) : Math.max(40, curve.points.length * 12), piece.diameter / 2, 16, false), jacket);
+        tube.name = `bundle-${f.id}-trunk`;
+        tube.renderOrder = 1;
+        tube.userData.envelope = {bundle: f.id, diameter: piece.diameter, riders: piece.riders};
+        tube.visible = false;
+        g.add(tube);
+      }
     }
     const at = [];
     const vec = pts.map(p => (p ? [p.x, p.y, p.z] : null));
     (f.straps?.straps ?? []).forEach((s, k) => {
       const hit = strapAt(vec, s);
       if (!hit) return;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(D / 2 + 1.5, D / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
+      // a band round the pack, at the pack's diameter where the strap is
+      const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
       band.position.set(...hit.at);
       band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...hit.dir));
       band.name = `bundle-${f.id}-strap-${k}`;
-      band.userData.strap = {bundle: f.id, along_mm: s.along_mm};
+      band.userData.strap = {bundle: f.id, along_mm: s.along_mm, diameter: Ds};
       g.add(band);
       at.push(band.position.clone());
     });
@@ -356,7 +504,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null), bendOf: radiusOf(rack, bendOf, bundles)});
+    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null, bundles?.bundles ?? null, rack, ctx), bendOf: radiusOf(rack, bendOf, bundles)});
     // Each corner drawn tighter than its radius, in the kit's bend-check words.
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
