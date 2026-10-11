@@ -65,15 +65,23 @@ import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearS
 export const NEAR_OPACITY = 0.2;
 // The least a pane's own words measure on screen, in CSS px (sizeSideLabels).
 export const LABEL_MIN_PX = {num: 9, word: 11, part: 11};
-// A plug as a block: mm across the run, and its paint (the strap's light neutral and dark rim: seen on either stage).
+// A PLUG AS A BLOCK. Its length is the kit's (the plug's reach). Its height is
+// A DRAWING FIGURE, 9 mm for every plug: neither the kit nor the cable types
+// (cable-types.json: a jacket's diameter and bend radii) states a connector's
+// or a boot's size, so nothing here is measured across the run. It is in its
+// cable's own colour with a dark rim and a nose line at the port, which is
+// how it is told from a strap at a glance: a strap is a neutral bar across a
+// trunk, a plug a coloured block along a cable's end.
 const PLUG_H = 9;
-const PLUG = {fill: '#c9ced4', line: '#1b1d20'};
+const PLUG_LINE = '#1b1d20';
 // The line round every body, in the stage's own ink: a dark chassis on the dark stage is otherwise not seen.
 const EDGE = {fill: 'none', stroke: 'var(--pt-ink-muted)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', 'pointer-events': 'none'};
 // mm under the rack a pane always has when the rack has cables (the front pane's DROP).
 const DROP = 40;
 const MARGIN = 24;
 const WORD_ROOM = 24;
+// mm under the rack a near part's name may take (its size is capped at this)
+const PART_ROOM = 32;
 
 // The metal the front pane's rails are (elevation.js METAL).
 const METAL = {rail: '#B9BFC6', railLine: '#8D949C', num: '#2B3036'};
@@ -120,7 +128,9 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   // the front pane's own top and height (elevation.js), so a U is at one y in all four panes
   const fb = elevationBox(frame, zeroU, 1, laneGap);
   // (and WORD_ROOM more above it, for FRONT and REAR at the size they are kept readable at)
-  const box = [bx, fb.y - WORD_ROOM, bw, fb.h + WORD_ROOM + (cabled ? DROP : 0)];
+  // (and as much under it where a part beside the near side is named, below)
+  const named = parts.some(x => x.near) ? PART_ROOM + 6 : 0;
+  const box = [bx, fb.y - WORD_ROOM, bw, fb.h + WORD_ROOM + Math.max(cabled ? DROP : 0, named)];
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': pane, 'data-side': 'true', viewBox: box.join(' ')});
   out.dataset.baseBox = box.join(' ');
   out.dataset.depth = ext.join(' ');
@@ -238,8 +248,8 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   const nearParts = parts.filter(x => x.near);
   if (nearParts.length) {
     const defs = svgEl('defs', {});
-    const pat = svgEl('pattern', {id: `rk-side-hatch-${pane}`, width: 14, height: 14, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)'});
-    pat.append(svgEl('line', {x1: 0, y1: 0, x2: 0, y2: 14, stroke: 'var(--pt-ink-muted)', 'stroke-width': 1.4}));
+    const pat = svgEl('pattern', {id: `rk-side-hatch-${pane}`, width: 30, height: 30, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)'});
+    pat.append(svgEl('line', {x1: 0, y1: 0, x2: 0, y2: 30, stroke: 'var(--pt-ink-muted)', 'stroke-width': 0.9}));
     defs.append(pat);
     near.append(defs);
   }
@@ -249,13 +259,16 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
     near.append(g);
     const [x, y, w, h] = g.dataset.box.split(' ').map(Number);
     const mark = svgEl('g', {'data-side-near-mark': p.z.id, 'pointer-events': 'none', 'data-pt-ui': '*'});
-    mark.append(svgEl('rect', {x, y, width: w, height: h, fill: `url(#rk-side-hatch-${pane})`, opacity: 0.22}),
+    mark.append(svgEl('rect', {x, y, width: w, height: h, fill: `url(#rk-side-hatch-${pane})`, opacity: 0.16}),
                 svgEl('rect', {x, y, width: w, height: h, ...EDGE, 'stroke-dasharray': '6 4'}));
-    // its name, up its length, beside its outer edge (in front of the rack, clear of the lanes)
-    const outer = pane === 'right' ? x - 8 : x + w + 8, cy = y + h / 2;
-    const t = svgEl('text', {x: outer, y: cy, 'text-anchor': 'middle', transform: `rotate(-90 ${n3(outer)} ${n3(cy)})`, 'font-family': 'IBM Plex Mono, monospace',
-      'font-size': 11, fill: 'var(--pt-ink-muted)', 'data-side-label': 'part', 'data-turn': `${n3(outer)} ${n3(cy)}`});
-    t.textContent = `${p.z.label} · in front, beside this side of the rack`;
+    // ITS NAME, UNDER THE RACK at the part's own foot, running back from the
+    // rack's front: below every body and every cable, so it crosses neither
+    // at any zoom (up the part's length it ran over the lacers and the patches
+    // in front of the rack).
+    const frontX = sideX(pane, p.span.z1), foot = Math.max(y + h, totalH) + 4;
+    const t = svgEl('text', {x: n3(frontX), y: n3(foot + 11), 'text-anchor': pane === 'right' ? 'start' : 'end', 'font-family': 'IBM Plex Mono, monospace',
+      'font-size': 11, fill: 'var(--pt-ink-muted)', 'data-side-label': 'part', 'data-top': String(n3(foot))});
+    t.textContent = `${p.z.label}: in front, beside this side of the rack`;
     mark.append(t);
     near.append(mark);
   }
@@ -314,8 +327,14 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     // behind a rear device before it turns reads as an overshoot.
     for (const [e, sp] of Object.entries(plugSpans(pts.map((q, k) => ({...q, at: path.points[k].at, end: path.points[k].end}))))) {
       const a = sideX(pane, sp.z0), b = sideX(pane, sp.z1), y = sideY(frame, sp.y);
-      g.append(svgEl('rect', {x: n3(Math.min(a, b)), y: n3(y - PLUG_H / 2), width: n3(Math.abs(b - a)), height: PLUG_H, rx: 1,
-        fill: PLUG.fill, stroke: PLUG.line, 'stroke-width': 0.6, 'data-side-plug': e}));
+      const blk = svgEl('g', {'data-side-plug': e});
+      blk.append(svgEl('rect', {x: n3(Math.min(a, b)), y: n3(y - PLUG_H / 2), width: n3(Math.abs(b - a)), height: PLUG_H, rx: 2,
+        fill: colorOf(link), stroke: PLUG_LINE, 'stroke-width': 1}));
+      // the nose: a line across it a third of the way in from the port's face
+      const port = sideX(pane, path.points.find(q => q.at === e).z), nose = port + (port === Math.min(a, b) ? 1 : -1) * Math.abs(b - a) / 3;
+      blk.append(svgEl('line', {x1: n3(nose), y1: n3(y - PLUG_H / 2), x2: n3(nose), y2: n3(y + PLUG_H / 2), stroke: PLUG_LINE, 'stroke-width': 1}));
+      blk.dataset.span = `${n3(Math.min(a, b))} ${n3(Math.max(a, b))} ${n3(y)}`;
+      g.append(blk);
       see([Math.min(a, b), y]); see([Math.max(a, b), y]);
     }
     layer.append(g);
@@ -442,10 +461,12 @@ export function sizeSideLabels(svgs) {
     const vb = svg.viewBox?.baseVal, w = svg.getBoundingClientRect().width;
     const scale = vb?.width > 0 && w > 0 ? w / vb.width : 0;
     for (const t of svg.querySelectorAll('[data-side-label]')) {
-      const kind = t.dataset.sideLabel, fs = labelSize(11, LABEL_MIN_PX[kind] ?? 9, scale, kind === 'num' ? RU * 0.7 : 60);
+      const kind = t.dataset.sideLabel, fs = labelSize(11, LABEL_MIN_PX[kind] ?? 9, scale, kind === 'num' ? RU * 0.7 : kind === 'part' ? PART_ROOM : 60);
       t.setAttribute('font-size', String(n3(fs)));
       // a U number stays centred in its unit
       if (kind === 'num') t.setAttribute('y', String(n3(Number(t.dataset.mid) + fs * 0.36)));
+      // a part's name hangs from the line under the rack
+      if (kind === 'part') t.setAttribute('y', String(n3(Number(t.dataset.top) + fs * 0.85)));
     }
   }
 }

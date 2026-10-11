@@ -7673,7 +7673,18 @@ SIDE_BODIES_JS = """async () => {
       return {id: g.dataset.zerouId, opacity: +getComputedStyle(g).opacity, hatch: !!m?.querySelector('rect[fill^="url(#rk-side-hatch"]') && !!svg.querySelector('pattern[id^="rk-side-hatch"] line'),
               dashed: [...(m?.querySelectorAll('rect') ?? [])].some(r => r.getAttribute('stroke-dasharray')), label: m?.querySelector('text')?.textContent ?? null, events: m ? getComputedStyle(m).pointerEvents : null}; });
     p.plugs = Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(g => [g.dataset.cableId,
-      Object.fromEntries([...g.querySelectorAll('[data-side-plug]')].map(r => [r.dataset.sidePlug, [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width'), +r.getAttribute('y') + +r.getAttribute('height') / 2]]))]));
+      Object.fromEntries([...g.querySelectorAll('[data-side-plug]')].map(r => [r.dataset.sidePlug, r.dataset.span.split(' ').map(Number)]))]));
+    // a plug is told from a strap: in its cable's own colour, with a nose line; where the part's name is, against the bodies and the cables
+    p.plugPaint = [...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(g => [g.querySelector('path:last-of-type').getAttribute('stroke'),
+      ...[...g.querySelectorAll('[data-side-plug]')].map(b => [b.querySelector('rect').getAttribute('fill'), b.querySelectorAll('line').length])]);
+    const inPane = el => { const b = el.getBBox(), m = inv.multiply(el.getScreenCTM()), c = [[b.x, b.y], [b.x + b.width, b.y + b.height]].map(([x, y]) => new DOMPoint(x, y).matrixTransform(m));
+      return {x0: Math.min(c[0].x, c[1].x), x1: Math.max(c[0].x, c[1].x), y0: Math.min(c[0].y, c[1].y), y1: Math.max(c[0].y, c[1].y)}; };
+    const over = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+    p.nameOver = [...svg.querySelectorAll('[data-side-label="part"]')].map(t => { const n = inPane(t), v = svg.viewBox.baseVal;
+      return {inside: n.x0 >= v.x && n.x1 <= v.x + v.width && n.y1 <= v.y + v.height,
+              bodies: [...svg.querySelectorAll('[data-item-id] [data-side-hit]')].filter(h => over(n, inPane(h))).length,
+              cables: [...svg.querySelectorAll('[data-cables] [data-cable] path')].filter(c => over(n, inPane(c))).length}; });
+    p.hatch = (l => (l ? [+l.getAttribute('stroke-width'), +l.closest('pattern').getAttribute('width')] : null))(svg.querySelector('pattern[id^="rk-side-hatch"] line'));
     p.extent = (() => { const r = svg.querySelector('[data-side-extent]'); return r ? [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')] : null; })();
     p.words = Object.fromEntries([...svg.querySelectorAll('[data-side-word]')].map(t => [t.dataset.sideWord, +t.getAttribute('x')]));
     p.layers = [...svg.children].map(n => n.dataset.sidePosts ? 'posts' : n.dataset.cables ? 'cables' : n.dataset.sideNear ? 'near' : n.dataset.itemId ? `item:${n.dataset.itemId}` : n.dataset.zerouId ? `part:${n.dataset.zerouId}` : null).filter(Boolean);
@@ -7782,6 +7793,16 @@ def check_rack_side_placement(page, base):
     nl = L["near"]
     if len(nl) != 1 or nl[0]["id"] != "z1" or not (0.1 <= nl[0]["opacity"] <= 0.4) or not nl[0]["hatch"] or not nl[0]["dashed"] or "duct-1" not in (nl[0]["label"] or "") or nl[0]["events"] != "none":
         bad.append(f"left pane: the manager beside the near side is {nl}; expected z1 see-through, hatched, outlined, named, its marks taking no pointer")
+    # its name is under the rack, inside the pane, over no body and no cable at Fit; the hatch is thin and wide apart
+    if L["nameOver"] != [{"inside": True, "bodies": 0, "cables": 0}]:
+        bad.append(f"left pane: the near part's name is {L['nameOver']}; expected inside the pane and over no body or cable")
+    if not L["hatch"] or L["hatch"][0] > 1 or L["hatch"][1] < 24:
+        bad.append(f"left pane: the near part's hatch is {L['hatch']} (line width, pitch); expected a thin line at a wide pitch")
+    # a plug is its cable's colour with a nose line, never a strap's neutral
+    for name, p in (("left", L), ("right", R)):
+        for row in p["plugPaint"]:
+            if len(row) != 3 or any(b != [row[0], 1] for b in row[1:]) or row[0].lower() in ("#1b1d20", "#ffffff", "#d5d9de", "#0b0c0d"):
+                bad.append(f"{name} pane: a cable drawn {row[0]} has plugs {row[1:]}; expected two, each in the cable's colour with one nose line")
     if R["near"] or not L["px"]["part"] or min(L["px"]["part"]) < 10.9:
         bad.append(f"the right pane marks {R['near']} as beside its near side (expected none), and the left pane's part name is {L['px']['part']} px")
     # one U scale and one top for all four panes: the numbers on the front post at the front pane's own heights
@@ -7932,6 +7953,14 @@ def check_rack_side_cables(page, base):
           window.__rack.replaceRack(r); }""")
         page.wait_for_function("() => window.__rack.routesCurrent().current && [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length === 1)", timeout=READY_MS)
         b3 = page.evaluate(BUN)
+        # A CABLE WITH A LOOSE END IS NOT DRAWN FROM THE SIDE AT ALL: no stroke, no plug, no lead, no tag (the cable list says why it is not connected)
+        loose = page.evaluate("""() => [...document.querySelectorAll('#panes svg[data-side]')].map(s => [s.querySelectorAll('[data-cable-id="c1"], [data-cable-id="c3"]').length,
+          s.querySelectorAll('[data-loose-lead], [data-open-plug], [data-cable-tag]').length, s.querySelectorAll('[data-side-plug]').length])""")
+        if loose != [[0, 0, 2], [0, 0, 2]]:
+            bad.append(f"c1 and c3 with a loose end: the side panes hold {loose} (their drawings; leads, open plugs and tags; plugs in all); expected nothing of them, and c2's two plugs")
+        why = page.evaluate("() => { const side = document.getElementById('side').innerText; return Object.values(window.__rack.cableFacts().reasons).filter(Boolean).map(r => [r, side.includes(r)]); }")
+        if len(why) != 2 or not all(shown for _, shown in why):
+            bad.append(f"c1 and c3 with a loose end: the page's reasons, and whether the side panel says each, are {why}; expected two, both said")
         if any(v["straps"] or v["stretches"] for v in b3):
             bad.append(f"c1 and c3 not drawn (a loose end each): their bundle still has {[(len(v['straps']), v['stretches']) for v in b3]} straps and stretches on the side panes")
         page.evaluate("() => window.__rack.undo()")
@@ -8149,28 +8178,188 @@ def check_rack_side_view_only(page, base):
     return bad
 
 
-@extra("rack.html: the sheet (.svg) and the draw.io file are byte for byte the same whether the panes show Front / Rear or Left / Right, and hold no side view (#187)")
+@extra("rack.html: every file is the same whether the panes show Front / Rear or Left / Right - the sheet, the draw.io file, the bill of materials, the cable schedule and the rack file byte for byte, and the GLB's materials, images, nodes and bundle content - and none holds a side view (#187)")
 def check_rack_side_exports_same(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.set_viewport_size({"width": 1600, "height": 1000})
     open_side_fixture(page, base)
+    res = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c3'], label: 'pair'})")
+    if res and res.get("error"):
+        return bad + [f"the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.wait_for_timeout(400)
+    KINDS = ("sheet-svg", "front-svg", "rear-svg", "drawio", "bom", "cables", "json")
     grab = lambda kind: pathlib.Path(export_file(page, kind).path()).read_bytes()
-    faces = {k: grab(k) for k in ("sheet-svg", "drawio")}
+    gl = not webgl_trouble(page)
+    if not gl:
+        print("[check_rack_side_exports_same] no WebGL here - the GLB was not compared")
+
+    def model():
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: the side fixture's scene, for its GLB", tubes=True)
+        g = page.evaluate(BUNDLE_GLB_JS)
+        page.click('#mode [data-mode="2d"]')
+        page.wait_for_function("() => !document.getElementById('panes').hidden && document.querySelectorAll('#panes > section > div > svg').length === 2", timeout=READY_MS)
+        page.wait_for_timeout(400)
+        return g
+    faces = {k: grab(k) for k in KINDS}
+    glb_f = model() if gl else None
     to_sides(page)
     menu = page.evaluate("() => { document.querySelector('#exportMenu > summary').click(); const v = [...document.querySelectorAll('#exportItems [data-export]')].map(b => [b.dataset.export, b.textContent]); document.querySelector('#exportMenu > summary').click(); return v; }")
     if any("left" in k or "right" in k or "side" in k.lower() or "Left" in t or "Right" in t for k, t in menu):
         bad.append(f"Left / Right: the Export menu offers a side view: {menu}")
-    sides = {k: grab(k) for k in ("sheet-svg", "drawio")}
-    for k in faces:
-        if len(faces[k]) < 2000:
+    sides = {k: grab(k) for k in KINDS}
+    glb_s = model() if gl else None
+    least = {"sheet-svg": 2000, "front-svg": 2000, "rear-svg": 2000, "drawio": 2000, "bom": 100, "cables": 200, "json": 500}
+    for k in KINDS:
+        if len(faces[k]) < least[k]:
             bad.append(f"{k}: the file is {len(faces[k])} bytes: nothing was compared")
         if faces[k] != sides[k]:
             bad.append(f"{k}: the file exported from Left / Right ({len(sides[k])} bytes) is not the one exported from Front / Rear ({len(faces[k])} bytes)")
-        if b'data-pane="left"' in sides[k] or b'data-side' in sides[k]:
-            bad.append(f"{k}: the file holds a side pane")
+        if b'data-pane="left"' in sides[k] or b'data-side' in sides[k] or b'"sides"' in sides[k]:
+            bad.append(f"{k}: the file holds a side pane or the pair")
+    # the schedule and the bill of materials did carry the cables and the bundle's straps
+    if b"c1" not in faces["cables"] or faces["cables"].count(b"\n") < 4 or faces["bom"].count(b"\n") < 4:
+        bad.append(f"the cable schedule ({faces['cables'].count(bytes([10]))} lines) or the bill of materials ({faces['bom'].count(bytes([10]))} lines) is too short to have been compared")
+    if gl:
+        same = ("paint", "images", "nodes", "cables", "straps", "trunks", "bundle", "bytes")
+        diff = [k for k in same if glb_f[k] != glb_s[k]]
+        if diff:
+            bad.append(f"GLB: from Left / Right it differs from Front / Rear in {diff} ({[(glb_f[k], glb_s[k]) for k in diff if k not in ('paint', 'images')]})")
+        if len(glb_f["cables"]) != 3 or not glb_f["straps"] or not glb_f["bundle"] or glb_f["nodes"] < 20:
+            bad.append(f"GLB: it holds cables {glb_f['cables']}, {len(glb_f['straps'])} straps, {glb_f['nodes']} nodes: too little to have been compared")
     if page.evaluate("() => window.__rack.view()") != "sides" or not page.evaluate(SIDE_DRAWN):
         bad.append("after the exports the panes no longer show Left / Right")
+    return bad
+
+
+# FRESH AFTER AN EDIT (#187). A switch of pair draws from the faces and routes
+# the page already holds, and only when they were read for the rack as it is
+# (rack-page.js redraw `kept`: S.routes.rack and S.factsRack are this very rack
+# object). The case that tells: an edit, and the switch pressed while that
+# edit's redraw is still reading. Kept without the identity test, the switch
+# drew the rack before the edit and left it so: "the routes are not known yet",
+# old lengths, old cables, until the next edit. Each case here is an edit, the
+# switch a few milliseconds later (and once after everything settled), and then
+# the same document loaded afresh: the two must be drawn and said the same.
+SIDE_FRESH_JS = """() => ({
+  current: window.__rack.routesCurrent().current,
+  pair: [...document.querySelectorAll('#panes > section > div > svg')].map(s => s.dataset.pane),
+  cables: [...document.querySelectorAll('#panes > section > div > svg')].map(s => [...s.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id]')]
+    .map(g => [g.dataset.cableId, [...g.querySelectorAll('path')].map(p => p.getAttribute('d')).join('|')]).sort()),
+  bodies: [...document.querySelectorAll('#panes > section > div > svg')].map(s => [...s.querySelectorAll(':scope > [data-item-id], [data-side-near] > [data-zerou-id], :scope > [data-zerou-id]')]
+    .map(g => [g.dataset.itemId ?? g.dataset.zerouId, g.getAttribute('transform')]).sort()),
+  list: [...document.querySelectorAll('#cableList li')].map(li => li.innerText.replace(/\\s+/g, ' ').trim()),
+  notice: [...document.querySelectorAll('#side .rk-notice, #side .rk-warn')].map(n => n.textContent).filter(t => /not known|not checked/i.test(t)),
+  seats: JSON.stringify(window.__rack.cableFacts()),
+})"""
+SIDE_SETTLED = """() => window.__rack.routesCurrent().current && !document.getElementById('panes').hasAttribute('aria-busy')
+  && document.querySelectorAll('#panes > section > div > svg').length === 2 && !document.getElementById('panes').hidden"""
+
+
+@extra("rack.html: a switch of pair pressed while an edit is still being redrawn shows the rack as it now is - after a move, a turn and a cable removed and added, at 5, 40 and 150 ms and once settled, the drawings, the cable list and the routes are those of the same document loaded afresh - and a new cable's picked ends dropped by the switch leave no plug behind (#187)")
+def check_rack_side_fresh_after_edit(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    fixture = page.evaluate("() => structuredClone(window.__rack.doc().racks[0])")
+
+    def settle(where):
+        try:
+            page.wait_for_function(SIDE_SETTLED, timeout=9000)
+        except Exception:
+            bad.append(f"{where}: the page did not settle: the routes it holds are not this rack's")
+        page.wait_for_timeout(500)
+        park_mouse(page)
+    edits = [
+        ("a move", ["() => window.__rack.apply({op: 'move', id: 'i3', ru: 33})"]),
+        ("a turn", ["() => window.__rack.apply({op: 'patch', id: 'i5', turned: false})"]),
+        ("a cable removed and added", ["() => window.__rack.apply({op: 'cable.remove', id: 'c3'})",
+                                       "() => window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'port-5', view: 'front'}, b: {item: 'i3', path: 'port-5', view: 'front'}, media: 'cat6a'})"]),
+    ]
+    tried = 0
+    for k, (what, cmds) in enumerate(edits):
+        for n, delay in enumerate((5, 40, 150, None)):
+            # from one pair to the other, turn about: the edit is made in `start`, and the switch is to `to`
+            start, to = (("faces", "sides") if (k + n) % 2 == 0 else ("sides", "faces"))
+            where = f"{what}, the switch to {'Left / Right' if to == 'sides' else 'Front / Rear'} {f'{delay} ms' if delay is not None else 'once settled'} after it"
+            if page.evaluate("() => window.__rack.view()") != start:
+                page.click(f'#view2d [data-view="{start}"]')
+            page.evaluate("r => window.__rack.replaceRack(r)", fixture)
+            page.wait_for_function(SIDE_DRAWN if start == "sides" else FACES_DRAWN, timeout=READY_MS)
+            settle(f"{where} (before)")
+            for cmd in cmds[:-1]:
+                r = page.evaluate(cmd)
+                if r and r.get("error"):
+                    bad.append(f"{where}: refused: {r['error']}")
+                settle(f"{where} (first step)")
+            if delay is None:
+                r = page.evaluate(cmds[-1])
+                settle(f"{where} (the edit)")
+                page.click(f'#view2d [data-view="{to}"]')
+            else:
+                # the edit and the click in one task of the page, `delay` apart: the edit's redraw is reading while the switch lands
+                r = page.evaluate("""async ([cmd, delay, to]) => { const r = (0, eval)(`(${cmd})`)(); await new Promise(done => setTimeout(done, delay));
+                  const busy = !window.__rack.routesCurrent().current; document.querySelector(`#view2d [data-view="${to}"]`).click(); return {error: r?.error ?? null, busy}; }""", [cmds[-1], delay, to])
+                if delay <= 40 and not r.get("busy"):
+                    print(f"[check_rack_side_fresh_after_edit] {where}: the edit's redraw had already finished, so the switch did not land inside it")
+                else:
+                    tried += 1 if delay <= 40 else 0
+            if r and r.get("error"):
+                bad.append(f"{where}: refused: {r['error']}")
+            page.wait_for_function(SIDE_DRAWN if to == "sides" else FACES_DRAWN, timeout=READY_MS)
+            settle(where)
+            got = page.evaluate(SIDE_FRESH_JS)
+            # the same document, loaded afresh, in the same pair
+            page.evaluate("() => window.__rack.loadDoc(structuredClone(window.__rack.doc()))")
+            page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=3, timeout=READY_MS)
+            settle(f"{where} (loaded afresh)")
+            want = page.evaluate(SIDE_FRESH_JS)
+            if not want["current"] or want["pair"] != (["left", "right"] if to == "sides" else ["front", "rear"]) or sum(len(c) for c in want["cables"]) < 3:
+                bad.append(f"{where}: the fresh load to compare with is not settled or shows {want['pair']} with {[len(c) for c in want['cables']]} cables")
+                continue
+            for key, said in (("current", "the routes are current"), ("pair", "the pair shown"), ("bodies", "where the bodies are drawn"), ("cables", "the cables as drawn"),
+                              ("list", "the cable list"), ("notice", "a not-known notice"), ("seats", "the facts of the cabled ends")):
+                if got[key] != want[key]:
+                    n_diff = (sum(1 for a, b in zip(sum(got[key], []), sum(want[key], [])) if a != b) if key in ("cables", "bodies") else None)
+                    bad.append(f"{where}: {said} differ from the same document loaded afresh"
+                               + (f" ({n_diff} drawings)" if n_diff is not None else f" ({str(got[key])[:120]} against {str(want[key])[:120]})"))
+    if tried < 3:
+        bad.append(f"only {tried} of the 6 quick switches landed while the edit's redraw was reading: the case was not tried")
+    # ── A NEW CABLE IN HAND, dropped by the switch: the plugs seated for its two picked ends go with it ──
+    page.click('#view2d [data-view="faces"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", fixture)
+    page.wait_for_function(FACES_DRAWN, timeout=READY_MS)
+    settle("the new-cable case (before)")
+    seats0 = page.evaluate("() => JSON.stringify(window.__rack.cableFacts())")
+    page.click("#cableBtn")
+    for item, port in (("i1", "port-7"), ("i3", "port-7")):
+        box = page.evaluate("""([item, port]) => { const r = document.querySelector(`#paneFront svg [data-item-id="${item}"][data-panel="mounted"] [data-path="${port}"]`).getBoundingClientRect();
+          return [r.left + r.width / 2, r.top + r.height / 2]; }""", [item, port])
+        page.mouse.click(box[0], box[1])
+        page.wait_for_timeout(500)
+    try:
+        page.wait_for_selector("#cableForm", timeout=8000)
+    except Exception:
+        return bad + ["the new-cable case: picking two ports did not open the new cable's form"]
+    settle("the new-cable case (the form open)")
+    with_form = page.evaluate("() => JSON.stringify(window.__rack.cableFacts())")
+    if with_form == seats0:
+        bad.append("the new-cable case: with the form open the page's facts hold nothing for its two ends, so there was nothing to leave behind")
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    settle("the new-cable case (in Left / Right)")
+    in_sides = page.evaluate("() => [JSON.stringify(window.__rack.cableFacts()), !!document.getElementById('cableForm'), window.__rack.doc().racks[0].cables.length]")
+    page.click('#view2d [data-view="faces"]')
+    page.wait_for_function(FACES_DRAWN, timeout=READY_MS)
+    settle("the new-cable case (back in Front / Rear)")
+    back = page.evaluate("() => JSON.stringify(window.__rack.cableFacts())")
+    if in_sides[1] or in_sides[2] != 3:
+        bad.append(f"the new-cable case: in Left / Right the form is {'open' if in_sides[1] else 'closed'} and the rack has {in_sides[2]} cables; expected the form gone and nothing added")
+    if in_sides[0] != seats0 or back != seats0:
+        bad.append("the new-cable case: after the switch the page still holds facts for the dropped cable's two ends")
     return bad
 
 

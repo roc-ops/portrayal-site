@@ -1069,14 +1069,18 @@ async function redraw(keepRoutes = false) {
   // rack object (S.factsRack, S.routes.rack: any edit makes a new one), they
   // are drawn from as they are. In every other case, and whenever either is
   // another rack's or missing, both are read as always.
-  const kept = keepRoutes && S.routes?.rack === r && S.factsRack === r && !pendingEnds().length && !S.probeFactsFail ? S.cableFacts : null;
+  // Nor are facts read with a new cable's two ends in hand (a plug seated for
+  // each, pendingEnds) kept once that cable is dropped, or the other way round:
+  // S.factsPending is how many such ends the facts were read with.
+  const pending = pendingEnds();
+  const kept = keepRoutes && S.routes?.rack === r && S.factsRack === r && !pending.length && S.factsPending === 0 && !S.probeFactsFail ? S.cableFacts : null;
   try {
     // PLUGS ARE DERIVED, NEVER STORED: a cabled end is drawn with the plug its
     // port takes, laid over the item's own swaps for this drawing only. The
     // document, Explorer and the exports keep reading item.swaps.
     // Cables are an overlay: if reading them fails, the rack still draws, unplugged.
     // Then the ends are drawn as they are, none marked loose, and the panel says so.
-    facts = kept ?? await (S.probeFactsFail ? Promise.reject(new Error('probe: cableFacts fails')) : cableFacts(r, pendingEnds()))
+    facts = kept ?? await (S.probeFactsFail ? Promise.reject(new Error('probe: cableFacts fails')) : cableFacts(r, pending))
       .catch(err => {
         console.warn('[portrayal] could not read the cables\' faces', err);
         return UNCHECKED;
@@ -1157,6 +1161,7 @@ async function redraw(keepRoutes = false) {
   if (mine !== S.draws) return;
   S.cableFacts = facts;
   S.factsRack = r;       // the rack these were read for (a switch of pair draws from them again: `kept`, above)
+  if (!kept) S.factsPending = pending.length;
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
   // The SVGs are new nodes every render, so the zoom (a style on the old
