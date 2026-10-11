@@ -68,7 +68,7 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel, onLate =
   const label = el('input', {id: 'bLabel', type: 'text', value: ''});
   const form = el('form', {id: 'bundleForm', class: 'rk-cable-form', novalidate: ''}, [
     el('h3', {text: 'New bundle'}),
-    el('p', {class: 'rk-muted', text: 'Tick two or more cables that run together. The bundle follows the route they share, with a Velcro strap every 12 in.'}),
+    el('p', {class: 'rk-muted', text: 'Tick two or more cables that run together. The bundle follows the route they share, with a Velcro strap every 12 in, one before each point where a cable leaves, and one at each tray tie slot it lies on.'}),
     el('fieldset', {class: 'rk-bundle-picks'}, [el('legend', {text: 'Cables'}), ...boxes]),
     field('Label', label),
     err,

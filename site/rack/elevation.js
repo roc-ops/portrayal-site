@@ -36,7 +36,7 @@ const METAL = {rail: '#B9BFC6', railLine: '#8D949C', hole: '#15181B', num: '#2B3
 
 function drawRails(out, frame, baseRU, totalH, C = THEMED) {
   const X = x => x + OPENING / 2;
-  const round = frame.holes?.style === 'tapped';
+  const round = frame.holes?.style === 'tapped' || frame.holes?.style === 'round';   // (round: unthreaded, rack file version 4)
   for (const s of SIDES) {
     out.append(svgEl('rect', {x: X(Math.min(s.inner, s.outer)), y: 0, width: RAIL_W, height: totalH,
       'data-rail': s.side, fill: C.rail, stroke: C.railLine, 'stroke-width': 1}));
@@ -311,6 +311,17 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // halves since rack file version 4), falling back to the compiled
     // drawing's own height only when it is not.
     let ruH = it.u ?? 1;
+    // ROLLED A QUARTER TURN (rack file version 4), an item is an outline, as
+    // the kit fits and routes it and says when the file opens: how it mounts
+    // that way is not described yet, so its drawing is not stood on its side
+    // by guesswork, nor drawn upright in a span that is its width.
+    const quarter = it.roll === 90 || it.roll === 270;
+    if (quarter && face && placeholders) {
+      out.append(outline(topOf(ruH), ruH, `${it.label} · rolled a quarter turn`,
+                         {...common, 'data-panel': through ? 'through' : 'mounted', 'data-rolled': String(it.roll)}, paper ? OUTLINE_PAPER : OUTLINE));
+      if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
+      continue;
+    }
     if (!face) {
       if (placeholders) {
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,

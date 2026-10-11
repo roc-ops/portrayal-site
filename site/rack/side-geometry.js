@@ -34,7 +34,7 @@
 // catalogue states no setback yet (Portrayal #908).
 
 import {RU, SIDES} from '../../vendor/rack/rails.js';
-import {railOf} from '../../vendor/rack/fit.js';
+import {railOf, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {zeroUBottom} from '../../vendor/rack/model.js';
 
@@ -63,7 +63,9 @@ export function itemDepth(rack, it, c) {
   const d = num(c?.d), w = num(c?.w);
   if (!(d > 0)) return null;
   const rear = it.face === 'rear', turned = !!it.turned;
-  const plane = rear ? -railDepthOf(rack.frame) : 0;
+  // its faceplate stands its setback behind its rail, into the rack (rack file version 4; 0 for a part on the rail face)
+  const s = setbackOf(rack, it, () => c);
+  const plane = rear ? -railDepthOf(rack.frame) + s : 0 - s;
   let zFront, outward;
   if (c.mount === 'rack-face') { zFront = rear ? plane - d : plane + d; outward = rear ? -1 : 1; }
   else {

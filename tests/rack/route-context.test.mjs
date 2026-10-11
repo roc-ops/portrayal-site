@@ -69,3 +69,22 @@ test('a ring guide carries its run, and a ring along x its -end rect width as it
   assert.deepEqual(ringGroupsFrom([{id: 'end-ring-left', x: 0, w: 20}], 'front', 483, {'end-ring-left': 'y'})
     .map(x => [x.run, x.depth]), [['y', undefined]]);
 });
+
+// ── kit 0.21.0: a cable is laid from both ends ────────────────────────────
+// A reader on the routing context can be handed a twin of a cable, the same
+// id with `a` and `b` exchanged. Every reader this site supplies takes the END
+// it is asked about (or the item, or the part) and never reads `cable.a` or
+// `cable.b` to decide which end that is.
+import {readFileSync as readSrc} from 'node:fs';
+test('the context\'s readers key on the end they are given, never on which end the cable calls a', () => {
+  const src = readSrc(new URL('../../site/rack/route-context.js', import.meta.url), 'utf8');
+  const lit = src.slice(src.indexOf('const ctx = Object.freeze({'), src.indexOf('const routes = new Map((rack.cables || [])'));
+  assert.ok(lit.length > 500, 'the context literal was found');
+  const readers = [...lit.matchAll(/^\s{4}(\w+):/gm)].map(m => m[1]);
+  assert.deepEqual(readers, ['guidesOf', 'portX', 'portY', 'zeroUAperture', 'plugReachOf'], 'a new reader: audit it for the twin, then list it');
+  for (const r of ['portX', 'portY', 'plugReachOf']) assert.match(lit, new RegExp(`${r}: end =>`), `${r} takes the end`);
+  assert.match(lit, /plugReachOf: end => reachOf\.get\(endKey\(end\)\)/);
+  assert.doesNotMatch(lit.replace(/\/\/.*$/gm, ''), /\b(cable|c)\.(a|b)\b/, 'a reader reads cable.a or cable.b');
+  // the ports are looked up by the end's own item, view and path
+  assert.match(src, /const port = end => ports\.get\(`\$\{end\.item\}\|\$\{end\.view === 'rear' \? 'rear' : 'front'\}\|\$\{portPathOf\(end\.path\)\}`\)/);
+});

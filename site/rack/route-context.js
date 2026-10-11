@@ -11,6 +11,8 @@ import {WIDTH} from '../../vendor/rack/cable-geometry.js';
 import {itemBox} from '../../vendor/rack/fit.js';
 import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindings, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
+import {anchorsOf} from '../../vendor/rack/bundles.js';
+import {traysOf} from '../../vendor/rack/solids.js';
 import {portPathOf, mergeSeats, endKey} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUOf} from '../../vendor/rack/model.js';
@@ -477,6 +479,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // bundle from the kit's bundleExports, measured with the same context, for
   // the cable schedule's notes and the BOM's strap line.
   const bundleRecords = bundleExports(rack, bctx);
+  // EVERY TIE SLOT A STRAP IS AT, AND THE ONES A SINGLE CABLE IS TIED AT
+  // (kit 0.22.0): the BOM counts the first, the drawings stand a band at each
+  // of the second (a bundle's own are among its straps, along its trunk).
+  const ties = tieStraps(rack, bctx, ctx, paths);
   const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
@@ -486,7 +492,34 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // rack asks whether it is still that one (rack-page.js routesNow).
   return {rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: fill(rack, ctx),
           over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
-          endPane: e => endPane(rack, e), bundles, bundleRecords, places};
+          endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks};
+}
+
+// THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0, bundles.js anchorsOf): one
+// strap at each tray tie slot a lone cord is tied at, shared by every cord at
+// that slot. The kit names the slot ({item, via, tie}) with its width and the
+// cables there; where the slot is comes from its tray (solids.js traysOf: a
+// plan rectangle, and the heights of the tray's two faces), and which face
+// the cables are on from the first one's own path (`rests`: held under the
+// plate, or resting on it). `slots` is every slot, a bundle's among them, as
+// strapBomRows takes them; `marks` are the ones no bundle is tied at:
+// [{item, via, tie, width_mm, cables, run, held, at: {x, y, z}}], `at` on the
+// face of the plate the cables are on, in rack mm.
+export function tieStraps(rack, bctx, ctx, paths) {
+  let slots = [], trays = [];
+  try { slots = anchorsOf(rack, bctx); trays = traysOf(rack, ctx); }
+  catch (err) { console.warn('[portrayal] the tie straps could not be read', err); return {slots: [], marks: []}; }
+  const marks = [];
+  for (const s of slots) {
+    if (s.bundles.length) continue;
+    const t = trays.find(x => x.item === s.item && x.via === s.via), slot = t?.ties[s.tie];
+    if (!slot) continue;
+    const rest = s.cables.map(id => (paths.get(id)?.rests || []).find(r => r.kind === 'tray' && r.item === s.item && r.via === s.via)).find(Boolean);
+    const held = rest?.role === 'held';
+    marks.push({item: s.item, via: s.via, tie: s.tie, width_mm: s.width_mm, cables: [...s.cables], run: t.run, held,
+                at: {x: (slot.x0 + slot.x1) / 2, y: held ? t.under : t.top, z: (slot.z0 + slot.z1) / 2}});
+  }
+  return {slots, marks};
 }
 
 // A TIGHT BEND IS SHOWN FOR A CABLE THAT IS PLUGGED IN AT BOTH ENDS. The kit

@@ -10,11 +10,11 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter} from './bundle-view.js';
+import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
-import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
-import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
+import {zeroUOf, zeroUBottom, uLabel} from '../../vendor/rack/model.js';
+import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
@@ -356,11 +356,12 @@ async function hangBundles(scene, rack, facts, boxes = null) {
       if (!hit) return;
       // a band round the pack, at the pack's diameter where the strap is
       const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
+      // as wide along the run as its own width asks (kit 0.22.0 `width_mm`; a 19 mm strap is the band it always was)
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND * strapDrawn(s) / STRAP_DRAWN, 20, 1, false), strapMat);
       band.position.set(...hit.at);
       band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...hit.dir));
       band.name = `bundle-${f.id}-strap-${k}`;
-      band.userData.strap = {bundle: f.id, along_mm: s.along_mm, diameter: Ds};
+      band.userData.strap = {bundle: f.id, along_mm: s.along_mm, diameter: Ds, kind: s.kind ?? 'spacing', width_mm: s.width_mm ?? null};
       g.add(band);
       at.push(band.position.clone());
     });
@@ -389,8 +390,32 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     group.add(g);
     out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight, radius_mm: R, curves: runs});
   }
+  // THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0; route-context.js tieStraps): a
+  // band at the tray's tie slot round the cables lying there, its axis along
+  // their run, on the face of the plate they are on. Named by its slot, with
+  // the cables it ties, so it is lit and dimmed with them (hover.js).
+  const ties = [];
+  if (facts.tieStraps?.length) {
+    facts.tieStraps.forEach(m => {
+      // a group and a material of its own, as a bundle has: hover.js dims a group's materials
+      const slot = `${m.item}|${m.via}|${m.tie}`;
+      const tg = new THREE.Group();
+      tg.name = `bundle-tie:${slot}`;
+      tg.userData.tie = slot; tg.userData.members = [...m.cables];
+      const mat = new THREE.MeshStandardMaterial({color: new THREE.Color(strapPaint(facts.stage ?? '#101214').core), roughness: 0.8});
+      mat.userData.strap = true;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(TIE_HALF, TIE_HALF, STRAP_BAND * strapDrawn(m) / STRAP_DRAWN, 16, 1, false), mat);
+      band.position.copy(toScene({x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z}));
+      band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), m.run === 'z' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0));
+      band.name = `tie-strap-${slot}`;
+      band.userData.strap = {tie: slot, cables: [...m.cables], kind: 'anchor', width_mm: m.width_mm, held: m.held};
+      tg.add(band);
+      group.add(tg);
+      ties.push(band);
+    });
+  }
   world.add(group);
-  return {group, bundles: out, tight: drawnTight};
+  return {group, bundles: out, tight: drawnTight, ties};
 }
 
 // THE STRAPS TURN WITH THE STAGE, as the rail labels do: every strap band's
@@ -534,8 +559,11 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     }));
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
-    if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
+    // (and the tie straps of single cables, for a cable plugged in at both ends, as the panes draw them)
+    const landedId = id => { const c = (rack.cables || []).find(x => x.id === id); return !!c && !loose.has(endKey(c.a)) && !loose.has(endKey(c.b)); };
+    const tieStraps = (bundles?.tieStraps ?? []).filter(m => m.cables.some(landedId));
+    if (bundles?.bundles?.size || tieStraps.length) {
+      try { hung = await hangBundles(scene, rack, {...bundles, tieStraps, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
@@ -588,6 +616,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
+    // how far its faceplate stands behind its rail, and its roll, which sets the span it fills (rack file version 4: the kit's setbackOf, itemBox)
+    ...(chassisOf?.(item.ref) ? {setback: setbackOf(rack, item, chassisOf)} : {}), ...(item.roll ? {roll: item.roll} : {}),
   }));
   // ZERO-U PARTS stand beside an upright (the kit's zero-u.js): built as any device is,
   // then stood in place once built (placeZeroU). A four-post's rear upright
@@ -614,7 +644,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     // faceplate 30 mm behind the rails, which put every drawn plug 30 mm
     // behind the path it starts.
     const built = createRackScene(container, {
-      stack, heightRU: frame.heightRU, recess: 0,
+      stack, heightRU: frame.heightRU, recess: 0, unitLabel: u => uLabel(frame, u),
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
     });

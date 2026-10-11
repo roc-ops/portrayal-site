@@ -29,7 +29,6 @@ import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
-const RECESS_DEFAULT = 30;          // how far back the faceplate sits from the rails
 const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
 
 // Named opening views. `iso` is the direction this stage was composed with,
@@ -135,10 +134,15 @@ export function createRackScene(container, opts = {}) {
   });
   let LABEL = labelTones(opts);
 
-  // How far back the faceplate sits from the mounting rails. Most gear mounts
-  // flush and wants 0; the default is the setback the showcase was drawn with,
-  // so passing nothing changes nothing.
-  const RECESS = opts.recess ?? RECESS_DEFAULT;
+  // How far back every faceplate sits from the mounting rails. FLUSH UNLESS
+  // TOLD (decided 2026-10-11, with rack file version 4): the kit stands a
+  // faceplate on its rail plane unless the file states a setback, and so does
+  // this. It was 30 mm unless told, the setback the showcase was first drawn
+  // with, which put every plug of a scene built without the option 30 mm
+  // behind the path the kit starts it at. An entry's own `setback` (mm, the
+  // kit's fit.js setbackOf: the item's, its device's ear position or the
+  // frame's) is added to it for that entry.
+  const RECESS = opts.recess ?? 0;
 
   // Which view the scene opens at, and which one double-click returns to.
   // Named rather than a vector, because the useful ones carry their own aim and
@@ -430,7 +434,9 @@ export function createRackScene(container, opts = {}) {
         }
         // U numbers ON the rail, on its outboard half, on BOTH rails. They
         // used to float off the left side only.
-        const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? 'emph' : 'unit');
+        // (numbered as the caller's frame counts, when it says how: `opts.unitLabel`, 1 at the bottom otherwise)
+        const num = typeof opts.unitLabel === 'function' ? opts.unitLabel(u + 1) : u + 1;
+        const n = labelSprite(String(num), 30, num % 5 === 0 ? 'emph' : 'unit');
         n.scale.multiplyScalar(0.45);   // sized to sit inside a 26 mm face; adjust by eye
         n.position.set(s.number, u * RU + RU / 2, mountZ + dir * 0.6);
         rack.add(n);
@@ -694,9 +700,10 @@ export function createRackScene(container, opts = {}) {
     // its body outward: toward the viewer from the front rails, away from the
     // rear ones. A rack device's body goes the other way, between the rails.
     const rackFace = entry.mount === 'rack-face';
+    const back = RECESS + (Number.isFinite(entry.setback) ? entry.setback : 0);
     const z = rackFace
       ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
-      : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
+      : (face === 'rear' ? mountZ + back + D / 2 : mountZ - back - D / 2);
     group.position.set(0, entry.mount === 'rack-side' ? box.lo + H / 2 : (box.lo + box.hi) / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is

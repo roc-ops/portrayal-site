@@ -3,13 +3,14 @@
 // editor's change event autosaves and redraws. What the side panel shows
 // follows S.sel.
 
-import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf} from '../vendor/rack/model.js';
+import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf} from '../vendor/rack/model.js';
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
 import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf} from '../vendor/rack/fit.js';
-import {zeroUEntries} from '../vendor/rack/zero-u.js';
+import {zeroUEntries, hangNotices} from '../vendor/rack/zero-u.js';
+import {stateNotices} from '../vendor/rack/states.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
 import {frameForm} from './rack/frame-form.js';
@@ -25,7 +26,7 @@ import {mountStage, loadStage, stageTone} from './rack/stage.js';
 import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
-import {exportStatus, UNCHECKED_NOTE} from '../vendor/rack/export-data.js';
+import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
@@ -534,6 +535,39 @@ function setDoc(doc, notes = docNotes(doc)) {
   render();
   renderLibrary();
   if (S.mode === '3d') rebuild3d();
+  sayKept(docsSet);
+}
+
+// WHAT A VERSION-4 FILE CARRIES THAT THIS PAGE KEEPS AND DOES NOT YET DRAW OR
+// SET (kit 0.22.0). The file is loaded, drawn and saved whole; what the page
+// cannot show is said once when the document opens, where its other notices
+// are, and never drawn as something it is not:
+//   - the kit's own sentences, which need the devices' parts lists (loadSlots),
+//     so the editor cannot give them on load as it gives frameNotices: a part
+//     hung on brackets that does not hang as its file says (zero-u.js
+//     hangNotices), and a state or a reading that is kept and not applied
+//     (states.js stateNotices);
+//   - a device mounted upside down, in the kit's sentence (rollNote): it is
+//     fitted, routed and exported as mounted, and drawn upright;
+//   - states and readings that do apply: kept, exported, and not drawn.
+// Only for a rack that carries one of these: a version-3 rack asks nothing.
+const keptOf = r => ({
+  hung: zeroUOf(r).some(z => z.heldBy != null), rolled: r.items.filter(i => rollOf(i) === 180),
+  set: [...r.items, ...zeroUOf(r)].filter(e => e.states != null || e.readings != null || e.readingsAsWritten != null)});
+async function sayKept(mine) {
+  const r = rack(), k = keptOf(r);
+  if (!k.hung && !k.rolled.length && !k.set.length) return;
+  const said = k.rolled.map(i => `${i.label}: ${rollNote(i)} It is fitted, routed and exported that way, and drawn upright here.`);
+  if (k.set.length) said.push(`${k.set.length === 1 ? `${k.set[0].label || k.set[0].ref} carries` : `${k.set.length} parts carry`} outlet states or readings: they are kept in the file and written to the exports, and not drawn here yet.`);
+  try {
+    if (k.hung || k.set.length) {
+      const ctx = await agentContext(r, zeroUOf(r).map(z => z.ref));
+      said.push(...(k.hung ? hangNotices(r, ctx) : []), ...(k.set.length ? stateNotices(r, ctx) : []));
+    }
+  } catch (err) { console.warn('[portrayal] what the file keeps could not be checked', err); }
+  if (mine !== docsSet || !said.length) return;      // another document was opened meanwhile
+  for (const text of said) addNotice(text, 'note');
+  render();
 }
 
 // ── Cable mode (spec §9.2) ──────────────────────────────────────────────
@@ -847,7 +881,7 @@ function bundlePanel(sel) {
     pinned: !S.pinOff, onPin: () => { S.pinOff = !S.pinOff; S.focusNext = 'bPin'; render(); }});
 }
 // What the 3D scene reads of the bundles, and its rebuild signature's share.
-const bundles3d = rf => (rf?.bundles?.size ? {bundles: rf.bundles, places: rf.places} : null);
+const bundles3d = rf => (rf?.bundles?.size || rf?.tieStraps?.length ? {bundles: rf.bundles ?? new Map(), places: rf.places, tieStraps: rf.tieStraps ?? []} : null);
 const bundlesSig = rf => (rf?.bundles?.size ? JSON.stringify([...rf.bundles.values()].map(f =>
   [f.id, f.diameter, f.straps?.straps ?? null, f.check?.layout?.trunk ?? null])) : '');
 
@@ -1062,7 +1096,7 @@ async function redraw(keepRoutes = false) {
   let r = rack();
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
-    ? `tapped${r.frame.holes.thread ? ` ${r.frame.holes.thread}` : ''}` : 'square holes';
+    ? `tapped${r.frame.holes.thread ? ` ${r.frame.holes.thread}` : ''}` : r.frame.holes.style === 'round' ? 'round holes' : 'square holes';
   // The heading stays one line ("Front" / "Rear") so both panes' SVGs start
   // at the same top edge; the frame summary that used to wrap it onto two
   // lines lives in the top bar instead, beside the rack name.
@@ -2076,8 +2110,11 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     routeContext: () => S.routes?.ctx ?? null,
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
-      diameter: f.diameter, count: f.straps?.count ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
+      diameter: f.diameter, count: f.straps?.count ?? null, kinds: f.straps?.kinds ?? null, widths: f.straps?.widths ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
       warnings: [...f.check.warnings], checked: f.check.checked})) : null),
+    // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
+    anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
+    tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

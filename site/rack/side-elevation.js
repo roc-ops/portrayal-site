@@ -50,7 +50,8 @@ import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {elevationBox} from './elevation.js';
-import {bundleSummary, STRAP_DRAWN, drawnDiameter} from './bundle-view.js';
+import {bundleSummary, drawnDiameter, TIE_HALF} from './bundle-view.js';
+import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
@@ -402,15 +403,18 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       const bar = p && q ? strapBar(p, q, hit.f, hit.stretch.diameter / 2 + 2) : null;
       // a strap on a run across the rack is seen end on: counted, not drawn here
       if (!bar) continue;
-      const el = svgEl('g', {'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
       const xy = {x1: n3(bar.x1), y1: n3(bar.y1), x2: n3(bar.x2), y2: n3(bar.y2)};
-      const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
-      el.append(svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
-                svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
-                svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
-                svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      const el = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, xy, s);
       bars.append(el);
     }
+  }
+  // THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0; route-context.js tieStraps): a
+  // band at the tray's tie slot, where one of its cables is drawn, on the face
+  // of the plate the cables are on. From the side it stands across the tray.
+  for (const m of routes.tieStraps ?? []) {
+    if (!m.cables.some(id => onPane.has(id))) continue;
+    const [cx, cy] = project(pane, frame, {x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z});
+    bars.append(strapBarEl(tieAttrs(m), {x1: n3(cx), y1: n3(cy - TIE_HALF), x2: n3(cx), y2: n3(cy + TIE_HALF)}, {kind: 'anchor', width_mm: m.width_mm}));
   }
   if (bands.childElementCount) layer.prepend(bands);
   if (bars.childElementCount) layer.append(bars);
