@@ -10,6 +10,7 @@ import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, 
 import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
 import {spareText, needsText, SPARE_HELP} from './spare.js';
+import {LOOSE, wireTree} from './cable-tree.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -123,11 +124,23 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // cord, 0.02 m spare without dressing room; the route needs 0.68 m"). One line
 // under the count says what the drawing shows. A cable not in it (not routed, a loose end, a length
 // the page cannot convert) says its length as before.
+// A TREE (portrayal-site#190, cable-tree.js): the list is role="tree". Each
+// bundle's header is a row that opens and closes over its members
+// (aria-expanded, its members in a role="group" beneath it), the cables in no
+// bundle are a group of their own ("Not bundled") when the rack has a bundle,
+// and every row is a treeitem with one Tab stop between them. A row that is
+// closed still says its name, how many cables it holds and its size, and how
+// many of them carry a warning (a loose end, a media mismatch, a cord shorter
+// than its route). `tree` is the page's: {open(key), peek (the key a hover
+// holds open), stop (the row that had the Tab stop), onToggle(key, open),
+// onStop(id)}; without it every row is open. A row's own button, its id and
+// its data-* are as they were.
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
 export const cableMeta = (c, spare = null) =>
   [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, spare ? spareText(spare) : lengthText(c.length)].filter(Boolean).join(' · ');
 export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete,
-                           spares = new Map(), bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null}) {
+                           spares = new Map(), bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null,
+                           tree = null}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -148,21 +161,25 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
       return b;
     })]);
 
-  const rowOf = c => {
+  // How many of the rows built so far carry a warning, by cable id.
+  const warned = new Set();
+  const rowOf = (c, level = 1) => {
     const picked = c.id === selectedId;
-    const row = el('button', {type: 'button', id: `cableRow-${c.id}`, 'data-cable-row': c.id,
+    const row = el('button', {type: 'button', id: `cableRow-${c.id}`, 'data-cable-row': c.id, tabindex: '-1',
       'aria-pressed': String(picked), text: `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}`});
     row.addEventListener('click', () => onSelect(c.id));
     const kids = [row];
     const spare = spares.get(c.id) ?? null;
     const meta = cableMeta(c, spare);
-    if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', ...(spare ? {'data-spare': spareText(spare)} : {}), text: meta}));
+    if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', id: `cableMeta-${c.id}`, ...(spare ? {'data-spare': spareText(spare)} : {}), text: meta}));
     const needs = spare ? needsText(spare) : null;
     if (needs) kids.push(el("span", {class: "rk-warn", "data-spare-short": c.id, text: `${spareText(spare)}; ${needs}.`}));
     for (const [k, e] of [['a', c.a], ['b', c.b]])
       if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
-    for (const w of mismatch(c.media, info(c.a), info(c.b)))
+    const wrong = mismatch(c.media, info(c.a), info(c.b));
+    for (const w of wrong)
       kids.push(el('span', {class: 'rk-warn', 'data-warning': 'true', text: w}));
+    if (needs || wrong.length || why(c.a) || why(c.b)) warned.add(c.id);
     // The selected cable stays on the list even when the filter leaves it out; say so.
     if (picked && !matches(c, on))
       kids.push(el('span', {class: 'rk-muted', 'data-off-filter': 'true', text: 'Not in this filter.'}));
@@ -174,17 +191,41 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     if (picked) kids.push(el('div', {class: 'rk-actions'}, [
       button('cableEdit', 'Edit', () => onEdit(c.id)),
       button('cableDelete', 'Delete', () => onDelete(c.id)), bundleBtn].filter(Boolean)));
-    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {})}, kids);
+    const li = el('li', {'data-cable-item': c.id, id: `cableItem-${c.id}`, role: 'treeitem', 'aria-level': String(level),
+      'aria-selected': String(picked), 'aria-labelledby': `cableRow-${c.id}${meta ? ` cableMeta-${c.id}` : ''}`,
+      ...(inB ? {class: 'rk-bundled'} : {})}, kids);
     li.hidden = !picked && !matches(c, on);
     return li;
   };
-  // Each bundle's header, then its members in combing order; then the cables in no bundle.
+  // Each bundle's header, then its members in combing order beneath it; then the cables in no bundle.
   const groups = bundlesOf(rack);
   const inAny = new Set(groups.flatMap(b => b.members.map(m => m.cable)));
-  const rows = [
-    ...groups.flatMap(b => [bundleHeader({bundle: b, fact: bundles?.get(b.id) ?? null, selected: selectedBundle === b.id, onSelect: onBundleSelect}),
-      ...b.members.map(m => cables.find(c => c.id === m.cable)).filter(Boolean).map(rowOf)]),
-    ...cables.filter(c => !inAny.has(c.id)).map(rowOf)];
+  const isOpen = key => (tree ? tree.open(key) || tree.peek === key : true);
+  const some = n => `${n} cable${n === 1 ? '' : 's'} with a warning`;
+  const rows = groups.map(b => {
+    const members = b.members.map(m => cables.find(c => c.id === m.cable)).filter(Boolean);
+    const kids = members.map(c => rowOf(c, 2));
+    return bundleHeader({bundle: b, fact: bundles?.get(b.id) ?? null, selected: selectedBundle === b.id, onSelect: onBundleSelect,
+      tree: {open: isOpen(b.id), peek: tree?.peek === b.id, rows: kids, warned: members.filter(c => warned.has(c.id)).length, some}});
+  });
+  const free = cables.filter(c => !inAny.has(c.id));
+  if (!groups.length) rows.push(...free.map(c => rowOf(c)));
+  else if (free.length) {
+    const kids = free.map(c => rowOf(c, 2)), n = free.filter(c => warned.has(c.id)).length, open = isOpen(LOOSE);
+    const group = el('ul', {role: 'group'}, kids);
+    group.hidden = !open;
+    rows.push(el('li', {'data-tree-group': LOOSE, 'data-tree-key': LOOSE, id: 'cableGroup-none', role: 'treeitem', 'aria-level': '1',
+      'aria-expanded': String(open), 'aria-labelledby': 'cableGroupName-none cableGroupCount-none', class: 'rk-tree-parent',
+      ...(tree?.peek === LOOSE ? {'data-peek': ''} : {})}, [
+      el('span', {class: 'rk-twist', 'data-tree-toggle': LOOSE, 'aria-hidden': 'true'}),
+      el('span', {class: 'rk-tree-name', id: 'cableGroupName-none', 'data-tree-toggle': LOOSE, text: 'Not bundled'}),
+      el('span', {class: 'rk-cable-meta rk-muted', id: 'cableGroupCount-none', 'data-group-count': String(free.length),
+                  text: `${free.length} cable${free.length === 1 ? '' : 's'}`}),
+      ...(n ? [el('span', {class: 'rk-warn', 'data-member-warnings': String(n), text: some(n)})] : []),
+      group]));
+  }
+  const list = el('ul', {role: 'tree', 'aria-label': 'Cables', class: 'rk-tree'}, rows);
+  wireTree(list, {stop: tree?.stop ?? null, onToggle: tree?.onToggle, onStop: tree?.onStop});
 
   return el('div', {id: 'cableList', class: 'rk-cables'}, [
     el('h3', {text: 'Cables'}),
@@ -194,7 +235,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
     ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP})] : []),
     ...notes.map(n => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text: n})),
-    el('ul', {}, rows),
+    list,
   ]);
 }
 

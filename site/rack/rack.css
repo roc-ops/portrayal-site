@@ -222,6 +222,25 @@
 .rk-cable-tip span[data-tip-short] { color: var(--pt-warn); }
 .rk-side .rk-cables li.rk-bundled { padding-left: 0.9rem; border-left: 2px solid var(--pt-line); }
 .rk-side .rk-cables [data-bundle-row] { text-align: left; font-weight: 600; }
+/* THE LIST IS A TREE (#190, cable-tree.js). A row that opens (a bundle, the
+   cables in no bundle) has its disclosure mark in a column of its own, a
+   click target beside the name and never part of it; its members are the
+   group beneath. A closed row keeps its name, its summary and its warnings,
+   and folds the rest of what is said of it away. A group is a grid here too,
+   which would otherwise outrank the hidden attribute. */
+.rk-side .rk-cables ul[hidden] { display: none; }
+.rk-side .rk-cables li.rk-tree-parent { grid-template-columns: 1.5rem minmax(0, 1fr); column-gap: 0.15rem; }
+.rk-side .rk-cables li.rk-tree-parent > * { grid-column: 2; }
+.rk-side .rk-cables li.rk-tree-parent > .rk-twist { grid-column: 1; grid-row: 1; align-self: stretch; display: grid; place-items: center;
+  min-height: 1.5rem; cursor: pointer; color: var(--pt-ink-muted); border-radius: 4px; user-select: none; }
+.rk-side .rk-cables li.rk-tree-parent > .rk-twist:hover { color: var(--pt-brass); background: var(--pt-surface-2); }
+.rk-side .rk-cables .rk-twist::before { content: '\25B8'; font-size: 1.05rem; line-height: 1; }
+.rk-side .rk-cables li[aria-expanded="true"] > .rk-twist::before { content: '\25BE'; }
+.rk-side .rk-cables li.rk-tree-parent > ul { grid-column: 1 / -1; margin-top: 0.3rem; }
+.rk-side .rk-cables li[aria-expanded="false"] > :is([data-bundle-size], [data-bundle-bend], [data-bundle-note]) { display: none; }
+.rk-side .rk-cables .rk-tree-name { font-weight: 600; cursor: pointer; align-self: center; }
+/* the row the keyboard is on is ringed as its name is */
+.rk-side .rk-cables li[role="treeitem"]:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 2px; border-radius: 3px; }
 .rk-side .rk-bundle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .rk-side .rk-bundle-title button[aria-pressed="true"] { border-color: var(--pt-brass); color: var(--pt-brass); }
 .rk-side .rk-bundle-picks { display: grid; gap: 0.25rem; border: 0; padding: 0; margin: 0 0 0.6rem; font-size: 0.85rem; }

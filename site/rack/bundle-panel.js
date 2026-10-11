@@ -35,13 +35,27 @@ export function bundleFindings(fact) {
 
 // A BUNDLE'S HEADER ROW in the cable list: its name as a button that selects
 // it, the one-line summary, then what is said of it.
-export function bundleHeader({bundle, fact, selected, onSelect}) {
+// IN THE TREE (portrayal-site#190, cable-tree.js) it is a row that opens and
+// closes over its members: `tree` is {open, peek, rows (its members' rows),
+// warned (how many of them carry a warning), some(n) (that count in words)}.
+// The disclosure mark is a click target of its own; the name selects the
+// bundle and toggles nothing. Closed, the row keeps its name, its summary
+// (how many cables, its size) and its warnings; rack.css folds the rest away.
+export function bundleHeader({bundle, fact, selected, onSelect, tree}) {
   const row = button(`bundleRow-${bundle.id}`, fact?.name ?? bundle.id, () => onSelect(bundle.id),
-    {'data-bundle-row': bundle.id, 'aria-pressed': String(selected)});
-  return el('li', {'data-bundle-item': bundle.id, class: 'rk-bundle-head'}, [
-    row,
-    el('span', {class: 'rk-cable-meta rk-muted', 'data-bundle-summary': bundle.id, text: fact ? bundleSummary(fact) : `${bundle.members.length} cables`}),
-    ...bundleFindings(fact)]);
+    {'data-bundle-row': bundle.id, 'aria-pressed': String(selected), tabindex: '-1'});
+  const summary = el('span', {class: 'rk-cable-meta rk-muted', 'data-bundle-summary': bundle.id, id: `bundleSummary-${bundle.id}`,
+    text: fact ? bundleSummary(fact) : `${bundle.members.length} cables`});
+  const group = el('ul', {role: 'group'}, tree.rows);
+  group.hidden = !tree.open;
+  return el('li', {'data-bundle-item': bundle.id, 'data-tree-key': bundle.id, id: `bundleItem-${bundle.id}`, class: 'rk-bundle-head rk-tree-parent',
+    role: 'treeitem', 'aria-level': '1', 'aria-expanded': String(tree.open), 'aria-selected': String(selected),
+    'aria-labelledby': `bundleRow-${bundle.id} bundleSummary-${bundle.id}`, ...(tree.peek ? {'data-peek': ''} : {})}, [
+    el('span', {class: 'rk-twist', 'data-tree-toggle': bundle.id, 'aria-hidden': 'true'}),
+    row, summary,
+    ...(tree.warned ? [el('span', {class: 'rk-warn', 'data-member-warnings': String(tree.warned), text: tree.some(tree.warned)})] : []),
+    ...bundleFindings(fact),
+    group]);
 }
 
 // The line under a member's row: which bundle, and where a peel point sends it off.

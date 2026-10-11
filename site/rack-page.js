@@ -52,6 +52,8 @@ import {zeroUInspector, sideControl} from './rack/zero-u-panel.js';
 import {drawSideElevation, drawSideCables, roomForSideCables, sizeSideLabels} from './rack/side-elevation.js';
 import {stopCentre} from './rack/scene3d.js';
 import {solidsOf} from '../vendor/rack/solids.js';
+import {bundleOfCable} from '../vendor/rack/bundles.js';
+import {loadTree, saveTree, isOpen, peek, LOOSE} from './rack/cable-tree.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -96,6 +98,10 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   cable: {on: false, a: null},
   // The cable list's filter: the viewer's, not the document's.
   cableFilter: {purpose: null, media: null},
+  // The cable list as a tree (cable-tree.js): which rows the reader opened or closed in this rack document
+  // (`state`, remembered in this browser), the row a hover holds open (`peek`), the row with the Tab stop
+  // (`stop`) and the cable whose pin last opened its row (`pinned`). The viewer's, never the document's.
+  tree: {doc: null, state: {}, peek: null, stop: null, pinned: null, show: null},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 // How tall a device is, in U: a device is named with its position (model.js
@@ -738,6 +744,27 @@ function pruneFilter() {
 // could not be checked (an end not known to land is not said to have spare).
 // The list, the 2D titles and the hover label all read this, so they say one figure.
 const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesNow()?.paths ?? null, looseIn(S.cableFacts.ends));
+// THE LIST'S ROWS, OPEN OR CLOSED (#190, cable-tree.js): the reader's, per rack
+// document, in this browser. A row nobody touched starts open in a small rack
+// and closed in a large one. A CABLE PINNED OPENS THE ROW IT IS UNDER, once,
+// when it is pinned (from the stage or the list), and its own row is scrolled
+// into view: the reader can still close that row with the cable pinned.
+function treeHooks(r) {
+  const t = S.tree, docId = theDoc().id;
+  if (t.doc !== docId) Object.assign(t, {doc: docId, state: loadTree(docId), peek: null, stop: null, pinned: null, show: null});
+  const open = key => isOpen(t.state, key, r.cables.length);
+  const set = (key, on) => { t.state = {...t.state, [key]: on}; if (t.peek === key) t.peek = null; saveTree(docId, t.state); };
+  const pin = selectedCable();
+  if (pin !== t.pinned) {
+    t.pinned = pin;
+    if (pin != null) {
+      const key = bundleOfCable(r, pin)?.id ?? LOOSE;
+      if (!open(key)) set(key, true);
+      t.show = pin;
+    }
+  }
+  return {open, peek: t.peek, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
+}
 function cableListPanel() {
   const r = rack();
   pruneFilter();
@@ -750,6 +777,7 @@ function cableListPanel() {
   const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? []}) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     spares: sparesNow(),
+    tree: treeHooks(r),
     ...bundleListHooks(),
     onFilter: next => {
       S.cableFilter = next;
@@ -1274,6 +1302,8 @@ function summary() {
 function setHover(target) {
   if (sameTarget(S.hover, target)) { if (S.hover && target) S.hover.from = target.from; paintTip(); return; }
   S.hover = target;
+  // a cable under the pointer on the stage opens the row it is under in the list, and shows its own row (cable-tree.js)
+  if (target?.from === 'stage' && target.kind === 'cable') S.tree.peek = peek($('side'), target.id);
   const lit = litFor(rack(), target);
   paintHover2d(S.svgs, lit);
   if (S.scene3d) paintHover3d(S.scene3d, lit);
@@ -1570,6 +1600,8 @@ function renderSide() {
   const next = S.focusNext ? document.getElementById(S.focusNext) : null;
   S.focusNext = null;
   S.focusRow = null;
+  // a cable just pinned shows its row (treeHooks opened the row it is under)
+  if (S.tree.show != null) { document.getElementById(`cableItem-${S.tree.show}`)?.scrollIntoView({block: 'nearest'}); S.tree.show = null; }
   if (row) row.focus();
   else if (next) next.focus();
   else if (back) back.focus();

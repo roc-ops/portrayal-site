@@ -5618,23 +5618,27 @@ def check_rack_hover_dims(page, base):
     if page.evaluate(HOVER_2D_STATE) != base2:
         bad.append("2D: leaving c2's row did not restore everything exactly")
 
-    # THE KEYBOARD, with the pointer parked: Tab onto a row and it is lit as
-    # under the pointer. The list runs b1's header, c1, c2, c3, then c4.
-    at = "() => { const a = document.activeElement; return a?.dataset?.cableRow ?? a?.dataset?.bundleRow ?? null; }"
+    # THE KEYBOARD, with the pointer parked: the arrow keys onto a row and it
+    # is lit as under the pointer. The list is a tree (#190): one Tab stop,
+    # and Down and Up between its rows, which run b1's header, c1, c2, c3,
+    # then the unbundled group and c4.
+    at = "() => { const a = document.activeElement; return a?.dataset?.cableRow ?? a?.dataset?.bundleRow ?? a?.dataset?.cableItem ?? a?.dataset?.bundleItem ?? null; }"
     page.focus('#cableList [data-bundle-row="b1"]')
-    page.keyboard.press("Tab")
+    page.keyboard.press("ArrowDown")
     page.wait_for_timeout(350)
     if page.evaluate(at) != "c1":
-        bad.append(f"2D keyboard: Tab from b1's header did not reach c1's row ({page.evaluate(at)!r}), so focus was not measured")
+        bad.append(f"2D keyboard: Down from b1's header did not reach c1's row ({page.evaluate(at)!r}), so focus was not measured")
     else:
         bad += [f"2D keyboard focus on c1: {m}" for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1"}, set())]
-        page.keyboard.press("Tab")
+        page.keyboard.press("ArrowDown")
         page.wait_for_timeout(350)
         bad += [f"2D keyboard focus on {page.evaluate(at)}, after c1: {m}"
                 for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c2"}, set())]
-        page.keyboard.press("Shift+Tab")
-        page.keyboard.press("Shift+Tab")
+        page.keyboard.press("ArrowUp")
+        page.keyboard.press("ArrowUp")
         page.wait_for_timeout(350)
+        if page.evaluate(at) != "b1":
+            bad.append(f"2D keyboard: Up twice from c2 did not reach b1's header ({page.evaluate(at)!r})")
         bad += [f"2D keyboard focus on {page.evaluate(at)}, the bundle's header: {m}"
                 for m in hover_2d_dims(page.evaluate(HOVER_2D_STATE), {"c1", "c2", "c3"}, {"b1"})]
         # The pointer over another row outranks the focused one, and gives it back on leaving.
@@ -5752,12 +5756,12 @@ def check_rack_hover_dims(page, base):
     park_mouse(page)
     if page.evaluate(HOVER_3D_STATE) != base3:
         bad.append("3D: leaving c2's row did not restore every material exactly")
-    # The keyboard in 3D: Tab from the bundle's header onto c1's row, then focus gone.
+    # The keyboard in 3D: Down from the bundle's header onto c1's row, then focus gone.
     page.focus('#cableList [data-bundle-row="b1"]')
-    page.keyboard.press("Tab")
+    page.keyboard.press("ArrowDown")
     page.wait_for_timeout(350)
-    if page.evaluate("() => document.activeElement?.dataset?.cableRow ?? null") != "c1":
-        bad.append("3D keyboard: Tab from b1's header did not reach c1's row, so focus was not measured")
+    if page.evaluate("() => document.activeElement?.dataset?.cableRow ?? document.activeElement?.dataset?.cableItem ?? null") != "c1":
+        bad.append("3D keyboard: Down from b1's header did not reach c1's row, so focus was not measured")
     else:
         bad += [f"3D keyboard focus on c1: {m}" for m in hover_3d_dims(page.evaluate(HOVER_3D_STATE), base3, {"cable-c1"})]
     page.evaluate("() => document.activeElement?.blur()")
@@ -16851,6 +16855,241 @@ def check_rack_unchecked_3d_each_rack(page, base):
             bad.append("unchecked 3D: the second rack's unchecked scene was not announced")
     finally:
         page.evaluate("() => window.__rack.failSceneFacts(false)")
+    return bad
+
+
+
+# ── portrayal-site#190: the cable list as a tree ─────────────────────────
+# Two switches and a lacer, a switch at the rear, `n` cables up the front
+# (c2 an OS2 cord on copper ports, so it carries a warning) and one more from
+# the front to the rear, which has a tag on the front pane. c1 to c3 are
+# bundled by the check.
+TREE_FIXTURE = """async n => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.newRack({name: 'Tree'});
+  const sw = {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default};
+  ({rack: r} = M.withItem(r, {...sw, ru: 20, face: 'front', label: 'sw-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face: 'front', label: 'mgr-1', on: 'i1', unit: 1}));
+  ({rack: r} = M.withItem(r, {...sw, ru: 30, face: 'front', label: 'sw-2'}));
+  ({rack: r} = M.withItem(r, {...sw, ru: 26, face: 'rear', label: 'sw-rear'}));
+  for (let k = 1; k <= n; k++)
+    ({rack: r} = K.withCable(r, {a: {item: 'i1', path: `port-${k}`, view: 'front'}, b: {item: 'i3', path: `port-${k}`, view: 'front'}, media: k === 2 ? 'os2' : 'cat6a'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-48', view: 'front'}, b: {item: 'i4', path: 'port-48', view: 'front'}, media: 'cat6a'}));
+  return r;
+}"""
+# The tree as a reader of the page finds it: each row's place, what it says and whether it shows.
+TREE_JS = """() => {
+  const tree = document.querySelector('#cableList [role="tree"]');
+  if (!tree) return null;
+  const shows = n => !!n && n.getClientRects().length > 0;
+  const row = li => ({id: li.id, key: li.dataset.treeKey ?? li.dataset.cableItem, level: li.getAttribute('aria-level'),
+    expanded: li.getAttribute('aria-expanded'), selected: li.getAttribute('aria-selected'), tab: li.tabIndex, shows: shows(li), peek: li.hasAttribute('data-peek'),
+    parent: li.parentElement.closest('[role="treeitem"]')?.id ?? null, group: li.parentElement.getAttribute('role'),
+    name: (li.getAttribute('aria-labelledby') || '').split(' ').map(i => document.getElementById(i)?.textContent ?? '?').join(' | '),
+    warned: li.querySelector(':scope > [data-member-warnings]')?.textContent ?? null,
+    button: li.querySelector(':scope > [data-cable-row], :scope > [data-bundle-row]')?.tabIndex ?? null,
+    twist: shows(li.querySelector(':scope > .rk-twist'))});
+  const a = document.activeElement;
+  return {rows: [...tree.querySelectorAll('[role="treeitem"]')].map(row), label: tree.getAttribute('aria-label'),
+          at: a?.id || null, stops: [...document.querySelectorAll('#cableList [role="treeitem"], #cableList [data-cable-row], #cableList [data-bundle-row]')].filter(n => n.tabIndex === 0).map(n => n.id),
+          pressed: [...document.querySelectorAll('#cableList [aria-pressed="true"]')].map(b => b.id), panel: !!document.getElementById('bundlePanel'),
+          stored: localStorage.getItem('portrayal.rack.tree')};
+}"""
+STROKE_CLEAR_JS = """id => {
+  const svg = document.querySelector('#paneFront > svg');
+  const g = svg.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
+  // (a member's stroke outranks its bundle's band under the pointer: only other cables are in the way)
+  const others = [...svg.querySelectorAll('[data-cables] [data-cable] path')].filter(p => !g.contains(p));
+  for (const p of g.querySelectorAll('path')) {
+    const L = p.getTotalLength();
+    for (let f = 0.02; f < 0.98; f += 0.005) {
+      const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(p.getScreenCTM());
+      if (others.some(o => o.isPointInStroke(new DOMPoint(s.x, s.y).matrixTransform(o.getScreenCTM().inverse())))) continue;
+      if (document.elementFromPoint(s.x, s.y)?.closest('#paneFront')) return [s.x, s.y];
+    }
+  }
+  return null;
+}"""
+
+
+def tree_rows(page):
+    t = page.evaluate(TREE_JS)
+    return t, {r["key"]: r for r in (t or {}).get("rows", [])}
+
+
+@extra("rack.html: the cable list is a tree - each bundle a row that opens and closes over its members, the cables in no bundle a group of their own, closed to begin with past twenty cables and open under, remembered per rack in this browser and never in the rack; one Tab stop and the arrow keys; a closed row keeps its name, count, size and how many members carry a warning; the disclosure mark toggles and the name pins; a cable pinned or hovered on the stage opens the row it is under (#190)")
+def check_rack_cable_tree(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+
+    def load(n):
+        page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(TREE_FIXTURE, n))
+        wait_fn(page, f"tree: {n + 1} cables drawn", "n => document.querySelectorAll('#cableList [data-cable-item]').length === n && window.__rack.routesCurrent().current", arg=n + 1)
+        if not page.evaluate("() => (window.__rack.doc().racks[0].bundles || []).length"):
+            res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+            if res.get("error"):
+                raise RuntimeError(f"the bundle was not made: {res['error']}")
+        wait_fn(page, "tree: the bundle's row", "() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && window.__rack.routesCurrent().current"
+                                               " && document.querySelector('#paneFront [data-bundle-id=\"b1\"]')")
+        page.wait_for_timeout(300)
+
+    # PAST TWENTY CABLES every row that opens starts closed: 22 cables, three of them in b1.
+    try:
+        load(21)
+    except RuntimeError as e:
+        return bad + [f"fixture: {e}"]
+    t, rows = tree_rows(page)
+    if not t or t["label"] != "Cables":
+        return bad + [f"tree: the list is not a labelled role=tree: {t and t['label']!r}"]
+    tops = [r for r in t["rows"] if r["level"] == "1"]
+    if [r["key"] for r in tops] != ["b1", "~none"] or any(r["expanded"] != "false" for r in tops):
+        bad.append(f"22 cables: the rows at the top are {[(r['key'], r['expanded']) for r in tops]}, expected b1 and the unbundled group, both closed")
+    members = [r for r in t["rows"] if r["level"] == "2"]
+    if len(members) != 22 or any(r["shows"] for r in members) or any(r["group"] != "group" for r in members):
+        bad.append(f"22 cables: {sum(r['shows'] for r in members)} of {len(members)} member rows show under closed rows, in {sorted({r['group'] for r in members})}")
+    if {r["parent"] for r in members if r["key"] in ("c1", "c2", "c3")} != {"bundleItem-b1"} or {r["parent"] for r in members if r["key"] not in ("c1", "c2", "c3")} != {"cableGroup-none"}:
+        bad.append("22 cables: b1's members are not under its row, or the rest are not under the unbundled group")
+    # A CLOSED ROW still says its name, how many cables, its size, and how many carry a warning.
+    b1, none = rows.get("b1", {}), rows.get("~none", {})
+    if not re.search(r"^uplinks \| 3 cables \(c1-c3\), about \d+ mm", b1.get("name", "")):
+        bad.append(f"closed: b1's row reads {b1.get('name')!r}, expected its name, its count and its size")
+    if b1.get("warned") != "1 cable with a warning":
+        bad.append(f"closed: b1's row says {b1.get('warned')!r} of its members' warnings; c2 is an OS2 cord on copper ports")
+    if none.get("name") != "Not bundled | 19 cables" or none.get("warned") is not None:
+        bad.append(f"closed: the unbundled group reads {none.get('name')!r} with {none.get('warned')!r}")
+    if not (b1.get("twist") and none.get("twist")):
+        bad.append("closed: a row that opens shows no disclosure mark")
+    if t["stored"] is not None:
+        bad.append(f"closed: rows nobody touched were stored: {t['stored']}")
+    doc0 = page.evaluate("() => JSON.stringify(window.__rack.doc())")
+
+    # UNDER TWENTY they start open: the same rack with four cables up the front.
+    try:
+        load(3)
+    except RuntimeError as e:
+        return bad + [f"fixture: {e}"]
+    t, rows = tree_rows(page)
+    if [(r["key"], r["expanded"]) for r in t["rows"] if r["level"] == "1"] != [("b1", "true"), ("~none", "true")]:
+        bad.append(f"4 cables: the rows at the top are {[(r['key'], r['expanded']) for r in t['rows'] if r['level'] == '1']}, expected both open")
+    if [r["key"] for r in t["rows"]] != ["b1", "c1", "c2", "c3", "~none", "c4"] or not all(r["shows"] for r in t["rows"]):
+        bad.append(f"4 cables: the rows are {[(r['key'], r['shows']) for r in t['rows']]}")
+    # ONE TAB STOP: one row holds it, and no row's own button is a stop.
+    if len(t["stops"]) != 1 or any(r["button"] not in (-1, None) for r in t["rows"]):
+        bad.append(f"keyboard: the list's Tab stops are {t['stops']}; expected one row")
+    page.focus("#bundleItem-b1")
+    page.keyboard.press("Tab")
+    after = page.evaluate("() => { const a = document.activeElement; return [a?.id ?? null, !!a?.closest('[role=\"treeitem\"]')]; }")
+    if after[1]:
+        bad.append(f"keyboard: Tab from a row went to another row ({after[0]}), not out of the list")
+
+    def press(key, want_at=None, label=""):
+        page.keyboard.press(key)
+        page.wait_for_timeout(120)
+        tt, rr = tree_rows(page)
+        if want_at and tt["at"] != want_at:
+            bad.append(f"keyboard: {label or key} left focus on {tt['at']!r}, expected {want_at!r}")
+        return tt, rr
+
+    # THE ARROWS. Left closes b1 (its members no longer show), Right opens it, Right again steps in.
+    page.focus("#bundleItem-b1")
+    t, rows = press("ArrowLeft", "bundleItem-b1", "Left on open b1")
+    if rows["b1"]["expanded"] != "false" or any(rows[c]["shows"] for c in ("c1", "c2", "c3")) or not rows["c4"]["shows"]:
+        bad.append(f"keyboard: Left on b1 left it {rows['b1']['expanded']} with members showing {[rows[c]['shows'] for c in ('c1', 'c2', 'c3')]}")
+    if json.loads(t["stored"] or "[]")[:1] != [[page.evaluate("() => window.__rack.doc().id"), {"b1": False}]]:
+        bad.append(f"remembered: closing b1 stored {t['stored']!r}, expected this rack document with b1 closed")
+    t, rows = press("ArrowDown", "cableGroup-none", "Down from closed b1")
+    t, rows = press("ArrowUp", "bundleItem-b1", "Up from the unbundled group")
+    t, rows = press("ArrowRight", "bundleItem-b1", "Right on closed b1")
+    if rows["b1"]["expanded"] != "true" or not rows["c1"]["shows"]:
+        bad.append("keyboard: Right on closed b1 did not open it")
+    press("ArrowRight", "cableItem-c1", "Right on open b1")
+    press("ArrowDown", "cableItem-c2", "Down from c1")
+    press("ArrowUp", "cableItem-c1", "Up from c2")
+    press("End", "cableItem-c4", "End")
+    press("ArrowLeft", "cableGroup-none", "Left on c4")
+    press("Home", "bundleItem-b1", "Home")
+    t, rows = press("ArrowDown", "cableItem-c1", "Down from open b1")
+    if len(t["stops"]) != 1 or t["stops"][0] != "cableItem-c1":
+        bad.append(f"keyboard: the Tab stop did not follow focus to c1: {t['stops']}")
+    # ENTER AND SPACE do what a click on the row does: pin the cable, then let it go.
+    page.keyboard.press("Enter")
+    wait_fn(page, "tree: Enter pins c1", "() => document.querySelector('#cableRow-c1')?.getAttribute('aria-pressed') === 'true' && document.getElementById('cableEdit')")
+    t, rows = tree_rows(page)
+    if t["at"] != "cableItem-c1" or rows["c1"]["selected"] != "true":
+        bad.append(f"keyboard: after Enter focus is on {t['at']!r} and c1's row is selected={rows['c1']['selected']}")
+    page.keyboard.press(" ")
+    wait_fn(page, "tree: Space lets c1 go", "() => document.querySelector('#cableRow-c1')?.getAttribute('aria-pressed') === 'false'")
+    if page.evaluate("() => document.activeElement?.id") != "cableItem-c1":
+        bad.append("keyboard: Space on c1's row lost focus")
+
+    # THE DISCLOSURE MARK IS ITS OWN TARGET: it closes and opens, and pins nothing.
+    page.click("#bundleItem-b1 > .rk-twist")
+    t, rows = tree_rows(page)
+    if rows["b1"]["expanded"] != "false" or t["pressed"] or t["panel"]:
+        bad.append(f"mark: a click on b1's mark left it {rows['b1']['expanded']}, pressed {t['pressed']}, bundle panel {t['panel']}")
+    if t["at"] != "bundleItem-b1":
+        bad.append(f"mark: closing b1 over the focused c1 left focus on {t['at']!r}, not on b1's row")
+    # THE NAME PINS THE BUNDLE, as it did, and toggles nothing: b1 is still closed when its panel is put away.
+    page.click('#cableList [data-bundle-row="b1"]')
+    wait_fn(page, "tree: b1's panel", "() => document.getElementById('bundlePanel') && document.querySelector('#paneFront [data-bundle-id=\"b1\"].on')")
+    page.click("#bDone")
+    wait_fn(page, "tree: the list again", "() => document.querySelector('#cableList [role=\"tree\"]')")
+    t, rows = tree_rows(page)
+    if rows["b1"]["expanded"] != "false":
+        bad.append("name: pinning b1 by its name opened its row")
+    # ...and it is still closed after a reload: remembered in this browser, for this rack.
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    wait_fn(page, "tree: the list after a reload", "() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && window.__rack.routesCurrent().current"
+                                                " && document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id][data-cable]').length >= 4")
+    page.wait_for_timeout(300)
+    t, rows = tree_rows(page)
+    if rows["b1"]["expanded"] != "false" or rows["~none"]["expanded"] != "true":
+        bad.append(f"remembered: after a reload b1 is {rows['b1']['expanded']} and the unbundled group {rows['~none']['expanded']}; expected closed and open")
+
+    # A CABLE HOVERED ON THE STAGE opens the row it is under, shows its own row, and is not remembered.
+    stored = t["stored"]
+    pt = page.evaluate(STROKE_CLEAR_JS, "c1")
+    if not pt:
+        bad.append("peek: found no point on c1's stroke clear of the others")
+    else:
+        page.mouse.move(pt[0], pt[1])
+        page.wait_for_timeout(350)
+        t, rows = tree_rows(page)
+        if rows["b1"]["expanded"] != "true" or not rows["b1"]["peek"] or not rows["c1"]["shows"]:
+            bad.append(f"peek: with c1 under the pointer b1 is {rows['b1']['expanded']} (peek {rows['b1']['peek']}), c1's row shows {rows['c1']['shows']}")
+        if t["stored"] != stored:
+            bad.append(f"peek: a hover was remembered: {t['stored']}")
+        park_mouse(page)
+        if tree_rows(page)[1]["b1"]["expanded"] != "true":
+            bad.append("peek: b1 closed again the moment the pointer left c1")
+    # A CABLE PINNED FROM THE STAGE (its tag) opens the row it is under, and that is remembered.
+    page.click("#cableGroup-none > .rk-twist")
+    if tree_rows(page)[1]["~none"]["expanded"] != "false":
+        bad.append("pin: the unbundled group did not close")
+    page.click('svg[data-pane="front"] [data-cable-tags] [data-cable-tag][data-cable-id="c4"]')
+    wait_fn(page, "tree: the tag pins c4", "() => document.querySelector('#cableRow-c4')?.getAttribute('aria-pressed') === 'true'")
+    t, rows = tree_rows(page)
+    if rows["~none"]["expanded"] != "true" or not rows["c4"]["shows"]:
+        bad.append(f"pin: with c4 pinned from its tag the unbundled group is {rows['~none']['expanded']} and c4's row shows {rows['c4']['shows']}")
+    inview = page.evaluate("() => { const r = document.getElementById('cableItem-c4').getBoundingClientRect(), s = document.getElementById('side').getBoundingClientRect(); return r.top >= s.top - 1 && r.bottom <= s.bottom + 1; }")
+    if not inview:
+        bad.append("pin: c4's row is not in view in the side panel")
+    if json.loads(t["stored"] or "[]")[0][1].get("~none") is not True:
+        bad.append(f"pin: the row a pin opened was not remembered: {t['stored']}")
+    page.keyboard.press("Escape")
+    wait_fn(page, "tree: Esc lets c4 go", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    # NOTHING OF THIS IS IN THE RACK: the document is what it was but for the cables the check itself changed.
+    doc = page.evaluate("() => JSON.stringify(window.__rack.doc())")
+    if "tree" in doc or "expanded" in doc or '"open"' in doc or "tree" in doc0:
+        bad.append("rack: the rack document names the list's rows")
     return bad
 
 
