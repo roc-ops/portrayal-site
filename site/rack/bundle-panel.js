@@ -80,8 +80,10 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel}) {
     ev.preventDefault();
     const cables = [...form.querySelectorAll('[data-bundle-pick]')].filter(b => b.checked).map(b => b.dataset.bundlePick);
     if (cables.length < 2) { err.textContent = 'Tick two or more cables.'; return; }
+    // (an answer may come a moment later: a command sent just after an edit waits for the rack's routes)
+    const show = res => { err.textContent = res?.error ?? ''; };
     const res = onCreate({cables, label: label.value.trim()});
-    err.textContent = res?.error ?? '';
+    if (typeof res?.then === 'function') res.then(show); else show(res);
   });
   return form;
 }
@@ -93,7 +95,8 @@ export function bundleForm({rack, picked = [], uOf, onCreate, onCancel}) {
 const UNITS = ['in', 'mm'];
 export function bundleInspector({rack, bundle, fact, uOf, onLabel, onStraps, onAdd, onPeel, onRemove, onClose}) {
   const err = el('p', {id: 'bError', class: 'rk-error', role: 'alert'});
-  const say = res => { err.textContent = res?.error ?? ''; };
+  // (an answer may come a moment later: a command sent just after an edit waits for the rack's routes)
+  const say = res => { if (typeof res?.then === 'function') res.then(say); else err.textContent = res?.error ?? ''; };
   const label = el('input', {id: 'bLabel', type: 'text', value: bundle.label || ''});
   label.addEventListener('change', () => say(onLabel(label.value.trim())));
   const every = bundle.straps && 'every' in bundle.straps ? bundle.straps.every : {value: 12, unit: 'in'};

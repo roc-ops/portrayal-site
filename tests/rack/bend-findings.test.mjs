@@ -139,3 +139,14 @@ test('a tight bend is shown only for a cable plugged in at both ends', () => {
   assert.deepEqual(landedBends(found, r, e => e.item === 'pp').map(f => f.cable), []);
   assert.deepEqual(landedBends(null, r, () => false), []);
 });
+
+test('the cable list\'s notes carry the bends they are given, after the ring and body findings, and the exports\' carry none', async () => {
+  const {routeNotes} = await import('../../site/rack/route-context.js');
+  const facts = {ctx: null, fill: [], over: [], routes: new Map(), ringFindings: [{text: 'ring finding'}], bodyFindings: [{text: 'body finding'}]};
+  const bends = [{cable: 'c9', text: 'c9 turns 90 degrees ... 10 mm short.'}, {cable: 'c9', text: 'c9 turns 23.3 degrees ... 15.2 mm short.'}];
+  // the page gives the bends it rings
+  assert.deepEqual(routeNotes(rack([]), facts, id => id, {bends}).slice(-4), ['ring finding', 'body finding', bends[0].text, bends[1].text]);
+  // an export gives none, and gets none
+  assert.deepEqual(routeNotes(rack([]), facts).slice(-2), ['ring finding', 'body finding']);
+  assert.deepEqual(routeNotes(rack([]), facts, id => id, {bodies: false}).slice(-1), ['ring finding']);
+});

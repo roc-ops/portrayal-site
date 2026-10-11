@@ -503,9 +503,13 @@ export function bendNotice(findings, most = 3) {
 // 0.11.0). The cable list and the exports' notes both read this, so they say
 // the same things. `bodies: false` leaves the bodies out, for the cable
 // schedule, which writes each into its own cable's row instead.
-export function routeNotes(rack, facts, nameOf = id => id, {bodies = true} = {}) {
+// `bends` are the tight bends to list after them, each the kit's sentence
+// (route.js bendFindings): the page gives the ones it rings (landedBends).
+// The exports give none; their notes do not carry bends yet.
+export function routeNotes(rack, facts, nameOf = id => id, {bodies = true, bends = []} = {}) {
   if (!facts) return [];
   const rings = facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
   const crossed = !bodies ? [] : facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
-  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text)];
+  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text),
+          ...(bends || []).map(f => f.text)];
 }
