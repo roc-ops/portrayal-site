@@ -5082,26 +5082,26 @@ def check_rack_ring_rear_pane(page, base):
 # and sizes it from the cable types' Cat6A diameter, well above the drawing's
 # two-stroke floor, so the band and tube widths test the real figure. `face`
 # puts the whole set on the front or the rear face.
-def bundle_fixture(page, face="front"):
-    return page.evaluate("""async face => {
+def bundle_fixture(page, face="front", ports=("port-1", "port-2", "port-3")):
+    return page.evaluate("""async ([face, ports]) => {
       const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
       let r = M.newRack({name: 'Bundles'});
       ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 20, face, label: 'sw-1'}));
       ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, face, label: 'mgr-1', on: 'i1', unit: 1}));
       ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 30, face, label: 'sw-2'}));
-      for (const p of ['port-1', 'port-2', 'port-3'])
+      for (const p of ports)
         ({rack: r} = K.withCable(r, {a: {item: 'i1', path: p, view: 'front'}, b: {item: 'i3', path: p, view: 'front'}, media: 'cat6a'}));
       return r;
-    }""", face)
+    }""", [face, list(ports)])
 
 
-def open_bundle_rack(page, base, face="front"):
+def open_bundle_rack(page, base, face="front", ports=("port-1", "port-2", "port-3")):
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     page.click('#mode [data-mode="2d"]')
-    page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face))
+    page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face, ports))
     page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)",
                            timeout=READY_MS)
 
@@ -5309,6 +5309,23 @@ def check_rack_bundle_2d_rear(page, base):
     kit = page.evaluate("() => window.__rack.bundles()[0].count")
     if in_sheet != kit:
         bad.append(f"sheet: {in_sheet} straps drawn on the two faces, the kit counts {kit}")
+    # THE SAME, WHERE IT BITES: cords from the middle of the switch ride two of the rear lacer's rings
+    # together, a stretch from ring to ring. A ring's rest height alone once placed that stretch on the
+    # front pane too (a lane node is never placed on the other face, so the cords above showed nothing).
+    open_bundle_rack(page, base, "rear", ports=("port-25", "port-26", "port-27"))
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3']})")
+    if res.get("error"):
+        return bad + [f"create (two rings): refused: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#paneRear [data-bundle-id=\"b1\"] [data-bundle-trunk]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+    two = page.evaluate("""() => { const f = document.querySelector('#paneFront svg'), r = document.querySelector('#paneRear svg');
+      const flat = [...r.querySelectorAll('[data-bundle-trunk]')].filter(p => { const [x0, y0, x1, y1] = p.getAttribute('d').match(/-?[\\d.]+(?:e-?\\d+)?/g).map(Number);
+        return Math.abs(y1 - y0) < 0.5 && Math.abs(x1 - x0) > 20; }).length;
+      return {flat, strokes: f.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length,
+              straps: f.querySelectorAll('[data-strap]').length, stretches: f.querySelectorAll('[data-bundle-trunk]').length}; }""")
+    if not two["flat"] or two["strokes"]:
+        bad.append(f"2D fixture (two rings): the rear pane has {two['flat']} ring-to-ring stretches and the front {two['strokes']} cable strokes, so the case was not measured")
+    if two["straps"] or two["stretches"]:
+        bad.append(f"2D (two rings): the front pane, where no member runs, has {two['straps']} straps and {two['stretches']} envelope stretches")
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
@@ -7072,6 +7089,10 @@ def check_rack_bundle_downloads(page, base):
     settle_scene(page, "3D: the downloads' scene", tubes=True)
     page.evaluate("() => window.__rack.scene().settled?.()")
     dark = page.evaluate(BUNDLE_GLB_JS)
+    # the file is written in the file's ink; straight after, on the dark stage still, the scene's strap is the stage's own again
+    after = page.evaluate(STRAP_3D_JS)
+    if not after or after["color"] != "#d5d9de":
+        bad.append(f"GLB: straight after the export the scene's strap is {after}, expected the dark stage's #d5d9de again")
     page.click('#stagebg .sw[data-c="#ffffff"]')
     page.wait_for_timeout(400)
     light = page.evaluate(BUNDLE_GLB_JS)
@@ -7098,10 +7119,7 @@ def check_rack_bundle_downloads(page, base):
         print("[check_rack_bundle_downloads] the GLBs from the two stages are the same bytes")
     if (dark["cables"], dark["straps"], dark["trunks"]) != (light["cables"], light["straps"], light["trunks"]):
         bad.append("GLB: its bundle content differs between the dark stage and the light one")
-    # on the page the strap is the stage's own colour again, once the file is written
-    after = page.evaluate(STRAP_3D_JS)
-    if not after or after["color"] != "#d5d9de":
-        bad.append(f"GLB: after the export the scene's strap is {after}, expected the dark stage's #d5d9de again")
+    return bad
 
 
 # ── THE SIDE PAIR (portrayal-site#187) ────────────────────────────────────
