@@ -6669,6 +6669,230 @@ def check_rack_half_unit(page, base):
     return bad
 
 
+# What is pinned, as the page shows it: per cable its opacity on the front
+# pane and whether it is .on, the pressed rows, whether b1's envelope shows,
+# and in the scene each cable's material and b1's envelope.
+PIN_STATE_JS = """() => {
+  const svg = document.querySelector('#paneFront > svg'), out = {two: {}, three: null};
+  if (svg && !document.getElementById('panes').hidden) {
+    for (const n of svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]'))
+      out.two[n.dataset.cableId] = [n.classList.contains('on'), Math.round(+getComputedStyle(n).opacity * 100) / 100];
+    const env = svg.querySelector('[data-bundle-id="b1"] [data-envelope]');
+    out.envelope2 = !!env && getComputedStyle(env).visibility === 'visible';
+    out.hovering = svg.classList.contains('cable-hover');
+  }
+  out.pressed = [...document.querySelectorAll('#cableList [aria-pressed="true"]')].map(b => b.dataset.cableRow ?? b.dataset.bundleRow);
+  out.panel = !!document.getElementById('bundlePanel');
+  const w = window.__rack.scene()?.three?.scene, g = w?.getObjectByName('patch-cables');
+  if (g && !document.getElementById('stage3d').hidden) {
+    out.three = {};
+    for (const c of g.children) { const m = c.children.find(o => o.isMesh).material; out.three[c.name.slice(6)] = [m.transparent, Math.round(m.opacity * 1000) / 1000]; }
+    out.envelope3 = (w.getObjectByName('bundle-b1')?.children ?? []).filter(o => o.userData.envelope).map(o => o.visible);
+  }
+  return out;
+}"""
+
+
+def pin_wrong(st, lit, envelope, where):
+    """What is wrong with a state for these cables pinned (none: nothing pinned)."""
+    bad = []
+    for c, (on, op) in (st.get("two") or {}).items():
+        if lit and c in lit and (not on or op != 1):
+            bad.append(f"{where}: 2D {c} should be lit, is on={on} opacity={op}")
+        if lit and c not in lit and (on or op > 0.25):
+            bad.append(f"{where}: 2D {c} should be dimmed, is on={on} opacity={op}")
+        if not lit and (on or op != 1):
+            bad.append(f"{where}: 2D {c} should be as drawn, is on={on} opacity={op}")
+    if st.get("two") and st.get("envelope2") != envelope:
+        bad.append(f"{where}: 2D b1's envelope is {'shown' if st.get('envelope2') else 'hidden'}")
+    for c, (tr, op) in (st.get("three") or {}).items():
+        if (not lit or c in lit) and (tr or op != 1):
+            bad.append(f"{where}: 3D {c} should be at full strength, its material is transparent={tr} opacity={op}")
+        if lit and c not in lit and (not tr or op > 0.2):
+            bad.append(f"{where}: 3D {c} should be dimmed, its material is transparent={tr} opacity={op}")
+    if st.get("three") is not None and (not st.get("envelope3") or any(v != envelope for v in st["envelope3"])):
+        bad.append(f"{where}: 3D b1's envelope is {st.get('envelope3')}, expected {'shown' if envelope else 'hidden'}")
+    return bad
+
+
+@extra("rack.html: a click on a cable's or a bundle's row pins its highlight - the rest stay dimmed in 2D and 3D through a switch of view, an orbit drag, a hover over another cable and a click on a control - and a click on empty stage or page, Escape or the row again puts it down")
+def check_rack_pinned_highlight(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    res = hover_fixture(page, base)
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    state = lambda: page.evaluate(PIN_STATE_JS)
+
+    def put_down(js):
+        # (a pin that is not put down is a finding, not a timeout: it is said, then put down with Escape so the rest is still tried)
+        try:
+            page.wait_for_function(js, timeout=5000)
+        except Exception:
+            st = state()
+            bad.append(f"not put down: still pinned (pressed rows {st['pressed']}, bundle panel {'open' if st['panel'] else 'closed'}) after the step before \"{steps[-1] if steps else 'the first check'}\"")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(400)
+    steps = []
+    see = lambda lit, env, where: (steps.append(where), bad.extend(pin_wrong(state(), lit, env, where)))
+    park_mouse(page)
+    see(None, False, "nothing pinned")
+    # ── a cable, in 2D ──
+    page.click('#cableList [data-cable-row="c4"]')
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c4\"].on')", timeout=READY_MS)
+    park_mouse(page)
+    see({"c4"}, False, "c4's row clicked")
+    if state()["pressed"] != ["c4"] or state().get("hovering"):
+        bad.append(f"c4's row clicked: the pressed rows are {state()['pressed']} and the pane is {'in' if state().get('hovering') else 'not in'} hover; expected c4 pressed and no hover")
+    # a hover over another cable previews it, and the pin returns when the pointer leaves
+    page.hover('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(350)
+    h = state()["two"]
+    if h["c1"][1] != 1 or h["c4"][1] > 0.25:
+        bad.append(f"2D: hovering c1 while c4 is pinned shows c1 at {h['c1'][1]} and c4 at {h['c4'][1]}; expected c1 lit and c4 dimmed for the while")
+    park_mouse(page)
+    see({"c4"}, False, "2D, the pointer gone from c1")
+    # a click on a control does not put it down: the zoom, then the stage's swatch
+    page.click("#zoomIn")
+    page.click("#zoomFit")
+    page.click('#stagebg .sw[data-c="#101214"]')
+    page.wait_for_timeout(300)
+    park_mouse(page)
+    see({"c4"}, False, "2D, after clicks on the zoom and a stage swatch")
+    if webgl_trouble(page):
+        print("[check_rack_pinned_highlight] no WebGL here - the 3D half was not checked")
+    else:
+        # ── the mode switch does not put it down, and the scene shows it ──
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: the pinned rack's scene", tubes=True)
+        park_mouse(page)
+        see({"c4"}, False, "3D, after the switch")
+        if state()["pressed"] != ["c4"]:
+            bad.append(f"3D: after the switch the pressed rows are {state()['pressed']}")
+        # an orbit drag is not a click
+        spot = page.evaluate("""async () => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene(), r = s.three.renderer.domElement.getBoundingClientRect();
+          for (const [fx, fy] of [[0.04, 0.05], [0.96, 0.05], [0.04, 0.95], [0.5, 0.03]]) {
+            const x = r.left + r.width * fx, y = r.top + r.height * fy;
+            if (document.elementFromPoint(x, y) === s.three.renderer.domElement && !H.hoverAt3d(s, {clientX: x, clientY: y})) return [x, y];
+          }
+          return null; }""")
+        if not spot:
+            return bad + ["3D: found no empty point on the scene to drag from and click"]
+        cam0 = page.evaluate("() => window.__rack.scene().three.camera.position.toArray()")
+        page.mouse.move(spot[0], spot[1])
+        page.mouse.down()
+        for k in range(1, 9):
+            page.mouse.move(spot[0] + 15 * k, spot[1] + 6 * k)
+        page.mouse.up()
+        page.wait_for_timeout(400)
+        cam1 = page.evaluate("() => window.__rack.scene().three.camera.position.toArray()")
+        if max(abs(a - b) for a, b in zip(cam0, cam1)) < 1:
+            bad.append("3D: the drag did not orbit the scene, so an orbit was not what was tried")
+        park_mouse(page)
+        see({"c4"}, False, "3D, after an orbit drag")
+        page.hover('#cableList [data-cable-row="c1"]')
+        page.wait_for_timeout(350)
+        h = state()["three"]
+        if h["c1"] != [False, 1] or not h["c4"][0]:
+            bad.append(f"3D: hovering c1 while c4 is pinned shows c1 {h['c1']} and c4 {h['c4']}; expected c1 lit and c4 dimmed for the while")
+        park_mouse(page)
+        see({"c4"}, False, "3D, the pointer gone from c1")
+        # a click on empty stage puts it down
+        spot = page.evaluate("""async () => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene(), r = s.three.renderer.domElement.getBoundingClientRect();
+          for (const [fx, fy] of [[0.04, 0.05], [0.96, 0.05], [0.04, 0.95], [0.5, 0.03]]) {
+            const x = r.left + r.width * fx, y = r.top + r.height * fy;
+            if (document.elementFromPoint(x, y) === s.three.renderer.domElement && !H.hoverAt3d(s, {clientX: x, clientY: y})) return [x, y];
+          }
+          return null; }""")
+        page.mouse.click(spot[0], spot[1])
+        put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+        park_mouse(page)
+        see(None, False, "3D, after a click on empty stage")
+        # ── a bundle, in 3D: its members, its envelope; an orbit keeps it; Escape puts it down ──
+        page.click('#cableList [data-bundle-row="b1"]')
+        page.wait_for_selector("#bundlePanel", timeout=READY_MS)
+        park_mouse(page)
+        see({"c1", "c2", "c3"}, True, "3D, b1's row clicked")
+        page.mouse.move(spot[0], spot[1])
+        page.mouse.down()
+        for k in range(1, 9):
+            page.mouse.move(spot[0] + 12 * k, spot[1] + 9 * k)
+        page.mouse.up()
+        page.wait_for_timeout(400)
+        park_mouse(page)
+        see({"c1", "c2", "c3"}, True, "3D, b1 pinned, after an orbit drag")
+        page.click('#mode [data-mode="2d"]')
+        page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"]') && !document.getElementById('panes').hidden", timeout=READY_MS)
+        park_mouse(page)
+        page.wait_for_timeout(300)
+        see({"c1", "c2", "c3"}, True, "2D, b1 pinned, after the switch back")
+        page.keyboard.press("Escape")
+        put_down("() => !document.getElementById('bundlePanel')")
+        park_mouse(page)
+        see(None, False, "2D, after Escape")
+    # ── a bundle, in 2D; a click on the page's background puts it down ──
+    if state()["two"].get("c4", [True])[0] or state()["pressed"]:
+        page.keyboard.press("Escape")
+        put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    page.click('#cableList [data-bundle-row="b1"]')
+    page.wait_for_selector("#bundlePanel", timeout=READY_MS)
+    park_mouse(page)
+    page.wait_for_timeout(300)
+    see({"c1", "c2", "c3"}, True, "2D, b1's row clicked")
+    page.click("#headFront")
+    put_down("() => !document.getElementById('bundlePanel')")
+    park_mouse(page)
+    see(None, False, "2D, after a click on the page's background")
+    # ── the keyboard: Enter on a row pins, Enter again puts it down; a click on empty stage too ──
+    page.focus('#cableList [data-cable-row="c1"]')
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c1\"].on')", timeout=READY_MS)
+    ring = page.evaluate("() => { const a = document.activeElement; return [a?.dataset?.cableRow ?? null, a?.getAttribute('aria-pressed'), getComputedStyle(a).outlineStyle]; }")
+    if ring[:2] != ["c1", "true"] or ring[2] == "none":
+        bad.append(f"keyboard: after Enter on c1's row the focused row is {ring[0]!r}, aria-pressed {ring[1]!r}, outline {ring[2]!r}; expected c1, pressed, ringed")
+    page.evaluate("() => document.activeElement?.blur()")
+    park_mouse(page)
+    see({"c1"}, True, "keyboard, Enter on c1's row")
+    page.focus('#cableList [data-cable-row="c1"]')
+    page.keyboard.press("Space")
+    put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    page.evaluate("() => document.activeElement?.blur()")
+    park_mouse(page)
+    see(None, False, "keyboard, Space on the pinned row")
+    page.click('#cableList [data-cable-row="c4"]')
+    page.wait_for_function("() => document.querySelector('#paneFront [data-cable-id=\"c4\"].on')", timeout=READY_MS)
+    gutter = page.evaluate("""() => {
+      const svg = document.querySelector('#paneFront > svg'), r = svg.getBoundingClientRect();
+      for (const [fx, fy] of [[0.5, 0.004], [0.02, 0.004], [0.98, 0.004]]) {
+        const x = r.left + r.width * fx, y = r.top + r.height * fy;
+        if (document.elementFromPoint(x, y) === svg) return [x, y];
+      }
+      return null; }""")
+    if not gutter:
+        bad.append("2D: found no empty point of the front pane (its own background) to click")
+    else:
+        # a press held and moved is not a click...
+        page.mouse.move(gutter[0], gutter[1])
+        page.mouse.down()
+        page.mouse.move(gutter[0] + 40, gutter[1] + 1, steps=4)
+        page.mouse.up()
+        page.wait_for_timeout(300)
+        see({"c4"}, False, "2D, after a drag on empty stage")
+        # ...and a click there is
+        page.mouse.click(gutter[0], gutter[1])
+        put_down("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+        park_mouse(page)
+        see(None, False, "2D, after a click on empty stage")
+    # the pin is the page's: nothing of it in the document that is saved
+    doc = json.dumps(page.evaluate("() => window.__rack.doc()"))
+    if "pinned" in doc or '"sel"' in doc:
+        bad.append("saved: the rack document carries the pin")
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that

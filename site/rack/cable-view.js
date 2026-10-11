@@ -579,13 +579,17 @@ export function markPort(svg, itemId, path) {
 // both panes at once, so a cross-face run lights at both ends. A cable the
 // list's filter leaves out fades to a ghost (.ghost), as in stage 5 - except
 // the selected cable, which is never ghosted. Classes only: nothing is redrawn.
-export function paintCables(svgs, rack, {selectedId = null, on = {}} = {}) {
+// A SELECTED BUNDLE (`bundleId`) is lit the same way: its members keep their
+// paint and every other cable dims, with its envelope and straps (paintBundles).
+export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on = {}} = {}) {
   const out = new Set(rack.cables.filter(c => !matches(c, on)).map(c => c.id));
+  const members = new Set(bundleId == null ? [] : ((rack.bundles || []).find(b => b.id === bundleId)?.members ?? []).map(m => m.cable));
+  const lit = id => id === selectedId || members.has(id);
   for (const svg of svgs) {
-    svg.classList.toggle('cable-focus', selectedId != null);
+    svg.classList.toggle('cable-focus', selectedId != null || members.size > 0);
     for (const n of svg.querySelectorAll('[data-cable-id]')) {
-      n.classList.toggle('on', n.dataset.cableId === selectedId);
-      n.classList.toggle('ghost', n.dataset.cableId !== selectedId && out.has(n.dataset.cableId));
+      n.classList.toggle('on', lit(n.dataset.cableId));
+      n.classList.toggle('ghost', !lit(n.dataset.cableId) && out.has(n.dataset.cableId));
     }
     // a selected cable shows the envelope of the bundle it rides
     for (const n of svg.querySelectorAll('[data-bundle-id]'))

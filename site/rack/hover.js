@@ -25,6 +25,16 @@
 // (:focus-visible): a row clicked with the mouse keeps focus, and is not held
 // lit by it once the pointer has gone.
 //
+// A SELECTED CABLE OR BUNDLE IS PINNED. The page has one selection (a click on
+// a cable's or a bundle's row, or a cable's tag): on the panes it has always
+// lit the selected cable and dimmed the rest (cable-view.js paintCables,
+// .cable-focus). The scene now does the same, with the hover's own look, and
+// a selected bundle lights its members, its straps and its envelope in both
+// views: the scene keeps the selection's lit set as `pinLit` (paintSelected3d)
+// and dims by the hover while there is one, else by the pin. So a hover over
+// another cable previews it and the pinned one comes back when the pointer
+// leaves; an orbit, a rebuild or a switch of view never ends it.
+//
 // NEVER IN A FILE. The 2D exports are drawn fresh by exports.js, so the panes'
 // classes cannot reach them. A GLB or USDZ is written from the live scene, so
 // modelFile holds the scene undimmed while it writes (holdUndimmed).
@@ -113,10 +123,14 @@ export function paintEnvelopes3d(scene) {
     for (const o of g.children) if (o.userData.envelope) o.visible = on;
   }
 }
-/** 3D: which cable or bundle is selected ({cable, bundle}, either null), for the envelopes. */
-export function paintSelected3d(scene, sel) {
+/** 3D: which cable or bundle is selected ({cable, bundle}, either null), and
+ *  what stays lit for it (`lit`, litFor's answer for the selection, or null):
+ *  the rest dims as under a hover, until a hover says otherwise. */
+export function paintSelected3d(scene, sel, lit = null) {
   if (!scene?.three) return;
   scene.selected = sel && (sel.cable != null || sel.bundle != null) ? {cable: sel.cable ?? null, bundle: sel.bundle ?? null} : null;
+  scene.pinLit = scene.selected ? lit : null;
+  if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
   paintEnvelopes3d(scene);
 }
 
@@ -125,7 +139,7 @@ export function paintSelected3d(scene, sel) {
 export function paintHover3d(scene, lit) {
   if (!scene?.three) return;
   scene.hoverLit = lit;
-  if (!scene.hoverHeld) apply3d(scene.three.scene, lit);
+  if (!scene.hoverHeld) apply3d(scene.three.scene, lit ?? scene.pinLit ?? null);
   paintEnvelopes3d(scene);
 }
 
@@ -137,7 +151,7 @@ export async function holdUndimmed(scene, fn) {
   paintEnvelopes3d(scene);
   try { return await fn(); } finally {
     scene.hoverHeld -= 1;
-    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? null);
+    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
     paintEnvelopes3d(scene);
   }
 }

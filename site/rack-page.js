@@ -177,7 +177,7 @@ async function rebuild3d() {
   const now = rack();
   S.scene3d = built;
   paintHover3d(built, litFor(now, S.hover));
-  paintSelected3d(built, {cable: selectedCable(), bundle: selectedBundle()});
+  paintSelected3d(built, {cable: selectedCable(), bundle: selectedBundle()}, pinnedLit(now));
   // A swatch picked while this was building found no scene to tell.
   if (S.stage !== stage) built.setStage?.(S.stage);
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
@@ -682,7 +682,7 @@ function cableListPanel() {
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
-      paintCables(S.svgs, rack(), {selectedId: selectedCable(), on: next});
+      paintCables(S.svgs, rack(), {selectedId: selectedCable(), bundleId: selectedBundle(), on: next});
     },
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
@@ -1084,7 +1084,7 @@ async function redraw() {
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
       if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
-      paintCables(S.svgs, r, {selectedId: selectedCable(), on: S.cableFilter});
+      paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: selectedBundle(), on: S.cableFilter});
       paintBundles(S.svgs, selectedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
     }
@@ -1098,7 +1098,7 @@ async function redraw() {
   renderSide();
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
-  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: selectedBundle()});
+  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: selectedBundle()}, pinnedLit(rack()));
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -1161,6 +1161,39 @@ function hoverMove(ev, find) {
     setHover(t ? {...t, from: 'stage'} : focusHover());
   });
 }
+// ── The pinned highlight ──────────────────────────────────────────────────
+// THE SELECTION IS THE PIN: a cable or a bundle selected (a click on its row,
+// Enter or Space on it, a cable's tag on a pane) stays lit, and the rest dim,
+// in both views, through an orbit, a redraw and a switch of view, until it is
+// put down. There is no second state: this is S.sel, read as a hover target.
+const pinnedLit = r => {
+  const cable = selectedCable(), bundle = selectedBundle();
+  return litFor(r, cable != null ? {kind: 'cable', id: cable} : bundle != null ? {kind: 'bundle', id: bundle} : null);
+};
+// PUT DOWN BY A CLICK ON NOTHING: on empty stage, or on the page's own
+// background. A click is a press and a release within a few pixels and half a
+// second, so an orbit, a pan or a drag never puts it down. A click on a
+// control, in the side panel or on something a pane selects (a device, an
+// empty unit: the pane's own handler ran first and the selection is no longer
+// this one) is not a click on nothing; nor, in 3D, is one on a cable or a
+// bundle. Escape and a second click on the pinned row put it down as before.
+const CLICK_SLOP = 4, CLICK_MS = 500;
+const NOT_NOTHING = 'button, a, input, select, textarea, label, summary, details, dialog, [role="button"], [tabindex], #side, .rk-lens, .rk-lens-backdrop';
+function wirePin() {
+  let down = null;
+  document.addEventListener('pointerdown', ev => { down = {x: ev.clientX, y: ev.clientY, t: performance.now(), sel: S.sel}; }, true);
+  document.addEventListener('click', ev => {
+    const d = down;
+    down = null;
+    if (!d || d.sel !== S.sel || (S.sel?.kind !== 'cable' && S.sel?.kind !== 'bundle')) return;
+    if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > CLICK_SLOP || performance.now() - d.t > CLICK_MS) return;
+    const t = ev.target;
+    if (!(t instanceof Element) || t.closest(NOT_NOTHING)) return;
+    if (t.closest('#stage3d') && S.scene3d && hoverAt3d(S.scene3d, ev)) return;
+    select(null);
+  });
+}
+
 function wireHover() {
   for (const id of ['paneFront', 'paneRear']) {
     const pane = $(id);
@@ -1582,6 +1615,7 @@ async function bootInner() {
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
   wireHover();
+  wirePin();
   drag = createDragController({
     panesEl: $('panes'),
     svgFor: face => S.svgs.find(s => s.dataset.pane === face),
