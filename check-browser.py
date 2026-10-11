@@ -6255,6 +6255,8 @@ BEND_FRESH_JS = """async () => {
     rings2d: [...document.querySelectorAll('#paneFront svg [data-bend-finding], #paneRear svg [data-bend-finding]')].map(c => ({
       pane: c.closest('svg').dataset.pane, cable: c.dataset.bendFinding, at: [+c.getAttribute('cx'), +c.getAttribute('cy')],
       title: c.querySelector('title')?.textContent ?? '', ui: c.getAttribute('data-pt-ui')})),
+    // the cable list's notes: where the sentences stay, for the keyboard and a screen reader
+    listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
     media: Object.fromEntries(rack.cables.map(c => [c.id, c.media]))};
 }"""
 BEND_RINGS_3D_JS = """async () => {
@@ -6301,8 +6303,9 @@ def check_rack_bend_notice(page, base):
     ref = page.evaluate(BEND_FRESH_JS)
     if ref["page"] or ref["fresh"]:
         bad.append(f"reference rack: the kit reports tight bends: {[f['text'] for f in ref['page'] + ref['fresh']]}")
-    if "bend" in ref["said"] or ref["rings2d"]:
-        bad.append(f"reference rack: a bend is said or ringed with no finding: notice {ref['said']!r}, {len(ref['rings2d'])} rings")
+    if "bend" in ref["said"] or ref["rings2d"] or any("bend" in n for n in ref["listed"]):
+        bad.append(f"reference rack: a bend is said, listed or ringed with no finding: notice {ref['said']!r}, "
+                   f"list {ref['listed']}, {len(ref['rings2d'])} rings")
     if webgl_trouble(page):
         print("[check_rack_bend_notice] WebGL unavailable - the 3D rings were not exercised")
     else:
@@ -6335,6 +6338,10 @@ def check_rack_bend_notice(page, base):
     # the notice is those sentences, and nothing else (three or fewer, each in full)
     if got["said"] != got["notice"] or (len(finds) <= 3 and got["said"] != " ".join(f["text"] for f in finds)):
         bad.append(f"the notice is {got['said']!r}, not the kit's sentences {got['notice']!r}")
+    # THE SENTENCES STAY IN THE CABLE LIST'S NOTES, each once, where the ring
+    # and body findings are: the notice goes with the next redraw.
+    if [n for n in got["listed"] if "needs 30 mm" in n] != [f["text"] for f in finds]:
+        bad.append(f"the cable list's notes are {got['listed']}; expected the kit's sentences {[f['text'] for f in finds]}")
     # 2D: one ring per finding on the front pane (both stops are there), at the finding's point, titled with its sentence
     rings = got["rings2d"]
     if [r["pane"] for r in rings] != ["front"] * len(finds):
@@ -6351,9 +6358,12 @@ def check_rack_bend_notice(page, base):
     wait_fn(page, "bend notice: the relabel drawn",
             "() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].cables.find(c => c.id === 'c2').label === 'said once'"
             " && !(document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('needs 30 mm')")
-    again = page.evaluate("() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length})")
+    again = page.evaluate("""() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length,
+      listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent).filter(t => t.includes('needs 30 mm'))})""")
     if again["n"] != len(finds) or again["bends"] != len(finds):
         bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {len(finds)} still")
+    if again["listed"] != [f["text"] for f in finds]:
+        bad.append(f"after a redraw, with the notice gone, the cable list's notes are {again['listed']}; expected the sentences still")
 
     if webgl_trouble(page):
         return bad
@@ -6381,6 +6391,19 @@ def check_rack_bend_notice(page, base):
     back = page.evaluate(BEND_RINGS_3D_JS)
     if [r["visible"] for r in back["rings"]] != [True] * len(finds):
         bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
+    # A REDRAW THAT CHANGES NOTHING KEEPS THE SCENE. The scene is rebuilt when
+    # the routes' signature changes, and the signature counts the bends shown:
+    # compared before they were set, it differed on every redraw of a rack
+    # with a tight bend, and each one tore the scene down and built it again.
+    # Selecting a cable row is a redraw and no edit.
+    settle_scene(page, "bend notice: the scene before a redraw", tubes=True)
+    kept = page.evaluate_handle("() => window.__rack.scene()")
+    page.click('#cableList [data-cable-row="c2"]')
+    wait_fn(page, "bend notice: c2's row selected", "() => !!document.querySelector('#cableList [data-cable-row=\"c2\"][aria-pressed=\"true\"]')")
+    page.wait_for_timeout(1500)   # past the 300 ms rebuild debounce, and into any build it started
+    if not page.evaluate("s => !!s && window.__rack.scene() === s", kept):
+        bad.append("3D: selecting a cable row, which edits nothing, replaced the scene of a rack with a tight bend")
+    page.click('#cableList [data-cable-row="c2"]')   # let it go again
 
     # A CABLE WITH A LOOSE END IS NOT DRAWN ALONG ITS PATH, so its bends are
     # neither said nor ringed: take the AOC head out of LEAF-A's cage. The
@@ -6399,9 +6422,9 @@ def check_rack_bend_notice(page, base):
     loose3d = page.evaluate(BEND_RINGS_3D_JS)
     if not [f for f in loose["fresh"] if f["cable"] == "c9"]:
         bad.append("loose end: the kit no longer finds c9's path tight, so nothing was withheld")
-    if loose["page"] or loose3d["rings"] or loose3d["listed"] or "needs 30 mm" in loose["said"]:
+    if loose["page"] or loose3d["rings"] or loose3d["listed"] or "needs 30 mm" in loose["said"] or any("needs 30 mm" in n for n in loose["listed"]):
         bad.append(f"loose end: a bend of a cable that is not connected is shown: {len(loose['page'])} findings, "
-                   f"{len(loose3d['rings'])} rings in 3D, notice {loose['said']!r}")
+                   f"{len(loose3d['rings'])} rings in 3D, notice {loose['said']!r}, list {loose['listed']}")
 
     # 3. UNDO: the reference rack again, and with it no finding, no ring, no sentence.
     old = page.evaluate_handle("() => window.__rack.scene()")
@@ -6412,8 +6435,9 @@ def check_rack_bend_notice(page, base):
     settle_scene(page, "bend notice: the undone rack's scene", tubes=True)
     gone = page.evaluate(BEND_RINGS_3D_JS)
     said = page.evaluate("() => document.querySelector('.rk-side .rk-notice')?.textContent || ''")
-    if gone["rings"] or gone["listed"] or "needs 30 mm" in said:
-        bad.append(f"undone: {len(gone['rings'])} rings left in 3D, notice {said!r}")
+    notes = page.evaluate("() => [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent)")
+    if gone["rings"] or gone["listed"] or "needs 30 mm" in said or any("needs 30 mm" in n for n in notes):
+        bad.append(f"undone: {len(gone['rings'])} rings left in 3D, notice {said!r}, list {notes}")
     page.click('#mode [data-mode="2d"]')
     wait_fn(page, "bend notice: the undone rack in 2D",
             "() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 16")
@@ -6545,23 +6569,62 @@ def check_rack_routes_follow_edits(page, base):
              ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); return {}; }""",
          None, ["c4"], f"() => !('port-52' in ({item})('i1').swaps)")
 
-    # A COMMAND THAT READS THE ROUTES never takes the last rack's. A bundle
-    # made in the same turn as an edit, before the page has read the routes
-    # again, has no context for the rack as it is: the kit refuses it and says
-    # the routes are not known, where the page used to hand it the context of
-    # the rack before the edit. Once the routes are read it is made.
-    both = page.evaluate("""() => {
+    # THE DOCUMENT MOVES WHILE THE ROUTES ARE READ. A change that is not an
+    # undo step (a DCIM setting stored) redraws nothing. Landing while the
+    # redraw after a move is still reading the routes, it used to leave the
+    # page holding the routes of the rack before the move, with no redraw in
+    # hand to read them again. The move's redraw starts on the next
+    # microtask; the setting is stored one microtask later, long before any
+    # drawing is read. The routes must become the rack's own.
+    res = page.evaluate("""async () => {
+      const moved = window.__rack.apply({op: 'move', id: 'i3', ru: 37});
+      await Promise.resolve();
+      const set = window.__rack.apply({op: 'dcim', site: 'Lab 4', role: 'leaf'});
+      return {moved: moved.error ?? null, set: set.error ?? null, current: window.__rack.routesCurrent().current}; }""")
+    if res["moved"] or res["set"] or res["current"]:
+        bad.append(f"a setting stored during the redraw after a move: {res}; expected both to land with the routes not yet read")
+    try:
+        page.wait_for_function("() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].items.find(i => i.id === 'i3').ru === 37",
+                               timeout=20000)
+    except Exception:
+        bad.append("a setting stored during the redraw after a move left the page holding the routes of the rack before it")
+    else:
+        faults, state = route_follows(page, "after a setting stored during the redraw", None, ())
+        bad += faults
+
+    # A COMMAND THAT READS THE ROUTES never takes the last rack's. The page's
+    # own apply, in the same turn as an edit, has no context for the rack as
+    # it is: the kit refuses a bundle and says the routes are not known, where
+    # the page used to hand it the context of the rack before the edit.
+    # A PERSON'S BUNDLE COMMAND (a panel's: bundleCommand) waits for the redraw
+    # in hand and is then sent with the new rack's routes: made, and checked,
+    # never "not checked ... the routes are not known here". So for create,
+    # and for add after another move.
+    both = page.evaluate("""async () => {
       const moved = window.__rack.apply({op: 'move', id: 'i3', ru: 39});
       const cur = window.__rack.routesCurrent().current;
-      const res = window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']});
-      return {moved: moved.error ?? null, current: cur, error: res.error ?? null}; }""")
-    if both["moved"] or both["current"] or "routes" not in (both["error"] or ""):
-        bad.append(f"a bundle made in the same turn as a move: the move {both['moved']!r}, routes current {both['current']}, "
-                   f"the bundle answered {both['error']!r}; expected a refusal that says the routes are not known")
-    wait_fn(page, "follow: the routes after the move to U39", ROUTES_CURRENT)
-    made = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']})")
-    if made.get("error"):
-        bad.append(f"a bundle made once the routes are read was refused: {made['error']}")
+      const raw = window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']});
+      const made = await window.__rack.bundleCommand({op: 'bundle.create', cables: ['c9', 'c10']});
+      const ru = window.__rack.doc().racks[0].items.find(i => i.id === 'i3').ru, route = (window.__rack.doc().racks[0].bundles || [])[0]?.route ?? null;
+      const moved2 = window.__rack.apply({op: 'move', id: 'i3', ru: 38});
+      const cur2 = window.__rack.routesCurrent().current;
+      const added = await window.__rack.bundleCommand({op: 'bundle.add', id: made.created?.id ?? made.created?.ids?.[0], cables: ['c11']});
+      return {moved: moved.error ?? null, current: cur, raw: raw.error ?? null, made, ru, route,
+              moved2: moved2.error ?? null, current2: cur2, added,
+              members: (window.__rack.doc().racks[0].bundles || []).map(b => b.members.map(m => m.cable))}; }""")
+    if both["moved"] or both["current"] or "routes" not in (both["raw"] or ""):
+        bad.append(f"a bundle applied in the same turn as a move: the move {both['moved']!r}, routes current {both['current']}, "
+                   f"the kit answered {both['raw']!r}; expected a refusal that says the routes are not known")
+    unchecked = lambda r: [t for t in (r.get("findings") or []) if "not checked" in t or "not known" in t]
+    # (made with a trunk worked out from the routes, which only a route context gives)
+    if both["made"]["error"] or both["ru"] != 39 or not both["route"] or unchecked(both["made"]):
+        bad.append(f"a panel's bundle.create sent in the same turn as a move: {both['made']}, trunk {both['route']}; "
+                   "expected it made, its trunk worked out from the moved rack's routes, and checked")
+    if both["moved2"] or both["current2"] or both["added"]["error"] or unchecked(both["added"]) or both["members"] != [["c9", "c10", "c11"]]:
+        bad.append(f"a panel's bundle.add sent in the same turn as a move: {both['added']}, routes current before {both['current2']}, "
+                   f"members {both['members']}; expected c11 added, with the moved rack's routes, and checked")
+    if both["made"]["error"]:
+        return bad            # no bundle to wait for: what went wrong is said above
     wait_fn(page, "follow: the bundle", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 1")
 
     if webgl_trouble(page):
