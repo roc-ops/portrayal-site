@@ -5420,6 +5420,11 @@ def hover_fixture(page, base):
       return r;
     }""")
     page.evaluate("r => window.__rack.replaceRack(r)", r)
+    # A bundle command reads the routes of the rack as it is (rack-page.js
+    # routesNow, kit 0.17.0): wait for the render after the replace to have
+    # read them. Sent sooner it is refused, never worked out from the routes
+    # of the rack before (check_rack_routes_follow_edits holds that).
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
     res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
     page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]')"
                            " && document.querySelector('#paneFront [data-cable-id=\"c4\"]')"
@@ -6283,7 +6288,7 @@ def near(a, b, eps=0.05):
     return len(a) == len(b) and all(abs(x - y) <= eps for x, y in zip(a, b))
 
 
-@extra("rack.html: bend notice - the reference cable-lay rack has no tight bend, so nothing is said or ringed; an AOC run between the leaves gives the kit's own findings, said once in the notice and ringed at each finding's point in 2D and 3D, never in a GLB, and gone again on undo")
+@extra("rack.html: bend notice - the reference cable-lay rack has no tight bend, so nothing is said or ringed; an AOC run between the leaves gives the kit's own findings, said once in the notice and ringed at each finding's point in 2D and 3D, never in a GLB, not for a cable with a loose end, and gone again on undo")
 def check_rack_bend_notice(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -6377,9 +6382,30 @@ def check_rack_bend_notice(page, base):
     if [r["visible"] for r in back["rings"]] != [True] * len(finds):
         bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
 
+    # A CABLE WITH A LOOSE END IS NOT DRAWN ALONG ITS PATH, so its bends are
+    # neither said nor ringed: take the AOC head out of LEAF-A's cage. The
+    # kit still lays a path between the two ports and still finds it tight
+    # (the fresh context says so); the page says only that it is not connected.
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
+        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-49'))} : i))}); }""")
+    wait_fn(page, "bend notice: the head taken out",
+            "() => window.__rack.routesCurrent().current && !('port-49' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
+            " && Object.values(window.__rack.cableFacts().reasons).some(Boolean)")
+    page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+    settle_scene(page, "bend notice: the loose AOC's scene", tubes=True)
+    loose = page.evaluate(BEND_FRESH_JS)
+    loose3d = page.evaluate(BEND_RINGS_3D_JS)
+    if not [f for f in loose["fresh"] if f["cable"] == "c9"]:
+        bad.append("loose end: the kit no longer finds c9's path tight, so nothing was withheld")
+    if loose["page"] or loose3d["rings"] or loose3d["listed"] or "needs 30 mm" in loose["said"]:
+        bad.append(f"loose end: a bend of a cable that is not connected is shown: {len(loose['page'])} findings, "
+                   f"{len(loose3d['rings'])} rings in 3D, notice {loose['said']!r}")
+
     # 3. UNDO: the reference rack again, and with it no finding, no ring, no sentence.
     old = page.evaluate_handle("() => window.__rack.scene()")
-    page.evaluate("() => { window.__rack.undo(); window.__rack.undo(); }")
+    page.evaluate("() => { window.__rack.undo(); window.__rack.undo(); window.__rack.undo(); }")
     wait_fn(page, "bend notice: undone",
             "() => window.__rack.routesCurrent().current && window.__rack.doc().racks[0].cables.length === 16 && window.__rack.bends().length === 0")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
@@ -6518,6 +6544,25 @@ def check_rack_routes_follow_edits(page, base):
            window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
              ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); return {}; }""",
          None, ["c4"], f"() => !('port-52' in ({item})('i1').swaps)")
+
+    # A COMMAND THAT READS THE ROUTES never takes the last rack's. A bundle
+    # made in the same turn as an edit, before the page has read the routes
+    # again, has no context for the rack as it is: the kit refuses it and says
+    # the routes are not known, where the page used to hand it the context of
+    # the rack before the edit. Once the routes are read it is made.
+    both = page.evaluate("""() => {
+      const moved = window.__rack.apply({op: 'move', id: 'i3', ru: 39});
+      const cur = window.__rack.routesCurrent().current;
+      const res = window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']});
+      return {moved: moved.error ?? null, current: cur, error: res.error ?? null}; }""")
+    if both["moved"] or both["current"] or "routes" not in (both["error"] or ""):
+        bad.append(f"a bundle made in the same turn as a move: the move {both['moved']!r}, routes current {both['current']}, "
+                   f"the bundle answered {both['error']!r}; expected a refusal that says the routes are not known")
+    wait_fn(page, "follow: the routes after the move to U39", ROUTES_CURRENT)
+    made = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c9', 'c10']})")
+    if made.get("error"):
+        bad.append(f"a bundle made once the routes are read was refused: {made['error']}")
+    wait_fn(page, "follow: the bundle", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 1")
 
     if webgl_trouble(page):
         print("[check_rack_routes_follow_edits] WebGL unavailable - the 3D rebuild was not exercised")
