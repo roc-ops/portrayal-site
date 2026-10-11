@@ -1789,11 +1789,94 @@ for _lb in sorted({"v1", "v2"} | {d.split("/")[1] for d in _schemas}):
           and not re.search(r"^/schemas/\*\s*$", _hd, re.M),
           f"/schemas/{_lb}/*.json is readable from any origin, typed by its extension - no Content-Type rule to mislabel a 404",
           f"no /schemas/{_lb}/*.json block with Access-Control-Allow-Origin, a Content-Type override in it, or a broad /schemas/* block")
-check({"schemas/v1/device.schema.json", "schemas/v1/component.schema.json"} <= set(_schemas),
-      "the device and component schemas are served under /schemas/v1/", f"{_schemas}")
+# EVERY PUBLISHED SCHEMA RESOLVES (#58). Read from the folder, publish/schemas/,
+# not from the build's list: a file put there by hand and never added is in
+# the folder and not in the list, and a check that walked the list would pass
+# without it. Each file must parse, carry a $id that is the URL it is served
+# at, and be in the build's list (tools/build-public.py --list, which is what
+# goes live) as that same file.
+_PUBLISHED = ["schemas/v1/component.schema.json", "schemas/v1/device.schema.json", "schemas/v1/lab.schema.json",
+              "schemas/v1/listing.schema.json", "schemas/v1/marks.schema.json", "schemas/v1/rack.schema.json",
+              "schemas/v2/rack.schema.json"]
+
+
+def schema_faults(root, served):
+    """{served path: what is wrong with it} for every file under `root`, a
+    schemas/ folder, and for every schemas/ path in `served` (served path ->
+    source file); and how many files were read."""
+    faults, seen = {}, 0
+    for f in sorted(p for p in Path(root).rglob("*") if p.is_file() and p.name != ".DS_Store"):
+        rel = "schemas/" + f.relative_to(root).as_posix()
+        seen += 1
+        if not re.fullmatch(r"schemas/v[1-9][0-9]*/[a-z0-9-]+\.schema\.json", rel):
+            faults[rel] = "not <vN>/<name>.schema.json: the headers and the publish script know no other shape"
+            continue
+        try:
+            got = json.loads(f.read_text()).get("$id")
+        except (ValueError, AttributeError) as e:
+            faults[rel] = f"does not parse as a JSON object ({e})"
+            continue
+        if got != f"https://portrayal.dev/{rel}":
+            faults[rel] = f"$id is {got!r}, not https://portrayal.dev/{rel}"
+        elif rel not in served or Path(served[rel]).resolve() != f.resolve():
+            faults[rel] = "not in the build's list (tools/build-public.py --list): git add it"
+    for rel in served:
+        if rel.startswith("schemas/") and not (Path(root) / rel[len("schemas/"):]).is_file():
+            faults[rel] = "served, but not a file under publish/schemas/"
+    return faults, seen
+
+
+_sf, _sn = schema_faults(HERE / "publish" / "schemas", _srv)
+# NOT VACUOUS: seven are published and a label is permanent, so fewer than
+# seven read is a folder that moved or a URL that went away.
+check(_sn >= len(_PUBLISHED) and set(_PUBLISHED) <= set(_schemas) and not _sf,
+      f"every schema under publish/schemas/ parses, is served, and has the URL it is served at as its $id ({_sn} files)",
+      f"read {_sn}, want at least {len(_PUBLISHED)}; published and gone: {sorted(set(_PUBLISHED) - set(_schemas))}; "
+      f"{_sf}")
 for _rel in _schemas:
-    check(json.loads(_srv[_rel].read_text()).get("$id") == f"https://portrayal.dev/{_rel}",
-          f"{_rel}: its $id is the URL it is served at", f"$id {json.loads(_srv[_rel].read_text()).get('$id')!r}")
+    check(_rel not in _sf, f"{_rel}: its $id is the URL it is served at", _sf.get(_rel, ""))
+# THE CHECK ABOVE CAN FAIL: a folder of its own making, seven small schemas
+# under the published names, with one fault put in at a time; each is caught
+# by name. Nothing here reads publish/schemas/, so a published file that goes
+# missing is reported by the check above and not by a traceback from this one.
+def _schema_mutants():
+    out = {}
+    with _tf.TemporaryDirectory() as _d:
+        _root = Path(_d) / "schemas"
+        _doc = lambda rel: json.dumps({"$id": f"https://portrayal.dev/{rel}", "type": "object"})
+
+        def _clean():
+            _sh.rmtree(_root, ignore_errors=True)
+            for rel in _PUBLISHED:
+                f = _root / rel[len("schemas/"):]
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_text(_doc(rel))
+        _served = lambda: {"schemas/" + p.relative_to(_root).as_posix(): p for p in _root.rglob("*.json")}
+        _clean(); _all = _served()
+        out["clean"] = schema_faults(_root, _all)
+        (_root / "v1" / "lab.schema.json").write_text(_doc("schemas/v2/lab.schema.json"))
+        out["wrong $id"] = schema_faults(_root, _all)
+        _clean(); (_root / "v3").mkdir(); (_root / "v3" / "new.schema.json").write_text(_doc("schemas/v1/lab.schema.json"))
+        out["added with another label's $id"] = schema_faults(_root, _served())
+        _clean(); (_root / "v1" / "marks.schema.json").write_text("{")
+        out["does not parse"] = schema_faults(_root, _all)
+        _clean(); (_root / "v1" / "new.schema.json").write_text(_doc("schemas/v1/new.schema.json"))
+        out["not added"] = schema_faults(_root, _all)
+        _clean(); (_root / "v2" / "rack.schema.json").unlink()
+        out["served and gone"] = schema_faults(_root, _all)
+    return out
+
+
+import shutil as _sh
+_sm_ = _schema_mutants()
+_n = len(_PUBLISHED)
+_want = {"clean": ([], _n), "wrong $id": (["schemas/v1/lab.schema.json"], _n),
+         "added with another label's $id": (["schemas/v3/new.schema.json"], _n + 1),
+         "does not parse": (["schemas/v1/marks.schema.json"], _n), "not added": (["schemas/v1/new.schema.json"], _n + 1),
+         "served and gone": (["schemas/v2/rack.schema.json"], _n - 1)}
+check({k: (sorted(v[0]), v[1]) for k, v in _sm_.items()} == _want,
+      "the published-schema check fails a wrong $id, a file that does not parse, one never added and one that went away",
+      f"{_sm_}")
 # ROBOTS.TXT (RFC 9309): a real group, not only comments. Cloudflare's managed
 # robots.txt is comments alone, so without this file agent-readiness scanners
 # (isitagentready.com) find no User-agent and fail it. A sitemap, once served,
