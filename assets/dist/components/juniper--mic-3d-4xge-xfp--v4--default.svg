@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="168.8mm" height="29.2mm" viewBox="0 0 168.8 29.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/mic-3d-4xge-xfp@'] .state-link { --led-color: #22c55e; }</style>
+  <g id="mic-3d-4xge-xfp" data-path="mic-3d-4xge-xfp" data-class="line-card" data-behaviour="fills" data-ref="juniper/mic-3d-4xge-xfp@4:4.0.0" data-model="MIC-3D-4XGE-XFP" data-power-draw-max-w="37" data-xfp-10g="4" data-states="ok fail absent" transform="translate(0,0)">
+    <title>mic-3d-4xge-xfp</title>
+    <rect id="mic-3d-4xge-xfp--face" x="0" y="0" width="168.8" height="29.2" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="mic-3d-4xge-xfp--lamps">
+      <circle id="mic-3d-4xge-xfp--led-ok-fail" cx="11.50" cy="20.10" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="mic-3d-4xge-xfp--silkscreen">
+      <g id="mic-3d-4xge-xfp--m1-silkscreen">
+        <text x="3.00" y="14.60" font-family="Arial" fill="#3a3e43" font-size="1.3" text-anchor="middle" transform="rotate(-90 3.00 14.60)">MIC-3D-4XGE-XFP</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m2-silkscreen">
+        <text x="11.50" y="11.00" font-family="Arial" fill="#3a3e43" font-size="1.4" text-anchor="middle" transform="rotate(-90 11.50 11.00)">OK/FAIL</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m3-silkscreen">
+        <text x="20.20" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 20.20 18.35)">PORT [0/2]0</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m4-silkscreen">
+        <text x="46.40" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 46.40 18.35)">LINK</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m5-silkscreen">
+        <text x="54.30" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 54.30 18.35)">PORT [0/2]1</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m6-silkscreen">
+        <text x="80.50" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 80.50 18.35)">LINK</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m7-silkscreen">
+        <text x="88.20" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 88.20 18.35)">PORT [1/3]0</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m8-silkscreen">
+        <text x="114.40" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 114.40 18.35)">LINK</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m9-silkscreen">
+        <text x="122.10" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 122.10 18.35)">PORT [1/3]1</text>
+      </g>
+      <g id="mic-3d-4xge-xfp--m10-silkscreen">
+        <text x="148.30" y="18.35" font-family="Arial" fill="#3a3e43" font-size="1.2" text-anchor="middle" transform="rotate(-90 148.30 18.35)">LINK</text>
+      </g>
+    </g>
+    <g id="mic-3d-4xge-xfp--port-0-0" data-path="mic-3d-4xge-xfp/port-0-0" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(22.05,13.5)">
+      <title>mic-3d-4xge-xfp--port-0-0</title>
+      <rect id="mic-3d-4xge-xfp--port-0-0--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="mic-3d-4xge-xfp/port-0-0/opening" data-class="cutout" />
+      <rect id="mic-3d-4xge-xfp--port-0-0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="mic-3d-4xge-xfp--port-0-0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mic-3d-4xge-xfp--port-0-0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="mic-3d-4xge-xfp--port-0-1" data-path="mic-3d-4xge-xfp/port-0-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(56.15,13.5)">
+      <title>mic-3d-4xge-xfp--port-0-1</title>
+      <rect id="mic-3d-4xge-xfp--port-0-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="mic-3d-4xge-xfp/port-0-1/opening" data-class="cutout" />
+      <rect id="mic-3d-4xge-xfp--port-0-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="mic-3d-4xge-xfp--port-0-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mic-3d-4xge-xfp--port-0-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="mic-3d-4xge-xfp--port-1-0" data-path="mic-3d-4xge-xfp/port-1-0" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(90.05,13.5)">
+      <title>mic-3d-4xge-xfp--port-1-0</title>
+      <rect id="mic-3d-4xge-xfp--port-1-0--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="mic-3d-4xge-xfp/port-1-0/opening" data-class="cutout" />
+      <rect id="mic-3d-4xge-xfp--port-1-0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="mic-3d-4xge-xfp--port-1-0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mic-3d-4xge-xfp--port-1-0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="mic-3d-4xge-xfp--port-1-1" data-path="mic-3d-4xge-xfp/port-1-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(123.95,13.5)">
+      <title>mic-3d-4xge-xfp--port-1-1</title>
+      <rect id="mic-3d-4xge-xfp--port-1-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="mic-3d-4xge-xfp/port-1-1/opening" data-class="cutout" />
+      <rect id="mic-3d-4xge-xfp--port-1-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="mic-3d-4xge-xfp--port-1-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mic-3d-4xge-xfp--port-1-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="mic-3d-4xge-xfp--led-link-0-0" data-path="mic-3d-4xge-xfp/led-link-0-0" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(43.3,17.35)">
+      <title>mic-3d-4xge-xfp--led-link-0-0</title>
+      <circle id="mic-3d-4xge-xfp--led-link-0-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mic-3d-4xge-xfp--led-link-0-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mic-3d-4xge-xfp/led-link-0-0/lamp" data-class="led" data-states="off link" data-z-dome="0.3" />
+    </g>
+    <g id="mic-3d-4xge-xfp--led-link-0-1" data-path="mic-3d-4xge-xfp/led-link-0-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(77.4,17.35)">
+      <title>mic-3d-4xge-xfp--led-link-0-1</title>
+      <circle id="mic-3d-4xge-xfp--led-link-0-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mic-3d-4xge-xfp--led-link-0-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mic-3d-4xge-xfp/led-link-0-1/lamp" data-class="led" data-states="off link" data-z-dome="0.3" />
+    </g>
+    <g id="mic-3d-4xge-xfp--led-link-1-0" data-path="mic-3d-4xge-xfp/led-link-1-0" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(111.3,17.35)">
+      <title>mic-3d-4xge-xfp--led-link-1-0</title>
+      <circle id="mic-3d-4xge-xfp--led-link-1-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mic-3d-4xge-xfp--led-link-1-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mic-3d-4xge-xfp/led-link-1-0/lamp" data-class="led" data-states="off link" data-z-dome="0.3" />
+    </g>
+    <g id="mic-3d-4xge-xfp--led-link-1-1" data-path="mic-3d-4xge-xfp/led-link-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(145.2,17.35)">
+      <title>mic-3d-4xge-xfp--led-link-1-1</title>
+      <circle id="mic-3d-4xge-xfp--led-link-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mic-3d-4xge-xfp--led-link-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mic-3d-4xge-xfp/led-link-1-1/lamp" data-class="led" data-states="off link" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

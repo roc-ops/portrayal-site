@@ -22,6 +22,24 @@
   "width": 441.1
  },
  "configurations": {
+  "ac": {
+   "bays": {
+    "fpc0": "juniper/mx960-blank@1",
+    "fpc1": "juniper/dpce-r-40ge-sfp@2",
+    "fpc10": "juniper/mx960-blank@1",
+    "fpc11": "juniper/mx960-blank@1",
+    "fpc2": "juniper/mx960-blank@1",
+    "fpc3": "juniper/dpce-r-40ge-sfp@2",
+    "fpc4": "juniper/mx960-blank@1",
+    "fpc5": "juniper/mx960-blank@1",
+    "fpc6": "juniper/mx960-blank@1",
+    "fpc7": "juniper/dpc-r-4xge-xfp@3",
+    "fpc8": "juniper/mx960-blank@1",
+    "fpc9": "juniper/dpc-r-4xge-xfp@3"
+   },
+   "description": "AC-powered chassis as photographed - four AC supplies, SCB-MX with RE-S-1300 in both SCB slots, DPC 40xGE in slots 1 and 3, a four-XFP DPC in slots 7 and 9 (it prints DPC 4x10GE and a bare 0/0 over TUNNEL and LINK; juniper/dpc-r-4xge-xfp@3 stands in for it with the same layout, and whether the part is DPC-R- or DPCE-R-4XGE-XFP is unsettled - gaps), blanks in the other eight line slots. Every card stands turned 90, so this is the configuration that renders a seated vertical card (#899).",
+   "kind": "orderable"
+  },
   "base": {
    "bays": {
     "fpc0": "juniper/mx960-blank@1",
@@ -55,8 +73,16 @@
    "scope": [
     "fpcs"
    ],
-   "wanted": "the rest of the MX960 card range - the slots seat the shared MX240/MX480 card catalogue turned 90, and the photographed unit also shows a 4-port tunnel-services card that is not identified in the extraction.",
+   "wanted": "the rest of the MX960 card range - the slots seat the shared MX240/MX480 card catalogue turned 90. The shared cards it seats took the MX240 and MX480 photographs' corrections at 4.0.0 (DPC-R-4XGE ports, SCB-MX Routing Engine bay, DPCE-R-40GE OK/FAIL lamp) in issue 891; none was re-read on this chassis's own photograph.",
    "what": "card-catalogue"
+  },
+  {
+   "reason": "needs-photo",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "the exact part in slots 7 and 9 of the photographed unit. At zoom the cards print DPC 4x10GE, a bare 0/0 (not PORT 0/0) and TUNNEL and LINK over each XFP, which is the four-XFP DPC layout but does not say whether the part is DPC-R-4XGE-XFP or DPCE-R-4XGE-XFP. The `ac` configuration seats juniper/dpc-r-4xge-xfp@3 as a stand-in with the same layout, not as an identification (#899).",
+   "what": "slot-7-9-card-identity"
   },
   {
    "reason": "needs-photo",
@@ -149,6 +175,10 @@
   "slot-order": {
    "note": "guide + photo - line slots 0-5, SCB0, SCB1, then 6-11; the craft interface prints the SCB positions blue, and slot 6 accepts either a line card or SCB2 (redundant fabric takes a line slot)"
   },
+  "slot-pitch": {
+   "confidence": "photo-measured",
+   "note": "WHY THE THREE CHASSIS READ DIFFERENT PITCHES FOR ONE CARD (#899). The MX240, MX480 and MX960 photographs read 30.7-30.9, 31.2-31.5 and 30.8-31.1 mm between plates, each on its own photograph's scale, and each chassis carries its own reading (31.0, 31.3, 31.0). The spread is the photographs', not a stated difference between the chassis: no document dimensions a slot pitch, and the readings overlap within each photograph's own scale uncertainty (0.1-0.8% across against down). The guides' 1.25 in (31.75 mm) is Table 88's HEIGHT of the card, its envelope, and is not a pitch: fourteen slots at 31.75 would need 444.5 mm, more than the MX960's 441.1 width, and eight would need 254.0 where the MX480 photograph spans 250.2. Settled only by a drawing that dimensions the cage."
+  },
   "sources": {
    "note": "MX960 Hardware Guide (868 pages), the MX portfolio datasheet, and the studio front and rear photographs in the image library"
   }
@@ -159,7 +189,7 @@
    "title": "Juniper MX960 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "3.0.0",
+ "version": "5.0.1",
  "views": {
   "bottom": {
    "panel": {
@@ -202,13 +232,13 @@
     "bays": [
      {
       "accepts": [
-       "juniper/mx960-craft@1"
+       "juniper/mx960-craft@2"
       ],
       "at": [
        0.05,
        8.0
       ],
-      "default": "juniper/mx960-craft@1",
+      "default": "juniper/mx960-craft@2",
       "for": "chassis",
       "group": "craft",
       "id": "craft",
@@ -220,7 +250,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -262,7 +292,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -304,7 +334,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -346,7 +376,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -388,7 +418,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -430,7 +460,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -472,13 +502,13 @@
      },
      {
       "accepts": [
-       "juniper/scb-mx@2"
+       "juniper/scb-mx@3"
       ],
       "at": [
        190.3,
        146.4
       ],
-      "default": "juniper/scb-mx@2",
+      "default": "juniper/scb-mx@3",
       "group": "scbs",
       "id": "scb0",
       "opening": {
@@ -494,13 +524,13 @@
      },
      {
       "accepts": [
-       "juniper/scb-mx@2"
+       "juniper/scb-mx@3"
       ],
       "at": [
        221.3,
        146.4
       ],
-      "default": "juniper/scb-mx@2",
+      "default": "juniper/scb-mx@3",
       "group": "scbs",
       "id": "scb1",
       "opening": {
@@ -516,7 +546,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -537,13 +567,13 @@
        "juniper/ms-dpc@2",
        "juniper/ms-mpc@2",
        "juniper/mx960-blank@1",
-       "juniper/scb-mx@2"
+       "juniper/scb-mx@3"
       ],
       "at": [
        252.3,
        146.4
       ],
-      "default": "juniper/dpc-r-4xge-xfp@2",
+      "default": "juniper/dpc-r-4xge-xfp@3",
       "group": "fpcs",
       "id": "fpc6",
       "opening": {
@@ -559,7 +589,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -585,7 +615,7 @@
        283.3,
        146.4
       ],
-      "default": "juniper/dpc-r-4xge-xfp@2",
+      "default": "juniper/dpc-r-4xge-xfp@3",
       "group": "fpcs",
       "id": "fpc7",
       "opening": {
@@ -601,7 +631,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -643,7 +673,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -685,7 +715,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
@@ -727,7 +757,7 @@
      },
      {
       "accepts": [
-       "juniper/dpc-r-4xge-xfp@2",
+       "juniper/dpc-r-4xge-xfp@3",
        "juniper/dpce-20ge-2xge@2",
        "juniper/dpce-2xge-xfp@2",
        "juniper/dpce-40ge-tx@2",
