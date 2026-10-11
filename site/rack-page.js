@@ -31,7 +31,8 @@ import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, propos
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
-import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
+import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.js';
+import {sparesOf, looseIn} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
@@ -666,6 +667,11 @@ function pruneFilter() {
   for (const f of ['purpose', 'media']) if (on[f] != null && !countsBy(r.cables, f).has(on[f])) on[f] = null;
   S.cableFilter = on;
 }
+// EACH CABLE'S SPARE (spare.js), from the paths read for the rack as it is
+// (routesNow): none while they are another rack's, and none for a cable with
+// a loose end, which is not drawn along its path. The list, the 2D titles and
+// the hover label all read this, so they say one figure.
+const sparesNow = () => sparesOf(rack(), routesNow()?.paths ?? null, looseIn(S.cableFacts.ends));
 function cableListPanel() {
   const r = rack();
   pruneFilter();
@@ -677,6 +683,7 @@ function cableListPanel() {
   // says them once, and here they stay, beside the ring and body findings.
   const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? []}) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    spares: sparesNow(),
     ...bundleListHooks(),
     onFilter: next => {
       S.cableFilter = next;
@@ -1078,7 +1085,8 @@ async function redraw() {
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       // by the routes read for the rack this draws, never another's
-      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes?.rack === r ? S.routes : null);
+      const spares = sparesNow();
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf, S.routes?.rack === r ? S.routes : null, spares);
       // A long cable's loop and a low lead's tag reach below the rack: both
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
@@ -1096,6 +1104,7 @@ async function redraw() {
   }
   renderSide();
   paintAgentMark();
+  paintTip();   // a cable under the pointer may have just changed its cord
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -1137,11 +1146,38 @@ function summary() {
 // view shows (hover.js). Restyles the panes and the scene; never redraws,
 // never selects. A touch pointer is ignored: on touch the page is as before.
 function setHover(target) {
-  if (sameTarget(S.hover, target)) { if (S.hover && target) S.hover.from = target.from; return; }
+  if (sameTarget(S.hover, target)) { if (S.hover && target) S.hover.from = target.from; paintTip(); return; }
   S.hover = target;
   const lit = litFor(rack(), target);
   paintHover2d(S.svgs, lit);
   if (S.scene3d) paintHover3d(S.scene3d, lit);
+  paintTip();
+}
+// THE HOVER LABEL. A cable under the pointer on either stage (the 2D panes or
+// the 3D scene) says what it is beside the pointer: its two ends, then what
+// its row in the list says (cable-panel.js cableMeta), its cord and spare
+// with it. Two cords on paths of one length look alike in the drawing; this
+// is where the stage tells them apart. Only for a hover from the stage: over
+// a row of the list, the row itself says it. It takes no pointer and is no
+// control, and it is hidden from assistive technology, which reads the list.
+let tipAt = null;
+function paintTip() {
+  let tip = $('cableTip');
+  const h = S.hover, c = h?.kind === 'cable' && h.from === 'stage' && tipAt ? rack().cables.find(x => x.id === h.id) : null;
+  if (!c) { if (tip) { tip.hidden = true; tip.removeAttribute('data-cable-tip'); } return; }
+  if (!tip) {
+    tip = el('div', {id: 'cableTip', class: 'rk-cable-tip', 'aria-hidden': 'true'});
+    document.body.append(tip);
+  }
+  const r = rack(), meta = cableMeta(c, sparesNow().get(c.id) ?? null);
+  tip.replaceChildren(el('span', {text: `${endName(r, c.a, uOf)} → ${endName(r, c.b, uOf)}`}),
+                      ...(meta ? [el('span', {'data-tip-meta': 'true', text: meta})] : []));
+  tip.dataset.cableTip = c.id;
+  tip.hidden = false;
+  // beside the pointer, and turned back inside the window at its right and bottom edges
+  const w = tip.offsetWidth, hgt = tip.offsetHeight;
+  tip.style.left = `${Math.max(4, Math.min(tipAt.x + 14, window.innerWidth - w - 4))}px`;
+  tip.style.top = `${Math.max(4, tipAt.y + 16 + hgt > window.innerHeight ? tipAt.y - hgt - 10 : tipAt.y + 16)}px`;
 }
 let hoverFrame = 0, hoverEv = null;
 function hoverMove(ev, find) {
@@ -1154,8 +1190,10 @@ function hoverMove(ev, find) {
     // an orbit or a drag in progress is not a hover
     if (e.buttons) return;
     const t = find(e);
+    tipAt = t ? {x: e.clientX, y: e.clientY} : null;
     // over nothing: a row keyboard focus is on is lit again, as on leaving the list
     setHover(t ? {...t, from: 'stage'} : focusHover());
+    paintTip();   // the same cable, the pointer further along it
   });
 }
 function wireHover() {

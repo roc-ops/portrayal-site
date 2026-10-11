@@ -10,6 +10,7 @@ import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
+import {spareFor, spareText} from './spare.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -173,7 +174,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         }
       }),
     tool('inspect', 'Inspect a device or cable',
-      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields and cables. A cable: its ends, media, length, routed length and stock size, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
+      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields and cables. A cable: its ends, media, length, routed length, stock size and spare, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
       {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
        ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
        cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
@@ -208,7 +209,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           o = {...await queries.inspect(rack, id, {...ctx, cableFacts: undefined}), unchecked: true};
         }
         if (o.error) return refuse(o.error);
-        return say(o.kind === 'cable' ? cableText(o) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
+        // A cable's spare (spare.js), as its row in the list says it: by the
+        // same routes, and none for a cable with an end that does not land.
+        const spare = o.kind === 'cable' && !o.loose?.length
+          ? spareFor(rack, rack.cables.find(c => c.id === id), ctx.route) : null;
+        return say(o.kind === 'cable' ? cableText(o, {spare: spare ? spareText(spare) : null}) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
           : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',

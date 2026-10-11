@@ -9,6 +9,7 @@ import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, 
         matches} from '../../vendor/rack/cable-rules.js';
 import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
+import {spareText, undrawnText, SPARE_HELP} from './spare.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -114,8 +115,17 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // bundle-view.js bundleFacts' Map, or null before the routes are known. A
 // selected cable gets a Bundle button (onBundleNew) or, in a bundle, one that
 // opens it (onBundleSelect). A rack with no bundles lists exactly as before.
+// SPARE (spare.js): `spares` is sparesOf's Map (cable id -> its spare). A cable
+// in it says its cord and its spare where it said its length ("1 m cord, 0.58
+// m spare"); one whose spare is more than half its cord is marked, with a
+// sentence saying that much of it is not drawn. One line under the count says
+// what the drawing shows. A cable not in it (not routed, a loose end, a length
+// the page cannot convert) says its length as before.
+// What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
+export const cableMeta = (c, spare = null) =>
+  [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, spare ? spareText(spare) : lengthText(c.length)].filter(Boolean).join(' · ');
 export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete,
-                           bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null}) {
+                           spares = new Map(), bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -142,8 +152,11 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
       'aria-pressed': String(picked), text: `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}`});
     row.addEventListener('click', () => onSelect(c.id));
     const kids = [row];
-    const meta = [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, lengthText(c.length)].filter(Boolean).join(' · ');
-    if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', text: meta}));
+    const spare = spares.get(c.id) ?? null;
+    const meta = cableMeta(c, spare);
+    if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', ...(spare ? {'data-spare': spareText(spare)} : {}), text: meta}));
+    const undrawn = spare ? undrawnText(spare) : null;
+    if (undrawn) kids.push(el('span', {class: 'rk-spare-note', 'data-spare-note': c.id, text: undrawn}));
     for (const [k, e] of [['a', c.a], ['b', c.b]])
       if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
     for (const w of mismatch(c.media, info(c.a), info(c.b)))
@@ -159,7 +172,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     if (picked) kids.push(el('div', {class: 'rk-actions'}, [
       button('cableEdit', 'Edit', () => onEdit(c.id)),
       button('cableDelete', 'Delete', () => onDelete(c.id)), bundleBtn].filter(Boolean)));
-    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {})}, kids);
+    const li = el('li', {'data-cable-item': c.id, ...(inB ? {class: 'rk-bundled'} : {}), ...(undrawn ? {'data-spare-large': 'true'} : {})}, kids);
     li.hidden = !picked && !matches(c, on);
     return li;
   };
@@ -177,6 +190,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     filterRow('media', 'Media'),
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
+    ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP})] : []),
     ...notes.map(n => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text: n})),
     el('ul', {}, rows),
   ]);
