@@ -166,12 +166,12 @@ const len = x => (x == null ? null : typeof x === 'number' ? `${Math.round(x * 1
 const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${e.name ? ` (${clip(e.name, 60)})` : ''}`;
 // SPARE (spare.js): `spare` is the cable's in words (spareText: "1 m cord,
 // 0.58 m spare"), or null; `dressing` is what the routed length allows at each
-// end beyond the path and the plugs, in metres, and `asks` the sentence for an
-// entered cord shorter than the stock size the route asks for. The spare is the cord less its
+// end beyond the path and the plugs, in metres, and `needs` the sentence for a
+// length, not a routed one, shorter than what the route needs. The spare is the cord less its
 // path and what the plugs take, so it holds the dressing allowance the routed
 // length adds; the kit's `slack`, given only for an entered length, is that
 // length less the routed one and does not. Both are said, each by its name.
-export function cableText(c, {spare = null, dressing = 0, asks = null} = {}) {
+export function cableText(c, {spare = null, dressing = 0, needs = null} = {}) {
   const stock = len(c.routed?.stock);
   const lines = [
     `${c.id}: ${endText(c.a)} <-> ${endText(c.b)}`,
@@ -182,7 +182,7 @@ export function cableText(c, {spare = null, dressing = 0, asks = null} = {}) {
       // still has spare), so the slack says what it is measured against.
       (c.slack ? `; slack ${len(c.slack.metres)}${spare ? ` against the routed length${dressing > 0
         ? `, which allows ${len(dressing)} of dressing at each end` : ''}` : ''}` : '') +
-      (spare ? `; ${spare}${asks ? `; ${asks}` : ''} (the cord less its path and what its plugs take; the drawing shows the path only)` : ''),
+      (spare ? `; ${spare}${needs ? `; ${needs}` : ''} (the cord less its path and what its plugs take; the drawing shows the path only)` : ''),
     `route: ${c.route?.edited ? 'drawn by hand' : 'its own'}${c.route?.text ? `: ${clip(c.route.text, 300)}` : ''}`,
   ];
   // A bundled cable (kit 0.7.0): which bundle, and where it joins and leaves it.

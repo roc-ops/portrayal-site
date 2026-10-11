@@ -10,7 +10,7 @@ import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
-import {spareFor, spareText, asksText} from './spare.js';
+import {spareFor, spareText, needsText} from './spare.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -214,7 +214,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         // None either when the ends could not be checked (`loose` null).
         const spare = o.kind === 'cable' && Array.isArray(o.loose) && !o.loose.length && !o.unchecked
           ? spareFor(rack, rack.cables.find(c => c.id === id), ctx.route) : null;
-        return say(o.kind === 'cable' ? cableText(o, spare ? {spare: spareText(spare), dressing: spare.dressing, asks: asksText(spare)} : {}) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
+        return say(o.kind === 'cable' ? cableText(o, spare ? {spare: spareText(spare), dressing: spare.dressing, needs: needsText(spare)} : {}) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
           : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',

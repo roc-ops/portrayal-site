@@ -32,7 +32,7 @@ import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCa
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
 import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.js';
-import {sparesOf, looseIn, asksText} from './rack/spare.js';
+import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
@@ -1171,10 +1171,10 @@ function paintTip() {
     document.body.append(tip);
   }
   const r = rack(), spare = sparesNow().get(c.id) ?? null, meta = cableMeta(c, spare);
-  const asks = spare ? asksText(spare) : null;
+  const needs = spare ? needsText(spare) : null;
   tip.replaceChildren(el('span', {text: `${endName(r, c.a, uOf)} → ${endName(r, c.b, uOf)}`}),
                       ...(meta ? [el('span', {'data-tip-meta': 'true', text: meta})] : []),
-                      ...(asks ? [el('span', {'data-tip-short': 'true', text: `${asks[0].toUpperCase()}${asks.slice(1)}.`})] : []));
+                      ...(needs ? [el('span', {'data-tip-short': 'true', text: `${needs[0].toUpperCase()}${needs.slice(1)}.`})] : []));
   tip.dataset.cableTip = c.id;
   tip.hidden = false;
   // beside the pointer, and turned back inside the window at its right and bottom edges

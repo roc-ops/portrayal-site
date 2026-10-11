@@ -9,7 +9,7 @@ import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, 
         matches} from '../../vendor/rack/cable-rules.js';
 import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
-import {spareText, asksText, SPARE_HELP} from './spare.js';
+import {spareText, needsText, SPARE_HELP} from './spare.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -118,8 +118,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // SPARE (spare.js): `spares` is sparesOf's Map (cable id -> its spare). A cable
 // in it says its cord and its spare where it said its length ("1 m cord, 0.58
 // m spare"). No row is marked for having much spare: most cords do. An entered
-// cord shorter than the stock size the route asks for IS a signal, and says so
-// as a warning ("0.5 m cord, 0.03 m spare; the route asks for 1 m"). One line
+// length shorter than what its route needs (the kit's routed length, whatever
+// stock size it rounds up to) IS a signal, and says so as a warning ("0.5 m
+// cord, 0.03 m spare without dressing room; the route needs 0.67 m"). One line
 // under the count says what the drawing shows. A cable not in it (not routed, a loose end, a length
 // the page cannot convert) says its length as before.
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
@@ -156,8 +157,8 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     const spare = spares.get(c.id) ?? null;
     const meta = cableMeta(c, spare);
     if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', ...(spare ? {'data-spare': spareText(spare)} : {}), text: meta}));
-    const asks = spare ? asksText(spare) : null;
-    if (asks) kids.push(el('span', {class: 'rk-warn', 'data-spare-short': c.id, text: `${spareText(spare)}; ${asks}.`}));
+    const needs = spare ? needsText(spare) : null;
+    if (needs) kids.push(el("span", {class: "rk-warn", "data-spare-short": c.id, text: `${spareText(spare)}; ${needs}.`}));
     for (const [k, e] of [['a', c.a], ['b', c.b]])
       if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
     for (const w of mismatch(c.media, info(c.a), info(c.b)))

@@ -21,10 +21,15 @@
 // of the table, so the day the kit drops it (step 4 of #949), or gives each
 // media its own, this module follows with no edit.
 //
-// A CORD SHORTER THAN THE ROUTE ASKS FOR. An entered length can be under the
-// stock size the kit would choose for the route (stockLength of its routed
-// length). The cord may still reach, with little or nothing to dress it by,
-// or fall short. Either way that is a signal, and the cable says so: `asks`.
+// A CORD SHORTER THAN THE ROUTE NEEDS. What a route needs is the kit's routed
+// length for it (pathLength's `measured`: the path, the table figure and the
+// dressing allowance at each end), the figure a stock size is rounded up
+// from. A length that is not the page's own measurement (any source but
+// `routed`: entered by a person, read from a DCIM) can be under it: the cord
+// may still reach, with less than the dressing allowance to dress it by, or
+// fall short. That is a signal, and the cable says so: `needs`. The stock size
+// plays no part: a 3 ft cord on a route that needs 0.62 m is not warned of
+// because the kit would have picked 1 m.
 //
 // NOT THE KIT'S `slack`. queries.js inspect reports `slack` only for a cable
 // whose length was entered, as that length less the routed one, dressing
@@ -60,17 +65,17 @@ export function usedMetres(path, cable) {
  *  usable length, or a length in a unit other than m or ft.
  *  {value, unit}: the cord as the cable has it; cord, used, spare: metres;
  *  dressing: what the kit's routed length allows at each end beyond `used`;
- *  asks: the stock size the route asks for, in metres, when the cord is an
- *  entered one and shorter than it, else null. */
+ *  needs: the kit's routed length, in metres, when the cable's length is not
+ *  a routed one and is shorter than it, else null. */
 export function spareOf(cable, path) {
   const cord = lengthParts(cable?.length);
   if (!cord || !Object.hasOwn(M_PER, cord.unit)) return null;
   const used = usedMetres(path, cable);
   if (used == null) return null;
   const metres = cord.value * M_PER[cord.unit];
-  const stock = pathLength(path).value;
-  const asks = cable.length.source !== 'routed' && Number.isFinite(stock) && metres < stock - 1e-9 ? stock : null;
-  return {value: cord.value, unit: cord.unit, cord: metres, used, spare: metres - used, dressing: dressingAllowance(cable), asks};
+  const need = pathLength(path).measured;
+  const needs = cable.length.source !== 'routed' && metres < need - 1e-9 ? need : null;
+  return {value: cord.value, unit: cord.unit, cord: metres, used, spare: metres - used, dressing: dressingAllowance(cable), needs};
 }
 
 /** Every cable's spare, by id: `paths` is route-context.js routeFacts' Map.
@@ -100,11 +105,16 @@ const amount = (s, metres) => `${round2(Math.abs(metres) / M_PER[s.unit])} ${s.u
 /** "0.58 m": the spare alone, in the cord's unit. */
 export const spareAmount = s => amount(s, s.spare);
 /** "1 m cord, 0.58 m spare"; a cord shorter than what its route uses reads
- *  "0.5 m cord, 0.12 m short". */
-export const spareText = s => `${s.value} ${s.unit} cord, ${spareAmount(s)} ${round2(s.spare / M_PER[s.unit]) < 0 ? 'short' : 'spare'}`;
-/** "the route asks for 1 m" (in feet too for a cord in feet) when an entered
- *  cord is shorter than the stock size the kit would choose, else null. */
-export const asksText = s => (s.asks == null ? null
-  : `the route asks for ${round2(s.asks)} m${s.unit === 'ft' ? ` (${round2(s.asks / M_PER.ft)} ft)` : ''}`);
+ *  "0.3 m cord, 0.17 m short". A cord that reaches but is under what the
+ *  route needs has spare, and less of it than the dressing allowance the need
+ *  holds: "0.5 m cord, 0.03 m spare without dressing room", so the row never
+ *  says "spare" and "needs more" with nothing between them. */
+export const spareText = s => {
+  const short = round2(s.spare / M_PER[s.unit]) < 0;
+  return `${s.value} ${s.unit} cord, ${spareAmount(s)} ${short ? 'short' : `spare${s.needs != null ? ' without dressing room' : ''}`}`;
+};
+/** "the route needs 0.67 m", in the cord's own unit, when a length that is
+ *  not a routed one is shorter than the kit's routed length, else null. */
+export const needsText = s => (s.needs == null ? null : `the route needs ${amount(s, s.needs)}`);
 /** The cable list's one line of explanation. */
 export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';
