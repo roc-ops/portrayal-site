@@ -164,7 +164,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true,
-                   laneGap: routed ? LANE_GAP : 0, zeroU})));
+                   laneGap: routed ? LANE_GAP : 0, zeroU, chassisOf})));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});

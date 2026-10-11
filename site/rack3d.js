@@ -23,6 +23,7 @@ import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
+import {bodySpan, HALF_HOLE} from './rack/body-span.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
@@ -456,10 +457,16 @@ export function createRackScene(container, opts = {}) {
   // running toward the front, and its screw heads facing the back - the
   // mirror image of a front ear, not a copy of it parented somewhere else.
   // Defaulted to the front pair, so nothing that already calls this changes.
-  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null)) {
+  //
+  // A BODY UNDER ONE UNIT (body-span.js; `body` = {inset, h}, given only for
+  // one) has an ear as tall as itself, where it sits in the lower half of its
+  // unit, with one screw, at the one rail hole that half holds - as the 2D
+  // elevation draws it. It had a whole unit's ear and two screws.
+  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null), body = null) {
     const g = new THREE.Group();
     const yBase = (ru - 1) * RU;
-    const h = ruHeight * RU - 4.5;
+    const h = body ? body.h : ruHeight * RU - 4.5;
+    const yMid = body ? yBase + body.inset + body.h / 2 : yBase + ruHeight * RU / 2;
     // The leg spans the recess and then grips the flank. Only the GRIP is
     // capped: the recess has to be crossed whatever the device, or the ear
     // never reaches it.
@@ -479,14 +486,14 @@ export function createRackScene(container, opts = {}) {
       // face draws them, and only the screws holding it to the rail are added
       if (earMat) {
         const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
-        flange.position.set(earX, yBase + ruHeight * RU / 2, mountZ + dir * 1.5);
+        flange.position.set(earX, yMid, mountZ + dir * 1.5);
         g.add(flange);
         const leg = new THREE.Mesh(new THREE.BoxGeometry(3, h, legLen), earMat);
-        leg.position.set(side * (halfW + 1.5), yBase + ruHeight * RU / 2, mountZ - dir * legLen / 2);
+        leg.position.set(side * (halfW + 1.5), yMid, mountZ - dir * legLen / 2);
         g.add(leg);
       }
       for (let u = 0; u < ruHeight; u++) {
-        for (const dy of [6.35, 38.10]) {
+        for (const dy of body ? [HOLE_DY[HALF_HOLE]] : [6.35, 38.10]) {
           const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
           head.rotation.x = Math.PI / 2;
           head.position.set(holeX, yBase + u * RU + dy, mountZ + dir * 4.1);
@@ -679,7 +686,11 @@ export function createRackScene(container, opts = {}) {
     const z = rackFace
       ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
       : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
-    group.position.set(0, (entry.ru - 1) * RU + H / 2, z);
+    // WHERE THE BODY IS IN ITS UNITS (body-span.js): standing on the bottom of
+    // its lowest unit, as ever; a body under one unit (catalogue `ru` below 1)
+    // centred in its own part of that unit, as the 2D elevation draws it.
+    const span = bodySpan(entry.chassis?.ru, ruHeight, H, true);
+    group.position.set(0, (entry.ru - 1) * RU + span.inset + H / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is
     // mounted to, and what you see from the mounting face's own side is its
@@ -713,7 +724,8 @@ export function createRackScene(container, opts = {}) {
     const noEars = !!entry.mount && entry.mount !== 'rack';
     const plan = noEars ? null : earPlan(entry.index || {chassis: entry.chassis}, frontW);
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null);
+      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null,
+                 span.half ? {inset: span.inset, h: H} : null);
     ears.userData.ears = noEars ? null : plan ? 'generic' : 'built-in';
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);

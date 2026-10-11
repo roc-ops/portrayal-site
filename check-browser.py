@@ -6535,6 +6535,140 @@ def check_rack_straps_seen(page, base):
     return bad
 
 
+# A half-unit panel (the Fibrain XCU10: catalogue ru 0.5, 22.2 mm) at U20 and
+# another at U23 with a fibre between them, a 1U switch at U21 and a 2U switch
+# at U18.
+HALF_U_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.newRack({name: 'Half U'});
+  ({rack: r} = M.withItem(r, {ref: 'xcu', cfg: 'xcu10-21ic', ru: 20, face: 'front', label: 'xcu-a'}));
+  ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 21, face: 'front', label: 'sw-1u'}));
+  ({rack: r} = M.withItem(r, {ref: 'dcs500', cfg: 'ac-f2b', ru: 18, face: 'front', label: 'sw-2u'}));
+  ({rack: r} = M.withItem(r, {ref: 'xcu', cfg: 'xcu10-21ic', ru: 23, face: 'front', label: 'xcu-b'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'drawer/module/slot-1/module/lc01', view: 'front'},
+                               b: {item: 'i4', path: 'drawer/module/slot-1/module/lc01', view: 'front'}, media: 'os2'}));
+  return r;
+}"""
+# Each item on the front pane, in pane mm: its face group's translate, its
+# face's declared height (read from the compiled file), its ears' flange and
+# screw heads, and where the cable leaves the XCU; with the kit's port height.
+HALF_U_2D_JS = """async () => {
+  const {RU} = await import('/vendor/rack/rails.js'), C = await import('/vendor/rack/catalog.js'), F = await import('/site/faces.js').catch(() => null);
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  const rack = window.__rack.doc().racks[0], svg = document.querySelector('#paneFront svg'), H = rack.frame.heightRU * RU;
+  const out = {RU, H, items: {}};
+  for (const it of rack.items) {
+    const g = svg.querySelector(`[data-item-id="${it.id}"][data-panel="mounted"]`);
+    const [tx, ty] = /translate\\(([-\\d.e]+) ([-\\d.e]+)\\)/.exec(g.getAttribute('transform')).slice(1).map(Number);
+    const face = g.querySelector('[data-class="chassis"]');
+    const h = +face.getAttribute('height'), y0 = +face.getAttribute('y') || 0;
+    const ears = svg.querySelector(`.rk-ears[data-ears-for="${it.id}"]`);
+    out.items[it.id] = {ref: it.ref, ru: it.ru, catRu: cat[it.ref].ru, ty, h, y0,
+      flanges: [...(ears?.querySelectorAll('rect') ?? [])].map(r => [+r.getAttribute('y'), +r.getAttribute('height')]),
+      screws: [...(ears?.querySelectorAll('circle') ?? [])].map(c => +c.getAttribute('cy'))};
+  }
+  // where the cable's strands start: at its plugs' own cable points (the two of a duplex pair, each end)
+  const ends = [...svg.querySelectorAll('[data-cables] [data-cable-id="c1"] path')].map(p => {
+    const q = p.getPointAtLength(0), w = new DOMPoint(q.x, q.y).matrixTransform(svg.getScreenCTM().inverse().multiply(p.getScreenCTM())); return [w.x, w.y]; });
+  const pts = window.__rack.paths().c1.points;
+  out.cable = {ends, a: pts.find(q => q.at === 'a').y, b: pts.find(q => q.at === 'b').y};
+  return out;
+}"""
+HALF_U_3D_JS = """async () => {
+  const s = window.__rack.scene(), w = s.three.scene, THREE = s.three.THREE, out = {};
+  for (const id of ['i1', 'i2', 'i3']) {
+    const g = w.getObjectByName(`device-${id}`), e = w.getObjectByName(`ears-${id}`);
+    const body = g.children.find(o => o.isMesh && o.geometry.type === 'BoxGeometry');
+    const flanges = [], heads = [];
+    e?.traverse(o => { if (!o.isMesh) return;
+      if (o.geometry.type === 'BoxGeometry' && o.geometry.parameters.width === 24) flanges.push([o.position.y, o.geometry.parameters.height]);
+      if (o.geometry.type === 'CylinderGeometry') heads.push(o.position.y); });
+    out[id] = {y: g.position.y, h: body.geometry.parameters.height, flanges, heads};
+  }
+  const port = await s.portAnchor({id: 'i1'}, 'drawer/module/slot-1/module/lc01', {view: 'front'});
+  out.port = port ? port.position.y : null;
+  return out;
+}"""
+
+
+@extra("rack.html: a body under one unit (the half-unit XCU10) sits in the lower half of its unit in 2D and 3D - its face, its port and cable, and an ear as tall as itself with one screw at the hole that half holds - and a 1U and a 2U device are exactly where they were")
+def check_rack_half_unit(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, HALF_U_FIXTURE, cables=1)
+    g = page.evaluate(HALF_U_2D_JS)
+    RU, H = g["RU"], g["H"]
+    x, one, two = g["items"]["i1"], g["items"]["i2"], g["items"]["i3"]
+    if x["catRu"] != 0.5 or abs(x["h"] - 22.2) > 1e-9 or one["catRu"] != 1 or two["catRu"] != 2:
+        return bad + [f"fixture: the catalogue gives the XCU ru {x['catRu']} and height {x['h']}, the switches ru {one['catRu']} and {two['catRu']}"]
+    bottom = lambda it: H - (it["ru"] - 1) * RU          # pane y of the bottom of the item's lowest unit
+    # ── 2D: the XCU's face is in the lower half of U20, centred in that half ──
+    top = x["ty"] + x["y0"]
+    if not (bottom(x) - RU / 2 - 1e-6 <= top and top + x["h"] <= bottom(x) + 1e-6):
+        bad.append(f"2D: the XCU's face runs y {top:.3f} to {top + x['h']:.3f}; the lower half of U20 is {bottom(x) - RU / 2:.3f} to {bottom(x):.3f}")
+    if abs((top + x["h"] / 2) - (bottom(x) - RU / 4)) > 1e-6:
+        bad.append(f"2D: the XCU's face is not centred in the lower half of its unit (centre {top + x['h'] / 2:.4f}, the half's {bottom(x) - RU / 4:.4f})")
+    # its ear: as tall as the body, where the body is, with one screw a side at the lowest hole
+    if len(x["flanges"]) != 2 or any(abs(y - top) > 1e-6 or abs(h - x["h"]) > 1e-6 for y, h in x["flanges"]):
+        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected two from y {top:.3f}, {x['h']} tall")
+    if len(x["screws"]) != 2 or any(abs(cy - (bottom(x) - 6.35)) > 1e-6 for cy in x["screws"]):
+        bad.append(f"2D: the XCU's screws are at {x['screws']}, expected one a side at {bottom(x) - 6.35:.3f} (6.35 mm above the unit's bottom)")
+    # its port: the cable leaves it inside the body, and the kit's height for the port is in the lower half too
+    # (its strands start at its plugs; those in the lower half of the pane's span of them are the XCU at U20's)
+    ys = [q[1] for q in g["cable"]["ends"]]
+    at_x = [q for q in g["cable"]["ends"] if q[1] > (min(ys) + max(ys)) / 2 and bottom(x) - RU <= q[1] <= bottom(x)]
+    end = at_x[0] if at_x else [0, -1]
+    if not at_x or any(not top <= q[1] <= top + x["h"] for q in at_x):
+        bad.append(f"2D: the cable leaves the XCU at y {[round(q[1], 2) for q in at_x]}, not inside its face ({top:.2f} to {top + x['h']:.2f})")
+    ya = g["cable"]["a"]
+    if not 19 * RU <= ya <= 19.5 * RU or abs((H - ya) - end[1]) > 3:
+        bad.append(f"2D: the kit's height for the XCU's port is {ya:.2f} mm, the pane draws the cable from {H - end[1]:.2f}; the lower half of U20 is {19 * RU:.2f} to {19.5 * RU:.2f}")
+    # ── 2D: the 1U and the 2U device are exactly where the centred formula has always put them ──
+    for it, u in ((one, 1), (two, 2)):
+        was = (H - (it["ru"] - 1 + u) * RU) + (u * RU - it["h"]) / 2 - it["y0"]
+        if it["ty"] != was:
+            bad.append(f"2D: the {u}U {it['ref']} is at y {it['ty']!r}, it was at {was!r}")
+        t0, t1 = H - (it["ru"] - 1 + u) * RU, H - (it["ru"] - 1) * RU
+        if len(it["flanges"]) != 2 or any(y != t0 or h != t1 - t0 for y, h in it["flanges"]):
+            bad.append(f"2D: the {u}U {it['ref']}'s ear flanges are {it['flanges']}, they were two from {t0}, {t1 - t0} tall")
+        want = sorted([H - (it["ru"] - 1 + k) * RU - dy for k in range(u) for dy in (6.35, 38.10)] * 2)
+        if sorted(it["screws"]) != want:
+            bad.append(f"2D: the {u}U {it['ref']}'s screws are at {sorted(it['screws'])}, they were at {want}")
+    if webgl_trouble(page):
+        print("[check_rack_half_unit] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the half-unit scene", tubes=True)
+    t = page.evaluate(HALF_U_3D_JS)
+    x3, base_y = t["i1"], 19 * RU
+    lo, hi = x3["y"] - x3["h"] / 2, x3["y"] + x3["h"] / 2
+    if not (base_y - 1e-6 <= lo and hi <= base_y + RU / 2 + 1e-6) or abs(x3["y"] - (base_y + RU / 4)) > 1e-6:
+        bad.append(f"3D: the XCU's body runs y {lo:.3f} to {hi:.3f}; the lower half of U20 is {base_y:.3f} to {base_y + RU / 2:.3f}, centred at {base_y + RU / 4:.4f}")
+    # the two views agree: the body's place above the unit's bottom is the same
+    if abs((lo - base_y) - (bottom(x) - (top + x["h"]))) > 1e-6:
+        bad.append(f"2D and 3D: the XCU's body is {bottom(x) - (top + x['h']):.4f} mm above its unit's bottom in 2D and {lo - base_y:.4f} in 3D")
+    if len(x3["flanges"]) != 2 or any(abs(y - x3["y"]) > 1e-6 or abs(h - x3["h"]) > 1e-6 for y, h in x3["flanges"]):
+        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected two at {x3['y']:.3f}, {x3['h']} tall")
+    if len(x3["heads"]) != 2 or any(abs(y - (base_y + 6.35)) > 1e-6 for y in x3["heads"]):
+        bad.append(f"3D: the XCU's screw heads are at {x3['heads']}, expected one a side at {base_y + 6.35:.3f}")
+    if t["port"] is None or not lo <= t["port"] <= hi or abs(t["port"] - ya) > 1.0:
+        bad.append(f"3D: the XCU's port is at y {t['port']}, the kit's height for it is {ya:.2f} and its body runs {lo:.2f} to {hi:.2f}")
+    for key, it, u in (("i2", one, 1), ("i3", two, 2)):
+        d = t[key]
+        was = (it["ru"] - 1) * RU + d["h"] / 2
+        if d["y"] != was:
+            bad.append(f"3D: the {u}U {it['ref']} is at y {d['y']!r}, it was at {was!r} (standing on the bottom of its unit)")
+        mid = (it["ru"] - 1) * RU + u * RU / 2
+        if len(d["flanges"]) != 2 or any(y != mid or h != u * RU - 4.5 for y, h in d["flanges"]):
+            bad.append(f"3D: the {u}U {it['ref']}'s ear flanges are {d['flanges']}, they were two at {mid}, {u * RU - 4.5} tall")
+        want = sorted([(it["ru"] - 1) * RU + k * RU + dy for k in range(u) for dy in (6.35, 38.10)] * 2)
+        if sorted(d["heads"]) != want:
+            bad.append(f"3D: the {u}U {it['ref']}'s screw heads are at {sorted(d['heads'])}, they were at {want}")
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that

@@ -1046,7 +1046,7 @@ async function redraw() {
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-      laneGap: hasRoutes() ? LANE_GAP : 0, zeroU, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null})));
+      laneGap: hasRoutes() ? LANE_GAP : 0, zeroU, selectedZeroU: S.sel?.kind === 'zerou' ? S.sel.id : null, chassisOf})));
   } catch (err) {
     if (mine !== S.draws) return;
     // routes read for a rack before this one are not this rack's: nothing waits for them
