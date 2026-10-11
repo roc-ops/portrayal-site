@@ -33,6 +33,28 @@ export async function loadCatalog(dist) {
 const DEVICE_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const compKey = c => `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`;
 
+// WHAT A PDU MEASURES, from its class (`pdu-class` at the top of its
+// configs.json, docs/format-stability.md): nothing, its input, its branches
+// too, or each outlet. null for a device that is no PDU, or a class this kit
+// does not know.
+const METERING = {basic: 'none', switched: 'none', 'metered-input': 'input', 'switched-metered-input': 'input',
+  'metered-branch': 'branch', 'switched-metered-branch': 'branch', 'metered-outlet': 'outlet', managed: 'outlet'};
+export const meteringOf = pduClass => (Object.hasOwn(METERING, pduClass) ? METERING[pduClass] : null);
+// THE FACTS A RACK ENTRY IS CHECKED AGAINST, for one device and the
+// configuration an entry names (its default when it names none): what the
+// device measures, what each placed part can be set to (`states`), the slots it
+// offers a hanging part and the mount points it hangs by, each as its
+// configs.json states it. `slots` is what loadSlots answered for the device;
+// null when that is not loaded or it has no such configuration.
+export function configFacts(slots, cfg) {
+  if (!slots || slots.error) return null;
+  const name = cfg || slots.default;
+  const c = (slots.configs || []).find(k => k.name === name);
+  if (!c) return null;
+  return {config: c.name, pduClass: slots['pdu-class'] ?? null, metering: meteringOf(slots['pdu-class']),
+          states: c.states || {}, slots: c.slots || [], mountPoints: c['mount-points'] || []};
+}
+
 export async function loadSlots(dist, refs = []) {
   const comps = new Map();
   try {
@@ -42,7 +64,8 @@ export async function loadSlots(dist, refs = []) {
   await Promise.all([...new Set(refs)].filter(r => typeof r === 'string' && DEVICE_NAME.test(r)).map(async ref => {
     try {
       const j = await jdist(urlOf(dist, `${ref}.configs.json`));
-      slots.set(ref, {bays: j?.bays || {}, cages: j?.cages || {}, configs: j?.configs || [], default: j?.default ?? null});
+      slots.set(ref, {bays: j?.bays || {}, cages: j?.cages || {}, configs: j?.configs || [], default: j?.default ?? null,
+                      'pdu-class': j?.['pdu-class'] ?? null});
     } catch { slots.set(ref, null); }
   }));
   return {

@@ -5,13 +5,14 @@
 // The Rack Builder's exports (the page that builds the files) do the
 // fetching and drawing, and ask here.
 
-import {positionOf, uLabel, zeroUOf, bundlesOf, bundleName} from './model.js';
+import {positionOf, uLabel, zeroUOf, bundlesOf, bundleName, firstU, railWidth, RAIL_WIDTH_IN, holderOf, rollOf} from './model.js';
 import {routeText, trunkRoute} from './route.js';
-import {isRackMount, isZeroUPart, railOf} from './fit.js';
-import {zeroUEntries, whereText} from './zero-u.js';
-import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable} from './bundles.js';
+import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMeet} from './fit.js';
+import {zeroUEntries, whereText, hungText} from './zero-u.js';
+import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts} from './bundles.js';
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
+import {storedText, mText} from './slack.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -47,6 +48,7 @@ export function toCsv(columns, rows, notes = [], {cell = csvCell} = {}) {
 }
 
 export function holesText(frame) {
+  if (frame.holes?.style === 'round') return 'Round holes';
   if (frame.holes?.style !== 'tapped') return 'Square holes (cage nuts)';
   return `Tapped holes, ${frame.holes.thread || 'thread not stated'}`;
 }
@@ -56,7 +58,7 @@ export function holesText(frame) {
 export function titleLines(rack, date, {source = 'Portrayal'} = {}) {
   const f = rack.frame;
   const kind = f.kind === 'two-post' ? 'Two-post' : 'Four-post';
-  const numbering = f.numbering === 'top-down' ? 'U1 at the top' : 'U1 at the bottom';
+  const numbering = `U${firstU(f)} at the ${f.numbering === 'top-down' ? 'top' : 'bottom'}`;
   const depth = f.kind === 'two-post'
     ? `Usable depth ${Math.round(f.usableDepth)} mm`
     : `Rail depth ${Math.round(f.railDepth)} mm · usable depth ${Math.round(f.usableDepth)} mm`;
@@ -224,17 +226,30 @@ const asWrittenNote = c => (c.lengthAsWritten != null ? `Length as written in th
 // `bundle` (#923) is the name of the bundle the cable is in, as its tag prints
 // it (model.js bundleName: its label, else "Bundle N"), blank for none.
 export const CABLE_COLUMNS = ['id', 'cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
-  'length', 'length_unit', 'route', 'bundle', 'length_source', 'status', 'notes'];
+  'length', 'length_unit', 'route', 'bundle', 'length_source', 'status', 'notes', 'spare', 'stored', 'straps'];
+// `spare` and `stored` (rack file version 4) are APPENDED AFTER THE LAST, so
+// no column read by position moves: `spare` is metres, the length bought less
+// what the cable needs; `stored` says where it is (slack.js storedText). Both
+// are blank for a cable with no length, a length kept as written, a loose
+// end or no path, and when the caller passes no `spare`.
+// `straps` follows them: the tray, the face and the tie slots a single cable
+// is strapped at (bundles.js strapTexts, handed in as `straps`), blank for a
+// cable strapped nowhere and when the caller passes none.
 // `items` are the rack's items with their height `u` (fit.js itemsWithU), so a
 // device's U is the device import's position (positionOf). Without a height an
 // item counts as 1U.
 // `routes` is route-context.js's Map<cableId, {waypoints}>; without it no route is written.
 // `bodies` is route.js bodyFindings(rack, ctx, nameOf) for the same render:
 // each finding's sentence joins its cable's notes. Without it none is written.
+// `bends` is route.js bendFindings(rack, ctx, nameOf) and `covers` is
+// coverFindings(rack, ctx, nameOf), for the same render (#1007, #1013): a
+// cable's notes gain one sentence for its tight bends (the one, or how many
+// and the tightest) and one for the ports its spans cross in front of
+// (layNotesOf). Without them none is written.
 // `bundles` is bundleExports(rack, ctx) for the same render: each bundle's note
 // and its warnings join the file's notes. Without it the bundles are read
 // with no routing context, so each is listed as not measured.
-export function cableScheduleRows(rack, ends = new Map(), items = rack.items, routes = null, {bundles = null, bodies = null} = {}) {
+export function cableScheduleRows(rack, ends = new Map(), items = rack.items, routes = null, {spare = null, straps = null, bundles = null, bodies = null, bends = null, covers = null} = {}) {
   const names = uniqueNames(rack.items);
   const byId = new Map(items.map(i => [i.id, i]));
   const named = new Set();
@@ -251,20 +266,31 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items, ro
     if (asWrittenNote(c)) notes.push(asWrittenNote(c));
     // each solid body its route still crosses (route.js bodyFindings, #949)
     for (const x of bodies || []) if (x.cable === c.id && x.text) notes.push(x.text);
+    notes.push(...layNotesOf(c.id, {bends, covers}));
     return {id: c.id, cable: cableName(c), a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
             media: mediaLabel(c.media), purpose: c.purpose, length: len ? len.value : '',
             length_unit: len ? len.unit : '',
             route: routes?.get(c.id) ? routeText(routes.get(c.id).waypoints, id => names.get(id)?.name ?? id, rack.frame) : '',
             bundle: bundleOfCable(rack, c.id) ? flat(bundleName(bundleOfCable(rack, c.id))) : '',
             length_source: c.length ? (c.length.source || 'entered') : '',
-            status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' ')};
+            status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' '),
+            ...spareCells(rack, c, f.loose.length ? null : spare?.byCable?.get(c.id)),
+            straps: straps?.get?.(c.id) ?? ''};
   });
   const notes = [];
   if (!rows.length) notes.push('This rack has no cables, so there is nothing to list.');
   if (findings.some(f => !f.checked)) notes.push(UNCHECKED_NOTE);
   if (named.size) notes.push(`Devices that share a label are named as the device import names them: ${[...named].join(', ')}.`);
   notes.push(...bundleNotes(bundles ?? bundleExports(rack)));
+  // one line for the rack, never a line a cable
+  if (spare?.line) notes.push(spare.line);
   return {columns: CABLE_COLUMNS, rows, notes};
+}
+
+// The two spare cells of a cable: blank when nothing can be said.
+function spareCells(rack, c, s) {
+  const text = s ? storedText(rack, c, s) : '';
+  return {spare: text ? Math.round(s.spare.spare_m * 100) / 100 : '', stored: text};
 }
 
 // ── BUNDLES IN THE EXPORTS (#923, docs/cable-bundles-design.md section 7) ─
@@ -293,6 +319,11 @@ export function bundleExports(rack, ctx = {}) {
             members: b.members.map(m => m.cable), drawn, checked: !!check.checked,
             length_m: len ? len.metres : null, every: strapSpacing(b),
             straps: !check.checked ? null : drawn ? (st ? st.count : null) : 0,
+            // the three kinds, which `straps` is the sum of (bundles.js straps)
+            strap_kinds: check.checked && drawn && st ? {...st.kinds} : null,
+            // how many of each strap width, {19: 6, 12: 2}, and of those the anchors
+            strap_widths: check.checked && drawn && st ? {...st.widths} : null,
+            anchor_widths: check.checked && drawn && st ? widthCounts(st.straps.filter(x => x.kind === 'anchor').map(x => x.width_mm)) : null,
             size_mm: size && size.max_mm > 0 ? size.max_mm : null, limit_mm: size ? size.limit_mm : null,
             limit_at: size?.limitBy?.text ?? null, limit_estimated: !!size?.limitBy?.estimated,
             bend_mm: bend?.radius_mm ?? null, bend_by: bend?.by ?? null,
@@ -301,7 +332,14 @@ export function bundleExports(rack, ctx = {}) {
   });
 }
 
-const strapsText = (n, e) => (e ? `${count(n, 'strap', 'straps')} every ${e.value} ${e.unit}` : 'no straps');
+// "8 straps every 12 in", "8 straps (6 every 12 in, 2 where a cable leaves)", "no straps"
+const strapsText = (n, e, k) => {
+  if (!n) return 'no straps';
+  const kinds = k ? [k.spacing && e ? `${k.spacing} every ${e.value} ${e.unit}` : null, k.breakout ? `${k.breakout} where a cable leaves` : null,
+                     k.anchor ? `${k.anchor} at a tray` : null].filter(Boolean) : [];
+  if (k && (k.breakout || k.anchor)) return `${count(n, 'strap', 'straps')} (${kinds.join(', ')})`;
+  return e ? `${count(n, 'strap', 'straps')} every ${e.value} ${e.unit}` : count(n, 'strap', 'straps');
+};
 // ONE LINE PER BUNDLE, then its warnings and its notes, for the cable
 // schedule and any other export that lists the bundles: "Bundle 2 (b1): 12
 // cables (c1-c12), 2.4 m, 8 straps every 12 in; 23 mm across, limit 29.5 mm
@@ -312,7 +350,7 @@ export function bundleNote(e) {
   if (!e.drawn) return `${head}, no straps.`;
   if (!e.checked) return `${head}; its route could not be read, so its length, straps, size and bend are not given.`;
   const run = [e.length_m != null ? `${e.length_m} m` : null,
-               e.straps != null ? strapsText(e.straps, e.every) : 'straps not counted'].filter(Boolean).join(', ');
+               e.straps != null ? strapsText(e.straps, e.every, e.strap_kinds) : 'straps not counted'].filter(Boolean).join(', ');
   const size = e.size_mm != null ? `${Math.round(e.size_mm)} mm across, limit ${e.limit_mm} mm${e.limit_at ? ` at ${e.limit_at}${e.limit_estimated ? ' (estimated)' : ''}` : ''}` : null;
   const bend = e.bend_mm != null ? `bend radius ${e.bend_mm} mm (${e.bend_by})` : 'bend not checked';
   return `${head}, ${[run, size, bend].filter(Boolean).join('; ')}.`;
@@ -323,14 +361,30 @@ export const bundleNotes = (bundles = []) => bundles.flatMap(e => [bundleNote(e)
 // its quantity every bundle's straps added up; no manufacturer, and length and
 // width left to the buyer. No line when no bundle has a strap. `bundles` is
 // bundleExports'.
-export function strapBomRows(bundles = []) {
-  const qty = bundles.reduce((a, e) => a + (e.straps || 0), 0);
+// THE THREE KINDS ARE SUMMED (rack file version 4): the spacing and breakout
+// straps of each bundle, and the anchor straps, which are counted by tie slot
+// and not by what passes it. `anchors`, when given, is bundles.js anchorsOf
+// for the rack: every slot a bundle or a single cable is tied at. Without it
+// the anchors are each bundle's own, and no single cable's.
+// A STRAP IS CUT FROM ONE OF A FEW WIDTHS (bundles.js STRAP_WIDTHS_MM), so the
+// line says how many of each, widest first: "9 of 19 mm, 2 of 12 mm".
+export function strapBomRows(bundles = [], {anchors = null} = {}) {
+  const widths = {};
+  const addW = (m, sign = 1) => { for (const [w, n] of Object.entries(m || {})) widths[w] = (widths[w] || 0) + sign * n; };
+  for (const e of bundles) { addW(e.strap_widths); if (anchors) addW(e.anchor_widths, -1); }
+  if (anchors) addW(widthCounts(anchors.map(x => x.width_mm)));
+  const byWidth = Object.entries(widths).filter(([, n]) => n > 0).sort((p, q) => q[0] - p[0]).map(([w, n]) => `${n} of ${w} mm`).join(', ');
+  const kind = k => bundles.reduce((a, e) => a + (e.strap_kinds?.[k] || 0), 0);
+  const spacing = kind('spacing'), breakout = kind('breakout'), anchor = anchors ? anchors.length : kind('anchor');
+  const qty = spacing + breakout + anchor;
   if (!qty) return [];
   const used = bundles.filter(e => e.straps > 0);
-  const every = uniq(used.map(e => `${e.every.value} ${e.every.unit}`));
+  const every = uniq(used.filter(e => e.every && e.strap_kinds?.spacing).map(e => `${e.every.value} ${e.every.unit}`));
+  const what = [spacing ? `${spacing} along ${count(used.filter(e => e.strap_kinds?.spacing).length, 'bundle', 'bundles')}, one every ${andWords(every)}` : null,
+                breakout ? `${breakout} where a cable joins or leaves a bundle` : null,
+                anchor ? `${anchor} at tray tie slots` : null].filter(Boolean);
   return [{section: 'Cables', qty, manufacturer: '', model: 'Hook-and-loop cable strap',
-           description: `For ${count(used.length, 'bundle', 'bundles')}, one strap every ${andWords(every)} along each; length and width to suit`,
-           ref: ''}];
+           description: `${what.join('; ')}; ${byWidth ? `${byWidth} wide; ` : ''}length to suit`, ref: ''}];
 }
 const andWords = xs => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`);
 // What the strap line cannot count: a drawn bundle whose route could not be
@@ -340,7 +394,7 @@ export function strapBomNotes(bundles = []) {
   for (const e of bundles) {
     if (!e.drawn) continue;
     if (e.straps == null) out.push(`${e.name}: its route could not be read, so its straps are not counted.`);
-    else if (!e.every) out.push(`${e.name} is set to no straps, so none are counted for it.`);
+    else if (!e.every && !e.straps) out.push(`${e.name} is set to no straps, so none are counted for it.`);
   }
   return out;
 }
@@ -368,13 +422,32 @@ export function mountPick(mount) {
   const m = mountOf(mount);
   return m && {tag: m.tag, fit: `Fits here, on ${m.where}: this is ${m.what}.`};
 }
+// A rolled item says so wherever its mounting is said (the BOM notes and the
+// comment of both device imports): '' for an upright one.
+export function rollNote(item) {
+  const roll = rollOf(item);
+  return roll === 180 ? 'Mounted upside down.'
+    : roll ? `Mounted rotated 90 degrees ${roll === 90 ? 'clockwise' : 'anticlockwise'}, as seen from its face.` : '';
+}
 export function mountNotes(items, chassisOf, frame) {
   const out = [];
   for (const it of items) {
+    const at = `${it.label} at U${frame ? uOfItem(frame, it, chassisOf) : it.ru}`;
     const t = mountText(chassisOf(it.ref)?.mount);
-    if (t) out.push(`${it.label} at U${frame ? uOfItem(frame, it, chassisOf) : it.ru}: ${t}.`);
+    if (t) out.push(`${at}: ${t}.`);
+    if (rollNote(it)) out.push(`${at}: ${rollNote(it)}`);
   }
   return out;
+}
+// WHAT IS SET OFF on one entry, as the one line a device comment carries
+// ("Outlets off: outlet-a2, outlet-a7."): '' when nothing is. `states` is
+// what states.js statesFor answers for the entry, so only what the part
+// declares is named, by the path the rack file names it by. A part that is
+// no outlet is in a line of its own ("Off: psu-1.").
+export function offNote(states) {
+  const off = Object.entries(states || {}).filter(([, s]) => s === 'off').map(([p]) => p);
+  const outlets = off.filter(p => /^outlet\b/.test(p)), rest = off.filter(p => !/^outlet\b/.test(p));
+  return [outlets.length ? `Outlets off: ${outlets.join(', ')}.` : '', rest.length ? `Off: ${rest.join(', ')}.` : ''].filter(Boolean).join(' ');
 }
 
 // WHERE EACH MANAGER IS, for the sheets, draw.io and the BOM; a narrow part
@@ -395,7 +468,7 @@ export function zeroUNotes(rack, chassisOf) {
   return zeroUEntries(rack, chassisOf).map(e => {
     const c = chassisOf(e.ref);
     const what = [c.manufacturer, c.model].filter(Boolean).join(' ') || e.ref;
-    return `${e.label}: ${what}, 0U, ${whereText(rack, byId.get(e.id), chassisOf)}` +
+    return `${e.label}: ${what}, 0U, ${hungText(rack, byId.get(e.id), chassisOf) ?? whereText(rack, byId.get(e.id), chassisOf)}` +
       `${e.between ? '; it serves the next rack too, which this file does not hold' : ''}.`;
   });
 }
@@ -404,8 +477,10 @@ export function zeroUNotes(rack, chassisOf) {
 // takes beside the rack's own items, one per part zeroUEntries lists, with
 // `mount` (rack-side), `at`, `between`, `ru` and `u`, and the text of where
 // it stands. A caller looks its device type up by ref as it does an item's.
-export const zeroUImportItems = (rack, chassisOf) => zeroUEntries(rack, chassisOf).map(e =>
-  ({...e, where: whereText(rack, zeroUOf(rack).find(z => z.id === e.id), chassisOf)}));
+export const zeroUImportItems = (rack, chassisOf) => zeroUEntries(rack, chassisOf).map(e => {
+  const z = zeroUOf(rack).find(o => o.id === e.id);
+  return {...e, where: hungText(rack, z, chassisOf) ?? whereText(rack, z, chassisOf), ...(z.states ? {states: z.states} : {})};
+});
 
 // createRackScene has no fields input yet (the Rack Builder's 3D scene).
 export function threeDNotes(rack) {
@@ -418,12 +493,15 @@ export function threeDNotes(rack) {
 // frame counts; what a DCIM calls a device's position). The height is the
 // item's own `u` when it carries one (fit.js itemsWithU), else its chassis's.
 export const uOfItem = (frame, item, chassisOf = () => null) =>
-  positionOf(frame, item.ru, item.u ?? Math.max(1, chassisOf(item.ref)?.ru ?? 1));
+  positionOf(frame, item.ru, item.u ?? itemUnits(item, chassisOf));
 
-// draw.io's cabinet counts from 1 at the TOP, and its `u` is the device's top U.
-export const drawioU = (heightRU, ru, u) => heightRU - (ru + u - 1) + 1;
+// draw.io's cabinet counts from 1 at the TOP, and its `u` is the top of the
+// device's box in units from the top, in steps of 0.5: the top U of a device
+// that ends on a whole unit.
+export const drawioU = (heightRU, ru, u) => heightRU + 2 - ru - u;
 
-const overlaps = (a, b) => a.ru <= b.ru + b.u - 1 && b.ru <= a.ru + a.u - 1;
+// Two items carrying their height (`u`) meet as their spans do (fit.js spansMeet).
+const overlaps = (a, b) => spansMeet([a.ru, a.ru + a.u], [b.ru, b.ru + b.u]);
 // ONE CABINET PER FACE. What you see from a side is what is mounted there,
 // plus the far panel of anything that nothing mounted on this side covers.
 // Behind a mounted device, the other side's device is hidden - two pictures
@@ -565,7 +643,9 @@ export const drawioCableStyle = color =>
   'edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;startArrow=none;strokeWidth=2;fontSize=8;' +
   `labelBackgroundColor=#FFFFFF;fontColor=#15171a;strokeColor=${color};`;
 
-export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf}) {
+// `spare` is slack.js spareExports(rack, ctx): a cable with a length and a
+// path carries what is spare of it, which its edge label states.
+export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf, spare = null}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   // Ends that could not be checked: an edge may run to an empty cage, which
   // says "connected" where nothing is. None is drawn, and the file says so.
@@ -589,8 +669,10 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = ()
       continue;
     }
     const [a, b] = sides.map(s => ({item: idOf(s.it.id, s.pane), path: s.end.path}));
+    const s = c.length ? spare?.byCable?.get(c.id) : null;
     cables.push({id: c.id, a, b, media: drawioMediaKey(c), purpose: c.purpose, label: c.label,
-                 ...(c.length ? {length: c.length} : {})});
+                 ...(c.length ? {length: c.length} : {}),
+                 ...(s && !s.short && lengthText(c.length) ? {spare: mText(s.spare.spare_m)} : {})});
   }
   // draw.io draws each cable as its own edge, as it draws no routes (#923).
   const drawnBundles = bundlesOf(rack).filter(b => b.members.length >= 2);
@@ -773,11 +855,29 @@ export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
 //     and rear while either type is full depth. The rack's own order is the
 //     order they were placed. Nautobot 3.2 accepts such a pair, so its file
 //     keeps both.
-export function deviceImportRows({rack, items, types, target = 'netbox', dcim = {}, why = new Map()}) {
+// NAUTOBOT STORES WHOLE RACK UNITS (docs/rack-file-v4-design.md section 2.7),
+// so there each item has a whole-unit span: from floor(p) to
+// ceil(p + units) - 1, where p is its position. Items are taken by their
+// stored `ru`, lowest first, and in the order given where two share one. An
+// item whose whole-unit span meets, on its face, that of one already written
+// with a position is KEPT IN THE RACK WITH NO POSITION AND NO FACE, and its
+// comment says where it is; any other whose span is not whole units is
+// written at floor(p), and its comment says which part of that it fills. So
+// the file imports, loses no device, and states no position that is false.
+// `items` carry their height `u` (fit.js itemsWithU). One that does not is
+// given it from the catalogue when `chassisOf` is passed, and counts as 1U
+// otherwise.
+// `statesOf(entry)` gives what an item or a part beside the rack is set to
+// (states.js statesFor with the facts of its device): what is off goes in
+// its comment, in both files, since neither device import has a column for
+// it. Without it no state is written. A reading is in neither file.
+export function deviceImportRows({rack, items: given, types, target = 'netbox', dcim = {}, why = new Map(), chassisOf = null, statesOf = null}) {
+  const items = given.map(it => (it.u != null ? it : {...it, u: chassisOf ? itemUnits(it, chassisOf) : 1}));
   const T = TARGET_NAME[target] || 'NetBox';
   const names = uniqueNames(items);
   const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
   const kept = [], left = [];
+  const offRails = m => m === 'rack-face' || isZeroUPart({mount: m});
   for (const it of items) {
     const t = types.get(it.id) || null, name = names.get(it.id).name;
     if (!t) {
@@ -792,7 +892,6 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
         'Shorten its label and export again.'});
       continue;
     }
-    const offRails = m => m === 'rack-face' || isZeroUPart({mount: m});
     const clash = target === 'nautobot' || offRails(it.mount) ? null
       : kept.find(o => !offRails(o.mount) && o.face !== it.face && overlaps(o, it) && (t.isFullDepth || types.get(o.id).isFullDepth));
     if (clash) {
@@ -806,7 +905,21 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
   }
   // Top down by the U a device's TOP occupies, not where it starts (ru is
   // its bottom): a tall device reaches higher than its ru alone would say.
-  const topU = it => it.ru + it.u - 1;
+  // Nautobot: the items with no position there, each with the one it meets
+  const unplaced = new Map();
+  const uOf = it => it.u;
+  if (target === 'nautobot') {
+    const wholeSpan = it => { const p = positionOf(rack.frame, it.ru, uOf(it)); return [Math.floor(p), Math.ceil(p + uOf(it)) - 1]; };
+    const placed = [];
+    // a held item that is no rack device claims no unit
+    const order = kept.filter(it => !offRails(it.mount) && !(holderOf(it) != null && it.mount != null)).map((it, k) => ({it, k})).sort((a, b) => a.it.ru - b.it.ru || a.k - b.k);
+    for (const {it} of order) {
+      const [lo, hi] = wholeSpan(it);
+      const met = placed.find(o => o.face === it.face && wholeSpan(o)[0] <= hi && lo <= wholeSpan(o)[1]);
+      if (met) unplaced.set(it.id, met); else placed.push(it);
+    }
+  }
+  const topU = it => it.ru + it.u;
   const sorted = [...kept].sort((a, b) => topU(b) - topU(a) || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
   const rows = sorted.map(it => {
     const t = types.get(it.id);
@@ -819,6 +932,7 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     const mt = mountText(it.mount);
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
+    if (rollNote(it)) notes.push(rollNote(it));
     // A part beside the rack (zeroUImportItems) and a manager on the rail face
     // take no position and no face: where each is goes in the comment.
     const beside = isZeroUPart({mount: it.mount});
@@ -832,13 +946,38 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
                  `${host ? `, over ${names.get(host.id)?.name ?? host.label}` : ''}; ${T} has no field for that.`);
     }
     const position = positionOf(rack.frame, it.ru, it.u);
+    // A HELD ITEM (on a shelf or a rail of another) is in the rack with no
+    // position and no face; its comment says what it is on.
+    const holder = holderOf(it), held = !zeroU && holder != null && it.mount != null;
+    if (held) {
+      const host = items.find(o => o.id === holder);
+      notes.push(`On ${host ? names.get(host.id)?.name ?? host.label : 'a device that is no longer in the rack'}, which holds it; ${T} has no field for that.`);
+    }
+    // BOTH IMPORTS COUNT A RACK FROM 1. Nautobot has no field for another
+    // start, and the NetBox rack import takes none (RackImportForm has no
+    // starting_unit), so a position is counted from 1 whatever `startU` is,
+    // and the comment says how the rack itself is numbered: every unit a
+    // comment names is the label on the rack.
+    const from1 = positionOf({...rack.frame, startU: 1}, it.ru, it.u);
+    const none = zeroU || held || unplaced.has(it.id);
+    if (target === 'nautobot' && !zeroU && !held) {
+      const met = unplaced.get(it.id), where = unitsText(rack.frame, it.ru, uOf(it));
+      if (met) notes.push(`In ${where}, ${it.ru > met.ru ? 'above' : 'with'} ${names.get(met.id).name}; no position, since Nautobot stores whole rack units.`);
+      else if (!Number.isInteger(it.ru) || !Number.isInteger(uOf(it)))
+        notes.push(`Occupies ${where} (${uOf(it)}U). Nautobot stores whole rack units.`);
+    }
+    let off = '';
+    try { off = typeof statesOf === 'function' ? offNote(statesOf(it)) : ''; } catch { off = ''; }
+    if (off) notes.push(off);
+    if (firstU(rack.frame) !== 1)
+      notes.push(`${none ? '' : `U${position} on the rack. `}The rack numbers its units from ${firstU(rack.frame)}, and a unit named here is its label; the ${T} import counts from 1.`);
     const comments = notes.join(' ');
     return target === 'nautobot'
       ? {name: n.name, role__name: role, device_type__manufacturer__name: t.manufacturer ?? '',
          device_type__model: t.model ?? '', status__name: 'Planned', location__name: site,
-         rack__name: rack.name, rack__location__name: site, position: zeroU ? '' : position, face: zeroU ? '' : it.face, comments}
+         rack__name: rack.name, rack__location__name: site, position: none ? '' : Math.floor(from1), face: none ? '' : it.face, comments}
       : {name: n.name, role, manufacturer: t.manufacturer ?? '', device_type: t.model ?? '',
-         status: 'planned', site, rack: rack.name, position: zeroU ? '' : position, face: zeroU ? '' : it.face, comments};
+         status: 'planned', site, rack: rack.name, position: zeroU || held ? '' : from1, face: zeroU || held ? '' : it.face, comments};
   });
   return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows, left};
 }
@@ -846,10 +985,23 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
 // THE RACK, as NetBox imports one: written from the frame.
 // A device row names its rack, and the device import does not create it.
 // desc_units is NetBox's "units are numbered top-to-bottom".
+// ONLY WHAT THE RACK IMPORT TAKES. The columns are fields of NetBox's
+// RackImportForm; a header it does not list refuses the whole file. It lists
+// no starting unit, and its width is one of four choices (10, 19, 21, 23
+// inches). So a frame that numbers from another unit, or states another
+// width, says so in `comments`, a column written only then: a rack with
+// neither is the six columns it always was.
 export const NETBOX_RACK_COLUMNS = ['site', 'name', 'status', 'width', 'u_height', 'desc_units'];
+export const NETBOX_RACK_WIDTHS = [10, 19, 21, 23];
 export function rackImportRows({rack, dcim = {}}) {
-  return {columns: NETBOX_RACK_COLUMNS, rows: [{site: String(dcim?.site ?? '').trim(), name: rack.name, status: 'planned',
-    width: 19, u_height: rack.frame.heightRU, desc_units: rack.frame.numbering === 'top-down' ? 'true' : 'false'}]};
+  const f = rack.frame, width = railWidth(f), known = NETBOX_RACK_WIDTHS.includes(width), said = [];
+  if (firstU(f) !== 1)
+    said.push(`Its units are numbered from ${firstU(f)} on the rack. The NetBox rack import takes no starting unit, so this rack and the positions in the devices file count from 1. Leave its starting unit at 1 in NetBox; if it is set to ${firstU(f)}, raise every device position by ${firstU(f) - 1}.`);
+  if (!known) said.push(`Its rails are ${width} in wide, which the NetBox rack import does not take; 19 is written.`);
+  const row = {site: String(dcim?.site ?? '').trim(), name: rack.name, status: 'planned',
+    width: known ? width : RAIL_WIDTH_IN, u_height: f.heightRU, desc_units: f.numbering === 'top-down' ? 'true' : 'false'};
+  return said.length ? {columns: [...NETBOX_RACK_COLUMNS, 'comments'], rows: [{...row, comments: said.join(' ')}]}
+    : {columns: NETBOX_RACK_COLUMNS, rows: [row]};
 }
 
 // ── THE BILL OF MATERIALS ───────────────────────────────────────────────
@@ -914,9 +1066,13 @@ export function bomRows({devices = [], parts = [], frame, railUs = []}) {
   return [...rows, ...hardwareRows(frame, railUs)];
 }
 
-// 2 ears x 2 screws x each U a rail item covers.
+// 2 ears x 2 screws x each U a rail item covers, with no floor of one unit: a
+// half-unit panel has one slot an ear, so it takes 2. `railUs` are the heights
+// in units (fit.js unitsOf, in halves), so the count is always whole.
+// Each is read through unitsOf, so whatever a caller passes is a height in
+// halves; one that is no height counts as a unit.
 export function hardwareRows(frame, railUs) {
-  const qty = 4 * railUs.reduce((s, u) => s + Math.max(1, u), 0);
+  const qty = 4 * railUs.reduce((s, u) => s + (Number(u) > 0 ? unitsOf({ru: Number(u)}) : 1), 0);
   if (!qty) return [];
   const row = model => ({section: 'Mounting hardware', qty, manufacturer: '', model,
     description: 'Two per ear for each U a device covers', ref: ''});
@@ -924,6 +1080,8 @@ export function hardwareRows(frame, railUs) {
   return [row('Cage nut, M6'), row('Screw, M6')];
 }
 export function hardwareNotes(frame) {
+  // round holes are counted as square ones are, and say so
+  if (frame.holes?.style === 'round') return ['Round holes: check what fixing your rail takes.'];
   if (frame.holes?.style !== 'tapped')
     return ["Cage nuts and screws are counted as M6, the usual size for square-hole rails; check your rack's own."];
   return frame.holes.thread ? [] : ['The rail thread is not set under Frame, so the screws are listed without one.'];
@@ -937,6 +1095,27 @@ export function hardwareNotes(frame) {
 // drawn with are part of the cable: they are never lines of their own.
 const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC'};
 const familyOf = info => (info && Object.hasOwn(FAMILY, info.family ?? '') ? FAMILY[info.family] : null);
+// WHAT THE LAY FINDS FOR ONE CABLE, as sentences for a notes cell (#1007):
+// its tight bends in one sentence (route.js bendFindings: the one finding's
+// own, or how many corners and the tightest of them), then the ports its
+// spans cross in front of (coverFindings, #1013). `bends` and `covers` are
+// those lists for the whole rack, or null.
+export function layNotesOf(cableId, {bends = null, covers = null} = {}) {
+  const out = [];
+  const tight = (bends || []).filter(f => f.cable === cableId && f.text);
+  if (tight.length === 1) out.push(tight[0].text);
+  else if (tight.length) {
+    const worst = tight.reduce((m, f) => (f.short_mm > m.short_mm ? f : m));
+    const rest = worst.text.startsWith(`${cableId} `) ? worst.text.slice(cableId.length + 1) : worst.text;
+    out.push(`${cableId} has ${tight.length} corners with less room than the cable needs; the tightest ${rest}`);
+  }
+  for (const f of covers || []) if (f.cable === cableId && f.text) out.push(f.text);
+  return out;
+}
+// The same for a file's notes: one line a cable, in the rack's order, for
+// each cable the lay finds something for. What a BOM or a drawing's notes
+// carry, where there is no row for a cable.
+export const layNotes = (rack, found = {}) => (rack.cables || []).map(c => layNotesOf(c.id, found).join(' ')).filter(Boolean);
 function connectorText(a, b) {
   const known = [familyOf(a), familyOf(b)].filter(Boolean).sort();
   if (known.length === 2) return known[0] === known[1] ? `${known[0]} at both ends` : `${known[0]} at one end, ${known[1]} at the other`;
@@ -945,7 +1124,10 @@ function connectorText(a, b) {
 // A panel with no drawing leaves its cables' connectors blank: said once per
 // device panel, not once per cable. A length kept as written is listed as
 // "length not set": said once per such cable, as the schedule says it.
-export function cableBomNotes(rack, ends = new Map()) {
+// `spare` is slack.js spareExports(rack, ctx) for the same render: its one
+// line totals the spare and counts the cords with no place for it. Without
+// it none is written.
+export function cableBomNotes(rack, ends = new Map(), {spare = null} = {}) {
   const byId = new Map(rack.items.map(i => [i.id, i])), seen = new Set(), out = [];
   const names = cableNames(rack);
   for (const c of rack.cables || []) if (asWrittenNote(c)) out.push(`Cable ${names.get(c.id)}: ${asWrittenNote(c)}`);
@@ -955,6 +1137,7 @@ export function cableBomNotes(rack, ends = new Map()) {
     seen.add(k);
     out.push(`${it.label}: its ${e.view} panel had no drawing, so the cable lines do not state its connectors.`);
   }
+  if (spare?.bom) out.push(spare.bom);
   return out;
 }
 // What the routes add to an export's notes: a pathway filled past its limit, a

@@ -35,6 +35,11 @@ export function validate(schema, value, root = schema, path = []) {
     if (schema.minimum != null && value < schema.minimum) out.push(err('minimum'));
     if (schema.maximum != null && value > schema.maximum) out.push(err('maximum'));
     if (schema.exclusiveMinimum != null && value <= schema.exclusiveMinimum) out.push(err('exclusiveMinimum'));
+    // a whole number of steps, to within what a float can say of a decimal step
+    if (schema.multipleOf != null) {
+      const q = value / schema.multipleOf;
+      if (Math.abs(q - Math.round(q)) > 1e-9) out.push(err('multipleOf'));
+    }
   }
   if (typeof value === 'string' && schema.minLength != null && value.length < schema.minLength) out.push(err('minLength'));
   if (Array.isArray(value)) {

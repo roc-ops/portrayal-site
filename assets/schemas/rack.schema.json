@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "https://portrayal.dev/schemas/v2/rack.schema.json",
- "title": "Portrayal rack file (v3)",
+ "$id": "https://portrayal.dev/schemas/v3/rack.schema.json",
+ "title": "Portrayal rack file (v4)",
  "description": "A Rack Builder document: one or more racks, the devices in them, and the cables between their ports. What the kit's Rack Builder reads and writes.",
  "type": "object",
  "required": [
@@ -16,8 +16,8 @@
    "description": "Always portrayal-rack."
   },
   "version": {
-   "const": 3,
-   "description": "The file version. Older files are migrated on load; newer ones are refused. Version 3 carries bundles."
+   "const": 4,
+   "description": "The file version. Older files are migrated on load; newer ones are refused. Version 4 carries half-unit positions and the keys of the rack file version 4 design note. A reader keeps a key it does not know, at every level of the file."
   },
   "id": {
    "type": "string",
@@ -142,9 +142,10 @@
       "style": {
        "enum": [
         "square",
-        "tapped"
+        "tapped",
+        "round"
        ],
-       "description": "Square (cage nuts) or tapped."
+       "description": "Square (cage nuts), tapped, or round (unthreaded)."
       },
       "thread": {
        "enum": [
@@ -176,6 +177,23 @@
       "null"
      ],
      "description": "A catalogue rack this frame was taken from, if any."
+    },
+    "startU": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "The number of the first unit, for a frame whose labels do not start at 1. Absent is 1."
+    },
+    "setback": {
+     "type": "number",
+     "description": "Millimetres a faceplate stands behind its rail in this rack, for an item that states none of its own. Absent until set."
+    },
+    "width": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "description": "The rail width in inches. Absent is 19."
+    },
+    "options": {
+     "description": "The options of a catalogue rack this frame takes. Kept as written; nothing reads one until a product defines it."
     }
    }
   },
@@ -220,9 +238,10 @@
      "description": "The name shown on the drawing."
     },
     "ru": {
-     "type": "integer",
+     "type": "number",
      "minimum": 1,
-     "description": "The U its bottom sits in, counted bottom-up."
+     "multipleOf": 0.5,
+     "description": "Its bottom, in rack units counted bottom-up from 1, in steps of 0.5: 12 is the bottom of U12 and 12.5 the middle of it."
     },
     "face": {
      "enum": [
@@ -254,12 +273,58 @@
     },
     "side": {
      "description": "left or right: the rail a part narrower than the rack opening is on, seen from its face. Absent, it is across both rails."
+    },
+    "roll": {
+     "enum": [
+      90,
+      180,
+      270
+     ],
+     "description": "Degrees it is rolled clockwise, as seen in the elevation of the face it is on. Absent is upright."
+    },
+    "states": {
+     "$ref": "#/$defs/states"
+    },
+    "readings": {
+     "$ref": "#/$defs/readings"
+    },
+    "readingsAsWritten": {
+     "description": "Readings the loader could not use, kept whole as they were written."
+    },
+    "setback": {
+     "type": "number",
+     "description": "Millimetres its faceplate stands behind its rail. Absent, the device default and then the frame setback apply."
+    },
+    "heldBy": {
+     "type": "object",
+     "description": "What holds an item that is not bolted to the rails itself: a shelf, a drawer or a rail of another item.",
+     "properties": {
+      "item": {
+       "type": "string",
+       "description": "The id of the item that holds it."
+      },
+      "at": {
+       "type": "string",
+       "description": "Which place on that item, by its id there."
+      },
+      "x": {
+       "type": "number",
+       "description": "Millimetres along that place."
+      },
+      "z": {
+       "type": "number",
+       "description": "Millimetres back from its front."
+      },
+      "turn": {
+       "description": "How it is turned on that place."
+      }
+     }
     }
    }
   },
   "zeroU": {
    "type": "object",
-   "description": "A part beside the rack. Its keys are described but not constrained, so any object is a valid entry; the kit places an entry whose id, ref and at are non-empty strings, and keeps any other as written.",
+   "description": "A part beside the rack. Its place (id, ref, at, offsetMm) is described but not constrained, so an entry of another shape is still a valid entry; the kit places an entry whose id, ref and at are non-empty strings, and keeps any other as written. What it is set to (swaps, fields, states, readings, heldBy) is typed as on an item.",
    "properties": {
     "id": {
      "description": "Unique within the rack's zeroU entries; z1, z2 and so on. The loader gives an entry without one an id."
@@ -281,6 +346,40 @@
     },
     "between": {
      "description": "True when it stands between this rack and the next one, serving both."
+    },
+    "swaps": {
+     "type": "object",
+     "description": "What is seated in it: slot path to part ref, as on an item."
+    },
+    "fields": {
+     "type": "object",
+     "description": "Its part settings, as on an item."
+    },
+    "states": {
+     "$ref": "#/$defs/states"
+    },
+    "readings": {
+     "$ref": "#/$defs/readings"
+    },
+    "heldBy": {
+     "type": "object",
+     "description": "What it hangs on, such as the two brackets of a PDU.",
+     "properties": {
+      "parts": {
+       "type": "array",
+       "description": "The ids of the zero-U entries of this rack that hold it, one or more.",
+       "items": {
+        "type": "string",
+        "minLength": 1
+       }
+      }
+     }
+    },
+    "channel": {
+     "description": "The channel of the frame it stands in, by its id on the catalogue rack the frame names."
+    },
+    "readingsAsWritten": {
+     "description": "Readings the loader could not use, kept whole as they were written."
     }
    }
   },
@@ -409,7 +508,12 @@
       "measured": {
        "type": "number",
        "exclusiveMinimum": 0,
-       "description": "Metres along the route, before rounding up to a stock length. Present when the source is routed."
+       "description": "Written before version 4: metres along the route with the allowances of then. A version-4 kit writes need in its place and drops this at the next measure."
+      },
+      "need": {
+       "type": "number",
+       "exclusiveMinimum": 0,
+       "description": "Metres the cable must at least be: its path, what is inside its two ports and the short tolerance of its maker. Present beside a routed length."
       }
      }
     },
@@ -430,6 +534,33 @@
     "routeAsWritten": {
      "type": "array",
      "description": "A route containing an entry the loader could not read, kept whole as it was written. The readable waypoints are in route."
+    },
+    "slack": {
+     "type": "array",
+     "description": "Where the spare length is stored. Absent, nothing has been said; an empty list says it is stored nowhere.",
+     "items": {
+      "$ref": "#/$defs/slackEntry"
+     }
+    },
+    "slackAsWritten": {
+     "description": "A slack list holding an entry the loader could not use, kept whole as it was written. The usable entries are in slack."
+    },
+    "lay": {
+     "type": "array",
+     "description": "Where the cable was laid by hand in a pathway.",
+     "items": {
+      "$ref": "#/$defs/layEntry"
+     }
+    },
+    "straps": {
+     "type": "object",
+     "description": "The straps of a single cable.",
+     "properties": {
+      "anchors": {
+       "type": "boolean",
+       "description": "False for no strap tying it to a tray it passes."
+      }
+     }
     }
    }
   },
@@ -478,13 +609,18 @@
     },
     "straps": {
      "type": "object",
-     "required": [
-      "every"
-     ],
-     "description": "The hook-and-loop straps. Absent means every 12 in.",
+     "description": "The hook-and-loop straps. Absent means every 12 in, with breakout and anchor straps.",
      "properties": {
       "every": {
        "$ref": "#/$defs/strapSpacing"
+      },
+      "breakout": {
+       "type": "boolean",
+       "description": "Whether a strap goes beside each point where a cable joins or leaves the bundle. When left out: true, unless every is null."
+      },
+      "anchors": {
+       "type": "boolean",
+       "description": "Whether the bundle is strapped to each tray with tie slots it lies on. When left out: true, unless every is null."
       }
      }
     }
@@ -521,7 +657,7 @@
     "value",
     "unit"
    ],
-   "description": "How far apart the straps are, a length with its own unit; null for no straps.",
+   "description": "How far apart the spacing straps are, a length with its own unit; null for none.",
    "properties": {
     "value": {
      "type": "number",
@@ -534,6 +670,137 @@
       "mm"
      ],
      "description": "in or mm."
+    }
+   }
+  },
+  "states": {
+   "type": "object",
+   "description": "What each switchable part is set to: part path to state name.",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "readings": {
+   "type": "object",
+   "required": [
+    "source",
+    "at"
+   ],
+   "description": "Readings taken from the device, with where they came from and when.",
+   "properties": {
+    "source": {
+     "type": "string",
+     "description": "Where the readings came from."
+    },
+    "at": {
+     "type": "string",
+     "description": "When they were taken, as an RFC 3339 time."
+    },
+    "values": {
+     "type": "object",
+     "description": "Part path to what was read there.",
+     "additionalProperties": {
+      "type": "object",
+      "description": "What was read at one part.",
+      "properties": {
+       "current-a": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Amperes."
+       },
+       "power-w": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Watts."
+       },
+       "energy-kwh": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Kilowatt hours."
+       }
+      }
+     }
+    }
+   }
+  },
+  "slackEntry": {
+   "type": "object",
+   "description": "Spare stored in a tray or on a spool of a placed part (item and via), or left at one end of the cable (end). At most one entry of a cable has no value: it takes the rest.",
+   "properties": {
+    "item": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The id of the placed item or zero-U part, with via."
+    },
+    "via": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The tray or spool on that part, with item."
+    },
+    "end": {
+     "enum": [
+      "a",
+      "b"
+     ],
+     "description": "The end of the cable the spare is left at."
+    },
+    "form": {
+     "enum": [
+      "coil",
+      "serpentine",
+      "spool"
+     ],
+     "description": "How it is stored; a coil when left out."
+    },
+    "value": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "description": "How much is stored there."
+    },
+    "unit": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The unit of value; m when left out."
+    }
+   },
+   "dependentRequired": {
+    "item": [
+     "via"
+    ],
+    "via": [
+     "item"
+    ]
+   }
+  },
+  "layEntry": {
+   "type": "object",
+   "required": [
+    "item",
+    "via"
+   ],
+   "description": "One pathway the cable was laid in by hand. An entry states a position, a face, or both.",
+   "properties": {
+    "item": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The id of the placed part the pathway is on."
+    },
+    "via": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The pathway on that part."
+    },
+    "position": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "Its place across the pathway, counted from 1."
+    },
+    "face": {
+     "enum": [
+      "top",
+      "underside"
+     ],
+     "description": "The face of a tray it lies on."
     }
    }
   }

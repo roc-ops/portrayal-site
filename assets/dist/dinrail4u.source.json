@@ -1,4 +1,22 @@
 {
+ "adjustments": {
+  "rail-setback": {
+   "axis": "z",
+   "carrier": "rail-panel",
+   "datum": "the front face of the rail panel, behind the ear plane",
+   "default": 159.9,
+   "label": "Rail setback",
+   "range": [
+    50.5,
+    269.4
+   ],
+   "stops": {
+    "front": 50.5,
+    "middle": 159.9,
+    "rear": 269.4
+   }
+  }
+ },
  "aliases": [
   {
    "kind": "vendor",
@@ -60,12 +78,6 @@
    "reason": "vendor-silent",
    "wanted": "the profile from FS or a ruler on the rail",
    "what": "din-profile"
-  },
-  {
-   "note": "the rail panel's face can stand from 50.5 to 269.4 mm behind the ears; it is drawn at 159.9, the middle, and no configuration offers the other positions, because the format has no way to move a part along a slot per configuration.",
-   "reason": "vendor-silent",
-   "wanted": "a setback field or configuration key for adjustable parts",
-   "what": "setback"
   },
   {
    "note": "the face is 165.1 tall, 12.7 short of 4U, and the side view dimensions the brackets 176.40 at their full-height ends, the panel's tabs lying inside that on the lowered edges; FS does not say how the ear holes meet the rail holes, and they are drawn where the front view puts them.",
@@ -145,9 +157,9 @@
    "confidence": "drawing",
    "note": "a TS35 x 7.5 rail 400 long (fs/din-rail-ts35-400@1) centred on the panel's height, its centre line 82.55 below the top: the datasheet's front views draw it across the whole 400 panel at mid-height (the 4U's measures 82.2 down on the 300 dpi render, the 165.1 face's middle being 82.55)."
   },
-  "setback": {
+  "rail-setback": {
    "confidence": "drawing",
-   "note": "the rail panel's front face can stand from 50.5 to 269.4 mm behind the ears, and is drawn at 159.9, the middle of that travel; the rail's face stands 7.5 in front of the panel's. The panel slides along the two long slots in each 360 mm side bracket (\"the adjustable rails can be easily set back\"; QSG: adjust the rail panel's position to suit the device). On the datasheet's side view (p3, an embedded 435 x 279 px raster, about 1.2 mm a pixel, read on a 600 dpi upsampled render at 3.258 px/mm along the 360) the slots run 65.7 to 289.8 and are about 5.2 wide, so a screw's centre travels from 68.3 to 287.2; the panel's tab spans 128.6 to 164.8 with its screw at 146.4, so the panel face stands 17.8 in front of the screw. The face travel is the screw travel less that. The gallery renders show it at both ends of that travel: g3 about 62 and g4 about 284 behind the ears, each read along the near side bracket as a fraction of its 360 (a three-quarter render, so to perhaps 10 per cent). With no single photographed position, the middle of the travel is the default; the range is in attrs and the format cannot offer the other positions (see gaps)."
+   "note": "the rail panel's front face can stand from 50.5 to 269.4 mm behind the ears, and is drawn at 159.9, the middle of that travel; the rail's face stands 7.5 in front of the panel's. The panel slides along the two long slots in each 360 mm side bracket (\"the adjustable rails can be easily set back\"; QSG: adjust the rail panel's position to suit the device). On the datasheet's side view (p3, an embedded 435 x 279 px raster, about 1.2 mm a pixel, read on a 600 dpi upsampled render at 3.258 px/mm along the 360) the slots run 65.7 to 289.8 and are about 5.2 wide, so a screw's centre travels from 68.3 to 287.2; the panel's tab spans 128.6 to 164.8 with its screw at 146.4, so the panel face stands 17.8 in front of the screw. The face travel is the screw travel less that. The gallery renders show it at both ends of that travel: g3 about 62 and g4 about 284 behind the ears, each read along the near side bracket as a fraction of its 360 (a three-quarter render, so to perhaps 10 per cent). With no single photographed position, the middle of the travel is the default. The travel is stated as the `rail-setback` adjustment, whose three stops are the two ends and that middle; the three din-rail-setback attrs restate it."
   },
   "sheet": {
    "confidence": "estimated",
@@ -160,7 +172,7 @@
    "title": "FS DINRAIL4U Quick Start Guide V1.0 (portal 9719)"
   }
  ],
- "version": "1.0.0",
+ "version": "1.1.0",
  "views": {
   "bottom": {
    "panel": {
@@ -199,6 +211,7 @@
       "fill": "#1b1d20",
       "id": "rail-panel",
       "kind": "rail-panel",
+      "moves-with": "rail-setback",
       "size": [
        419.7,
        1.5
@@ -212,6 +225,7 @@
       "fill": "#b9bdc2",
       "id": "rail",
       "kind": "din-rail",
+      "moves-with": "rail-setback",
       "size": [
        400.0,
        7.5
@@ -225,6 +239,7 @@
       "fill": "#1b1d20",
       "id": "tab-left",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "size": [
        17.1,
        36.2
@@ -238,6 +253,7 @@
       "fill": "#1b1d20",
       "id": "tab-right",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "size": [
        17.1,
        36.2
@@ -260,6 +276,7 @@
       ],
       "group": "frame",
       "id": "rail-panel",
+      "moves-with": "rail-setback",
       "ref": "fs/dinrail4u-panel@2",
       "rel-pos": 1
      },
@@ -271,6 +288,7 @@
       "group": "rails",
       "id": "rail",
       "in": "rail-panel",
+      "moves-with": "rail-setback",
       "ref": "fs/din-rail-ts35-400@1",
       "rel-pos": 1
      },
@@ -359,6 +377,7 @@
       "group": "screws",
       "id": "screw-upper",
       "lift": 1.5,
+      "moves-with": "rail-setback",
       "ref": "common/pan-screw-m5@1",
       "rel-pos": 1
      },
@@ -370,6 +389,7 @@
       "group": "screws",
       "id": "screw-lower",
       "lift": 1.5,
+      "moves-with": "rail-setback",
       "ref": "common/pan-screw-m5@1",
       "rel-pos": 2
      }
@@ -385,6 +405,7 @@
       "fill": "#15171a",
       "id": "flange",
       "kind": "panel-flange",
+      "moves-with": "rail-setback",
       "size": [
        36.2,
        153.3
@@ -398,6 +419,7 @@
       "fill": "#1b1d20",
       "id": "tab-top",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "out": 10.4,
       "size": [
        36.2,
@@ -412,6 +434,7 @@
       "fill": "#1b1d20",
       "id": "tab-bottom",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "out": 10.4,
       "size": [
        36.2,
@@ -462,6 +485,7 @@
       "fill": "#15171a",
       "id": "panel-back",
       "kind": "rail-panel",
+      "moves-with": "rail-setback",
       "size": [
        419.7,
        165.1
@@ -475,6 +499,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-1",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -488,6 +513,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-2",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -501,6 +527,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-3",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -514,6 +541,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-4",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -527,6 +555,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-5",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -540,6 +569,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-6",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -553,6 +583,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-7",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -566,6 +597,7 @@
       "fill": "#0a0b0c",
       "id": "cutout-8",
       "kind": "cutout",
+      "moves-with": "rail-setback",
       "size": [
        75.0,
        20.5
@@ -604,6 +636,7 @@
       "group": "screws",
       "id": "screw-upper",
       "lift": 1.5,
+      "moves-with": "rail-setback",
       "ref": "common/pan-screw-m5@1",
       "rel-pos": 3
      },
@@ -615,6 +648,7 @@
       "group": "screws",
       "id": "screw-lower",
       "lift": 1.5,
+      "moves-with": "rail-setback",
       "ref": "common/pan-screw-m5@1",
       "rel-pos": 4
      }
@@ -630,6 +664,7 @@
       "fill": "#15171a",
       "id": "flange",
       "kind": "panel-flange",
+      "moves-with": "rail-setback",
       "size": [
        36.2,
        153.3
@@ -643,6 +678,7 @@
       "fill": "#1b1d20",
       "id": "tab-top",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "out": 10.4,
       "size": [
        36.2,
@@ -657,6 +693,7 @@
       "fill": "#1b1d20",
       "id": "tab-bottom",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "out": 10.4,
       "size": [
        36.2,
@@ -707,6 +744,7 @@
       "fill": "#1b1d20",
       "id": "rail-panel",
       "kind": "rail-panel",
+      "moves-with": "rail-setback",
       "size": [
        419.7,
        1.5
@@ -720,6 +758,7 @@
       "fill": "#b9bdc2",
       "id": "rail",
       "kind": "din-rail",
+      "moves-with": "rail-setback",
       "size": [
        400.0,
        7.5
@@ -733,6 +772,7 @@
       "fill": "#1b1d20",
       "id": "tab-left",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "size": [
        17.1,
        36.2
@@ -746,6 +786,7 @@
       "fill": "#1b1d20",
       "id": "tab-right",
       "kind": "panel-tab",
+      "moves-with": "rail-setback",
       "size": [
        17.1,
        36.2
