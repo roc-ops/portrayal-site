@@ -5800,6 +5800,321 @@ def check_rack_hover_dims(page, base):
     return bad
 
 
+# A CORD'S SPARE IS SAID (site/rack/spare.js). The page draws the path a cable
+# takes and nothing more, so on the reference rack c4, a 0.5 m cord, and c12, a
+# 1 m cord, look alike: their paths are 130 mm apart and their cords half a
+# metre. The cable list says each cord and its spare, and in one line what the
+# drawing shows; no row is marked for having much spare. A cable under the
+# pointer says the same two figures beside it, in 2D and in 3D. A length
+# entered in feet says both in feet. An entered cord shorter than what its
+# route needs (the kit's routed length) says so as a warning, whether it still
+# reaches (0.5 m on c16's route) or falls short (0.2 m on c4's); a 3 ft cord on
+# c12's route, which needs about 0.62 m, does not, though the kit would pick 1 m.
+#
+# THE EXPECTED SPARE is worked here from the page's own kit output, by another
+# road than spare.js takes: each path's points added up (window.__rack.paths),
+# and the kit's sourced table figure at each end (END_ALLOWANCE_BY_MEDIA),
+# taken from the cord's length. spare.js takes the kit's routed length less the
+# dressing allowance. No figure is written down here, so a plug drawn deeper
+# moves both.
+SPARE_WANT_JS = """async () => {
+  const R = await import('/vendor/rack/route.js');
+  const rack = window.__rack.doc().racks[0], paths = window.__rack.paths() || {};
+  const PER = {m: 1, ft: 0.3048}, r2 = x => Math.round(x * 100) / 100, out = {};
+  for (const c of rack.cables) {
+    const p = paths[c.id], l = c.length;
+    if (!p || !l || !PER[l.unit ?? 'm']) { out[c.id] = null; continue; }
+    let mm = 0;
+    for (let k = 1; k < p.points.length; k++)
+      mm += Math.hypot(p.points[k].x - p.points[k - 1].x, p.points[k].y - p.points[k - 1].y, p.points[k].z - p.points[k - 1].z);
+    const unit = l.unit ?? 'm', cord = l.value * PER[unit];
+    const spare = cord - (mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media]);
+    // said so that rounding never flatters the cord: a spare down, a shortfall and a need up
+    const dn = x => Math.floor(x * 100 + 1e-6) / 100, up = x => Math.ceil(x * 100 - 1e-6) / 100;
+    const shown = spare < -1e-9 ? -up(-spare / PER[unit]) : dn(Math.max(0, spare) / PER[unit]);
+    // a length that is not the page's own measurement, under the kit's routed length for this path
+    const under = l.source !== 'routed' && cord < p.measured - 1e-9;
+    const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : under ? 'spare without dressing room' : 'spare'}`;
+    const asks = under ? `the route needs ${up(p.measured / PER[unit])} ${unit}` : null;
+    out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, path_mm: Math.round(mm), spare,
+      text, asks, short: asks ? [`${text}; ${asks}.`] : []};
+  }
+  return out;
+}"""
+SPARE_LIST_JS = """() => ({
+  help: [...document.querySelectorAll('#cableList [data-spare-help]')].map(p => p.textContent),
+  toasts: [...document.querySelectorAll('.rk-side .rk-notice')].map(p => p.textContent),
+  rows: Object.fromEntries([...document.querySelectorAll('#cableList li[data-cable-item]')].map(li => [li.dataset.cableItem, {
+    meta: li.querySelector('.rk-cable-meta')?.textContent ?? '',
+    marks: li.querySelectorAll('[data-spare-note], [data-spare-large], .rk-spare-note').length + (li.dataset.spareLarge != null ? 1 : 0),
+    short: [...li.querySelectorAll('[data-spare-short]')].map(n => n.textContent),
+    shortWarns: [...li.querySelectorAll('[data-spare-short]')].every(n => n.classList.contains('rk-warn'))}])),
+  titles: Object.fromEntries([...document.querySelectorAll('#paneFront svg [data-cables] [data-cable][data-cable-id]')]
+    .map(g => [g.dataset.cableId, g.querySelector('title')?.textContent ?? '']))})"""
+SPARE_TIP_JS = """() => { const t = document.getElementById('cableTip');
+  if (!t || t.hidden) return null;
+  const r = t.getBoundingClientRect();
+  return {id: t.dataset.cableTip ?? null, text: t.textContent, meta: t.querySelector('[data-tip-meta]')?.textContent ?? '',
+          short: t.querySelector('[data-tip-short]')?.textContent ?? null,
+          shown: r.width > 0 && r.height > 0 && r.right <= innerWidth && r.bottom <= innerHeight && getComputedStyle(t).display !== 'none'}; }"""
+# A point of the window where the page's own hover finds this cable: on its 2D stroke...
+SPARE_PT_2D_JS = """async id => {
+  const H = await import('/site/rack/hover.js');
+  const svg = document.querySelector('#paneFront > svg');
+  const g = svg.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
+  if (!g) return null;
+  g.scrollIntoView({block: 'center'});
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for (const p of g.querySelectorAll('path')) {
+    const L = p.getTotalLength();
+    for (let f = 0.05; f < 0.96; f += 0.03) {
+      const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(p.getScreenCTM());
+      const at = document.elementFromPoint(s.x, s.y);
+      if (!at?.closest('#paneFront')) continue;
+      if (H.hoverAt2d(svg, {clientX: s.x, clientY: s.y, target: at})?.id === id) return [s.x, s.y];
+    }
+  }
+  return null;
+}"""
+# ...and on its 3D tube, where a ray reaches it before any other.
+SPARE_PT_3D_JS = """async id => {
+  const H = await import('/site/rack/hover.js');
+  const s = window.__rack.scene(), {THREE, scene: w, camera, renderer} = s.three;
+  const g = w.getObjectByName('cable-' + id), r = renderer.domElement.getBoundingClientRect(), v = new THREE.Vector3();
+  if (!g) return null;
+  const meshes = []; g.traverse(o => { if (o.isMesh) meshes.push(o); });
+  for (const mesh of meshes) {
+    const pos = mesh.geometry.attributes.position;
+    for (let k = 0; k < pos.count; k += 7) {
+      v.fromBufferAttribute(pos, k).applyMatrix4(mesh.matrixWorld).project(camera);
+      if (Math.abs(v.x) > 0.95 || Math.abs(v.y) > 0.95) continue;
+      const x = r.left + (v.x + 1) / 2 * r.width, y = r.top + (1 - v.y) / 2 * r.height;
+      if (document.elementFromPoint(x, y) !== renderer.domElement) continue;
+      const t = H.hoverAt3d(s, {clientX: x, clientY: y});
+      if (t?.kind === 'cable' && t.id === id) return [x, y];
+    }
+  }
+  return null;
+}"""
+
+
+def spare_hover(page, bad, where, find_js, cid, want, drag=None):
+    """Put the pointer on `cid` and read the label beside it against `want`. With
+    `drag`, a button held and let go hides it until the pointer next moves."""
+    pt = page.evaluate(find_js, cid)
+    if not pt:
+        bad.append(f"{where}: found no point where the page's hover finds {cid}, so its label was not read")
+        return
+    page.mouse.move(pt[0] - 3, pt[1] - 3)
+    page.mouse.move(pt[0], pt[1])
+    try:
+        wait_fn(page, f"{where}: {cid}'s hover label", "id => document.getElementById('cableTip')?.dataset.cableTip === id", arg=cid, timeout=10000)
+    except RuntimeError:
+        pass
+    tip = page.evaluate(SPARE_TIP_JS)
+    if not tip or tip["id"] != cid:
+        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
+    else:
+        if want["text"] not in tip["meta"]:
+            bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
+        if not tip["shown"]:
+            bad.append(f"{where}: {cid}'s hover label is not laid out inside the window: {tip}")
+        asks = want["asks"] and want["asks"][0].upper() + want["asks"][1:] + "."
+        if tip["short"] != asks:
+            bad.append(f"{where}: {cid}'s hover label says {tip['short']!r} of what the route asks for, expected {asks!r}")
+        if drag is not None:
+            # `drag` is how far the pointer goes with the button down: an orbit in
+            # 3D; on a pane 0, a press and release in place, which moves nothing.
+            page.mouse.down()
+            if drag > 1:
+                page.mouse.move(pt[0] + drag, pt[1] + drag / 4, steps=4)
+            page.wait_for_timeout(300)
+            held = page.evaluate(SPARE_TIP_JS)
+            page.mouse.up()
+            page.wait_for_timeout(300)
+            let_go = page.evaluate(SPARE_TIP_JS)
+            if held or let_go:
+                bad.append(f"{where}: the hover label stays through a drag (button down: {held}, let go: {let_go})")
+            # ...and it comes back with the next free move over a cable.
+            if drag > 1:
+                settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
+            back = page.evaluate(find_js, cid)
+            if not back:
+                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
+            else:
+                page.mouse.move(back[0] - 3, back[1] - 3)
+                page.mouse.move(back[0], back[1])
+                try:
+                    wait_fn(page, f"{where}: {cid}'s label back", "id => { const t = document.getElementById('cableTip'); return t && !t.hidden && t.dataset.cableTip === id; }",
+                            arg=cid, timeout=10000)
+                except RuntimeError:
+                    bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+    park_mouse(page)
+    if page.evaluate(SPARE_TIP_JS):
+        bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
+
+
+@extra("rack.html: each routed cable says its cord and its spare in the list with no row marked for it, an entered cord under what its route needs warns, and the hover label carries the figures in 2D and 3D, in the cable's own unit")
+def check_rack_cable_spare(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)     # the agent's tools, to read inspect's text
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "spare: the reference rack's routes", ROUTES_CURRENT)
+    wait_fn(page, "spare: every row says a spare",
+            "() => document.querySelectorAll('#cableList .rk-cable-meta[data-spare]').length === 16")
+    park_mouse(page)
+    want = page.evaluate(SPARE_WANT_JS)
+    if len(want) != 16 or any(w is None for w in want.values()):
+        return bad + [f"spare: not every one of the 16 cords has a path and a length to work from: {want}"]
+    # THE TWO CORDS OF THE REPORT: c4 a 0.5 m cord, c12 a 1 m cord, both the kit's stock size.
+    for cid, cord in (("c4", 0.5), ("c12", 1)):
+        w = want[cid]
+        if (w["value"], w["unit"], w["source"], w["stock"]) != (cord, "m", "routed", cord):
+            bad.append(f"{cid}: not a routed {cord} m cord: {w}")
+    if not (want["c4"]["spare"] > 0 and want["c12"]["spare"] > want["c4"]["spare"]):
+        bad.append(f"the 1 m cord on the longer path should have the larger spare: c4 {want['c4']['spare']}, c12 {want['c12']['spare']}")
+    if any(w["asks"] for w in want.values()):
+        bad.append(f"fixture: a routed cord is under the size its route asks for: {[c for c, w in want.items() if w['asks']]}")
+
+    def read_list(where, ids=None):
+        got = page.evaluate(SPARE_LIST_JS)
+        for cid, w in sorted(want.items(), key=lambda kv: int(kv[0][1:])):
+            if ids is not None and cid not in ids:
+                continue
+            row = got["rows"].get(cid)
+            if not row:
+                bad.append(f"{where}: no row for {cid}")
+                continue
+            if not row["meta"].endswith(w["text"]):
+                bad.append(f"{where}: {cid} ({w['path_mm']} mm path, {w['measured']} m measured) says {row['meta']!r}, expected it to end {w['text']!r}")
+            # NO ROW IS MARKED FOR ITS SPARE: 14 of these 16 cords are more spare than path, and none is a fault.
+            if row["marks"]:
+                bad.append(f"{where}: {cid}'s row carries a spare mark ({row['marks']})")
+            # ...and only an entered cord under the size its route asks for warns.
+            if row["short"] != w["short"] or not row["shortWarns"]:
+                bad.append(f"{where}: {cid} ({w['value']} {w['unit']} {w['source']}, the kit's size {w['stock']} m) warns {row['short']}, expected {w['short']}")
+        if len(got["help"]) != 1 or "path" not in got["help"][0] or not got["help"][0].endswith("is not drawn."):
+            bad.append(f"{where}: the list's one line on what the drawing shows is {got['help']}")
+        if any("not drawn" in t for t in got["toasts"]):
+            bad.append(f"{where}: the spare is said in a notice, not only in the list: {got['toasts']}")
+        return got
+    got = read_list("2D list")
+    for cid in ("c4", "c12"):
+        if want[cid]["text"] not in got["titles"].get(cid, ""):
+            bad.append(f"2D: {cid}'s title on the pane is {got['titles'].get(cid)!r}, without {want[cid]['text']!r}")
+    for cid in ("c4", "c12"):
+        spare_hover(page, bad, "2D hover", SPARE_PT_2D_JS, cid, want[cid])
+    # Over a row of the list, the row says it: no second label.
+    page.hover('#cableList [data-cable-row="c4"]')
+    page.wait_for_timeout(350)
+    if page.evaluate(SPARE_TIP_JS):
+        bad.append("2D: the pointer on c4's row in the list shows the stage's hover label too")
+    park_mouse(page)
+
+    # THE AGENT'S TEXT: inspect says the same words of each cord.
+    for cid in ("c4", "c12"):
+        said = page.evaluate("""async id => { const t = window.__tools?.inspect; if (!t) return null;
+          const out = await t.execute({id}); return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        if not said or f"; {want[cid]['text']} (" not in said:
+            bad.append(f"agent: inspect {cid} does not say {want[cid]['text']!r}: {said!r}")
+
+    # FEET. c12 is given a length of 3 ft in its form: the cord and the spare are both said in feet.
+    page.click('#cableList [data-cable-row="c12"]')
+    wait_sel(page, "spare: Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "spare: c12's form", "#cableForm")
+    page.fill("#cLength", "3")
+    page.select_option("#cUnit", "ft")
+    page.click("#cSave")
+    wait_fn(page, "spare: c12 saved as 3 ft", "() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c12').length?.unit === 'ft'")
+    wait_fn(page, "spare: the routes after the edit", ROUTES_CURRENT)
+    wait_fn(page, "spare: c12's row in feet", "() => /ft cord/.test(document.querySelector('#cableList li[data-cable-item=\"c12\"] .rk-cable-meta')?.textContent ?? '')")
+    was = want["c12"]
+    want = page.evaluate(SPARE_WANT_JS)
+    ft = want["c12"]
+    if (ft["value"], ft["unit"]) != (3, "ft") or not ft["text"].startswith("3 ft cord, ") or not ft["text"].endswith(" ft spare"):
+        bad.append(f"feet: c12 should read as a 3 ft cord with its spare in feet, is {ft}")
+    if ft["text"] == was["text"] or abs(ft["spare"] - (was["spare"] - (1 - 3 * 0.3048))) > 1e-6:
+        bad.append(f"feet: a 3 ft cord on the same path should have 0.0856 m less spare than the 1 m cord: {was['spare']} then {ft['spare']}")
+    # 3 ft (0.914 m) is under the 1 m the kit would pick and over what the route needs: no warning.
+    if not (ft["measured"] < 0.9 and ft["stock"] == 1 and ft["asks"] is None and ft["text"].endswith(" ft spare")):
+        bad.append(f"feet: a 3 ft cord on a route needing under 0.9 m should have spare and no warning: {ft}")
+    page.click('#cableList [data-cable-row="c12"]')     # let it go: a selected cable dims the rest
+    wait_fn(page, "spare: nothing selected", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    def give(cid, metres, seen):
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        wait_sel(page, f"spare: Edit {cid}", "#cableEdit")
+        page.click("#cableEdit")
+        wait_sel(page, f"spare: {cid}'s form", "#cableForm")
+        page.fill("#cLength", str(metres))
+        page.select_option("#cUnit", "m")
+        page.click("#cSave")
+        wait_fn(page, f"spare: {cid} saved as {metres} m", "([id, v]) => window.__rack.doc().racks[0].cables.find(c => c.id === id).length?.value === v", arg=[cid, metres])
+        wait_fn(page, f"spare: the routes after {cid}'s edit", ROUTES_CURRENT)
+        wait_fn(page, f"spare: {cid}'s row says {seen!r}", "([id, t]) => (document.querySelector(`#cableList li[data-cable-item=\"${id}\"] .rk-cable-meta`)?.textContent ?? '').includes(t)", arg=[cid, seen])
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        wait_fn(page, "spare: nothing selected again", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+    # A CORD THAT REACHES BUT IS UNDER WHAT ITS ROUTE NEEDS. c16 is given 0.5 m: its route needs more.
+    give("c16", 0.5, "without dressing room")
+    # A CORD THAT DOES NOT REACH. c4 is given 0.2 m: less than its path and plugs use.
+    give("c4", 0.2, "short")
+    want = page.evaluate(SPARE_WANT_JS)
+    ft, tight, short = want["c12"], want["c16"], want["c4"]
+    if not (tight["spare"] > 0 and tight["measured"] > 0.5 and tight["text"].startswith("0.5 m cord, ")
+            and tight["text"].endswith(" m spare without dressing room") and (tight["asks"] or "").startswith("the route needs 0.")):
+        bad.append(f"tight: c16 at 0.5 m should have spare and be under what its route needs: {tight}")
+    if not (short["spare"] < 0 and short["text"].startswith("0.2 m cord, ") and short["text"].endswith(" m short")
+            and (short["asks"] or "").startswith("the route needs 0.")):
+        bad.append(f"short: c4 at 0.2 m should read short of what its route needs: {short}")
+    if ft["asks"] is not None:
+        bad.append(f"feet: c12 at 3 ft warns after the other edits: {ft}")
+    park_mouse(page)
+    read_list("2D list, c12 in feet, c16 tight and c4 short")
+    spare_hover(page, bad, "2D hover, c12 in feet", SPARE_PT_2D_JS, "c12", ft)
+    spare_hover(page, bad, "2D hover, c16 tight", SPARE_PT_2D_JS, "c16", tight)
+    spare_hover(page, bad, "2D hover, c4 short", SPARE_PT_2D_JS, "c4", short, drag=0)
+    # the press and release in place was a click on whatever lies under the cable: let it go
+    page.keyboard.press("Escape")
+    wait_sel(page, "spare: the list after the press", '#cableList [data-cable-row="c4"]')
+    wait_fn(page, "spare: the routes after the press", ROUTES_CURRENT)
+    park_mouse(page)
+    # A CORD UNDER THE NEED BY LESS THAN A DISPLAYED STEP. c12's route needs about 0.6232 m; at
+    # 0.62 m it warns, and the need it names is rounded up, so it reads more than the cord.
+    give("c12", 0.62, "without dressing room")
+    want = page.evaluate(SPARE_WANT_JS)
+    hair = want["c12"]
+    m = re.fullmatch(r"the route needs ([\d.]+) m", hair["asks"] or "")
+    if not (0.62 < hair["measured"] < 0.63) or not m or float(m.group(1)) <= 0.62:
+        bad.append(f"rounding: c12 at 0.62 m on a route needing {hair['measured']} m should name a need over 0.62 m: {hair}")
+    read_list("2D list, c12 at 0.62 m")
+    spare_hover(page, bad, "2D hover, c12 at 0.62 m", SPARE_PT_2D_JS, "c12", hair)
+    # The agent's text for each: the kit's slack named for what it is against, then the cord, then what the route asks for.
+    for cid in ("c4", "c16", "c12"):
+        said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+          return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        w = want[cid]
+        tail = f"{w['text']}; {w['asks']} (" if w["asks"] else f"{w['text']} ("
+        if not re.search(r"; slack -?[\d.]+ (m|ft) against the routed length, which allows [\d.]+ m of dressing at each end; "
+                         + re.escape(tail), said or ""):
+            bad.append(f"agent: inspect {cid} does not say its slack against the routed length, then {tail!r}: {said!r}")
+
+    if webgl_trouble(page):
+        print("[check_rack_cable_spare] no WebGL here - checked the 2D half only")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the spare rack's scene", tubes=True)
+    wait_fn(page, "spare: the routes in 3D", ROUTES_CURRENT)
+    park_mouse(page)
+    read_list("3D list")
+    for cid in ("c4", "c12"):
+        spare_hover(page, bad, "3D hover", SPARE_PT_3D_JS, cid, want[cid], drag=40 if cid == "c4" else None)
+    return bad
+
+
 # THE EARS MEET THE BODY (#168). A generic ear's flange runs from the face's
 # own edge out over the rail, as the kit's plan and the 3D flange do. It ran
 # from the opening's edge, so every device narrower than the 450.85 mm opening
@@ -7226,6 +7541,19 @@ def check_rack_side_switch(page, base):
     beside = page.evaluate("() => document.getElementById('view2d').nextElementSibling?.id")
     if beside != "mode":
         bad.append(f"the switch's next neighbour in the bar is #{beside}, expected #mode")
+    # THE SWITCH ANSWERS AT ONCE: the headings and the busy mark in the very task of the click, the panes when drawn;
+    # and it reads nothing again: the routes it draws from are the ones the page already held for this rack
+    at_click = page.evaluate("""() => { window.__ctx0 = window.__rack.routeContext(); document.querySelector('#view2d [data-view="sides"]').click();
+      return [document.getElementById('panes').getAttribute('aria-busy'), document.getElementById('headFront').textContent, document.getElementById('headRear').textContent,
+              getComputedStyle(document.getElementById('panes')).cursor]; }""")
+    if at_click != ["true", "Left", "Right", "progress"]:
+        bad.append(f"at the click on Left / Right the panes' busy mark, headings and cursor are {at_click}; expected busy, Left, Right, the progress cursor")
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => !document.getElementById('panes').hasAttribute('aria-busy')", timeout=READY_MS)
+    kept = page.evaluate("() => [window.__rack.routeContext() === window.__ctx0, window.__rack.routesCurrent().current, document.querySelectorAll('#panes svg[data-side] [data-cables] [data-cable][data-cable-id]').length]")
+    if kept != [True, True, 6]:
+        bad.append(f"after the switch: the same route context {kept[0]}, current {kept[1]}, {kept[2]} cables drawn on the side panes; expected the routes kept and all 3 cables on each pane")
+    to_faces(page)
     to_sides(page)
     s1 = st()
     expect(s1, "sides", "after Left / Right")
@@ -7299,7 +7627,23 @@ SIDE_BODIES_JS = """async () => {
       p.order.push(id);
     }
     p.posts = [...svg.querySelectorAll('[data-side-post]')].map(r => [r.dataset.sidePost, +r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')]);
-    p.nums = [...svg.querySelectorAll('[data-side-num="front"]')].map(t => [t.textContent, +t.getAttribute('y')]);
+    p.nums = [...svg.querySelectorAll('[data-side-num="front"]')].map(t => [t.textContent, Math.round((+t.dataset.mid + 4) * 1000) / 1000]);
+    // how big the pane's own words are on screen, in CSS px, and whether a U number still sits in its unit
+    const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+    p.scale = scale;
+    p.px = Object.fromEntries(['num', 'word', 'part'].map(k => [k, [...svg.querySelectorAll(`[data-side-label="${k}"]`)].map(t => Math.round(+t.getAttribute('font-size') * scale * 10) / 10)]));
+    p.numFits = [...svg.querySelectorAll('[data-side-label="num"]')].every(t => { const b = t.getBBox(), mid = +t.dataset.mid; return b.y >= mid - RU / 2 - 0.5 && b.y + b.height <= mid + RU / 2 + 0.5; });
+    p.wordsIn = [...svg.querySelectorAll('[data-side-label="word"]')].every(t => { const b = t.getBBox(), v = svg.viewBox.baseVal; return b.x >= v.x - 0.5 && b.x + b.width <= v.x + v.width + 0.5 && b.y >= v.y - 0.5; });
+    // the line round each body, as painted: its colour and its width on screen
+    p.edges = Object.fromEntries([...svg.querySelectorAll('[data-item-id], [data-zerou-id]')].map(g => { const e = g.querySelector('[data-side-edge]'), cs = e && getComputedStyle(e);
+      return [g.dataset.itemId ?? g.dataset.zerouId, e ? [cs.stroke, cs.vectorEffect, parseFloat(cs.strokeWidth)] : null]; }));
+    p.stage = getComputedStyle(svg).getPropertyValue('--pt-ink-muted').trim();
+    // a part beside the near side: its drawing's own opacity, and the marks that say it is a part in front
+    p.near = [...svg.querySelectorAll('[data-side-near] > [data-zerou-id]')].map(g => { const m = svg.querySelector(`[data-side-near-mark="${g.dataset.zerouId}"]`);
+      return {id: g.dataset.zerouId, opacity: +getComputedStyle(g).opacity, hatch: !!m?.querySelector('rect[fill^="url(#rk-side-hatch"]') && !!svg.querySelector('pattern[id^="rk-side-hatch"] line'),
+              dashed: [...(m?.querySelectorAll('rect') ?? [])].some(r => r.getAttribute('stroke-dasharray')), label: m?.querySelector('text')?.textContent ?? null, events: m ? getComputedStyle(m).pointerEvents : null}; });
+    p.plugs = Object.fromEntries([...svg.querySelectorAll('[data-cables] [data-cable][data-cable-id]')].map(g => [g.dataset.cableId,
+      Object.fromEntries([...g.querySelectorAll('[data-side-plug]')].map(r => [r.dataset.sidePlug, [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width'), +r.getAttribute('y') + +r.getAttribute('height') / 2]]))]));
     p.extent = (() => { const r = svg.querySelector('[data-side-extent]'); return r ? [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')] : null; })();
     p.words = Object.fromEntries([...svg.querySelectorAll('[data-side-word]')].map(t => [t.dataset.sideWord, +t.getAttribute('x')]));
     p.layers = [...svg.children].map(n => n.dataset.sidePosts ? 'posts' : n.dataset.cables ? 'cables' : n.dataset.sideNear ? 'near' : n.dataset.itemId ? `item:${n.dataset.itemId}` : n.dataset.zerouId ? `part:${n.dataset.zerouId}` : null).filter(Boolean);
@@ -7318,7 +7662,7 @@ def check_rack_side_placement(page, base):
     # the front pane's U rows, read before the switch: the side panes keep its scale and its top
     rows = page.evaluate("""() => { const svg = document.querySelector('#paneFront svg[data-pane="front"]');
       return {vb: svg.getAttribute('viewBox').split(' ').map(Number),
-              nums: [...svg.querySelectorAll('[data-rail-num="left"]')].map(t => [t.textContent, +t.getAttribute('y')])}; }""")
+              nums: [...svg.querySelectorAll('[data-rail-num="left"]')].map(t => [t.textContent, Math.round(+t.getAttribute('y') * 1000) / 1000])}; }""")
     to_sides(page)
     d = page.evaluate(SIDE_BODIES_JS)
     H, RU, rd, deep = d["H"], d["RU"], d["frame"]["railDepth"], d["frame"]["usableDepth"]
@@ -7376,17 +7720,44 @@ def check_rack_side_placement(page, base):
         bad.append(f"the posts are at {R['posts']} (right) and {L['posts']} (left); expected the front pair behind the front rail plane and the rear pair {rd} mm back")
     if R["extent"] != [0, deep] or L["extent"] != [-deep, 0]:
         bad.append(f"the rack's depth is drawn {R['extent']} and {L['extent']}, expected {deep} mm back from the front rail plane")
-    if not (R["words"].get("front") == 0 and R["words"].get("rear") == deep and L["words"].get("front") == 0 and L["words"].get("rear") == -deep):
+    if not (R["words"].get("front") == 0 and R["words"].get("rear") == rd and L["words"].get("front") == 0 and L["words"].get("rear") == -rd):
         bad.append(f"FRONT and REAR are at {R['words']} and {L['words']}")
     # the front of the rack is at the right pane's left and the left pane's right
-    if not (R["vb"][0] < 0 < deep < R["vb"][0] + R["vb"][2] and L["vb"][0] < -deep < 0 < L["vb"][0] + L["vb"][2]) or abs(L["vb"][2] - R["vb"][2]) > eps or abs(L["vb"][0] + R["vb"][0] + R["vb"][2]) > eps:
-        bad.append(f"the panes' boxes are {L['vb']} and {R['vb']}; expected mirrored boxes of one width holding the whole depth")
+    if not (R["vb"][0] < 0 < rd < R["vb"][0] + R["vb"][2] and L["vb"][0] < -rd < 0 < L["vb"][0] + L["vb"][2]) or abs(L["vb"][2] - R["vb"][2]) > eps or abs(L["vb"][0] + R["vb"][0] + R["vb"][2]) > eps:
+        bad.append(f"the panes' boxes are {L['vb']} and {R['vb']}; expected mirrored boxes of one width holding the rack from its rear posts to in front of its front rails")
+    # FITTED TO THE RACK AS IT STANDS, not to its usable depth: what the pane shows is the posts, the bodies and the cables, and a margin
+    held = [b for b in R["bodies"].values()]
+    lo, hi = min([b["x0"] for b in held] + [0]), max([b["x1"] for b in held] + [rd])
+    if R["vb"][2] >= deep or R["vb"][0] < lo - 130 or R["vb"][0] + R["vb"][2] > hi + 130:
+        bad.append(f"the right pane's box runs {R['vb'][0]:.0f}..{R['vb'][0] + R['vb'][2]:.0f} mm; what stands in it runs {lo:.0f}..{hi:.0f}, and the usable depth is {deep}: expected the rack as it stands and a margin")
+    for name, p in (("left", L), ("right", R)):
+        # THE PANE'S OWN WORDS ARE READABLE AT FIT: never under their least size on screen, the U numbers still inside their units, the words inside the pane
+        if p["scale"] >= 1:
+            bad.append(f"{name} pane: drawn at {p['scale']:.2f} px a mm at Fit, so the least sizes were not tried")
+        if not p["px"]["num"] or min(p["px"]["num"]) < 8.9 or len(p["px"]["word"]) != 2 or min(p["px"]["word"]) < 10.9 or not p["numFits"] or not p["wordsIn"]:
+            bad.append(f"{name} pane: on screen the U numbers are {min(p['px']['num'] or [0])} px and FRONT / REAR {p['px']['word']} px (least 9 and 11); numbers inside their units {p['numFits']}, words inside the pane {p['wordsIn']}")
+        # A LINE ROUND EVERY BODY in the stage's ink, a pixel wide whatever the zoom
+        for bid, e in p["edges"].items():
+            if not e or e[0] in ("none", "") or e[1] != "non-scaling-stroke" or e[2] != 1:
+                bad.append(f"{name} pane: {bid} has no outline in the stage's ink ({e})")
+        # A PLUG AT EACH CABLED PORT, from the port's face out by the kit's reach
+        for c, ends in p["plugs"].items():
+            if set(ends) != {"a", "b"} or any(not (4 < abs(v[1] - v[0]) < 90) for v in ends.values()):
+                bad.append(f"{name} pane: {c}'s plugs are {ends}; expected a block at each end, as long as its plug reaches")
+    # the front device's plugs start on the front rail plane and stand out in front; the rear device's start on the rear rail plane and stand out behind
+    pa, pb = R["plugs"].get("c2", {}).get("a"), R["plugs"].get("c2", {}).get("b")
+    if not pa or not pb or abs(pa[1]) > eps or pa[0] > -4 or abs(pb[0] - rd) > eps or pb[1] < rd + 4:
+        bad.append(f"c2's plugs in the right pane are {pa} and {pb}; expected one out of the front rail plane at 0 and one out of the rear rail plane at {rd}")
+    # THE PART BESIDE THE NEAR SIDE reads as a part in front: see-through, with a dashed outline, a hatch and its name, none of which takes the pointer
+    nl = L["near"]
+    if len(nl) != 1 or nl[0]["id"] != "z1" or not (0.1 <= nl[0]["opacity"] <= 0.4) or not nl[0]["hatch"] or not nl[0]["dashed"] or "duct-1" not in (nl[0]["label"] or "") or nl[0]["events"] != "none":
+        bad.append(f"left pane: the manager beside the near side is {nl}; expected z1 see-through, hatched, outlined, named, its marks taking no pointer")
+    if R["near"] or not L["px"]["part"] or min(L["px"]["part"]) < 10.9:
+        bad.append(f"the right pane marks {R['near']} as beside its near side (expected none), and the left pane's part name is {L['px']['part']} px")
     # one U scale and one top for all four panes: the numbers on the front post at the front pane's own heights
     for name, p in (("left", L), ("right", R)):
         if p["nums"] != rows["nums"] or len(p["nums"]) != 42:
             bad.append(f"{name} pane: the U numbers on its front post are not at the front pane's heights ({p['nums'][:2]} against {rows['nums'][:2]}, {len(p['nums'])} of them)")
-        if p["vb"][1] != rows["vb"][1]:
-            bad.append(f"{name} pane: its box starts at y {p['vb'][1]}, the front pane's at {rows['vb'][1]}")
     # nearer over farther: from the left the manager beside the left upright is in front of everything, from the right behind it
     lo, ro = L["layers"], R["layers"]
     if not (lo.index("near") > lo.index("cables") > lo.index("posts") > max(i for i, n in enumerate(lo) if n.startswith("item:")) and L["bodies"]["z1"]["near"]):
@@ -7404,7 +7775,7 @@ def check_rack_side_placement(page, base):
 # whether it is lit, the envelope, and the label beside the pointer.
 SIDE_CABLES_JS = """() => {
   const out = {panes: {}, pressed: [...document.querySelectorAll('#cableList [aria-pressed="true"]')].map(b => b.dataset.cableRow ?? b.dataset.bundleRow),
-               tip: (t => (t && !t.hidden ? t.textContent : null))(document.getElementById('sideTip')), paths: {}};
+               tip: (t => (t && !t.hidden ? t.textContent : null))(document.getElementById('cableTip')), tips: document.querySelectorAll('#sideTip, .rk-side-tip').length, paths: {}};
   const P = window.__rack.paths() || {};
   for (const [id, p] of Object.entries(P)) out.paths[id] = p ? p.points.map(q => [q.x, q.y, q.z]) : null;
   for (const svg of document.querySelectorAll('#panes > section > div > svg')) {
@@ -7549,6 +7920,32 @@ def check_rack_side_cables(page, base):
         bad.append("hovering c2 in the right pane: the left pane is not dimmed with it")
     if not h["tip"] or "sw-front" not in h["tip"] or "sw-rear" not in h["tip"]:
         bad.append(f"hovering c2: the label beside the pointer reads {h['tip']!r}; expected it to name c2's two ends")
+    if h["tips"]:
+        bad.append("the side pair has a hover label of its own again; the page has one (#cableTip)")
+    # a switch of pair by keyboard leaves the pointer where it is: the label goes with the pane it was over
+    page.focus('#view2d [data-view="faces"]')
+    page.keyboard.press("Enter")
+    page.wait_for_function(FACES_DRAWN, timeout=READY_MS)
+    if page.evaluate(SIDE_CABLES_JS)["tip"]:
+        bad.append("a switch of pair by keyboard left the hover label up over the new panes")
+    page.focus('#view2d [data-view="sides"]')
+    page.keyboard.press("Enter")
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length === 3)", timeout=READY_MS)
+    page.wait_for_timeout(300)
+    # a button going down on the stroke hides it at once (the click that pins does not carry it along)
+    spot = page.evaluate(SIDE_POINT_JS, ["right", "c2"])
+    page.mouse.move(spot[0] - 30, spot[1] - 30)
+    page.mouse.move(spot[0], spot[1], steps=3)
+    page.wait_for_timeout(450)
+    if not page.evaluate(SIDE_CABLES_JS)["tip"]:
+        bad.append("hovering c2 again after the switch back: no label")
+    page.mouse.down()
+    held = page.evaluate(SIDE_CABLES_JS)["tip"]
+    page.mouse.move(spot[0] + 60, spot[1] + 60, steps=3)   # a press that moves away is no click: nothing is pinned by it
+    page.mouse.up()
+    if held:
+        bad.append(f"a button down on c2's stroke left the hover label up ({held!r})")
     park_mouse(page)
     h = page.evaluate(SIDE_CABLES_JS)
     bad += side_lit_wrong(h, None, "the pointer gone")
@@ -13303,7 +13700,9 @@ def check_rack_cable_list(page, base):
         return bad + [f"cable list: the rows are {list(by)}"]
     if by["c2"]["text"] != "leaf-1 (U14) mgmt-eth → demarc (U14) port-2-1":
         bad.append(f"cable list: c2 reads {by['c2']['text']!r}")
-    if by["c1"]["meta"] != "A1 · OS2 single-mode fiber · uplink · 2 m":
+    # c1 is routed and lands at both ends, so its 2 m is said as a cord with its
+    # spare (spare.js; the figure is check_rack_cable_spare's to hold).
+    if not re.fullmatch(r"A1 · OS2 single-mode fiber · uplink · 2 m cord, \d+(\.\d+)? m spare", by["c1"]["meta"]):
         bad.append(f"cable list: c1's details read {by['c1']['meta']!r}")
     if by["c3"]["loose"] != {"a": "Loose end A: port-2 holds no optic."} or by["c1"]["loose"] or by["c2"]["loose"]:
         bad.append(f"cable list: the loose ends are {[(r['id'], r['loose']) for r in got['rows']]}")

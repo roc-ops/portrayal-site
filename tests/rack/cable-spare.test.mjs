@@ -1,0 +1,210 @@
+// A CORD'S SPARE (site/rack/spare.js): the cord's length less what its route
+// uses, which is the kit's path and the kit's sourced end allowance at each
+// end, and not the dressing allowance the kit's routed length adds on top.
+// The page draws a cable's path and nothing more, so the list, the hover
+// label and the agent's text say the spare. No cord is marked for having much
+// of it; a length that is not a routed one and is shorter than what its
+// route needs (the kit's routed length) is, whatever stock size the kit would pick.
+//
+// The expected figures here are worked from the path's points and the kit's
+// table, never from spare.js's own route to them (the kit's `measured` less
+// the dressing allowance), so the two have to agree.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {dressingAllowance, usedMetres, spareOf, sparesOf, spareFor, looseIn, spareText, spareAmount, needsText,
+        SPARE_HELP} from '../../site/rack/spare.js';
+import {cableMeta} from '../../site/rack/cable-panel.js';
+import {cableText} from '../../site/rack/agent-text.js';
+import {endAllowance, pathLength, stockLength, END_ALLOWANCE_BY_MEDIA} from '../../vendor/rack/route.js';
+import {endKey} from '../../vendor/rack/cable-rules.js';
+
+// A path of `mm` millimetres in three legs, as routePath hands one over: its
+// points and its cable's end allowance.
+const pathOf = (mm, cable) => ({points: [{x: 0, y: 0, z: 0}, {x: mm / 2, y: 0, z: 0}, {x: mm / 2, y: mm / 4, z: 0}, {x: mm / 2, y: mm / 4, z: mm / 4}],
+  allowance: endAllowance(cable)});
+// A cable as the page keeps it once routed: the kit's stock size, in metres.
+const routed = (id, media, mm) => {
+  const c = {id, media, a: {item: 'sw', path: `port-${id}`, view: 'front'}, b: {item: 'pp', path: `port-${id}`, view: 'front'}};
+  const got = pathLength(pathOf(mm, c));
+  return {...c, length: {value: got.value, unit: 'm', source: 'routed', measured: Math.round(got.measured * 100) / 100}};
+};
+const near = (got, want, what) => assert.ok(Math.abs(got - want) < 1e-9, `${what}: ${got}, expected ${want}`);
+
+test('the dressing allowance is read for each media: what the kit adds on top of that media\'s table figure', () => {
+  for (const [media, table] of Object.entries(END_ALLOWANCE_BY_MEDIA)) {
+    near(dressingAllowance({media}), endAllowance({media}) - table, `${media}'s end allowance less its table figure`);
+    assert.ok(dressingAllowance({media}) >= 0);
+  }
+  // a cable with no media, or one the table does not know, takes the copper cord's figure, as the kit does
+  for (const c of [null, {}, {media: 'coax'}]) {
+    assert.equal(endAllowance(c), endAllowance({media: 'cat6'}));
+    near(dressingAllowance(c), endAllowance(c) - END_ALLOWANCE_BY_MEDIA.cat6, 'no media');
+  }
+});
+
+test('what a routed cable uses is its path and the table figure at each end', () => {
+  for (const [media, table] of Object.entries(END_ALLOWANCE_BY_MEDIA))
+    near(usedMetres(pathOf(300, {media}), {media}), 0.3 + 2 * table, `${media} on a 300 mm path`);
+  near(usedMetres(pathOf(300, null), null), 0.3 + 2 * END_ALLOWANCE_BY_MEDIA.cat6, 'no media on a 300 mm path');
+  assert.equal(usedMetres(null, {media: 'om4'}), null);
+});
+
+test('the reference rack\'s two kinds of cord: a 0.5 m cord and a 1 m cord on paths 130 mm apart', () => {
+  // c4's path is 267 mm and c12's 397 mm on the sample rack: both LC fibre.
+  const c4 = routed('c4', 'om4', 267), c12 = routed('c12', 'om4', 397);
+  assert.equal(c4.length.value, 0.5);
+  assert.equal(c12.length.value, 1);
+  const s4 = spareOf(c4, pathOf(267, c4)), s12 = spareOf(c12, pathOf(397, c12));
+  near(s4.spare, 0.5 - (0.267 + 2 * END_ALLOWANCE_BY_MEDIA.om4), 'c4');
+  near(s12.spare, 1 - (0.397 + 2 * END_ALLOWANCE_BY_MEDIA.om4), 'c12');
+  // the dressing allowance is part of the spare: more than the cord less the kit's routed length
+  near(s4.spare - (0.5 - pathLength(pathOf(267, c4)).measured), 2 * dressingAllowance(c4), 'c4 over the routed length');
+  near(s4.dressing, dressingAllowance(c4), 'c4 dressing');
+  // a routed cord is at least what the route needs: nothing to say, and no mark of any kind
+  assert.equal(s4.needs, null);
+  assert.equal(needsText(s12), null);
+  assert.deepEqual(Object.keys(s12).sort(), ['cord', 'dressing', 'needs', 'spare', 'unit', 'used', 'value']);
+  assert.equal(spareText(s4), '0.5 m cord, 0.2 m spare');
+  assert.equal(spareText(s12), '1 m cord, 0.57 m spare');
+  assert.equal(spareAmount(s12), '0.57 m');
+});
+
+test('a length in feet is said in feet, cord and spare both', () => {
+  const c = {id: 'c1', media: 'om4', length: {value: 3, unit: 'ft', source: 'entered'}};
+  const s = spareOf(c, pathOf(397, c));
+  const want = 3 * 0.3048 - (0.397 + 2 * END_ALLOWANCE_BY_MEDIA.om4);
+  near(s.spare, want, 'metres under the words');
+  assert.equal(spareText(s), `3 ft cord, ${Math.floor(want / 0.3048 * 100) / 100} ft spare`);
+  assert.equal(spareText(s), '3 ft cord, 1.61 ft spare');
+  // 3 ft is 0.9144 m: under the 1 m the kit would pick, over the 0.62 m the route needs. No warning.
+  assert.ok(3 * 0.3048 < pathLength(pathOf(397, c)).value && 3 * 0.3048 > pathLength(pathOf(397, c)).measured);
+  assert.equal(s.needs, null);
+  assert.equal(needsText(s), null);
+  // ...and the same for a 0.99 m cord, and for a length a DCIM gave
+  for (const length of [{value: 0.99, unit: 'm', source: 'entered'}, {value: 3, unit: 'ft', source: 'dcim'}])
+    assert.equal(needsText(spareOf({...c, length}, pathOf(397, c))), null);
+  // the same cord entered in metres says the same length in metres
+  const m = {...c, length: {value: 0.9144, unit: 'm', source: 'entered'}};
+  assert.equal(spareText(spareOf(m, pathOf(397, m))), '0.9144 m cord, 0.49 m spare');
+});
+
+test('a cord shorter than what its route uses is short, not spare, and says what the route needs in its own unit', () => {
+  const c = {id: 'c1', media: 'om4', length: {value: 1, unit: 'ft', source: 'entered'}};
+  const s = spareOf(c, pathOf(397, c));
+  assert.ok(s.spare < 0);
+  assert.equal(spareText(s), '1 ft cord, 0.39 ft short');
+  near(s.needs, pathLength(pathOf(397, c)).measured, 'the need is the kit\'s routed length');
+  assert.equal(needsText(s), `the route needs ${Math.ceil(pathLength(pathOf(397, c)).measured / 0.3048 * 100) / 100} ft`);
+  assert.equal(needsText(s), 'the route needs 2.05 ft');
+  // 0.3 m on a 444 mm path: 0.3 - (0.444 + 0.0262) = -0.1702, said rounded up
+  const m = {id: 'c2', media: 'om4', length: {value: 0.3, unit: 'm', source: 'entered'}};
+  const sm = spareOf(m, pathOf(444, m));
+  assert.equal(spareText(sm), '0.3 m cord, 0.18 m short');
+  assert.equal(needsText(sm), 'the route needs 0.68 m');
+});
+
+test('a cord a little under what the route needs has spare without dressing room, and says the need', () => {
+  // a 444 mm path of LC fibre: it uses 0.4702 m, its routed length is 0.6702 m, and the kit would choose 1 m
+  const c = {id: 'c1', media: 'om4', length: {value: 0.5, unit: 'm', source: 'entered'}};
+  const path = pathOf(444, c), s = spareOf(c, path);
+  near(pathLength(path).measured, 0.444 + 2 * endAllowance(c), 'routed');
+  assert.ok(0.5 - pathLength(path).measured < 0, 'under the routed length');
+  near(s.spare, 0.5 - (0.444 + 2 * END_ALLOWANCE_BY_MEDIA.om4), 'spare');
+  assert.ok(s.spare > 0 && s.spare < 2 * s.dressing, 'spare, and less of it than the dressing the need holds');
+  assert.equal(spareText(s), '0.5 m cord, 0.02 m spare without dressing room');
+  near(s.needs, pathLength(path).measured, 'needs');
+  assert.equal(needsText(s), 'the route needs 0.68 m');
+  // any source that is not the page's own measurement is held to the need: a DCIM's length too
+  assert.equal(needsText(spareOf({...c, length: {value: 0.5, unit: 'm', source: 'dcim'}}, path)), 'the route needs 0.68 m');
+  // ...and a routed length never is, whatever it says
+  assert.equal(needsText(spareOf({...c, length: {value: 0.5, unit: 'm', source: 'routed'}}, path)), null);
+  // at the need or over it there is nothing to add, under the 1 m stock size or not
+  for (const value of [0.68, 0.9, 1, 2]) {
+    const ok = spareOf({...c, length: {value, unit: 'm', source: 'entered'}}, path);
+    assert.equal(needsText(ok), null);
+    assert.doesNotMatch(spareText(ok), /dressing|short/);
+  }
+  // the agent's sentence: the slack names what it is against, so the two signs do not contradict
+  const o = {kind: 'cable', id: 'c1', a: {item: 'sw', path: 'port-1', view: 'front'}, b: {item: 'pp', path: 'port-1', view: 'front'},
+    media: 'om4', length: {value: 0.5, unit: 'm', source: 'entered'}, routed: {metres: 0.67, stock: 1}, slack: {metres: -0.17},
+    route: {edited: false, waypoints: [], text: ''}};
+  const said = cableText(o, {spare: spareText(s), dressing: s.dressing, needs: needsText(s)});
+  assert.match(said, /; slack -0\.17 m against the routed length, which allows 0\.1 m of dressing at each end; 0\.5 m cord, 0\.02 m spare without dressing room; the route needs 0\.68 m \(the cord less/);
+  // with no dressing allowance in the kit, the clause goes
+  assert.match(cableText(o, {spare: spareText(s), dressing: 0}), /; slack -0\.17 m against the routed length; 0\.5 m cord/);
+});
+
+test('no spare is said where it cannot be: no path, no length, a unit the page does not convert', () => {
+  const c = routed('c1', 'om4', 300);
+  assert.equal(spareOf(c, null), null);
+  assert.equal(spareOf({...c, length: null}, pathOf(300, c)), null);
+  assert.equal(spareOf({...c, length: {value: 3, unit: 'yd', source: 'entered'}}, pathOf(300, c)), null);
+  assert.equal(spareOf({...c, length: undefined, lengthAsWritten: {value: 'long', unit: 'm'}}, pathOf(300, c)), null);
+  assert.equal(spareFor({cables: [c]}, c, null), null);
+  assert.equal(spareFor({cables: [c]}, null, {}), null);
+});
+
+test('sparesOf lists every routed cable but one with a loose end', () => {
+  const cs = [routed('c1', 'om4', 267), routed('c2', 'cat6', 900), routed('c3', 'om4', 397), routed('c4', 'dac', 500)];
+  const paths = new Map(cs.map((c, k) => [c.id, k === 3 ? null : pathOf([267, 900, 397][k], c)]));
+  const ends = new Map([[endKey(cs[2].b), {info: null, reason: 'nothing is seated in that cage'}]]);
+  const got = sparesOf({cables: cs}, paths, looseIn(ends));
+  assert.deepEqual([...got.keys()], ['c1', 'c2']);
+  near(got.get('c2').spare, stockLength(pathLength(paths.get('c2')).measured) - (0.9 + 2 * END_ALLOWANCE_BY_MEDIA.cat6), 'c2');
+  assert.equal(sparesOf({cables: cs}, null).size, 0);
+});
+
+test('the list\'s line and the agent\'s text carry the same words', () => {
+  const c = {...routed('c12', 'om4', 397), label: 'L12', purpose: 'uplink'};
+  const s = spareOf(c, pathOf(397, c));
+  assert.equal(cableMeta(c, s), 'L12 · OM4 multimode fiber · uplink · 1 m cord, 0.57 m spare');
+  assert.equal(cableMeta(c, null), 'L12 · OM4 multimode fiber · uplink · 1 m');
+  const o = {kind: 'cable', id: 'c12', a: {item: 'sw', path: 'port-1', view: 'front'}, b: {item: 'pp', path: 'port-1', view: 'front'},
+    media: 'om4', purpose: 'uplink', label: 'L12', length: {value: 1, unit: 'm', source: 'routed'},
+    routed: {metres: 0.62, stock: 1}, slack: null, route: {edited: false, waypoints: [], text: ''}};
+  const said = cableText(o, {spare: spareText(s)});
+  assert.match(said, /length 1 m \(routed\); routed 0\.62 m, stock size 1 m; 1 m cord, 0\.57 m spare \(the cord less its path and what its plugs take; the drawing shows the path only\)/);
+  assert.doesNotMatch(cableText(o), /spare/);
+  // an entered length has the kit's slack too, and each is named
+  const e = {...o, length: {value: 2, unit: 'm', source: 'entered'}, slack: {metres: 1.38}};
+  assert.match(cableText(e, {spare: '2 m cord, 1.58 m spare', dressing: 0.1}), /; slack 1\.38 m against the routed length, which allows 0\.1 m of dressing at each end; 2 m cord, 1\.58 m spare /);
+  assert.match(cableText(e), /; slack 1\.38 m$/m);
+  assert.match(SPARE_HELP, /path/);
+  assert.match(SPARE_HELP, /is not drawn\.$/);
+});
+
+test('rounding never flatters the cord: a need is said rounded up, a spare down, a shortfall up', () => {
+  // c12's route needs 0.6232 m. A 0.62 m cord is under it by 3 mm: the need must not read 0.62 m.
+  const c = {id: 'c12', media: 'om4', length: {value: 0.62, unit: 'm', source: 'entered'}};
+  const path = pathOf(397, c), s = spareOf(c, path);
+  near(s.needs, 0.397 + 2 * endAllowance(c), 'the need');
+  assert.equal(needsText(s), 'the route needs 0.63 m');
+  // its spare is 0.1968 m: said as 0.19, never the 0.2 m that would be the whole dressing room
+  near(s.spare, 0.62 - (0.397 + 2 * END_ALLOWANCE_BY_MEDIA.om4), 'the spare');
+  assert.equal(spareText(s), '0.62 m cord, 0.19 m spare without dressing room');
+  // A 3 ft cord (0.9144 m) against a need of 0.9150 m, which is 3.002 ft: the need must not read 3 ft.
+  const table = END_ALLOWANCE_BY_MEDIA.om4, d = dressingAllowance({media: 'om4'});
+  const ft = {id: 'f', media: 'om4', length: {value: 3, unit: 'ft', source: 'entered'}};
+  const mm = (0.9150 - 2 * (table + d)) * 1000, sf = spareOf(ft, pathOf(mm, ft));
+  near(sf.needs, 0.9150, 'a need of 0.9150 m');
+  assert.equal(needsText(sf), 'the route needs 3.01 ft');
+  assert.match(spareText(sf), /^3 ft cord, 0\.65 ft spare without dressing room$/);
+  // THE FT BOUNDARY: a need of exactly 3 ft does not warn a 3 ft cord, and a hair over it reads 3.01 ft, never 3 ft
+  const at = pathOf((3 * 0.3048 - 2 * (table + d)) * 1000, ft);
+  assert.equal(needsText(spareOf(ft, at)), null);
+  assert.equal(needsText(spareOf(ft, pathOf((3 * 0.3048 - 2 * (table + d)) * 1000 + 0.05, ft))), 'the route needs 3.01 ft');
+  // for every cord a little under a need, the need reads more than the cord, and cord less shortfall or plus nothing never over-reads
+  for (const [value, unit] of [[0.62, 'm'], [0.6, 'm'], [0.43, 'm'], [0.42, 'm'], [2, 'ft'], [2.04, 'ft'], [1.38, 'ft'], [1, 'ft']]) {
+    const k = {id: 'k', media: 'om4', length: {value, unit, source: 'entered'}}, sk = spareOf(k, pathOf(397, k));
+    const per = unit === 'ft' ? 0.3048 : 1;
+    const need = Number(needsText(sk).match(/needs ([\d.]+) /)[1]), said = Number(spareText(sk).match(/, ([\d.]+) /)[1]);
+    assert.ok(need > value, `${value} ${unit}: the need reads ${need}`);
+    assert.ok(need * per >= sk.needs - 1e-9, `${value} ${unit}: the need is not under-read`);
+    if (/short/.test(spareText(sk))) assert.ok(said * per >= -sk.spare - 1e-9 && said > 0, `${value} ${unit}: the shortfall ${said} is not under-read`);
+    else assert.ok(said * per <= sk.spare + 1e-9, `${value} ${unit}: the spare ${said} is not over-read`);
+  }
+  // figures exact in decimal do not move a step on float noise
+  const one = {id: 'o', media: 'cat6', length: {value: 2, unit: 'm', source: 'entered'}};
+  assert.equal(spareText(spareOf(one, pathOf((1 - 2 * END_ALLOWANCE_BY_MEDIA.cat6) * 1000, one))), '2 m cord, 1 m spare');
+  assert.equal(spareText(spareOf({...one, length: {value: 0.9, unit: 'm', source: 'entered'}}, pathOf((1 - 2 * END_ALLOWANCE_BY_MEDIA.cat6) * 1000, one))), '0.9 m cord, 0.1 m short');
+});

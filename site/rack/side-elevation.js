@@ -429,25 +429,6 @@ export function roomForSideCables(svgs, extents) {
   return true;
 }
 
-// ── the hover label ──────────────────────────────────────────────────────
-// What the pointer is over on a side pane, in words, beside the pointer: a
-// cable by its two ends, a bundle by its name and size, an item or a part by
-// its label. One element for the page (#sideTip), shown only over a side
-// pane; it takes no pointer and is not read out twice (the list says the
-// same of a row).
-export function sideTipText(rack, routes, target, uOf) {
-  if (!target) return '';
-  if (target.kind === 'cable') {
-    const c = (rack.cables || []).find(x => x.id === target.id);
-    return c ? `${c.label || c.id}: ${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}` : '';
-  }
-  if (target.kind === 'bundle') {
-    const f = routes?.bundles?.get(target.id);
-    return f ? `${f.name}: ${bundleSummary(f)}` : '';
-  }
-  return '';
-}
-
 /** THE PANE'S OWN WORDS ARE NEVER TOO SMALL TO READ. A side pane at Fit on a
  *  42U rack is drawn at well under a pixel a millimetre, and its U numbers,
  *  FRONT and REAR, and a near part's name are 11 mm tall at true scale. Each
