@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, sideX, sideY, project, projectedPath, paintOrder, onNearSide,
-        nearness, postsOf, depthExtent, paneSpanX, packedPoints, strapBar, POST_D, FRONT_ROOM, SIDE_PAD} from '../../site/rack/side-geometry.js';
+        nearness, postsOf, depthExtent, paneSpanX, packedPoints, strapBar, labelSize, plugSpans, POST_D, FRONT_ROOM, SIDE_PAD} from '../../site/rack/side-geometry.js';
 import {solidsOf} from '../../vendor/rack/solids.js';
 import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {normalizeFrame} from '../../vendor/rack/model.js';
@@ -102,9 +102,13 @@ test('the right pane has the front at its left and the left pane at its right: m
   const ext = depthExtent(four), L = paneSpanX('left', ext), R = paneSpanX('right', ext);
   assert.equal(L.w, R.w);
   close(L.x, -(R.x + R.w), 'mirrored boxes');
-  assert.deepEqual(ext, [-four.usableDepth - SIDE_PAD, FRONT_ROOM + SIDE_PAD]);
+  // the rack as it stands: from its rear posts to a little in front of the front rail plane, not the whole usable depth
+  assert.deepEqual(ext, [-four.railDepth - SIDE_PAD, FRONT_ROOM + SIDE_PAD]);
+  assert.ok(-four.usableDepth < ext[0], 'the usable depth is a limit, not what the pane is fitted to');
+  assert.deepEqual(depthExtent(two), [-POST_D - SIDE_PAD, FRONT_ROOM + SIDE_PAD]);
   // a body that stands out past either end widens it
   assert.deepEqual(depthExtent(four, [{z0: -1500, z1: 300}]), [-1500 - SIDE_PAD, 300 + SIDE_PAD]);
+  assert.deepEqual(depthExtent(four, [{z0: -580, z1: 0}, {z0: 0, z1: 110}]), [-four.railDepth - SIDE_PAD, 110 + SIDE_PAD]);
 });
 
 test('a body\'s box and its drawing are mirror placements in the two panes, with its front on its own front', () => {
@@ -197,4 +201,20 @@ test('a strap is a bar across the run where it is, and a run seen end on has non
   close((tilted.x2 - tilted.x1) * 30 + (tilted.y2 - tilted.y1) * 40, 0, 'across');
   close(Math.hypot(tilted.x2 - tilted.x1, tilted.y2 - tilted.y1), 10, 'length');
   assert.equal(strapBar([5, 5], [5, 5], 0.5, 8), null);
+});
+
+test('a label is never under its least size on screen, and never over what its place holds', () => {
+  assert.equal(labelSize(11, 9, 1), 11);            // at true scale it is its own size
+  assert.equal(labelSize(11, 9, 0.5), 18);          // at half scale, 9 px on screen is 18 units
+  assert.equal(labelSize(11, 9, 0.2, 31), 31);      // capped by its place
+  assert.equal(labelSize(11, 9, 3), 11);            // zoomed in, never smaller than drawn
+  assert.equal(labelSize(11, 9, 0), 11);            // a pane not laid out
+});
+
+test('a plug is the kit\'s straight run out of each port, by its reach', () => {
+  const pts = [{x: 0, y: 100, z: 0, at: 'a'}, {x: 0, y: 100, z: 39.4, at: 'reach', end: 'a'}, {x: -260, y: 111, z: 0, at: 'lane'},
+               {x: 5, y: 500, z: -789, at: 'lead'}, {x: 5, y: 500, z: -779.4, at: 'reach', end: 'b'}, {x: 5, y: 500, z: -740, at: 'b'}];
+  assert.deepEqual(plugSpans(pts), {a: {z0: 0, z1: 39.4, y: 100}, b: {z0: -779.4, z1: -740, y: 500}});
+  // an end with no reach point (the kit gave none) has no block
+  assert.deepEqual(plugSpans([pts[0], pts[2], pts[5]]), {});
 });

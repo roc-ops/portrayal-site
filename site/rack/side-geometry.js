@@ -139,16 +139,18 @@ export function postsOf(frame) {
   return out;
 }
 
-// mm in front of the front rail a pane always shows (a lacer's rings, the
-// plugs and the cables' first legs), and round its extent on every side.
-export const FRONT_ROOM = 160;
-export const SIDE_PAD = 24;
+// mm in front of the front rail plane a pane always shows (the plugs and the
+// first legs of the cables stand there), and the margin round what it shows.
+export const FRONT_ROOM = 60;
+export const SIDE_PAD = 40;
 /** The depth a side pane shows, in rack z: [zRear, zFront], zRear < 0 <
- *  zFront. The rack's own depth (frame.usableDepth, measured back from the
- *  front rail), FRONT_ROOM in front of it, and every span given (a part that
- *  stands out further, a cable's point), padded. */
+ *  zFront. THE RACK AS IT STANDS, with a margin: its posts, FRONT_ROOM in
+ *  front of the front rail plane, and every span given (each body; a cable's
+ *  points widen it later, side-elevation.js roomForSideCables). Not the whole
+ *  of frame.usableDepth: that is a limit, drawn as an outline, and a pane
+ *  fitted to it was half empty behind a rack of ordinary devices. */
 export function depthExtent(frame, spans = []) {
-  let lo = -(Number(frame?.usableDepth) || 0), hi = FRONT_ROOM;
+  let lo = Math.min(...postsOf(frame).map(p => p.z0)), hi = FRONT_ROOM;
   for (const s of spans) { if (s.z0 < lo) lo = s.z0; if (s.z1 > hi) hi = s.z1; }
   return [lo - SIDE_PAD, hi + SIDE_PAD];
 }
@@ -237,4 +239,23 @@ export function strapBar(p, q, f, half) {
   const dir = [(q[0] - p[0]) / len, (q[1] - p[1]) / len], n = [-dir[1], dir[0]];
   const c = [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f];
   return {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half, at: c};
+}
+
+/** A label's size on a pane, in the pane's own units, so it is never under
+ *  `minPx` on screen: `base` is its size at true scale, `scale` the pane's
+ *  screen pixels per unit, `most` a cap in units (what its place holds). */
+export const labelSize = (base, minPx, scale, most = Infinity) => (scale > 0 ? Math.min(most, Math.max(base, minPx / scale)) : base);
+
+/** A PLUG, AS A BLOCK. The kit starts a cable's path at its port and runs it
+ *  straight out by the plug's reach before it may turn (route.js: `a` or `b`,
+ *  then the `reach` point of that end). From the side that stretch is the
+ *  plug standing out of the face: {z0, z1, y} in rack mm for each end that has
+ *  both points, keyed 'a' and 'b'. */
+export function plugSpans(points) {
+  const out = {};
+  for (const e of ['a', 'b']) {
+    const port = points.find(q => q.at === e), reach = points.find(q => q.at === 'reach' && q.end === e);
+    if (port && reach && Math.abs(reach.z - port.z) > 0.5) out[e] = {z0: Math.min(port.z, reach.z), z1: Math.max(port.z, reach.z), y: port.y};
+  }
+  return out;
 }

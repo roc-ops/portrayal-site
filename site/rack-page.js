@@ -48,7 +48,7 @@ import {writeHint} from './rack/agent-hint.js';
 import {relaySwitch, prefs} from './agent/relay.js';
 import {touchedIds, markTouched} from './rack/agent-mark.js';
 import {zeroUInspector, sideControl} from './rack/zero-u-panel.js';
-import {drawSideElevation, drawSideCables, roomForSideCables, sideTipText} from './rack/side-elevation.js';
+import {drawSideElevation, drawSideCables, roomForSideCables, sizeSideLabels, sideTipText} from './rack/side-elevation.js';
 import {stopCentre} from './rack/scene3d.js';
 import {solidsOf} from '../vendor/rack/solids.js';
 
@@ -315,8 +315,17 @@ function setView(v) {
     paintCableMode();
   }
   showMode();
-  if (S.mode === '2d') render();
+  if (S.mode !== '2d') return;
+  // THE SWITCH IS ANSWERED AT ONCE, the panes a moment later: the headings
+  // name the pair now, and the panes are marked busy (aria-busy; rack.css
+  // fades them and shows the progress cursor) until the pair asked for is
+  // drawn. A redraw overtaken by another switch leaves the mark to that one.
+  [$('headFront').textContent, $('headRear').textContent] = PAIRS[v];
+  const mine = ++viewTurns;
+  $('panes').setAttribute('aria-busy', 'true');
+  render().finally(() => { if (mine === viewTurns) $('panes').removeAttribute('aria-busy'); });
 }
+let viewTurns = 0;
 const rack = () => ed.rack();
 const theDoc = () => ed.getDoc();
 const itemById = id => rack().items.find(i => i.id === id) || null;
@@ -342,7 +351,10 @@ function attachManager(id) {
 // the raw column-width factor - a controller ruling, so this needs
 // recomputing after every render and every resize, not just when the zoom
 // itself changes.
-const setZoomLabel = () => { $('zoomLevel').textContent = zoomLabel(S.zoom, factorForFit($('panes'), S.svgs[0])); };
+// (Every place that applies the zoom says its label straight after, so this is
+// also where a side pane's own words are kept readable at the scale it now
+// has: side-elevation.js sizeSideLabels. Size only; nothing is redrawn.)
+const setZoomLabel = () => { $('zoomLevel').textContent = zoomLabel(S.zoom, factorForFit($('panes'), S.svgs[0])); sizeSideLabels(S.svgs); };
 const setZoom = z => { S.zoom = z; saveZoom(z); applyZoom($('panes'), S.svgs, z); setZoomLabel(); };
 
 // A stored document can be missing (deleted from another tab) or fail to

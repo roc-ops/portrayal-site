@@ -55,13 +55,25 @@ import {bundleSummary, STRAP_DRAWN, drawnDiameter} from './bundle-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
-        paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar} from './side-geometry.js';
+        paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
 
-// What a part beside the rack on the near side keeps of its own opacity.
-export const NEAR_OPACITY = 0.34;
+// What a part beside the rack on the near side keeps of its own opacity. Its
+// drawing alone, see-through over the devices, read as a grey bezel on the
+// front of each of them: so it is fainter than the front pane's cover (0.34),
+// and what says it is a separate part in front is drawn round it at full
+// strength: a dashed outline, a light hatch across it, and its name.
+export const NEAR_OPACITY = 0.2;
+// The least a pane's own words measure on screen, in CSS px (sizeSideLabels).
+export const LABEL_MIN_PX = {num: 9, word: 11, part: 11};
+// A plug as a block: mm across the run, and its paint (the strap's light neutral and dark rim: seen on either stage).
+const PLUG_H = 9;
+const PLUG = {fill: '#c9ced4', line: '#1b1d20'};
+// The line round every body, in the stage's own ink: a dark chassis on the dark stage is otherwise not seen.
+const EDGE = {fill: 'none', stroke: 'var(--pt-ink-muted)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', 'pointer-events': 'none'};
 // mm under the rack a pane always has when the rack has cables (the front pane's DROP).
 const DROP = 40;
-const MARGIN = 8;
+const MARGIN = 24;
+const WORD_ROOM = 24;
 
 // The metal the front pane's rails are (elevation.js METAL).
 const METAL = {rail: '#B9BFC6', railLine: '#8D949C', num: '#2B3036'};
@@ -107,7 +119,8 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   const {x: bx, w: bw} = paneSpanX(pane, ext);
   // the front pane's own top and height (elevation.js), so a U is at one y in all four panes
   const fb = elevationBox(frame, zeroU, 1, laneGap);
-  const box = [bx, fb.y, bw, fb.h + (cabled ? DROP : 0)];
+  // (and WORD_ROOM more above it, for FRONT and REAR at the size they are kept readable at)
+  const box = [bx, fb.y - WORD_ROOM, bw, fb.h + WORD_ROOM + (cabled ? DROP : 0)];
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': pane, 'data-side': 'true', viewBox: box.join(' ')});
   out.dataset.baseBox = box.join(' ');
   out.dataset.depth = ext.join(' ');
@@ -122,12 +135,14 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   // which way is the front: a word over each end of the rack
   const word = (z, text, anchor) => {
     const t = svgEl('text', {x: sideX(pane, z), y: -6, 'text-anchor': anchor, 'font-family': 'IBM Plex Mono, monospace',
-      'font-size': 11, fill: 'var(--pt-ink-muted)', 'data-side-word': text.toLowerCase(), 'pointer-events': 'none'});
+      'font-size': 11, fill: 'var(--pt-ink-muted)', 'data-side-word': text.toLowerCase(), 'data-side-label': 'word', 'pointer-events': 'none'});
     t.textContent = text;
     out.append(t);
   };
+  // FRONT over the front rail plane, REAR over the rearmost post (a two-post has none: over the pane's rear edge)
+  const rearmost = Math.min(...postsOf(frame).map(p => p.z0));
   word(0, 'FRONT', pane === 'right' ? 'start' : 'end');
-  if (deep > 0) word(-deep, 'REAR', pane === 'right' ? 'end' : 'start');
+  word(frame.kind === 'two-post' ? ext[0] + 8 : rearmost, 'REAR', pane === 'right' ? 'end' : 'start');
 
   let styled = false;
   const rings = [];
@@ -151,6 +166,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
       // the whole box takes a click and the pointer: under the drawing
       g.append(svgEl('rect', {x: p.ox, y: p.oy, width: p.faceW, height: p.faceH, fill: 'transparent', 'data-side-hit': ''}));
       adopt(g, p.root);
+      g.append(svgEl('rect', {x: p.ox, y: p.oy, width: p.faceW, height: p.faceH, ...EDGE, 'data-side-edge': '', 'data-pt-ui': '*'}));
       b = {x, y, w: p.faceW, h: p.faceH};
     } else {
       b = sideBox(pane, frame, span, units ? units(h) : y0, h);
@@ -204,17 +220,45 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
       const yBottom = totalH - i * RU;
       posts.append(svgEl('line', {x1: x0, y1: yBottom - RU, x2: x0 + w, y2: yBottom - RU, stroke: METAL.railLine, 'stroke-width': 0.8}));
       const t = svgEl('text', {x: x0 + w / 2, y: yBottom - RU / 2 + 4, 'text-anchor': 'middle',
-        'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 500, fill: METAL.num, 'data-side-num': p.at});
+        'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 500, fill: METAL.num, 'data-side-num': p.at,
+        'data-side-label': 'num', 'data-mid': String(yBottom - RU / 2)});
       t.textContent = String(uLabel(frame, 1 + i));
       posts.append(t);
     }
   }
   out.append(posts);
 
-  // THE PARTS BESIDE THE NEAR SIDE, in front of everything, see-through. The
-  // cables go in under this layer (drawSideCables).
-  const near = svgEl('g', {'data-side-near': pane, opacity: NEAR_OPACITY});
-  for (const p of parts.filter(x => x.near)) near.append(await zeroUGroup(p));
+  // THE PARTS BESIDE THE NEAR SIDE, in front of everything. The drawing is
+  // see-through (NEAR_OPACITY), so the devices and the lanes behind it are
+  // seen; and it is marked as a part of its own, in front: a dashed outline
+  // and a light hatch in the stage's ink, and its name up its length. The
+  // marks are the page's (data-pt-ui) and take no pointer; the part itself
+  // takes a click. The cables go in under this layer (drawSideCables).
+  const near = svgEl('g', {'data-side-near': pane});
+  const nearParts = parts.filter(x => x.near);
+  if (nearParts.length) {
+    const defs = svgEl('defs', {});
+    const pat = svgEl('pattern', {id: `rk-side-hatch-${pane}`, width: 14, height: 14, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)'});
+    pat.append(svgEl('line', {x1: 0, y1: 0, x2: 0, y2: 14, stroke: 'var(--pt-ink-muted)', 'stroke-width': 1.4}));
+    defs.append(pat);
+    near.append(defs);
+  }
+  for (const p of nearParts) {
+    const g = await zeroUGroup(p);
+    g.setAttribute('opacity', String(NEAR_OPACITY));
+    near.append(g);
+    const [x, y, w, h] = g.dataset.box.split(' ').map(Number);
+    const mark = svgEl('g', {'data-side-near-mark': p.z.id, 'pointer-events': 'none', 'data-pt-ui': '*'});
+    mark.append(svgEl('rect', {x, y, width: w, height: h, fill: `url(#rk-side-hatch-${pane})`, opacity: 0.22}),
+                svgEl('rect', {x, y, width: w, height: h, ...EDGE, 'stroke-dasharray': '6 4'}));
+    // its name, up its length, beside its outer edge (in front of the rack, clear of the lanes)
+    const outer = pane === 'right' ? x - 8 : x + w + 8, cy = y + h / 2;
+    const t = svgEl('text', {x: outer, y: cy, 'text-anchor': 'middle', transform: `rotate(-90 ${n3(outer)} ${n3(cy)})`, 'font-family': 'IBM Plex Mono, monospace',
+      'font-size': 11, fill: 'var(--pt-ink-muted)', 'data-side-label': 'part', 'data-turn': `${n3(outer)} ${n3(cy)}`});
+    t.textContent = `${p.z.label} · in front, beside this side of the rack`;
+    mark.append(t);
+    near.append(mark);
+  }
   out.append(near);
 
   // The selection ring is drawn, not styled, as on the front pane, and last.
@@ -262,6 +306,18 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     t.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
     g.append(t);
     stroke(g, d, colorOf(link), WIDTH);
+    // THE PLUG AT EACH END, as a block (side-geometry.js plugSpans): the kit's
+    // straight run out of the port by the plug's reach. No seated plug or
+    // optic has a side drawing to seat here (the devices' indexes list side
+    // cages only for grounding studs), so this stands for it: without it a
+    // cable starts at a bare panel edge, and the stretch a cable runs out
+    // behind a rear device before it turns reads as an overshoot.
+    for (const [e, sp] of Object.entries(plugSpans(pts.map((q, k) => ({...q, at: path.points[k].at, end: path.points[k].end}))))) {
+      const a = sideX(pane, sp.z0), b = sideX(pane, sp.z1), y = sideY(frame, sp.y);
+      g.append(svgEl('rect', {x: n3(Math.min(a, b)), y: n3(y - PLUG_H / 2), width: n3(Math.abs(b - a)), height: PLUG_H, rx: 1,
+        fill: PLUG.fill, stroke: PLUG.line, 'stroke-width': 0.6, 'data-side-plug': e}));
+      see([Math.min(a, b), y]); see([Math.max(a, b), y]);
+    }
     layer.append(g);
     drawn.push(c.id);
   });
@@ -390,4 +446,25 @@ export function sideTipText(rack, routes, target, uOf) {
     return f ? `${f.name}: ${bundleSummary(f)}` : '';
   }
   return '';
+}
+
+/** THE PANE'S OWN WORDS ARE NEVER TOO SMALL TO READ. A side pane at Fit on a
+ *  42U rack is drawn at well under a pixel a millimetre, and its U numbers,
+ *  FRONT and REAR, and a near part's name are 11 mm tall at true scale. Each
+ *  is given the larger of that and LABEL_MIN_PX on screen, from the pane as
+ *  it is laid out; a U number is never taller than its unit holds. Call it
+ *  after the zoom is applied, and again whenever the zoom or the window
+ *  changes. Size only: nothing is redrawn. */
+export function sizeSideLabels(svgs) {
+  for (const svg of svgs) {
+    if (!svg?.dataset?.side) continue;
+    const vb = svg.viewBox?.baseVal, w = svg.getBoundingClientRect().width;
+    const scale = vb?.width > 0 && w > 0 ? w / vb.width : 0;
+    for (const t of svg.querySelectorAll('[data-side-label]')) {
+      const kind = t.dataset.sideLabel, fs = labelSize(11, LABEL_MIN_PX[kind] ?? 9, scale, kind === 'num' ? RU * 0.7 : 60);
+      t.setAttribute('font-size', String(n3(fs)));
+      // a U number stays centred in its unit
+      if (kind === 'num') t.setAttribute('y', String(n3(Number(t.dataset.mid) + fs * 0.36)));
+    }
+  }
 }
