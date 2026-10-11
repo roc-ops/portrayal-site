@@ -15,13 +15,13 @@ import {fits} from '../../vendor/rack/fit.js';
 import {placement, hostAt} from '../../vendor/rack/managers.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {mountPick} from '../../vendor/rack/export-data.js';
-import {attachPoints, isZeroUPart, isNarrow, fitsZeroU} from '../../vendor/rack/fit.js';
+import {attachPoints, isZeroUPart, isNarrow, fitsZeroU, unitsOf, spanText} from '../../vendor/rack/fit.js';
 
 const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
 const ALL = 'all';
 
-export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState, onPlace, onlyMount = null}) {
+export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chassisOf, pick, onState, onPlace, onlyMount = null}) {
   // fit() only depends on the rack, this U and this face - all fixed for the
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
@@ -31,29 +31,43 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   // where it would go - the upright, the rail - as chosen below (state.at, state.side).
   const points = attachPoints(rack.frame.kind);
   const fitCache = new Map();
-  // `choice` is the upright or the rail; null means the one chosen now.
+  // A DEVICE THAT MAY START ON A HALF UNIT (rack file version 4): one whose
+  // height is not a whole number of units (the kit's unitsOf: a half-unit
+  // panel, a 1.5U or 3.5U device). In a whole unit it is offered both of that
+  // unit's halves, the lower one first (state.half), as a zero-U part is
+  // offered each upright; in a half that was picked as one (`half`: the free
+  // half beside another panel, which the pane offers as a target of its own)
+  // it goes on that half. Every other device is judged at the position
+  // picked, and the kit refuses a whole-unit one on a half, or in a unit
+  // whose other half is taken, in its own sentence.
+  const mayHalf = e => !isZeroUPart(e) && e.mount !== 'rack-face' && !Number.isInteger(unitsOf(e));
+  const HALVES = ['lower', 'upper'];
+  const whole = onHalf == null && Number.isInteger(ru);
+  const ruAt = (e, half) => (mayHalf(e) && whole && half === 'upper' ? ru + 0.5 : ru);
+  // `choice` is the upright, the rail or the half; null means the one chosen now.
   const fitFor = (e, choice = null) => {
-    const at = choice ?? state.at, side = choice ?? state.side;
-    const key = isZeroUPart(e) ? `${e.name}|${at}` : isNarrow(e) ? `${e.name}|${side}` : e.name;
+    const at = choice ?? state.at, side = choice ?? state.side, half = choice ?? state.half;
+    const key = isZeroUPart(e) ? `${e.name}|${at}` : isNarrow(e) ? `${e.name}|${side}` : mayHalf(e) ? `${e.name}|${half}` : e.name;
     if (!fitCache.has(key)) fitCache.set(key, isZeroUPart(e) ? fitsZeroU(rack, {ref: e.name, at, ru}, chassisOf)
       : isNarrow(e) ? fits(rack, {ref: e.name, face, ru, side}, chassisOf)
-      : fits(rack, {ref: e.name, ...(e.mount === 'rack-face' ? placement(rack, {face, ru}, chassisOf) : {ru, face})}, chassisOf));
+      : fits(rack, {ref: e.name, ...(e.mount === 'rack-face' ? placement(rack, {face, ru}, chassisOf) : {ru: ruAt(e, half), face})}, chassisOf));
     return fitCache.get(key);
   };
   // In the list, a part with a choice fits when ANY choice does (the line below
   // the list says whether the chosen one does): a bracket whose left rail is
   // taken here still goes on the right one.
-  const choices = e => (isZeroUPart(e) ? points : isNarrow(e) ? ['left', 'right'] : [null]);
+  const choices = e => (isZeroUPart(e) ? points : isNarrow(e) ? ['left', 'right'] : mayHalf(e) && whole ? HALVES : [null]);
   const fitOf = {get: name => { const e = byRefOf(name), all = choices(e).map(c => fitFor(e, c));
     return all.find(f => f.ok) ?? fitFor(e); }};
   // A U a rack device spans on this face is not empty: a rack-face part would attach to it.
-  const host = hostAt(rack, face, ru, chassisOf);
+  const host = hostAt(rack, face, Math.floor(ru), chassisOf);
   const byRef = new Map(live.map(e => [e.name, e]));
   const byRefOf = name => byRef.get(name);
 
   let state = {query: '', vendor: ALL, fitsOnly: true, device: null, cfgByRef: {}, ...pick};
   if (!points.includes(state.at)) state.at = points.includes(`left-${face}`) ? `left-${face}` : points[0];
   if (state.side !== 'right') state.side = 'left';
+  if (state.half !== 'upper') state.half = 'lower';
   const setState = patch => { state = {...state, ...patch}; onState(patch); };
 
   const afterQuery = () => { const ws = wordsOf(state.query); return live.filter(e => ws.every(w => hay(e).includes(w))); };
@@ -77,6 +91,9 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   const atRow = el('label', {}, ['Beside the upright', at]);
   const betweenRow = el('label', {class: 'rk-check'}, [between, ' Between racks (serves the next rack too)']);
   const sideRow = el('label', {}, ['Rail', side]);
+  const half = el('select', {id: 'catHalf', 'aria-label': 'Half of the unit'},
+    HALVES.map(p => el('option', {value: p, text: `${p} half of U${uLabel(rack.frame, Math.floor(ru))}`, ...(p === state.half ? {selected: ''} : {})})));
+  const halfRow = el('label', {}, ['Starts on the', half]);
 
   function renderVendorOptions(fitted) {
     const counts = new Map();
@@ -108,6 +125,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const show = (n, on) => { n.hidden = !on; n.style.display = on ? '' : 'none'; };
     show(atRow, !!entry && isZeroUPart(entry)); show(betweenRow, !!entry && isZeroUPart(entry));
     show(sideRow, !!entry && isNarrow(entry));
+    show(halfRow, !!entry && mayHalf(entry) && whole);
     if (!entry) {
       cfg.replaceChildren();
       cfg.disabled = true;
@@ -119,11 +137,17 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const configs = entry.configs?.length ? entry.configs : [entry.default ?? ''];
     const chosen = state.cfgByRef[entry.name] ?? entry.default ?? configs[0];
     cfg.replaceChildren(...configs.map(c => el('option', {value: c, text: c, ...(c === chosen ? {selected: ''} : {})})));
+    // the half chosen last time may be taken here: start on the one that fits
+    if (mayHalf(entry) && whole && !fitFor(entry).ok) {
+      const other = HALVES.find(h => fitFor(entry, h).ok);
+      if (other) { setState({half: other}); half.value = other; }
+    }
     const f = fitFor(entry);
     fitLine.textContent = !f.ok ? f.reason
       : isZeroUPart(entry) ? `Fits here: it stands beside the rack at ${state.at}, its bottom level with U${uLabel(rack.frame, ru)}, and takes no U.`
       : isNarrow(entry) ? `Fits here: it mounts on the ${state.side} rail's face and takes no U of its own.`
       : entry.mount === 'rack-face' && host ? `Fits here: it mounts on the rail face over ${host.label}, and takes no U of its own.`
+      : mayHalf(entry) ? `Fits here: ${spanText(rack.frame, {ru: ruAt(entry, state.half), ref: entry.name}, chassisOf)}.`
       : (mountPick(entry.mount)?.fit ?? 'Fits here.');
     fitLine.className = f.ok ? 'rk-muted' : 'rk-error';
   }
@@ -156,7 +180,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const chosenCfg = cfg.value || entry.default || entry.configs?.[0] || '';
     setState({cfgByRef: {...state.cfgByRef, [entry.name]: chosenCfg}});
     onPlace(entry, chosenCfg, isZeroUPart(entry) ? {at: state.at, between: !!state.between}
-      : isNarrow(entry) ? {side: state.side} : {});
+      : isNarrow(entry) ? {side: state.side} : mayHalf(entry) ? {ru: ruAt(entry, state.half)} : {});
   }
 
   query.addEventListener('input', () => { setState({query: query.value}); redraw(); });
@@ -171,19 +195,21 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
   at.addEventListener('change', () => { setState({at: at.value}); redraw(); });
   between.addEventListener('change', () => setState({between: between.checked}));
   side.addEventListener('change', () => { setState({side: side.value}); redraw(); });
+  half.addEventListener('change', () => { setState({half: half.value}); redraw(); });
 
   redraw();
   queueMicrotask(() => query.focus());
 
   return el('div', {class: 'rk-picker'}, [
-    el('h3', {text: `U${uLabel(rack.frame, ru)} · ${face}, ${host ? `on ${host.label}` : 'empty'}`}),
+    // a half picked as one is named as the kit names a span: "the upper half of U12"
+    el('h3', {text: `${whole ? `U${uLabel(rack.frame, ru)}` : (t => t[0].toUpperCase() + t.slice(1))(spanText(rack.frame, {ru, ref: ''}, () => ({ru: 0.5})))} · ${face}, ${host ? `${whole ? 'on' : 'beside'} ${host.label}` : 'empty'}`}),
     el('label', {}, ['Search', query]),
     el('label', {class: 'rk-check'}, [fitsOnly, ' Only what fits here']),
     el('label', {}, ['Vendor', vendor]),
     el('label', {}, ['Device', device]),
     empty,
     el('label', {}, ['Configuration', cfg]),
-    atRow, betweenRow, sideRow,
+    atRow, betweenRow, sideRow, halfRow,
     fitLine,
     el('div', {class: 'rk-actions'}, [place]),
   ]);

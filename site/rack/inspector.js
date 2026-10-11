@@ -4,6 +4,7 @@
 
 import {el} from './dom.js';
 import {positionOf} from '../../vendor/rack/model.js';
+import {unitsOf} from '../../vendor/rack/fit.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});
@@ -37,7 +38,7 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
   const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
   return el('div', {class: 'rk-inspector'}, [
     el('h3', {text: item.label}),
-    el('p', {class: 'rk-muted', text: `${chassis?.manufacturer ?? ''} ${chassis?.model ?? item.ref} · U${positionOf(rack.frame, item.ru, chassis?.ru ?? 1)}, ${item.face}${item.turned ? ', turned' : ''}`.trim()}),
+    el('p', {class: 'rk-muted', text: `${chassis?.manufacturer ?? ''} ${chassis?.model ?? item.ref} · U${positionOf(rack.frame, item.ru, unitsOf(chassis))}, ${item.face}${item.turned ? ', turned' : ''}`.trim()}),
     field('Label', label),
     field('Configuration', cfg),
     field('Mounted on', face),

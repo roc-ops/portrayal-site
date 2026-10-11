@@ -8,7 +8,7 @@ import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces, trunkLay} from './bundle-view.js';
 import {WIDTH} from '../../vendor/rack/cable-geometry.js';
-import {bodySpan} from './body-span.js';
+import {itemBox} from '../../vendor/rack/fit.js';
 import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindings, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
 import {portPathOf, mergeSeats, endKey} from '../../vendor/rack/cable-rules.js';
@@ -402,12 +402,12 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // Height above the floor: the item's top, less the port's depth into its face.
     portY: end => { const p = port(end), it = itemOf(end.item);
       if (!p || !it) return null;
-      // The drawing is centered, unscaled, in its span (elevation.js): the
-      // units the item takes, or, for a body under one unit, its own part of
-      // its unit, from the bottom (body-span.js), so a port of a half-unit
-      // panel is where both views draw it.
-      const c = chassisOf(it.ref), s = bodySpan(c?.ru, Math.max(1, c?.ru ?? 1), p.faceH);
-      return (it.ru - 1 + s.units) * RU - (s.inset + p.y); },
+      // The drawing is centred, unscaled, in the span the item fills (the
+      // kit's fit.js itemBox, `lo` to `hi`: where elevation.js, the side panes
+      // and the 3D rack stand the body, and the kit its solids), so a port of
+      // a half-unit panel is where every view draws it, in either half.
+      const b = itemBox(rack, it, chassisOf);
+      return (b.lo + b.hi) / 2 + p.faceH / 2 - p.y; },
     // A duct beside the rack: its channel, from its drawing (ductAperture), or
     // null. The kit's fill and capacityOver count the cables through it, and a
     // bundle's size check reads it, so the page does not count them itself.

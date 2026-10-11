@@ -23,7 +23,8 @@ import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
-import {bodySpan, HALF_HOLE} from './rack/body-span.js';
+import { earHoles } from './rack/ear-holes.js';
+import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
@@ -458,15 +459,16 @@ export function createRackScene(container, opts = {}) {
   // mirror image of a front ear, not a copy of it parented somewhere else.
   // Defaulted to the front pair, so nothing that already calls this changes.
   //
-  // A BODY UNDER ONE UNIT (body-span.js; `body` = {inset, h}, given only for
-  // one) has an ear as tall as itself, where it sits in the lower half of its
-  // unit, with one screw, at the one rail hole that half holds - as the 2D
-  // elevation draws it. It had a whole unit's ear and two screws.
-  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null), body = null) {
+  // THE EAR IS AS TALL AS THE SPAN ITS ITEM FILLS, `lo` to `hi` in mm above
+  // the bottom of the rails (the kit's fit.js itemBox), and is fixed at the
+  // rail holes that span holds (ear-holes.js, over the kit's holesIn), as the
+  // 2D elevation draws it: two screws a unit, a unit's middle hole left
+  // empty, and one screw for a half unit, at the one hole that half holds.
+  function rackEars(lo, hi, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null)) {
     const g = new THREE.Group();
-    const yBase = (ru - 1) * RU;
-    const h = body ? body.h : ruHeight * RU - 4.5;
-    const yMid = body ? yBase + body.inset + body.h / 2 : yBase + ruHeight * RU / 2;
+    const h = hi - lo - (hi - lo >= RU ? 4.5 : 2);
+    const yMid = (lo + hi) / 2;
+    const screws = earHoles(lo, hi);
     // The leg spans the recess and then grips the flank. Only the GRIP is
     // capped: the recess has to be crossed whatever the device, or the ear
     // never reaches it.
@@ -492,13 +494,11 @@ export function createRackScene(container, opts = {}) {
         leg.position.set(side * (halfW + 1.5), yMid, mountZ - dir * legLen / 2);
         g.add(leg);
       }
-      for (let u = 0; u < ruHeight; u++) {
-        for (const dy of body ? [HOLE_DY[HALF_HOLE]] : [6.35, 38.10]) {
-          const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
-          head.rotation.x = Math.PI / 2;
-          head.position.set(holeX, yBase + u * RU + dy, mountZ + dir * 4.1);
-          g.add(head);
-        }
+      for (const y of screws) {
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
+        head.rotation.x = Math.PI / 2;
+        head.position.set(holeX, y, mountZ + dir * 4.1);
+        g.add(head);
       }
     }
     return g;
@@ -669,7 +669,18 @@ export function createRackScene(container, opts = {}) {
     group.add(body);
     meshes.forEach(m => group.add(m));
 
-    const ruHeight = Math.max(1, Math.round(H / RU));
+    // THE SPAN IT FILLS, AND WHERE ITS BODY IS IN IT: the kit's (fit.js
+    // itemBox). `lo` and `hi` are the edges of the span, in mm above the
+    // bottom of the rails, from the catalogue's height in units (in halves
+    // since rack file version 4: a half-unit panel at 12.5 is the upper half
+    // of U12); the body is centred in it, always, as the 2D elevation, the
+    // side panes and the kit's solids have it. It stood on the bottom of its
+    // lowest unit here, up to 6.35 mm below where the kit's routes took it to
+    // be. Without a catalogue entry the span is the drawing's height in units.
+    // A part beside the rack is no rack item: it stands on its bottom unit.
+    const box = entry.chassis?.ru != null && entry.mount !== 'rack-side'
+      ? itemBox(null, {ru: entry.ru, ref: entry.ref, roll: entry.roll}, () => entry.chassis)
+      : (u => ({lo: (entry.ru - 1) * RU, hi: (entry.ru - 1 + u) * RU}))(Math.max(1, Math.round(H / RU)));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
     // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
     // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).
@@ -686,11 +697,7 @@ export function createRackScene(container, opts = {}) {
     const z = rackFace
       ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
       : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
-    // WHERE THE BODY IS IN ITS UNITS (body-span.js): standing on the bottom of
-    // its lowest unit, as ever; a body under one unit (catalogue `ru` below 1)
-    // centred in its own part of that unit, as the 2D elevation draws it.
-    const span = bodySpan(entry.chassis?.ru, ruHeight, H, true);
-    group.position.set(0, (entry.ru - 1) * RU + span.inset + H / 2, z);
+    group.position.set(0, entry.mount === 'rack-side' ? box.lo + H / 2 : (box.lo + box.hi) / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is
     // mounted to, and what you see from the mounting face's own side is its
@@ -724,8 +731,7 @@ export function createRackScene(container, opts = {}) {
     const noEars = !!entry.mount && entry.mount !== 'rack';
     const plan = noEars ? null : earPlan(entry.index || {chassis: entry.chassis}, frontW);
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null,
-                 span.half ? {inset: span.inset, h: H} : null);
+      : rackEars(box.lo, box.hi, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null);
     ears.userData.ears = noEars ? null : plan ? 'generic' : 'built-in';
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
@@ -1012,8 +1018,8 @@ export function createRackScene(container, opts = {}) {
   function fitUnits() {
     let top = 0;
     for (const e of RESOLVED) {
-      const h = e.chassis?.ru || Math.max(1, Math.round((e.chassis?.h || RU) / RU));
-      top = Math.max(top, (e.ru || 1) + h - 1);
+      const h = e.chassis?.ru != null ? unitsOf(e.chassis) : Math.max(1, Math.round((e.chassis?.h || RU) / RU));
+      top = Math.max(top, Math.ceil((e.ru || 1) + h - 1));
     }
     return Math.max(MIN_RU, top);
   }

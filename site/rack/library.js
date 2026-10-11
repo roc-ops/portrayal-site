@@ -12,7 +12,8 @@ import {fileStem} from '../../vendor/rack/export-data.js';
 
 // THE KIT'S READER, AND WHAT IT SAID. parseDoc keeps a narrow part's `side`
 // and gives a zero-U entry with no id one of its own (kit 0.6.0), and migrates
-// a version 1 or 2 file to version 3 (0.7.0), which every save then writes.
+// an older file (version 1, 2 or 3) to version 4 (kit 0.22.0: half-unit
+// positions, and every key it does not know kept), which every save then writes.
 // The sentences it gives for the bundles it repaired are not kept in the
 // document: they are held here beside the document they came with, so the page
 // can hand them to the editor's loadDoc (docNotes), which makes them its first

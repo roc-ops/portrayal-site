@@ -7,8 +7,8 @@ import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf} from '../v
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
-import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf} from '../vendor/rack/fit.js';
+import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
+import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf} from '../vendor/rack/fit.js';
 import {zeroUEntries} from '../vendor/rack/zero-u.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
@@ -732,12 +732,12 @@ function pruneFilter() {
   for (const f of ['purpose', 'media']) if (on[f] != null && !countsBy(r.cables, f).has(on[f])) on[f] = null;
   S.cableFilter = on;
 }
-// EACH CABLE'S SPARE (spare.js), from the paths read for the rack as it is
-// (routesNow): none while they are another rack's, none for a cable with a
+// EACH CABLE'S SPARE (spare.js: the kit's spareOf), by the route context read
+// for the rack as it is (routesNow): none while it is another rack's, none for a cable with a
 // loose end, which is not drawn along its path, and none at all while the ends
 // could not be checked (an end not known to land is not said to have spare).
 // The list, the 2D titles and the hover label all read this, so they say one figure.
-const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesNow()?.paths ?? null, looseIn(S.cableFacts.ends));
+const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesNow()?.ctx ?? null, looseIn(S.cableFacts.ends));
 function cableListPanel() {
   const r = rack();
   pruneFilter();
@@ -1235,7 +1235,8 @@ function summary() {
   const r = rack();
   const devices = r.items.filter(i => !isRackFace(chassisOf(i.ref)));
   const managers = r.items.length - devices.length;
-  const used = devices.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
+  // in halves since rack file version 4: two half-unit panels in one unit use one unit between them
+  const used = devices.reduce((n, i) => n + uOf(i), 0);
   // A narrow part on one rail is judged on its rail (the kit's fits reads the item's side).
   const warnings = r.items
     .map(i => ({i, f: fits(r, i, chassisOf, {ignoreId: i.id})}))
@@ -1425,9 +1426,9 @@ function renderSide() {
     onEdit: draft => { S.dcimDraft = draft; },
     onDone: closeDcimForm,
     onCancel: () => closeDcimForm(null)});
-  else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
+  else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru, half: sel.half ?? null,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
-    onPlace: (entry, cfg, extra) => place(entry, cfg, sel.face, sel.ru, extra), onlyMount: sel.onlyMount ?? null});
+    onPlace: (entry, cfg, extra) => place(entry, cfg, sel.face, extra.ru ?? sel.ru, extra), onlyMount: sel.onlyMount ?? null});
   else if (sel.kind === 'zerou') {
     const z = zeroUById(r, sel.id);
     if (!z) { S.sel = null; body = homePanel(); }
@@ -1521,7 +1522,7 @@ function renderSide() {
       managerRows({host: it, rack: r, chassisOf,
         attachable: (face, ru) => r.items.find(i => i.face === face && i.ru === ru && !i.on && isRackFace(chassisOf(i.ref))) ?? null,
         onAttach: id => attachManager(id),
-        onAdd: unit => select({kind: 'u', face: it.face, ru: it.ru + unit - 1, onlyMount: 'rack-face'}),
+        onAdd: unit => select({kind: 'u', face: it.face, ru: Math.floor(it.ru) + unit - 1, onlyMount: 'rack-face'}),
         onSelect: id => select({kind: 'item', id}),
         onRemove: id => {
           const m = itemById(id);
@@ -1655,17 +1656,20 @@ function onPaneClick(ev) {
     const svg = through.closest('svg');
     const face = svg.dataset.pane;
     const r = rack();
-    const u = uAtY(r.frame, svgY(svg, ev.clientX, ev.clientY));
+    // The whole unit when all of it is free on this face; else the half
+    // clicked, when that half is (the kit's spans, half-open).
+    const y = svgY(svg, ev.clientX, ev.clientY), u = uAtY(r.frame, y), h = halfAtY(r.frame, y);
     const item = itemById(through.dataset.itemId);
-    const free = !itemsWithU(r, chassisOf)
-      .some(it => !isRackFace(chassisOf(it.ref)) && it.face === face && u >= it.ru && u <= it.ru + it.u - 1);
-    const opensPicker = r.frame.kind === 'four-post' && item && !reaches(item, r, chassisOf) && free;
-    return opensPicker ? select({kind: 'u', face, ru: u}) : select({kind: 'item', id: through.dataset.itemId});
+    const freeIn = (lo, hi) => !r.items.some(it => !isRackFace(chassisOf(it.ref)) && it.face === face && spansMeet([lo, hi], spanOf(it, chassisOf)));
+    const ru = freeIn(u, u + 1) ? u : freeIn(h, h + 0.5) ? h : null;
+    const opensPicker = r.frame.kind === 'four-post' && item && !reaches(item, r, chassisOf) && ru != null;
+    return opensPicker ? select({kind: 'u', face, ru, ...(ru === u && freeIn(u, u + 1) ? {} : {half: Number.isInteger(ru) ? 'lower' : 'upper'})}) : select({kind: 'item', id: through.dataset.itemId});
   }
   const hit = ev.target.closest('[data-item-id]');
   if (hit) return select({kind: 'item', id: hit.dataset.itemId});
   const u = ev.target.closest('[data-u]');
-  if (u) return select({kind: 'u', face: u.dataset.face, ru: Number(u.dataset.u)});
+  // (a unit one half of which is taken offers its other half as a target of its own: elevation.js `data-half`)
+  if (u) return select({kind: 'u', face: u.dataset.face, ru: Number(u.dataset.u), ...(u.dataset.half ? {half: u.dataset.half} : {})});
 }
 
 // Without IndexedDB, S.lib is a no-op: New rack and Delete would otherwise
@@ -1924,7 +1928,10 @@ async function bootInner() {
       const cur = itemById(id);
       if (cur) {
         ev.preventDefault();
-        const r = patchItem(id, {ru: cur.ru + (ev.key === 'ArrowUp' ? 1 : -1)});
+        // half a unit at a time for a device that may start on a half (its height
+        // is not a whole number of units, or a file has it on one); a unit otherwise
+        const step = Number.isInteger(uOf(cur)) && Number.isInteger(cur.ru) ? 1 : 0.5;
+        const r = patchItem(id, {ru: cur.ru + (ev.key === 'ArrowUp' ? step : -step)});
         if (!r.ok) { S.notice = {text: r.reason, kind: 'error'}; render(); }
       }
     }

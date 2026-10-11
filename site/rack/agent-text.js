@@ -164,25 +164,32 @@ export function inspectText(o, {section = null, offset = 0, ask = {}} = {}) {
 // could not read the ends' facts) is said, never read as "nothing is loose".
 const len = x => (x == null ? null : typeof x === 'number' ? `${Math.round(x * 100) / 100} m` : `${x.value} ${x.unit ?? 'm'}`);
 const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${e.name ? ` (${clip(e.name, 60)})` : ''}`;
-// SPARE (spare.js): `spare` is the cable's in words (spareText: "1 m cord,
-// 0.57 m spare"), or null; `dressing` is what the routed length allows at each
-// end beyond the path and the plugs, in metres, and `needs` the sentence for a
-// length, not a routed one, shorter than what the route needs. The spare is the cord less its
-// path and what the plugs take, so it holds the dressing allowance the routed
-// length adds; the kit's `slack`, given only for an entered length, is that
-// length less the routed one and does not. Both are said, each by its name.
-export function cableText(c, {spare = null, dressing = 0, needs = null} = {}) {
+// SPARE (spare.js): `spare` is the cable's in the words its row in the list
+// says ("1 m cord, 0.57 m spare"), or null, and `needs` the sentence for a
+// pinned length under what the route needs. Both are the kit's figures (kit
+// 0.22.0, rack file version 4): its `slack` on inspect is that same spare, the
+// stock less the need, with where it is: `at_ends_m` in the curves into the
+// two ports, each place it is said to be stored, and `unplaced_m`, what is to
+// store and has no place (`said` false: nobody chose; true: a list was given).
+// The length carries `need`. Before 0.22.0 the kit's slack was another figure
+// (an entered length less the routed one), and both were said, each by name.
+const storedWords = s => [
+  `${len(s.at_ends_m)} at the two ends`,
+  ...(s.stored ?? []).map(e => (e.end ? `${len(e.metres) ?? 'a length'} at end ${String(e.end).toUpperCase()}`
+    : `${len(e.metres) ?? 'a length'} as a ${e.form} in ${e.item} ${e.via}${e.ok === false ? ', where it cannot be stored' : ''}`)),
+  ...(s.unplaced_m > 0 ? [`${len(s.unplaced_m)} ${s.said && !(s.stored ?? []).length ? 'left unplaced by choice' : 'not placed'}`] : []),
+].join(', ');
+export function cableText(c, {spare = null, needs = null} = {}) {
   const stock = len(c.routed?.stock);
   const lines = [
     `${c.id}: ${endText(c.a)} <-> ${endText(c.b)}`,
     [`media ${c.media || 'not known'}`, c.purpose ? `purpose ${clip(c.purpose, 60)}` : null, c.label ? `label ${clip(c.label, 80)}` : null].filter(Boolean).join(', '),
-    `length ${c.length ? `${len(c.length)}${c.length.source ? ` (${c.length.source})` : ''}` : 'not known'}` +
+    `length ${c.length ? `${len(c.length)}${c.length.source ? ` (${c.length.source})` : ''}${c.length.need != null ? `, needs ${len(c.length.need)}` : ''}` : 'not known'}` +
       (c.routed ? `; routed ${len(c.routed.metres)}${stock ? `, stock size ${stock}` : ''}` : '; routed length not measured') +
-      // The two can differ in sign (a cord a little under the routed length
-      // still has spare), so the slack says what it is measured against.
-      (c.slack ? `; slack ${len(c.slack.metres)}${spare ? ` against the routed length${dressing > 0
-        ? `, which allows ${len(dressing)} of dressing at each end` : ''}` : ''}` : '') +
-      (spare ? `; ${spare}${needs ? `; ${needs}` : ''} (the cord less its path and what its plugs take; the drawing shows the path only)` : ''),
+      // One spare: the row's words when the page can say them (no loose end),
+      // else the kit's figure; then where the kit says it is.
+      (spare ? `; ${spare}${needs ? `; ${needs}` : ''}` : c.slack ? `; spare ${len(c.slack.metres)}` : '') +
+      (c.slack && c.slack.metres >= 0 ? ` (${storedWords(c.slack)}; spare is listed, not drawn)` : spare || c.slack ? ' (the drawing shows the path only)' : ''),
     `route: ${c.route?.edited ? 'drawn by hand' : 'its own'}${c.route?.text ? `: ${clip(c.route.text, 300)}` : ''}`,
   ];
   // A bundled cable (kit 0.7.0): which bundle, and where it joins and leaves it.
@@ -209,6 +216,15 @@ export function cableText(c, {spare = null, dressing = 0, needs = null} = {}) {
     lines.push(`Crosses a body: ${x.item}${x.part && x.part !== 'envelope' ? ` (${clip(x.part, 60)})` : ''}` +
       ` between ${stop(a)} and ${stop(b)}${Array.isArray(x.at) ? `, entering at ${x.at.join(', ')} mm` : ''}.`);
   }
+  // WHAT THE LAY FINDS (kit 0.21.0, #1007 and #1013: inspect's route.bends
+  // and route.covers), each in the kit's sentence: a corner with less room
+  // than the cable's bend radius, and the ports a span of it runs in front of.
+  for (const x of c.route?.bends ?? []) if (x.text) lines.push(`Tight bend: ${clip(x.text, 200)}`);
+  if (c.route?.covers?.text) lines.push(`In front of other ports: ${clip(c.route.covers.text, 300)}`);
+  // What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
+  for (const f of c.spare_findings ?? []) lines.push(`Spare: ${clip(f.text, 200)}`);
+  // How it was pinned by hand in a pathway, as the file has it (cable.lay).
+  if (c.lay?.length) lines.push(`Laid by hand: ${cutList(c.lay.map(e => `${e.item} ${e.via}${e.face ? `, ${e.face} face` : ''}${e.position != null ? `, position ${e.position}` : ''}`), 6)}.`);
   if (c.unchecked || c.loose == null) lines.push('Its ends could not be checked, so whether they land is not known.');
   for (const l of c.loose ?? []) lines.push(`Loose: the ${l.end} end: ${l.reason}`);
   for (const m of c.mismatch ?? []) lines.push(`Mismatch: ${m}`);

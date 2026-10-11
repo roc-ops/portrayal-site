@@ -9,7 +9,7 @@
 //   - EVERY ITEM, by its own left or right drawing, with its swaps and fields
 //     applied as the front pane applies them (face.js configuredFace), in the
 //     depth the kit places its body at (solids.js) and at the height the
-//     front pane draws it (body-span.js), so a row lines up across all four
+//     front pane draws it (the kit's fit.js itemBox), so a row lines up across all four
 //     panes. Flush on its rail plane, as in 3D;
 //   - THE PARTS BESIDE THE RACK (rack.zeroU) and the managers bolted over a
 //     device, the same way;
@@ -44,12 +44,11 @@
 
 import {RU} from '../../vendor/rack/rails.js';
 import {uLabel} from '../../vendor/rack/model.js';
-import {isZeroUPart} from '../../vendor/rack/fit.js';
+import {isZeroUPart, itemBox} from '../../vendor/rack/fit.js';
 import {colorOf, WIDTH} from '../../vendor/rack/cable-geometry.js';
 import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
-import {bodySpan} from './body-span.js';
 import {elevationBox} from './elevation.js';
 import {bundleSummary, STRAP_DRAWN, drawnDiameter} from './bundle-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
@@ -169,7 +168,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
     let b, g;
     if (face) {
       const p = parsed(face.text);
-      // the body's bottom above the floor: where the front pane draws it in the units it takes (body-span.js)
+      // the body's bottom above the floor: where the front pane draws it in the span it fills (fit.js itemBox)
       const x = drawingX(pane, span, view, p.faceW), y = sideY(frame, (units ? units(p.faceH) : y0) + p.faceH);
       g = svgEl('g', {transform: `translate(${n3(x - p.ox)} ${n3(y - p.oy)})${turn ? ` rotate(180 ${n3(p.ox + p.faceW / 2)} ${n3(p.oy + p.faceH / 2)})` : ''}`,
         ...attrs, 'data-side-view': view, ...(turn ? {'data-side-turn': 'true'} : {})});
@@ -207,9 +206,9 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   // FARTHEST FIRST: the parts beside the far side, then every item by how near it is.
   for (const p of parts.filter(x => !x.near)) out.append(await zeroUGroup(p));
   const drawn = await Promise.all(paintOrder(pane, bodies).map(async ({it, c, span}) => {
-    const whole = it.u ?? Math.max(1, c.ru ?? 1);
-    // above the floor: the item's bottom, and the body centred in the span the front pane centres it in
-    const units = faceH => { const s = bodySpan(c.ru, whole, faceH); return (it.ru - 1) * RU + s.inset; };
+    // above the floor: the body centred in the span its item fills (the kit's fit.js itemBox), as the front pane centres it
+    const box = itemBox(rack, it, chassisOf), whole = (box.hi - box.lo) / RU;
+    const units = faceH => (box.lo + box.hi) / 2 - faceH / 2;
     const {g, b} = await draw({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, label: it.label, span,
       h: Number(c.h) || whole * RU, units,
       attrs: {'data-item-id': it.id, 'data-device-name': it.label, 'data-device-ref': it.ref, 'data-side-face': it.face,

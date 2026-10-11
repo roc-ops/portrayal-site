@@ -41,9 +41,16 @@ test('the end allowance is the kit\'s: the old names are gone, and a length is t
     const p = R.routePath(r, c, ctx);
     // what a length adds an end is the path's, by its cable's media
     assert.equal(p.allowance, R.endAllowance(c));
-    assert.ok(p.allowance > R.END_ALLOWANCE_BY_MEDIA[c.media], 'the table, plus the dressing allowance');
+    // kit 0.22.0 (rack file version 4): what is inside the port alone; the
+    // 0.1 m an end of dressing is END_PLAY_M, out of the need and in the spare
+    assert.equal(p.allowance, R.END_ALLOWANCE_BY_MEDIA[c.media], 'the table alone, with no dressing in it');
+    assert.equal(R.END_PLAY_M, 0.1);
     const run = p.points.reduce((m, q, i) => (i ? m + Math.hypot(q.x - p.points[i - 1].x, q.y - p.points[i - 1].y, q.z - p.points[i - 1].z) : 0), 0);
-    assert.ok(Math.abs(R.pathLength(p).measured - (run / 1000 + 2 * p.allowance)) < 1e-9);
+    const len = R.pathLength(p);
+    // fibre and AOC have no short tolerance, so the need is the path and what is inside the two ports
+    assert.equal(R.shortTolerance(c, len.value), 0);
+    assert.ok(Math.abs(len.need - (run / 1000 + 2 * p.allowance)) < 1e-9);
+    assert.ok(Math.abs(len.measured - (len.need + 2 * R.END_PLAY_M)) < 1e-9, 'measured is the need and the end play at both ends');
   }
   // and it differs by media: an LC cord's is not an AOC's
   assert.notEqual(R.endAllowance(r.cables[0]), R.endAllowance(r.cables[1]));

@@ -64,27 +64,40 @@ const v2File = () => ({
             {ref: DUCT, cfg: 'base', label: 'vcm-2', at: 'right', offsetMm: 0, between: true}],
     cables: []}]});
 
-test('a version 2 rack the site saved reads back whole through library.js, and saves as version 3', () => {
-  assert.equal(VERSION, 3);
+test('a version 2 rack the site saved reads back whole through library.js, and saves as version 4', () => {
+  assert.equal(VERSION, 4);
   for (const input of [v2File(), JSON.stringify(v2File())]) {
     const doc = readDoc(input);
-    assert.equal(doc.version, 3);
+    assert.equal(doc.version, 4);
     assert.equal(doc.id, 'doc-v2');
     const r = doc.racks[0];
     assert.equal(r.items[0].side, 'right');
     assert.deepEqual(r.zeroU.map(z => [z.id, z.at, z.between === true]), [['z1', 'left', false], ['z2', 'right', true]]);
     assert.deepEqual(docNotes(doc), []);
     const saved = JSON.parse(serialize(doc));
-    assert.equal(saved.version, 3);
+    assert.equal(saved.version, 4);
     // read again, it is the same document
     assert.deepEqual(readDoc(saved), doc);
   }
   // A version 1 file (the browser checks' fixtures) migrates the same way.
-  assert.equal(readDoc({...v2File(), version: 1}).version, 3);
+  assert.equal(readDoc({...v2File(), version: 1}).version, 4);
+  // A version 3 file (every rack saved since kit 0.7.0) opens unchanged but for its version,
+  // and keeps a key this page does not know, on the document, a rack, the frame and an item.
+  const v3 = {...v2File(), version: 3, note: 'kept'};
+  v3.racks[0] = {...v3.racks[0], later: {a: 1}, frame: {...v3.racks[0].frame, startU: 5, vendorKey: 'x'},
+                 items: [{...v3.racks[0].items[0], ru: 20, tag: 'asset-7'}]};
+  const up = JSON.parse(serialize(readDoc(v3)));
+  assert.equal(up.version, 4);
+  assert.equal(up.note, 'kept');
+  assert.deepEqual(up.racks[0].later, {a: 1});
+  assert.equal(up.racks[0].frame.startU, 5);
+  assert.equal(up.racks[0].frame.vendorKey, 'x');
+  assert.equal(up.racks[0].items[0].tag, 'asset-7');
+  assert.deepEqual(up.racks[0].items[0], {...v3.racks[0].items[0]});
   // A file newer than this page is refused with a sentence.
   // The kit says what it reads; the page adds what to do about it, once.
-  assert.throws(() => readDoc({...v2File(), version: 4}),
-                {message: 'This rack file is version 4; this reader supports up to version 3. Reload to get the newer page.'});
+  assert.throws(() => readDoc({...v2File(), version: 5}),
+                {message: 'This rack file is version 5; this reader supports up to version 4. Reload to get the newer page.'});
 });
 
 test('what parseDoc says of a bundle it repaired reaches the editor\'s first findings', () => {

@@ -4,17 +4,20 @@
 
 import {el} from './dom.js';
 import {positionOf} from '../../vendor/rack/model.js';
+import {spanOf} from '../../vendor/rack/fit.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
 export function managerRows({host, rack, chassisOf, attachable = () => null, onAttach = () => {}, onAdd, onSelect, onRemove}) {
-  const units = Math.max(1, chassisOf(host.ref)?.ru ?? 1);
+  // The whole units a host offers a manager, counted from the unit its bottom
+  // is in (the kit's spans, in halves): a half-unit panel offers the one unit it is in.
+  const [lo, hi] = spanOf(host, chassisOf), units = Math.ceil(hi) - Math.floor(lo);
   const rows = [];
   for (let unit = units; unit >= 1; unit--) {           // top first, as the rack reads
     const m = rack.items.find(i => i.on === host.id && i.unit === unit);
     // An unhosted manager already at this U on the host's face: attach it
     // rather than offering to add another one (it would be refused as taken).
-    const loose = m ? null : attachable(host.face, host.ru + unit - 1);
+    const loose = m ? null : attachable(host.face, Math.floor(host.ru) + unit - 1);
     const name = units > 1 ? `Unit ${unit}` : 'On this device';
     rows.push(el('li', {}, m
       ? [`${name}: ${m.label} `, button(`mgrSelect-${unit}`, 'Select', () => onSelect(m.id)),
