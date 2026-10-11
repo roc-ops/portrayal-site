@@ -120,7 +120,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // m spare"). No row is marked for having much spare: most cords do. An entered
 // length shorter than what its route needs (the kit's routed length, whatever
 // stock size it rounds up to) IS a signal, and says so as a warning ("0.5 m
-// cord, 0.03 m spare without dressing room; the route needs 0.67 m"). One line
+// cord, 0.02 m spare without dressing room; the route needs 0.68 m"). One line
 // under the count says what the drawing shows. A cable not in it (not routed, a loose end, a length
 // the page cannot convert) says its length as before.
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.

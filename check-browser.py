@@ -5724,11 +5724,13 @@ SPARE_WANT_JS = """async () => {
       mm += Math.hypot(p.points[k].x - p.points[k - 1].x, p.points[k].y - p.points[k - 1].y, p.points[k].z - p.points[k - 1].z);
     const unit = l.unit ?? 'm', cord = l.value * PER[unit];
     const spare = cord - (mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media]);
-    const shown = r2(spare / PER[unit]);
+    // said so that rounding never flatters the cord: a spare down, a shortfall and a need up
+    const dn = x => Math.floor(x * 100 + 1e-6) / 100, up = x => Math.ceil(x * 100 - 1e-6) / 100;
+    const shown = spare < -1e-9 ? -up(-spare / PER[unit]) : dn(Math.max(0, spare) / PER[unit]);
     // a length that is not the page's own measurement, under the kit's routed length for this path
     const under = l.source !== 'routed' && cord < p.measured - 1e-9;
     const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : under ? 'spare without dressing room' : 'spare'}`;
-    const asks = under ? `the route needs ${r2(p.measured / PER[unit])} ${unit}` : null;
+    const asks = under ? `the route needs ${up(p.measured / PER[unit])} ${unit}` : null;
     out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, path_mm: Math.round(mm), spare,
       text, asks, short: asks ? [`${text}; ${asks}.`] : []};
   }
@@ -5975,6 +5977,16 @@ def check_rack_cable_spare(page, base):
     wait_sel(page, "spare: the list after the press", '#cableList [data-cable-row="c4"]')
     wait_fn(page, "spare: the routes after the press", ROUTES_CURRENT)
     park_mouse(page)
+    # A CORD UNDER THE NEED BY LESS THAN A DISPLAYED STEP. c12's route needs about 0.6232 m; at
+    # 0.62 m it warns, and the need it names is rounded up, so it reads more than the cord.
+    give("c12", 0.62, "without dressing room")
+    want = page.evaluate(SPARE_WANT_JS)
+    hair = want["c12"]
+    m = re.fullmatch(r"the route needs ([\d.]+) m", hair["asks"] or "")
+    if not (0.62 < hair["measured"] < 0.63) or not m or float(m.group(1)) <= 0.62:
+        bad.append(f"rounding: c12 at 0.62 m on a route needing {hair['measured']} m should name a need over 0.62 m: {hair}")
+    read_list("2D list, c12 at 0.62 m")
+    spare_hover(page, bad, "2D hover, c12 at 0.62 m", SPARE_PT_2D_JS, "c12", hair)
     # The agent's text for each: the kit's slack named for what it is against, then the cord, then what the route asks for.
     for cid in ("c4", "c16", "c12"):
         said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});

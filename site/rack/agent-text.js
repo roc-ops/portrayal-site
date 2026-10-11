@@ -165,7 +165,7 @@ export function inspectText(o, {section = null, offset = 0, ask = {}} = {}) {
 const len = x => (x == null ? null : typeof x === 'number' ? `${Math.round(x * 100) / 100} m` : `${x.value} ${x.unit ?? 'm'}`);
 const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${e.name ? ` (${clip(e.name, 60)})` : ''}`;
 // SPARE (spare.js): `spare` is the cable's in words (spareText: "1 m cord,
-// 0.58 m spare"), or null; `dressing` is what the routed length allows at each
+// 0.57 m spare"), or null; `dressing` is what the routed length allows at each
 // end beyond the path and the plugs, in metres, and `needs` the sentence for a
 // length, not a routed one, shorter than what the route needs. The spare is the cord less its
 // path and what the plugs take, so it holds the dressing allowance the routed

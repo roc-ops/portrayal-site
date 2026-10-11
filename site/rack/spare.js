@@ -43,7 +43,16 @@ import {endAllowance, pathLength, routePath, END_ALLOWANCE_BY_MEDIA} from '../..
 import {lengthParts, endKey} from '../../vendor/rack/cable-rules.js';
 
 const M_PER = {m: 1, ft: 0.3048};
-const round2 = x => Math.round(x * 100) / 100;
+// ROUNDING NEVER FLATTERS THE CORD. Figures are said to the centimetre (or
+// 0.01 ft). A spare is rounded DOWN, a shortfall UP and a route's need UP, so
+// no row says two figures that only rounding makes agree: a 0.62 m cord under
+// a need of 0.6232 m reads "needs 0.63 m", never "needs 0.62 m", and its
+// spare of 0.1968 m reads 0.19, never the 0.2 that would be dressing room.
+// The hair taken off before rounding keeps a figure that is exact in decimal
+// (0.3 m, 1 m) from moving a whole step on float noise.
+const HAIR = 1e-6;
+const down2 = x => Math.floor(x * 100 + HAIR) / 100;
+const up2 = x => Math.ceil(x * 100 - HAIR) / 100;
 
 // The table figure the kit takes for a cable: its media's, or, for a cable
 // with no media or one the table does not know, the copper cord's (route.js
@@ -101,20 +110,20 @@ export function spareFor(rack, cable, routeCtx) {
 export const looseIn = ends => e => ends?.get(endKey(e))?.reason != null;
 
 // A length of `metres` in the cord's own unit, to the centimetre (or 0.01 ft).
-const amount = (s, metres) => `${round2(Math.abs(metres) / M_PER[s.unit])} ${s.unit}`;
-/** "0.58 m": the spare alone, in the cord's unit. */
-export const spareAmount = s => amount(s, s.spare);
-/** "1 m cord, 0.58 m spare"; a cord shorter than what its route uses reads
- *  "0.3 m cord, 0.17 m short". A cord that reaches but is under what the
+const isShort = s => s.spare < -1e-9;
+/** "0.57 m": the spare alone (rounded down), or the shortfall (rounded up), in the cord's unit. */
+export const spareAmount = s => `${isShort(s) ? up2(-s.spare / M_PER[s.unit]) : down2(Math.max(0, s.spare) / M_PER[s.unit])} ${s.unit}`;
+/** "1 m cord, 0.57 m spare"; a cord shorter than what its route uses reads
+ *  "0.3 m cord, 0.18 m short". A cord that reaches but is under what the
  *  route needs has spare, and less of it than the dressing allowance the need
  *  holds: "0.5 m cord, 0.03 m spare without dressing room", so the row never
  *  says "spare" and "needs more" with nothing between them. */
 export const spareText = s => {
-  const short = round2(s.spare / M_PER[s.unit]) < 0;
+  const short = isShort(s);
   return `${s.value} ${s.unit} cord, ${spareAmount(s)} ${short ? 'short' : `spare${s.needs != null ? ' without dressing room' : ''}`}`;
 };
-/** "the route needs 0.67 m", in the cord's own unit, when a length that is
+/** "the route needs 0.68 m", in the cord's own unit, when a length that is
  *  not a routed one is shorter than the kit's routed length, else null. */
-export const needsText = s => (s.needs == null ? null : `the route needs ${amount(s, s.needs)}`);
+export const needsText = s => (s.needs == null ? null : `the route needs ${up2(s.needs / M_PER[s.unit])} ${s.unit}`);
 /** The cable list's one line of explanation. */
 export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';
