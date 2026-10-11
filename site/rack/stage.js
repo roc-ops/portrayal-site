@@ -34,6 +34,23 @@ const LIGHT = {labelColor: '#2b3035', labelUnitColor: '#5a6168', labelEmphasisCo
 const LABELS = {'#ffffff': LIGHT, '#c5c9ce': LIGHT, '#3b3f45': {labelUnitColor: '#9aa1a8'}, '#101214': {}};
 export const labelsFor = c => LABELS[String(c).toLowerCase()] ?? (stageTone(c) === 'light' ? LIGHT : {});
 
+// A BUNDLE'S STRAP ON EACH STAGE. A hook-and-loop strap is black, which is
+// what it is on a light stage and on paper (a sheet is fixed ink on white).
+// On a dark stage a black strap is not seen: #24282d on #101214 was 1.3 to 1.
+// There it is a light neutral, and on either it has a rim of the opposite
+// tone, so it stands off the stage and off every cable colour, the black DAC
+// and the grey of an unset cable included: whichever of the two a cable is
+// close to, the other is not. `core` and `rim` are what the 2D bar is drawn
+// in (rack.css repeats them per stage; the bar's own attributes are the
+// light pair, for a file) and `core` the 3D band's colour.
+export const STRAP_PAINT = {light: {core: '#1b1d20', rim: '#ffffff'}, dark: {core: '#d5d9de', rim: '#0b0c0d'}};
+export const strapPaint = c => STRAP_PAINT[stageTone(c)];
+// The least a strap measures on screen in 2D, in CSS px, along the run and
+// across it: at Fit on a 42U rack a 10 mm bar is 4 or 5 px, and less on a
+// small window. Drawn as a second, non-scaling stroke under the true one: 7,
+// so that 6 whole pixels are the strap's own colour once its edges are blended.
+export const STRAP_MIN_PX = 7;
+
 export function loadStage() {
   try {
     const c = localStorage.getItem(STAGE_KEY);

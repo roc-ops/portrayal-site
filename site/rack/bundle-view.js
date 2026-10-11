@@ -14,8 +14,9 @@
 // Pure: no DOM and no three.js here (cable-view.js and scene3d.js draw).
 
 import {bundlesOf, bundleName, bundleCheck, straps as strapsOf, strapSpacing, spacingText, membersText,
-        waypointText, onTrunk} from '../../vendor/rack/bundles.js';
+        waypointText, onTrunk, bundleDiameter} from '../../vendor/rack/bundles.js';
 import {waypointKey} from '../../vendor/rack/bundle-route.js';
+import {pointOf, DIAMETERS} from '../../vendor/rack/route.js';
 
 // A strap as drawn, along the run (mm). The kit keeps straps STRAP_W (20 mm)
 // off rings; a strap drawn half that wide reads as a strap, not a block.
@@ -85,17 +86,6 @@ export function memberPlaces(rack, routes, bundles) {
 // Every view and the members' packing use this one figure.
 export const drawnDiameter = (diameter, width) => Math.max(diameter ?? 0, width * 2);
 
-// HOW FAR A MEMBER SITS FROM ITS BUNDLE'S CENTRE LINE, across the run (mm):
-// the members side by side in combing order, their centres spread over the
-// bundle's diameter less one cable's width, never further apart than `width`
-// (a stroke or a tube's width), so they stay inside the band.
-export function combOffset(place, width) {
-  if (!place || place.n < 2) return 0;
-  const room = Math.max(0, drawnDiameter(place.diameter, width) - width);
-  const pitch = Math.min(width, room / (place.n - 1));
-  return (place.index - (place.n - 1) / 2) * pitch;
-}
-
 // WHERE A MEMBER SITS IN ITS BUNDLE'S CROSS-SECTION (3D), [across, across]
 // from the bundle's centre (mm): the members on a sunflower (golden-angle
 // spiral) in the circle the bundle's diameter leaves for a cable's centre,
@@ -108,6 +98,170 @@ export function packOffset(place, width) {
   const R = Math.max(0, (drawnDiameter(place.diameter, width) - width) / 2);
   const r = R * Math.sqrt((place.index + 0.5) / place.n), a = place.index * GOLDEN;
   return [r * Math.cos(a), r * Math.sin(a)];
+}
+
+// ── the lay of a bundle along its trunk ──────────────────────────────────
+// A BUNDLE IS AS THICK AS THE CABLES IN IT AT EACH PLACE. The kit's layout
+// (bundles.js layoutOf) cuts the trunk into elements (`T`: a pathway, a lane
+// node at each U, a lane segment between two) and says where each member joins
+// and leaves (`ji`, `li`, indices into `T`). The size check reports the largest
+// diameter; the drawing needs the diameter everywhere, and where each member
+// lies in it, so the pack thins as cables peel off and no peel crosses the
+// cables that go on. trunkLay works that out once, in the rack's own frame
+// (x right as seen from the front, y up, z out), for both views:
+//
+//   - WHO IS THERE. At each element, the members whose ride covers it.
+//   - HOW THICK. The kit's own rule (bundles.js bundleDiameter) over the
+//     diameters of the members there, never under two drawn widths.
+//   - IN WHAT ORDER. One order for the whole trunk, across the run as seen
+//     from the front (`a`, to the left of the direction the trunk runs): a
+//     member that leaves at a point the others ride on past sits on the side
+//     it leaves toward, and the sooner it leaves the further out, so it
+//     peels off the outside of the pack.
+//   - WHERE, IN 2D. Side by side in that order at one pitch for the whole
+//     trunk (the largest pack's: its members just fill its diameter), each in
+//     its own place while the members there are neighbours, so a member runs
+//     straight while others join and leave beside it; where a member between
+//     two others has gone the rest close up about their middle. On a lane the
+//     offset is across the lane (x); at a ring or a tray the members stand on
+//     the floor, the lowest where the kit rests a cable (y).
+//   - WHERE, IN 3D. Packed in the circle of the diameter there (packOffset's
+//     sunflower), in the same order across the run.
+//
+// `paths` is routeFacts' cable id -> routePath (the kit's points), `ctx` its
+// route context, `diameterOf` the cable types' lookup (or none: the kit's
+// figure for the media is taken, as its size check takes it). Nothing here
+// changes a length, a route or a check: it is where the drawing puts what the
+// kit measured. Returns null for a bundle that is not drawn or has no trunk.
+const unit = (v, k) => (k === 'x' ? {x: v, y: 0} : {x: 0, y: v});
+export function trunkLay(rack, fact, {paths = null, ctx = null, diameterOf = null, width = 3} = {}) {
+  const L = fact?.check?.layout, T = L?.T ?? [];
+  if (!fact?.drawn || !T.length) return null;
+  const byId = new Map((rack.cables || []).map(c => [c.id, c]));
+  const dOf = id => {
+    const c = byId.get(id);
+    let d = null;
+    try { d = typeof diameterOf === 'function' ? diameterOf(c) : null; } catch { d = null; }
+    return typeof d === 'number' && d > 0 ? d : DIAMETERS[c?.media] ?? 6;
+  };
+  const riders = L.members.filter(m => m.ji != null && m.li != null)
+    .map((m, k) => ({cable: m.cable, k, lo: Math.min(m.ji, m.li), hi: Math.max(m.ji, m.li), ji: m.ji, li: m.li}));
+  if (riders.length < 2) return null;
+  const at = i => riders.filter(m => m.lo <= i && i <= m.hi);
+  const index = new Map();
+  T.forEach((e, i) => { if (e.kind !== 's' && !index.has(e.key)) index.set(e.key, i); });
+  const nodes = T.map((e, i) => i).filter(i => T[i].kind !== 's');
+  // where each node is, in rack mm: a lane node by the kit's own point; a
+  // pathway by the points a member's path gives it (not its lead or approach)
+  const pathPts = (id, e) => (paths?.get(id)?.points ?? []).filter(q => q.item === e.item && q.via === e.via && q.at !== 'lead' && q.at !== 'approach');
+  const pos = new Map(), run = new Map();
+  for (const i of nodes) {
+    const e = T[i];
+    let p = null, r = e.kind === 'n' ? 'y' : 'x';
+    if (e.kind === 'p') {
+      for (const m of at(i)) {
+        const qs = pathPts(m.cable, e);
+        if (!qs.length) continue;
+        p = {x: qs.reduce((s, q) => s + q.x, 0) / qs.length, y: qs.reduce((s, q) => s + q.y, 0) / qs.length, z: qs.reduce((s, q) => s + q.z, 0) / qs.length};
+        const d = {x: Math.abs(qs.at(-1).x - qs[0].x), y: Math.abs(qs.at(-1).y - qs[0].y), z: Math.abs(qs.at(-1).z - qs[0].z)};
+        if (qs.length > 1) r = d.z > d.x && d.z > d.y ? 'z' : d.y > d.x ? 'y' : 'x';
+        break;
+      }
+    }
+    if (!p) { try { p = ctx ? pointOf(rack, e.kind === 'n' ? {lane: e.lane, ru: e.u} : {item: e.item, via: e.via}, ctx) : null; } catch { p = null; } }
+    pos.set(i, p); run.set(i, r);
+  }
+  // which way the trunk runs at each node, along its run, and the axis across
+  // it in the face: to the left of that direction, as seen from the front
+  const across = new Map();
+  nodes.forEach((i, n) => {
+    const r = run.get(i), p = pos.get(i);
+    if (r === 'z' || !p) { across.set(i, {x: 1, y: 0}); return; }
+    const near = step => { for (let k = n + step; k >= 0 && k < nodes.length; k += step) { const q = pos.get(nodes[k]); if (q && Math.abs(q[r] - p[r]) > 1e-6) return q; } return null; };
+    const before = near(-1), after = near(1);
+    const s = Math.sign((after ?? p)[r] - (before ?? p)[r]) || 1;
+    across.set(i, r === 'y' ? {x: -s, y: 0} : {x: 0, y: s});
+  });
+  // the one order: each end that leaves the others behind pulls its member
+  // to the side its port is on, harder the sooner it leaves
+  const lo0 = Math.min(...riders.map(m => m.lo)), hi0 = Math.max(...riders.map(m => m.hi));
+  const portOf = (id, end) => (paths?.get(id)?.points ?? []).find(q => q.at === end) ?? null;
+  const pull = (m, i, end, depth) => {
+    const n = across.get(i), p = pos.get(i), q = portOf(m.cable, end);
+    if (!depth || !n || !p || !q) return 0;
+    return Math.sign(n.x * (q.x - p.x) + n.y * (q.y - p.y)) * depth;
+  };
+  for (const m of riders) {
+    const [loEnd, hiEnd] = m.ji <= m.li ? ['a', 'b'] : ['b', 'a'];
+    m.key = pull(m, m.lo, loEnd, m.lo - lo0) + pull(m, m.hi, hiEnd, hi0 - m.hi);
+  }
+  const order = [...riders].sort((p, q) => p.key - q.key || p.k - q.k);
+  order.forEach((m, s) => { m.slot = s; });
+  const M = order.length, Dmax = drawnDiameter(fact.diameter, width);
+  const pitch = M > 1 ? Math.min(width, Math.max(0, Dmax - width) / (M - 1)) : 0;
+  // (to a tenth of a millimetre, as the kit's size check reports it, so the thickest stretch is the size it says)
+  const sizeOf = list => drawnDiameter(Math.round((list.length >= 2 ? bundleDiameter(list.map(m => dOf(m.cable))) : list.length ? dOf(list[0].cable) : 0) * 10) / 10, width);
+  // each node's members in order, their places across the run (mm from the
+  // trunk's line, along `across`), and the diameter there
+  const lay = new Map();
+  for (const i of nodes) {
+    const here = at(i).sort((p, q) => p.slot - q.slot), n = here.length;
+    if (!n) continue;
+    const mid = (here[0].slot + here.at(-1).slot) / 2;
+    const tight = here.at(-1).slot - here[0].slot === n - 1;
+    const a = here.map((m, r) => ((tight ? m.slot : mid + r - (n - 1) / 2) - (M - 1) / 2) * pitch);
+    lay.set(i, {members: here.map(m => m.cable), a, diameter: sizeOf(here)});
+  }
+  const floor = i => T[i].kind === 'p' && run.get(i) !== 'z';
+  // 2D: a member's offset at a node, in rack mm (x right, y up)
+  const offset = (cable, i) => {
+    const l = lay.get(i), n = across.get(i), r = l ? l.members.indexOf(cable) : -1;
+    if (r < 0 || !n) return null;
+    const v = {x: l.a[r] * n.x || 0, y: l.a[r] * n.y || 0};
+    // on a floor the lowest member rests where the kit rests a cable
+    if (floor(i)) v.y -= Math.min(...l.a.map(x => x * n.y));
+    return v;
+  };
+  // 3D: a member's place in the circle at a node, from its centre: `u` across
+  // the run in the face (along `across`), `v` out of it
+  const packed = new Map();
+  const pack = (cable, i) => {
+    const l = lay.get(i), r = l ? l.members.indexOf(cable) : -1, n = across.get(i);
+    if (r < 0 || !n) return null;
+    if (!packed.has(i)) {
+      const k = l.members.length;
+      const pts = l.members.map((_, index) => packOffset({index, n: k, diameter: l.diameter}, width));
+      // the same order across the run: the member furthest along `across` takes the point furthest along it
+      packed.set(i, pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]));
+    }
+    const [u, v] = packed.get(i)[r];
+    return {x: u * n.x, y: u * n.y, z: v, u, v};
+  };
+  // the stretches between one node and the next, with the members that ride
+  // both, the diameter of those, and where their pack's middle is at each end
+  const stretches = [];
+  for (let n = 0; n + 1 < nodes.length; n++) {
+    const i = nodes[n], j = nodes[n + 1];
+    const on = at(i).filter(m => m.lo <= j && j <= m.hi).sort((p, q) => p.slot - q.slot);
+    if (on.length < 2) continue;
+    const D = sizeOf(on);
+    const middle = k => {
+      const vs = on.map(m => offset(m.cable, k)).filter(Boolean);
+      if (!vs.length) return {x: 0, y: 0};
+      const xs = vs.map(v => v.x), ys = vs.map(v => v.y);
+      // on a floor the pack stands on its lowest member's underside; elsewhere it is about its members' middle
+      return {x: (Math.min(...xs) + Math.max(...xs)) / 2,
+              y: floor(k) ? Math.min(...ys) - width / 2 + D / 2 : (Math.min(...ys) + Math.max(...ys)) / 2};
+    };
+    stretches.push({from: i, to: j, members: on.map(m => m.cable), diameter: D, c0: middle(i), c1: middle(j),
+                    s0: T[i].seg + T[i].t, s1: T[j].seg + T[j].t});
+  }
+  return {T, nodes, index, order: order.map(m => m.cable), pitch, diameter: Dmax, lay, stretches,
+          at: i => lay.get(i) ?? null, pos: i => pos.get(i) ?? null, across: i => across.get(i) ?? null, run: i => run.get(i) ?? null,
+          offset, pack, indexOf: w => index.get(waypointKey(w)) ?? -1,
+          // the stretch a strap is on ({segment, t}: the kit's place along the trunk), and how far along it
+          stretchAt: s => { const v = s.segment + s.t; const st = stretches.find(x => x.s0 <= v + 1e-9 && v <= x.s1 + 1e-9);
+            return st ? {stretch: st, f: st.s1 > st.s0 ? (v - st.s0) / (st.s1 - st.s0) : 0} : null; }};
 }
 
 // THE TRUNK'S RING MARKS, one per trunk waypoint (the kit's layout.trunk), in

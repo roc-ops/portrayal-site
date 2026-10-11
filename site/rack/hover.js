@@ -25,6 +25,16 @@
 // (:focus-visible): a row clicked with the mouse keeps focus, and is not held
 // lit by it once the pointer has gone.
 //
+// A SELECTED CABLE OR BUNDLE IS PINNED. The page has one selection (a click on
+// a cable's or a bundle's row, or a cable's tag): on the panes it has always
+// lit the selected cable and dimmed the rest (cable-view.js paintCables,
+// .cable-focus). The scene now does the same, with the hover's own look, and
+// a selected bundle lights its members, its straps and its envelope in both
+// views: the scene keeps the selection's lit set as `pinLit` (paintSelected3d)
+// and dims by the hover while there is one, else by the pin. So a hover over
+// another cable previews it and the pinned one comes back when the pointer
+// leaves; an orbit, a rebuild or a switch of view never ends it.
+//
 // NEVER IN A FILE. The 2D exports are drawn fresh by exports.js, so the panes'
 // classes cannot reach them. A GLB or USDZ is written from the live scene, so
 // modelFile holds the scene undimmed while it writes (holdUndimmed).
@@ -44,15 +54,22 @@ export function litFor(rack, target) {
   return null;
 }
 
-/** 2D: dim every cable, tag, band and strap on `svgs` but the lit ones; null restores. */
+/** 2D: dim every cable, tag and band on `svgs` but the lit ones, and every strap but those of a lit bundle or of a lit cable's bundle; null restores. */
 export function paintHover2d(svgs, lit) {
   for (const svg of svgs) {
     if (!svg) continue;
     svg.classList.toggle('cable-hover', !!lit);
     for (const n of svg.querySelectorAll('[data-cable-id]'))
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
-    for (const n of svg.querySelectorAll('[data-bundle-id], [data-strap]'))
-      n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId ?? n.dataset.strap));
+    for (const n of svg.querySelectorAll('[data-bundle-id]'))
+      n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId));
+    // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
+    // it, is lit, and dimmed with the rest otherwise.
+    for (const n of svg.querySelectorAll('[data-strap]'))
+      n.classList.toggle('hot', !!lit && (lit.bundles.has(n.dataset.strap) || (n.dataset.members || '').split(' ').some(id => lit.cables.has(id))));
+    // a member under the pointer shows the envelope of the bundle it rides (rack.css)
+    for (const n of svg.querySelectorAll('[data-bundle-id]'))
+      n.classList.toggle('hot-member', !!lit && (n.dataset.members || '').split(' ').some(id => lit.cables.has(id)));
   }
 }
 
@@ -81,9 +98,41 @@ function apply3d(world, lit) {
     if (!group) continue;
     for (const g of group.children) {
       const dim = !!lit && !lit[key].has(g.name.slice(prefix.length));
-      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim); });
+      // (a bundle's envelope is shown or hidden, never dimmed: paintEnvelopes3d;
+      // and its straps go with it: lit while it, or a cable that rides it, is lit)
+      const rides = !!lit && (g.userData.members ?? []).some(id => lit.cables.has(id));
+      g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material))
+        dimMaterial(m, dim && !o.userData.envelope && !(o.userData.strap && rides)); });
     }
   }
+}
+
+// A BUNDLE'S ENVELOPE IN 3D (scene3d.js hangBundles: the see-through tube at
+// its diameter) is hidden until the bundle, or a cable that rides it, is
+// hovered or selected, as in 2D. The hover is the scene's `hoverLit`, the
+// selection its `selected` ({cable, bundle}, from paintSelected3d). While an
+// export holds the scene (holdUndimmed) every envelope is hidden, so no file
+// carries one.
+export function paintEnvelopes3d(scene) {
+  const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
+  if (!group) return;
+  const lit = scene.hoverLit ?? null, sel = scene.selected ?? null;
+  for (const g of group.children) {
+    const id = g.userData.bundle, members = g.userData.members ?? [];
+    const on = !scene.hoverHeld && ((!!lit && (lit.bundles.has(id) || members.some(m => lit.cables.has(m))))
+      || (!!sel && (sel.bundle === id || (sel.cable != null && members.includes(sel.cable)))));
+    for (const o of g.children) if (o.userData.envelope) o.visible = on;
+  }
+}
+/** 3D: which cable or bundle is selected ({cable, bundle}, either null), and
+ *  what stays lit for it (`lit`, litFor's answer for the selection, or null):
+ *  the rest dims as under a hover, until a hover says otherwise. */
+export function paintSelected3d(scene, sel, lit = null) {
+  if (!scene?.three) return;
+  scene.selected = sel && (sel.cable != null || sel.bundle != null) ? {cable: sel.cable ?? null, bundle: sel.bundle ?? null} : null;
+  scene.pinLit = scene.selected ? lit : null;
+  if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
+  paintEnvelopes3d(scene);
 }
 
 /** 3D: dim every tube in `scene` (scene3d.js's) but the lit ones; null restores.
@@ -91,7 +140,8 @@ function apply3d(world, lit) {
 export function paintHover3d(scene, lit) {
   if (!scene?.three) return;
   scene.hoverLit = lit;
-  if (!scene.hoverHeld) apply3d(scene.three.scene, lit);
+  if (!scene.hoverHeld) apply3d(scene.three.scene, lit ?? scene.pinLit ?? null);
+  paintEnvelopes3d(scene);
 }
 
 /** Run `fn` with the scene undimmed, then dim it again as the hover is by then. */
@@ -99,10 +149,26 @@ export async function holdUndimmed(scene, fn) {
   if (!scene?.three) return fn();
   scene.hoverHeld = (scene.hoverHeld || 0) + 1;
   apply3d(scene.three.scene, null);
+  paintEnvelopes3d(scene);
   try { return await fn(); } finally {
     scene.hoverHeld -= 1;
-    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? null);
+    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
+    paintEnvelopes3d(scene);
   }
+}
+
+// A FILE'S STRAPS ARE ONE COLOUR, WHATEVER THE STAGE. On the page a strap
+// turns with the stage so it can be seen (stage.js STRAP_PAINT); a GLB or USDZ
+// is the rack, not the page, and must be the same file from a dark stage and
+// a light one, as the sheet is. It is written with every strap in the sheet's
+// ink, a black strap (STRAP_PAINT.light.core): what a hook-and-loop strap is,
+// and what reads on the light-grey ground model viewers open on.
+export async function withFileStraps(scene, color, fn) {
+  const mats = new Map();
+  if (typeof scene?.three?.scene?.traverse === 'function')
+    scene.three.scene.traverse(o => { if (o.isMesh && o.userData?.strap && !mats.has(o.material)) mats.set(o.material, o.material.color.getHex()); });
+  for (const m of mats.keys()) m.color.set(color);
+  try { return await fn(); } finally { for (const [m, c] of mats) m.color.setHex(c); }
 }
 
 /** Run `fn` with the cables' bend rings (scene3d.js ringBends) out of sight,
@@ -149,13 +215,23 @@ export function hoverAt3d(scene, ev) {
   if (!r.width || !r.height) return null;
   const ray = new THREE.Raycaster();
   ray.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), camera);
+  // A bundle's envelope is a see-through sleeve round its members, shown or
+  // not: a ray that meets a cable or a strap after passing through it is on
+  // that cable or strap (a member under the pointer is hovered alone, as in
+  // 2D, where a cable's stroke outranks the band). Through an envelope and
+  // nothing else, it is on the bundle.
+  let sleeve = null;
   for (const hit of ray.intersectObjects(targets, true)) {
     for (let o = hit.object; o && o.parent; o = o.parent) {
       const [name, prefix, key] = GROUPS.find(([n]) => n === o.parent.name) ?? [];
-      if (name) return {kind: key === 'cables' ? 'cable' : 'bundle', id: o.name.slice(prefix.length)};
+      if (!name) continue;
+      const target = {kind: key === 'cables' ? 'cable' : 'bundle', id: o.name.slice(prefix.length)};
+      if (!hit.object.userData.envelope) return target;
+      sleeve ??= target;
+      break;
     }
   }
-  return null;
+  return sleeve;
 }
 
 /** The hover target a side-panel row names: a cable row or a bundle header. */

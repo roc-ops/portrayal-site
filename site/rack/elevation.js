@@ -17,6 +17,7 @@ import {svgEl} from './dom.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
 import {faceOfAt, sideOfAt, STANDOFF} from '../../vendor/rack/zero-u.js';
+import {bodySpan, HALF_HOLE} from './body-span.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.
@@ -114,16 +115,22 @@ const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 // opening - 186 of the 187 that take a generic ear - showed a strip of rail
 // between its body and each ear: 9.75 mm on the 431.35 mm XCU10, 115 mm on a
 // half-width box. Without a face (a missing drawing) it keeps the opening.
-function drawEars(out, item, topOf, ruH, C = THEMED, plan = null, face = [0, OPENING]) {
+//
+// A BODY UNDER ONE UNIT (body-span.js: `body` = [top, bottom] in pane y, given
+// only for one) has an ear as tall as itself, in the lower half of its unit
+// where it sits, fixed by the one rail hole that half holds. It had a whole
+// unit's ear and two screws round half a unit of body.
+function drawEars(out, item, topOf, ruH, C = THEMED, plan = null, face = [0, OPENING], body = null) {
   const color = plan?.color || null;
   const X = x => x + OPENING / 2;
-  const top = topOf(ruH), bottom = topOf(0);
+  const [top, bottom] = body ?? [topOf(ruH), topOf(0)];
   // Two screws per ear in EVERY U the ear covers - the first and last hole of
   // each U - as rack3d.js's rackEars draws them and as the BOM counts them
   // (4 x U per device). One pair for the whole device read as a 1U ear on a
   // 10U chassis.
   const screwYs = [];
-  for (let k = 0; k < ruH; k++) {
+  if (body) screwYs.push(topOf(0) - HOLE_DY[HALF_HOLE]);
+  else for (let k = 0; k < ruH; k++) {
     const uBottom = topOf(k);
     screwYs.push(uBottom - HOLE_DY[0], uBottom - HOLE_DY[HOLE_DY.length - 1]);
   }
@@ -194,7 +201,7 @@ function sidedTransform(it, view, w, h, y) {
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
                                      placeholders = true, ears = false, metal = false, paper = false, laneGap = 0,
-                                     zeroU = [], selectedZeroU = null}) {
+                                     zeroU = [], selectedZeroU = null, chassisOf = null}) {
   const C = metal ? METAL : THEMED;
   const totalH = frame.heightRU * RU;
   // Lanes (cable routing spec §7): with routed cables the gutter beside each
@@ -285,7 +292,12 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // when it is known (every real caller sets it via fit.js's itemsWithU),
     // falling back to the compiled drawing's own height only when it is not.
     let ruH = it.u ?? 1;
+    // The catalogue's own height in units, when the caller has the catalogue
+    // (`chassisOf`: the Rack Builder and its sheet): a body under one unit is
+    // drawn in the lower part of its unit (body-span.js).
+    const catRu = typeof chassisOf === 'function' ? chassisOf(it.ref)?.ru : null;
     if (!face) {
+      ruH = bodySpan(catRu, ruH, 0).units;
       if (placeholders) {
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,
                            {...common, 'data-panel': 'missing', ...(isFace(it) ? {'pointer-events': 'none'} : {})}, paper ? OUTLINE_PAPER : OUTLINE));
@@ -298,7 +310,11 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const w = parseFloat(root.getAttribute('width')) || vb[2];
     const h = parseFloat(root.getAttribute('height')) || vb[3];
     if (it.u == null) ruH = Math.max(1, Math.round(h / RU));
-    const y = topOf(ruH) + (ruH * RU - h) / 2;
+    // The span the body is centred in: the units the item takes, or, for a
+    // body under one unit, its own height in units from the item's bottom.
+    const whole = ruH;
+    ruH = bodySpan(catRu, whole, h).units;
+    const y = topOf(ruH) + bodySpan(catRu, whole, h).inset;
     // THE FACE IS CENTRED, NOT THE DRAWING (#168). A drawing bigger than its
     // face (#865: `data-face-w`/`-h`, the face at 0,0 in it, its viewBox grown
     // round what stands off it) was centred by its whole width and ignored
@@ -309,7 +325,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const declared = fw > 0 && fh > 0;
     const [faceW, faceH] = declared ? [fw, fh] : [w, h];
     const [ox, oy] = declared ? [0, 0] : [Number.isFinite(vb[0]) ? vb[0] : 0, Number.isFinite(vb[1]) ? vb[1] : 0];
-    const fx = (OPENING - faceW) / 2, fy = topOf(ruH) + (ruH * RU - faceH) / 2;
+    const span = bodySpan(catRu, whole, faceH);
+    const fx = (OPENING - faceW) / 2, fy = topOf(ruH) + span.inset;
     const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${fx - ox} ${fy - oy})`, ...common,
                           ...(isFace(it) && SIDED.has(it.side) ? {'data-side': it.side} : {}),
                           'data-panel': through ? 'through' : 'mounted'});
@@ -343,7 +360,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // second pair over them would hide the real ones: such a device gets its
     // screw heads only. In the plan's colour, silver unless the device states
     // `chassis.ears.color`.
-    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C, await earPlanFor(it.ref, it.cfg), [fx, fx + faceW]);
+    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C, await earPlanFor(it.ref, it.cfg), [fx, fx + faceW],
+                                                      span.half ? [fy, fy + faceH] : null);
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
   // A U carrying a manager says so in the gutter: the manager itself is mostly

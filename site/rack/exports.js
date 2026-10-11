@@ -14,7 +14,8 @@
 
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {drawElevation, panelFor} from './elevation.js';
-import {holdUndimmed, withoutBendRings} from './hover.js';
+import {holdUndimmed, withoutBendRings, withFileStraps} from './hover.js';
+import {STRAP_PAINT} from './stage.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
 import {itemsWithU, heightOf} from '../../vendor/rack/fit.js';
@@ -164,7 +165,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true,
-                   laneGap: routed ? LANE_GAP : 0, zeroU})));
+                   laneGap: routed ? LANE_GAP : 0, zeroU, chassisOf})));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});
@@ -199,7 +200,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
           console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
-          pane.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]').forEach(n => n.remove());
+          pane.querySelectorAll(':scope > [data-cables], :scope > [data-in-front], :scope > [data-cable-tags]').forEach(n => n.remove());
           failed.push(pane.dataset.pane);
           after.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet; tags on the other face may point at runs that are not drawn.`);
         }
@@ -386,7 +387,8 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
             // never the hover's dimming (#169): the file is the rack, not the pointer;
             // nor a tight bend's warning ring (kit 0.17.0): that is the page's to show
-            data: await holdUndimmed(scene, () => withoutBendRings(scene, () => (usdz ? scene.toUSDZ() : scene.toGLB()))),
+            data: await holdUndimmed(scene, () => withoutBendRings(scene, () => withFileStraps(scene, STRAP_PAINT.light.core,
+              () => (usdz ? scene.toUSDZ() : scene.toGLB())))),
             type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary',
             ...(usdz ? {notes: [], left: notes, leftText: 'USDZ carries no notes; the GLB does.'} : {notes})};
   } finally {
