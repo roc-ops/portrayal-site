@@ -5120,8 +5120,10 @@ def open_bundle_rack(page, base, face="front", ports=("port-1", "port-2", "port-
     page.evaluate("() => window.__rack.ready")
     page.click('#mode [data-mode="2d"]')
     page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face, ports))
-    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)",
-                           timeout=READY_MS)
+    # (the routes of THIS rack: the page opens on the last rack, which in a check that calls this twice is the last
+    # call's, three routed cables as well, and those would answer for it)
+    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)"
+                           " && window.__rack.routesCurrent().current", timeout=READY_MS)
 
 
 # The envelope of a bundle on a pane, measured: its stroke width, the x of its
@@ -8864,7 +8866,7 @@ WARNINGS_JS = """() => {
     firstRow: first ? {...box(first), id: first.id, inView: box(first).top >= side.getBoundingClientRect().top && box(first).top < Math.min(innerHeight, side.getBoundingClientRect().bottom)} : null,
     kinds: [...document.querySelectorAll('#cableList [data-warning-kind]')].map(k => ({kind: k.dataset.warningKind, count: +k.dataset.count,
       title: k.querySelector('.rk-warnings-row, .rk-warnings-title').textContent, folds: !!k.querySelector('.rk-warnings-row'),
-      open: !k.querySelector('ul').hidden, rows: k.querySelectorAll('[data-warning-row]').length,
+      open: !k.querySelector('.rk-warnings-list').hidden, rows: k.querySelectorAll('[data-warning-row]').length,
       picks: [...k.querySelectorAll('[data-warning-pick]')].map(b => b.dataset.warningPick),
       texts: [...k.querySelectorAll('[data-route-warning], [data-warning-text]')].map(p => p.textContent)})),
     laidOut: [...document.querySelectorAll('#cableList [data-warnings] p')].filter(p => p.getClientRects().length).length,

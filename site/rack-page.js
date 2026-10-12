@@ -1289,6 +1289,12 @@ async function redraw(keepRoutes = false) {
       // reads (a selection, a row opened, a notice) is handed the routes the last one read, and so is every
       // export and every call an assistant makes. A step is a new rack object, and is read afresh.
       const read = await routesOf(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // A REDRAW ASKED FOR LATER IN THE SAME TASK STILL OVERTAKES THIS ONE. Reading the routes always took long enough
+      // that a second redraw asked for by the same click (a pane's own handler, then the page's, which puts a pinned
+      // cable down) began before this one drew, and this one stood down for it (`mine`, below). Handed routes already
+      // read, this one would finish first and show the one-shot notice, and the second would then draw it away: a
+      // taken port's "already has a cable" flashed and was gone. So the task that asked is let finish first.
+      await new Promise(next => setTimeout(next));
       // (the page's own copy: `rack` is the rack this redraw draws, which a reading shared with the rack before a
       // change that is not a step does not name, and `bendsShown` is this redraw's, by the ends as it read them)
       const rf = read && {...read, rack: r, bendsShown: landedBends(read.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null)};

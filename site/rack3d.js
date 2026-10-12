@@ -1173,8 +1173,10 @@ export function createRackScene(container, opts = {}) {
     // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
     const now = BUILD_FRAME_MS ? performance.now() : 0;
     if (costDue) { frameCost = now - lastFrame; costDue = false; }
-    if (!(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
-      controls.update();
+    // (the camera is kept where the controls have it at every animation frame, held back or not: a camera still
+    // easing to rest is drawn, and a host that asks what is under the pointer asks a camera that is where it looks)
+    const moved = controls.update();
+    if (moved || !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
       renderer.render(scene, camera);
       lastFrame = now;
       costDue = !!BUILD_FRAME_MS;

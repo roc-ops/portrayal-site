@@ -191,14 +191,15 @@ export function warningsSection({kinds, nameOf, open = () => false, onToggle = (
   const body = el('div', {id: 'warningsBody', class: 'rk-warnings-body'}, kinds.map(({kind, rows}) => {
     const title = `${WARNING_KINDS[kind] ?? kind} (${rows.length})`, listId = `warningList-${kind}`;
     const folds = rows.length > WARNINGS_FOLD, kindOpen = !folds || open(`warnings/${kind}`);
-    const list = el('ul', {id: listId, class: 'rk-warnings-list'}, rows.map((r, k) => {
+    // (a list by role, not `ul` and `li`: the rows of the tree are the panel's only list items, and are read as such)
+    const list = el('div', {id: listId, class: 'rk-warnings-list', role: 'list'}, rows.map((r, k) => {
       const texts = r.texts.map(text => el('p', {class: 'rk-warn', ...(r.route ? {'data-route-warning': 'true'} : {'data-warning-text': 'true'}), text}));
       const name = r.cable || r.item ? nameOf(r) : null;
-      if (!name) return el('li', {'data-warning-row': kind}, texts);
+      if (!name) return el('div', {'data-warning-row': kind, role: 'listitem'}, texts);
       const pick = el('button', {type: 'button', id: `warningRow-${kind}-${k}`, 'data-warning-pick': r.cable ? `cable ${r.cable}` : `item ${r.item}`,
                                  text: r.texts.length > 1 ? `${name} (${r.texts.length})` : name});
       pick.addEventListener('click', () => onPick(r));
-      return el('li', {'data-warning-row': kind}, [pick, ...texts]);
+      return el('div', {'data-warning-row': kind, role: 'listitem'}, [pick, ...texts]);
     }));
     list.hidden = !kindOpen;
     return el('div', {class: 'rk-warnings-kind', 'data-warning-kind': kind, 'data-count': String(rows.length)}, [
