@@ -1796,6 +1796,9 @@ function onPaneClick(ev) {
   // and what was typed.
   if (cab && S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on)) return;
   if (cab) return select({kind: 'cable', id: cab.dataset.cableId});
+  // A bundle's tag (shown while its bundle is hovered or pinned, #194) selects its bundle.
+  const btag = ev.target.closest('[data-cable-tags] [data-bundle-tag]');
+  if (btag) return S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on) ? undefined : select({kind: 'bundle', id: btag.dataset.bundleTag});
   if (S.cable.on) return onCableClick(ev);
   if (S.sel?.kind === 'move') {
     const u = ev.target.closest('[data-u]');
@@ -2014,6 +2017,13 @@ async function bootInner() {
       // select() redraws the cable layer and destroys the focused tag: the keyboard goes to the row.
       S.focusRow = cab.dataset.cableId;
       select({kind: 'cable', id: cab.dataset.cableId});
+    }
+    // ...and a bundle's tag its bundle (#194).
+    const btag = !cab && (ev.key === 'Enter' || ev.key === ' ') ? ev.target.closest?.('[data-cable-tags] [data-bundle-tag]') : null;
+    if (btag) {
+      ev.preventDefault();
+      if (S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on)) return;
+      select({kind: 'bundle', id: btag.dataset.bundleTag});
     }
   });
   // The frame form is a different activity from Cable mode, as it is from

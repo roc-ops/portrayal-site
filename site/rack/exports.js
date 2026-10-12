@@ -120,6 +120,10 @@ const MONO = 'IBM Plex Mono, ui-monospace, monospace';
 // it is the only thing that says where a cross-face run goes or that a lead
 // is not connected. So the layer stops being screen UI, and each pill gets
 // fixed ink of its own: no class, no tabindex, no role, no theme token.
+// WHICH CROSS-FACE TAGS A SHEET CARRIES (#194; cable-view.js drawRackCables):
+// 'bundles' is one per bundle and one per cable no bundle's tag stands for;
+// 'all' is one per cable; 'none' is none. The cable schedule lists every cable.
+const SHEET_TAGS = 'bundles';
 function paperTags(pane) {
   // pointer-events is a screen concern; the title (hover text) stays as accessible text.
   for (const n of pane.querySelectorAll('[data-cables][pointer-events], [data-cables] [pointer-events], [data-cable-tags] [pointer-events]'))
@@ -127,9 +131,10 @@ function paperTags(pane) {
   const set = (node, attrs) => { for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); };
   for (const layer of pane.querySelectorAll(':scope > [data-cable-tags]')) {
     layer.removeAttribute('data-pt-ui');
-    for (const tag of layer.querySelectorAll('[data-cable-tag]')) {
+    for (const tag of layer.querySelectorAll('[data-cable-tag], [data-bundle-tag]')) {
       const loose = tag.classList.contains('not-connected');
       for (const a of ['class', 'tabindex', 'role']) tag.removeAttribute(a);
+      tag.querySelector('[data-tag-reach]')?.remove();   // the pointer's way onto a tag: a screen concern
       if (loose) tag.setAttribute('data-not-connected', 'true');
       set(tag.querySelector('rect'), {fill: PAPER, stroke: loose ? MUTED : RULE, 'stroke-width': 1,
                                       ...(loose ? {'stroke-dasharray': '3 2'} : {})});
@@ -201,7 +206,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       for (const pane of panes) {
         try {
           if (probeFail.pane === pane.dataset.pane) throw new Error('probe: this pane cannot draw its cables');
-          drawRackCables(pane, rack, reasons, uOf, rf);
+          drawRackCables(pane, rack, reasons, uOf, rf, null, {tags: SHEET_TAGS});
         }
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.

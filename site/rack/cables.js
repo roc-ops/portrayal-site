@@ -132,8 +132,11 @@ function leadDown(g, a, color, drop, outboard) {
 // `ends(svg, dev, path)` finds an end's connector points; it defaults to
 // ends2d, which looks a device up by its ref. The Rack Builder passes its
 // own (cable-view.js), which looks an item up by its id and panel.
+// `stackGutter: false` leaves a routed cross-face tag at its own cable's
+// height, for a caller that shows one tag at a time or stacks what it keeps
+// (cable-view.js); the record says which gutter it is in (`gutter`, -1 or 1).
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
-                                               outboard = 1, ends = ends2d}) {
+                                               outboard = 1, ends = ends2d, stackGutter = true}) {
   // The CABLES are the drawing, and exports keep them (standalone() drops
   // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
   // controls - a cross-face button, a not-connected link to the stage that
@@ -224,7 +227,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
   const gutterY = new Map();          // routed tags stack per gutter, apart from the column
   for (const c of column) {
     let at;
-    if (c.lane) { at = Math.max(c.want, (gutterY.get(c.lane) ?? -Infinity) + TAG_H); gutterY.set(c.lane, at); }
+    if (c.lane) { at = stackGutter ? Math.max(c.want, (gutterY.get(c.lane) ?? -Infinity) + TAG_H) : c.want; gutterY.set(c.lane, at); c.rec.gutter = c.lane; }
     else at = y = Math.max(c.want, y + TAG_H);
     const t = c.place(at);
     t.setAttribute('data-link-index', String(c.rec.i));

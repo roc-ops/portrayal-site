@@ -196,6 +196,13 @@
    (rack-page.js setView). The old pair fades and the pointer says to wait. */
 .rk-panes[aria-busy="true"] { cursor: progress; }
 .rk-panes[aria-busy="true"] > .rk-pane > div { opacity: 0.35; transition: opacity 60ms; }
+/* A CROSS-FACE TAG IS HIDDEN UNTIL IT IS ASKED FOR (#194): a cable's own
+   while that cable is hovered (on the drawing, or on its row in the list,
+   which keyboard focus hovers too) or pinned, a bundle's one tag while the
+   bundle is (.hot-tag from hover.js, .on-tag from cable-view.js paintCables).
+   Hidden, it takes no pointer and no focus. A not-connected tag always shows. */
+.cable-hover [data-bundle-tag]:not(.hot-tag) { opacity: 0.15; }
+[data-cable-tags] .cable-tag:not(.not-connected):not(.hot-tag):not(.on-tag) { visibility: hidden; pointer-events: none; }
 .cable-tag { cursor: pointer; pointer-events: all; }
 .cable-tag rect { fill: var(--pt-surface); stroke: var(--pt-line); }
 .cable-tag text { font: 500 11px var(--pt-font-mono); fill: var(--pt-ink); }

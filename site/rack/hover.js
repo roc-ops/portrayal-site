@@ -63,6 +63,13 @@ export function paintHover2d(svgs, lit) {
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId));
+    // A CROSS-FACE TAG IS SHOWN FOR WHAT IS HOVERED (#194; rack.css): a cable's
+    // own tag for a cable, and for a bundle its one tag, not its members'.
+    const alone = !!lit && lit.bundles.size === 0;
+    for (const n of svg.querySelectorAll('[data-cable-tag][data-cable-id]'))
+      n.classList.toggle('hot-tag', alone && lit.cables.has(n.dataset.cableId));
+    for (const n of svg.querySelectorAll('[data-bundle-tag]'))
+      n.classList.toggle('hot-tag', !!lit && lit.bundles.has(n.dataset.bundleTag));
     // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
     // it, is lit, and dimmed with the rest otherwise.
     for (const n of svg.querySelectorAll('[data-strap]'))
@@ -194,6 +201,8 @@ export async function withoutBendRings(scene, fn) {
 export function hoverAt2d(svg, ev) {
   const tag = ev.target?.closest?.('[data-cable-tags] [data-cable-id]');
   if (tag) return {kind: 'cable', id: tag.dataset.cableId};
+  const btag = ev.target?.closest?.('[data-cable-tags] [data-bundle-tag]');
+  if (btag) return {kind: 'bundle', id: btag.dataset.bundleTag};
   const hit = sel => {
     for (const p of [...svg.querySelectorAll(sel)].reverse()) {
       const m = p.getScreenCTM();

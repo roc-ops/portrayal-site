@@ -15,7 +15,7 @@
 // (cable-rules.js looseReason) does not land at all.
 
 import {cablePoints} from '../../vendor/relief.js';
-import {drawCables2d, plugAt, WIDTH} from './cables.js';
+import {drawCables2d, plugAt, WIDTH, TAG_H} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
@@ -164,7 +164,19 @@ export function pillText(text) {
 // for them (cable id -> one per waypoint, route.js ringMarks) and fill.
 // `spares` is spare.js sparesOf's Map: a cable in it names its cord and its
 // spare in its title, as its row in the list does.
-export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = null) {
+// A CROSS-FACE TAG IS SHOWN WHEN IT IS ASKED FOR (#194). `tags` says which
+// of them this drawing carries:
+//   'hover'   (the page) every cable's tag, each at its own cable's height,
+//             and one tag per bundle where its cables leave the face. rack.css
+//             hides them all; a hovered or pinned cable shows its own, a
+//             hovered or pinned bundle the bundle's (hover.js, paintCables);
+//   'bundles' (a sheet, which cannot be hovered) one tag per bundle and one
+//             per cross-face cable no bundle's tag stands for, stacked TAG_H
+//             apart in their gutter;
+//   'all'     a tag per cable and none per bundle, stacked;
+//   'none'    no cross-face tag.
+// A not-connected tag is not a cross-face tag: it is always drawn and shown.
+export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = null, {tags = 'hover'} = {}) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
@@ -203,6 +215,9 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     if (!qs.length) return null;
     return detourAt({x: qs.reduce((a, q) => a + q.x, 0) / qs.length, y: qs.reduce((a, q) => a + q.y, 0) / qs.length});
   };
+  // Whether the kit lays the cable along this waypoint as a tray (its rest of
+  // kind 'tray'), not through it as a ring.
+  const onTray = (id, w) => (routes?.paths?.get(id)?.rests ?? []).some(x => x.kind === 'tray' && x.item === w.item && x.via === w.via);
   if (routes?.routes) {
     // THE RINGS AS THE KIT DECIDED THEM (Portrayal #930): a mark's sense is
     // along the rack's axes, x right as seen from the front and y up. This
@@ -242,6 +257,11 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
         // no element of its own on the pane, is placed by the kit's points.
         const rest = !w.lane ? restAt(link.id, w) : null;
         if (!rest) return p;
+        // ONLY A TRAY is placed by the kit's points alone. A ring has an
+        // element on the pane that draws its manager; where this pane does not
+        // draw it (the manager is on the other face), the ring is not placed,
+        // and the stretch to it is the other pane's (#194), as a bundle's is.
+        if (!p && !onTray(link.id, w)) return null;
         return [p ? p[0] : rest[0], rest[1] + off[1]];
       });
       // BETWEEN TWO OF ITS LANE WAYPOINTS a member passes the lane's other
@@ -314,10 +334,18 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const x = at[0] < OPENING / 2 ? at[0] - 4 - w : at[0] + 4;
     t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
+    // ITS REACH (#194): a tag shows only while its cable is under the pointer,
+    // so the gap from the cable's end to the pill would end the hover before
+    // the pointer got to the tag. This unpainted strip from over the cable's
+    // end to the pill is the tag's too, so the pointer stays on it on the way
+    // and the tag can be clicked. A sheet leaves it out (exports.js paperTags).
+    const out = at[0] < OPENING / 2 ? -1 : 1;
+    t.append(svgEl('path', {d: `M${at[0] - out * 12} ${at[1] - 9}H${at[0] + out * 4}V${at[1] + 9}H${at[0] - out * 12}Z`, fill: 'transparent', 'data-tag-reach': ''}));
     return t;
   };
+  const tagAt = new Map(), farOf = new Map();   // cable id -> where its cross-face tag points from, and its far end
   const recs = drawCables2d(svg, plan, pane, {
-    edgeX, outboard: rear ? -1 : 1,
+    edgeX, outboard: rear ? -1 : 1, stackGutter: false,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
@@ -328,6 +356,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
       const full = svgEl('title', {});
       full.textContent = `→ ${it ? it.label : 'removed'} ${end.path}`;
       t.append(full);
+      tagAt.set(link.id, at); farOf.set(link.id, end);
       return pill(t, at, tagText(rack, end));
     },
     // The far end does not land anywhere: the tag says so, and its title says why.
@@ -362,6 +391,51 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   });
   drawTieStraps2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
   drawInFront(svg);
+  // ONE TAG FOR A BUNDLE, where its cables leave this face (#194): at the
+  // middle of its members' own tag points in a gutter. A member that leaves
+  // the face somewhere else (more than LEAVE mm from the middle one) is not
+  // counted in it, and keeps its own tag. The tag names the bundle's group
+  // (data-bundle-tag), the cables it stands for (data-members) and its gutter.
+  const LEAVE = 60;
+  const tagLayer = svg.querySelector(':scope > [data-cable-tags]');
+  const routedTag = new Map(recs.filter(rec => rec.tag && rec.gutter && tagAt.has(cables[rec.i].id)).map(rec => [cables[rec.i].id, rec]));
+  const stood = new Set(), bundleTags = [];
+  if (tags === 'hover' || tags === 'bundles') for (const f of routes?.bundles?.values() ?? []) {
+    const mine = f.members.filter(id => routedTag.has(id)).sort((a, b) => tagAt.get(a)[1] - tagAt.get(b)[1] || tagAt.get(a)[0] - tagAt.get(b)[0]);
+    if (!mine.length) continue;
+    const mid = tagAt.get(mine[mine.length >> 1]);
+    const here = mine.filter(id => Math.hypot(tagAt.get(id)[0] - mid[0], tagAt.get(id)[1] - mid[1]) <= LEAVE
+      && routedTag.get(id).gutter === routedTag.get(mine[mine.length >> 1]).gutter);
+    const at = [0, 1].map(k => here.reduce((a, id) => a + tagAt.get(id)[k], 0) / here.length);
+    // where they go: the one device every one of them ends on, else the other face
+    const fars = new Set(here.map(id => farOf.get(id).item)), far = rack.items.find(i => fars.size === 1 && fars.has(i.id));
+    const to = far ? far.label : `the ${rear ? 'front' : 'rear'} face`;
+    const t = svgEl('g', {class: 'cable-tag bundle-tag', tabindex: '0', role: 'button', 'data-bundle-tag': f.id, 'data-members': here.join(' ')});
+    const full = svgEl('title', {});
+    full.textContent = `${f.name}: ${here.length} cable${here.length === 1 ? '' : 's'} → ${to}`;
+    t.append(full);
+    tagLayer.append(pill(t, at, `→ ${to} ×${here.length} · ${f.name}`));
+    for (const id of here) stood.add(id);
+    bundleTags.push({tag: t, y: at[1], gutter: routedTag.get(here[0]).gutter});
+  }
+  if (tags !== 'hover') {
+    // what a file carries: the tags it does not are taken off, and the rest
+    // of each gutter's are stacked, top down, each at its own height or TAG_H
+    // below the one above it
+    const kept = [...bundleTags];
+    for (const rec of recs) {
+      const id = cables[rec.i].id;
+      if (!rec.tag || !tagAt.has(id)) continue;                 // no tag, or a not-connected one
+      if (tags === 'none' || (tags === 'bundles' && stood.has(id))) { rec.tag.remove(); rec.tag = null; }
+      else if (rec.gutter) kept.push({tag: rec.tag, y: tagAt.get(id)[1], gutter: rec.gutter});
+    }
+    const low = new Map();
+    for (const k of kept.sort((a, b) => a.y - b.y)) {
+      const y = Math.max(k.y, (low.get(k.gutter) ?? -Infinity) + TAG_H);
+      low.set(k.gutter, y);
+      if (y !== k.y) k.tag.setAttribute('transform', `translate(0 ${Math.round((y - k.y) * 100) / 100})`);
+    }
+  }
   for (const rec of recs) {
     const c = cables[rec.i];
     for (const n of [rec.g, rec.tag]) if (n) n.setAttribute('data-cable-id', c.id);
@@ -661,6 +735,10 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
       n.classList.toggle('on', lit(n.dataset.cableId));
       n.classList.toggle('ghost', !lit(n.dataset.cableId) && out.has(n.dataset.cableId));
     }
+    // A PINNED CABLE OR BUNDLE KEEPS ITS TAG (#194): the selected cable's own,
+    // the selected bundle's one (rack.css shows a tag that is .on-tag or .hot-tag).
+    for (const n of svg.querySelectorAll('[data-cable-tag][data-cable-id]')) n.classList.toggle('on-tag', n.dataset.cableId === selectedId);
+    for (const n of svg.querySelectorAll('[data-bundle-tag]')) n.classList.toggle('on-tag', bundleId != null && n.dataset.bundleTag === bundleId);
     // a selected cable shows the envelope of the bundle it rides
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('on-member', selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId));
