@@ -7,11 +7,19 @@
 //                through it (what the front pane has always drawn);
 //   off          the cover is not drawn.
 //
-// WHAT A COVER IS: what the library marks as one, on any part: the `cover`
-// group of its drawing (data-group="cover") and, on the views that draw the
-// cover edge on, the nodes of kind cover (data-kind="cover"). A vertical
-// manager beside the rack has two, a rack-mounted finger duct has its own, a
-// lacer has none, and nothing else is touched.
+// WHAT A COVER IS: a PLATE the library puts in a part's `cover` group
+// (data-group="cover" on a part of data-class="mechanical") and, on the views
+// that draw that plate edge on, the nodes of kind cover (data-kind="cover").
+// The group alone is not the rule. A group is named for what its parts have to
+// do with, so it can hold what fastens a cover as well as the cover: the
+// Amphenol power panels put their two thumbscrews (data-class="screw") in a
+// group called `cover`, and a screw is not something to see through or take
+// off. Over the whole catalogue every cover plate is a mechanical part and
+// nothing else in a cover group is, so the class is what tells them apart: it
+// says what the part is, where the group says what it belongs with. A
+// vertical manager beside the rack has two, a rack-mounted finger duct has
+// its own, a lacer has none, and nothing else is touched
+// (tests/rack/covers.test.mjs sweeps the catalogue for exactly that).
 //
 // A VIEW SETTING. It is the reader's, remembered in this browser beside the
 // 2D/3D mode; it is never in the rack file and never in the URL. NO DOWNLOAD
@@ -51,13 +59,17 @@ export function loadCovers(store = globalThis.localStorage) {
 }
 export function saveCovers(v, store = globalThis.localStorage) { try { store.setItem(COVERS_KEY, v); } catch { /* forgets */ } }
 
-/** Is `path` a cover's: one of `paths` (the cover groups' data-paths) or a node under one? */
+/** Is `path` a cover's: one of `paths` (the cover plates' data-paths) or a node under one? */
 export const underCover = (paths, path) => typeof path === 'string' && [...(paths ?? [])].some(p => path === p || path.startsWith(`${p}/`));
 
-/** The data-paths of the cover groups in a drawing's text. */
+// The class of a cover plate, and the selector for one in a drawing.
+export const COVER_CLASS = 'mechanical';
+export const COVER_PLATE = `[data-group="cover"][data-class="${COVER_CLASS}"]`;
+/** The data-paths of the cover plates in a drawing's text: the parts of its `cover` groups that are plates. */
 export function coverPathsIn(text) {
   const out = [];
   for (const m of String(text ?? '').matchAll(/<[a-zA-Z][^>]*\sdata-group="cover"[^>]*>/g)) {
+    if (!new RegExp(`\\sdata-class="${COVER_CLASS}"`).test(m[0])) continue;
     const p = /\sdata-path="([^"]*)"/.exec(m[0]);
     if (p) out.push(p[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
   }
@@ -121,7 +133,7 @@ export function layCovers2d(svgs) {
     if (!svg?.querySelector) continue;
     svg.querySelector(':scope > [data-covers-front]')?.remove();
     const cables = svg.querySelector(':scope > [data-cables]');
-    const covers = [...svg.querySelectorAll(':scope > [data-item-id][data-panel] [data-group="cover"]')];
+    const covers = [...svg.querySelectorAll(`:scope > [data-item-id][data-panel] ${COVER_PLATE}`)];
     if (!cables || !covers.length) continue;
     const NS = 'http://www.w3.org/2000/svg', layer = document.createElementNS(NS, 'g'), inv = svg.getScreenCTM().inverse();
     layer.setAttribute('data-covers-front', svg.dataset.pane ?? '');

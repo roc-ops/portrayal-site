@@ -171,6 +171,7 @@ const STALE_3D_TRIES = 36, STALE_3D_MS = 100;
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
+  S.detailFailed = null;      // what the scene before could not draw is not this one's to say
   const camera = S.camera3d;
   // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
   // edit the routes are read again by render(), which can finish after this
@@ -196,7 +197,7 @@ async function rebuild3d() {
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
     bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
-    onDetailFailed: f => detailFailed(forRack, f),
+    onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
     ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
@@ -227,14 +228,21 @@ async function rebuild3d() {
 // A PART WHOSE DETAIL COULD NOT BE BUILT IN 3D (a file of its drawing did not
 // load) stays the plain box it stood as while loading (rack3d.js standIn),
 // marked as one that is not coming. The page says which, once for each part of
-// a rack document, in the notice: a box with nothing said read as loading forever.
+// a rack document: a box with nothing said read as loading forever.
 function detailFailed(forRack, {id, label}) {
   if (rack() !== forRack && !sameScene(rack(), forRack)) return;   // a scene for a rack that has moved on
-  const key = `${theDoc().id}|${id ?? label}`;
-  if ((S.detailSaid ??= new Set()).has(key)) return;
-  S.detailSaid.add(key);
-  addNotice(`${label} could not be drawn in detail.`, 'note');
+  (S.detailFailed ??= new Map()).set(id ?? label, label);
   renderSide();
+}
+// ...AND IT STAYS SAID WHILE THE PART IS STILL A BOX: not a one-shot notice,
+// which the next redraw takes away, but a line of the side panel for as long
+// as the scene on screen (or the one being built) has a part that failed.
+// Each part once. A new build starts with none and says its own (rebuild3d);
+// 2D, where every part is drawn, has none.
+function detailFailedLine() {
+  if (S.mode !== '3d' || !S.detailFailed?.size) return null;
+  return el('p', {id: 'detailFailed', class: 'rk-notice rk-error', role: 'status',
+    text: [...S.detailFailed.values()].map(label => `${label} could not be drawn in detail.`).join(' ')});
 }
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on
@@ -330,6 +338,7 @@ function setMode(m) {
     return;
   }
   disposeScene3d();
+  S.detailFailed = null;
   // render() skips applying zoom while #panes is hidden (it was, in 3D), so
   // whatever was drawn there while hidden never got a real height - this is
   // what makes the panes come back to life rather than blank.
@@ -1609,6 +1618,8 @@ function renderSide() {
         }})]);
   }
   const kids = [body];
+  const failed = detailFailedLine();
+  if (failed) kids.push(failed);
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
   // Undo and Redo, each while there is a step to take, each saying what it would

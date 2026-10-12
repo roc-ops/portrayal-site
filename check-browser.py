@@ -17210,6 +17210,9 @@ COVERS_2D_JS = """() => {
             return {copies: [...svg.querySelectorAll(':scope > [data-covers-front] [data-front="cover"][data-front-of="i4"]')].map(css),
                     own: [...(g?.querySelectorAll('[data-group="cover"]') ?? [])].map(css), at: r ? [r.left + r.width / 2, r.top + r.height / 2] : null,
                     selected: !!g?.classList.contains('rk-selected'), layers: svg.querySelectorAll(':scope > [data-covers-front]').length}; })(),
+          // the power panel's thumbscrews, which its drawing puts in a group called `cover`: as they are painted, and any copy laid for them
+          screws: (() => { const g = svg.querySelector('[data-item-id="i5"]'); return {own: [...(g?.querySelectorAll('[data-group="cover"]') ?? [])].map(n => [n.dataset.path, n.dataset.class, ...css(n)]),
+            copies: svg.querySelectorAll('[data-front-of="i5"]').length}; })(),
           stored: localStorage.getItem('portrayal.rack.covers'), search: location.search, selected: z.classList.contains('rk-selected'),
           hot: [...svg.querySelectorAll('[data-cables] [data-cable].hot')].map(n => n.dataset.cableId)};
 }"""
@@ -17230,7 +17233,10 @@ COVERS_3D_JS = """aim => {
   const v = p.clone().project(T.camera), r = T.renderer.domElement.getBoundingClientRect();
   const at = [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height];
   const under = name => { const g = T.scene.getObjectByName(name); return ms.filter(o => { for (let n = o; n; n = n.parent) if (n === g) return true; return false; }); };
-  return {n: ms.length, shown: ms.filter(o => o.visible).length, setting: s.covers, duct: under('device-i4').length, ductShown: under('device-i4').filter(o => o.visible).length,
+  // the power panel's thumbscrews in the scene: every mesh of them, whether it shows, and its materials' own values
+  const screws = []; T.scene.getObjectByName('device-i5')?.traverse(o => { if (o.isMesh && /^thumbscrew-/.test(o.userData.portrayalPath ?? ''))
+    screws.push([o.userData.portrayalPath, o.visible, ms.includes(o), ...[].concat(o.material).map(m => [m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite].join('/'))].join(' ')); });
+  return {n: ms.length, shown: ms.filter(o => o.visible).length, setting: s.covers, screws: screws.sort(), panel: under('device-i5').length, duct: under('device-i4').length, ductShown: under('device-i4').filter(o => o.visible).length,
           mats: [...new Set(mats.map(m => [m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite, m.alphaToCoverage, m.alphaTest].join('/')))].sort(),
           others: (() => { let n = 0; T.scene.getObjectByName('device-z1').traverse(o => { if (o.isMesh && !ms.includes(o) && o.visible) n++; }); return n; })(), at};
 }"""
@@ -17284,7 +17290,7 @@ def colour_gap(a, b):
     return max(abs(x - y) for x, y in zip(a, b))
 
 
-@extra("rack.html: covers on, see-through or off - one control for the panes (both pairs) and the scene, for a vertical manager's covers and a rack-mounted duct's alike, see-through to begin with and remembered in the browser, never in the rack or the URL; on hides the run inside a vertical manager, see-through shows it through the cover, off draws no cover; the manager is still selected by a click and the cable inside still hovered; and the sheet, the GLB and the USDZ are the same files whatever it says (#190)")
+@extra("rack.html: covers on, see-through or off - one control for the panes (both pairs) and the scene, for a vertical manager's covers and a rack-mounted duct's alike and never for the thumbscrews a power panel keeps in a group of that name, see-through to begin with and remembered in the browser, never in the rack or the URL; on hides the run inside a vertical manager, see-through shows it through the cover, off draws no cover; the manager is still selected by a click and the cable inside still hovered; and the sheet, the GLB and the USDZ are the same files whatever it says (#190)")
 def check_rack_covers(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -17295,6 +17301,11 @@ def check_rack_covers(page, base):
     if res.get("error") or res.get("created", {}).get("ids") != ["i4"]:
         return bad + [f"fixture: the horizontal duct was not placed as i4: {res}"]
     wait_fn(page, "covers: the horizontal duct", "() => document.querySelector('#paneFront [data-item-id=\"i4\"]') && window.__rack.routesCurrent().current")
+    # and a power panel (i5) whose two thumbscrews are in a group the library calls `cover`: fasteners, not covers
+    res = page.evaluate("() => window.__rack.apply({op: 'place', ref: '300cb08', cfg: 'base', face: 'front', ru: 10, label: 'panel'})")
+    if res.get("error") or res.get("created", {}).get("ids") != ["i5"]:
+        return bad + [f"fixture: the power panel was not placed as i5: {res}"]
+    wait_fn(page, "covers: the power panel", "() => document.querySelector('#paneFront [data-item-id=\"i5\"]') && window.__rack.routesCurrent().current")
     res = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
     if res.get("error"):
         return bad + [f"create: refused: {res['error']}"]
@@ -17303,6 +17314,9 @@ def check_rack_covers(page, base):
     page.wait_for_timeout(400)
     park_mouse(page)
     st = page.evaluate(COVERS_2D_JS)
+    screws0 = st["screws"]["own"]
+    if sorted(x[:2] for x in screws0) != [["thumbscrew-left", "screw"], ["thumbscrew-right", "screw"]]:
+        return bad + [f"fixture: the power panel's cover group holds {screws0}, expected its two thumbscrews"]
     if not st["duct"]["copies"] or not st["duct"]["own"] or st["duct"]["layers"] != 1:
         return bad + [f"fixture: the horizontal duct has {len(st['duct']['copies'])} cover copies over the cables and {len(st['duct']['own'])} covers in its drawing, in {st['duct']['layers']} layers"]
     # THE CONTROL: three settings, see-through to begin with, nothing stored until the reader picks.
@@ -17331,6 +17345,9 @@ def check_rack_covers(page, base):
         d = st["duct"]
         if any(c != copy for c in d["copies"]) or any(c != own for c in d["own"]) or not d["copies"]:
             bad.append(f"2D {state}: the horizontal duct's copies over the cables are {d['copies']} and its covers {d['own']}; expected {copy} and {own}")
+        # THE THUMBSCREWS ARE NOT A COVER: painted as they were, with no copy laid for them, whatever the setting
+        if st["screws"]["own"] != screws0 or any(x[2:] != [1, "visible"] for x in st["screws"]["own"]) or st["screws"]["copies"]:
+            bad.append(f"2D {state}: the power panel's thumbscrews are {st['screws']['own']} with {st['screws']['copies']} copies laid; expected them untouched")
         # the horizontal duct is still selected by a click on it
         page.mouse.click(*d["at"])
         try:
@@ -17409,6 +17426,9 @@ def check_rack_covers(page, base):
     st = page.evaluate(COVERS_3D_JS, True)
     if not st["duct"]:
         bad.append(f"3D: none of the {st['n']} cover meshes is the horizontal duct's")
+    screws3 = st["screws"]
+    if len(screws3) < 2 or st["panel"] or any(" true false " not in f" {x} " for x in screws3):
+        bad.append(f"3D: the power panel's thumbscrews are {screws3} and {st['panel']} of its meshes are taken as covers; expected its screws shown and none taken")
     if st["n"] < 2 or st["shown"] or st["setting"] != "off" or st["others"] < 10:
         bad.append(f"3D off: {st['shown']} of {st['n']} cover meshes show in a scene built with the covers off (setting {st['setting']!r}, {st['others']} other meshes of the duct show)")
     page.wait_for_timeout(1500)
@@ -17429,6 +17449,8 @@ def check_rack_covers(page, base):
                 bad.append(f"3D see-through: {st3['shown']} of {st3['n']} cover meshes show, materials {st3['mats']}; expected every one blended at 0.3 and writing no depth")
         elif st3["shown"]:
             bad.append(f"3D off: {st3['shown']} of {st3['n']} cover meshes show")
+        if st3["screws"] != screws3 or st3["panel"]:
+            bad.append(f"3D {state}: the power panel's thumbscrews changed with the setting: {st3['screws']} (built {screws3}), {st3['panel']} taken as covers")
         if (st3["ductShown"] > 0) != (state != "off"):
             bad.append(f"3D {state}: {st3['ductShown']} of the horizontal duct's {st3['duct']} cover meshes show")
         if st3["others"] != st["others"]:
@@ -17489,7 +17511,7 @@ STRAPS_WITH_CABLES_JS = """() => [...document.querySelectorAll('#panes svg[data-
   trunks: s.querySelectorAll('[data-bundle-trunk]').length}))"""
 
 
-@extra("rack.html: nothing floats while the 3D scene loads - no frame has a cable or a strap without the vertical manager's body (a plain box of its size until its detail arrives), the box stands beside its rail from the first frame it is in, through the wait for a later part's held-back files, and is gone once the scene is complete; and a part whose files do not load stays a box marked as not coming, with the page saying so once (#190)")
+@extra("rack.html: nothing floats while the 3D scene loads - no frame has a cable or a strap without the vertical manager's body (a plain box of its size until its detail arrives), the box stands beside its rail from the first frame it is in, through the wait for a later part's held-back files, and is gone once the scene is complete; and a part whose files do not load stays a box marked as not coming, with the page saying so, once, for as long as it is one (#190)")
 def check_rack_3d_loading(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -17573,26 +17595,34 @@ def check_rack_3d_loading(page, base):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     wait_fn(page, "failed: the panes again", "() => document.querySelector('#paneFront svg [data-cables] [data-cable-id]') && window.__rack.routesCurrent().current")
     page.route("**/assets/dist/cmv-sfd42u9w*", lambda route: route.abort())
-    said = "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('duct-1 could not be drawn in detail.')"
+    said = "() => (document.getElementById('side').textContent.match(/duct-1 could not be drawn in detail\\./g) || []).length"
     failed = """() => { const g = window.__rack.scene()?.three.scene.getObjectByName('device-z1'), b = g?.children[0];
       return !!b && b.userData.standIn === 'failed' && [].concat(b.material).some(m => m.visible); }"""
     try:
         page.click('#mode [data-mode="3d"]')
         wait_fn(page, "failed: the manager's box marked as not coming", failed, timeout=READY_3D_MS)
-        wait_fn(page, "failed: the page says the manager could not be drawn in detail", said, timeout=15000)
-        st = page.evaluate("""() => { const T = window.__rack.scene().three.scene; let tubes = 0; T.getObjectByName('patch-cables')?.traverse(o => { if (o.isMesh) tubes++; });
-          return {tubes, notices: document.querySelectorAll('.rk-side .rk-notice').length}; }""")
+        wait_fn(page, "failed: the page says the manager could not be drawn in detail", f"() => ({said})() === 1", timeout=15000)
+        st = page.evaluate("""() => { const T = window.__rack.scene().three.scene; let tubes = 0; T.getObjectByName('patch-cables')?.traverse(o => { if (o.isMesh) tubes++; }); return {tubes}; }""")
         if not st["tubes"]:
             bad.append("failed: the cables were not hung in a scene whose manager could not be drawn in detail")
-        # ...once: the scene built again for the same rack does not say it again
+        # IT STAYS SAID WHILE THE PART IS STILL A BOX: through a redraw of the side panel (a cable pinned and let go)...
+        page.click('#cableList [data-cable-row="c4"]')
+        wait_fn(page, "failed: c4 pinned", "() => document.querySelector('#cableRow-c4')?.getAttribute('aria-pressed') === 'true'")
+        page.click('#cableList [data-cable-row="c4"]')
+        wait_fn(page, "failed: c4 let go", "() => !document.querySelector('#cableList [aria-pressed=\"true\"]')")
+        if page.evaluate(said) != 1:
+            bad.append(f"failed: after a redraw of the panel the page says it {page.evaluate(said)} times, expected once")
+        # ...and on a second build of the scene, where the part fails again: said, and said once
         old = page.evaluate_handle("() => window.__rack.scene()")
         page.click('#mode [data-mode="2d"]')
+        wait_fn(page, "failed: 2D says nothing of it", f"() => ({said})() === 0")
         page.click('#mode [data-mode="3d"]')
         page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
         wait_fn(page, "failed: the second scene's box marked as not coming", failed, timeout=READY_3D_MS)
+        wait_fn(page, "failed: the second scene says it too", f"() => ({said})() >= 1", timeout=15000)
         page.wait_for_timeout(600)
-        if page.evaluate(said):
-            bad.append("failed: the page said it again for the same part of the same rack")
+        if page.evaluate(said) != 1:
+            bad.append(f"failed: on a second build the page says it {page.evaluate(said)} times, expected once")
     except RuntimeError as e:
         bad.append(str(e))
     finally:
