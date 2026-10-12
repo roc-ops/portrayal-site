@@ -3798,6 +3798,18 @@ def check_rack_loose_end_sentences(page, base):
     offered = text("list_free_ports", {"id": "i1"})
     if any("--" in p for p in free) or "--" in offered or "bay-1/module/b05" not in free:
         bad.append(f"the free ports of the panel offer an element id, or not the address: {[p for p in free if '--' in p][:3]} {offered[:200]!r}")
+    # A PANEL SWAPPED FOR ONE WITH THE SAME PORTS KEEPS ITS CABLES, front and back, and says nothing of loose ends
+    # (kit 0.23.0 counts the ports of a part's back as its ports: until then the note said the cable on the back
+    # was kept as a loose end, of a cable that still landed).
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "fit", "id": "i1", "path": "bay-1", "ref": "fs/fhd-fap12lcd-om4@1"}]})
+    said = " ".join(c.get("text", "") for c in res.get("content", []))
+    if res.get("isError") or "Fitted" not in said or "loose end" in said:
+        bad.append(f"a panel swapped for its multimode twin answered {said[:300]!r}")
+    try:
+        wait_fn(page, "loose ends: the swapped panel's cables land", """() => { const r = window.__rack.cableFacts().reasons;
+          return window.__rack.routesCurrent().current && r['i1|rear|bay-1/module/b01'] === null && r['i1|front|bay-1/module/lc04'] === null; }""", timeout=20000)
+    except RuntimeError:
+        bad.append(f"after the swap the two cables that landed read {page.evaluate('() => window.__rack.cableFacts().reasons')}")
     return bad
 
 
