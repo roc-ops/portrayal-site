@@ -18260,7 +18260,6 @@ MARKS_UNIT = "marks-harness"
 DEFAULT_SECONDS = 2.0
 SECONDS = {
     "index.html": 73,
-    "check_rack_ring_rack_budgets": 25, "check_rack_edit_survives_reload": 12,
     "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
     "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
     "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
