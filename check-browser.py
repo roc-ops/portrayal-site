@@ -8497,6 +8497,36 @@ def check_rack_side_fresh_after_edit(page, base):
     return bad
 
 
+# A RACK OF A SIZE (portrayal-site#192): `devices` two-unit fabric switches stacked from the top of a 42U four-post
+# rack, a lacer panel on each, a vertical manager either side, and `per_pair` cables from each switch to the one below
+# it, port k to port 24 + k, each port holding the cable's own plug. 13 devices and 24 a pair is 288 cables and 576
+# seated ends: the shape and size of the rack the issue was measured on. Built here, so no rack file is committed.
+def speed_fixture(devices, per_pair=24, name=None):
+    if not (2 <= devices <= 20 and 1 <= per_pair <= 24):
+        raise ValueError("speed_fixture: 2 to 20 devices, 1 to 24 cables a pair")
+    items, cables = [], []
+    for k in range(devices):
+        used = ([*range(per_pair)] if k < devices - 1 else []) + ([*range(24, 24 + per_pair)] if k else [])
+        items.append({"id": f"i{k + 1}", "ref": "s9725-64e", "cfg": "ac", "label": f"FAB-{k + 1}", "ru": 41 - 2 * k, "face": "front", "turned": False,
+                      "swaps": {f"port-{n}": "generic/qsfp-dd-cable@1" for n in used}, "fields": {}})
+    for k in range(devices):
+        items.append({"id": f"i{devices + k + 1}", "ref": "fhd-cmp5dr", "cfg": "base", "label": f"CM-{k + 1}", "ru": 42 - 2 * k, "face": "front",
+                      "turned": False, "swaps": {}, "fields": {}, "on": f"i{k + 1}", "unit": 2})
+    for k in range(devices - 1):
+        for n in range(per_pair):
+            cables.append({"id": f"c{len(cables) + 1}", "a": {"item": f"i{k + 1}", "path": f"port-{n}", "view": "front"},
+                           "b": {"item": f"i{k + 2}", "path": f"port-{24 + n}", "view": "front"}, "media": "aoc", "purpose": "fabric",
+                           "label": f"FAB-{k + 1} {n} > FAB-{k + 2} {24 + n}", "route": []})
+    return {"format": "portrayal-rack", "version": 4, "id": f"doc-speed-{devices}-{per_pair}", "racks": [{
+        "id": "r1", "name": name or f"Speed {len(cables)}",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": items,
+        "zeroU": [{"id": "z1", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV left", "at": "left-front", "offsetMm": 0},
+                  {"id": "z2", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV right", "at": "right-front", "offsetMm": 0}],
+        "cables": cables}]}
+
+
 # ONE READING OF A RACK, AND NEVER A STALE ONE (portrayal-site#192, site/rack/reading.js). The routes are read once for
 # a rack object and handed to the panes, the list, the exports and every assistant tool, and what a tool reads of the
 # kit is answered once for the rack object. What that risks is staleness: something shown, said or downloaded that was
@@ -8692,6 +8722,101 @@ def check_rack_reading_fresh_after_edit(page, base):
             bad.append(f"after {what}: describe_rack asked the moment the edit landed does not say what the kit says of the rack as it then was: {at_once['said'][:300]!r} against {at_once['kit'][:300]!r}")
         rack = compare(f"after {what}", drawn if what != "the DCIM settings" else drawn - 1)
     other.close()
+    return bad
+
+
+# THE ROUTE WARNINGS, A KIND AT A TIME (portrayal-site#192, cable-panel.js noteGroupEls). A rack of 275 cables has
+# hundreds of them, and every one was laid out above the cable list. Each kind now shows its first three and folds the
+# rest under a line that counts them, built when it is opened. No sentence changes, and none is lost.
+WARNINGS_JS = """() => ({
+  shown: [...document.querySelectorAll('#cableList > [data-route-warning]')].map(p => p.textContent),
+  folds: [...document.querySelectorAll('#cableList > details[data-route-more]')].map(d => ({kind: d.dataset.routeMore, count: +d.dataset.routeCount, open: d.open,
+    line: d.querySelector('summary').textContent, built: d.querySelectorAll('[data-route-warning]').length,
+    inside: [...d.querySelectorAll('[data-route-warning]')].map(p => p.textContent),
+    laidOut: [...d.querySelectorAll('[data-route-warning]')].filter(p => p.getClientRects().length).length})),
+  bends: (window.__rack.bends() ?? []).map(f => f.text),
+  focus: document.activeElement?.id ?? null,
+})"""
+
+
+@extra("rack.html: the route warnings are listed a kind at a time - a kind with more than three shows its first three, in the kit's words and order, and folds the rest under a line that counts them, built only when it is opened; opened, every sentence is there once; it stays open, and keeps the keyboard, through a redraw of the panel, and closes again; a kind of three or fewer is listed whole as before; another document starts closed (#192)")
+def check_rack_route_warnings_fold(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+
+    def settled(n):
+        page.wait_for_function(READING_SETTLED, arg=n, timeout=READY_MS)
+        page.wait_for_timeout(150)
+
+    open_fixture(page, base, speed_fixture(3, 6))
+    settled(0)
+    st = page.evaluate(WARNINGS_JS)
+    bends = st["bends"]
+    if len(bends) <= 6:
+        return bad + [f"the fixture has {len(bends)} tight bends; the check needs more than six to fold"]
+    fold = next((f for f in st["folds"] if f["kind"] == "bends"), None)
+    if not fold:
+        return bad + [f"with {len(bends)} tight bends the list folds none of them: {len(st['shown'])} sentences shown, folds {[f['kind'] for f in st['folds']]}"]
+    rest = len(bends) - 3
+    if fold["count"] != len(bends) or fold["line"] != f"{rest} more tight bends ({len(bends)} in all)":
+        bad.append(f"the fold's line reads {fold['line']!r} for {fold['count']}; expected '{rest} more tight bends ({len(bends)} in all)'")
+    if fold["open"] or fold["built"]:
+        bad.append(f"the fold starts {'open' if fold['open'] else 'closed'} with {fold['built']} sentences built inside it; expected closed and none built until it is opened")
+    if st["shown"][-3:] != bends[:3]:
+        bad.append(f"the three sentences shown are not the kit's first three tight bends, in its order: {st['shown'][-3:]} against {bends[:3]}")
+    if len(st["shown"]) != len([s for s in st["shown"] if s not in bends]) + 3:
+        bad.append(f"more than three tight bends are shown outside the fold: {len(st['shown'])} sentences")
+    # opened with the keyboard: every sentence is there, once, in the kit's order, and laid out
+    page.focus("#routeMore-bends")
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => document.querySelector('details[data-route-more=\"bends\"]').open && document.querySelectorAll('details[data-route-more=\"bends\"] [data-route-warning]').length > 0", timeout=READY_MS)
+    st = page.evaluate(WARNINGS_JS)
+    fold = next(f for f in st["folds"] if f["kind"] == "bends")
+    if st["shown"][-3:] + fold["inside"] != bends:
+        bad.append(f"opened, the sentences are not the kit's tight bends, each once and in order: {len(st['shown'][-3:] + fold['inside'])} against {len(bends)}")
+    if fold["laidOut"] != rest:
+        bad.append(f"opened, {fold['laidOut']} of the {rest} folded sentences are laid out")
+    # a redraw of the panel (a selection, an edit) leaves it open, with the keyboard where it was
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => { window.__rack.redraw(); }")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    fold = next((f for f in st["folds"] if f["kind"] == "bends"), None)
+    if not fold or not fold["open"] or st["shown"][-3:] + fold["inside"] != bends:
+        bad.append("after a redraw of the panel the opened kind is closed, or does not hold every sentence")
+    if st["focus"] != "routeMore-bends":
+        bad.append(f"after a redraw of the panel the keyboard is on {st['focus']!r}; expected the fold's line it was on")
+    # closed again, it stays closed through a redraw
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => !document.querySelector('details[data-route-more=\"bends\"]').open", timeout=READY_MS)
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => { window.__rack.redraw(); }")
+    settled(n)
+    fold = next((f for f in page.evaluate(WARNINGS_JS)["folds"] if f["kind"] == "bends"), None)
+    if not fold or fold["open"] or fold["built"]:
+        bad.append("closed again, the kind is open after a redraw, or built its sentences while closed")
+    # opened, then another document: its kinds start closed
+    page.click("#routeMore-bends")
+    page.wait_for_function("() => document.querySelector('details[data-route-more=\"bends\"]').open", timeout=READY_MS)
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("d => window.__rack.loadDoc(d)", {**speed_fixture(3, 6, name="Speed again"), "id": "doc-speed-again"})
+    settled(n)
+    fold = next((f for f in page.evaluate(WARNINGS_JS)["folds"] if f["kind"] == "bends"), None)
+    if not fold or fold["open"]:
+        bad.append("another document opened with the kind of warning the last one's reader had opened still open")
+    # A KIND OF THREE OR FEWER IS LISTED WHOLE, with no line: the cable-lay rack with one AOC between its leaves
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("r => window.__rack.replaceRack(r)", aoc_between_the_leaves(lay))
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    few = st["bends"]
+    if not 1 <= len(few) <= 3:
+        bad.append(f"the small case has {len(few)} tight bends; it needs one to three to show a kind listed whole")
+    elif st["folds"] or st["shown"][-len(few):] != few:
+        bad.append(f"with {len(few)} tight bends the list folds some ({[f['line'] for f in st['folds']]}) or does not list each: {st['shown']}")
     return bad
 
 

@@ -903,7 +903,7 @@ function cableListPanel() {
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
-  const lap = lapsOf();
+  const lap = lapsOf(), opened = S.notesOpen;
   // (by kind: the list shows the first few of each and folds the rest, cable-panel.js noteGroupEls; which
   // kinds the reader has opened is kept across a redraw of the panel, S.notesOpen)
   const noteGroups = now ? routeNoteGroups(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
@@ -912,7 +912,8 @@ function cableListPanel() {
   lap('spares');
   if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: noteGroups.reduce((n, g) => n + g.notes.length, 0)}; });
   return cableList({rack: r, ends: S.cableFacts.ends, noteGroups, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
-    notesOpen: S.notesOpen, onNotesToggle: (kind, open) => { if (open) S.notesOpen.add(kind); else S.notesOpen.delete(kind); },
+    // (the set this panel was built with: a fold of a panel since replaced, or of another document's, says nothing to this one)
+    notesOpen: opened, onNotesToggle: (kind, open) => { if (open) opened.add(kind); else opened.delete(kind); },
     spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
@@ -1426,7 +1427,7 @@ async function redraw(keepRoutes = false) {
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
   if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
   paintTip();   // a cable under the pointer may have just changed its cord
-  if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cables: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
+  if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cableCount: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
