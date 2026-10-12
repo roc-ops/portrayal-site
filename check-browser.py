@@ -3679,6 +3679,36 @@ def check_rack_ring_rack_budgets(page, base):
     return bad
 
 
+# THE DRAW.IO FILE NAMES A PORT ON THE BACK OF A SEATED MODULE BY ITS ADDRESS, as it has since the page first drew
+# such ports. Kit 0.23.0 would name it by its element id (zones.js exportName); the page keeps the address until a
+# re-vendor that means to change the download (exports.js asAddressed). The cell's own id is the element's, as ever.
+@extra("rack.html: the draw.io file of a rack with a port on the back of a seated module names that port's cell by its address (bay-1/module/b01), not by its element id, and every other port cell as before")
+def check_rack_drawio_projected_port_path(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(REAR_PORT_FIXTURE))
+    wait_fn(page, "drawio rear port: the routes", "() => window.__rack.routesCurrent().current && Object.keys(window.__rack.paths() || {}).length === 2")
+    text = pathlib.Path(export_file(page, "drawio").path()).read_text(encoding="utf-8")
+    cells = {o.get("id"): o.get("portrayal-path") for o in ET.fromstring(text).iter("object") if o.get("portrayal-path")}
+    back = {i: p for i, p in cells.items() if i.endswith("-bay-1-rear--b01")}
+    if list(back.values()) != ["bay-1/module/b01"]:
+        bad.append(f"the cell of the back of the first adapter carries {back!r}, expected one cell with portrayal-path bay-1/module/b01")
+    ids = sorted(p for p in cells.values() if "--" in p)
+    if ids:
+        bad.append(f"{len(ids)} port cells are named by an element id, the first {ids[:3]}")
+    # (a cabled adapter has a second cell, for what is seated in it: `b01-occupant`)
+    backs = [p for i, p in cells.items() if "-rear--" in i and not i.endswith("-occupant")]
+    if len(backs) != 12 or any(not re.fullmatch(r"bay-1/module/b\d\d", p) for p in backs):
+        bad.append(f"the panel's 12 rear adapters should each be a cell named bay-1/module/bNN: {sorted(backs)}")
+    if "bay-1/module/lc01" not in cells.values() or "port-1" not in cells.values():
+        bad.append("the front adapter's cell or the switch's port-1 cell is missing")
+    return bad
+
+
 @extra("draw.io port cells carry portrayal-path, including ports on a seated card")
 def check_drawio_port_paths(page, base):
     bad = []
