@@ -32,7 +32,8 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows,
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {routeFacts, routeNotes, withCableTypes, cableTypes, landedBends} from './route-context.js';
+import {routeNotes, withCableTypes, cableTypes, landedBends} from './route-context.js';
+import {routesOf as readRoutes} from './reading.js';
 import {LANE_GAP, bodyFindings, bendFindingsOf, coverFindingsOf} from '../../vendor/rack/route.js';
 import {spareExports} from '../../vendor/rack/slack.js';
 import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
@@ -102,10 +103,12 @@ async function cabledItems(rack, base) {
 }
 
 // The routes and pathway fill of a rack's cables (route-context.js), read once
-// per export. Null with no cables or when the drawings cannot be read: the
-// export then comes without routes, as it did before them.
+// for the rack object and handed to every export of it, and to the page that
+// drew it (reading.js, portrayal-site#192). Null with no cables or when the
+// drawings cannot be read: the export then comes without routes, as it did
+// before them.
 const routesOf = (rack, chassisOf) => ((rack.cables || []).length
-  ? routeFacts(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
+  ? readRoutes(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
   : Promise.resolve(null));
 // The spare of each cable as the exports take it (kit 0.22.0), or null without routes.
 const spareOf = (rack, rf) => { try { return rf?.ctx ? spareExports(rack, rf.ctx) : null; } catch (err) { console.warn('[portrayal] export: spare', err); return null; } };

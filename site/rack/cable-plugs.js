@@ -79,6 +79,12 @@ const NONE = Object.freeze({seats: Object.freeze({}), ends: new Map()});
 // selection, a zoom) change neither the cables nor what is seated.
 let memo = {key: '', value: null};
 
+// WHETHER AN ANSWER IS ONE THIS MODULE KEEPS (portrayal-site#192): the answer for a rack with no
+// cabled end, or the last one read with every panel and the component index loaded. An answer
+// built on a fetch that failed is given and not kept (below), and what is worked out from one
+// is not kept either (reading.js): the next ask reads again.
+export const factsStand = facts => facts === NONE || (!!facts && facts === memo.value);
+
 // EVERY CABLED END OF THE RACK, read once per redraw:
 //   seats  {itemId: {slotId: plugRef}}   the derived plugs, per item
 //   ends   Map(endKey -> {facts, info, reason})   reason is null when the end lands

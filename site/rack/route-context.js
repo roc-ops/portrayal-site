@@ -206,12 +206,13 @@ export function ductAperture(rects, depth) {
   const g = rects.find(r => r.cls === 'guide' && r.id.startsWith('guide--'));
   return g && g.w > 0 && depth > 0 ? {w: g.w, h: depth, estimated: true} : null;
 }
-async function zeroUApertures(rack, chassisOf) {
+// (`lost.n` counts a drawing that could not be read: the reading is then not one to keep, routeFacts' `whole`)
+async function zeroUApertures(rack, chassisOf, lost = {n: 0}) {
   const out = new Map();
   await Promise.all(zeroUOf(rack).map(async z => {
     const c = chassisOf(z.ref);
     if (!carriesLane(c)) return;
-    const f = await configuredFace({ref: z.ref, cfg: z.cfg, view: 'front', swaps: {}, fields: {}}).catch(() => null);
+    const f = await configuredFace({ref: z.ref, cfg: z.cfg, view: 'front', swaps: {}, fields: {}}).catch(() => { lost.n++; return null; });
     const ap = f ? ductAperture(rectsOf(rootOf(f.text)), c.d) : null;
     if (ap) out.set(z.id, ap);
   }));
@@ -312,24 +313,26 @@ export function bendStops(waypoints, finding) {
 const plugAt = (cp, path) => cp === `${path}-occupant` || cp.startsWith(`${path}-occupant/`);
 // `facts`, when the caller has them (rack-page.js render reads them just
 // before), are cableFacts' answer, and are not read again.
-export async function plugReaches(rack, facts = null) {
+// `lost.n` counts what could not be read (the cables' faces, a panel): the
+// reaches are then the best that could be had, and not ones to keep.
+export async function plugReaches(rack, facts = null, lost = {n: 0}) {
   const out = new Map();
   const ends = (rack.cables || []).flatMap(c => [c.a, c.b]).filter(e => e?.item && e.path);
   if (!ends.length) return out;
   // imported here: relief.js reads the page's address at load, and this module
   // is also loaded where there is no page (the node tests of the agent tools)
   const {cablePoints} = await import('../../vendor/relief.js');
-  if (!facts?.seats || facts.unchecked) {
-    const {cableFacts} = await import('./cable-plugs.js');
-    facts = await cableFacts(rack).catch(() => null);
-  }
+  const {cableFacts, factsStand} = await import('./cable-plugs.js');
+  if (!facts?.seats || facts.unchecked) facts = await cableFacts(rack).catch(() => null);
+  // (facts read with a panel missing are given and not kept: cable-plugs.js)
+  if (!factsStand(facts)) lost.n++;
   const items = new Map(rack.items.map(i => [i.id, i]));
   const roots = new Map();
   const rootOfPanel = (it, view) => {
     const k = `${it.id}|${view}`;
     if (!roots.has(k)) roots.set(k, configuredFace({ref: it.ref, cfg: it.cfg, view,
       swaps: mergeSeats(it.swaps, facts?.seats?.[it.id]), fields: it.fields || {}})
-      .then(f => (f ? rootOf(f.text) : null)).catch(() => null));
+      .then(f => (f ? rootOf(f.text) : null)).catch(() => { lost.n++; return null; }));
     return roots.get(k);
   };
   await Promise.all(ends.map(async e => {
@@ -375,10 +378,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   const took = {};
   let lapAt = now();
   const lap = k => { const t = now(); took[k] = t - lapAt; lapAt = t; };
-  const guides = new Map(), ports = new Map(), failed = {n: 0};
+  const guides = new Map(), ports = new Map(), failed = {n: 0}, lost = {n: 0};
   const typesReady = cableTypes();
   // The ducts beside the rack, read from their drawings with the faces.
-  const ducts = zeroUApertures(rack, chassisOf);
+  const ducts = zeroUApertures(rack, chassisOf, lost);
   await Promise.all(rack.items.map(async it => {
     const c = chassisOf(it.ref) || {};
     const get = faceOf(it, failed);
@@ -409,7 +412,9 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // writing to this one throws. Nothing it closes over (the guides, the
   // ports, the channels, the reaches) is written to after this line.
   lap('faces');
-  const [channels, types, reachOf] = await Promise.all([ducts, typesReady, plugReaches(rack, given)]);
+  const [channels, types, reached] = await Promise.all([ducts, typesReady, plugReaches(rack, given, lost)]);
+  // (each ask is counted, for a probe: `reads.reach`, above)
+  const reachOf = {get: key => { reads.reach++; return reached.get(key); }};
   lap('reach');
   const itemOf = id => rack.items.find(i => i.id === id);
   const port = end => ports.get(`${end.item}|${end.view === 'rear' ? 'rear' : 'front'}|${portPathOf(end.path)}`) ?? null;
@@ -442,7 +447,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     ...(types ? {diameterOf: types.diameterOf, typeOf: types.typeOf, bendOf: types.bendOf} : {}),
     // Each end from the far end of its seated plug (kit 0.13.0), so every
     // length the page shows is the kit's, measured the way the 3D scene draws it.
-    plugReachOf: end => { reads.reach++; return reachOf.get(endKey(end)) ?? null; },
+    plugReachOf: end => reachOf.get(endKey(end)) ?? null,
   });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   lap('resolve');
@@ -525,7 +530,9 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   const filled = fill(rack, ctx), over = capacityOver(rack, ctx);
   lap('fill');
   reads.last = took;
-  return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: filled,
+  // (`whole`: nothing these were read from failed to load, a face, a duct's drawing, a plug's panel or the cables'
+  // faces, so they are the rack's and a later reader may be handed them: reading.js. `complete` is the faces alone.)
+  return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, whole: failed.n === 0 && lost.n === 0, routes, paths, marks, detours, leads, fill: filled,
           over, ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
           endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks};
 }
@@ -599,15 +606,30 @@ const notesMemo = new WeakMap();   // facts -> {rack, nameOf, rings, crossed}
 // the rack the routes are for: the page, whose routes are read again whenever
 // a step changes a label (rack-page.js routesNow). An export names devices
 // its own way and does not pass it.
-export function routeNotes(rack, facts, nameOf = id => id, {bodies = true, bends = [], asRead = false} = {}) {
+export const routeNotes = (rack, facts, nameOf, opts) => routeNoteGroups(rack, facts, nameOf, opts).flatMap(g => g.notes);
+
+// THE SAME SENTENCES, BY KIND, in the order routeNotes gives them
+// (portrayal-site#192): [{kind, notes}] for `pathways` (fill, capacity, a
+// waypoint that is gone), `rings`, `bodies` and `bends`, a kind with none left
+// out. The cable list shows the first few of each kind and folds the rest
+// (cable-panel.js), so a rack with hundreds of tight bends does not lay
+// hundreds of sentences out at once; routeNotes is this list flattened, so
+// neither can say a sentence the other does not.
+export function routeNoteGroups(rack, facts, nameOf = id => id, {bodies = true, bends = [], asRead = false} = {}) {
   if (!facts) return [];
-  if (asRead && Array.isArray(facts.ringFindings) && Array.isArray(facts.bodyFindings))
-    return [...fillNotes(rack, facts, nameOf), ...facts.ringFindings.map(f => f.text), ...(bodies ? facts.bodyFindings : []).map(f => f.text),
-            ...(bends || []).map(f => f.text)];
-  let m = notesMemo.get(facts);
-  if (!m || m.rack !== rack || m.nameOf !== nameOf) notesMemo.set(facts, m = {rack, nameOf, rings: null, crossed: null});
-  m.rings ??= facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
-  if (bodies) m.crossed ??= facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
-  return [...fillNotes(rack, facts, nameOf), ...m.rings.map(f => f.text), ...(bodies ? m.crossed : []).map(f => f.text),
-          ...(bends || []).map(f => f.text)];
+  let rings, crossed = [];
+  if (asRead && Array.isArray(facts.ringFindings) && Array.isArray(facts.bodyFindings)) {
+    rings = facts.ringFindings;
+    if (bodies) crossed = facts.bodyFindings;
+  } else {
+    let m = notesMemo.get(facts);
+    if (!m || m.rack !== rack || m.nameOf !== nameOf) notesMemo.set(facts, m = {rack, nameOf, rings: null, crossed: null});
+    m.rings ??= facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
+    if (bodies) m.crossed ??= facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
+    rings = m.rings;
+    if (bodies) crossed = m.crossed;
+  }
+  return [{kind: 'pathways', notes: fillNotes(rack, facts, nameOf)}, {kind: 'rings', notes: rings.map(f => f.text)},
+          {kind: 'bodies', notes: crossed.map(f => f.text)}, {kind: 'bends', notes: (bends || []).map(f => f.text)}]
+    .filter(g => g.notes.length);
 }

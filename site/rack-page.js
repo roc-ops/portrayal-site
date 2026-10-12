@@ -28,7 +28,7 @@ import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
-import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
+import {cableFacts, factsStand, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
@@ -38,8 +38,9 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
+import {routeNoteGroups, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
+import {routesOf, sameReading, once} from './rack/reading.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
@@ -108,6 +109,8 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   // (`state`, remembered in this browser), the row with the Tab stop (`stop`) and the cable whose pin last
   // opened its row (`pinned`). The viewer's, never the document's.
   tree: {doc: null, state: {}, stop: null, pinned: null, show: null},
+  // Which kinds of route warning the reader has opened in the cable list (cable-panel.js noteGroupEls): the viewer's.
+  notesOpen: new Set(),
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 // How tall a device is, in U: a device is named with its position (model.js
@@ -548,7 +551,8 @@ function onChange(ev) {
   if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
   else scheduleRebuild3d();
   // What is not a step changes nothing a route reads: the routes stay this rack's.
-  if (!ev.step) keepRoutes(ev.before, ev.after);
+  // (and so does the one reading of the rack that every reader shares: reading.js)
+  if (!ev.step) { keepRoutes(ev.before, ev.after); sameReading(ev.before, ev.after); }
   // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
@@ -577,6 +581,7 @@ function setDoc(doc, notes = docNotes(doc)) {
   const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
+  S.notesOpen = new Set();   // nor the kinds of warning its reader opened
   S.bendsSaid = '';          // nor its tight bends: this document's are said once of their own
   // (what the kit keeps and does not act on stands in the panel while it is true: sayKept. Not said twice.)
   const stands = new Set(frameNotices(rack(), chassisOf));
@@ -898,12 +903,15 @@ function cableListPanel() {
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
   const lap = lapsOf();
-  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
+  // (by kind: the list shows the first few of each and folds the rest, cable-panel.js noteGroupEls; which
+  // kinds the reader has opened is kept across a redraw of the panel, S.notesOpen)
+  const noteGroups = now ? routeNoteGroups(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
   lap('notes');
   const spares = sparesNow();
   lap('spares');
-  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: notes.length}; });
-  return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: noteGroups.reduce((n, g) => n + g.notes.length, 0)}; });
+  return cableList({rack: r, ends: S.cableFacts.ends, noteGroups, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    notesOpen: S.notesOpen, onNotesToggle: (kind, open) => { if (open) S.notesOpen.add(kind); else S.notesOpen.delete(kind); },
     spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
@@ -1277,7 +1285,13 @@ async function redraw(keepRoutes = false) {
     else if (r.cables.length) {
       const at = theDoc();
       if (S.probeHold) { const held = probeHeld('routes'); if (held) await held; }
-      const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // READ ONCE FOR THIS RACK OBJECT (reading.js, portrayal-site#192): a redraw that changes nothing a route
+      // reads (a selection, a row opened, a notice) is handed the routes the last one read, and so is every
+      // export and every call an assistant makes. A step is a new rack object, and is read afresh.
+      const read = await routesOf(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // (the page's own copy: `rack` is the rack this redraw draws, which a reading shared with the rack before a
+      // change that is not a step does not name, and `bendsShown` is this redraw's, by the ends as it read them)
+      const rf = read && {...read, rack: r, bendsShown: landedBends(read.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null)};
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
       // THE RACK MOVED WHILE ITS FACES AND ROUTES WERE READ, and nothing has
@@ -1289,9 +1303,8 @@ async function redraw(keepRoutes = false) {
       // redraw was going to read. `r` is the rack this redraw began with.
       else if (rack() !== r || theDoc() !== at) { renderSoon(); return; }
       else {
-        // (before the scene's signature is compared: it counts the bends
-        // shown, and the scene's own was taken with them set)
-        rf.bendsShown = landedBends(rf.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null);
+        // (the bends shown are set before the scene's signature is compared:
+        // it counts them, and the scene's own was taken with them set)
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
         // THE BEND NOTICE (kit 0.17.0, Portrayal #973): each corner of a
@@ -2175,16 +2188,32 @@ async function bootInner() {
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+// WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (reading.js `once`, portrayal-site#192): a window of describe
+// with the routes, and the inspect of a cable or a bundle. The kit lays every cable of the rack for describe's
+// two lines of totals, and again for each smaller window describe_rack tries; asked again of the same rack
+// object, with the same route context and cable types, it has the same answer. A device's inspect lays nothing
+// and is asked each time. An inspect read while the cables' faces could not all be loaded is not kept.
+const routeDeps = ctx => [ctx.route ?? null, ctx.diameterOf ?? null, ctx.bendOf ?? null, ctx.chassisOf ?? null, ctx.cableFacts ?? null];
+function inspectOnce(r, id, ctx = {}) {
+  const lays = ctx.route && ((r.cables ?? []).some(c => c.id === id) || (r.bundles ?? []).some(b => b.id === id));
+  if (!lays) return Q.inspect(r, id, ctx);
+  let stood = true;
+  const facts = ctx.cableFacts && (async (...args) => { const f = await ctx.cableFacts(...args); if (!factsStand(f)) stood = false; return f; });
+  return once(r, `inspect ${id}`, routeDeps(ctx), () => Q.inspect(r, id, facts ? {...ctx, cableFacts: facts} : ctx), () => stood);
+}
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
-  describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
+  describe: (r, win, ctx = {}) => (ctx.route
+    ? once(r, `describe ${JSON.stringify([win?.section ?? null, win?.offset ?? null, win?.limit ?? null])}`, [...routeDeps(ctx), chassisOf],
+           () => Q.describe(r, {...ctx, chassisOf}, win))
+    : Q.describe(r, {...ctx, chassisOf}, win)),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
-  inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
+  inspect: (r, id, ctx) => inspectOnce(r, id, ctx),
 });
 
 // THE KIT'S PER-CALL CONTEXT for an agent's call (agent-context.js): the
@@ -2194,7 +2223,8 @@ const boundQueries = () => ({
 const agentContext = agentContextFor({
   // chassisOf is read through, not captured: the catalog replaces it once loaded.
   loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts,
-  routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
+  // (the one reading of the rack, which the redraw has usually made already: reading.js)
+  routeFacts: r => routesOf(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
 if (PROBE) {

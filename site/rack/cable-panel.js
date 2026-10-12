@@ -137,12 +137,40 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // open. Each row says where it is among its siblings that show (aria-setsize,
 // aria-posinset). A row's own button, its id and
 // its data-* are as they were.
+// WHAT THE ROUTES WARN OF, A KIND AT A TIME (portrayal-site#192). `noteGroups`
+// is route-context.js routeNoteGroups' [{kind, notes}]: the sentences are the
+// kit's, each as it always was, in the order they always came. A rack of 275
+// cables has hundreds of them (579 tight bends, by one layout), and all of
+// them laid out above the list pushed the list off the panel and cost every
+// redraw of it. So each kind shows its first NOTES_SHOWN, and the rest are
+// folded under a line that counts them ("576 more tight bends (579 in all)"),
+// built when it is opened and not before. A kind with NOTES_SHOWN or fewer is
+// listed whole, with no line: a small rack's panel is as it was. Which kinds
+// are open is the reader's (`notesOpen`, a Set of kinds; `onNotesToggle(kind,
+// open)`), so a redraw of the panel leaves an opened kind open.
+export const NOTES_SHOWN = 3;
+const NOTE_WORDS = {pathways: ['pathway warning', 'pathway warnings'], rings: ['ring warning', 'ring warnings'],
+                    bodies: ['cable through a body', 'cables through a body'], bends: ['tight bend', 'tight bends']};
+const noteP = text => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text});
+export function noteGroupEls(groups, {open = new Set(), onToggle = () => {}} = {}) {
+  return groups.flatMap(({kind, notes}) => {
+    if (notes.length <= NOTES_SHOWN) return notes.map(noteP);
+    const rest = notes.slice(NOTES_SHOWN), [one, many] = NOTE_WORDS[kind] ?? ['warning', 'warnings'];
+    const more = el('details', {class: 'rk-notes-more', 'data-route-more': kind, 'data-route-count': String(notes.length)}, [
+      el('summary', {id: `routeMore-${kind}`, text: `${rest.length} more ${rest.length === 1 ? one : many} (${notes.length} in all)`})]);
+    const fill = () => { if (more.childElementCount === 1) more.append(...rest.map(noteP)); };
+    if (open.has(kind)) { more.open = true; fill(); }
+    more.addEventListener('toggle', () => { if (more.open) fill(); onToggle(kind, more.open); });
+    return [...notes.slice(0, NOTES_SHOWN).map(noteP), more];
+  });
+}
+
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
 export const cableMeta = (c, spare = null) =>
   [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, spare ? spareText(spare) : lengthText(c.length)].filter(Boolean).join(' · ');
 export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete,
                            spares = new Map(), bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null,
-                           tree = null}) {
+                           tree = null, noteGroups = null, notesOpen = new Set(), onNotesToggle = () => {}}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -238,7 +266,8 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
     ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP})] : []),
-    ...notes.map(n => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text: n})),
+    // (by kind, the first few of each, when the page gives them so: noteGroupEls; else every sentence, as before)
+    ...(noteGroups ? noteGroupEls(noteGroups, {open: notesOpen, onToggle: onNotesToggle}) : notes.map(noteP)),
     list,
   ]);
 }
