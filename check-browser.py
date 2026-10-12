@@ -8497,6 +8497,204 @@ def check_rack_side_fresh_after_edit(page, base):
     return bad
 
 
+# ONE READING OF A RACK, AND NEVER A STALE ONE (portrayal-site#192, site/rack/reading.js). The routes are read once for
+# a rack object and handed to the panes, the list, the exports and every assistant tool, and what a tool reads of the
+# kit is answered once for the rack object. What that risks is staleness: something shown, said or downloaded that was
+# true of the rack before an edit. So each kind of edit is made on a page that has already answered everything for the
+# rack before it, and what the page then shows, says and downloads is compared with THE SAME DOCUMENT OPENED IN A
+# BROWSER THAT HAS NEVER SEEN IT (another context, a fresh page): nothing there can be left over from anything.
+#
+# The page's state, as plain data: both panes' drawings whole, the list's rows, every route warning (a folded kind is
+# opened first), what the page read of the routes, and the rack.
+READING_STATE_JS = """async () => {
+  const R = window.__rack, plain = v => JSON.parse(JSON.stringify(v ?? null));
+  for (const d of document.querySelectorAll('#side details[data-route-more]:not([open])')) d.querySelector('summary').click();
+  await new Promise(r => setTimeout(r, 30));
+  // (less the zoom, which is the window's, and the outline an assistant's edit wears for three seconds)
+  const pane = id => { const svg = document.querySelector(`#${id} > svg`); if (!svg) return null;
+    const c = svg.cloneNode(true); c.removeAttribute('style');
+    for (const n of c.querySelectorAll('.rk-agent-touched')) { n.classList.remove('rk-agent-touched'); if (!n.getAttribute('class')) n.removeAttribute('class'); }
+    return c.outerHTML; };
+  return {"the front pane's drawing": pane('paneFront'), "the rear pane's drawing": pane('paneRear'),
+    "the cable list's rows": [...document.querySelectorAll('#side [data-cable-item]')].map(li => li.textContent),
+    'the route warnings': [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
+    'the routes': plain(R.routes()), 'the paths': plain(R.paths()), 'the fill': plain(R.fill()), 'the ring marks and findings': plain(R.rings()),
+    'the bodies crossed': plain(R.bodies()), 'the tight bends': plain(R.bends()), 'the bundles': plain(R.bundles()),
+    'the tie straps': plain(R.tieStraps()), "the cabled ends' facts": plain(R.cableFacts()), 'the rack': plain(R.doc().racks[0])};
+}"""
+# A redraw has finished since `n` were, none is running or queued, and the routes the page holds are this rack's.
+READING_SETTLED = """n => window.__rack.drawn() > n && window.__rack.idle()
+  && (!window.__rack.doc().racks[0].cables.length || window.__rack.routesCurrent().current)"""
+# describe_rack asked the moment an edit lands, before its redraw has read anything, against the kit asked afresh of
+# that very rack object with a context nobody else holds: [what the tool said, the kit's lines it should end with].
+# (A small window, so the tool's own cut to fit plays no part: its text is the kit's first line, its own lines of the
+# session, then the rest of the kit's.)
+READING_AT_ONCE_JS = """async () => {
+  const rack = window.__rack.doc().racks[0];
+  const said = window.__tools.describe_rack.execute({limit: 4});
+  const Q = await import('/vendor/rack/queries.js'), RC = await import('/site/rack/route-context.js'), C = await import('/vendor/rack/catalog.js');
+  const {chassisOf} = await C.loadCatalog('assets/dist/'), types = await RC.cableTypes();
+  const rf = rack.cables.length ? await RC.routeFacts(rack, chassisOf) : null;
+  const kit = Q.describe(rack, {chassisOf, ...(rf ? {route: rf.ctx} : {}), ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})}, {offset: 0, limit: 4});
+  return {said: (await said).content[0].text, kit};
+}"""
+READING_TOOL_JS = """async ([n, a]) => { const before = window.__rack.reads(), res = await window.__tools[n].execute(a), after = window.__rack.reads();
+  return {text: (res?.content ?? []).map(c => c.text).join('\\n'), isError: !!res?.isError,
+          reads: after.routeFacts - before.routeFacts, lays: after.lays - before.lays}; }"""
+
+
+def reading_tools(rack):
+    """The tool calls whose answers are compared: everything an assistant can read of this rack."""
+    cables = [c["id"] for c in rack.get("cables") or []]
+    # (windows small enough to fit whole: the default one is cut to the room the undo line leaves, and a rack opened afresh has none)
+    calls = [("describe_rack", {"limit": 4}), ("describe_rack", {"section": "items"}), ("describe_rack", {"section": "bundles"})]
+    calls += [("describe_rack", {"section": "cables", "offset": k, "limit": 8}) for k in range(0, len(cables), 8)]
+    calls += [("inspect", {"id": c}) for c in dict.fromkeys(cables[:2] + cables[-2:])]
+    calls += [("inspect", {"id": b["id"]}) for b in rack.get("bundles") or []]
+    calls += [("inspect", {"id": "i1"}), ("list_free_ports", {"id": "i1"}), ("check_fit", {"ref": "as7326-56x", "face": "front"})]
+    if len(cables) >= 2:
+        calls.append(("edit_rack", {"dry_run": True, "commands": [{"op": "bundle.create", "cables": cables[-2:]}]}))
+    return calls
+
+
+# The undo line is the one thing a tool says that is the session's, not the rack's: a rack opened afresh has nothing to undo.
+def reading_text(name, text):
+    lines = text.split("\n")
+    return "\n".join(l for k, l in enumerate(lines) if not (name == "describe_rack" and k == 1 and (l.startswith("Undo would take back") or l == "Nothing to undo.")))
+
+
+@extra("rack.html: one reading of a rack, never a stale one - after each kind of edit (a cable's end, media and label, a cable removed and added, a device moved, renamed and an optic taken out by an assistant, the frame, a route by hand and reset, a bundle, undo, redo, the DCIM settings, the rack's name, another document with the same ids) every tool's text, both drawings, the list, the warnings, the routes and a download are those of the same document opened in a browser that has never seen it; a tool call on a rack that has not changed reads no route again, and asked twice lays no cable (#192)")
+def check_rack_reading_fresh_after_edit(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(CABLE_LAY_FIXTURE.read_text())
+    fixture.pop("_note", None)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.click('#view2d [data-view="faces"]')
+    # the browser that has never seen the rack: its own context, so not even this one's library
+    other = page.context.browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
+    fresh = other.new_page()
+    fresh.on("pageerror", lambda e: bad.append(f"uncaught, in the fresh browser: {e}"))
+    fresh.add_init_script(STAND_IN_MODEL_CONTEXT)
+
+    def settle(pg, drawn, where):
+        try:
+            pg.wait_for_function(READING_SETTLED, arg=drawn, timeout=READY_MS)
+        except Exception:
+            bad.append(f"{where}: the page did not settle on the routes of the rack as it is")
+        pg.wait_for_timeout(150)
+
+    def answers(pg, rack):
+        out = []
+        for name, a in reading_tools(rack):
+            r = pg.evaluate(READING_TOOL_JS, [name, a])
+            out.append((name, a, r))
+        return out
+
+    def schedule(pg):
+        dl = export_file(pg, "cables")
+        return pathlib.Path(dl.path()).read_text()
+
+    def compare(where, drawn_before):
+        settle(page, drawn_before, where)
+        rack = page.evaluate("() => window.__rack.doc().racks[0]")
+        got_state, got_tools, got_csv = page.evaluate(READING_STATE_JS), answers(page, rack), schedule(page)
+        # ...and a redraw that changes nothing reads nothing again and draws the same
+        n, reads = page.evaluate("() => [window.__rack.drawn(), window.__rack.reads()]")
+        page.evaluate("() => { window.__rack.redraw(); }")
+        settle(page, n, f"{where} (drawn again)")
+        again_state, reads_after = page.evaluate(READING_STATE_JS), page.evaluate("() => window.__rack.reads()")
+        if rack["cables"] and (reads_after["routeFacts"] != reads["routeFacts"] or reads_after["lays"] != reads["lays"]):
+            bad.append(f"{where}: a redraw of a rack that had not changed read the routes {reads_after['routeFacts'] - reads['routeFacts']} times and laid {reads_after['lays'] - reads['lays']:g} cables; expected neither")
+        for key in got_state:
+            if again_state[key] != got_state[key]:
+                bad.append(f"{where}: {key} changed when the page was drawn again with no edit")
+        # each tool again: no route is read, and no cable is laid for an answer already given
+        # (a dry run is not a reading: the kit runs the command, which lays what the command needs laid)
+        for name, a, first in got_tools:
+            r = page.evaluate(READING_TOOL_JS, [name, a])
+            if r["text"] != first["text"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} answered differently the second time")
+            if r["reads"] or (r["lays"] and name != "edit_rack"):
+                bad.append(f"{where}: {name} {json.dumps(a)}, asked a second time of a rack that had not changed, read the routes {r['reads']} times and laid {r['lays']:g} cables; expected neither")
+        for name, a, first in got_tools:
+            if first["reads"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} read the routes again ({first['reads']} times) on a rack the page had already read")
+        # THE SAME DOCUMENT, in the browser that has never seen it
+        doc = page.evaluate("() => window.__rack.doc()")
+        open_fixture(fresh, base, doc)
+        settle(fresh, 0, f"{where} (opened afresh)")
+        want_state, want_tools, want_csv = fresh.evaluate(READING_STATE_JS), answers(fresh, rack), schedule(fresh)
+        if len(want_state["the paths"] or {}) != len(rack["cables"]) and rack["cables"]:
+            bad.append(f"{where}: the fresh browser to compare with read {len(want_state['the paths'] or {})} paths for {len(rack['cables'])} cables")
+        for key in got_state:
+            if got_state[key] != want_state[key]:
+                a, b = json.dumps(got_state[key]), json.dumps(want_state[key])
+                k = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), min(len(a), len(b)))
+                bad.append(f"{where}: {key} is not that of the same document opened afresh: ...{a[max(0, k - 60):k + 90]} against ...{b[max(0, k - 60):k + 90]}")
+        for (name, a, g), (_, _, w) in zip(got_tools, want_tools):
+            if reading_text(name, g["text"]) != reading_text(name, w["text"]) or g["isError"] != w["isError"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} does not say what it says of the same document opened afresh: {g['text'][:160]!r} against {w['text'][:160]!r}")
+        if got_csv != want_csv:
+            bad.append(f"{where}: the cable schedule is not the one downloaded from the same document opened afresh")
+        return rack
+
+    drawn = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("r => window.__rack.replaceRack(r)", fixture)
+    rack = compare("the rack as loaded", drawn)
+    if len(rack["cables"]) != 16:
+        return bad + [f"the fixture has {len(rack['cables'])} cables; expected the cable-lay rack's 16"]
+    apply = lambda cmd: f"() => window.__rack.apply({json.dumps(cmd)})"
+    agent = lambda cmds: f"() => window.__tools.edit_rack.execute({json.dumps({'commands': cmds})}).then(r => (r.isError ? {{error: r.content[0].text}} : {{}}))"
+    edits = [
+        ("a cable's end moved", apply({"op": "cable.update", "id": "c16", "b": {"item": "i2", "path": "bay-1/module/lc1", "view": "front"}})),
+        ("a cable's media changed", apply({"op": "cable.update", "id": "c2", "media": "cat6a"})),
+        ("a cable's label changed", apply({"op": "cable.update", "id": "c3", "label": "uplink three"})),
+        ("a cable removed", apply({"op": "cable.remove", "id": "c15"})),
+        ("a cable added", apply({"op": "cable.add", "a": {"item": "i3", "path": "port-55", "view": "front"}, "b": {"item": "i2", "path": "bay-1/module/lc2", "view": "front"}, "media": "om4"})),
+        ("a device moved", apply({"op": "move", "id": "i3", "ru": 37})),
+        ("a device renamed", apply({"op": "patch", "id": "i1", "label": "LEAF-A2"})),
+        ("an optic taken out by an assistant", agent([{"op": "fit", "id": "i1", "path": "port-56", "ref": None}])),
+        ("the frame grown", apply({"op": "frame", "heightRU": 44})),
+        ("a route edited by hand", """() => { const ways = new Map(window.__rack.routes()).get('c4') ?? [];
+            return window.__rack.apply({op: 'cable.route', id: 'c4', route: [...ways, {lane: 'left-front', ru: 30}], summary: 'Waypoint added.'}); }"""),
+        ("the route reset", apply({"op": "cable.route.reset", "id": "c4", "summary": "Route reset to automatic."})),
+        ("a bundle made", "() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c5', 'c6', 'c7'], label: 'trunk'})"),
+        ("undo", "() => { window.__rack.undo(); return {}; }"),
+        ("redo", "() => { window.__rack.redo(); return {}; }"),
+        # not a step: the rack is a new object that shares the reading of the one before (reading.js sameReading)
+        ("the DCIM settings", apply({"op": "dcim", "site": "DC-1", "role": "leaf"})),
+        ("the rack renamed", apply({"op": "rename", "name": "Cable lay, renamed"})),
+        # another document, its ids the same as the last one's: nothing of the last is its
+        ("another document with the same ids", """() => { const d = structuredClone(window.__rack.doc());
+            d.id = 'doc-reading-other'; d.racks[0].name = 'Another';
+            d.racks[0].cables = d.racks[0].cables.filter(c => !['c1', 'c9'].includes(c.id)).map(c => (c.id === 'c10' ? {...c, media: 'os2'} : c));
+            d.racks[0].bundles = [];
+            window.__rack.loadDoc(d); return {}; }"""),
+    ]
+    for what, js in edits:
+        # before the edit the page has answered everything for the rack as it was (compare did): each answer is there to go stale
+        drawn = page.evaluate("() => window.__rack.drawn()")
+        r = page.evaluate(js)
+        if r and r.get("error"):
+            bad.append(f"{what}: refused: {r['error']}")
+            continue
+        # ASKED AT ONCE, before the edit's redraw has read a route: the answer is this rack's, as the kit gives it afresh.
+        # (Not compared with the answer once the redraw is done: the redraw writes the routed lengths, and a new cable's spare with them.)
+        at_once = page.evaluate(READING_AT_ONCE_JS)
+        first, rest = at_once["kit"].split("\n", 1) if "\n" in at_once["kit"] else (at_once["kit"], "")
+        if not (at_once["said"].startswith(first + "\n") and at_once["said"].endswith("\n" + rest)):
+            bad.append(f"after {what}: describe_rack asked the moment the edit landed does not say what the kit says of the rack as it then was: {at_once['said'][:300]!r} against {at_once['kit'][:300]!r}")
+        rack = compare(f"after {what}", drawn if what != "the DCIM settings" else drawn - 1)
+    other.close()
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that

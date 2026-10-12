@@ -33,7 +33,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeNotes, withCableTypes, cableTypes, landedBends} from './route-context.js';
-import {routesOf as readRoutes} from './reading.js';
+import {routesOf as readRoutes, once} from './reading.js';
 import {LANE_GAP, bodyFindings, bendFindingsOf, coverFindingsOf} from '../../vendor/rack/route.js';
 import {spareExports} from '../../vendor/rack/slack.js';
 import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
@@ -110,10 +110,21 @@ async function cabledItems(rack, base) {
 const routesOf = (rack, chassisOf) => ((rack.cables || []).length
   ? readRoutes(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
   : Promise.resolve(null));
+// WHAT AN EXPORT READS OF THE KIT WITH THE ROUTES IS READ ONCE FOR A RACK OBJECT AND ITS ROUTES (reading.js `once`,
+// portrayal-site#192): each of these lays every cable of the rack again, and the schedule, the BOM, the sheet and the
+// draw.io file each asked, every time one was downloaded. A rack is never changed in place and its routes' context is
+// made once, so the same two objects give the same answer. What throws is not kept, and is answered as it was.
+const kitOnce = (rack, rf, what, deps, make) => once(rack, `export ${what}`, deps, make);
 // The spare of each cable as the exports take it (kit 0.22.0), or null without routes.
-const spareOf = (rack, rf) => { try { return rf?.ctx ? spareExports(rack, rf.ctx) : null; } catch (err) { console.warn('[portrayal] export: spare', err); return null; } };
+const spareOf = (rack, rf) => { try { return rf?.ctx ? kitOnce(rack, rf, 'spare', [rf.ctx], () => spareExports(rack, rf.ctx)) : null; } catch (err) { console.warn('[portrayal] export: spare', err); return null; } };
 const hasWaypoints = rf => !!rf && [...rf.routes.values()].some(x => x.waypoints?.length);
-const labelOf = rack => id => (rack.items || []).find(i => i.id === id)?.label ?? zeroUOf(rack).find(z => z.id === id)?.label ?? id;
+// (one namer for a rack object: routeNotes keeps its ring and body sentences for a rack, its routes and the namer it was given)
+const namers = new WeakMap();
+const labelOf = rack => {
+  let name = namers.get(rack);
+  if (!name) namers.set(rack, name = id => (rack.items || []).find(i => i.id === id)?.label ?? zeroUOf(rack).find(z => z.id === id)?.label ?? id);
+  return name;
+};
 
 const boxOf = svg => svg.getAttribute('viewBox').split(/\s+/).map(Number);
 const MONO = 'IBM Plex Mono, ui-monospace, monospace';
@@ -828,13 +839,13 @@ export async function cableScheduleCsv(rack, chassisOf) {
   const name = labelOf(rack), landed = fs => (facts.unchecked ? [] : landedBends(fs, rack, looseIn(facts.ends)));
   const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes,
                                                    {bundles: rf?.bundleRecords ?? null,
-                                                    bodies: rf?.ctx ? bodyFindings(rack, rf.ctx, name) : null,
+                                                    bodies: rf?.ctx ? kitOnce(rack, rf, 'bodies', [rf.ctx, name], () => bodyFindings(rack, rf.ctx, name)) : null,
                                                     // (each from the path already read for its cable: what the kit's rack-wide
                                                     // bendFindings and coverFindings call per cable, without laying it again)
                                                     bends: rf?.ctx ? landed((rack.cables || []).flatMap(c => bendFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
                                                     covers: rf?.ctx ? landed((rack.cables || []).flatMap(c => coverFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
                                                     spare: spareOf(rack, rf),
-                                                    straps: rf?.bctx ? strapTexts(rack, rf.bctx, name) : null});
+                                                    straps: rf?.bctx ? kitOnce(rack, rf, 'straps', [rf.bctx, name], () => strapTexts(rack, rf.bctx, name)) : null});
   notes.push(...routeNotes(rack, rf, labelOf(rack), {bodies: false}));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};

@@ -52,15 +52,20 @@ const r2 = x => Math.round(x * 100) / 100;
 // once for a reading of a rack and never changed (route-context.js), and a
 // rack and a cable are never changed in place, so the kit's answer for the
 // same three objects is the same. null where the kit has none, or throws.
-const kitSpares = new WeakMap();   // route context -> WeakMap(cable object -> {rack, k})
+// (kept for each of the three: the page asks of the rack the routes were read
+// from and an assistant's inspect of the rack as it is, and a cable neither
+// changed is one object in both)
+const kitSpares = new WeakMap();   // route context -> WeakMap(cable object -> WeakMap(rack object -> {k}))
 function kitSpare(rack, cable, routeCtx) {
   let per = kitSpares.get(routeCtx);
   if (!per) kitSpares.set(routeCtx, per = new WeakMap());
-  const had = per.get(cable);
-  if (had && had.rack === rack) return had.k;
+  let byRack = per.get(cable);
+  if (!byRack) per.set(cable, byRack = new WeakMap());
+  const had = byRack.get(rack);
+  if (had) return had.k;
   let k = null;
   try { k = kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
-  per.set(cable, {rack, k});
+  byRack.set(rack, {k});
   return k;
 }
 

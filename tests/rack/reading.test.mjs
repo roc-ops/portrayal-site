@@ -121,3 +121,93 @@ test('the kinds the list folds its warnings by are routeNotes, in order, a kind 
   assert.deepEqual(routeNoteGroups(rack, {...facts, fill: []}, name, {bodies: false}).map(g => g.kind), ['rings']);
   assert.deepEqual(routeNoteGroups(rack, null), []);
 });
+
+// ── what an assistant reads of the routes (site/rack/agent-read.js) ────────
+import {describeOnce, inspectOnce} from '../../site/rack/agent-read.js';
+
+// A describe shaped as the kit's is: a first line, the frame, the routes' lines, then the window's own.
+function fakeDescribe({routeInWindow = false} = {}) {
+  const calls = [];
+  const describe = (rack, ctx, {section = null, offset = 0, limit = 20} = {}) => {
+    calls.push({route: !!ctx.route, limit});
+    const cables = rack.cables.slice(offset, offset + limit);
+    return [`${rack.name}: ${rack.cables.length} cables. Cables ${offset + 1}-${offset + cables.length} shown.`, '42U four-post.',
+      ...(ctx.route ? ['Findings: 2 cables cross a body.', 'Spare: 1.2 m; 0 cords not placed.'] : []),
+      'Cables:', ...cables.map(c => `${c.id}${routeInWindow && ctx.route ? ', 2 m routed' : ''}`)].join('\n');
+  };
+  return {describe, calls};
+}
+const rackOf = n => ({name: 'R', cables: Array.from({length: n}, (_, k) => ({id: `c${k + 1}`})), bundles: []});
+
+test('describe with the routes is asked of the kit once for a window; a smaller window is put together from the answer without them', () => {
+  const {describe, calls} = fakeDescribe(), r = rackOf(30), ctx = {route: {}, chassisOf: () => null};
+  const big = describeOnce(describe, r, {offset: 0, limit: 20}, ctx);
+  assert.equal(big, describe(r, ctx, {offset: 0, limit: 20}));
+  const withRoutes = () => calls.filter(c => c.route).length;
+  const before = withRoutes();
+  for (const limit of [12, 7, 1]) {
+    const small = describeOnce(describe, r, {offset: 0, limit}, ctx);
+    assert.equal(withRoutes(), before, `the window of ${limit} was not asked of the kit with the routes`);
+    assert.equal(small, describe(r, ctx, {offset: 0, limit}), `and is the kit's own answer for ${limit}`);
+    calls.pop();   // the comparison's own call
+  }
+  // asked again: nothing at all is asked
+  const n = calls.length;
+  assert.equal(describeOnce(describe, r, {offset: 0, limit: 20}, ctx), big);
+  assert.equal(describeOnce(describe, r, {offset: 0, limit: 7}, ctx), describe(r, ctx, {offset: 0, limit: 7}));
+  assert.equal(calls.length, n + 1, 'only the comparison asked');
+});
+
+test('a larger window, another offset, another rack object and another route context are each asked of the kit whole', () => {
+  const {describe, calls} = fakeDescribe(), r = rackOf(60), ctx = {route: {}};
+  const routed = () => calls.filter(c => c.route).length;
+  describeOnce(describe, r, {offset: 0, limit: 10}, ctx);
+  assert.equal(routed(), 1);
+  describeOnce(describe, r, {offset: 0, limit: 30}, ctx);
+  assert.equal(routed(), 2, 'a larger window lists entries the first never saw');
+  describeOnce(describe, r, {offset: 0, limit: 25}, ctx);
+  assert.equal(routed(), 2, 'and what it learnt serves the windows under it');
+  describeOnce(describe, r, {offset: 30, limit: 10}, ctx);
+  assert.equal(routed(), 3, 'another offset');
+  describeOnce(describe, {...r}, {offset: 0, limit: 10}, ctx);
+  assert.equal(routed(), 4, 'another rack object: an edit');
+  describeOnce(describe, r, {offset: 0, limit: 10}, {route: {}});
+  assert.equal(routed(), 5, 'another route context');
+  // without the routes nothing is kept: the kit lays nothing for it
+  const n = calls.length;
+  describeOnce(describe, r, {offset: 0, limit: 10}, {});
+  describeOnce(describe, r, {offset: 0, limit: 10}, {});
+  assert.equal(calls.length, n + 2);
+});
+
+test('where a window\'s own lines read the routes, nothing is put together: every window is asked of the kit whole', () => {
+  const {describe, calls} = fakeDescribe({routeInWindow: true}), r = rackOf(30), ctx = {route: {}};
+  describeOnce(describe, r, {offset: 0, limit: 20}, ctx);
+  const before = calls.filter(c => c.route).length;
+  const small = describeOnce(describe, r, {offset: 0, limit: 5}, ctx);
+  assert.equal(calls.filter(c => c.route).length, before + 1, 'the smaller window was asked with the routes');
+  assert.equal(small, describe(r, ctx, {offset: 0, limit: 5}));
+  // a refusal is the kit's, and is not put together either
+  const refuses = (rack, c, win) => (win.section === 'nope' ? {error: 'There is no section nope.'} : describe(rack, c, win));
+  assert.deepEqual(describeOnce(refuses, r, {section: 'nope', offset: 0, limit: 5}, ctx), {error: 'There is no section nope.'});
+});
+
+test('inspect of a cable or a bundle with the routes is asked once; a device, and anything without the routes, each time', async () => {
+  let asked = 0;
+  const inspect = async (rack, id, ctx) => { asked++; if (ctx.cableFacts) await ctx.cableFacts(rack); return {id, n: asked}; };
+  const r = {...rackOf(3), bundles: [{id: 'b1'}], items: [{id: 'i1'}]};
+  const good = {}, cableFacts = async () => good, ctx = {route: {}, cableFacts};
+  const a = await inspectOnce(inspect, r, 'c1', ctx, f => f === good);
+  assert.equal(await inspectOnce(inspect, r, 'c1', ctx, f => f === good), a);
+  await inspectOnce(inspect, r, 'b1', ctx); await inspectOnce(inspect, r, 'b1', ctx);
+  assert.equal(asked, 2, 'a cable and a bundle, once each');
+  await inspectOnce(inspect, r, 'i1', ctx); await inspectOnce(inspect, r, 'i1', ctx);
+  assert.equal(asked, 4, 'a device is asked each time');
+  await inspectOnce(inspect, r, 'c1', {cableFacts}); await inspectOnce(inspect, r, 'c1', {cableFacts});
+  assert.equal(asked, 6, 'and so is a cable read without the routes');
+  // read while the cables' faces could not all be loaded: given, and asked again
+  await inspectOnce(inspect, r, 'c2', ctx, () => false);
+  await inspectOnce(inspect, r, 'c2', ctx, () => false);
+  assert.equal(asked, 8);
+  assert.notEqual(await inspectOnce(inspect, {...r}, 'c1', ctx, f => f === good), a, 'another rack object is asked afresh');
+});

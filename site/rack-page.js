@@ -40,7 +40,8 @@ import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeNoteGroups, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
-import {routesOf, sameReading, once} from './rack/reading.js';
+import {routesOf, sameReading} from './rack/reading.js';
+import {describeOnce, inspectOnce} from './rack/agent-read.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
@@ -2188,32 +2189,18 @@ async function bootInner() {
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
-// WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (reading.js `once`, portrayal-site#192): a window of describe
-// with the routes, and the inspect of a cable or a bundle. The kit lays every cable of the rack for describe's
-// two lines of totals, and again for each smaller window describe_rack tries; asked again of the same rack
-// object, with the same route context and cable types, it has the same answer. A device's inspect lays nothing
-// and is asked each time. An inspect read while the cables' faces could not all be loaded is not kept.
-const routeDeps = ctx => [ctx.route ?? null, ctx.diameterOf ?? null, ctx.bendOf ?? null, ctx.chassisOf ?? null, ctx.cableFacts ?? null];
-function inspectOnce(r, id, ctx = {}) {
-  const lays = ctx.route && ((r.cables ?? []).some(c => c.id === id) || (r.bundles ?? []).some(b => b.id === id));
-  if (!lays) return Q.inspect(r, id, ctx);
-  let stood = true;
-  const facts = ctx.cableFacts && (async (...args) => { const f = await ctx.cableFacts(...args); if (!factsStand(f)) stood = false; return f; });
-  return once(r, `inspect ${id}`, routeDeps(ctx), () => Q.inspect(r, id, facts ? {...ctx, cableFacts: facts} : ctx), () => stood);
-}
+// WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (agent-read.js, portrayal-site#192): a window of describe with the
+// routes, and the inspect of a cable or a bundle. A device's inspect lays nothing and is asked each time.
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
-  describe: (r, win, ctx = {}) => (ctx.route
-    ? once(r, `describe ${JSON.stringify([win?.section ?? null, win?.offset ?? null, win?.limit ?? null])}`, [...routeDeps(ctx), chassisOf],
-           () => Q.describe(r, {...ctx, chassisOf}, win))
-    : Q.describe(r, {...ctx, chassisOf}, win)),
+  describe: (r, win, ctx = {}) => describeOnce(Q.describe, r, win, {...ctx, chassisOf}),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
-  inspect: (r, id, ctx) => inspectOnce(r, id, ctx),
+  inspect: (r, id, ctx) => inspectOnce(Q.inspect, r, id, ctx, factsStand),
 });
 
 // THE KIT'S PER-CALL CONTEXT for an agent's call (agent-context.js): the
