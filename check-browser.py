@@ -3423,6 +3423,8 @@ def check_rack_edit_survives_reload(page, base):
 
     # 2. BY HAND: a device is clicked and moved up a unit with the arrow key, and the reload follows 10 ms after.
     was_ru = ru()
+    # (the reloaded page has its tools before it has drawn its panes)
+    wait_fn(page, "reload: the rear pane is drawn", "() => !!document.querySelector('#paneRear svg [data-item-id=\"i4\"]')")
     box = page.evaluate("""() => { const r = document.querySelector('#paneRear svg [data-item-id="i4"]').getBoundingClientRect();
       return [r.left + r.width / 2, r.top + r.height / 2]; }""")
     page.mouse.click(box[0], box[1])
