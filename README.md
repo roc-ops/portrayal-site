@@ -210,6 +210,28 @@ the hook does when asked.
 
 Then click through the showcase and check it still behaves.
 
+## How fast the Rack Builder is, and that a change kept it the same
+
+Two scripts under `tools/`, neither a check (each needs something CI has not
+got):
+
+```sh
+python3 tools/rack-speed.py path/to/a.rack.json [--runs 3] [--gpu] [--no-3d]
+python3 tools/rack-same.py --main /path/to/another/checkout path/to/a.rack.json [--fixtures] [--glb --gpu]
+```
+
+`rack-speed.py` opens a rack file through the page's own Open .json and prints
+medians for the first 2D draw, a redraw after an edit, each assistant tool, a
+pair switch and the 3D scene, with how often the routes were read, how many
+cables the kit laid, and where a redraw's time went. Headless Chromium draws
+with software GL unless `--gpu` asks for the machine's own; in 3D nearly all of
+the difference is there. `rack-same.py` serves this checkout and another, makes
+the same edits in both, and compares every drawing, list row, warning, tool
+answer and download: for a change that must change nothing. A rack file is the
+visitor's own, so none is committed; `check_rack_speed_budgets` builds its own
+288-cable rack and holds the page to counts and to ratios of one run, never to
+seconds (portrayal-site#192).
+
 ## The showcase
 
 One device — an Edgecore AS7726-32X — driven seven ways off a single compiled
