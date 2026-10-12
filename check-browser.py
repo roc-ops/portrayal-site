@@ -5915,6 +5915,7 @@ SPARE_PT_3D_JS = """async id => {
   const s = window.__rack.scene(), {THREE, scene: w, camera, renderer} = s.three;
   const g = w.getObjectByName('cable-' + id), r = renderer.domElement.getBoundingClientRect(), v = new THREE.Vector3();
   if (!g) return null;
+  let edge = null;
   const meshes = []; g.traverse(o => { if (o.isMesh) meshes.push(o); });
   for (const mesh of meshes) {
     const pos = mesh.geometry.attributes.position;
@@ -5923,27 +5924,42 @@ SPARE_PT_3D_JS = """async id => {
       if (Math.abs(v.x) > 0.95 || Math.abs(v.y) > 0.95) continue;
       const x = r.left + (v.x + 1) / 2 * r.width, y = r.top + (1 - v.y) / 2 * r.height;
       if (document.elementFromPoint(x, y) !== renderer.domElement) continue;
-      const t = H.hoverAt3d(s, {clientX: x, clientY: y});
-      if (t?.kind === 'cable' && t.id === id) return [x, y];
+      // WELL INSIDE THE TUBE, NOT ON ITS EDGE: a vertex on the tube's silhouette is under the pointer in one frame
+      // and beside it in the next (the camera eases by a fraction of a pixel long after an orbit), so the ray must
+      // find this cable a pixel to each side too. The first such point is taken; with none, the first that hits.
+      const on = (dx, dy) => { const t = H.hoverAt3d(s, {clientX: x + dx, clientY: y + dy}); return t?.kind === 'cable' && t.id === id; };
+      if (!on(0, 0)) continue;
+      if (on(1, 0) && on(-1, 0) && on(0, 1) && on(0, -1)) return [x, y];
+      edge ??= [x, y];
     }
   }
-  return null;
+  return edge;
 }"""
 
 
 def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     """Put the pointer on `cid` and read the label beside it against `want`. With
     `drag`, a button held and let go hides it until the pointer next moves."""
-    pt = page.evaluate(find_js, cid)
+    # THE POINT IS FOUND ON THE SCENE AS IT STANDS, and in 3D the camera eases on for a moment after an orbit (the
+    # c4 step before c12's drags one): a point found while it still moves may not be under the cable once the
+    # pointer gets there. The label is the pointer's, on a move, so the point is found again, up to three times,
+    # until the pointer put on it shows the label. A cable whose label never shows still fails below.
+    pt = None
+    for attempt in range(3):
+        pt = page.evaluate(find_js, cid)
+        if not pt:
+            break
+        page.mouse.move(pt[0] - 3, pt[1] - 3)
+        page.mouse.move(pt[0], pt[1])
+        try:
+            wait_fn(page, f"{where}: {cid}'s hover label", "id => document.getElementById('cableTip')?.dataset.cableTip === id", arg=cid, timeout=10000 if attempt == 2 else 2500)
+            break
+        except RuntimeError:
+            park_mouse(page)
+            page.wait_for_timeout(600)
     if not pt:
         bad.append(f"{where}: found no point where the page's hover finds {cid}, so its label was not read")
         return
-    page.mouse.move(pt[0] - 3, pt[1] - 3)
-    page.mouse.move(pt[0], pt[1])
-    try:
-        wait_fn(page, f"{where}: {cid}'s hover label", "id => document.getElementById('cableTip')?.dataset.cableTip === id", arg=cid, timeout=10000)
-    except RuntimeError:
-        pass
     tip = page.evaluate(SPARE_TIP_JS)
     if not tip or tip["id"] != cid:
         bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
