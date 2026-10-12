@@ -460,13 +460,18 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
       groups.push({el: t, at, gutter: set[0].gutter, parts: [...to, ` ×${n} · `, f.name], id: f.id});
     }
   }
-  // TWO GROUPS NEVER READ THE SAME: where shortening leaves two of this pane's
-  // bundle tags with one text, each says its bundle's id in place of its
-  // shortened name (the cable list and a sheet's notes give the id beside the name).
-  const said = groups.map(g => fitTag(g.parts, [1, 4]));
+  // THE DEVICE'S NAME IS KEPT WHOLE BEFORE THE BUNDLE'S: a tag that does not
+  // fit with the bundle's name says the bundle's id in its place (the cable
+  // list and a sheet's notes give the id beside the name; the title keeps the
+  // name), and only a text still too long loses the middle of the device's
+  // name. TWO GROUPS NEVER READ THE SAME: two of this pane's tags left with
+  // one text each say their bundle's id too.
+  const fits = parts => Array.from(parts.join('')).length <= MAX_CHARS;
+  const byId = g => fitTag([...g.parts.slice(0, 4), g.id], [1]);
+  const said = groups.map(g => (fits(g.parts) ? g.parts.join('') : byId(g)));
   groups.forEach((g, k) => {
     const twice = said.some((x, j) => j !== k && x === said[k] && groups[j].parts.join('') !== g.parts.join(''));
-    tagLayer.append(pill(g.el, g.at, twice ? fitTag([...g.parts.slice(0, 4), g.id], [1]) : said[k], 6));
+    tagLayer.append(pill(g.el, g.at, twice ? byId(g) : said[k], 6));
   });
   if (tags !== 'hover') {
     // WHAT A FILE CARRIES: the tags it does not are taken off; the rest of each

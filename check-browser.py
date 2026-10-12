@@ -5371,7 +5371,8 @@ def check_rack_faces_and_tags(page, base):
     got = page.evaluate(FACE_TAGS_JS)
     if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
         bad.append(f"hover b6's row: the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}; expected b6's one on each pane")
-    if got["rear"]["text"] != ["→ AS7…64X U40 ×12 · PP Bay 2 rear"] or got["front"]["text"] != ["→ FHD-1UFCE ×12 · PP Bay 2 rear"]:
+    # (the rear one does not fit with the bundle's name beside the switch's and its U: the device stays whole, and the bundle is said by its id)
+    if got["rear"]["text"] != ["→ AS7816-64X U40 ×12 · b6"] or got["front"]["text"] != ["→ FHD-1UFCE ×12 · PP Bay 2 rear"]:
         bad.append(f"hover b6's row: its tags read {got['front']['text']} and {got['rear']['text']}")
     # NO TWO TAGS OF A PANE READ THE SAME, none is cut at its end, and each fits its pill.
     said = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => [p, [...document.querySelectorAll(
