@@ -474,42 +474,55 @@ def compare_exports(t, where, A, B, ms, kinds=EXPORTS):
 
 
 def compare_models(t, where, A, B, settle):
+    # ONE SCENE AT A TIME. Two pages each holding a rack in full detail on one GPU lose a WebGL context between
+    # them now and then, and a model exported after that has blank textures: the first runs of this script found
+    # "differences" of exactly that kind between two pages of the same checkout. So each page builds its scene,
+    # exports both files and goes back to 2D (which lets the scene go) before the other starts.
+    got = {}
     for S in (A, B):
         S.page.click('#mode [data-mode="3d"]')
-    ok = [S.page.evaluate(SCENE_SETTLED_JS, {"ms": settle * 1000}) for S in (A, B)]
-    if not all(ok):
-        t.notes.append(f"{where}: the 3D scene did not settle in {settle} s ({'main' if not ok[0] else ''}{' and ' if not any(ok) else ''}{'here' if not ok[1] else ''}), so the GLB and USDZ were not compared")
-        print(f"  NOT COMPARED  {t.notes[-1]}", flush=True)
-    else:
-        for kind in ("glb", "usdz"):
-            try:
-                (na, da), (nb, db) = A.export(kind, settle * 1000), B.export(kind, settle * 1000)
-            except Exception as e:
-                t.same(f"{where}: the {kind} download (failed: {str(e).splitlines()[0]})", 0, 1, show=False)
-                continue
-            t.same(f"{where}: the {kind} download's name", na, nb)
-            if da != db and SAVE:
-                SAVE.mkdir(parents=True, exist_ok=True)
-                stem = "".join(c if c.isalnum() else "-" for c in where)[:80]
-                (SAVE / f"{stem}.main.{kind}").write_bytes(da)
-                (SAVE / f"{stem}.here.{kind}").write_bytes(db)
-            if da == db:
-                t.same(f"{where}: the {kind} download, byte for byte ({len(da)} bytes)", 1, 1)
-            elif kind == "glb":
-                t.notes.append(f"{where}: the GLBs differ in bytes ({len(da)} and {len(db)}) and were compared by content")
-                ca, cb = glb_content(da), glb_content(db)
-                if not t.same(f"{where}: the glb download, by content (the bytes differ)", ca, cb, show=False):
-                    for line in glb_differs(ca, cb)[:12]:
-                        print(f"      {line}", flush=True)
-            else:
-                ca, cb = usdz_content(da), usdz_content(db)
-                t.notes.append(f"{where}: the USDZs differ in bytes ({len(da)} and {len(db)}) and were compared by content: "
-                               f"{len(ca['geometries'])} geometries, {len(ca['textures'])} textures, {ca['materials']} materials")
-                for k in ("geometries", "textures", "other", "model"):
-                    t.same(f"{where}: the usdz download, by content: its {k}", ca[k], cb[k])
-    for S in (A, B):
+        ok = S.page.evaluate(SCENE_SETTLED_JS, {"ms": settle * 1000})
+        got[S.name] = {}
+        if ok:
+            for kind in ("glb", "usdz"):
+                try:
+                    got[S.name][kind] = S.export(kind, settle * 1000)
+                except Exception as e:
+                    got[S.name][kind] = e
         S.page.click('#mode [data-mode="2d"]')
         S.settle(False, 120000)
+    late = [n for n in got if not got[n]]
+    if late:
+        t.notes.append(f"{where}: the 3D scene did not settle in {settle} s ({' and '.join(late)}), so the GLB and USDZ were not compared")
+        print(f"  NOT COMPARED  {t.notes[-1]}", flush=True)
+        return
+    for kind in ("glb", "usdz"):
+        a, b = got[A.name][kind], got[B.name][kind]
+        if isinstance(a, Exception) or isinstance(b, Exception):
+            e = a if isinstance(a, Exception) else b
+            t.same(f"{where}: the {kind} download (failed: {str(e).splitlines()[0]})", 0, 1, show=False)
+            continue
+        (na, da), (nb, db) = a, b
+        t.same(f"{where}: the {kind} download's name", na, nb)
+        if da != db and SAVE:
+            SAVE.mkdir(parents=True, exist_ok=True)
+            stem = "".join(c if c.isalnum() else "-" for c in where)[:80]
+            (SAVE / f"{stem}.main.{kind}").write_bytes(da)
+            (SAVE / f"{stem}.here.{kind}").write_bytes(db)
+        if da == db:
+            t.same(f"{where}: the {kind} download, byte for byte ({len(da)} bytes)", 1, 1)
+        elif kind == "glb":
+            t.notes.append(f"{where}: the GLBs differ in bytes ({len(da)} and {len(db)}) and were compared by content")
+            ca, cb = glb_content(da), glb_content(db)
+            if not t.same(f"{where}: the glb download, by content (the bytes differ)", ca, cb, show=False):
+                for line in glb_differs(ca, cb)[:12]:
+                    print(f"      {line}", flush=True)
+        else:
+            ca, cb = usdz_content(da), usdz_content(db)
+            t.notes.append(f"{where}: the USDZs differ in bytes ({len(da)} and {len(db)}) and were compared by content: "
+                           f"{len(ca['geometries'])} geometries, {len(ca['textures'])} textures, {ca['materials']} materials")
+            for k in ("geometries", "textures", "other", "model"):
+                t.same(f"{where}: the usdz download, by content: its {k}", ca[k], cb[k])
 
 
 def tools_same(t, where, A, B, calls):

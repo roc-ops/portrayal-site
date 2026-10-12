@@ -201,9 +201,13 @@ export function createRackScene(container, opts = {}) {
   // is still easing to rest, every frame is drawn as before; and once the
   // detail is in, every frame is drawn as before. Nothing is drawn that was
   // not, and no other caller passes the option.
+  // AND NEVER MORE THAN A FIFTH OF THE TIME: where a frame is slow (software
+  // GL takes over a second for one), `buildFrameMs` apart is back to back, so
+  // the wait is also four times what the last frame took, measured to the
+  // next animation frame the browser gave.
   const BUILD_FRAME_MS = opts.buildFrameMs > 0 ? opts.buildFrameMs : 0;
   const HANDLED_MS = 1000;      // how long after the last touch the view counts as handled (the easing runs on)
-  let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false;
+  let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false, frameCost = 0, costDue = false;
   const onHandle = () => { handledAt = performance.now(); };
   const onHandleStart = () => { handling = true; }, onHandleEnd = () => { handling = false; handledAt = performance.now(); };
   if (BUILD_FRAME_MS) {
@@ -1168,10 +1172,12 @@ export function createRackScene(container, opts = {}) {
     if (!alive || !running) { raf = 0; return; }
     // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
     const now = BUILD_FRAME_MS ? performance.now() : 0;
-    if (!(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < BUILD_FRAME_MS)) {
+    if (costDue) { frameCost = now - lastFrame; costDue = false; }
+    if (!(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
       controls.update();
       renderer.render(scene, camera);
       lastFrame = now;
+      costDue = !!BUILD_FRAME_MS;
     }
     raf = requestAnimationFrame(tick);
   }
