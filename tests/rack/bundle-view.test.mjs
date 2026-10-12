@@ -212,3 +212,27 @@ test('peelText names the waypoint and the end a peeled member heads for', () => 
   assert.equal(peelText(rack, bundle, 'c4'), 'leaves at left-front U21 for its a end; leaves at left-front U29 for its b end');
   assert.equal(peelText(rack, bundle, 'c9'), null, 'not a member');
 });
+
+// ── kit 0.22.0: three kinds of strap, each with a width ───────────────────
+import {strapsText, strapDrawn, STRAP_DRAWN as DRAWN_19} from '../../site/rack/bundle-view.js';
+test('a bundle\'s straps are said by kind: a count is "every 12 in" only when it is the spacing straps alone', () => {
+  const every = {value: 12, unit: 'in'};
+  assert.equal(strapsText({count: 2, kinds: {spacing: 2, breakout: 0, anchor: 0}}, every), '2 straps every 12 in');
+  assert.equal(strapsText({count: 1, kinds: {spacing: 1, breakout: 0, anchor: 0}}, every), '1 strap every 12 in');
+  assert.equal(strapsText({count: 10, kinds: {spacing: 2, breakout: 8, anchor: 0}}, every), '10 straps (2 every 12 in, 8 where a cable leaves)');
+  assert.equal(strapsText({count: 12, kinds: {spacing: 3, breakout: 6, anchor: 3}}, every), '12 straps (3 every 12 in, 6 where a cable leaves, 3 at tray tie slots)');
+  assert.equal(strapsText({count: 1, kinds: {spacing: 0, breakout: 0, anchor: 1}}, null), '1 strap (1 at a tray tie slot)');
+  assert.equal(strapsText({count: 4, kinds: {spacing: 0, breakout: 4, anchor: 0}}, every), '4 straps (4 where a cable leaves)');
+  assert.equal(strapsText({count: 0, kinds: {spacing: 0, breakout: 0, anchor: 0}}, every), null);
+  // the summary a row and the panel show carries it, and never the total as a spacing count
+  const f = {id: 'b1', name: 'Bundle 1', members: ['c1', 'c2'], drawn: true, every, diameter: 9,
+    check: {checked: true, warnings: [], notes: []}, straps: {every, count: 10, kinds: {spacing: 2, breakout: 8, anchor: 0}, straps: []}};
+  assert.equal(bundleSummary(f), '2 cables (c1-c2), about 9 mm, 10 straps (2 every 12 in, 8 where a cable leaves)');
+  assert.doesNotMatch(bundleSummary(f), /10 straps every/);
+});
+test('a strap is drawn at its own width: the 19 mm strap as the bar it always was, 12 narrower, 25 wider', () => {
+  assert.equal(strapDrawn({width_mm: 19}), DRAWN_19);
+  assert.ok(strapDrawn({width_mm: 12}) < DRAWN_19 && strapDrawn({width_mm: 25}) > DRAWN_19);
+  assert.ok(Math.abs(strapDrawn({width_mm: 25}) / strapDrawn({width_mm: 12}) - 25 / 12) < 1e-9);
+  assert.equal(strapDrawn({}), DRAWN_19);
+});

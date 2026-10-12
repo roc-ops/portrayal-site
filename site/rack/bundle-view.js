@@ -21,6 +21,48 @@ import {pointOf, DIAMETERS} from '../../vendor/rack/route.js';
 // A strap as drawn, along the run (mm). The kit keeps straps STRAP_W (20 mm)
 // off rings; a strap drawn half that wide reads as a strap, not a block.
 export const STRAP_DRAWN = 10;
+// EACH STRAP HAS ITS OWN WIDTH (kit 0.22.0: `width_mm`, one of 12, 19 and 25).
+// It is drawn in proportion: the common 19 mm strap is the bar it always was
+// (STRAP_DRAWN), and a 12 or a 25 mm one is narrower or wider beside it.
+export const STRAP_COMMON_MM = 19;
+export const strapDrawn = s => (Number(s?.width_mm) > 0 ? STRAP_DRAWN * Number(s.width_mm) / STRAP_COMMON_MM : STRAP_DRAWN);
+// A TIE STRAP OF A SINGLE CABLE (kit 0.22.0, bundles.js anchorsOf): a band at
+// a tray's tie slot, round the cables lying there. How far it reaches each
+// side of them as drawn, mm.
+export const TIE_HALF = 5;
+/** A tie strap's mark for one tie slot (route-context.js tieStraps): `slot` is
+ *  the kit's anchor ({item, via, tie, width_mm, cables}), `tray` its tray
+ *  (solids.js traysOf: `top` and `under`, the heights of the plate's two
+ *  faces, `run`, and `ties`, plan rectangles), `rest` how the first of its
+ *  cables lies there (the path's `rests` entry: `role` held or resting). `at`
+ *  is on the FACE OF THE PLATE THE CABLES ARE ON: its underside for a cable
+ *  held under it, its top for one resting on it. Null without the slot. */
+export function tieMark(slot, tray, rest) {
+  const r = tray?.ties?.[slot.tie];
+  if (!r) return null;
+  const held = rest?.role === 'held';
+  return {item: slot.item, via: slot.via, tie: slot.tie, width_mm: slot.width_mm, cables: [...slot.cables], run: tray.run, held,
+          at: {x: (r.x0 + r.x1) / 2, y: held ? tray.under : tray.top, z: (r.z0 + r.z1) / 2}};
+}
+/** The middle of a tie strap's band as drawn, in rack mm: off the plate's
+ *  face by half the band, on the side the cables are (below the underside for
+ *  a held cable, above the top for a resting one). One answer for the panes,
+ *  the side panes and the 3D scene. */
+export const tieCentre = m => ({x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z});
+
+// THE STRAPS OF A BUNDLE IN WORDS, by kind, as the kit counts them
+// (straps().kinds): "9 straps (2 every 12 in, 7 where a cable leaves)". A
+// count is never said to be "every 12 in" unless it is the spacing straps
+// alone. Null when it has none.
+export function strapsText(st, every) {
+  const k = st?.kinds ?? {spacing: st?.count ?? 0, breakout: 0, anchor: 0}, n = st?.count ?? 0;
+  if (!n) return null;
+  const parts = [k.spacing ? `${k.spacing}${every ? ` every ${every.value} ${every.unit}` : ' along it'}` : null,
+                 k.breakout ? `${k.breakout} where a cable leaves` : null,
+                 k.anchor ? `${k.anchor} at ${k.anchor === 1 ? 'a tray tie slot' : 'tray tie slots'}` : null].filter(Boolean);
+  const head = `${n} strap${n === 1 ? '' : 's'}`;
+  return parts.length === 1 && k.spacing === n && every ? `${head} every ${every.value} ${every.unit}` : `${head} (${parts.join(', ')})`;
+}
 
 // EVERY BUNDLE, AS THE VIEWS AND THE LIST READ IT, from the kit with the
 // routing context of this render (`ctx`: {route, diameterOf?, bendOf?}).
@@ -341,7 +383,8 @@ export function bundleSummary(fact) {
   else if (!fact.check.checked) parts.push('not checked');
   else if (fact.diameter) parts.push(`about ${mmText(fact.diameter)}`);
   const every = fact.every ?? null;
-  if (fact.straps && every) parts.push(`${fact.straps.count} strap${fact.straps.count === 1 ? '' : 's'} every ${every.value} ${every.unit}`);
+  const said = fact.straps ? strapsText(fact.straps, every) : null;
+  if (said) parts.push(said);
   else if (fact.drawn) parts.push(spacingText(every));
   return parts.join(', ');
 }

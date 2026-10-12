@@ -34,7 +34,9 @@ export function frameForm({rack, onName, onFrame}) {
   numbering.addEventListener('change', () => onFrame({numbering: numbering.value}));
 
   const holes = el('select', {id: 'fHoles'},
-    [option('square', 'Square (cage nuts)', f.holes.style), option('tapped', 'Tapped (round)', f.holes.style)]);
+    [option('square', 'Square (cage nuts)', f.holes.style), option('tapped', 'Tapped (round)', f.holes.style),
+     // (unthreaded round holes, rack file version 4: offered only where the file has them, so the form never loses them)
+     ...(f.holes.style === 'round' ? [option('round', 'Round (unthreaded)', f.holes.style)] : [])]);
   // Only the style: the page keeps the thread the frame has now (it may not be this form's any more).
   holes.addEventListener('change', () => onFrame({holes: {style: holes.value}}));
 

@@ -6,7 +6,8 @@
 // elevation.js, so this stays about gesture handling, not layout math.
 
 import {RU, OPENING} from '../../vendor/rack/rails.js';
-import {uAtY} from './elevation.js';
+import {uAtY, halfAtY} from './elevation.js';
+import {itemUnits} from '../../vendor/rack/fit.js';
 import {moveItem} from '../../vendor/rack/managers.js';
 import {svgEl, svgY} from './dom.js';
 
@@ -60,7 +61,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     if (!svg) return;
     const r = rack();
     const y = svgY(svg, clientX, clientY);
-    const pointerU = uAtY(r.frame, y);
+    const pointerU = d.posAt(r.frame, y);
     const maxRu = Math.max(1, r.frame.heightRU - d.ruH + 1);
     const ru = Math.min(maxRu, Math.max(1, pointerU - d.grabOffsetU));
     // What the drop's move command calls (managers.js moveItem, which judges a
@@ -89,9 +90,17 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     const face = paneFaceAt(d.startX, d.startY) || d.origFace;
     const svg = svgFor(face);
     const r = rack();
-    d.ruH = Math.max(1, chassisOf(d.item.ref)?.ru ?? 1);
-    const grabU = svg ? uAtY(r.frame, svgY(svg, d.startX, d.startY)) : d.item.ru;
-    d.grabOffsetU = grabU - d.item.ru;
+    // IN HALF STEPS WHERE THE DEVICE MAY START ON A HALF (rack file version 4):
+    // one whose height is not a whole number of units (the kit's itemUnits:
+    // a half-unit panel, a 1.5U or 3.5U device), or one a file put on a half.
+    // Every other device moves a whole unit at a time, as it always did, so it
+    // is never offered the half positions the kit would refuse it at.
+    d.ruH = itemUnits(d.item, chassisOf);
+    const halves = !Number.isInteger(d.ruH) || !Number.isInteger(d.item.ru);
+    d.posAt = halves ? halfAtY : uAtY;
+    const grabU = svg ? d.posAt(r.frame, svgY(svg, d.startX, d.startY)) : d.item.ru;
+    // by whole steps of its own grid, so a press anywhere on a half-unit panel drags it by that half
+    d.grabOffsetU = Math.max(0, Math.min(d.ruH - (halves ? 0.5 : 1), grabU - d.item.ru));
     onStart(d.id);
     d.rafId = requestAnimationFrame(edgeScroll);
   }

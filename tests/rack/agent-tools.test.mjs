@@ -882,3 +882,37 @@ test('bundles: edit_rack asks for the routes, describe_rack lists them, inspect 
   await run('describe_rack');
   assert.equal(contexts.length, k);
 });
+
+// ── kit 0.22.0 (rack file version 4): six commands more, offered as the rest are ──
+test('the six commands of rack file version 4 reach edit_rack from the kit\'s table, each with its arguments described', async () => {
+  const NEW = ['zerou.hang', 'state.set', 'readings.set', 'cable.slack', 'cable.slack.clear', 'cable.lay'];
+  for (const op of NEW) assert.ok(op in COMMANDS, `the kit has no ${op}`);
+  const ed = createRackEditor({doc: M.newDoc(), chassisOf});
+  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries: {}, runExport: async () => ({})}).map(t => [t.name, t]));
+  const branches = tools.edit_rack.inputSchema.properties.commands.items.oneOf;
+  const byOp = new Map(branches.map(b => [b.properties.op.const, b]));
+  for (const op of NEW) {
+    const b = byOp.get(op);
+    assert.ok(b, `edit_rack does not offer ${op}`);
+    // the kit's own description and arguments, with nothing dropped
+    assert.equal(typeof b.description, 'string');
+    assert.ok(b.description.length > 20 && b.description.length <= 500, `${op}: ${b.description.length} characters`);
+    const kitArgs = Object.keys(COMMANDS[op].args?.properties ?? {}).filter(k => k !== 'rack');
+    for (const k of kitArgs) {
+      assert.ok(k in b.properties, `${op} lost its ${k}`);
+      assert.ok((b.properties[k].description ?? '').length > 5, `${op}.${k} has no description`);
+    }
+    assert.deepEqual(b.required, ['op', ...(COMMANDS[op].args?.required ?? []).filter(r => !(['cable.remove', 'cable.update'].includes(op) && r === 'id'))]);
+  }
+  // patch takes the keys of version 4, and the frame its own
+  for (const k of ['setback', 'roll', 'heldBy']) assert.ok(k in byOp.get('patch').properties, `patch has no ${k}`);
+  for (const k of ['startU', 'setback']) assert.ok(k in byOp.get('frame').properties, `frame has no ${k}`);
+  // and one runs: a half position is taken and a whole-unit device refused on one, in the kit's sentence
+  const run = async (name, args) => tools[name].execute(args);
+  const no = await run('edit_rack', {commands: [{op: 'place', ref: 'as7726-32x', face: 'front', ru: 12.5}]});
+  assert.equal(no.isError, true);
+  assert.match(no.content[0].text, /whole unit/);
+  // a cable.slack on a cable that is not there is answered by the kit, not thrown
+  const gone = await run('edit_rack', {commands: [{op: 'cable.slack.clear', id: 'c404'}]});
+  assert.equal(gone.isError, true);
+});

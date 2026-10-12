@@ -4,13 +4,14 @@
 // are handed their readers in `ctx`, since reading a face needs the network and
 // a DOMParser, which this module never touches.
 
-import {fits, isRackFace, heightOf, railOf, isZeroUPart, zeroUUnits} from './fit.js';
+import {fits, isRackFace, heightOf, railOf, isZeroUPart, zeroUUnits, itemUnits, spanText, isHeld, isRackMount, isQuarter} from './fit.js';
 import {placement, managersOf} from './managers.js';
-import {uLabel, zeroUOf, zeroUBottom} from './model.js';
+import {uLabel, zeroUOf, zeroUBottom, firstU, holderOf, rollOf, uText} from './model.js';
 import {whereText, carriesLane} from './zero-u.js';
 import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText} from './cable-rules.js';
-import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bodyFindings} from './route.js';
+import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf} from './route.js';
 import {catalogEntries} from './catalog.js';
+import {slackOf, spareLine, slackFindings} from './slack.js';
 import {GONE, CABLE_GONE, ZERO_GONE, BUNDLE_GONE} from './commands.js';
 import {bundlesOf, bundleName} from './model.js';
 import {bundleCheck, bundleOfCable, membersText, spacingText, strapSpacing, straps as strapsOf, trunkLength,
@@ -23,8 +24,11 @@ export function fitsAt(rack, {ref, face, ru}, {chassisOf}) {
   return fits(rack, {ref, ...spot}, chassisOf);
 }
 
+// Every position the device fits at, in steps of 0.5: whole positions for a
+// device of a whole number of units (fit refuses it a half), and both for any
+// other.
 export const freeUs = (rack, {ref, face}, ctx) =>
-  Array.from({length: rack.frame.heightRU}, (_, k) => k + 1).filter(ru => fitsAt(rack, {ref, face, ru}, ctx).ok);
+  Array.from({length: rack.frame.heightRU * 2}, (_, k) => 1 + k / 2).filter(ru => fitsAt(rack, {ref, face, ru}, ctx).ok);
 
 // `text` matches the ref, maker and model, and what the device IS: its kind
 // ("patch panel", "switch", "cable manager", from rack.json) and its family.
@@ -70,19 +74,48 @@ function bundleLine(rack, b, ctx) {
   return `${head}, ${size}${spacing}, ${r.warnings.length ? count(r.warnings.length, 'warning') : 'no warnings'}.`;
 }
 
-// "Findings: 2 cables cross a body." from bodyFindings, or null when there is
-// none, or when the routes cannot be read (no `ctx.route`, or a reader throws).
+// ONE LINE OF TOTALS for what the routes find, or null when there is nothing,
+// or when the routes cannot be read (no `ctx.route`, or a reader throws):
+// "Findings: 2 cables cross a body; 3 cables have a tight bend (the worst c9,
+// 10.8 mm short); 9 cables cross in front of other ports (the most c7, 5
+// ports; only ports that hold a cable were judged)." Each part is there only
+// when it counts something: the cables whose path still crosses a body
+// (#949), those with a corner short of their bend radius and the cable
+// shortest of it (#973, #1007), and those with a span in front of other
+// ports and the cable that covers most (#1013), with what was judged when
+// the page listed no ports (`ctx.route.portBoxesOf`). Each cable's path is
+// read once.
 function findingsText(rack, ctx) {
   if (!ctx?.route) return null;
-  let n = 0;
-  try { n = new Set(bodyFindings(rack, ctx.route).map(f => f.cable)).size; } catch { return null; }
-  return n ? `Findings: ${count(n, 'cable')} cross${n === 1 ? 'es' : ''} a body.` : null;
+  let bodies = 0, bends = 0, covers = 0, worst = null, most = null, cabled = false;
+  try {
+    for (const c of rack.cables || []) {
+      const path = routePath(rack, c, ctx.route);
+      if (!path) continue;
+      if (path.crossings?.length) bodies++;
+      if (path.bends?.length) {
+        bends++;
+        const short = Math.max(...path.bends.map(f => f.short_mm));
+        if (!worst || short > worst.short) worst = {id: c.id, short};
+      }
+      if (path.covers?.length) {
+        covers++;
+        if (path.covers.some(f => f.judged !== 'all')) cabled = true;
+        if (!most || path.covers.length > most.n) most = {id: c.id, n: path.covers.length};
+      }
+    }
+  } catch { return null; }
+  const parts = [
+    ...(bodies ? [`${count(bodies, 'cable')} cross${bodies === 1 ? 'es' : ''} a body`] : []),
+    ...(bends ? [`${count(bends, 'cable')} ${bends === 1 ? 'has' : 'have'} a tight bend (${bends === 1 ? '' : 'the worst '}${worst.id}, ${worst.short} mm short)`] : []),
+    ...(covers ? [`${count(covers, 'cable')} cross${covers === 1 ? 'es' : ''} in front of other ports (${covers === 1 ? '' : 'the most '}${most.id}, ${count(most.n, 'port')}${cabled ? '; only ports that hold a cable were judged' : ''})`] : [])];
+  return parts.length ? `Findings: ${parts.join('; ')}.` : null;
 }
 
 export function describe(rack, ctx, {section, offset, limit} = {}) {
   const {chassisOf} = ctx;
   const f = rack.frame;
-  const holes = f.holes.style === 'tapped' ? `tapped${f.holes.thread ? ` ${f.holes.thread}` : ''} holes` : 'square holes';
+  const holes = f.holes.style === 'tapped' ? `tapped${f.holes.thread ? ` ${f.holes.thread}` : ''} holes` : `${f.holes.style === 'round' ? 'round' : 'square'} holes`;
   const items = [...rack.items].sort((a, b) => b.ru - a.ru);
   const cables = rack.cables || [];
   // the parts beside the rack (#926), top down; counted only when there are any
@@ -92,22 +125,33 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
   const totals = `${rack.name} (${rack.id}): ${count(items.length, 'item')}, ` +
     `${beside.length ? `${count(beside.length, 'part')} beside the rack, ` : ''}${count(cables.length, 'cable')}` +
     `${bundles.length ? `, ${count(bundles.length, 'bundle')}` : ''}.`;
-  const frameLine = `${f.heightRU}U ${f.kind}, ${holes}, numbered ${f.numbering}.`;
+  // the optional frame keys, each said only when the frame has it
+  // a setback as fit says it: back into the rack, or forward of the rail
+  const setText = s => `set ${s < 0 ? 'forward' : 'back'} ${Math.abs(s)} mm`;
+  const optionText = o => (typeof o === 'string' ? o : o && typeof o === 'object' && typeof o.id === 'string' ? o.id : JSON.stringify(o));
+  const options = f.options == null ? '' : ` Options: ${(Array.isArray(f.options) ? f.options : [f.options]).map(optionText).join(', ') || 'none'}.`;
+  const frameLine = `${f.heightRU}U ${f.kind}, ${holes}, numbered ${f.numbering}${firstU(f) !== 1 ? ` from U${firstU(f)}` : ''}.`
+    + (typeof f.setback === 'number' ? ` Faceplates ${setText(f.setback)}.` : '') + options;
   // ONE LINE OF TOTALS FOR THE FINDINGS (#949), when routes can be read and
   // there is any: an agent that only describes the rack still sees them.
+  let spare = '';
+  if (ctx?.route) { try { spare = spareLine(rack, ctx.route); } catch { spare = ''; } }
   const findingsLine = findingsText(rack, ctx);
-  const uOf = heightOf(chassisOf);
-  const span = i => {
-    const [a, b] = [uLabel(f, i.ru), uLabel(f, i.ru + uOf(i) - 1)].sort((x, y) => x - y);
-    return a === b ? `U${a}` : `U${a}-U${b}`;
-  };
+  const span = i => spanText(f, i, chassisOf);
   // `full` is a window's line: the ref and configuration, the purpose and length
+  const holds = i => rack.items.filter(o => holderOf(o) === i.id).map(o => o.id);
   const item = (i, short, full = false) => {
     const ms = managersOf(rack, i.id).map(m => m.id);
     const rail = railOf(i, chassisOf);
-    return [`${i.id}${short ? '' : ` ${i.label}`} ${span(i)} ${i.face}${rail ? ` ${rail} rail` : ''}${i.turned ? ' turned' : ''}`,
+    // a span that names a half is a phrase, set off from the label by commas
+    const where = span(i), plain = where.startsWith('U');
+    const c = chassisOf(i.ref);
+    return [`${i.id}${short ? '' : ` ${i.label}`}${plain ? ' ' : ', '}${where}${plain ? ' ' : ', '}${i.face}${rail ? ` ${rail} rail` : ''}${i.turned ? ' turned' : ''}${rollOf(i) ? ` rolled ${rollOf(i)}` : ''}`,
             ...(full ? [`${i.ref} ${i.cfg || '(no configuration)'}`] : []),
-            ...(i.on ? [`on ${i.on} unit ${i.unit}`] : []), ...(ms.length ? [`carries ${ms.join(' ')}`] : [])].join(', ');
+            ...(i.on ? [`on ${i.on} unit ${i.unit}`] : []), ...(ms.length ? [`carries ${ms.join(' ')}`] : []),
+            ...(typeof i.setback === 'number' && !isRackFace(c) && !isZeroUPart(c) ? [setText(i.setback)] : []),
+            ...(holderOf(i) != null ? [`held by ${holderOf(i)}${isHeld(i, chassisOf) ? ', not checked' : ''}`] : []),
+            ...(holds(i).length ? [`holds ${holds(i).join(' ')}`] : [])].join(', ');
   };
   const part = (z, short, full = false) => [`${z.id}${short ? '' : ` ${z.label}`} ${whereText(rack, z, chassisOf)}`,
     ...(full ? [`${z.ref} ${z.cfg || '(no configuration)'}`] : [])].join(', ');
@@ -132,12 +176,12 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
         body.push(`${title}:`, ...list.slice(from, from + n).map(line));
       }
     }
-    return [`${totals} ${shown.join(' ')}`, frameLine, ...(findingsLine ? [findingsLine] : []), ...body].join('\n');
+    return [`${totals} ${shown.join(' ')}`, frameLine, ...(findingsLine ? [findingsLine] : []), ...(spare ? [spare] : []), ...body].join('\n');
   }
 
   const bundleLines = bundles.map(b => bundleLine(rack, b, ctx));
   const build = (short, nItems, nCables, nBundles) => {
-    const lines = [totals, frameLine, ...(findingsLine ? [findingsLine] : []), items.length ? 'Items:' : 'No items.', ...items.slice(0, nItems).map(i => item(i, short)),
+    const lines = [totals, frameLine, ...(findingsLine ? [findingsLine] : []), ...(spare ? [spare] : []), items.length ? 'Items:' : 'No items.', ...items.slice(0, nItems).map(i => item(i, short)),
                    ...(beside.length ? ['Beside the rack:', ...beside.map(z => part(z, short))] : []),
                    ...(cables.length ? ['Cables:', ...cables.slice(0, nCables).map(c => cable(c))] : []),
                    ...(bundles.length ? ['Bundles:', ...bundleLines.slice(0, nBundles)] : [])];
@@ -201,9 +245,16 @@ function itemFacts(rack, item, ctx) {
     ? (slots.configs || []).map(k => ({name: k.name, description: k.description ?? '', airflow: k.airflow ?? null}))
     : (c?.configs || []).map(name => ({name, description: '', airflow: null}));
   const out = {kind: 'item', id: item.id, ref: item.ref, model: c?.model ?? null, manufacturer: c?.manufacturer ?? null,
-    label: item.label, cfg: item.cfg, configs, ru: item.ru, u: Math.max(1, c?.ru ?? 1), face: item.face, turned: !!item.turned,
+    label: item.label, cfg: item.cfg, configs, ru: item.ru, u: ctx.chassisOf ? itemUnits(item, ctx.chassisOf) : 1, face: item.face, turned: !!item.turned,
+    ...(rollOf(item) ? {roll: rollOf(item)} : {}),
     on: item.on ?? null, unit: item.unit ?? null, side: railOf(item, ctx.chassisOf ?? (() => null)),
     managers: managersOf(rack, item.id).map(m => m.id)};
+  // A DEVICE OF A HEIGHT THAT IS NO WHOLE NUMBER OF UNITS may start on a
+  // whole unit or on a half, and whether its ears meet the rail holes there
+  // is checked only when the catalogue states its ear slot heights. None
+  // does, so the check is silent and this says so, once for such a device.
+  if (c && isRackMount(c) && !isQuarter(item) && !Number.isInteger(out.u))
+    out.notes = [`The ear holes of ${c.model ?? item.ref} are not stated, so its holes at ${uText(rack.frame, item.ru, out.u)} are not checked.`];
   if (!slots) out.slots = 'not loaded';
   else {
     const env = slotEnv(item, slots, ctx.compByRef);
@@ -234,7 +285,7 @@ async function cableInfo(rack, cable, ctx) {
   const edited = cable.routeEdited === true;
   // A route context's readers come from the page's drawings and may throw; a
   // measure that fails is "not measured", never an error.
-  let routed = null, waypoints = edited ? cable.route || [] : [], rings = null, crosses = null, rests = null;
+  let routed = null, waypoints = edited ? cable.route || [] : [], rings = null, crosses = null, rests = null, bends = null, covers = null;
   if (ctx.route) {
     try {
       waypoints = resolveRoute(rack, cable, ctx.route).waypoints;
@@ -255,13 +306,43 @@ async function cableInfo(rack, cable, ctx) {
       // tray (the face it lies on, its role there, and on a held face the tie
       // slots it uses) and each body a free span comes to rest on
       if (path?.rests?.length) rests = path.rests.map(x => ({...x, ...(x.ties ? {ties: [...x.ties]} : {})}));
-    } catch { routed = null; rings = null; crosses = null; rests = null; }
+      // each corner with less room than its bend radius (#973, #1007): where,
+      // the turn, the room and what the cable needs, with the sentence
+      // bendFindings gives; and the ports a span of it passes in front of
+      // (#1013), with coverFindings' sentence, how many, and whether every
+      // port was there to judge or only the cabled ones (`judged`). Both follow the path, so a
+      // cable is told them wherever it is given a routed length, a loose end
+      // or not; a cable whose port is not found has no path and neither.
+      const tight = bendFindingsOf(rack, cable, ctx.route, label, path);
+      if (tight.length) bends = tight.map(f => ({point: f.point, between: f.between, at: f.at, angle_deg: f.angle_deg, legs_mm: f.legs_mm,
+        room_mm: f.room_mm, need_mm: f.need_mm, short_mm: f.short_mm, text: f.text}));
+      const over = coverFindingsOf(rack, cable, ctx.route, label, path)[0];
+      if (over) covers = {count: over.count, ports: over.ports, between: over.between, judged: over.judged,
+        ...(over.estimated ? {estimated: true} : {}), text: over.text};
+    } catch { routed = null; rings = null; crosses = null; rests = null; bends = null; covers = null; }
   }
   // slack: the cable's own length less the routed one, in metres
   // (only metres and feet convert; any other unit leaves slack unknown)
-  const own = l && l.source !== 'routed' && typeof l.value === 'number' && ['m', 'ft'].includes(l.unit ?? 'm')
-    ? l.value * ((l.unit ?? 'm') === 'ft' ? 0.3048 : 1) : null;
-  const slack = own != null && routed ? {metres: Math.round((own - routed.metres) * 100) / 100} : null;
+  // THE SPARE (version 4): the cable's length less what it needs, where it is
+  // said to be stored, and what of it has no place. `said` is false when the
+  // cable has no `slack` key and true for a list, empty or not. For a routed
+  // length the stock size is the one the route gives now; for a pinned one it
+  // is the pinned length. null where there is no path or no usable length.
+  const r2 = v => Math.round(v * 100) / 100;
+  let slack = null, need = null, spareNote = null;
+  if (ctx.route && l) {
+    try {
+      const s = slackOf(rack, cable, ctx.route);
+      if (s) {
+        need = r2(s.spare.need_m);
+        slack = {metres: r2(s.spare.spare_m), at_ends_m: r2(s.at_ends_m), said: s.said,
+                 stored: s.entries.map(e => (e.end ? {end: e.end, metres: e.metres == null ? null : r2(e.metres)}
+                   : {item: e.item, via: e.via, form: e.form, metres: e.metres == null ? null : r2(e.metres), ok: e.ok, ...(e.why ? {why: e.why} : {})})),
+                 unplaced_m: r2(s.unplaced_m)};
+        spareNote = slackFindings({...rack, cables: [cable]}, ctx.route, label).map(f => ({kind: f.kind, text: f.text}));
+      }
+    } catch { slack = null; }
+  }
   // the devices a route through this cable's ends can name: its two, and the
   // cable managers bolted on them
   const near = [...new Set([cable.a.item, cable.b.item])].filter(id => rack.items.some(i => i.id === id))
@@ -281,8 +362,12 @@ async function cableInfo(rack, cable, ctx) {
     }
   }
   return {kind: 'cable', id: cable.id, a: end(cable.a), b: end(cable.b), media: cable.media, purpose: cable.purpose, label: cable.label,
-    length: l ? {value: l.value, unit: l.unit ?? 'm', source: l.source ?? 'entered'} : null, routed, slack,
-    route: {edited, waypoints, text: routeText(waypoints, label, rack.frame), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {})}, lanes: lanesOf(rack.frame), passes,
+    length: l ? {value: l.value, unit: l.unit ?? 'm', source: l.source ?? 'entered', ...(need != null ? {need} : {})} : null, routed, slack,
+    ...(spareNote?.length ? {spare_findings: spareNote} : {}),
+    // how it was laid by hand in a pathway, as the file has it (`cable.lay`)
+    ...(Array.isArray(cable.lay) && cable.lay.length ? {lay: cable.lay} : {}),
+    route: {edited, waypoints, text: routeText(waypoints, label, rack.frame), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {}),
+            ...(bends ? {bends} : {}), ...(covers ? {covers} : {})}, lanes: lanesOf(rack.frame), passes,
     loose, mismatch: warn, ...(unchecked ? {unchecked: true} : {})};
 }
 
@@ -317,7 +402,7 @@ function bundleFacts(rack, b, ctx) {
     route: {waypoints: b.route || [], text: routeText(b.route || [], label, rack.frame)},
     length: r.checked ? trunkLength(rack, b, ctx) : null,
     size: r.size, bend: r.bend,
-    straps: {every: strapSpacing(b), count: s ? s.count : null},
+    straps: {every: strapSpacing(b), count: s ? s.count : null, kinds: s ? s.kinds : null},
     gone: r.gone, warnings: r.warnings, notes: r.notes, checked: r.checked};
 }
 

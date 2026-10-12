@@ -161,7 +161,7 @@ const KIND = {os2: FIBER_SM, om3: FIBER_MM, om4: FIBER_MM, om5: FIBER_MM,
 const UNKNOWN = {family: null, mode: null};
 // What a media IS: its connector family (`fiber`, copper, dac, aoc) and, for
 // fibre, its mode. A media this page does not know has neither.
-export const mediaKind = media => KIND[media] || UNKNOWN;
+export const mediaKind = media => (typeof media === 'string' && Object.hasOwn(KIND, media) ? KIND[media] : UNKNOWN);
 
 // What an END's connector is, from what is known about it: the attrs of the
 // part seated in the port (an optic, a DAC end - null when nothing is), the
@@ -206,7 +206,7 @@ export function mismatch(media, a, b) {
   const m = mediaKind(media);
   if (m.family) for (const [k, e] of [['A', a], ['B', b]])
     if (e?.family && e.family !== m.family)
-      out.push(`${MEDIA_LABELS[media]} does not suit end ${k}, which is ${NAMED[e.family]}.`);
+      out.push(`${Object.hasOwn(MEDIA_LABELS, media) ? MEDIA_LABELS[media] : media} does not suit end ${k}, which is ${NAMED[e.family]}.`);
   return out;
 }
 

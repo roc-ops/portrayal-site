@@ -4,6 +4,7 @@
 
 import {apply as applyCommands, COMMANDS} from './commands.js';
 import {settleManagers} from './managers.js';
+import {overlapNotices, frameNotices} from './fit.js';
 import {createHistory} from './history.js';
 
 // What a command that is not a step owns is kept across an undo or redo: Undo
@@ -72,6 +73,9 @@ export function createRackEditor({doc, chassisOf, cap = 100}) {
       const racks = next.racks.map(r => {
         const s = settleManagers(r, chassisOf);
         findings.push(...s.notices.map(text => ({kind: 'note', text})));
+        // what the fit of before allowed and this one does not is kept where
+        // it is, and named (fit.js overlapNotices)
+        findings.push(...[...overlapNotices(s.rack, chassisOf), ...frameNotices(s.rack, chassisOf)].map(text => ({kind: 'note', text})));
         return s.rack;
       });
       current = {...next, racks};

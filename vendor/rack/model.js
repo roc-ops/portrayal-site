@@ -13,7 +13,10 @@ export const FORMAT = 'portrayal-rack';
 // version-2 reader keeps (`zeroU` as written) or drops (`side`), and no reader
 // older than this kit was ever published. Bundles (#921) did: a version-2
 // reader would drop `bundles`, a rack key, and erase them on its next save.
-export const VERSION = 3;
+// Version 4 (docs/rack-file-v4-design.md) is one bump for every key that
+// needed one: a version-3 reader refuses `ru: 12.5` outright, and erases or
+// misreads the others.
+export const VERSION = 4;
 export const THREADS = ['12-24', '10-32', 'M6'];
 // MIGRATIONS[n - 1] takes a version-n document to version n + 1.
 //   1 -> 2: rack-face managers (`on`, `unit` on an item). Nothing in a
@@ -23,7 +26,52 @@ export const THREADS = ['12-24', '10-32', 'M6'];
 //   changes; the bump is so an older page refuses a file holding bundles
 //   instead of opening it, dropping them and erasing them on its next save
 //   (docs/cable-bundles-design.md section 2.3).
-export const MIGRATIONS = [d => ({...d, version: 2}), d => ({...d, version: 3})];
+//   3 -> 4: half-unit positions and the keys of docs/rack-file-v4-design.md
+//   section 1.1. Nothing in a version-3 file changes shape or meaning; the
+//   bump is so a version-3 page refuses a file it would erase keys from,
+//   misplace or measure wrongly (section 8 of that note).
+export const MIGRATIONS = [d => ({...d, version: 2}), d => ({...d, version: 3}), d => ({...d, version: 4})];
+
+// WHAT A READER DOES NOT KNOW, IT KEEPS (version 4). An item, the frame, a rack
+// and the document are each rebuilt from the keys this file knows; every other
+// own key is carried over as written, as a cable, a zero-U entry and a bundle
+// always carried theirs. So a later optional key that is safe to ignore needs
+// no version bump, whichever level it sits at. A misspelt key is kept too, and
+// not reported here: the schema reports it to anyone who validates.
+const unknownOf = (o, known) => Object.fromEntries(Object.entries(o && typeof o === 'object' && !Array.isArray(o) ? o : {})
+  .filter(([k]) => !known.includes(k)).map(([k, v]) => [k, structuredClone(v)]));
+const FRAME_KEYS = ['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref', 'startU', 'setback', 'width'];
+const ITEM_KEYS = ['id', 'ref', 'cfg', 'label', 'ru', 'face', 'turned', 'swaps', 'fields', 'on', 'unit', 'side', 'setback', 'roll',
+                   'states', 'readings', 'readingsAsWritten'];
+const RACK_KEYS = ['id', 'name', 'frame', 'items', 'zeroU', 'cables', 'dcim', 'bundles'];
+const DOC_KEYS = ['format', 'version', 'id', 'racks'];
+// The rail hole styles. `round` (version 4) is an unthreaded round hole.
+export const HOLE_STYLES = ['square', 'tapped', 'round'];
+// THE OPTIONAL NUMBERS OF VERSION 4, each written only when it says something
+// and left out otherwise, so a frame or an item never given one saves as it
+// was. `startU`: the number of the first unit, a whole number from 1 (absent
+// is 1). `setback`: millimetres a faceplate stands behind its rail, into the
+// rack from the face it is on; negative is proud. `width`: the rail width in
+// inches (absent is 19). A value that is none of these is dropped, as a bad
+// thread is. `options` on a frame and `heldBy` on an item are kept as written.
+const finite = v => typeof v === 'number' && Number.isFinite(v);
+const startUOf = v => (Number.isInteger(v) && v >= 1 ? {startU: v} : {});
+const setbackOf = v => (finite(v) ? {setback: v} : {});
+const widthOf = v => (finite(v) && v > 0 ? {width: v} : {});
+// ROLL (version 4): how an item is turned in the plane of its face, 90, 180 or
+// 270 degrees clockwise as it is seen in the elevation of the face it is on,
+// after `face` and `turned`. Absent is upright; 0 is never written.
+export const ROLLS = [90, 180, 270];
+export const rollOf = item => (ROLLS.includes(item?.roll) ? item.roll : 0);
+const rollKey = v => (ROLLS.includes(v) ? {roll: v} : {});
+export const firstU = frame => (Number.isInteger(frame?.startU) && frame.startU >= 1 ? frame.startU : 1);
+export const RAIL_WIDTH_IN = 19;
+export const railWidth = frame => (finite(frame?.width) && frame.width > 0 ? frame.width : RAIL_WIDTH_IN);
+// WHAT HOLDS AN ITEM that is not bolted to the rails itself (`heldBy`): the id
+// of its host item, or null. The key is kept whatever its shape; this is what
+// the kit acts on.
+export const holderOf = item => (item?.heldBy && typeof item.heldBy === 'object' && !Array.isArray(item.heldBy) && typeof item.heldBy.item === 'string' && item.heldBy.item
+  ? item.heldBy.item : null);
 
 const RAIL_DEPTH = 740;        // mm between front and rear rails: a common 4-post
 const USABLE_BEYOND = 260;     // mm a four-post allows past its rear rail by default
@@ -34,9 +82,10 @@ const token = () => Math.random().toString(36).slice(2, 10);
 export function normalizeFrame(f = {}) {
   const four = f.kind !== 'two-post';
   const railDepth = four ? (Number(f.railDepth) > 0 ? Number(f.railDepth) : RAIL_DEPTH) : null;
-  const style = f.holes?.style === 'tapped' ? 'tapped' : 'square';
+  const style = HOLE_STYLES.includes(f.holes?.style) ? f.holes.style : 'square';
   const height = Math.round(Number(f.heightRU));
   return {
+    ...unknownOf(f, FRAME_KEYS),
     kind: four ? 'four-post' : 'two-post',
     heightRU: height >= 1 ? height : 42,
     numbering: f.numbering === 'top-down' ? 'top-down' : 'bottom-up',
@@ -45,6 +94,7 @@ export function normalizeFrame(f = {}) {
     usableDepth: Number(f.usableDepth) > 0 ? Number(f.usableDepth)
       : four ? railDepth + USABLE_BEYOND : TWO_POST_USABLE,
     ref: f.ref ?? null,
+    ...startUOf(f.startU), ...setbackOf(f.setback), ...widthOf(f.width),
   };
 }
 
@@ -133,6 +183,11 @@ const plainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
 export const zeroUOf = rack => (Array.isArray(rack?.zeroU) ? rack.zeroU : []).filter(z => plainObject(z)
   && typeof z.id === 'string' && z.id && typeof z.ref === 'string' && z.ref && typeof z.at === 'string' && z.at);
 export const zeroUById = (rack, id) => zeroUOf(rack).find(z => z.id === id) ?? null;
+// WHAT A ZERO-U PART HANGS ON (version 4, `heldBy: {parts: [id, ...]}`): the
+// ids of the zero-U entries that hold it, such as the two brackets of a PDU;
+// none for a part that stands on its own.
+export const holdersOf = z => (plainObject(z?.heldBy) && Array.isArray(z.heldBy.parts)
+  ? z.heldBy.parts.filter(id => typeof id === 'string' && id) : []);
 // A part's bottom U and its offset, each from the other: U1 is offset 0.
 export const zeroUOffset = ru => Math.round((ru - 1) * RU * 100) / 100;
 export const zeroUBottom = z => Math.max(1, Math.round((Number(z?.offsetMm) || 0) / RU) + 1);
@@ -168,27 +223,80 @@ export const withDcim = (rack, patch) => {
   return !rack.dcim && !Object.keys(next).length ? rack : {...rack, dcim: next};
 };
 
-// U numbers are stored bottom-up always; this is only what a label says.
-export const uLabel = (frame, u) => (frame.numbering === 'top-down' ? frame.heightRU - u + 1 : u);
+// U numbers are stored bottom-up from 1 always; this is only what a label
+// says: counted the way the frame counts, from the number its first unit has
+// (`startU`, absent is 1).
+export const uLabel = (frame, u) => firstU(frame) - 1 + (frame.numbering === 'top-down' ? frame.heightRU - u + 1 : u);
 // A DEVICE'S U, wherever it is named with one: its POSITION, the lowest-numbered
-// U it covers, counted the way this frame counts - what a DCIM calls a device's
-// position. `ru` is its bottom U as stored and `u` its height; on a bottom-up
-// frame that is the bottom U's own label, on a top-down one the top U's.
-export const positionOf = (frame, ru, u = 1) => Math.min(uLabel(frame, ru), uLabel(frame, ru + Math.max(1, u) - 1));
+// half unit it fills, counted the way this frame counts - what a DCIM calls a
+// device's position, in steps of 0.5. `ru` is its bottom as stored and `units`
+// its height in units (fit.js unitsOf); on a bottom-up frame that is the bottom
+// itself, on a top-down one the half unit under its top edge. On a 42U top-down
+// frame a 0.5U item stored at 12 is at 31.5, and one stored at 12.5 is at 31.
+// A height that is missing (null, 0) counts as one unit, as it always did.
+// With `startU` it counts from there: a frame that starts at 5 has its bottom
+// unit at 5 bottom-up, and its top unit at 5 top-down.
+export const positionOf = (frame, ru, units = 1) =>
+  firstU(frame) - 1 + (frame.numbering === 'top-down' ? frame.heightRU + 2 - ru - (units > 0 ? units : 1) : ru);
+// A position as a person reads it: "U12", "U12.5". It takes the height because
+// a top-down label of a half depends on it. uLabel stays for whole units
+// (lanes, managers, the rail numbers).
+export const uText = (frame, ru, units = 1) => `U${positionOf(frame, ru, units)}`;
 
-function readItem(i, n) {
-  if (!i || typeof i.ref !== 'string' || !i.ref || !Number.isInteger(i.ru))
+// STATES AND READINGS (version 4, docs/rack-file-v4-design.md section 4), on
+// an item and on a zero-U entry alike.
+// `states` is a map of part path to state name, both text. It is read entry
+// by entry: one that is not text for text is dropped, and `said` is told.
+// `readings` is {source, at, values} and is kept ONLY WHOLE: without a source
+// that is text, a time `at` that can be read, or with `values` that are not a
+// map of part path to an object, it moves as written to `readingsAsWritten`,
+// as an unusable length moves to `lengthAsWritten`, and nothing draws it.
+const isText = v => typeof v === 'string' && v !== '';
+export const usableReadings = r => plainRecord(r) && isText(r.source) && isText(r.at) && !Number.isNaN(Date.parse(r.at))
+  && (r.values === undefined || (plainRecord(r.values) && Object.values(r.values).every(plainRecord)));
+const plainRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
+function readSettings(src, who, said) {
+  const out = {};
+  if ('states' in src) {
+    const kept = {}, dropped = [];
+    for (const [k, v] of Object.entries(plainRecord(src.states) ? src.states : {})) (isText(v) ? kept : dropped)[k] = v;
+    if (!plainRecord(src.states)) said?.(`The states of ${who} were not a map of part to state, so they were dropped.`);
+    else if (Object.keys(dropped).length)
+      said?.(`${Object.keys(dropped).join(', ')} on ${who} had a state that is not a name, so ${Object.keys(dropped).length === 1 ? 'it was' : 'they were'} dropped.`);
+    if (plainRecord(src.states)) out.states = kept;
+  }
+  // `readings: null` says there are none, and is no key at all
+  if (src.readings != null) {
+    const r = src.readings;
+    if (usableReadings(r)) out.readings = structuredClone(r);
+    else {
+      out.readingsAsWritten = structuredClone(r);
+      const sourced = plainRecord(r) && isText(r.source) && isText(r.at) && !Number.isNaN(Date.parse(r.at));
+      said?.(sourced
+        ? `The readings of ${who} have values that are not a map of part to what was read there, so they are kept as written and not shown.`
+        : `The readings of ${who} have no source or no time that can be read, so they are kept as written and not shown.`);
+    }
+  } else if (src.readingsAsWritten != null) out.readingsAsWritten = structuredClone(src.readingsAsWritten);
+  return out;
+}
+
+// A POSITION is a whole unit or a half (version 4): `ru` in steps of 0.5.
+export const isPosition = ru => typeof ru === 'number' && Number.isFinite(ru) && Number.isInteger(ru * 2);
+
+function readItem(i, n, said) {
+  if (!i || typeof i.ref !== 'string' || !i.ref || !isPosition(i.ru))
     throw new Error(`Item ${n} has no device or no U.`);
-  return {id: String(i.id ?? ''), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
+  return {...unknownOf(i, ITEM_KEYS), id: String(i.id ?? ''), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
           ru: i.ru, face: i.face === 'rear' ? 'rear' : 'front', turned: !!i.turned,
           swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {}),
-          ...hostOf({on: i.on == null ? undefined : String(i.on), unit: i.unit}), ...sideOf(i.side)};
+          ...hostOf({on: i.on == null ? undefined : String(i.on), unit: i.unit}), ...sideOf(i.side), ...setbackOf(i.setback), ...rollKey(i.roll),
+          ...readSettings(i, String(i.label ?? i.ref), said)};
 }
 
 // The zero-U record as written, with an id given to each object entry that
 // has none, or one an earlier entry took (as items are repaired), past every
 // id the record declares. Anything else is kept as it is.
-function readZeroU(list) {
+function readZeroU(list, said) {
   const taken = list.filter(z => plainObject(z) && typeof z.id === 'string' && z.id).map(z => ({id: z.id}));
   const seen = new Set();
   return list.map(raw => {
@@ -196,7 +304,9 @@ function readZeroU(list) {
     if (!plainObject(z)) return z;
     if (typeof z.id !== 'string' || !z.id || seen.has(z.id)) z.id = nextId([...taken, ...[...seen].map(id => ({id}))], 'z');
     seen.add(z.id);
-    return z;
+    // what it is set to is read as on an item; where it stands is kept as written
+    const {states: _s, readings: _r, readingsAsWritten: _w, ...rest} = z;
+    return {...rest, ...readSettings(z, String(z.label ?? z.ref ?? z.id), said)};
   });
 }
 
@@ -207,12 +317,12 @@ function readZeroU(list) {
 // past every id an item in the file declares and every id a cable end names
 // (`cables`, as written) - so a repair never takes a later item's id, and
 // never picks up a cable that was not this item's.
-function readItems(list, cables, bundles) {
+function readItems(list, cables, bundles, said) {
   const taken = [...list.map(i => ({id: String(i?.id ?? '')})), ...endItems(cables), ...bundleItems(bundles)];
   const items = [];
   const seen = new Set();
   list.forEach((i, n) => {
-    const it = readItem(i, n + 1);
+    const it = readItem(i, n + 1, said);
     if (!it.id || seen.has(it.id)) it.id = nextId([...taken, ...items], 'i');
     seen.add(it.id);
     items.push(it);
@@ -265,6 +375,36 @@ const lengthValue = v => {
   const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d+(\.\d+)?$/.test(v) ? Number(v) : 0;
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
+// A CABLE'S `slack` (version 4, docs/rack-file-v4-design.md section 3.3) is a
+// list, read entry by entry. An entry is usable when it is an object naming a
+// tray (`item` and `via`, non-empty text) or an end (`end`: a or b); `form`,
+// when present, is coil, serpentine or spool; `value`, when present, is a
+// number above 0 with a `unit` that is non-empty text or absent (metres). At
+// most one entry has no value, since only one can take the rest: a second is
+// not usable. When any entry is not usable, the usable ones stay in `slack`
+// and the list as written moves to `slackAsWritten`; nothing is thrown away.
+// A `slack` that is no list moves there whole, and the cable has no `slack`
+// key: nothing has been said.
+export const SLACK_FORMS = ['coil', 'serpentine', 'spool'];
+function readSlack(raw) {
+  if (raw === undefined) return {};
+  if (!Array.isArray(raw)) return {slackAsWritten: structuredClone(raw)};
+  let rest = false;
+  const usable = e => {
+    if (!plainObj(e)) return false;
+    const tray = typeof e.item === 'string' && e.item && typeof e.via === 'string' && e.via;
+    if (!tray && e.end !== 'a' && e.end !== 'b') return false;
+    if ('form' in e && !SLACK_FORMS.includes(e.form)) return false;
+    if ('unit' in e && e.unit != null && !(typeof e.unit === 'string' && e.unit.trim() !== '')) return false;
+    if (e.value != null) return typeof e.value === 'number' && Number.isFinite(e.value) && e.value > 0;
+    if ('value' in e || rest) return false;      // a value that is null, or a second entry for the rest
+    rest = true;
+    return true;
+  };
+  const kept = raw.filter(usable).map(e => structuredClone(e));
+  return kept.length === raw.length ? {slack: kept} : {slack: kept, slackAsWritten: structuredClone(raw)};
+}
+
 // `bundles`, as written: a repaired cable's fresh id is past every id a bundle
 // member names, so it cannot pick up another cable's membership.
 export function readCables(list, bundles = []) {
@@ -272,7 +412,7 @@ export function readCables(list, bundles = []) {
   const out = [];
   const seen = new Set();
   for (const raw of list) {
-    const {length: len, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    const {length: len, slack: slackRaw, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
@@ -303,7 +443,7 @@ export function readCables(list, bundles = []) {
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
               route, ...(routeAsWritten ? {routeAsWritten} : {}),
-              ...(routeEdited === true ? {routeEdited: true} : {}),
+              ...(routeEdited === true ? {routeEdited: true} : {}), ...readSlack(slackRaw),
               ...(length ? {length} : len == null ? {} : {lengthAsWritten: len})});
   }
   return out;
@@ -323,14 +463,17 @@ export function parseDoc(input, {notes} = {}) {
   for (let v = d.version; v < VERSION; v++) d = MIGRATIONS[v - 1](d);
   if (!Array.isArray(d.racks) || !d.racks.length) throw new Error('This rack file holds no rack.');
   return {
+    ...unknownOf(d, DOC_KEYS),
     format: FORMAT, version: VERSION,
     id: typeof d.id === 'string' && d.id ? d.id : `doc-${token()}`,
     racks: d.racks.map((r, k) => {
       const bundles = Array.isArray(r.bundles) ? r.bundles : null;
-      const items = readItems(r.items || [], r.cables, bundles);
-      const zeroU = readZeroU(Array.isArray(r.zeroU) ? r.zeroU : []);
+      const said = text => { if (Array.isArray(notes)) notes.push(`${String(r.name ?? 'Rack')}: ${text}`); };
+      const items = readItems(r.items || [], r.cables, bundles, said);
+      const zeroU = readZeroU(Array.isArray(r.zeroU) ? r.zeroU : [], said);
       const cables = readCables(Array.isArray(r.cables) ? r.cables : [], bundles ?? []);
       const rack = {
+        ...unknownOf(r, RACK_KEYS),
         id: String(r.id ?? `r${k + 1}`), name: String(r.name ?? 'Rack'),
         frame: normalizeFrame(r.frame), items, zeroU, cables,
         // Optional, and only when the file has it (dcimOf): no version bump, since a
@@ -339,7 +482,7 @@ export function parseDoc(input, {notes} = {}) {
           ? {dcim: {...structuredClone(r.dcim), ...Object.fromEntries(Object.entries(dcimOf(r)).filter(([k]) => k in r.dcim))}} : {}),
         // Optional too (#921), and only when the file has it: a rack that was
         // never given a bundle saves as it was.
-        ...(bundles ? {bundles: readBundles(bundles, [...items, ...cables, ...zeroU.filter(plainObj)])} : {}),
+        ...(bundles ? {bundles: readBundles(bundles, [...items, ...cables, ...zeroU.filter(plainObj)], said)} : {}),
       };
       // The references are checked here, so a reader that only parses gets
       // the same consistent rack as the editor.
@@ -373,9 +516,21 @@ export const bundleIdFor = rack => freshBundleId([...rackIds(rack), ...bundlesOf
 // {cable: <string>} is dropped; a number that is not a whole number from 1
 // goes past the highest in use; the trunk is read as a cable's route is, so an
 // unreadable entry keeps the trunk as written in `routeAsWritten`. A `straps`
-// that is not {every: null} or {every: {value above 0, unit in or mm}} says
-// nothing the default does not, and is dropped. Unknown fields are kept.
-function readBundles(list, others) {
+// is kept when it has a key that says something: `every` (null, or {value
+// above 0, unit in or mm}), or `breakout` or `anchors` (true or false, version
+// 4). One of those three that is not valid is left out of it, and a `straps`
+// left with none of them says nothing the defaults do not, and is dropped.
+// Unknown fields are kept.
+const STRAP_KINDS = ['breakout', 'anchors'];
+function readStraps(straps) {
+  if (!plainObj(straps)) return null;
+  const out = {...straps};
+  if ('every' in out && !(out.every === null || isStrapSpacing(out.every))) delete out.every;
+  for (const k of STRAP_KINDS) if (k in out && typeof out[k] !== 'boolean') delete out[k];
+  return ['every', ...STRAP_KINDS].some(k => k in out) ? out : null;
+}
+
+function readBundles(list, others, said) {
   const objs = list.filter(plainObj);
   const declared = objs.filter(b => typeof b.id === 'string' && b.id).map(b => ({id: b.id}));
   const whole = n => Number.isInteger(n) && n >= 1;
@@ -397,9 +552,14 @@ function readBundles(list, others) {
     // still the trunk, as a cable's route does, so a save and a reload keep it.
     const asWritten = r.routeAsWritten
       ?? (Array.isArray(incoming) && routesEqual(readableFromRouteAsWritten(incoming), r.route) ? incoming : null);
-    const strapsOk = plainObj(straps) && (straps.every === null || isStrapSpacing(straps.every));
+    const kept = readStraps(straps);
+    // what of its straps said nothing usable is dropped, and said
+    if (straps !== undefined) {
+      const lost = !plainObj(straps) ? ['straps'] : ['every', ...STRAP_KINDS].filter(k => k in straps && !(kept && k in kept));
+      if (lost.length) said?.(`${b.label ? b.label : `Bundle ${whole(b.number) ? b.number : id}`} had ${lost.join(', ')} that could not be read, so ${lost.length === 1 ? 'it was' : 'they were'} dropped.`);
+    }
     out.push({...b, id, number: whole(b.number) ? b.number : ++top, label: String(b.label ?? ''), members, route: r.route,
-              ...(asWritten ? {routeAsWritten: asWritten} : {}), ...(strapsOk ? {straps} : {})});
+              ...(asWritten ? {routeAsWritten: asWritten} : {}), ...(kept ? {straps: kept} : {})});
   }
   return out;
 }

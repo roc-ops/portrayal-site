@@ -9,7 +9,7 @@
 //   - EVERY ITEM, by its own left or right drawing, with its swaps and fields
 //     applied as the front pane applies them (face.js configuredFace), in the
 //     depth the kit places its body at (solids.js) and at the height the
-//     front pane draws it (body-span.js), so a row lines up across all four
+//     front pane draws it (the kit's fit.js itemBox), so a row lines up across all four
 //     panes. Flush on its rail plane, as in 3D;
 //   - THE PARTS BESIDE THE RACK (rack.zeroU) and the managers bolted over a
 //     device, the same way;
@@ -44,16 +44,17 @@
 
 import {RU} from '../../vendor/rack/rails.js';
 import {uLabel} from '../../vendor/rack/model.js';
-import {isZeroUPart} from '../../vendor/rack/fit.js';
+import {isZeroUPart, itemBox} from '../../vendor/rack/fit.js';
 import {colorOf, WIDTH} from '../../vendor/rack/cable-geometry.js';
 import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
-import {bodySpan} from './body-span.js';
 import {elevationBox} from './elevation.js';
-import {bundleSummary, STRAP_DRAWN, drawnDiameter} from './bundle-view.js';
+import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre} from './bundle-view.js';
+import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
+import {noteStrap} from './strap-size.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
         paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
 
@@ -171,7 +172,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
     let b, g;
     if (face) {
       const p = parsed(face.text);
-      // the body's bottom above the floor: where the front pane draws it in the units it takes (body-span.js)
+      // the body's bottom above the floor: where the front pane draws it in the span it fills (fit.js itemBox)
       const x = drawingX(pane, span, view, p.faceW), y = sideY(frame, (units ? units(p.faceH) : y0) + p.faceH);
       g = svgEl('g', {transform: `translate(${n3(x - p.ox)} ${n3(y - p.oy)})${turn ? ` rotate(180 ${n3(p.ox + p.faceW / 2)} ${n3(p.oy + p.faceH / 2)})` : ''}`,
         ...attrs, 'data-side-view': view, ...(turn ? {'data-side-turn': 'true'} : {})});
@@ -212,9 +213,9 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   // it does not join the near part in front of it into one solid column.
   for (const p of parts.filter(x => !x.near)) { const g = await zeroUGroup(p); g.setAttribute('opacity', String(FAR_OPACITY)); g.dataset.sideFar = 'true'; out.append(g); }
   const drawn = await Promise.all(paintOrder(pane, bodies).map(async ({it, c, span}) => {
-    const whole = it.u ?? Math.max(1, c.ru ?? 1);
-    // above the floor: the item's bottom, and the body centred in the span the front pane centres it in
-    const units = faceH => { const s = bodySpan(c.ru, whole, faceH); return (it.ru - 1) * RU + s.inset; };
+    // above the floor: the body centred in the span its item fills (the kit's fit.js itemBox), as the front pane centres it
+    const box = itemBox(rack, it, chassisOf), whole = (box.hi - box.lo) / RU;
+    const units = faceH => (box.lo + box.hi) / 2 - faceH / 2;
     const {g, b} = await draw({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, label: it.label, span,
       h: Number(c.h) || whole * RU, units,
       attrs: {'data-item-id': it.id, 'data-device-name': it.label, 'data-device-ref': it.ref, 'data-side-face': it.face,
@@ -403,15 +404,21 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       const bar = p && q ? strapBar(p, q, hit.f, hit.stretch.diameter / 2 + 2) : null;
       // a strap on a run across the rack is seen end on: counted, not drawn here
       if (!bar) continue;
-      const el = svgEl('g', {'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
       const xy = {x1: n3(bar.x1), y1: n3(bar.y1), x2: n3(bar.x2), y2: n3(bar.y2)};
-      const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
-      el.append(svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
-                svgEl('line', {...xy, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
-                svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
-                svgEl('line', {...xy, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      const el = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, xy, s);
+      // from the side the pack is its circle, as wide as its diameter whichever way the run goes (strap-size.js)
+      const len = Math.hypot(bar.x2 - bar.x1, bar.y2 - bar.y1) || 1;
+      noteStrap(el, {c: bar.at, n: [(bar.x2 - bar.x1) / len, (bar.y2 - bar.y1) / len], lo: -hit.stretch.diameter / 2, hi: hit.stretch.diameter / 2});
       bars.append(el);
     }
+  }
+  // THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0; route-context.js tieStraps): a
+  // band at the tray's tie slot, where one of its cables is drawn, on the face
+  // of the plate the cables are on. From the side it stands across the tray.
+  for (const m of routes.tieStraps ?? []) {
+    if (!m.cables.some(id => onPane.has(id))) continue;
+    const [cx, cy] = project(pane, frame, tieCentre(m));
+    bars.append(strapBarEl(tieAttrs(m), {x1: n3(cx), y1: n3(cy - TIE_HALF), x2: n3(cx), y2: n3(cy + TIE_HALF)}, {kind: 'anchor', width_mm: m.width_mm}));
   }
   if (bands.childElementCount) layer.prepend(bands);
   if (bars.childElementCount) layer.append(bars);

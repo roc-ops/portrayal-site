@@ -385,7 +385,10 @@ function cableCells(cables, locate, {cableStyle} = {}) {
     }
     const base = `cable-${slug(c.id ?? '') || i + 1}`;
     const style = esc(cableStyleOf(c, cableStyle));
-    const value = [c.label, lengthText(c.length)].filter(Boolean).join(' · ');
+    // the label alone says what is spare ("1 m, 0.58 m spare"): the length a
+    // round trip reads back is the attribute, which stays the length
+    const long = lengthText(c.length);
+    const value = [c.label, long && c.spare ? `${long}, ${c.spare} spare` : long].filter(Boolean).join(' · ');
     // THE CABLE STAYS A CABLE after a round trip: draw.io keeps an <object>'s
     // attributes through an edit and a save, as it keeps a port's path.
     const attrs = [['portrayal-cable', c.id], ['portrayal-media', c.media],

@@ -41,7 +41,8 @@
 
 import {RU, SIDES} from './rails.js';
 import {zeroUOf, zeroUBottom} from './model.js';
-import {isZeroUPart, railOf} from './fit.js';
+import {isZeroUPart, railOf, itemBox, setbackOf, isQuarter} from './fit.js';
+import {rollOf} from './model.js';
 import {zeroUX, faceOfAt, carriesLane} from './zero-u.js';
 
 // mm a detour keeps clear of a body, beyond the cable's own radius: the figure
@@ -85,8 +86,14 @@ function placer({cx, w, y0, h, zFront, outward, mirror, flipY}) {
 
 function itemPlacer(rack, it, c) {
   const f = rack.frame, rear = it.face === 'rear', turned = !!it.turned;
-  const w = num(c.w), h = num(c.h), d = num(c.d);
-  const plane = rear ? -railDepthOf(f) : 0;
+  // rolled a quarter turn (`roll`), its width stands up the rack and its
+  // height lies across the opening: the box it is placed as
+  const q = isQuarter(it);
+  const w = num(q ? c.h : c.w), h = num(q ? c.w : c.h), d = num(c.d);
+  // its faceplate stands its setback behind the rail, into the rack (0 for a
+  // part on the rail face)
+  const s = setbackOf(rack, it, () => c);
+  const plane = rear ? -railDepthOf(f) + s : 0 - s;
   // A rack-face part has its mounting face on the rail plane and its body
   // outward; a rack device's body runs between the rails (rack3d.js, route.js
   // pointOf).
@@ -105,11 +112,13 @@ function itemPlacer(rack, it, c) {
   // a narrow rack-face part on one rail stands over its hole line, and on the
   // right rail is turned end over end (railOf, as the elevation and the 3D
   // scene place it)
-  const rail = railOf(it, () => c);
+  const rail = q ? null : railOf(it, () => c);
   const left = rail ? (rail === 'left') === !rear : null;
   const cx = rail ? (left ? SIDES[0] : SIDES[1]).hole : 0;
-  const flip = rail === 'right';
-  return placer({cx, w, y0: (it.ru - 1) * RU, h, zFront, outward, mirror: flip ? !mirror : mirror, flipY: flip});
+  // ... and so is any part rolled 180 degrees, so one that is both is upright again
+  const flip = (rail === 'right') !== (rollOf(it) === 180);
+  // where the body stands is fit.js itemBox's: centred in its span, always
+  return placer({cx, w, y0: itemBox(rack, it, () => c).y0, h, zFront, outward, mirror: flip ? !mirror : mirror, flipY: flip});
 }
 
 function zeroUPlacer(rack, z, c) {
@@ -146,7 +155,10 @@ export function solidsOf(rack, ctx) {
   for (const it of rack.items || []) {
     const c = chassisOf(it.ref);
     if (!c || !(pos(c.w) && pos(c.h) && pos(c.d)) || isZeroUPart(c)) continue;
-    add(it.id, ownBoxes(c), itemPlacer(rack, it, c), {away: it.face === 'rear' ? -1 : 1});
+    // ROLLED A QUARTER TURN it is an outline: one box, its height and width
+    // swapped, centred across the opening, with none of its own parts
+    const list = isQuarter(it) ? [{part: 'envelope', box: {x: 0, y: 0, z: 0, w: num(c.h), h: num(c.w), d: num(c.d)}}] : ownBoxes(c);
+    add(it.id, list, itemPlacer(rack, it, c), {away: it.face === 'rear' ? -1 : 1});
   }
   for (const z of zeroUOf(rack)) {
     const c = chassisOf(z.ref);
@@ -187,6 +199,7 @@ export function traysOf(rack, ctx) {
   for (const it of rack.items || []) {
     const c = chassisOf(it.ref);
     if (!c || !Array.isArray(c.trays) || !(pos(c.w) && pos(c.h) && pos(c.d)) || isZeroUPart(c)) continue;
+    if (isQuarter(it)) continue;             // an outline has no tray to lie on
     const place = itemPlacer(rack, it, c);
     const plan = b => { const p = place(b); return {x0: p.x0, x1: p.x1, z0: p.z0, z1: p.z1, y0: p.y0, y1: p.y1}; };
     for (const t of c.trays) {

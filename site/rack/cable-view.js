@@ -16,12 +16,15 @@
 
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
-import {bundleSummary, STRAP_DRAWN, bendViolations, drawnDiameter} from './bundle-view.js';
+import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
+import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
+import {throughRings} from '../../vendor/rack/route-path.js';
 import {paneMarks, landedBends} from './route-context.js';
 import {spareText} from './spare.js';
+import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -115,7 +118,7 @@ const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.esca
 // A port's box in the pane's own user space, or null when the pane does not
 // draw it. `svg` must be in the document and laid out (getScreenCTM).
 export function portBox(svg, itemId, path) {
-  const port = panelGroup(svg, itemId)?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+  const port = panelGroup(svg, itemId)?.querySelector(partSel(path));
   if (!port) return null;
   const b = port.getBBox();
   const m = svg.getScreenCTM().inverse().multiply(port.getScreenCTM());
@@ -342,13 +345,22 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   // THIS PANE DOES NOT DRAW THE NODE: the kit's rest height is the rack's,
   // the same on either pane, so it never places a node by itself - a front
   // lacer's ring has no point on the rear pane, and no stretch or strap there.
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, (e, f, i) => {
+  // WHERE EACH CABLE'S LINE IS ON THIS PANE, as the points it is drawn through
+  // (its waypoints here, before its corners are eased), for a strap to be put
+  // across its members by (strap-size.js): nothing is read back off the drawing.
+  // (through a ring it goes as it is drawn there, in at one face and out at the other: route-path.js throughRings, as routed2d runs it)
+  const lines = new Map(plan.links.filter(link => link.via2d?.[pane]?.length > 1).map(link => {
+    const via = link.via2d[pane], rings = link.rings2d?.[pane];
+    return [link.id, rings ? throughRings(via, rings, {lead: 4}).points : via];
+  }));
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
     for (const id of f.lay.at(i)?.members ?? []) if ((rest = restAt(id, w))) break;
     return p && rest ? [p[0], rest[1]] : p;
   });
+  drawTieStraps2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
   drawInFront(svg);
   for (const rec of recs) {
     const c = cables[rec.i];
@@ -474,11 +486,12 @@ export function drawInFront(svg) {
 //   - a ring round a corner too tight for the bundle's bend radius.
 // A stretch of the trunk on the other face is not drawn here, nor are its
 // straps. They go in the cables' layer and take no click.
+// `lines` is each cable's line on this pane as points (cable id -> [[x, y], ...]).
 // `turn(v)` turns a rack offset to this pane's axes; `base(e, f, i)` is trunk
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, base) {
+function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -538,13 +551,18 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
       const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
       const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
       const half = hit.stretch.diameter / 2 + 2;
-      const bar = svgEl('g', {'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)});
       const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
-      const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
-      bar.append(svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_DRAWN + 1.6, 'data-strap-part': 'rim'}),
-                 svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
-                 svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
-                 svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+      const bar = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, at, s);
+      // WHERE THE PACK IS, square across the run, for the page to size the strap by (strap-size.js): its
+      // riders' own lines where they cross the strap; where none does (a rider this pane does not draw
+      // through here), each rider's place in the lay. Kept beside the bar, not on it: a sheet is as it was.
+      const riders = hit.stretch.members, reach = hit.stretch.diameter / 2 + 12;
+      const p0 = pt(hit.stretch.from), p1 = pt(hit.stretch.to);
+      const laid = riders.map(id => {
+        const a = turn(lay.offset(id, hit.stretch.from)), b = turn(lay.offset(id, hit.stretch.to));
+        return [p0[0] + a[0] + (p1[0] + b[0] - p0[0] - a[0]) * hit.f, p0[1] + a[1] + (p1[1] + b[1] - p0[1] - a[1]) * hit.f];
+      });
+      noteStrap(bar, {c, n, ...(lineSpan(riders.map(id => lines.get(id)).filter(Boolean), c, n, WIDTH, reach) ?? packSpan(laid, c, n, WIDTH, hit.stretch.diameter))});
       bars.append(bar);
     }
   }
@@ -552,6 +570,50 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
   // Under every cable, so the members show inside the envelope; the straps over them.
   layer.prepend(bands);
   layer.append(bars);
+}
+
+// A STRAP'S BAR, on any pane: a rim and a core, each drawn twice (at the
+// strap's own width, and at a least screen width), as rack.css, hover.js and
+// the exports read them. `s` is the kit's strap: its `kind` (spacing,
+// breakout or anchor; kit 0.22.0) and `width_mm` go on the bar, and its width
+// is drawn (bundle-view.js strapDrawn). Every kind has the one look.
+export function strapBarEl(attrs, at, s = {}) {
+  const drawn = strapDrawn(s);
+  const bar = svgEl('g', {...attrs, 'data-strap-kind': s.kind ?? 'spacing', ...(s.width_mm ? {'data-strap-width': String(s.width_mm)} : {})});
+  const paint = STRAP_PAINT.light, least = {'vector-effect': 'non-scaling-stroke', 'stroke-linecap': 'square', 'data-strap-least': ''};
+  bar.append(svgEl('line', {...at, stroke: paint.rim, 'stroke-width': drawn + 1.6, 'data-strap-part': 'rim'}),
+             svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
+             svgEl('line', {...at, stroke: paint.core, 'stroke-width': drawn, 'data-strap-part': 'core'}),
+             svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
+  return bar;
+}
+// What a tie strap carries, on any pane: `data-strap` names its slot (no
+// bundle has that id), `data-members` the cables tied there, so it is lit and
+// dimmed with them as a bundle's strap is with its members.
+export const tieAttrs = m => ({'data-strap': `tie:${m.item}|${m.via}|${m.tie}`, 'data-tie': `${m.item}|${m.via}|${m.tie}`,
+  'data-members': m.cables.join(' '), 'data-tie-face': m.held ? 'held' : 'resting'});
+
+// THE TIE STRAPS OF SINGLE CABLES on a front or rear pane (route-context.js
+// tieStraps): a band at the tray's tie slot, on the face of the plate the
+// cables are on, across their run. On the pane of the face the tray's part
+// is mounted on, and only where one of its cables is drawn there.
+function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
+  const layer = svg.querySelector(':scope > [data-cables]');
+  if (!layer || !routes?.tieStraps?.length) return;
+  let bars = layer.querySelector(':scope > [data-bundle-straps]');
+  const fresh = !bars;
+  if (fresh) bars = svgEl('g', {'data-bundle-straps': pane, 'pointer-events': 'none'});
+  for (const m of routes.tieStraps) {
+    const it = rack.items.find(i => i.id === m.item);
+    if (!it || it.face !== pane) continue;
+    if (!m.cables.some(id => drawn.has(id))) continue;
+    // the band's middle: off the plate's face, on the side the cables are
+    const [cx, cy] = at2d(tieCentre(m));
+    // across the run: a run across the rack is seen along its length, and its band stands up; one in depth is seen end on, and its band lies flat
+    const d = m.run === 'x' ? [0, TIE_HALF] : [TIE_HALF, 0];
+    bars.append(strapBarEl(tieAttrs(m), {x1: cx - d[0], y1: cy - d[1], x2: cx + d[0], y2: cy + d[1]}, {kind: 'anchor', width_mm: m.width_mm}));
+  }
+  if (fresh && bars.childElementCount) layer.append(bars);
 }
 
 // WHICH PORT A CLICK IS ON, as its data-path, or null. `group` is the item's
@@ -564,12 +626,13 @@ function drawBundles2d(svg, rack, routes, pane, turn, base) {
 export function portAt(target, group) {
   let hit = null;
   for (let n = target; n && n !== group; n = n.parentNode) {
-    const p = n.getAttribute?.('data-path');
+    // (its path, as its own drawing or as the projection of a seated module's back: part-path.js)
+    const p = pathOfEl(n);
     if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
   }
   if (hit == null) return null;
   const path = portPathOf(hit);
-  return group.querySelector(`[data-path="${CSS.escape(path)}"][data-class="port"]`) ? path : null;
+  return group.querySelector(partSel(path, '[data-class="port"]')) ? path : null;
 }
 
 // A brass outline round a picked port, in the pane's own layer: screen UI
@@ -603,8 +666,12 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
       n.classList.toggle('on-member', selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId));
     // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
     // it, is the one selected, and dimmed with the rest otherwise (rack.css).
-    for (const n of svg.querySelectorAll('[data-strap]'))
-      n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && (n.dataset.members || '').split(' ').includes(selectedId)));
+    // ...and it fades with them: a strap whose bundle's cables are all left out by the filter is a ghost too.
+    for (const n of svg.querySelectorAll('[data-strap]')) {
+      const ids = (n.dataset.members || '').split(' ').filter(Boolean);
+      n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && ids.includes(selectedId)));
+      n.classList.toggle('ghost', ids.length > 0 && ids.every(id => out.has(id) && !lit(id)));
+    }
   }
 }
 

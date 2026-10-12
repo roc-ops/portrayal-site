@@ -15,6 +15,7 @@
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {drawElevation, panelFor} from './elevation.js';
 import {holdUndimmed, withoutBendRings, withFileStraps} from './hover.js';
+import {withCoversAsBuilt} from './covers.js';
 import {STRAP_PAINT} from './stage.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
@@ -31,8 +32,11 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         drawioCables, drawioCableStyle, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows,
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {routeFacts, routeNotes, withCableTypes, cableTypes} from './route-context.js';
-import {LANE_GAP, bodyFindings} from '../../vendor/rack/route.js';
+import {routeFacts, routeNotes, withCableTypes, cableTypes, landedBends} from './route-context.js';
+import {LANE_GAP, bodyFindings, bendFindingsOf, coverFindingsOf} from '../../vendor/rack/route.js';
+import {spareExports} from '../../vendor/rack/slack.js';
+import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
+import {looseIn} from './spare.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
 import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
@@ -103,6 +107,8 @@ async function cabledItems(rack, base) {
 const routesOf = (rack, chassisOf) => ((rack.cables || []).length
   ? routeFacts(rack, chassisOf).catch(err => { console.warn('[portrayal] export: routes', err); return null; })
   : Promise.resolve(null));
+// The spare of each cable as the exports take it (kit 0.22.0), or null without routes.
+const spareOf = (rack, rf) => { try { return rf?.ctx ? spareExports(rack, rf.ctx) : null; } catch (err) { console.warn('[portrayal] export: spare', err); return null; } };
 const hasWaypoints = rf => !!rf && [...rf.routes.values()].some(x => x.waypoints?.length);
 const labelOf = rack => id => (rack.items || []).find(i => i.id === id)?.label ?? zeroUOf(rack).find(z => z.id === id)?.label ?? id;
 
@@ -285,19 +291,24 @@ export async function drawioFile(rack, chassisOf) {
     const mounted = await Promise.all(lists[pane].map(async it => {
       const f = await faceOf(it, panelFor(it, pane));
       // The port cells this cabinet will hold, as the vendor picks them (cls 'port', by path).
-      for (const p of f?.ports || []) if (p.cls === 'port') ports.add(`${it.id}|${pane}|${p.path || p.id}`);
+      // (not the ports of a seated module's back: the kit's diagram makes their cells by drawing id until #1019 is
+      // vendored, so a cable to one is a note in the file, never an edge to a cell that is not there)
+      for (const p of f?.ports || []) if (p.cls === 'port' && !p.projected) ports.add(`${it.id}|${pane}|${p.path || p.id}`);
       // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
       return {id: idFor.get(`${it.id}|${pane}`), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
               faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
     }));
     racks.push({label, units: H, numDisp, mounted});
   }
-  const wires = drawioCables(rack, {ends: facts.ends, idOf: (id, pane) => idFor.get(`${id}|${pane}`) ?? drawioId(id, pane, suffix),
+  // EACH CABLE'S SPARE (kit 0.22.0, rack/slack.js spareExports), by this
+  // render's routes: the kit writes it after the length in an edge's label.
+  const rf = cabled ? await routesOf(rack, chassisOf) : null;
+  const wires = drawioCables(rack, {ends: facts.ends, spare: spareOf(rack, rf), idOf: (id, pane) => idFor.get(`${id}|${pane}`) ?? drawioId(id, pane, suffix),
                                     drawn: (id, pane, path) => ports.has(`${id}|${pane}|${path}`),
                                     hiddenBy: (id, pane) => lists.hidden.find(h => h.item.id === id && h.pane === pane)?.by.label ?? null,
                                     unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
   notes.push(...wires.notes);
-  if (hasWaypoints(cabled ? await routesOf(rack, chassisOf) : null))
+  if (hasWaypoints(rf))
     notes.push('Cable routes are not drawn in draw.io; the cables run straight between their ports there.');
   // A cable's color is the page's own, by its media key; the style around it is export-data.js's.
   const colors = new Map();
@@ -387,8 +398,9 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
             // never the hover's dimming (#169): the file is the rack, not the pointer;
             // nor a tight bend's warning ring (kit 0.17.0): that is the page's to show
+            // nor the reader's setting for the covers (#190): every cover is in the file as it was built
             data: await holdUndimmed(scene, () => withoutBendRings(scene, () => withFileStraps(scene, STRAP_PAINT.light.core,
-              () => (usdz ? scene.toUSDZ() : scene.toGLB())))),
+              () => withCoversAsBuilt(scene, () => (usdz ? scene.toUSDZ() : scene.toGLB()))))),
             type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary',
             ...(usdz ? {notes: [], left: notes, leftText: 'USDZ carries no notes; the GLB does.'} : {notes})};
   } finally {
@@ -663,10 +675,16 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
                                unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
 
   const rows = {devices: dev.rows.length, modules: mod.rows.length, cables: cab.rows.length};
+  const rackLeft = [];
   if (!nautobot) {
+    // A RACK THE KIT SCREENS OUT (kit 0.22.0: a name NetBox would refuse) gives
+    // no row and says why (`left`). No rack file is written then: a file of a
+    // header alone imports nothing and reads as if it had. The reason goes
+    // with what else was left out, into the README and the page's notes.
     const r = rackImportRows({rack, dcim});
     rows.rack = r.rows.length;
-    add(F.rack, toCsv(r.columns, r.rows));
+    rackLeft.push(...(r.left ?? []).map(l => l.reason).filter(Boolean));
+    if (r.rows.length) add(F.rack, toCsv(r.columns, r.rows));
   }
   add(F.devices, toCsv(dev.columns, dev.rows));
   add(F.modules, toCsv(mod.columns, mod.rows));
@@ -684,14 +702,15 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   const notes = [...renamed, ...ctx.notes, ...cab.notes];
   if (!ctx.items.length) notes.unshift('This rack has no devices, so there is nothing to import.');
   const readme = kitReadme({target, rack, date, dcim, typeFiles, manufacturers, rows, script,
-                            left: [...ctx.causes, ...left, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),
+                            left: [...ctx.causes, ...left, ...rackLeft, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),
                             scriptUrl: scriptHref(), source: SOURCE, settingsAt: SETTINGS_AT});
   add('README.txt', readme.text);
   // The entries are dated with the export's DAY, the one the README prints: the same rack on the same day
   // gives the same bytes.
   const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   return {name: `${fileStem(rack.name)}-${nautobot ? 'nautobot' : 'netbox'}-import.zip`, data: await makeZip(entries, day),
-          type: 'application/zip', notes: readme.notes, files};
+          // a rack the kit screened out is said on the page too, in the kit's sentence (rack-page.js exportStatus: `left`)
+          type: 'application/zip', notes: readme.notes, files, ...(rackLeft.length ? {left: rackLeft} : {})};
 }
 
 // THE BILL OF MATERIALS (spec §8): each device by configuration, each
@@ -736,7 +755,8 @@ export async function bomCsv(rack, chassisOf) {
   const rf = cabled ? await routesOf(rack, chassisOf) : null;
   // Without the routes the kit still reads the cable types (portrayal-site#164).
   const bundles = (rack.bundles || []).length ? (rf?.bundleRecords ?? bundleExports(rack, withCableTypes({}, await cableTypes()))) : [];
-  if (cabled) notes.push(...cableBomNotes(rack, facts.ends), ...routeNotes(rack, rf, labelOf(rack)));
+  // (with the one line that totals the spare: kit 0.22.0, rack/slack.js spareBomLine)
+  if (cabled) notes.push(...cableBomNotes(rack, facts.ends, {spare: spareOf(rack, rf)}), ...routeNotes(rack, rf, labelOf(rack)));
   notes.push(...strapBomNotes(bundles));
   if (!items.length && !sides.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
@@ -754,7 +774,10 @@ export async function bomCsv(rack, chassisOf) {
   if (railUs.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
   const all = uniq(notes);
   const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs}),
-                ...cableBomRows(rack, facts.ends), ...strapBomRows(bundles)];
+                // THE STRAP LINE IS THE KIT'S (0.22.0): each kind and each width, with
+                // the tie slots a single cable is strapped at, which it counts only
+                // when it is handed them (bundles.js anchorsOf).
+                ...cableBomRows(rack, facts.ends), ...strapBomRows(bundles, {anchors: rf?.bctx ? anchorsOf(rack, rf.bctx) : null})];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
 }
@@ -793,9 +816,22 @@ export async function cableScheduleCsv(rack, chassisOf) {
   // THE BODIES A ROUTE STILL CROSSES (Portrayal #949, kit 0.11.0): each
   // finding's sentence goes in its own cable's notes, so the file's notes
   // leave them out rather than say each twice.
+  // WHAT THE LAY FINDS (kit 0.21.0): each tight bend and each span in front
+  // of other ports, in its own cable's notes too. Only for a cable plugged in
+  // at both ends, as the page rings them (route-context.js landedBends).
+  // THE SPARE, WHERE IT IS STORED AND THE STRAPS OF A SINGLE CABLE (kit
+  // 0.22.0): the schedule's last three columns, which the kit fills only from
+  // what the page hands it (slack.js spareExports, bundles.js strapTexts).
+  const name = labelOf(rack), landed = fs => (facts.unchecked ? [] : landedBends(fs, rack, looseIn(facts.ends)));
   const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes,
                                                    {bundles: rf?.bundleRecords ?? null,
-                                                    bodies: rf?.ctx ? bodyFindings(rack, rf.ctx, labelOf(rack)) : null});
+                                                    bodies: rf?.ctx ? bodyFindings(rack, rf.ctx, name) : null,
+                                                    // (each from the path already read for its cable: what the kit's rack-wide
+                                                    // bendFindings and coverFindings call per cable, without laying it again)
+                                                    bends: rf?.ctx ? landed((rack.cables || []).flatMap(c => bendFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
+                                                    covers: rf?.ctx ? landed((rack.cables || []).flatMap(c => coverFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
+                                                    spare: spareOf(rack, rf),
+                                                    straps: rf?.bctx ? strapTexts(rack, rf.bctx, name) : null});
   notes.push(...routeNotes(rack, rf, labelOf(rack), {bodies: false}));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};

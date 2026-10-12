@@ -1910,6 +1910,127 @@
    "fails": true,
    "warns": false,
    "fails-at-verified": false
+  },
+  {
+   "code": "L173",
+   "scope": "device",
+   "rule": "an adjustment is well formed: its `range` runs from a smaller number to a larger one and holds the `default` and every stop; with no `range` it has two stops or more and the `default` is one of them; no two stops share a position, and no stop is named with a number, a sign or an exponent included (`100`, `1e2`)",
+   "why": "A default outside its own range draws a position the part cannot take, and two stops at one position, or a stop named with a number, leave a reader unable to say which position a value means.",
+   "fix": "correct the range, the default or the stop the message names; give a part on a row of holes one stop for each hole",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L174",
+   "scope": "device",
+   "rule": "the `carrier` of an adjustment is a placement of the device with a `ref`, that says `moves-with` the adjustment and is neither `only-in` nor `optional`",
+   "why": "The chosen position is held at the path of the carrier, and a path that some build has no part at is one no reader can find.",
+   "fix": "name a placed part that every configuration has and that moves with the adjustment; a motion made only of decor is modelled as a part",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L175",
+   "scope": "device",
+   "rule": "membership resolves: each `moves-with` names an adjustment of the device, on a view that is one of the six faces, and each adjustment has at least one member",
+   "why": "A mistyped id leaves a part behind when the others move, and the drawing looks correct until the position changes.",
+   "fix": "correct the id, or declare the adjustment under `adjustments:`; add `moves-with` to each part that slides",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L176",
+   "scope": "device",
+   "rule": "what stands on a member moves with it: a placement or a bay `in:` a member, a placement mated to a member, and a bay whose plan is `in:` a member state the same `moves-with`",
+   "why": "A reader of the drawing moves only what is marked, so a part left on a floor that went back would hang in the air.",
+   "fix": "add `moves-with` with the same id to the part the message names",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L177",
+   "scope": "device",
+   "rule": "the `default` of an adjustment is the position drawn, where that can be told: for `axis: z` with a carrier that is a well on the front view, the depth of the well is the default",
+   "why": "A control starts at the default, so a default the drawing does not show moves every member the first time the control is touched.",
+   "fix": "state as `default` the depth the carrier is drawn at, or draw the carrier at the default",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L178",
+   "scope": "device",
+   "rule": "a member stays inside the device at both ends of the travel: its box lies inside its view, the floor of a member well stays inside the device, and the range ends inside the device along its axis",
+   "why": "Fit judges a device by its envelope, so a part that can be set outside it would reach into the space of a neighbour with no finding.",
+   "fix": "shorten the range to the travel the part has, or correct the position or the size of the member the message names",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L179",
+   "scope": "device",
+   "rule": "no new collision at either end of the travel or at a stop: with the members moved, no member lands on a part that is not one, and a pair one of which is `under` or `in` the other still overlaps",
+   "why": "A part pushed through its neighbour is a wrong drawing that the default position hides.",
+   "fix": "shorten the range, move the part that is in the way, or make it a member if it slides too",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L180",
+   "scope": "device",
+   "rule": "the id of an adjustment is free on its carrier: it is not a field or an attr of the carrier, and it is not a name the build writes on a drawing as `data-<name>`",
+   "why": "The position is written on the carrier as `data-<id>`, so an id such as `depth` would overwrite the depth the part is built from.",
+   "fix": "rename the adjustment",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L181",
+   "scope": "device",
+   "rule": "a position a configuration sets is one the adjustment takes: a number in its range, or the name of a stop",
+   "why": "The build draws a configuration at the position it sets, so a value outside the travel would draw a position the hardware does not have.",
+   "fix": "set a number inside the range or a stop the adjustment declares; quote the value, as every `component-attrs` value is text",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L182",
+   "scope": "device",
+   "rule": "each adjustment has a `provenance` entry under its own id",
+   "why": "A range with no source is a guess that reads as a fact.",
+   "fix": "add `provenance.<id>` with a confidence and a note that gives the source of each end of the range and of the default",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
+  },
+  {
+   "code": "L183",
+   "scope": "device",
+   "rule": "an attr that restates an adjustment equals it: an attr whose name is the id of the adjustment, with any words before it, followed by `-mm` holds the default, and one followed by `-min-mm` or `-max-mm`, or with `min` or `max` among the words before the id, holds that end of the range (`minimum` and `maximum` are read as `min` and `max`, and no other word names an end); a name that says both ends is not paired; on an adjustment with stops and no range, the minimum is the lowest stop and the maximum the highest",
+   "why": "The attrs are how the travel of a part reaches the DCIM export comments, and two statements of one number drift apart: a range against its attrs, or a row of stops against the lowest and highest an attr claims.",
+   "fix": "correct the attr, or the range or the stop it restates, so that the two agree; rename an attr that measures something else",
+   "severity": "error",
+   "fails": true,
+   "warns": false,
+   "fails-at-verified": false
   }
  ],
  "retired": []

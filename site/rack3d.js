@@ -23,12 +23,12 @@ import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
-import {bodySpan, HALF_HOLE} from './rack/body-span.js';
+import { earHoles } from './rack/ear-holes.js';
+import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
-const RECESS_DEFAULT = 30;          // how far back the faceplate sits from the rails
 const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
 
 // Named opening views. `iso` is the direction this stage was composed with,
@@ -134,10 +134,15 @@ export function createRackScene(container, opts = {}) {
   });
   let LABEL = labelTones(opts);
 
-  // How far back the faceplate sits from the mounting rails. Most gear mounts
-  // flush and wants 0; the default is the setback the showcase was drawn with,
-  // so passing nothing changes nothing.
-  const RECESS = opts.recess ?? RECESS_DEFAULT;
+  // How far back every faceplate sits from the mounting rails. FLUSH UNLESS
+  // TOLD (decided 2026-10-11, with rack file version 4): the kit stands a
+  // faceplate on its rail plane unless the file states a setback, and so does
+  // this. It was 30 mm unless told, the setback the showcase was first drawn
+  // with, which put every plug of a scene built without the option 30 mm
+  // behind the path the kit starts it at. An entry's own `setback` (mm, the
+  // kit's fit.js setbackOf: the item's, its device's ear position or the
+  // frame's) is added to it for that entry.
+  const RECESS = opts.recess ?? 0;
 
   // Which view the scene opens at, and which one double-click returns to.
   // Named rather than a vector, because the useful ones carry their own aim and
@@ -429,7 +434,9 @@ export function createRackScene(container, opts = {}) {
         }
         // U numbers ON the rail, on its outboard half, on BOTH rails. They
         // used to float off the left side only.
-        const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? 'emph' : 'unit');
+        // (numbered as the caller's frame counts, when it says how: `opts.unitLabel`, 1 at the bottom otherwise)
+        const num = typeof opts.unitLabel === 'function' ? opts.unitLabel(u + 1) : u + 1;
+        const n = labelSprite(String(num), 30, num % 5 === 0 ? 'emph' : 'unit');
         n.scale.multiplyScalar(0.45);   // sized to sit inside a 26 mm face; adjust by eye
         n.position.set(s.number, u * RU + RU / 2, mountZ + dir * 0.6);
         rack.add(n);
@@ -458,15 +465,16 @@ export function createRackScene(container, opts = {}) {
   // mirror image of a front ear, not a copy of it parented somewhere else.
   // Defaulted to the front pair, so nothing that already calls this changes.
   //
-  // A BODY UNDER ONE UNIT (body-span.js; `body` = {inset, h}, given only for
-  // one) has an ear as tall as itself, where it sits in the lower half of its
-  // unit, with one screw, at the one rail hole that half holds - as the 2D
-  // elevation draws it. It had a whole unit's ear and two screws.
-  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null), body = null) {
+  // THE EAR IS AS TALL AS THE SPAN ITS ITEM FILLS, `lo` to `hi` in mm above
+  // the bottom of the rails (the kit's fit.js itemBox), and is fixed at the
+  // rail holes that span holds (ear-holes.js, over the kit's holesIn), as the
+  // 2D elevation draws it: two screws a unit, a unit's middle hole left
+  // empty, and one screw for a half unit, at the one hole that half holds.
+  function rackEars(lo, hi, halfW, depth, mountZ = RACK_FACE_Z, dir = 1, earMat = earMatOf(null)) {
     const g = new THREE.Group();
-    const yBase = (ru - 1) * RU;
-    const h = body ? body.h : ruHeight * RU - 4.5;
-    const yMid = body ? yBase + body.inset + body.h / 2 : yBase + ruHeight * RU / 2;
+    const h = hi - lo - (hi - lo >= RU ? 4.5 : 2);
+    const yMid = (lo + hi) / 2;
+    const screws = earHoles(lo, hi);
     // The leg spans the recess and then grips the flank. Only the GRIP is
     // capped: the recess has to be crossed whatever the device, or the ear
     // never reaches it.
@@ -492,13 +500,11 @@ export function createRackScene(container, opts = {}) {
         leg.position.set(side * (halfW + 1.5), yMid, mountZ - dir * legLen / 2);
         g.add(leg);
       }
-      for (let u = 0; u < ruHeight; u++) {
-        for (const dy of body ? [HOLE_DY[HALF_HOLE]] : [6.35, 38.10]) {
-          const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
-          head.rotation.x = Math.PI / 2;
-          head.position.set(holeX, yBase + u * RU + dy, mountZ + dir * 4.1);
-          g.add(head);
-        }
+      for (const y of screws) {
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
+        head.rotation.x = Math.PI / 2;
+        head.position.set(holeX, y, mountZ + dir * 4.1);
+        g.add(head);
       }
     }
     return g;
@@ -668,8 +674,51 @@ export function createRackScene(container, opts = {}) {
     if (sheet) for (const m of mats) m.visible = false;
     group.add(body);
     meshes.forEach(m => group.add(m));
+    // A SHEET BODY STANDS AS A PLAIN BOX UNTIL ITS DETAIL ARRIVES
+    // (`opts.standIn`, portrayal-site#190). Everything a sheet part is made
+    // of is built by the relief pass below, which is not awaited: until it
+    // lands the part is not there at all, and whatever a host hangs in or on
+    // it (the Rack Builder's lane cables and their straps, in a vertical
+    // manager) hangs in the air. So its box, which is there already as the
+    // frame its relief is built in, is shown at once: plain and see-through,
+    // a body that is still being built. The first face of detail hides it
+    // again, exactly as it was, and that is before complete() resolves.
+    // IT IS THE BOX ITSELF, WITH ITS OWN MATERIALS LENT, not a second mesh: a
+    // new mesh, geometry or material would take an id, and a USDZ names its
+    // parts by those, so every file after would differ by a number. No other
+    // caller passes the option.
+    let stoodIn = null;
+    if (sheet && opts.standIn) {
+      stoodIn = mats.map(m => ({m, own: {visible: m.visible, map: m.map, color: m.color.getHex(), transparent: m.transparent, opacity: m.opacity,
+                                         alphaTest: m.alphaTest, depthWrite: m.depthWrite}}));
+      for (const {m} of stoodIn) {
+        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.transparent = true; m.opacity = 0.35; m.alphaTest = 0; m.depthWrite = false;
+        m.needsUpdate = true;
+      }
+      body.userData.standIn = true;
+    }
+    const dropStandIn = () => {
+      if (!stoodIn) return;
+      for (const {m, own} of stoodIn) {
+        m.visible = own.visible; m.map = own.map; m.color.setHex(own.color); m.transparent = own.transparent; m.opacity = own.opacity;
+        m.alphaTest = own.alphaTest; m.depthWrite = own.depthWrite; m.needsUpdate = true;
+      }
+      delete body.userData.standIn;
+      stoodIn = null;
+    };
 
-    const ruHeight = Math.max(1, Math.round(H / RU));
+    // THE SPAN IT FILLS, AND WHERE ITS BODY IS IN IT: the kit's (fit.js
+    // itemBox). `lo` and `hi` are the edges of the span, in mm above the
+    // bottom of the rails, from the catalogue's height in units (in halves
+    // since rack file version 4: a half-unit panel at 12.5 is the upper half
+    // of U12); the body is centred in it, always, as the 2D elevation, the
+    // side panes and the kit's solids have it. It stood on the bottom of its
+    // lowest unit here, up to 6.35 mm below where the kit's routes took it to
+    // be. Without a catalogue entry the span is the drawing's height in units.
+    // A part beside the rack is no rack item: it stands on its bottom unit.
+    const box = entry.chassis?.ru != null && entry.mount !== 'rack-side'
+      ? itemBox(null, {ru: entry.ru, ref: entry.ref, roll: entry.roll}, () => entry.chassis)
+      : (u => ({lo: (entry.ru - 1) * RU, hi: (entry.ru - 1 + u) * RU}))(Math.max(1, Math.round(H / RU)));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
     // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
     // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).
@@ -683,14 +732,11 @@ export function createRackScene(container, opts = {}) {
     // its body outward: toward the viewer from the front rails, away from the
     // rear ones. A rack device's body goes the other way, between the rails.
     const rackFace = entry.mount === 'rack-face';
+    const back = RECESS + (Number.isFinite(entry.setback) ? entry.setback : 0);
     const z = rackFace
       ? (face === 'rear' ? mountZ - D / 2 : mountZ + D / 2)
-      : (face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
-    // WHERE THE BODY IS IN ITS UNITS (body-span.js): standing on the bottom of
-    // its lowest unit, as ever; a body under one unit (catalogue `ru` below 1)
-    // centred in its own part of that unit, as the 2D elevation draws it.
-    const span = bodySpan(entry.chassis?.ru, ruHeight, H, true);
-    group.position.set(0, (entry.ru - 1) * RU + span.inset + H / 2, z);
+      : (face === 'rear' ? mountZ + back + D / 2 : mountZ - back - D / 2);
+    group.position.set(0, entry.mount === 'rack-side' ? box.lo + H / 2 : (box.lo + box.hi) / 2, z);
     // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
     // bay: its faceplate looks out of the back of whichever rail it is
     // mounted to, and what you see from the mounting face's own side is its
@@ -724,8 +770,7 @@ export function createRackScene(container, opts = {}) {
     const noEars = !!entry.mount && entry.mount !== 'rack';
     const plan = noEars ? null : earPlan(entry.index || {chassis: entry.chassis}, frontW);
     const ears = noEars ? new THREE.Group()
-      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null,
-                 span.half ? {inset: span.inset, h: H} : null);
+      : rackEars(box.lo, box.hi, W / 2, D, mountZ, face === 'rear' ? -1 : 1, plan ? earMatOf(plan.color) : null);
     ears.userData.ears = noEars ? null : plan ? 'generic' : 'built-in';
     if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
@@ -744,6 +789,10 @@ export function createRackScene(container, opts = {}) {
     }
     scene.add(group);
     mounted.push({entry, group, tag, ears});
+    // A HOST THAT STANDS A MOUNT SOMEWHERE OF ITS OWN (`opts.onMount`) does it
+    // here, before the mount is ever drawn, not after the whole stack is
+    // built: the Rack Builder's parts beside the rack (rack/scene3d.js).
+    opts.onMount?.({id: entry.id ?? null, ref: entry.ref, group});
 
     // The faces nobody is looking at yet, plus the underside. Deliberately not
     // awaited: build() resolves once every device is standing, so the scrim
@@ -759,23 +808,47 @@ export function createRackScene(container, opts = {}) {
     const shownNow = VISIBLE_FACES[VIEW] || VISIBLE_FACES.iso;
     const order = [...FACES].sort((a, b) =>
       (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
-    pending.push((async () => {
-      for (const F of order) {
-        const per = [];
-        await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
-          facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
-          D, bodyBoxMesh: null});
-        if (mine !== epoch) return;
-        per.forEach(m => { group.add(m); meshes.push(m); });
-        const i = MAT_SLOT[F.view], cv = faceCv[F.view];
-        if (cv && body.material[i] && !sheet) {
-          const prev = body.material[i];
-          body.material[i] = mat(cv);
-          prev.map && prev.map.dispose();
-          prev.dispose();
+    const detail = (async () => {
+      try {
+        for (const F of order) {
+          const per = [];
+          await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
+            facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
+            D, bodyBoxMesh: null});
+          if (mine !== epoch) return;
+          per.forEach(m => { group.add(m); meshes.push(m); });
+          // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
+          // in the same task the meshes join the device, so nothing is drawn
+          // between. The Rack Builder reads the covers off it (rack/covers.js).
+          // No other caller passes it, and nothing here changes without it.
+          if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
+          if (per.length) dropStandIn();
+          const i = MAT_SLOT[F.view], cv = faceCv[F.view];
+          if (cv && body.material[i] && !sheet) {
+            const prev = body.material[i];
+            body.material[i] = mat(cv);
+            prev.map && prev.map.dispose();
+            prev.dispose();
+          }
         }
+        dropStandIn();   // a part whose drawing builds nothing is not left as a box
+      } catch (err) {
+        // ITS DETAIL COULD NOT BE BUILT (a file that did not load): the box
+        // stays, so nothing hangs in the air, but it is marked as one that
+        // is not coming (duller, and `standIn: 'failed'`), and the host is
+        // told once so its page can say so (`opts.onDetailFailed`). The
+        // failure is still the pass's: complete() rejects as it did.
+        if (mine === epoch && stoodIn) {
+          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.opacity = 0.2; m.needsUpdate = true; }
+          body.userData.standIn = 'failed';
+          opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: err});
+        }
+        throw err;
       }
-    })());
+    })();
+    // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
+    if (opts.onDetailFailed) detail.catch(() => {});
+    pending.push(detail);
     return group;
   }
 
@@ -871,7 +944,7 @@ export function createRackScene(container, opts = {}) {
         // instead of starting inside the metal.
         normal: new THREE.Vector3(0, 0, 1).applyEuler(rot)
           .applyQuaternion(group.getWorldQuaternion(new THREE.Quaternion())).normalize(),
-        view, path: el.getAttribute?.('data-path') ?? null, id: el.id || null,
+        view, path: el.getAttribute?.('data-path') ?? el.getAttribute?.('data-of') ?? null, id: el.id || null,
         mm: {x: r.x, y: r.y, w: r.w, h: r.h},
         ref: entry.ref, ru: entry.ru, label: entry.label,
       };
@@ -879,7 +952,8 @@ export function createRackScene(container, opts = {}) {
     return null;
   }
   const portAnchor = (which, path, o = {}) => (path
-    ? elementAnchor(which, doc => doc.svg.querySelector(`[data-path="${CSS.escape(path)}"]`), o)
+    // (as its own drawing, or as the projection of a seated module's back, whose parts carry their path as data-of)
+    ? elementAnchor(which, doc => doc.svg.querySelector(`[data-path="${CSS.escape(path)}"], [data-of="${CSS.escape(path)}"]`), o)
     : Promise.resolve(null));
   // WHERE A NAMED PART OF A MANAGER IS (spec §8), for routing in piece 2: a
   // ring is `guide-1` to `guide-5`, on the FHD-CMP5DR's top view (its front
@@ -1012,8 +1086,8 @@ export function createRackScene(container, opts = {}) {
   function fitUnits() {
     let top = 0;
     for (const e of RESOLVED) {
-      const h = e.chassis?.ru || Math.max(1, Math.round((e.chassis?.h || RU) / RU));
-      top = Math.max(top, (e.ru || 1) + h - 1);
+      const h = e.chassis?.ru != null ? unitsOf(e.chassis) : Math.max(1, Math.round((e.chassis?.h || RU) / RU));
+      top = Math.max(top, Math.ceil((e.ru || 1) + h - 1));
     }
     return Math.max(MIN_RU, top);
   }

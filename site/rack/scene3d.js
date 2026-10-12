@@ -10,16 +10,17 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter} from './bundle-view.js';
+import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF, tieCentre} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
-import {zeroUOf, zeroUBottom} from '../../vendor/rack/model.js';
-import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
+import {zeroUOf, zeroUBottom, uLabel} from '../../vendor/rack/model.js';
+import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
 import {landedBends} from './route-context.js';
+import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -351,16 +352,29 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     }
     const at = [];
     const vec = pts.map(p => (p ? [p.x, p.y, p.z] : null));
+    // ON THE TUBE AS IT IS DRAWN. The kit places a strap along the straight
+    // trunk; the tube rounds its corners by the bundle's bend radius, and a
+    // strap near one (a breakout strap stands 25 mm from where a cable
+    // leaves, which is often at a corner) would hang off the tube. Each band
+    // is stood at the nearest point of the drawn run, along its tangent there.
+    const drawn = runs.flatMap(curve => { const n = Math.max(40, Math.ceil(curve.getLength() / 2));
+      return Array.from({length: n + 1}, (_, i) => ({p: curve.getPointAt(i / n), t: curve.getTangentAt(i / n)})); });
+    const onTube = at => { const q = new THREE.Vector3(...at); let best = null, d2 = Infinity;
+      for (const x of drawn) { const d = x.p.distanceToSquared(q); if (d < d2) { d2 = d; best = x; } }
+      return best && d2 < 60 * 60 ? best : null; };
     (f.straps?.straps ?? []).forEach((s, k) => {
       const hit = strapAt(vec, s);
       if (!hit) return;
+      const snap = onTube(hit.at);
+      if (snap) { hit.at = [snap.p.x, snap.p.y, snap.p.z]; hit.dir = [snap.t.x, snap.t.y, snap.t.z]; }
       // a band round the pack, at the pack's diameter where the strap is
       const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
+      // as wide along the run as its own width asks (kit 0.22.0 `width_mm`; a 19 mm strap is the band it always was)
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND * strapDrawn(s) / STRAP_DRAWN, 20, 1, false), strapMat);
       band.position.set(...hit.at);
       band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...hit.dir));
       band.name = `bundle-${f.id}-strap-${k}`;
-      band.userData.strap = {bundle: f.id, along_mm: s.along_mm, diameter: Ds};
+      band.userData.strap = {bundle: f.id, along_mm: s.along_mm, diameter: Ds, kind: s.kind ?? 'spacing', width_mm: s.width_mm ?? null};
       g.add(band);
       at.push(band.position.clone());
     });
@@ -389,18 +403,45 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     group.add(g);
     out.push({id: f.id, diameter: D, points: pts.filter(Boolean), straps: at, tight, radius_mm: R, curves: runs});
   }
+  // THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0; route-context.js tieStraps): a
+  // band at the tray's tie slot round the cables lying there, its axis along
+  // their run, on the face of the plate they are on. Named by its slot, with
+  // the cables it ties, so it is lit and dimmed with them (hover.js).
+  // (a group of their own beside the bundles', 'tie-straps': a tie strap is no bundle, has no envelope and takes no pointer)
+  const ties = [], tieGroup = new THREE.Group();
+  tieGroup.name = 'tie-straps';
+  if (facts.tieStraps?.length) {
+    facts.tieStraps.forEach(m => {
+      // a group and a material of its own, as a bundle has: hover.js dims a group's materials
+      const slot = `${m.item}|${m.via}|${m.tie}`;
+      const tg = new THREE.Group();
+      tg.name = `tie-${slot}`;
+      tg.userData.tie = slot; tg.userData.members = [...m.cables];
+      const mat = new THREE.MeshStandardMaterial({color: new THREE.Color(strapPaint(facts.stage ?? '#101214').core), roughness: 0.8});
+      mat.userData.strap = true;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(TIE_HALF, TIE_HALF, STRAP_BAND * strapDrawn(m) / STRAP_DRAWN, 16, 1, false), mat);
+      band.position.copy(toScene(tieCentre(m)));
+      band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), m.run === 'z' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0));
+      band.name = `tie-strap-${slot}`;
+      band.userData.strap = {tie: slot, cables: [...m.cables], kind: 'anchor', width_mm: m.width_mm, held: m.held};
+      tg.add(band);
+      tieGroup.add(tg);
+      ties.push(band);
+    });
+  }
   world.add(group);
-  return {group, bundles: out, tight: drawnTight};
+  if (ties.length) world.add(tieGroup);
+  return {group, bundles: out, tight: drawnTight, ties, tieGroup: ties.length ? tieGroup : null};
 }
 
 // THE STRAPS TURN WITH THE STAGE, as the rail labels do: every strap band's
 // material takes the stage's strap colour (a dimmed one keeps its dimming:
 // only the colour is set).
 function paintStraps3d(scene, stage) {
-  const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
-  if (!group) return;
   const color = strapPaint(stage).core;
-  group.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
+  // (a bundle's straps, and the tie straps of single cables in their own group)
+  for (const name of ['cable-bundles', 'tie-straps'])
+    scene?.three?.scene?.getObjectByName?.(name)?.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
@@ -534,8 +575,11 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     }));
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
-    if (bundles?.bundles?.size) {
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
+    // (and the tie straps of single cables, for a cable plugged in at both ends, as the panes draw them)
+    const landedId = id => { const c = (rack.cables || []).find(x => x.id === id); return !!c && !loose.has(endKey(c.a)) && !loose.has(endKey(c.b)); };
+    const tieStraps = (bundles?.tieStraps ?? []).filter(m => m.cables.some(landedId));
+    if (bundles?.bundles?.size || tieStraps.length) {
+      try { hung = await hangBundles(scene, rack, {...bundles, tieStraps, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
@@ -556,12 +600,19 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // `bundles` is routeFacts' {bundles, places} (bundle-view.js), or null.
 // `paths` is routeFacts' cable id -> routePath (the kit's points), and `ctx`
 // its route context (a bundle's lane stops are the kit's pointOf), or null.
+// `covers` is the reader's setting for the covers of the parts beside the rack
+// (covers.js: 'on', 'see' or 'off'); the page changes it on a built scene with
+// covers.js paintCovers3d. `onScene(scene)` is told the scene the moment it
+// exists, before anything is built in it (a probe watches it load).
+// `onDetailFailed({id, label})` is told of a sheet part whose detail could not
+// be built: it stays a plain box, and the page says so.
 // `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
-                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214'}) {
+                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214',
+                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -588,6 +639,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
+    // how far its faceplate stands behind its rail, and its roll, which sets the span it fills (rack file version 4: the kit's setbackOf, itemBox)
+    ...(chassisOf?.(item.ref) ? {setback: setbackOf(rack, item, chassisOf)} : {}), ...(item.roll ? {roll: item.roll} : {}),
   }));
   // ZERO-U PARTS stand beside an upright (the kit's zero-u.js): built as any device is,
   // then stood in place once built (placeZeroU). A four-post's rear upright
@@ -604,6 +657,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // rack3d.js) is not a cost a 2D-only visit should pay - the showcase's own
   // mount3d (site/showcase/rack.js) makes the same choice for the same
   // reason.
+  // WHICH PARTS OF EACH PART ARE ITS COVER (covers.js), read
+  // off its drawings before anything is built, so a cover takes the reader's
+  // setting in the task its meshes arrive in (onFace, below).
+  // (every part the library marks one on: a part beside the rack, and a rack-mounted duct with a cover as well)
+  const coverPaths = new Map(await Promise.all([...rack.items, ...sideParts].map(async z => [z.id, await coverPathsOf(z.ref, z.cfg)])));
   const {guard3d} = await import('../webgl.js');
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
@@ -614,11 +672,23 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     // faceplate 30 mm behind the rails, which put every drawn plug 30 mm
     // behind the path it starts.
     const built = createRackScene(container, {
-      stack, heightRU: frame.heightRU, recess: 0,
+      stack, heightRU: frame.heightRU, recess: 0, unitLabel: u => uLabel(frame, u),
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
+      onFace: ({id, meshes}) => takeCovers(built, meshes, coverPaths.get(id)),
+      // NOTHING FLOATS WHILE THE SCENE LOADS (#190). A sheet part (a vertical
+      // manager, a lacer) is all detail, and its detail is built after the
+      // cables are hung: it stands as a plain box of its size until then
+      // (rack3d.js standIn). And a part beside the rack, or on one rail, is
+      // stood in its place as it is mounted, not once the whole stack is
+      // built, so its box is never drawn at the middle of the rack first.
+      standIn: true,
+      onDetailFailed: f => onDetailFailed?.(f),
+      onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
+    onScene?.(built);
     built.stageColor = stage;
+    built.covers = covers;
     built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
     await built.build();
     placeZeroU(built, sideParts, chassisOf);

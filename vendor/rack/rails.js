@@ -16,6 +16,23 @@ export const RAIL_W = 26;
 export const OPENING = 450.85;
 export const HOLE_CC = 465.1;
 export const HOLE_DY = [6.35, 22.22, 38.10];
+// THE HOLES AN EAR CAN USE between two heights (mm above the bottom of the
+// rails): every hole centre at least HOLE_EDGE inside the range. A half unit
+// does not repeat the pattern: its lower half holds the hole at 6.35 and its
+// upper half the one at 38.10, and the middle hole sits on the line between
+// them, where no ear of either half can use it. A drawing lays the slots of
+// a generic ear through this, over the span fit.js itemBox gives (`lo`, `hi`);
+// the kit itself draws no ear, so its caller is the page.
+export const HOLE_EDGE = 3;
+export function holesIn(lo, hi) {
+  const out = [];
+  for (let u = Math.floor(lo / RU); u * RU < hi; u++)
+    for (const dy of HOLE_DY) {
+      const y = u * RU + dy;
+      if (y >= lo + HOLE_EDGE && y <= hi - HOLE_EDGE) out.push(y);
+    }
+  return out;
+}
 // THE HOLES. EIA-310's square hole for a cage nut is 0.375 in (9.5 mm) - the
 // 6.5 mm drawn before was a guess that read as a round-hole rail. A tapped
 // rail is drawn round at about a 12-24's major diameter (0.216 in); a 10-32

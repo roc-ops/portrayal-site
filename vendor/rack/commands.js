@@ -5,14 +5,18 @@
 // and {chassisOf} in, a new rack out - and says no with a sentence. One that
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
-import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint,
-        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor} from './model.js';
+import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint, holderOf, firstU, rollOf,
+        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings} from './model.js';
 import {withoutCables, bundleOfCable, bundleCheck, layoutOf, onTrunk, trunkText, waypointText, strapEveryMm,
-        spacingText, DEFAULT_STRAPS} from './bundles.js';
+        spacingText, strapSpacing, strapKinds} from './bundles.js';
 import {deriveTrunk, andList} from './bundle-route.js';
-import {ownRoute, pointOf, portPoint} from './route.js';
-import {fits, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU} from './fit.js';
-import {whereText, zeroUName} from './zero-u.js';
+import {ownRoute, autoRoute, routedLength, pointOf, portPoint, routePath} from './route.js';
+import {fits, fitsDepth, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU, setbackOf, isZeroUPart} from './fit.js';
+import {whereText, zeroUName, fitsHang, hangingOn} from './zero-u.js';
+import {stateRefusal} from './states.js';
+import {trayRefusal, trayText, FORMS, mText} from './slack.js';
+import {traysOf} from './solids.js';
+import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey,
         connectorOf, mediaKind, portPathOf, MEDIA, MEDIA_LABELS} from './cable-rules.js';
@@ -28,6 +32,9 @@ export const NOT_ADDED = 'The cable was not added because a device it ran to was
 export const CLEARED = 'Its swaps and fields were for the old configuration, so they were cleared.';
 export const ZERO_GONE = 'That part is no longer beside the rack.';
 export const BUNDLE_GONE = 'That bundle is no longer in the rack.';
+// A held item is kept and kept in step (docs/rack-file-v4-design.md 7.1), and
+// a new one cannot be placed until the catalogue describes what holds one.
+export const NO_HOSTS = 'The catalogue describes no host yet, so a device cannot be put on one; heldBy takes only null, which frees it.';
 
 const itemOf = (rack, id) => rack.items.find(i => i.id === id) || null;
 // An item command given the id of a part beside the rack: say which command
@@ -42,8 +49,9 @@ const note = text => ({kind: 'note', text});
 const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 // fits() measures a device against the top by the Us it has left there, which
 // reads oddly for a U past the top altogether; an agent can ask for any U.
-const pastTop = (rack, ru) => (ru != null && ru > rack.frame.heightRU
-  ? {error: `U${ru} is past the top of this ${rack.frame.heightRU}U rack.`} : null);
+// The upper half of the top unit is in the rack; the unit after it is not.
+const pastTop = (rack, ru) => (ru != null && ru >= rack.frame.heightRU + 1
+  ? {error: `U${firstU(rack.frame) - 1 + ru} is past the top of this ${rack.frame.heightRU}U rack.`} : null);
 
 // ── items ───────────────────────────────────────────────────────────────
 // A CONFIGURATION THE DEVICE DOES NOT LIST is refused when its slots are
@@ -85,6 +93,7 @@ function move(rack, {id, ru, face}, {chassisOf}) {
   if (top) return top;
   const patch = {...(ru == null ? {} : {ru}), ...(face == null ? {} : {face})};
   if (Object.entries(patch).every(([k, v]) => it[k] === v)) return unchanged(rack);
+  if (holderOf(it) != null) return {error: `${it.id} is held by ${holderOf(it)}: move ${holderOf(it)}, or free it first.`};
   // Through managers.js: a manager is re-hosted by where it lands, and a host
   // takes its managers with it.
   const m = moveItem(rack, id, patch, chassisOf);
@@ -121,11 +130,40 @@ function patch(rack, {id, ...given}, ctx) {
   }
   const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
     .filter(k => k in p && !same(p[k], it[k]) && !(k === 'cfg' && !newCfg)).map(k => [k, p[k]]));
-  if (!Object.keys(changes).length) return findings.length ? {...unchanged(rack), findings} : unchanged(rack);
+  // SETBACK AND heldBy (version 4): null takes the key off the item. A larger
+  // setback is checked against the rack; a smaller one is never refused.
+  const drop = [];
+  if ('heldBy' in given) {
+    if (given.heldBy !== null) return {error: NO_HOSTS};
+    if ('heldBy' in it) drop.push('heldBy');
+  }
+  if ('setback' in given && (given.setback ?? null) !== (it.setback ?? null)) {
+    const c = ctx.chassisOf(it.ref);
+    // a part on the rail face or beside the rack bolts to the rail: it has none
+    if (given.setback != null && (isRackFace(c) || isZeroUPart(c)))
+      return {error: `${it.label} bolts to the rail face, so it has no setback.`};
+    const {setback: _was, ...bare} = it;
+    const trial = given.setback == null ? bare : {...bare, setback: given.setback};
+    if (setbackOf(rack, trial, ctx.chassisOf) > setbackOf(rack, it, ctx.chassisOf)) {
+      const f = fitsDepth(rack, trial, ctx.chassisOf, {ignoreId: id});
+      if (!f.ok) return {error: f.reason};
+    }
+    if (given.setback == null) drop.push('setback'); else changes.setback = given.setback;
+  }
+  // ROLL: 90, 180 or 270, or null for upright; refused where the rolled box does not fit
+  if ('roll' in given && (given.roll ?? 0) !== rollOf(it)) {
+    const {roll: _r, ...bare} = it;
+    const trial = given.roll == null ? bare : {...bare, roll: given.roll};
+    const f = fits(rack, trial, ctx.chassisOf, {ignoreId: id});
+    if (!f.ok) return {error: f.reason};
+    if (given.roll == null) drop.push('roll'); else changes.roll = given.roll;
+  }
+  if (!Object.keys(changes).length && !drop.length) return findings.length ? {...unchanged(rack), findings} : unchanged(rack);
   const next = {...it, ...changes};
+  for (const k of drop) delete next[k];
   const had = Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length;
   const has = Object.keys(next.swaps ?? {}).length || Object.keys(next.fields ?? {}).length;
-  return {rack: updateItem(rack, id, changes), summary: `Changed ${it.label}.`,
+  return {rack: {...rack, items: rack.items.map(i => (i.id === id ? next : i))}, summary: `Changed ${it.label}.`,
           findings: [...('cfg' in changes && had && !has ? [note(CLEARED)] : []), ...findings]};
 }
 
@@ -134,7 +172,11 @@ function remove(rack, {id, cables = 'keep'}) {
   if (!it) return goneItem(rack, id, 'remove');
   const k = cablesOf(rack, id).length, n = count(k, 'cable');
   const ms = managersOf(rack, id);
-  const stay = ms.length ? ` Its cable manager${ms.length === 1 ? '' : 's'} ${ms.map(m => m.label).join(', ')} stay${ms.length === 1 ? 's' : ''} on the rack.` : '';
+  // what it held stays where it was, naming a host that is gone, until it is
+  // placed again or freed (fit refuses it meanwhile)
+  const hs = rack.items.filter(i => holderOf(i) === id);
+  const stay = (ms.length ? ` Its cable manager${ms.length === 1 ? '' : 's'} ${ms.map(m => m.label).join(', ')} stay${ms.length === 1 ? 's' : ''} on the rack.` : '')
+    + (hs.length ? ` ${hs.map(h => h.label).join(', ')} ${hs.length === 1 ? 'was' : 'were'} held by it and stay${hs.length === 1 ? 's' : ''} where ${hs.length === 1 ? 'it was' : 'they were'}, held by nothing.` : '');
   if (cables === 'remove') {
     // through withoutCables, so a bundle never names a cable that is gone
     const {rack: next, said} = withoutCables(withoutItem(rack, id), cablesOf(rack, id).map(c => c.id));
@@ -249,7 +291,7 @@ function fit(rack, {id, path, ref}, ctx) {
       if (!conn?.family || ![c.a, c.b].some(e => e.item === id && portPathOf(e.path) === path && (view == null || e.view === view))) continue;
       const m = mediaKind(c.media);
       if ((m.family && m.family !== conn.family) || (m.family === 'fiber' && m.mode && conn.mode && m.mode !== conn.mode))
-        findings.push(note(`${c.id} now runs ${MEDIA_LABELS[c.media] ?? c.media} into ${name}.`));
+        findings.push(note(`${c.id} now runs ${Object.hasOwn(MEDIA_LABELS, c.media) ? MEDIA_LABELS[c.media] : c.media} into ${name}.`));
     }
   }
   const summary = holds === undefined ? `Put ${path} on ${it.label} back as its configuration builds it.`
@@ -343,30 +385,134 @@ function zeroUPlace(rack, {ref, cfg, at: where, ru, between = false, label}, ctx
   return done(next, `Placed ${z.label} ${whereText(next, z, chassisOf)}.`, {created: {id}});
 }
 
-function zeroUUpdate(rack, {id, at: where, ru, between, label}, {chassisOf}) {
+// A part hung on brackets (`heldBy`) stands where they hold it: it is not
+// moved by hand, and a bracket that moves carries what hangs on it.
+function zeroUUpdate(rack, {id, at: where, ru, between, label, swaps, fields}, ctx) {
+  const {chassisOf} = ctx;
   const z = zeroUById(rack, id);
   if (!z) return {error: ZERO_GONE};
   const want = {at: where ?? z.at, ru: ru ?? zeroUBottom(z)};
-  const moved = want.at !== z.at || want.ru !== zeroUBottom(z);
+  const moved = (where != null && where !== z.at) || (ru != null && ru !== zeroUBottom(z));
+  if (moved && holdersOf(z).length)
+    return {error: `${zeroUName(z, chassisOf)} hangs on ${holdersOf(z).join(', ')}: move a bracket, or take it off them with zerou.hang.`};
   const {between: _b, ...rest} = z;
   const now = between == null ? z.between === true : !!between;
   const next = {...rest, at: want.at, ...(moved ? {offsetMm: zeroUOffset(want.ru)} : {}),
                 ...(label != null ? {label: String(label).trim() || chassisOf(z.ref)?.model || z.ref} : {}),
+                // what is seated in it and its part settings, each map replaced whole, as patch does on a device
+                ...(swaps !== undefined ? {swaps: {...swaps}} : {}), ...(fields !== undefined ? {fields: structuredClone(fields)} : {}),
                 ...(now ? {between: true} : {})};
   if (same(next, z)) return unchanged(rack);
   if (moved) {
-    const f = fitsZeroU(rack, {ref: z.ref, ...want}, chassisOf, {ignoreId: id});
+    const f = fitsZeroU(rack, {ref: z.ref, id, ...want}, chassisOf, {ignoreId: id});
     if (!f.ok) return {error: f.reason};
   }
-  const out = {...rack, zeroU: rack.zeroU.map(o => (o === z ? next : o))};
-  return done(out, moved ? `Moved ${zeroUName(next, chassisOf)} to ${whereText(out, next, chassisOf)}.`
-    : `Changed ${zeroUName(next, chassisOf)}, ${whereText(out, next, chassisOf)}.`);
+  let out = {...rack, zeroU: rack.zeroU.map(o => (o === z ? next : o))};
+  // what hangs on it goes with it, checked where it lands
+  const carried = [];
+  if (moved) for (const h of hangingOn(out, id)) {
+    const f = fitsHang(out, h, ctx);
+    if (!f.ok) return {error: `${zeroUName(h, chassisOf)} hangs on it: ${f.reason}`};
+    if (!f.place) continue;
+    const there = {...h, ...f.place};
+    const g = fitsZeroU(out, {...there, ru: undefined}, chassisOf, {ignoreId: h.id});
+    if (!g.ok) return {error: `${zeroUName(h, chassisOf)} hangs on it: ${g.reason}`};
+    out = {...out, zeroU: out.zeroU.map(o => (o.id === h.id ? there : o))};
+    carried.push(there);
+  }
+  const with_ = carried.length ? ` ${carried.map(h => zeroUName(h, chassisOf)).join(', ')} ${carried.length === 1 ? 'hangs' : 'hang'} on it and moved with it.` : '';
+  return done(out, (moved ? `Moved ${zeroUName(next, chassisOf)} to ${whereText(out, next, chassisOf)}.`
+    : `Changed ${zeroUName(next, chassisOf)}, ${whereText(out, next, chassisOf)}.`) + with_);
 }
 
 function zeroURemove(rack, {id}, {chassisOf}) {
   const z = zeroUById(rack, id);
   if (!z) return {error: ZERO_GONE};
-  return done({...rack, zeroU: rack.zeroU.filter(o => o !== z)}, `Removed ${zeroUName(z, chassisOf)} from beside the rack.`);
+  // what hung on it stays where it was, on a bracket that is gone, and fit
+  // refuses it until it is hung again or taken off
+  const hung = hangingOn(rack, id);
+  const stay = hung.length ? ` ${hung.map(h => zeroUName(h, chassisOf)).join(', ')} hung on it and stay${hung.length === 1 ? 's' : ''} where ${hung.length === 1 ? 'it was' : 'they were'}.` : '';
+  return done({...rack, zeroU: rack.zeroU.filter(o => o !== z)}, `Removed ${zeroUName(z, chassisOf)} from beside the rack.${stay}`);
+}
+
+// HANG A PART ON BRACKETS (`on`: their ids), or take it off them (`on: null`).
+// Hung, it stands where they hold it: the kit writes its `at` and `offsetMm`.
+function zeroUHang(rack, {id, on}, ctx) {
+  const {chassisOf} = ctx;
+  const z = zeroUById(rack, id);
+  if (!z) return {error: ZERO_GONE};
+  if (on === null) {
+    if (!('heldBy' in z)) return unchanged(rack);
+    const {heldBy: _h, ...free} = z;
+    return done({...rack, zeroU: rack.zeroU.map(o => (o === z ? free : o))},
+      `Took ${zeroUName(z, chassisOf)} off its brackets; it stands ${whereText(rack, free, chassisOf)}.`);
+  }
+  const ids = [...new Set(on)];
+  if (ids.includes(id)) return {error: `${zeroUName(z, chassisOf)} cannot hang on itself.`};
+  const s = slotsFor(ctx, z.ref);
+  if (!s) return {error: 'zerou.hang needs the parts lists of the devices, which the caller has not loaded.'};
+  if (s.error) return s;
+  const trial = {...z, heldBy: {...(z.heldBy && typeof z.heldBy === 'object' && !Array.isArray(z.heldBy) ? z.heldBy : {}), parts: ids}};
+  const f = fitsHang(rack, trial, ctx);
+  if (!f.ok) return {error: f.reason};
+  if (!f.place) return {error: partsMissingFor(ids, ctx)};
+  const next = {...trial, ...f.place};
+  if (same(next, z)) return unchanged(rack);
+  const g = fitsZeroU(rack, {...next, ru: undefined}, chassisOf, {ignoreId: id});
+  if (!g.ok) return {error: g.reason};
+  const out = {...rack, zeroU: rack.zeroU.map(o => (o === z ? next : o))};
+  return done(out, `Hung ${zeroUName(next, chassisOf)} on ${ids.join(', ')}, ${whereText(out, next, chassisOf)}.`);
+}
+const partsMissingFor = (ids, ctx) => `The parts list of ${ids.find(i => !ctx.slotsOf(i)) ?? 'a bracket'} could not be loaded.`;
+
+// ── states and readings (docs/rack-file-v4-design.md section 4) ──────────
+// On a device or on a part beside the rack, by its id.
+const entryOf = (rack, id) => itemOf(rack, id) ?? zeroUById(rack, id);
+const withEntry = (rack, id, next) => (itemOf(rack, id)
+  ? {...rack, items: rack.items.map(i => (i.id === id ? next : i))}
+  : {...rack, zeroU: rack.zeroU.map(o => (o?.id === id ? next : o))});
+const entryName = (e, chassisOf) => e.label || chassisOf(e.ref)?.model || e.ref;
+
+function stateSet(rack, {id, path, state}, ctx) {
+  const e = entryOf(rack, id);
+  if (!e) return {error: GONE};
+  const had = e.states && typeof e.states === 'object' ? e.states : {};
+  if (state == null) {
+    if (!Object.hasOwn(had, path)) return unchanged(rack);
+    const {[path]: _was, ...rest} = had;
+    const {states: _s, ...bare} = e;
+    return done(withEntry(rack, id, Object.keys(rest).length ? {...e, states: rest} : bare), `Cleared the state of ${path} on ${entryName(e, ctx.chassisOf)}.`);
+  }
+  if (had[path] === state) return unchanged(rack);
+  // checked against what the part declares, when the parts lists are loaded
+  const s = slotsFor(ctx, e.ref);
+  if (s?.error) return s;
+  if (s) {
+    const facts = configFacts(s, e.cfg);
+    const no = facts ? stateRefusal({...e, label: entryName(e, ctx.chassisOf)}, path, state, facts) : null;
+    if (no) return {error: no};
+  }
+  return done(withEntry(rack, id, {...e, states: {...had, [path]: state}}), `Set ${path} on ${entryName(e, ctx.chassisOf)} to ${state}.`);
+}
+
+function readingsSet(rack, {id, readings}, ctx) {
+  const e = entryOf(rack, id);
+  if (!e) return {error: GONE};
+  const name = entryName(e, ctx.chassisOf);
+  if (readings == null) {
+    if (!('readings' in e) && !('readingsAsWritten' in e)) return unchanged(rack);
+    const {readings: _r, readingsAsWritten: _w, ...bare} = e;
+    return done(withEntry(rack, id, bare), `Cleared the readings of ${name}.`);
+  }
+  if (!usableReadings(readings)) return {error: 'readings.set needs readings with a source, a time (at) that can be read, and values by part.'};
+  const s = slotsFor(ctx, e.ref);
+  if (s?.error) return s;
+  const facts = s ? configFacts(s, e.cfg) : null;
+  if (facts?.metering === 'none')
+    return {error: `${ctx.chassisOf(e.ref)?.model ?? e.ref} measures nothing, so there is no reading for ${Object.keys(readings.values || {}).join(', ') || 'it'}.`};
+  if (same(readings, e.readings)) return unchanged(rack);
+  const {readingsAsWritten: _w, ...rest} = e;
+  return done(withEntry(rack, id, {...rest, readings: structuredClone(readings)}), `Stored the readings of ${name}.`);
 }
 
 // What a frame change did to the parts beside the rack, as sentences.
@@ -386,18 +532,40 @@ function zeroUSaid({moved, removed}, chassisOf) {
 // and off it when they no longer fit; each is named.
 function frame(rack, p, ctx) {
   const r = frameItems(rack, p, ctx);
-  if (r.rack === rack) return r;
+  if (r.error || r.rack === rack) return r;
   const z = settleZeroU(r.rack, ctx.chassisOf);
+  // A PART HUNG ON BRACKETS IS NEVER MOVED SILENTLY: the kit writes where it
+  // stands from where its brackets are, so a frame that would move or remove
+  // it, or one of the brackets it hangs on, is refused, naming them.
+  const touched = new Set([...z.moved, ...z.removed].map(e => e.id));
+  const hung = (r.rack.zeroU || []).find(e => holdersOf(e).length && (touched.has(e.id) || holdersOf(e).some(id => touched.has(id))));
+  if (hung) return {error: `${zeroUName(hung, ctx.chassisOf)} hangs on ${holdersOf(hung).join(', ')}, and this frame would move ${touched.has(hung.id) ? 'it' : 'a bracket it hangs on'}: take it off its brackets first with zerou.hang.`};
   const said = zeroUSaid(z, ctx.chassisOf);
   return said ? {rack: z.rack, summary: `${r.summary} ${said}`, findings: [...r.findings, note(said)]} : r;
+}
+
+// A LARGER RACK SETBACK is checked for every device it moves back, on depth
+// alone (fit.js fitsDepth), in the rack as the command leaves it; a smaller
+// one is never refused.
+function setbackRefused(rack, next, chassisOf) {
+  if (!((next.frame.setback ?? 0) > (rack.frame.setback ?? 0))) return null;
+  const was = new Map(rack.items.map(i => [i.id, setbackOf(rack, i, chassisOf)]));
+  for (const it of next.items) {
+    if (setbackOf(next, it, chassisOf) <= (was.get(it.id) ?? 0)) continue;
+    const f = fitsDepth(next, it, chassisOf, {ignoreId: it.id});
+    if (!f.ok) return {error: `${it.label}: ${f.reason}`};
+  }
+  return null;
 }
 
 function frameItems(rack, p, {chassisOf}) {
   const want = p.holes ? {...p, holes: {...rack.frame.holes, ...p.holes}} : p;
   if ('heightRU' in want && want.heightRU < rack.frame.heightRU) {
     const {heightRU, ...rest} = want;
-    const {rack: shrunk, moved, removed} = shrinkRack(rack, heightRU, chassisOf);
+    const {rack: shrunk, moved, removed, orphaned} = shrinkRack(rack, heightRU, chassisOf);
     const next = Object.keys(rest).length ? withFrame(shrunk, rest) : shrunk;
+    const bad = setbackRefused(rack, next, chassisOf);
+    if (bad) return bad;
     if (!moved.length && !removed.length) return done(next, `Set the rack to ${heightRU}U.`);
     const dn = n => `device${n === 1 ? '' : 's'}`;
     const names = removed.map(i => i.label).join(', ');
@@ -407,11 +575,17 @@ function frameItems(rack, p, {chassisOf}) {
       ? `Moved ${moved.length} ${dn(moved.length)} down to fit ${heightRU}U.`
       : `Removed ${removed.length} ${dn(removed.length)} from the bottom to fit ${heightRU}U: ${names}.`;
     const cut = new Set(removed.flatMap(i => cablesOf(rack, i.id).map(c => c.id))).size;
-    const kept = cut ? ` ${cut} ${cut === 1 ? 'cable is kept as a loose end' : 'cables are kept as loose ends'}.` : '';
+    const cables = cut ? ` ${cut} ${cut === 1 ? 'cable is kept as a loose end' : 'cables are kept as loose ends'}.` : '';
+    // what a removed device held stays in the rack, held by nothing
+    const one = orphaned.length === 1;
+    const kept = cables + (orphaned.length ? ` ${orphaned.map(i => i.label).join(', ')} ${one ? 'was' : 'were'} held by a removed device and stay${one ? 's' : ''} in the rack, held by nothing.` : '');
     return {rack: next, summary: text + kept, findings: [note(text + kept)]};
   }
   const next = withFrame(rack, want);
-  return same(next.frame, rack.frame) ? unchanged(rack) : done(next, 'Changed the rack frame.');
+  if (same(next.frame, rack.frame)) return unchanged(rack);
+  const bad = setbackRefused(rack, next, chassisOf);
+  if (bad) return bad;
+  return done(next, 'Changed the rack frame.');
 }
 
 function rename(rack, {name}) {
@@ -451,11 +625,16 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
     const can = canCable(rack, ends.a, ends.b, {ignoreId: id, uOf});
     if (!can.ok) return {error: can.reason};
   }
-  const want = 'length' in p ? {...p, length: lengthOf(p.length)} : p;
+  const {straps: tie, ...fields} = p;
+  const want = 'length' in fields ? {...fields, length: lengthOf(fields.length)} : {...fields};
+  // the straps of this cable alone: null takes the key off, which is the default
+  const untie = tie === null && 'straps' in c;
+  if (tie != null) want.straps = {...(c.straps && typeof c.straps === 'object' ? c.straps : {}), ...tie};
   // A length named at all replaces one the loader kept as written.
   const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c));
-  if (!changed.length && !moved.length) return unchanged(rack);
-  const next = updateCable(rack, id, {...want, ...Object.fromEntries(moved.map(k => [k, ends[k]]))});
+  if (!changed.length && !moved.length && !untie) return unchanged(rack);
+  let next = updateCable(rack, id, {...want, ...Object.fromEntries(moved.map(k => [k, ends[k]]))});
+  if (untie) next = {...next, cables: next.cables.map(x => { if (x.id !== id) return x; const {straps: _s, ...rest} = x; return rest; })};
   const name = cableName(cableOf(next, id));
   const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.`);
   // A bundled cable stays in its bundle; an end now on another device is said.
@@ -571,6 +750,15 @@ const putBundle = (rack, b) => ({...rack, bundles: bundlesOf(rack).map(x => (x.i
 const labelOf = rack => id => rack.items.find(i => i.id === id)?.label ?? id;
 // A spacing under 50 mm or over 1 m is taken, and said: either is more likely
 // a unit slip than intent.
+// A bundle's straps in words: its spacing, and each kind that is not as the
+// spacing alone would have it.
+function strapsSaid(b) {
+  const e = strapSpacing(b), k = strapKinds(b), on = e !== null;
+  const extra = [k.breakout !== on ? (k.breakout ? 'breakout straps' : 'no breakout straps') : null,
+                 k.anchors !== on ? (k.anchors ? 'anchor straps' : 'no anchor straps') : null].filter(Boolean);
+  // with no spacing straps and another kind on, "no straps" would not be true
+  return [e === null && extra.length ? 'no spacing straps' : spacingText(e), ...extra].join(', ');
+}
 function spacingNote(straps) {
   const e = straps?.every;
   if (!e) return [];
@@ -601,7 +789,9 @@ function workedOut(rack, ids, ctx) {
   if (!ctx?.route) return {error: NO_ROUTES};
   let members;
   try {
-    members = ids.map(id => ({id, waypoints: ownRoute(rack, cableOf(rack, id), ctx.route).waypoints}));
+    // each cable's route as a member takes it: by the gutter, where a short
+    // jumper would hang on its own (#1012, route.js resolveRoute)
+    members = ids.map(id => ({id, waypoints: ownRoute(rack, cableOf(rack, id), ctx.route, {gutter: true}).waypoints}));
   } catch { return {error: NO_ROUTES}; }
   return deriveTrunk(members, {nameOf: labelOf(rack), frame: rack.frame});
 }
@@ -638,8 +828,34 @@ function bundleCreate(rack, {cables, label = '', number, route, straps}, ctx) {
              label: String(label), members: cables.map(cable => ({cable})), route: trunk,
              ...(straps ? {straps: structuredClone(straps)} : {})};
   const next = {...rack, bundles: [...bundlesOf(rack), b]};
-  return {rack: next, summary: `Bundled ${cables.length} cables as ${bundleName(b)}.`, created: {id: b.id},
+  const longer = hungLonger(rack, next, cables, ctx);
+  return {rack: next, summary: `Bundled ${cables.length} cables as ${bundleName(b)}.${longer ? ` ${longer}` : ''}`, created: {id: b.id},
           findings: [...spacingNote(straps), ...checksOf(next, b, ctx)]};
+}
+
+// WHAT BUNDLING COSTS A JUMPER THAT HUNG (#1012). A jumper within two units
+// hangs from port to port on its own; in a bundle it is taken to the trunk
+// and back, so it is longer: 0.60 m becomes 0.81 m for a one-unit hop to a
+// lane beside it. The summary says so, cable by cable, so that whoever
+// bundles it sees the length it buys. Each is a cable on its automatic
+// route with no waypoint of its own, whose measured length grows by a
+// centimetre or more. Nothing is said when the routes are not known, or a
+// reader throws.
+function hungLonger(before, after, ids, ctx) {
+  if (!ctx?.route) return '';
+  try {
+    const m = v => `${v.toFixed(2)} m`;
+    const grew = ids.flatMap(id => {
+      const c = cableOf(before, id);
+      if (!c || c.routeEdited === true || autoRoute(before, c, ctx.route).length) return [];
+      const was = routedLength(before, c, ctx.route), is = routedLength(after, cableOf(after, id), ctx.route);
+      return was && is && is.measured >= was.measured + 0.01 ? [{id, was: was.measured, is: is.measured}] : [];
+    });
+    if (!grew.length) return '';
+    return grew.length === 1
+      ? `${grew[0].id} hung on its own and now runs with the bundle: ${m(grew[0].was)} becomes ${m(grew[0].is)}.`
+      : `${andList(grew.map(g => g.id))} hung on their own and now run with the bundle: ${grew.map(g => `${g.id} ${m(g.was)} to ${m(g.is)}`).join(', ')}.`;
+  } catch { return ''; }
 }
 
 // A cable already in the bundle has its peel points cleared, and rides the
@@ -710,9 +926,17 @@ function bundleUpdate(rack, {id, label, number, straps, summary, ...rest}, ctx) 
     if (taken) return {error: `Bundle ${number} is already ${taken.id}'s number.`};
     patch.number = number;
   }
-  if (straps !== undefined && !same(straps, b.straps ?? {every: DEFAULT_STRAPS})) {
-    patch.straps = structuredClone(straps);
-    findings.push(...spacingNote(straps));
+  // STRAPS MERGE BY KEY (version 4): a key given replaces that key, a key
+  // left out stays as it was, and `straps: null` takes the object off, which
+  // is the defaults: every 12 in, with breakout and anchor straps.
+  let unstrap = false;
+  if (straps === null) unstrap = 'straps' in b;
+  else if (straps !== undefined) {
+    const merged = {...(b.straps || {}), ...structuredClone(straps)};
+    if (!same(merged, b.straps ?? {})) {
+      patch.straps = merged;
+      findings.push(...spacingNote(straps));
+    }
   }
   let cleared = [];
   if ('route' in rest) {
@@ -742,11 +966,13 @@ function bundleUpdate(rack, {id, label, number, straps, summary, ...rest}, ctx) 
       if (cleared.length) patch.members = members;
     }
   }
-  if (!Object.keys(patch).length) return unchanged(rack);
+  if (!Object.keys(patch).length && !unstrap) return unchanged(rack);
   const {routeAsWritten: _w, ...kept} = b;
-  const nb = {...('route' in patch ? kept : b), ...patch}, next = putBundle(rack, nb);
+  const nb = {...('route' in patch ? kept : b), ...patch};
+  if (unstrap) delete nb.straps;
+  const next = putBundle(rack, nb);
   if ('label' in patch || 'number' in patch) said.push(`Renamed ${name} to ${bundleName(nb)}.`);
-  if ('straps' in patch) said.push(`${bundleName(nb)} now has ${spacingText(nb.straps.every)}.`);
+  if ('straps' in patch || unstrap) said.push(`${bundleName(nb)} now has ${strapsSaid(nb)}.`);
   if ('route' in patch) said.push(`Rerouted ${bundleName(nb)}.`);
   if (cleared.length) findings.push(note(`Cleared the peel points of ${andList(cleared)}: they are not on the new route.`));
   return {rack: next, summary: summary ?? said.join(' '), findings: [...findings, ...checksOf(next, nb, ctx)]};
@@ -761,12 +987,128 @@ function bundleRemove(rack, {id}) {
     `Dissolved ${bundleName(b)}${n ? `; ${n === 1 ? 'its cable follows its own route' : `its ${n} cables follow their own routes`} again` : ''}.`);
 }
 
+// ── spare cable (docs/rack-file-v4-design.md sections 3.3 and 3.5) ───────
+// Where a cable's spare is stored: a tray it rests on, or one of its ends.
+// It is recorded and listed, never drawn, and the kit places none itself.
+const sameAt = (e, at) => ('end' in at ? e.end === at.end : e.item === at.item && e.via === at.via);
+function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
+  const c = cableOf(rack, id);
+  if (!c) return {error: CABLE_GONE};
+  const isEnd = where.end != null, isTray = where.item != null && where.via != null;
+  if (isEnd === isTray) return {error: 'cable.slack needs at as {item, via}, a tray on a device, or {end}, a or b.'};
+  if (isEnd && form != null) return {error: 'Spare left at an end has no form.'};
+  const entry = {...(isEnd ? {end: where.end} : {item: where.item, via: where.via, ...(form != null ? {form} : {})}),
+                 ...(value != null ? {value, unit: unit ?? 'm'} : {})};
+  const had = Array.isArray(c.slack) ? c.slack : [];
+  const others = had.filter(e => !sameAt(e, entry));
+  if (value == null && others.some(e => e.value == null))
+    return {error: `${c.id} already has an entry that takes the rest of its spare: give this one a value.`};
+  if (isTray) {
+    if (!itemOf(rack, where.item) && !zeroUById(rack, where.item)) return {error: `${where.item} is not in the rack.`};
+    // judged against the route when the routes are known; else recorded as given
+    let path = null;
+    if (ctx.route) { try { path = routePath(rack, c, ctx.route); } catch { path = null; } }
+    const no = trayRefusal(rack, c, entry, ctx.route, path);
+    if (no) return {error: no};
+  }
+  const next = [...others, entry];
+  if (same(next, had) && Array.isArray(c.slack)) return unchanged(rack);
+  const what = value != null ? `${mText(unit === 'ft' ? value * 0.3048 : value)} of the spare` : 'the spare';
+  return done(updateCable(rack, id, {slack: next}),
+    `Stored ${what} of ${cableName(c)} ${isEnd ? `at its ${where.end.toUpperCase()} end` : `in ${trayText(rack, entry)}`}.`);
+}
+
+// Without `at`, nothing is said of the cable's spare any more (no `slack`
+// key); with it, that one entry goes, and the key with the last of them.
+function cableSlackClear(rack, {id, at: where}) {
+  const c = cableOf(rack, id);
+  if (!c) return {error: CABLE_GONE};
+  if (!('slack' in c)) return unchanged(rack);
+  const left = where ? c.slack.filter(e => !sameAt(e, where)) : [];
+  if (where && left.length === c.slack.length) return unchanged(rack);
+  const {slack: _s, ...bare} = c;
+  const next = left.length ? {...c, slack: left} : bare;
+  return done({...rack, cables: rack.cables.map(x => (x.id === id ? next : x))},
+    left.length ? `Cleared one place for the spare of ${cableName(c)}.` : `Cleared where the spare of ${cableName(c)} is stored.`);
+}
+
+// `cable.lay`: pin how a cable lies in one pathway, `{item, via}`: its
+// `face` on a tray (`top` or `underside`, named in the frame of the part)
+// and its `position` across the pathway. A key left out is kept, null
+// unpins it, and an entry with neither left is removed, the `lay` key with
+// the last. `face` is acted on by the routes (route.js layFaceOf);
+// `position` is kept and not acted on until lay order is built. What the
+// file holds that is no usable entry is kept as it was written.
+// A face is judged against the tray when the routes are known, and recorded
+// as given when they are not, as `cable.slack` records a place.
+const usableLay = e => !!e && typeof e === 'object' && !Array.isArray(e) && typeof e.item === 'string' && typeof e.via === 'string';
+function cableLay(rack, args, ctx) {
+  const {id, at: where} = args;
+  const c = cableOf(rack, id);
+  if (!c) return {error: CABLE_GONE};
+  const hasPos = 'position' in args, hasFace = 'face' in args;
+  if (!hasPos && !hasFace) return {error: 'cable.lay needs a position or a face: a value to pin it, or null to unpin it.'};
+  const it = itemOf(rack, where.item);
+  if (!it) return {error: `${where.item} is not in the rack.`};
+  const name = `${it.label || it.id} ${where.via}`;
+  // the pathway must be one the routes know on the device: a ring or a duct
+  // the page draws, or a tray; with no routes known it is recorded as given
+  const pinning = args.position != null || args.face != null;
+  let trays = [];
+  if (ctx.route) { try { trays = traysOf(rack, ctx.route).filter(x => x.item === where.item); } catch { trays = []; } }
+  if (pinning && ctx.route) {
+    let guides = [];
+    try { guides = typeof ctx.route.guidesOf === 'function' ? ctx.route.guidesOf(where.item) || [] : []; } catch { guides = []; }
+    const ids = [...new Set([...guides.map(g => g.via), ...trays.map(t => t.via)])].sort();
+    if (!ids.includes(where.via))
+      return {error: ids.length ? `${it.label || it.id} has no ring, duct or tray called ${where.via}. It has: ${ids.join(', ')}.`
+                                : `${it.label || it.id} has no rings, ducts or trays.`};
+  }
+  if (args.face != null && ctx.route) {
+    const t = trays.find(x => x.via === where.via) || null;
+    if (!t) return {error: `${name} is no tray, so a cable has no face to lie on there.`};
+    const held = t.flipped ? 'top' : 'underside';
+    if (args.face === held && !t.ties.length)
+      return {error: `${name} offers no held face: it states no tie slots, so nothing holds a cable to its ${held}.`};
+  }
+  const had = Array.isArray(c.lay) ? c.lay : [];
+  const old = had.find(e => usableLay(e) && e.item === where.item && e.via === where.via) || null;
+  const entry = {...(old || {item: where.item, via: where.via})};
+  for (const [given, key] of [[hasPos, 'position'], [hasFace, 'face']]) {
+    if (!given) continue;
+    if (args[key] == null) delete entry[key]; else entry[key] = args[key];
+  }
+  const keep = entry.position != null || entry.face != null;
+  const next = old ? had.flatMap(e => (e === old ? (keep ? [entry] : []) : [e])) : keep ? [...had, entry] : had;
+  if (same(next, had)) return unchanged(rack);
+  // A FACE THE ROUTE DOES NOT TAKE IS REFUSED, as cable.slack refuses a tray
+  // that is not on the route: the cable must rest on the tray, and on the
+  // face asked, once the entry is written.
+  if (args.face != null && ctx.route) {
+    const laid = {...c, lay: next};
+    let path = null;
+    try { path = routePath({...rack, cables: rack.cables.map(x => (x.id === id ? laid : x))}, laid, ctx.route); } catch { path = null; }
+    if (path) {
+      const rest = (path.rests || []).find(x => x.kind === 'tray' && x.item === where.item && x.via === where.via);
+      if (!rest) return {error: `${name} is not on the route of ${c.id}.`};
+      if (rest.face !== args.face) return {error: `${c.id} cannot be held to the ${args.face} of ${name} along its stretch there, so it stays on the ${rest.face}.`};
+    }
+  }
+  const {lay: _l, ...bare} = c;
+  const said = [entry.face != null ? `on the ${entry.face}` : null, entry.position != null ? `at position ${entry.position}` : null].filter(Boolean).join(', ');
+  return done({...rack, cables: rack.cables.map(x => (x.id === id ? (next.length ? {...c, lay: next} : bare) : x))},
+    keep ? `Laid ${cableName(c)} ${said} of ${name}.` : `${cableName(c)} is no longer pinned in ${name}.`);
+}
+
 // ── the table an agent reads ────────────────────────────────────────────
 const RACK = {type: 'string', description: 'The id of the rack to edit. Only the first rack can be edited today.'};
 const AS = {type: 'string', minLength: 1, description: 'A name for what this creates; later commands in the same batch can use "@name" as its id.'};
 const ID = what => ({type: 'string', minLength: 1, description: `The id of the ${what}, as the rack's description lists it, or "@name" from earlier in this batch.`});
 const FACE = {enum: ['front', 'rear'], description: 'Which face of the rack: front or rear.'};
-const RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
+const RU = {type: 'number', minimum: 1, multipleOf: 0.5,
+  description: 'Its bottom, in units from 1 at the bottom of the rails, in steps of 0.5 (12.5 is the upper half of U12). A whole-unit device takes a whole unit.'};
+// A part that bolts to the rail face stands at a whole unit.
+const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
   description: 'One end of a cable: a port on a device.',
   properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
@@ -794,12 +1136,17 @@ const BOTTOM = {type: 'integer', minimum: 1, description: 'The U its bottom is l
 const BETWEEN = {type: 'boolean', description: 'true when it stands between this rack and the next one, serving both.'};
 const BUNDLE_CABLES = (min, description) => ({type: 'array', minItems: min, description,
   items: {type: 'string', minLength: 1, description: 'A cable id, or "@name" from earlier in this batch.'}});
-const STRAPS = {type: 'object', required: ['every'], additionalProperties: false,
-  description: 'Its hook-and-loop straps: {every: {value, unit}}, or {every: null} for none. Every 12 in when left out.',
+const STRAPS = {type: ['object', 'null'], additionalProperties: false,
+  description: 'Its hook-and-loop straps: any of every, breakout and anchors; a key left out stays as it is. null for the defaults.',
   properties: {every: {type: ['object', 'null'], required: ['value', 'unit'], additionalProperties: false,
-    description: 'The spacing, {value, unit}, or null for no straps.',
+    description: 'The spacing, {value, unit}, or null for no spacing straps. Every 12 in when never set.',
     properties: {value: {type: 'number', exclusiveMinimum: 0, description: 'How far apart, above 0.'},
-                 unit: {enum: ['in', 'mm'], description: 'Inches (in) or millimetres (mm).'}}}}};
+                 unit: {enum: ['in', 'mm'], description: 'Inches (in) or millimetres (mm).'}}},
+    breakout: {type: 'boolean', description: 'A strap beside each point where a cable joins or leaves. On when never set, unless every is null.'},
+    anchors: {type: 'boolean', description: 'A strap at each tray tie slot the bundle lies on. On when never set, unless every is null.'}}};
+const CABLE_STRAPS = {type: ['object', 'null'], additionalProperties: false,
+  description: 'The straps of this cable alone: {anchors: false} for none tying it to a tray it passes; null for the default.',
+  properties: {anchors: {type: 'boolean', description: 'false for no strap tying it to a tray it lies on.'}}};
 const args = (required, properties) => ({type: 'object', required, additionalProperties: false,
                                          properties: {...properties, rack: RACK}});
 
@@ -810,12 +1157,15 @@ export const COMMANDS = {
       face: FACE, ru: RU, label: {type: 'string', description: 'The name shown on the drawing; its model when left out.'}, as: AS})},
   move: {run: move, description: 'Move a device to another U and/or face. Its cable managers move with it; a cable manager moved onto a device bolts onto it.',
     args: args(['id'], {id: ID('device'), ru: RU, face: FACE})},
-  patch: {run: patch, description: "Change a placed device's configuration, label or turned state, or replace all of what is seated in it and all of its part settings at once. A new configuration on its own clears what was seated and set; to change one slot or one setting, use fit or field.",
+  patch: {run: patch, description: "Change a placed device's configuration, label, turned state, roll or setback, or replace all of what is seated in it and all of its part settings at once. A new configuration on its own clears what was seated and set; to change one slot or one setting, use fit or field.",
     args: args(['id'], {id: ID('device'), cfg: {type: 'string', description: 'Which of its configurations; it keeps its own when left out.'},
       swaps: {type: 'object', description: 'Every slot path to the part ref seated there, replacing the whole map. A slot left out holds what its configuration builds.'},
       fields: {type: 'object', description: 'Every part path to its settings ({key: value}), replacing the whole map.'},
       label: {type: 'string', description: 'The name shown on the drawing.'},
-      turned: {type: 'boolean', description: 'true when mounted back to front.'}})},
+      turned: {type: 'boolean', description: 'true when mounted back to front.'},
+      setback: {type: ['number', 'null'], description: 'Millimetres its faceplate stands behind its rail, into the rack; negative is proud. null for the default of the device or the rack.'},
+      heldBy: {type: ['object', 'null'], description: 'null frees a device held on a shelf or a rail. Nothing else is taken yet.'},
+      roll: {enum: [90, 180, 270, null], description: 'Degrees it is turned clockwise in its face, as seen from that face: 180 is upside down. null for upright.'}})},
   remove: {run: remove, description: 'Take a device out of the rack. Its cables are kept as loose ends, or removed with it; its cable managers stay on the rack.',
     args: args(['id'], {id: ID('device'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
   attach: {run: attach, description: 'Bolt an unattached cable manager onto the device at its U.',
@@ -827,10 +1177,12 @@ export const COMMANDS = {
       heightRU: {type: 'integer', minimum: 1, maximum: 100, description: 'How many U tall, from 1 to 100.'},
       numbering: {enum: ['bottom-up', 'top-down'], description: 'Which way the U labels count.'},
       holes: {type: 'object', additionalProperties: false, description: 'The rail holes.',
-        properties: {style: {enum: ['square', 'tapped'], description: 'square or tapped.'},
+        properties: {style: {enum: ['square', 'tapped', 'round'], description: 'square, tapped or round.'},
                      thread: {enum: ['12-24', '10-32', 'M6', null], description: 'The thread of tapped holes.'}}},
       railDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres between the front and rear rails (four-post).'},
-      usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'}})},
+      usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'},
+      startU: {type: 'integer', minimum: 1, description: 'The number of the first unit, for a rack whose labels do not start at 1.'},
+      setback: {type: ['number', 'null'], description: 'Millimetres a faceplate stands behind its rail in this rack, for a device that states none; null for flush.'}})},
   rename: {run: rename, description: 'Rename the rack.', args: args(['name'], {name: {type: 'string', description: 'The new name.'}})},
   dcim: {run: dcim, step: false, description: 'Set the names a NetBox or Nautobot import needs: the site (or location) and the device role. Not an undo step.',
     args: args([], {site: {type: 'string', description: "NetBox's site, Nautobot's location."}, role: {type: 'string', description: 'The device role.'}})},
@@ -846,7 +1198,7 @@ export const COMMANDS = {
   'side.place': {run: sidePlace, description: 'Put a narrow rail part (a finger bracket narrower than the opening) on one rail, its bottom at a U. It takes that rail only, so another can stand on the other rail at the same U.',
     args: args(['ref', 'face', 'ru', 'side'], {ref: {type: 'string', minLength: 1, description: 'The part, as the catalogue lists it (its ref).'},
       cfg: {type: 'string', description: "Which of the part's configurations; its default when left out."},
-      face: FACE, ru: RU, side: {enum: ['left', 'right'], description: 'Which rail it is on, as seen from its face: left or right.'},
+      face: FACE, ru: WHOLE_RU, side: {enum: ['left', 'right'], description: 'Which rail it is on, as seen from its face: left or right.'},
       label: {type: 'string', description: 'The name shown on the drawing; its model when left out.'}, as: AS})},
   'side.set': {run: sideSet, description: 'Put a narrow rail part on the left or right rail, or (side null) across both, where it bolts onto a device behind it.',
     args: args(['id', 'side'], {id: ID('rail part'), side: {enum: ['left', 'right', null], description: 'left, right, or null for across both rails.'}})},
@@ -856,23 +1208,58 @@ export const COMMANDS = {
       at: AT, ru: BOTTOM, between: BETWEEN, label: {type: 'string', description: 'The name shown on the drawing; its model when left out.'}, as: AS})},
   'zerou.update': {run: zeroUUpdate, description: 'Move a part beside the rack to another upright or U, say whether it stands between racks, or rename it.',
     args: args(['id'], {id: ID('part beside the rack'), at: AT, ru: BOTTOM, between: BETWEEN,
-      label: {type: 'string', description: 'The name shown on the drawing.'}})},
+      label: {type: 'string', description: 'The name shown on the drawing.'},
+      swaps: {type: 'object', description: 'Every slot path to the part ref seated there, replacing the whole map.'},
+      fields: {type: 'object', description: 'Every part path to its settings ({key: value}), replacing the whole map.'}})},
+  'zerou.hang': {run: zeroUHang, description: 'Hang a part beside the rack (a zero-U PDU) on brackets placed there, or take it off them. Hung, it stands where the brackets hold it, and moves when one moves. Refused, with the distance, when its mount points do not meet their slots.',
+    args: args(['id', 'on'], {id: ID('part beside the rack'),
+      on: {type: ['array', 'null'], minItems: 1, description: 'The ids of the brackets that hold it, or null to take it off them.',
+        items: {type: 'string', minLength: 1, description: 'A bracket id, or "@name" from earlier in this batch.'}}})},
+  'state.set': {run: stateSet, description: 'Set what one part of a placed device or of a part beside the rack is, such as an outlet of a PDU on or off; null clears it. Refused, with what the part can be, when it declares no such state.',
+    args: args(['id', 'path', 'state'], {id: ID('device or part beside the rack'),
+      path: {type: 'string', minLength: 1, description: 'The part, by its path on the device (e.g. outlet-a1).'},
+      state: {type: ['string', 'null'], minLength: 1, description: 'The state name, as the part declares it (e.g. on, off); null to clear.'}})},
+  'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
+    args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
+      readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
   'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack.',
     args: args(['id'], {id: ID('part beside the rack')})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
   'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label or length, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
     args: args(['id'], {id: ID('cable'), a: {...END, description: 'Move end A to this port; left where it is when left out.'},
-      b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS})},
+      b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS, straps: CABLE_STRAPS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},
   'cable.route': {run: cableRoute, description: 'Route a cable by hand through the waypoints given, in order. Its routed length follows. Refused for a pathway or gutter the rack lacks; the refusal lists what exists.',
     args: args(['id', 'route'], {id: ID('cable'),
       route: {type: 'array', description: 'The waypoints, in order: {item, via} for a pathway on a device, {lane, ru} for a gutter at a U.',
         items: WAYPOINT},
       summary: SUMMARY})},
+  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a tray it rests on, or at one of its ends. It is listed, not drawn. With no value the place takes whatever is left to store. Refused, with the reason, for a tray the cable cannot store in.',
+    args: args(['id', 'at'], {id: ID('cable'),
+      at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a tray on a device, or {end} for an end of the cable.',
+        properties: {item: {type: 'string', minLength: 1, description: 'The device the tray is on, with via.'},
+                     via: {type: 'string', minLength: 1, description: 'The tray on that device, with item.'},
+                     end: {enum: ['a', 'b'], description: 'The end of the cable the spare is left at: a or b.'}}},
+      value: {type: 'number', exclusiveMinimum: 0, description: 'How much is stored there, above 0; the rest when left out.'},
+      unit: {enum: ['m', 'ft'], description: 'Metres (m) or feet (ft); m when left out.'},
+      form: {enum: FORMS, description: 'How it is stored in a tray: coil, serpentine or spool; coil when left out.'}})},
+  'cable.slack.clear': {run: cableSlackClear, description: 'Take back where the spare of a cable is stored: one place, or with no place all of them, so that nothing is said of it.',
+    args: args(['id'], {id: ID('cable'),
+      at: {type: 'object', additionalProperties: false, description: 'The place to clear: {item, via} or {end}; all of them when left out.',
+        properties: {item: {type: 'string', minLength: 1, description: 'The device the tray is on, with via.'},
+                     via: {type: 'string', minLength: 1, description: 'The tray on that device, with item.'},
+                     end: {enum: ['a', 'b'], description: 'The end of the cable: a or b.'}}}})},
+  'cable.lay': {run: cableLay, description: 'Pin how a cable lies in one pathway: which face of a tray it lies on, and its place across the pathway. null unpins either; a key left out is kept. The face is acted on by the routes; the position is kept for when lay order is built.',
+    args: args(['id', 'at'], {id: ID('cable'),
+      at: {type: 'object', required: ['item', 'via'], additionalProperties: false, description: 'The pathway: {item, via}, a tray, ring or duct on a device.',
+        properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on.'},
+                     via: {type: 'string', minLength: 1, description: 'The pathway on that device.'}}},
+      position: {type: ['integer', 'null'], minimum: 1, description: 'Its place across the pathway, counted from 1; null to unpin it.'},
+      face: {enum: ['top', 'underside', null], description: 'The face of a tray it lies on, as the part names its own: top or underside; null unpins it. Refused on a ring or a duct.'}})},
   'cable.route.reset': {run: cableRouteReset, description: 'Drop a hand-made route; the cable takes its own route again.',
     args: args(['id'], {id: ID('cable'), summary: SUMMARY})},
-  'bundle.create': {run: bundleCreate, description: 'Bundle two or more cables sharing part of their route. It runs where they run together, unless given a route. Refused for a bundled cable.',
+  'bundle.create': {run: bundleCreate, description: 'Bundle two or more cables sharing part of their route. It runs where they run together, unless given a route. A cable whose own route does not meet a given route joins and leaves it at the points nearest its two ports. Refused for a bundled cable.',
     args: args(['cables'], {cables: BUNDLE_CABLES(2, 'The cables to bundle, two or more, by id, in combing order.'),
       label: {type: 'string', description: 'The name on its tags; "Bundle <number>" is used when there is none. Empty when left out.'},
       number: {type: 'integer', minimum: 1, description: 'Its number, unique in the rack; one past the highest in use when left out.'},
@@ -885,7 +1272,7 @@ export const COMMANDS = {
     args: args(['id', 'cable'], {id: ID('bundle'), cable: ID('cable'),
       at: {...WAYPOINT, description: 'A waypoint on the bundle\'s route where the cable leaves it; when left out, the cable leaves the bundle altogether.'},
       end: {enum: ['a', 'b'], description: 'The end it heads for after it leaves at that waypoint; the end whose port is nearer when left out.'}})},
-  'bundle.update': {run: bundleUpdate, description: "Change a bundle's label, number or strap spacing, or route it by hand. A route of null works the route out again from its cables.",
+  'bundle.update': {run: bundleUpdate, description: "Change a bundle's label, number or strap spacing, or route it by hand. A cable whose own route does not meet a route given by hand joins and leaves it at the points nearest its two ports. A route of null works the route out again from its cables.",
     args: args(['id'], {id: ID('bundle'), label: {type: 'string', description: 'The name on its tags; empty for "Bundle <number>". Kept when left out.'},
       number: {type: 'integer', minimum: 1, description: 'Its number, unique in the rack. Kept when left out.'},
       straps: STRAPS,
@@ -903,7 +1290,8 @@ const typeWord = s => {
   if (s.enum) return `one of ${s.enum.filter(v => v !== null && v !== '').join(', ')}`;
   const t = [].concat(s.type ?? []).find(x => x !== 'null');
   return {integer: `a whole number${s.minimum != null ? ` from ${s.minimum}` : ''}${s.maximum != null ? ` to ${s.maximum}` : ''}`,
-          number: `a number${s.exclusiveMinimum === 0 ? ' above 0' : ''}`, string: 'some text',
+          number: `a number${s.exclusiveMinimum === 0 ? ' above 0' : ''}${s.multipleOf != null ? ` in steps of ${s.multipleOf}` : ''}` +
+                  `${s.multipleOf != null && s.minimum != null ? ` from ${s.minimum}` : ''}`, string: 'some text',
           boolean: 'true or false', object: 'an object', array: 'a list'}[t] || 'a value';
 };
 function sentence(op, e) {
@@ -929,10 +1317,10 @@ function resolve(cmd, bound) {
   };
   const out = {...cmd};
   for (const k of ['id', 'cable']) if (k in out) { const s = swap(out[k]); if (s.error) return s; out[k] = s.v; }
-  if (Array.isArray(out.cables)) {
+  for (const k of ['cables', 'on']) if (Array.isArray(out[k])) {
     const list = [];
-    for (const v of out.cables) { const s = swap(v); if (s.error) return s; list.push(s.v); }
-    out.cables = list;
+    for (const v of out[k]) { const s = swap(v); if (s.error) return s; list.push(s.v); }
+    out[k] = list;
   }
   for (const k of ['a', 'b', 'at']) if (out[k]?.item != null) {
     const s = swap(out[k].item); if (s.error) return s; out[k] = {...out[k], item: s.v};

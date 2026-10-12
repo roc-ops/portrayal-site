@@ -1725,7 +1725,7 @@ check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, r
 # @portrayal/kit) and the components README the first two send people to. A
 # path is as written after the host; the bare host is "" and is the front page.
 _README_LINKS = ["media/hero-3d.mp4", "components/catalog", "assets/dist/components.json",
-                 "schemas/v2/rack.schema.json"]
+                 "schemas/v2/rack.schema.json", "schemas/v3/rack.schema.json"]
 _READMES = ["README.md", "kit/README.md", "library/components/README.md"]
 _PD_URL = re.compile(r"https://(?:www\.)?portrayal\.dev(?![\w-]|\.\w)(/[^\s)\"'<>\]`]*)?")
 
@@ -1797,7 +1797,7 @@ for _lb in sorted({"v1", "v2"} | {d.split("/")[1] for d in _schemas}):
 # goes live) as that same file.
 _PUBLISHED = ["schemas/v1/component.schema.json", "schemas/v1/device.schema.json", "schemas/v1/lab.schema.json",
               "schemas/v1/listing.schema.json", "schemas/v1/marks.schema.json", "schemas/v1/rack.schema.json",
-              "schemas/v2/rack.schema.json"]
+              "schemas/v2/rack.schema.json", "schemas/v3/rack.schema.json"]
 
 
 def schema_faults(root, served):
@@ -1827,8 +1827,8 @@ def schema_faults(root, served):
 
 
 _sf, _sn = schema_faults(HERE / "publish" / "schemas", _srv)
-# NOT VACUOUS: seven are published and a label is permanent, so fewer than
-# seven read is a folder that moved or a URL that went away.
+# NOT VACUOUS: eight are published and a label is permanent, so fewer than
+# eight read is a folder that moved or a URL that went away.
 check(_sn >= len(_PUBLISHED) and set(_PUBLISHED) <= set(_schemas) and not _sf,
       f"every schema under publish/schemas/ parses, is served, and has the URL it is served at as its $id ({_sn} files)",
       f"read {_sn}, want at least {len(_PUBLISHED)}; published and gone: {sorted(set(_PUBLISHED) - set(_schemas))}; "
@@ -1856,7 +1856,7 @@ def _schema_mutants():
         out["clean"] = schema_faults(_root, _all)
         (_root / "v1" / "lab.schema.json").write_text(_doc("schemas/v2/lab.schema.json"))
         out["wrong $id"] = schema_faults(_root, _all)
-        _clean(); (_root / "v3").mkdir(); (_root / "v3" / "new.schema.json").write_text(_doc("schemas/v1/lab.schema.json"))
+        _clean(); (_root / "v3").mkdir(exist_ok=True); (_root / "v3" / "new.schema.json").write_text(_doc("schemas/v1/lab.schema.json"))
         out["added with another label's $id"] = schema_faults(_root, _served())
         _clean(); (_root / "v1" / "marks.schema.json").write_text("{")
         out["does not parse"] = schema_faults(_root, _all)

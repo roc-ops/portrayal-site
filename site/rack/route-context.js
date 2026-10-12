@@ -6,11 +6,13 @@
 
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
-import {bundleFacts, memberPlaces, trunkLay} from './bundle-view.js';
+import {bundleFacts, memberPlaces, trunkLay, tieMark} from './bundle-view.js';
 import {WIDTH} from '../../vendor/rack/cable-geometry.js';
-import {bodySpan} from './body-span.js';
-import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindings, orientMarks} from '../../vendor/rack/route.js';
+import {itemBox} from '../../vendor/rack/fit.js';
+import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindingsOf, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
+import {anchorsOf} from '../../vendor/rack/bundles.js';
+import {traysOf} from '../../vendor/rack/solids.js';
 import {portPathOf, mergeSeats, endKey} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUOf} from '../../vendor/rack/model.js';
@@ -402,12 +404,12 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // Height above the floor: the item's top, less the port's depth into its face.
     portY: end => { const p = port(end), it = itemOf(end.item);
       if (!p || !it) return null;
-      // The drawing is centered, unscaled, in its span (elevation.js): the
-      // units the item takes, or, for a body under one unit, its own part of
-      // its unit, from the bottom (body-span.js), so a port of a half-unit
-      // panel is where both views draw it.
-      const c = chassisOf(it.ref), s = bodySpan(c?.ru, Math.max(1, c?.ru ?? 1), p.faceH);
-      return (it.ru - 1 + s.units) * RU - (s.inset + p.y); },
+      // The drawing is centred, unscaled, in the span the item fills (the
+      // kit's fit.js itemBox, `lo` to `hi`: where elevation.js, the side panes
+      // and the 3D rack stand the body, and the kit its solids), so a port of
+      // a half-unit panel is where every view draws it, in either half.
+      const b = itemBox(rack, it, chassisOf);
+      return (b.lo + b.hi) / 2 + p.faceH / 2 - p.y; },
     // A duct beside the rack: its channel, from its drawing (ductAperture), or
     // null. The kit's fill and capacityOver count the cables through it, and a
     // bundle's size check reads it, so the page does not count them itself.
@@ -457,7 +459,15 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // radius, with the kit's sentence and where it is (`at`, rack mm). The
   // page's notice says them and both drawings ring them; nothing here
   // measures a bend. `stops` is where the panes look for it (bendStops).
-  const bends = bendFindings(rack, ctx, labelOf).map(f => ({...f, stops: bendStops(routes.get(f.cable)?.waypoints ?? [], f)}));
+  // EACH CABLE IS LAID ONCE WHERE THE KIT LETS THE PAGE HAND ITS PATH BACK. The
+  // kit keeps which lay of a cable it chose, not the lay: every rack-wide
+  // reading (routePath, and so fill, capacityOver, ringFindings, bodyFindings,
+  // bendFindings, anchorsOf, spareOf, withRoutedLengths) lays every cable
+  // again. bendFindingsOf takes the path a caller already has, and is what
+  // bendFindings calls for each cable, so this is the same list from the
+  // paths read above, with one walk of the rack fewer.
+  const bends = (rack.cables || []).flatMap(c => bendFindingsOf(rack, c, ctx, labelOf, paths.get(c.id)))
+    .map(f => ({...f, stops: bendStops(routes.get(f.cable)?.waypoints ?? [], f)}));
   // THE BUNDLES (portrayal-site#142): each one's size check and straps from the
   // kit, with the cable types' diameters and bend radii (loaded once a page;
   // without them the kit counts each cable by its media), and where each
@@ -477,6 +487,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // bundle from the kit's bundleExports, measured with the same context, for
   // the cable schedule's notes and the BOM's strap line.
   const bundleRecords = bundleExports(rack, bctx);
+  // EVERY TIE SLOT A STRAP IS AT, AND THE ONES A SINGLE CABLE IS TIED AT
+  // (kit 0.22.0): the BOM counts the first, the drawings stand a band at each
+  // of the second (a bundle's own are among its straps, along its trunk).
+  const ties = tieStraps(rack, bctx, ctx, paths);
   const places = memberPlaces(rack, routes, bundles);
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
@@ -484,9 +498,36 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // load of the cable types has finished still checks the bend (bundleCtx).
   // `rack` is the rack these were read from: a reader that holds them beside a
   // rack asks whether it is still that one (rack-page.js routesNow).
-  return {rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: fill(rack, ctx),
+  // (`readRack` is the rack these were read from, for good: `rack` is re-pointed when a rack that differs in
+  // nothing a route reads takes its place, rack-page.js keepRoutes)
+  return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: fill(rack, ctx),
           over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
-          endPane: e => endPane(rack, e), bundles, bundleRecords, places};
+          endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks};
+}
+
+// THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0, bundles.js anchorsOf): one
+// strap at each tray tie slot a lone cord is tied at, shared by every cord at
+// that slot. The kit names the slot ({item, via, tie}) with its width and the
+// cables there; where the slot is comes from its tray (solids.js traysOf: a
+// plan rectangle, and the heights of the tray's two faces), and which face
+// the cables are on from the first one's own path (`rests`: held under the
+// plate, or resting on it). `slots` is every slot, a bundle's among them, as
+// strapBomRows takes them; `marks` are the ones no bundle is tied at:
+// [{item, via, tie, width_mm, cables, run, held, at: {x, y, z}}], `at` on the
+// face of the plate the cables are on, in rack mm.
+export function tieStraps(rack, bctx, ctx, paths) {
+  let slots = [], trays = [];
+  try { slots = anchorsOf(rack, bctx); trays = traysOf(rack, ctx); }
+  catch (err) { console.warn('[portrayal] the tie straps could not be read', err); return {slots: [], marks: []}; }
+  const marks = [];
+  for (const s of slots) {
+    if (s.bundles.length) continue;
+    const t = trays.find(x => x.item === s.item && x.via === s.via);
+    const rest = s.cables.map(id => (paths.get(id)?.rests || []).find(r => r.kind === 'tray' && r.item === s.item && r.via === s.via)).find(Boolean);
+    const mark = tieMark(s, t, rest);
+    if (mark) marks.push(mark);
+  }
+  return {slots, marks};
 }
 
 // A TIGHT BEND IS SHOWN FOR A CABLE THAT IS PLUGGED IN AT BOTH ENDS. The kit
@@ -519,10 +560,29 @@ export function bendNotice(findings, most = 3) {
 // `bends` are the tight bends to list after them, each the kit's sentence
 // (route.js bendFindings): the page gives the ones it rings (landedBends).
 // The exports give none; their notes do not carry bends yet.
-export function routeNotes(rack, facts, nameOf = id => id, {bodies = true, bends = []} = {}) {
+// READ ONCE FOR A RACK, A SET OF ROUTES AND A NAMER. The side panel is drawn
+// again on every selection, hover of a row and edit, and each ringFindings and
+// bodyFindings lays every cable of the rack again (the kit keeps which lay it
+// chose, not the lay). A rack is never changed in place, so the same rack
+// object with the same routes and the same `nameOf` gives the same sentences:
+// they are kept beside the routes, and worked out again only when one of the
+// three is another object.
+const notesMemo = new WeakMap();   // facts -> {rack, nameOf, rings, crossed}
+// `asRead: true` takes the ring and body findings routeFacts read with these
+// routes (its own namer: each item's or zero-U part's label, else its id),
+// and lays nothing again. For a caller whose `nameOf` is that same naming of
+// the rack the routes are for: the page, whose routes are read again whenever
+// a step changes a label (rack-page.js routesNow). An export names devices
+// its own way and does not pass it.
+export function routeNotes(rack, facts, nameOf = id => id, {bodies = true, bends = [], asRead = false} = {}) {
   if (!facts) return [];
-  const rings = facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
-  const crossed = !bodies ? [] : facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
-  return [...fillNotes(rack, facts, nameOf), ...rings.map(f => f.text), ...crossed.map(f => f.text),
+  if (asRead && Array.isArray(facts.ringFindings) && Array.isArray(facts.bodyFindings))
+    return [...fillNotes(rack, facts, nameOf), ...facts.ringFindings.map(f => f.text), ...(bodies ? facts.bodyFindings : []).map(f => f.text),
+            ...(bends || []).map(f => f.text)];
+  let m = notesMemo.get(facts);
+  if (!m || m.rack !== rack || m.nameOf !== nameOf) notesMemo.set(facts, m = {rack, nameOf, rings: null, crossed: null});
+  m.rings ??= facts.ctx ? ringFindings(rack, facts.ctx, nameOf) : (facts.ringFindings || []);
+  if (bodies) m.crossed ??= facts.ctx ? bodyFindings(rack, facts.ctx, nameOf) : (facts.bodyFindings || []);
+  return [...fillNotes(rack, facts, nameOf), ...m.rings.map(f => f.text), ...(bodies ? m.crossed : []).map(f => f.text),
           ...(bends || []).map(f => f.text)];
 }

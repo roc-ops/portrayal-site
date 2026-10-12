@@ -45,6 +45,7 @@ const KNOWN = new Set([
   'minItems', 'maxItems', 'uniqueItems', 'minimum', 'maximum', 'title',
   'exclusiveMinimum', 'exclusiveMaximum', 'minProperties', 'maxProperties',
   'minLength', 'maxLength', 'propertyNames', 'dependentRequired',
+  'multipleOf', 'prefixItems',
   '$defs', '$id', '$schema', '$comment', 'examples', 'deprecated',
 ]);
 
@@ -154,6 +155,10 @@ function constraints(node) {
   // These schemas use exclusiveMinimum heavily - a millimetre cannot be zero.
   if (node.exclusiveMinimum !== undefined) out.push(chip('greater than', String(node.exclusiveMinimum)));
   if (node.exclusiveMaximum !== undefined) out.push(chip('less than', String(node.exclusiveMaximum)));
+  // A rack position counts in halves (rack file version 4): `multipleOf: 0.5`.
+  if (node.multipleOf !== undefined) out.push(chip('in steps of', String(node.multipleOf)));
+  // A list whose places are each given (`prefixItems`) and that takes no more.
+  if (Array.isArray(node.prefixItems) && node.items === false) out.push(chip('', `exactly ${node.prefixItems.length} items`));
   if (node.minProperties !== undefined) out.push(chip('min keys', String(node.minProperties)));
   if (node.maxProperties !== undefined) out.push(chip('max keys', String(node.maxProperties)));
   // propertyNames constrains the KEYS of an object rather than its values: a
@@ -287,6 +292,15 @@ function renderNode(node, depth, ptr, ctx = {}) {
     const inner = constraints(it);
     if (inner.length) frag.append(el('div', {class: 'sc-meta'}, inner));
     frag.append(renderNode(it, depth, `${ptr}/items`, ctx));
+  }
+  // A LIST WITH A SHAPE FOR EACH PLACE (`prefixItems`: a part that slides
+  // states its travel as `[min, max]`): one branch a place, in order.
+  if (Array.isArray(node.prefixItems)) {
+    const wrap = el('div', {class: 'sc-oneof'});
+    node.prefixItems.forEach((b, i) => {
+      wrap.append(branch(`item ${i + 1}${typeLabel(b) ? ` — ${typeLabel(b)}` : ''}`, b, depth + 1, `${ptr}/prefixItems/${i}`, ctx));
+    });
+    frag.append(wrap);
   }
 
   // Last, because each of these refines the shape above it: a oneOf picks

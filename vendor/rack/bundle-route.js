@@ -178,7 +178,7 @@ export function deriveTrunk(members, {nameOf = id => id, frame = null} = {}) {
     return {error: `${said.slice(0, -1).join(', ')}, and ${said.at(-1)}, but the ${groups.length === 2 ? 'two groups share' : 'groups share'} nothing. ${SEPARATELY}`};
   }
   const lonely = seqs.find(s => !s.sh.length);
-  if (lonely) return {error: `${lonely.id} runs with none of the others. Leave it out, or give the bundle a route.`};
+  if (lonely) return {error: `${lonely.id} runs with none of the others. Leave it out; or give the bundle a route, which ${lonely.id} then joins and leaves at the points nearest its two ports.`};
 
   // ONE SIMPLE PATH, oriented the way the first cable named that meets two or
   // more of its elements runs, from its a end to its b end.
@@ -218,15 +218,25 @@ function bridgesOf(adj) {
 
 // ── a member's route along the trunk (section 4.2) ───────────────────────
 // `own` is the member's own route and `trunk` the bundle's, both as resolved
-// waypoints; `member` is {cable, a?, b?}. `aNearStart()` answers, for a member
-// whose own route never meets the trunk, whether its a port is nearer the
-// trunk's first waypoint than its last (true when it cannot tell).
+// waypoints; `member` is {cable, a?, b?}.
+// A MEMBER WHOSE OWN ROUTE NEVER MEETS THE TRUNK (#1012) joins it at the
+// trunk element nearest its a port and leaves it at the one nearest its b
+// port, and runs straight from each port to that element: it never rides to
+// an end of the trunk its ports are not at. `nearest(end, elements)` gives the
+// index of that element in `elements` (elementsOf(trunk)) for end 'a' or 'b',
+// or null when the port cannot be measured; the caller measures, since this
+// file reads no drawing (route.js trunkMeasures). `aNearStart()` answers
+// whether its a port is nearer the trunk's first waypoint than its last (true
+// when it cannot tell): the way such a member runs when both its ports are
+// nearest one element, and, where `nearest` is not given or cannot measure,
+// the end it starts from to ride all of the trunk, as every such member did
+// before #1012 (nothing is measured along a route whose ports are not found).
 // Returns {waypoints, join, leave, met, stale}: the route it follows; the
 // trunk waypoints it joins and leaves at (null when the trunk is empty);
 // `met`, whether its own route meets the trunk; and `stale`, the peel ends
 // ('a', 'b') that were not used because they are not on the trunk, or are a
 // pair whose a point is at or past its b point.
-export function followTrunk(own, trunk, member, {aNearStart = () => true} = {}) {
+export function followTrunk(own, trunk, member, {aNearStart = () => true, nearest = () => null} = {}) {
   const T = elementsOf(trunk), M = elementsOf(own);
   if (!T.length) return {waypoints: own, join: null, leave: null, met: false, stale: []};
   const tAt = new Map();
@@ -249,8 +259,15 @@ export function followTrunk(own, trunk, member, {aNearStart = () => true} = {}) 
     i0 = tAt.get(meets[0].e.key); i1 = tAt.get(meets.at(-1).e.key);
     dir = sign(i1 - i0) || (pb != null && sign(pb - i0)) || (pa != null && sign(i0 - pa)) || 1;
   } else {
-    dir = aNearStart() ? 1 : -1;
-    [i0, i1] = dir > 0 ? [0, last] : [last, 0];
+    const ok = i => Number.isInteger(i) && i >= 0 && i <= last;
+    const na = nearest('a', T), nb = nearest('b', T);
+    if (ok(na) && ok(nb)) {
+      i0 = na; i1 = nb;
+      dir = sign(i1 - i0) || (aNearStart() ? 1 : -1);
+    } else {
+      dir = aNearStart() ? 1 : -1;
+      [i0, i1] = dir > 0 ? [0, last] : [last, 0];
+    }
   }
   // A pair in the wrong order is stale; so is one peel point at or past the other
   // end of the member's run.

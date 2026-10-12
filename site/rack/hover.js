@@ -105,6 +105,12 @@ function apply3d(world, lit) {
         dimMaterial(m, dim && !o.userData.envelope && !(o.userData.strap && rides)); });
     }
   }
+  // THE TIE STRAPS OF SINGLE CABLES (scene3d.js, group `tie-straps`): each goes
+  // with the cables it ties, lit while one of them is, dimmed with the rest.
+  for (const g of world.getObjectByName('tie-straps')?.children ?? []) {
+    const dim = !!lit && !(g.userData.members ?? []).some(id => lit.cables.has(id));
+    g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim); });
+  }
 }
 
 // A BUNDLE'S ENVELOPE IN 3D (scene3d.js hangBundles: the see-through tube at

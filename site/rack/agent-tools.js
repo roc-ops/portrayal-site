@@ -11,6 +11,7 @@ import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {spareFor, spareText, needsText} from './spare.js';
+import {projectionIdRefusal} from './part-path.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
 
 export {LIMIT, fit, ranges};
@@ -33,6 +34,17 @@ const ARG_WORDS = {
   fields: 'Replaces every field: {part path: {key: value}}. To set one, use field.',
 };
 const ARG_WORDS_BY_OP = {
+  // kit 0.22.0 (rack file version 4): a held device is kept and freed; none can be put on a host yet
+  patch: {
+    heldBy: 'null frees a device held on a shelf or a rail (a saved one reads {item, at}). Only null is taken yet.',
+  },
+  // kit 0.22.0: a bundle's straps have three kinds, each its own key
+  'bundle.create': {
+    straps: 'Its straps: {every, breakout, anchors}, any of them. every is {value, unit} in in or mm, or null for no spacing straps. null for the defaults.',
+  },
+  'bundle.update': {
+    straps: 'Its straps: {every, breakout, anchors}; a key left out stays as it is. every is {value, unit} or null. null for the defaults.',
+  },
   'bundle.peel': {
     at: "A waypoint on the bundle's route where the cable leaves it: {item, via} or {lane, ru}. When left out, it leaves the bundle altogether.",
   },
@@ -214,7 +226,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         // None either when the ends could not be checked (`loose` null).
         const spare = o.kind === 'cable' && Array.isArray(o.loose) && !o.loose.length && !o.unchecked
           ? spareFor(rack, rack.cables.find(c => c.id === id), ctx.route) : null;
-        return say(o.kind === 'cable' ? cableText(o, spare ? {spare: spareText(spare), dressing: spare.dressing, needs: needsText(spare)} : {}) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
+        return say(o.kind === 'cable' ? cableText(o, spare ? {spare: spareText(spare), needs: needsText(spare)} : {}) : o.kind === 'zeroU' ? zeroUText(o) : o.kind === 'bundle' ? bundleText(o)
           : inspectText(o, {section, offset: offset ?? 0, ask: {id}}));
       }),
     tool('find_devices', 'Find devices',
@@ -322,6 +334,9 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           if (ed.rack() === rack) break;
         }
         if (x.error) return refuse(`${at(x.index)} was refused: ${x.error} Nothing was changed.`);
+        // an end given a drawing id (the back of a seated module is a projection) is refused with the path to use
+        const idNo = projectionIdRefusal(x.commands);
+        if (idNo) return refuse(`${idNo} Nothing was changed.`);
         const res = dry_run ? ed.preview(x.commands, {ctx}) : ed.apply(x.commands, {origin: 'agent', ctx});
         if (res.error) return refuse(`${at(x.from[res.index ?? 0] ?? 0)} was refused: ${res.error} Nothing was changed.`);
         if (res.noop) return say('Nothing changed: the rack already looks like that.');
