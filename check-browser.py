@@ -18641,8 +18641,8 @@ MARKS_UNIT = "marks-harness"
 # READ AGAIN ON 2026-10-12, from the four shards of one green run on main: by
 # then some 55 checks of eight seconds or more had no entry (one of 284 s), and
 # the shards ran 16, 16, 18 and 20 minutes against a limit of 20. The two
-# checks added with this reading (#194, #195) carry what they took beside it
-# (and, grown since, about what one and a half times their time here comes to).
+# checks added with this reading (#194, #195) carry what they took on the
+# runner once they had grown to what they are.
 DEFAULT_SECONDS = 2.0
 SECONDS = {
     "index.html": 68, "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
@@ -18650,8 +18650,8 @@ SECONDS = {
     "schematic.html": 9, "marks-harness.html": 9, "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
     "components/catalog.html": 9, "hero-3d": 31, "stage-rail": 284, "check_kit_page": 23,
     "check_takeaway_cables_3d": 128, "check_rack_export_3d": 24, "check_narrow_tool_pages": 12,
-    "check_rack_face_managers": 17, "check_rack_cable_routes": 18, "check_rack_faces_and_tags": 120,
-    "check_rack_straps_on_run": 90, "check_rack_ears_default": 22, "check_rack_hover_dims": 38,
+    "check_rack_face_managers": 17, "check_rack_cable_routes": 18, "check_rack_faces_and_tags": 148,
+    "check_rack_straps_on_run": 116, "check_rack_ears_default": 22, "check_rack_hover_dims": 38,
     "check_rack_cable_spare": 133, "check_rack_bundle_3d": 14, "check_rack_bundle_pack": 79,
     "check_rack_straps_seen": 48, "check_rack_half_unit": 38, "check_rack_pinned_highlight": 52,
     "check_rack_bundle_downloads": 56, "check_rack_side_cables": 65, "check_rack_side_exports_same": 121,
