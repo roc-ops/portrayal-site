@@ -25,8 +25,9 @@ and, after the open and after the last edit, every download: the rack file,
 the sheet (.svg), front and rear sheets, draw.io, the bill of materials, the
 cable schedule, and both DCIM kits entry by entry. With --glb the 3D scene is
 built in both and the GLB and USDZ are compared: byte for byte, and where the
-bytes differ, by content (every node's name, transform and mesh data, in any
-order), saying which.
+bytes differ, by content, saying which (a GLB: every node's name, transform
+and mesh data, in any order; a USDZ: every geometry, texture and material by
+what it holds, whatever id it was named by, and the scene that uses them).
 
 The edits are chosen from the rack as the other checkout has it: a cable's end
 moved, its media and its label changed, a cable removed and added back, a
@@ -319,6 +320,32 @@ def glb_content(data):
     return {"asset": js.get("asset"), "extensionsUsed": sorted(js.get("extensionsUsed", [])), "roots": roots}
 
 
+def usdz_content(data):
+    """A USDZ as what it holds, whatever numbers its parts were given. The exporter names each geometry, texture,
+    material and object by the id three.js gave it, and those ids follow the order the scene's parts happened to
+    be built in (the faces of 25 devices load side by side), so two exports of one scene can name the same part
+    differently. Here each geometry and texture is named by its own content, each material by its definition, and
+    each object by where it comes in the scene: the same scene gives the same answer."""
+    import re
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        files = {n: z.read(n) for n in z.namelist()}
+    h = lambda b: hashlib.sha1(b).hexdigest()[:16]
+    geo = {m.group(1): h(b) for n, b in files.items() if (m := re.fullmatch(r"geometries/Geometry_(\d+)\.usda", n))}
+    tex = {m.group(1): h(b) for n, b in files.items() if (m := re.fullmatch(r"textures/Texture_(\d+)_(?:true|false)\.png", n))}
+    model = files.get("model.usda", b"").decode("utf-8", "replace")
+    model = re.sub(r"Geometry_(\d+)\.usda", lambda m: f"Geometry_{geo.get(m.group(1), 'missing')}.usda", model)
+    model = re.sub(r"Texture_(\d+)", lambda m: f"Texture_{tex.get(m.group(1), 'missing')}", model)
+    # a material by its definition, its own number left out
+    mats = {}
+    for m in re.finditer(r'def Material "Material_(\d+)"\n(\t*)\{\n(.*?)\n\2\}', model, re.S):
+        mats[m.group(1)] = h(re.sub(r"Material_\d+", "Material", m.group(3)).encode())
+    model = re.sub(r"Material_(\d+)", lambda m: f"Material_{mats.get(m.group(1), 'missing')}", model)
+    seen = {}
+    model = re.sub(r"Object_(\d+)", lambda m: f"Object_#{seen.setdefault(m.group(1), len(seen))}", model)
+    other = {n: h(b) for n, b in files.items() if n != "model.usda" and not n.startswith(("geometries/", "textures/"))}
+    return {"model": model, "geometries": sorted(geo.values()), "textures": sorted(tex.values()), "materials": len(mats), "other": other}
+
+
 class Side:
     def __init__(self, browser, base, name):
         self.name, self.base = name, base
@@ -438,12 +465,11 @@ def compare_models(t, where, A, B, settle):
                 t.notes.append(f"{where}: the GLBs differ in bytes ({len(da)} and {len(db)}) and were compared by content")
                 t.same(f"{where}: the glb download, by content (the bytes differ)", glb_content(da), glb_content(db))
             else:
-                ea, oa = as_entries(na, da)
-                eb, ob = as_entries(nb, db)
-                t.notes.append(f"{where}: the USDZs differ in bytes and were compared entry by entry, in any order")
-                t.same(f"{where}: the usdz download's entries", sorted(oa), sorted(ob))
-                for n in sorted(oa):
-                    t.same(f"{where}: usdz / {n}", hashlib.sha1(ea[n]).hexdigest(), hashlib.sha1(eb.get(n, b"")).hexdigest(), show=False)
+                ca, cb = usdz_content(da), usdz_content(db)
+                t.notes.append(f"{where}: the USDZs differ in bytes ({len(da)} and {len(db)}) and were compared by content: "
+                               f"{len(ca['geometries'])} geometries, {len(ca['textures'])} textures, {ca['materials']} materials")
+                for k in ("geometries", "textures", "other", "model"):
+                    t.same(f"{where}: the usdz download, by content: its {k}", ca[k], cb[k])
     for S in (A, B):
         S.page.click('#mode [data-mode="2d"]')
         S.settle(False, 120000)

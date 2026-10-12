@@ -299,8 +299,28 @@ function tubeEnds(THREE, mesh) {
 // true arc of that radius kept out of `boxes` (bend3d.js kitRoute,
 // clearCurve), and its `tight` lists the corners whose legs could not hold
 // one (bend3d.js fitCorners). Without it the corners are eased.
-export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null,
-                                                 bendOf = null} = {}) {
+// `slice` (ms; portrayal-site#192): a host with hundreds of cables hands the
+// page back every `slice` milliseconds while the tubes are made, and the
+// cables stand in the scene as they are hung instead of all at once at the
+// end. 275 tubes were one task of a second and a half in which the page
+// answered nothing. The tubes are made in the same order either way, so the
+// scene is the same; if making them fails part-way, what was hung is taken
+// out again, and the failure is the caller's as before. No other caller
+// passes it.
+export async function drawCables3d(scene, plan, opts = {}) {
+  const early = {group: null};
+  try { return await hangTubes(scene, plan, opts, early); }
+  catch (err) {
+    // (hung as they were made: a scene whose cables could not all be made holds none of them)
+    if (early.group) {
+      scene.three.scene.remove(early.group);
+      early.group.traverse(o => { o.geometry?.dispose(); o.material?.dispose?.(); });
+    }
+    throw err;
+  }
+}
+async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null,
+                                       bendOf = null, slice = 0}, early) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
   boxes ??= scene.deviceBoxes();
@@ -325,7 +345,15 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     found.push({link, i, ends, loose});
   }
   reaches(THREE, found.flatMap(f => f.ends.filter(Boolean)));
+  const sliced = slice > 0;
+  if (sliced) { world.add(group); early.group = group; }
+  let sliceAt = sliced ? performance.now() : 0;
   for (const {link, i, ends, loose} of found) {
+    if (sliced && performance.now() - sliceAt > slice) {
+      await new Promise(next => setTimeout(next));
+      if (!live()) return null;
+      sliceAt = performance.now();
+    }
     if (loose.length === 2) { tubes.push({link, i, mesh: null, loose, points: [], starts: []}); continue; }
     const landed = ends.filter(Boolean);
     const dangling = landed.length === 1;
@@ -396,6 +424,6 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
                 ...(bent ? {bend: {radius_mm: bent.radius, corners: bent.corners, length_mm: bent.getLength(),
                                    polyline_mm: bent.polyline, extended_mm: extended}, tight} : {})});
   }
-  world.add(group);
+  if (!sliced) world.add(group);
   return {tubes, anchors, boxes, group};
 }

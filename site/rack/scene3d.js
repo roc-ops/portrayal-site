@@ -558,7 +558,9 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null, bundles?.bundles ?? null, rack, ctx), bendOf: radiusOf(rack, bendOf, bundles)});
+    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null, bundles?.bundles ?? null, rack, ctx), bendOf: radiusOf(rack, bendOf, bundles),
+      // the page is handed back every 30 ms while the tubes are made, and they stand as they are hung (cables.js `slice`)
+      slice: 30});
     // Each corner drawn tighter than its radius, in the kit's bend-check words.
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
