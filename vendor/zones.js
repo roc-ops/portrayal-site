@@ -134,8 +134,17 @@ export function readSvg(text, {layout = true} = {}) {
       // The model's own words about the thing, carried through. A miniature
       // symbol needs to know which bay a port belongs to and what kind of port
       // it is; geometry alone cannot say either.
+      // THE PATH IS THE PART'S ADDRESS, and a projection has one too: the back
+      // of a module seated in a bay is drawn on the host's rear face with
+      // `data-of` in place of `data-path` (swap.js applyRearOverrides, and
+      // render.py at build), naming the part it is. Read as its element id
+      // (`bay-1-rear--b01`), a rear adapter had an address nothing else
+      // accepted. `projected` says the element is such a view of a part and
+      // not the part's own drawing; `id` is still the element's.
+      const own = el.getAttribute('data-path'), of = own ? null : el.getAttribute('data-of');
       const meta = {
-        path: el.getAttribute('data-path') || el.id,
+        path: own || of || el.id,
+        projected: !!of,
         group: el.getAttribute('data-group') || null,
         media: el.getAttribute('data-media') || null,
         speed: el.getAttribute('data-speed') || null,
@@ -170,11 +179,17 @@ export function readSvg(text, {layout = true} = {}) {
   if (layout) layoutZones(text, zones);
   const sized = zones
     .filter(z => Number.isFinite(z.x))
-    .map(z => ({id: z.id, cls: z.cls, path: z.path, group: z.group,
+    .map(z => ({id: z.id, cls: z.cls, path: z.path, ...(z.projected ? {projected: true} : {}), group: z.group,
                 media: z.media, speed: z.speed, model: z.model,
                 x: z.x, y: z.y, w: z.x1 - z.x, h: z.y1 - z.y}));
   return {vb, zones: sized};
 }
+
+/** The name the diagram exports write for a zone (draw.io's and OmniGraffle's
+ *  `portrayal-path`). A projected part keeps the element id those files have
+ *  always carried for it, so a file exported again names its cells as before;
+ *  its address is `path`, and a cable end is matched by either. */
+export const exportName = z => (z.projected ? z.id : z.path || z.id);
 
 /** The things a cable can be drawn to: ports, and optionally the bays that hold
  *  the cards whose ports they are. Sorted so port-2 precedes port-10. */

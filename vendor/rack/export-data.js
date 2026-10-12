@@ -13,6 +13,7 @@ import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText,
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
 import {storedText, mText} from './slack.js';
+import {settleEnds} from './ports.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -151,8 +152,13 @@ export function cableNames(rack) {
   for (const c of cables) seen.set(cableName(c), (seen.get(cableName(c)) || 0) + 1);
   return new Map(cables.map(c => [c.id, c.label && seen.get(c.label) > 1 ? `${c.label} (${c.id})` : cableName(c)]));
 }
-export function cableFindings(rack, ends = new Map()) {
-  const names = cableNames(rack);
+// THE ENDS ARE SETTLED HERE, as the queries settle them (ports.js settleEnds),
+// so an export and `looseEnds` say the same of one end. `parts` is the parts
+// lists, {slotsOf, compByRef} as `loadSlots` returns them: with them, an end
+// on a port of what a bay holds is judged by the catalogue. Without them only
+// an element id is caught, and the rest is as the page read it.
+export function cableFindings(rack, given = new Map(), parts = null) {
+  const names = cableNames(rack), ends = settleEnds(rack, given, parts);
   return (rack.cables || []).map(cable => {
     const got = s => ends.get(endKey(cable[s]));
     const loose = [['A', 'a'], ['B', 'b']].filter(([, s]) => got(s)?.reason != null)
@@ -168,9 +174,9 @@ export function cableFindings(rack, ends = new Map()) {
 // some).
 // `uOf` is endName's (how tall a device is), for a rack whose items do not
 // carry their height.
-export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf} = {}) {
+export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf, parts = null} = {}) {
   const out = [], gone = typeof undrawn === 'function' ? undrawn : () => undrawn;
-  for (const f of cableFindings(rack, ends)) {
+  for (const f of cableFindings(rack, ends, parts)) {
     if (f.loose.length) {
       const why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
       out.push(`Cable ${f.name}${gone(f.cable) ? ' is not drawn' : ''}: ${why.join('; ')}.`);
@@ -191,8 +197,8 @@ export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf} = {}) 
 //   - its landed ends are all on the other face of a single-face sheet: it is
 //     simply not on this sheet, and one line counts those. (A cross-face cable
 //     is on both: its tag names the far end.)
-export function sheetCableNotes(rack, ends = new Map(), {faces = ['front', 'rear'], drawn = new Set(), failed = [], uOf} = {}) {
-  const byId = new Map(rack.items.map(i => [i.id, i]));
+export function sheetCableNotes(rack, given = new Map(), {faces = ['front', 'rear'], drawn = new Set(), failed = [], uOf, parts = null} = {}) {
+  const byId = new Map(rack.items.map(i => [i.id, i])), ends = settleEnds(rack, given, parts);
   const lands = e => byId.has(e.item) && ends.get(endKey(e))?.reason == null;
   const panes = c => [c.a, c.b].filter(lands).map(e => paneOf(byId.get(e.item), e.view));
   const undrawn = new Set(), elsewhere = new Map();
@@ -203,7 +209,7 @@ export function sheetCableNotes(rack, ends = new Map(), {faces = ['front', 'rear
     if (on.length && !here.length) elsewhere.set(on[0], (elsewhere.get(on[0]) || 0) + 1);
     else undrawn.add(c.id);
   }
-  const out = cableNotes(rack, ends, {undrawn: c => undrawn.has(c.id), uOf});
+  const out = cableNotes(rack, ends, {undrawn: c => undrawn.has(c.id), uOf, parts});
   for (const [face, n] of elsewhere)
     out.push(`${count(n, 'cable is', 'cables are')} on the ${face} face only and ${n === 1 ? 'is' : 'are'} not on this sheet.`);
   return out;
@@ -249,7 +255,7 @@ export const CABLE_COLUMNS = ['id', 'cable', 'a_device', 'a_u', 'a_port', 'b_dev
 // `bundles` is bundleExports(rack, ctx) for the same render: each bundle's note
 // and its warnings join the file's notes. Without it the bundles are read
 // with no routing context, so each is listed as not measured.
-export function cableScheduleRows(rack, ends = new Map(), items = rack.items, routes = null, {spare = null, straps = null, bundles = null, bodies = null, bends = null, covers = null} = {}) {
+export function cableScheduleRows(rack, ends = new Map(), items = rack.items, routes = null, {spare = null, straps = null, bundles = null, bodies = null, bends = null, covers = null, parts = null} = {}) {
   const names = uniqueNames(rack.items);
   const byId = new Map(items.map(i => [i.id, i]));
   const named = new Set();
@@ -259,7 +265,7 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items, ro
     if (names.get(it.id).renamed) named.add(names.get(it.id).name);
     return [names.get(it.id).name, uOfItem(rack.frame, it), e.path];
   };
-  const findings = cableFindings(rack, ends);
+  const findings = cableFindings(rack, ends, parts);
   const rows = findings.map(f => {
     const c = f.cable, len = lengthParts(c.length), [aDev, aU, aPort] = side(c.a), [bDev, bU, bPort] = side(c.b);
     const notes = [...f.loose.map(l => `End ${l.side} is not connected: ${l.reason}.`), ...f.warnings];
@@ -649,14 +655,14 @@ export const drawioCableStyle = color =>
 
 // `spare` is slack.js spareExports(rack, ctx): a cable with a length and a
 // path carries what is spare of it, which its edge label states.
-export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf, spare = null}) {
+export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf, spare = null, parts = null}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   // Ends that could not be checked: an edge may run to an empty cage, which
   // says "connected" where nothing is. None is drawn, and the file says so.
   const n = (rack.cables || []).length;
   if (unchecked && n) return {cables: [], notes: [`${count(n, 'cable is', 'cables are')} not drawn because ${n === 1 ? 'its' : 'their'} ends could not be checked.`]};
-  const cables = [], notes = cableNotes(rack, ends, {undrawn: true, uOf});
-  for (const f of cableFindings(rack, ends)) {
+  const cables = [], notes = cableNotes(rack, ends, {undrawn: true, uOf, parts});
+  for (const f of cableFindings(rack, ends, parts)) {
     if (f.loose.length) continue;
     const c = f.cable;
     const sides = [['A', c.a], ['B', c.b]].map(([side, end]) => {
@@ -1193,8 +1199,8 @@ export function fillNotes(rack, facts, nameOf = id => id) {
   }
   return out;
 }
-export function cableBomRows(rack, ends = new Map()) {
-  const lines = new Map();
+export function cableBomRows(rack, given = new Map(), {parts = null} = {}) {
+  const lines = new Map(), ends = settleEnds(rack, given, parts);
   for (const c of rack.cables || []) {
     const info = s => ends.get(endKey(c[s]))?.info;
     const length = lengthText(c.length)
