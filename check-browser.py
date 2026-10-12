@@ -18373,21 +18373,33 @@ MARKS_UNIT = "marks-harness"
 # A unit not listed weighs DEFAULT_SECONDS, which is about what the many small
 # ones take, so a new check needs no entry here until it is slow enough to
 # unbalance a shard - and a stale number costs balance, never coverage.
+# READ AGAIN ON 2026-10-12, from the four shards of one green run on main: by
+# then some 55 checks of eight seconds or more had no entry (one of 284 s), and
+# the shards ran 16, 16, 18 and 20 minutes against a limit of 20. The two
+# checks added with this reading (#194, #195) carry what they took beside it.
 DEFAULT_SECONDS = 2.0
 SECONDS = {
-    "index.html": 73,
-    "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
-    "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
-    "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
-    "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
-    "hero-3d": 23, "stage-rail": 219,
-    "check_kit_page": 24, "check_takeaway_cables_3d": 100,
-    "check_rack_export_3d": 11, "check_narrow_tool_pages": 11,
-    "check_rack_mount_flag_3d_exports": 10, "check_rack_export_overtaken": 20,
-    "check_rack_3d": 64, "check_wide_tool_pages": 10, "check_annotate_3d": 49,
-    "check_rack_cables_3d": 40, "check_rack_export_after_cable_edit": 15,
-    "check_rack_export_cable_failures": 12, "check_rack_cables_3d_scene": 10,
-    "check_rack_export_3d_cables": 25,
+    "index.html": 68, "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
+    "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9, "lint.html": 9, "kit.html": 9,
+    "schematic.html": 9, "marks-harness.html": 9, "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
+    "components/catalog.html": 9, "hero-3d": 31, "stage-rail": 284, "check_kit_page": 23,
+    "check_takeaway_cables_3d": 128, "check_rack_export_3d": 24, "check_narrow_tool_pages": 12,
+    "check_rack_face_managers": 17, "check_rack_cable_routes": 18, "check_rack_faces_and_tags": 78,
+    "check_rack_straps_on_run": 45, "check_rack_ears_default": 22, "check_rack_hover_dims": 38,
+    "check_rack_cable_spare": 133, "check_rack_bundle_3d": 14, "check_rack_bundle_pack": 79,
+    "check_rack_straps_seen": 48, "check_rack_half_unit": 38, "check_rack_pinned_highlight": 52,
+    "check_rack_bundle_downloads": 56, "check_rack_side_cables": 65, "check_rack_side_exports_same": 121,
+    "check_rack_side_fresh_after_edit": 45, "check_rack_ring_doubles_back": 21, "check_rack_cable_lay": 90,
+    "check_rack_bend_notice": 284, "check_rack_routes_follow_edits": 152, "check_rack_ring_clearance": 145,
+    "check_rack_bend_radius_3d": 95, "check_rack_cable_lay_pdu": 18, "check_rack_zero_u": 32,
+    "check_rack_mount_flag_3d_exports": 13, "check_rack_export_overtaken": 80, "check_rack_3d": 81,
+    "check_rack_stage": 33, "check_wide_tool_pages": 10, "check_annotate_3d": 57,
+    "check_3d_download_waits_for_scene": 170, "check_annotate_api": 20, "check_rack_cable_stale": 10,
+    "check_rack_cables_3d": 90, "check_rack_export_after_cable_edit": 42, "check_rack_export_cable_failures": 28,
+    "check_rack_cables_3d_scene": 57, "check_rack_export_3d_cables": 96, "check_rack_unchecked_3d_each_rack": 62,
+    "check_rack_cable_tree": 17, "check_rack_covers": 182, "check_rack_3d_loading": 49,
+    "check_rack_dcim_settings_draft": 12, "check_rack_dcim_settings_scene": 57, "check_rack_v4_keys_kept": 51,
+    "check_rack_strap_kinds": 160, "check_rack_rear_module_port": 27,
 }
 
 
