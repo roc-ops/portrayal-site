@@ -280,11 +280,7 @@ function envelopePieces(THREE, lay, run, pts, curve, D) {
 // The bodies a trunk of radius `rt` is kept out of: a ring's part and a
 // zero-U part met by the trunk's tube (grown by its radius), the rest as they are.
 const trunkInside = (boxes, rt) => insideOf((boxes ?? []).map(b => (b.raw ? {...b, box: b.raw.clone().expandByScalar(rt)} : b)));
-// A BUNDLE IS DRAWN WHERE ITS CABLES ARE (#190): `landed` is the cables hung
-// along their paths (a cable with a loose end hangs free from the end that
-// lands). A bundle none of whose members is hung so is not drawn, and a strap
-// goes only on a stretch a hung member rides: no band in the air.
-async function hangBundles(scene, rack, facts, boxes = null, landed = null) {
+async function hangBundles(scene, rack, facts, boxes = null) {
   const {THREE, scene: world} = scene.three;
   const toScene = inScene(THREE, scene.metrics().faceZ);
   const group = new THREE.Group(); group.name = 'cable-bundles';
@@ -292,7 +288,6 @@ async function hangBundles(scene, rack, facts, boxes = null, landed = null) {
   for (const f of facts.bundles.values()) {
     const L = f.check?.layout;
     if (!f.drawn || !L?.trunk?.length) continue;
-    if (landed && !(f.members ?? []).some(id => landed.has(id))) continue;
     // one point per trunk waypoint (the middle of its stop), for the straps
     // and the bend marks; the tube runs through every point of each stop
     // THE PACK IS AS THICK AS THE MEMBERS THERE (bundle-view.js trunkLay): at
@@ -360,8 +355,6 @@ async function hangBundles(scene, rack, facts, boxes = null, landed = null) {
     (f.straps?.straps ?? []).forEach((s, k) => {
       const hit = strapAt(vec, s);
       if (!hit) return;
-      const on = lay?.stretchAt(s)?.stretch ?? null;
-      if (landed && on && !on.members.some(id => landed.has(id))) return;
       // a band round the pack, at the pack's diameter where the strap is
       const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
       const band = new THREE.Mesh(new THREE.CylinderGeometry(Ds / 2 + 1.5, Ds / 2 + 1.5, STRAP_BAND, 20, 1, false), strapMat);
@@ -543,8 +536,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // The bundles over the cables they hold; one failing costs only the bundles.
     let hung = null;
     if (bundles?.bundles?.size) {
-      const landed = new Set((drawn.tubes || []).filter(t => t.mesh && !t.dangling && !(t.loose ?? []).length).map(t => t.link.id));
-      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes, landed);
+      try { hung = await hangBundles(scene, rack, {...bundles, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
@@ -569,13 +561,15 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // (covers.js: 'on', 'see' or 'off'); the page changes it on a built scene with
 // covers.js paintCovers3d. `onScene(scene)` is told the scene the moment it
 // exists, before anything is built in it (a probe watches it load).
+// `onDetailFailed({id, label})` is told of a sheet part whose detail could not
+// be built: it stays a plain box, and the page says so.
 // `bendOf` is the cable types' cable => installed bend radius in mm (the kit's
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
                                               ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214',
-                                              covers = COVERS_DEFAULT, onScene = null}) {
+                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -618,10 +612,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // rack3d.js) is not a cost a 2D-only visit should pay - the showcase's own
   // mount3d (site/showcase/rack.js) makes the same choice for the same
   // reason.
-  // WHICH PARTS OF EACH PART BESIDE THE RACK ARE ITS COVER (covers.js), read
+  // WHICH PARTS OF EACH PART ARE ITS COVER (covers.js), read
   // off its drawings before anything is built, so a cover takes the reader's
   // setting in the task its meshes arrive in (onFace, below).
-  const coverPaths = new Map(await Promise.all(sideParts.map(async z => [z.id, await coverPathsOf(z.ref, z.cfg)])));
+  // (every part the library marks one on: a part beside the rack, and a rack-mounted duct with a cover as well)
+  const coverPaths = new Map(await Promise.all([...rack.items, ...sideParts].map(async z => [z.id, await coverPathsOf(z.ref, z.cfg)])));
   const {guard3d} = await import('../webgl.js');
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
@@ -643,6 +638,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // stood in its place as it is mounted, not once the whole stack is
       // built, so its box is never drawn at the middle of the rack first.
       standIn: true,
+      onDetailFailed: f => onDetailFailed?.(f),
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);

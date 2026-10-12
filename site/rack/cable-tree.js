@@ -12,11 +12,12 @@
 //     or steps into an open one, Left closes an open row or steps out to its
 //     parent, Home and End, and Enter or Space do what a click on the row
 //     does. The disclosure mark is the pointer's; it is not a second stop.
-//   - A PEEK. A cable under the pointer on the stage opens the row it is
-//     under and its row is scrolled into view. The row stays open when the
-//     pointer leaves (the reader may be on the way to it), until a cable
-//     under another closed row is hovered: one peek at a time. A peek is not
-//     remembered; a row the reader opens or pins a cable in is.
+//   - A MARK, NOT A MOVE. A cable or a bundle under the pointer on the stage
+//     marks its row: the cable's own row where that shows, else the closed
+//     row it is under. Nothing opens and nothing scrolls for a hover (a sweep
+//     of the pointer across thirty cables once moved the panel twenty-three
+//     times). A PIN opens the row the cable is under and scrolls its row into
+//     view, once (rack-page.js treeHooks).
 //
 // The first two parts are pure (tests/rack/cable-tree.test.mjs); the rest
 // needs a document.
@@ -110,7 +111,6 @@ export function wireTree(tree, {onToggle = () => {}, onStop = () => {}, stop = n
     // closing a row over the focused one keeps the keyboard: it goes to the row that closed
     const inside = li.contains(document.activeElement) && document.activeElement !== li;
     setOpen(li, open);
-    li.removeAttribute('data-peek');
     if (!open && inside) { setStop(tree, li); li.focus(); onStop(li.id); }
     onToggle(li.dataset.treeKey, open);
   };
@@ -148,16 +148,17 @@ export function wireTree(tree, {onToggle = () => {}, onStop = () => {}, stop = n
   });
 }
 
-/** A PEEK: the row over cable `cableId` is opened, if it was closed, and the
- *  cable's own row scrolled into view; a row an earlier peek opened closes
- *  again unless this cable is under it. `root` is the side panel. Returns the
- *  data-tree-key of the row now held open by a peek, or null for none. */
-export function peek(root, cableId) {
-  const row = cableId == null ? null : root?.querySelector(`[data-cable-item="${CSS.escape(cableId)}"]`);
-  if (!row) return root?.querySelector('[data-peek]')?.dataset.treeKey ?? null;
-  const over = row.parentElement.closest(ITEM);
-  for (const li of root.querySelectorAll('[data-peek]')) if (li !== over) { li.removeAttribute('data-peek'); setOpen(li, false); }
-  if (over && over.getAttribute('aria-expanded') === 'false') { over.setAttribute('data-peek', ''); setOpen(over, true); }
-  if (!row.hidden) row.scrollIntoView({block: 'nearest'});
-  return over?.hasAttribute('data-peek') ? over.dataset.treeKey : null;
+/** MARK THE ROW of what is hovered on the stage (`target`: {kind: 'cable' |
+ *  'bundle', id}, or null for nothing): a cable's own row where it shows, else
+ *  the closed row it is under; a bundle's row. Only a mark (data-hover-mark,
+ *  rack.css): nothing is opened, closed or scrolled. `root` is the side panel. */
+export function markHover(root, target) {
+  for (const li of root?.querySelectorAll('[data-hover-mark]') ?? []) li.removeAttribute('data-hover-mark');
+  if (!target || !root) return null;
+  let li = target.kind === 'bundle' ? root.querySelector(`[data-bundle-item="${CSS.escape(target.id)}"]`)
+    : root.querySelector(`[data-cable-item="${CSS.escape(target.id)}"]`);
+  // a row under a closed one does not show: the closed row stands for it
+  for (let up = li?.parentElement.closest(ITEM); up; up = up.parentElement.closest(ITEM)) if (up.getAttribute('aria-expanded') === 'false') li = up;
+  if (li && !li.hidden) li.setAttribute('data-hover-mark', target.kind);
+  return li ?? null;
 }

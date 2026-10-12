@@ -53,9 +53,9 @@ import {drawSideElevation, drawSideCables, roomForSideCables, sizeSideLabels} fr
 import {stopCentre} from './rack/scene3d.js';
 import {solidsOf} from '../vendor/rack/solids.js';
 import {bundleOfCable} from '../vendor/rack/bundles.js';
-import {loadTree, saveTree, isOpen, peek, LOOSE} from './rack/cable-tree.js';
-import {mountCovers, loadCovers, paintCovers2d, paintCovers3d} from './rack/covers.js';
-import {fitStraps, sizeStraps} from './rack/strap-size.js';
+import {loadTree, saveTree, isOpen, markHover, LOOSE} from './rack/cable-tree.js';
+import {mountCovers, loadCovers, paintCovers2d, paintCovers3d, layCovers2d} from './rack/covers.js';
+import {sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
 const PROBE = new URLSearchParams(location.search).get('probe') === '1';
@@ -103,9 +103,9 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   // The cable list's filter: the viewer's, not the document's.
   cableFilter: {purpose: null, media: null},
   // The cable list as a tree (cable-tree.js): which rows the reader opened or closed in this rack document
-  // (`state`, remembered in this browser), the row a hover holds open (`peek`), the row with the Tab stop
-  // (`stop`) and the cable whose pin last opened its row (`pinned`). The viewer's, never the document's.
-  tree: {doc: null, state: {}, peek: null, stop: null, pinned: null, show: null},
+  // (`state`, remembered in this browser), the row with the Tab stop (`stop`) and the cable whose pin last
+  // opened its row (`pinned`). The viewer's, never the document's.
+  tree: {doc: null, state: {}, stop: null, pinned: null, show: null},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 // How tall a device is, in U: a device is named with its position (model.js
@@ -196,6 +196,7 @@ async function rebuild3d() {
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
     bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
+    onDetailFailed: f => detailFailed(forRack, f),
     ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
@@ -222,6 +223,18 @@ async function rebuild3d() {
   if (built.rackCables && built.rackCables.checked === false) {
     if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
   } else if (built.rackCables) S.unchecked3dSaid = false;
+}
+// A PART WHOSE DETAIL COULD NOT BE BUILT IN 3D (a file of its drawing did not
+// load) stays the plain box it stood as while loading (rack3d.js standIn),
+// marked as one that is not coming. The page says which, once for each part of
+// a rack document, in the notice: a box with nothing said read as loading forever.
+function detailFailed(forRack, {id, label}) {
+  if (rack() !== forRack && !sameScene(rack(), forRack)) return;   // a scene for a rack that has moved on
+  const key = `${theDoc().id}|${id ?? label}`;
+  if ((S.detailSaid ??= new Set()).has(key)) return;
+  S.detailSaid.add(key);
+  addNotice(`${label} could not be drawn in detail.`, 'note');
+  renderSide();
 }
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on
@@ -769,9 +782,9 @@ const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesN
 // into view: the reader can still close that row with the cable pinned.
 function treeHooks(r) {
   const t = S.tree, docId = theDoc().id;
-  if (t.doc !== docId) Object.assign(t, {doc: docId, state: loadTree(docId), peek: null, stop: null, pinned: null, show: null});
+  if (t.doc !== docId) Object.assign(t, {doc: docId, state: loadTree(docId), stop: null, pinned: null, show: null});
   const open = key => isOpen(t.state, key, r.cables.length);
-  const set = (key, on) => { t.state = {...t.state, [key]: on}; if (t.peek === key) t.peek = null; saveTree(docId, t.state); };
+  const set = (key, on) => { t.state = {...t.state, [key]: on}; saveTree(docId, t.state); };
   const pin = selectedCable();
   if (pin !== t.pinned) {
     t.pinned = pin;
@@ -781,7 +794,7 @@ function treeHooks(r) {
       t.show = pin;
     }
   }
-  return {open, peek: t.peek, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
+  return {open, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
 }
 function cableListPanel() {
   const r = rack();
@@ -826,7 +839,8 @@ const selectedBundle = () => (S.sel?.kind === 'bundle' ? S.sel.id : null);
 // The bundle whose highlight is pinned: the selected one, unless its panel's pin is off.
 const pinnedBundle = () => (S.pinOff ? null : selectedBundle());
 const bundleListHooks = () => ({bundles: routesNow()?.bundles ?? null, selectedBundle: selectedBundle(),
-  onBundleSelect: id => select(selectedBundle() === id ? null : {kind: 'bundle', id}),
+  // (the list is replaced by the bundle's panel: the keyboard goes to the panel's pin, not to the page's body)
+  onBundleSelect: id => { if (selectedBundle() !== id) S.focusNext = 'bPin'; select(selectedBundle() === id ? null : {kind: 'bundle', id}); },
   onBundleNew: id => select({kind: 'bundle-form', picked: [id]})});
 // A bundle command from a panel: a refusal is shown beside the control, not as a notice.
 // A BUNDLE COMMAND FROM A PERSON WAITS FOR THE RACK'S ROUTES. Right after an
@@ -888,7 +902,8 @@ function bundlePanel(sel) {
     onAdd: cables => bundleEdit({op: 'bundle.add', id: b.id, cables}),
     onPeel: (cable, at) => bundleEdit({op: 'bundle.peel', id: b.id, cable, ...(at ? {at} : {})}),
     onRemove: () => { S.sel = null; edit({op: 'bundle.remove', id: b.id}, {say: true}); },
-    onClose: () => select(null),
+    // (and back to the bundle's row in the list when the panel is put away)
+    onClose: () => { S.focusNext = `bundleItem-${b.id}`; select(null); },
     // the panel's own pin control: its row in the list is behind the panel
     pinned: !S.pinOff, onPin: () => { S.pinOff = !S.pinOff; S.focusNext = 'bPin'; render(); }});
 }
@@ -1252,7 +1267,7 @@ async function redraw(keepRoutes = false) {
       paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
       paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
-      fitStraps(S.svgs); sizeStraps(S.svgs);
+      sizeStraps(S.svgs);
     } else if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       // by the routes read for the rack this draws, never another's
@@ -1265,7 +1280,8 @@ async function redraw(keepRoutes = false) {
       paintCables(S.svgs, r, {selectedId: selectedCable(), bundleId: pinnedBundle(), on: S.cableFilter});
       paintBundles(S.svgs, pinnedBundle());
       paintHover2d(S.svgs, litFor(r, S.hover));
-      fitStraps(S.svgs); sizeStraps(S.svgs);
+      sizeStraps(S.svgs);
+      layCovers2d(S.svgs);
     }
     if (S.routePick && !sides) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
@@ -1322,8 +1338,8 @@ function summary() {
 function setHover(target) {
   if (sameTarget(S.hover, target)) { if (S.hover && target) S.hover.from = target.from; paintTip(); return; }
   S.hover = target;
-  // a cable under the pointer on the stage opens the row it is under in the list, and shows its own row (cable-tree.js)
-  if (target?.from === 'stage' && target.kind === 'cable') S.tree.peek = peek($('side'), target.id);
+  // what is under the pointer on the stage marks its row in the list: a mark only, nothing opens or scrolls (cable-tree.js)
+  markHover($('side'), target?.from === 'stage' ? target : null);
   const lit = litFor(rack(), target);
   paintHover2d(S.svgs, lit);
   if (S.scene3d) paintHover3d(S.scene3d, lit);
@@ -1620,6 +1636,8 @@ function renderSide() {
   const next = S.focusNext ? document.getElementById(S.focusNext) : null;
   S.focusNext = null;
   S.focusRow = null;
+  // the rebuilt list has the mark of what is still under the pointer on the stage
+  if (S.hover?.from === 'stage') markHover($('side'), S.hover);
   // a cable just pinned shows its row (treeHooks opened the row it is under)
   if (S.tree.show != null) { document.getElementById(`cableItem-${S.tree.show}`)?.scrollIntoView({block: 'nearest'}); S.tree.show = null; }
   if (row) row.focus();

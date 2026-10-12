@@ -39,11 +39,14 @@ test("the vertical manager's drawing marks its two covers on the front, and no o
   assert.deepEqual(coverPathsIn(left), [], 'the side view marks the cover by kind, which has no path');
   assert.deepEqual(coverPathsIn('<g data-group="body" data-path="base"/><g data-path="a&amp;b" data-group="cover"/>'), ['a&b']);
   assert.deepEqual(coverPathsIn(null), []);
+  // a rack-mounted finger duct marks its covers the same way, and a lacer marks none
+  assert.deepEqual(coverPathsIn(readFileSync(new URL('../../assets/dist/cmh-dfd1u.base.front.svg', import.meta.url), 'utf8')), ['front-cover']);
+  assert.deepEqual(coverPathsIn(readFileSync(new URL('../../assets/dist/fhd-cmp5dr.base.front.svg', import.meta.url), 'utf8')), []);
 });
 
 test('the page paints the three settings, and only inside the panes', () => {
   const css = readFileSync(new URL('../../site/rack/rack.css', import.meta.url), 'utf8');
-  assert.ok(css.includes('.rk-panes[data-covers="on"] [data-in-front] [data-front="cover"] { opacity: 1; }'));
-  assert.ok(/\.rk-panes\[data-covers="off"\] \[data-in-front\] \[data-front="cover"\],\n\.rk-panes\[data-covers="off"\] \[data-zerou-id\] :is\(\[data-group="cover"\], \[data-kind="cover"\]\) \{ visibility: hidden; \}/.test(css));
+  assert.ok(css.includes('.rk-panes[data-covers="on"] :is([data-in-front], [data-covers-front]) [data-front="cover"] { opacity: 1; }'));
+  assert.ok(css.includes('.rk-panes[data-covers="off"] :is([data-zerou-id], [data-item-id]) :is([data-group="cover"], [data-kind="cover"]) { visibility: hidden; }'));
   assert.ok(!/^\[data-covers|^\[data-front="cover"\]/m.test(css), 'no cover rule reaches a drawing outside the panes');
 });

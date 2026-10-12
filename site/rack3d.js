@@ -795,30 +795,47 @@ export function createRackScene(container, opts = {}) {
     const shownNow = VISIBLE_FACES[VIEW] || VISIBLE_FACES.iso;
     const order = [...FACES].sort((a, b) =>
       (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
-    pending.push((async () => {
-      for (const F of order) {
-        const per = [];
-        await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
-          facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
-          D, bodyBoxMesh: null});
-        if (mine !== epoch) return;
-        per.forEach(m => { group.add(m); meshes.push(m); });
-        // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
-        // in the same task the meshes join the device, so nothing is drawn
-        // between. The Rack Builder reads the covers off it (rack/covers.js).
-        // No other caller passes it, and nothing here changes without it.
-        if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
-        if (per.length) dropStandIn();
-        const i = MAT_SLOT[F.view], cv = faceCv[F.view];
-        if (cv && body.material[i] && !sheet) {
-          const prev = body.material[i];
-          body.material[i] = mat(cv);
-          prev.map && prev.map.dispose();
-          prev.dispose();
+    const detail = (async () => {
+      try {
+        for (const F of order) {
+          const per = [];
+          await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
+            facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
+            D, bodyBoxMesh: null});
+          if (mine !== epoch) return;
+          per.forEach(m => { group.add(m); meshes.push(m); });
+          // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
+          // in the same task the meshes join the device, so nothing is drawn
+          // between. The Rack Builder reads the covers off it (rack/covers.js).
+          // No other caller passes it, and nothing here changes without it.
+          if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
+          if (per.length) dropStandIn();
+          const i = MAT_SLOT[F.view], cv = faceCv[F.view];
+          if (cv && body.material[i] && !sheet) {
+            const prev = body.material[i];
+            body.material[i] = mat(cv);
+            prev.map && prev.map.dispose();
+            prev.dispose();
+          }
         }
+        dropStandIn();   // a part whose drawing builds nothing is not left as a box
+      } catch (err) {
+        // ITS DETAIL COULD NOT BE BUILT (a file that did not load): the box
+        // stays, so nothing hangs in the air, but it is marked as one that
+        // is not coming (duller, and `standIn: 'failed'`), and the host is
+        // told once so its page can say so (`opts.onDetailFailed`). The
+        // failure is still the pass's: complete() rejects as it did.
+        if (mine === epoch && stoodIn) {
+          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.opacity = 0.2; m.needsUpdate = true; }
+          body.userData.standIn = 'failed';
+          opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: err});
+        }
+        throw err;
       }
-      dropStandIn();   // a part whose drawing builds nothing is not left as a box
-    })());
+    })();
+    // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
+    if (opts.onDetailFailed) detail.catch(() => {});
+    pending.push(detail);
     return group;
   }
 

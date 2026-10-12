@@ -47,11 +47,12 @@
    (cable-view.js drawInFront). On, that copy is opaque. Off, neither is
    painted: `visibility`, so the part keeps its box and its own hit target
    takes the click a cover no longer does. From the side a cover is the strip
-   the drawing marks data-kind="cover". Never in a file: a sheet is not in
-   the panes. */
-.rk-panes[data-covers="on"] [data-in-front] [data-front="cover"] { opacity: 1; }
-.rk-panes[data-covers="off"] [data-in-front] [data-front="cover"],
-.rk-panes[data-covers="off"] [data-zerou-id] :is([data-group="cover"], [data-kind="cover"]) { visibility: hidden; }
+   the drawing marks data-kind="cover". A rack-mounted part's cover has a copy
+   over the cables too, the page's own (covers.js layCovers2d). Never in a
+   file: a sheet is not in the panes. */
+.rk-panes[data-covers="on"] :is([data-in-front], [data-covers-front]) [data-front="cover"] { opacity: 1; }
+.rk-panes[data-covers="off"] :is([data-in-front], [data-covers-front]) [data-front="cover"],
+.rk-panes[data-covers="off"] :is([data-zerou-id], [data-item-id]) :is([data-group="cover"], [data-kind="cover"]) { visibility: hidden; }
 #stagebg { display: flex; align-items: center; gap: 0.25rem; }
 #stagebg .sw { width: 0.95rem; height: 0.95rem; border-radius: 3px; cursor: pointer; padding: 0;
   min-width: 0; border: 1px solid var(--control-line); }
@@ -255,6 +256,9 @@
 .rk-side .rk-cables li.rk-tree-parent > ul { grid-column: 1 / -1; margin-top: 0.3rem; }
 .rk-side .rk-cables li[aria-expanded="false"] > :is([data-bundle-size], [data-bundle-bend], [data-bundle-note]) { display: none; }
 .rk-side .rk-cables .rk-tree-name { font-weight: 600; cursor: pointer; align-self: center; }
+/* what is under the pointer on the stage marks its row, or the closed row it is under: a mark, never a move */
+.rk-side .rk-cables li[data-hover-mark] > :is([data-cable-row], [data-bundle-row]) { border-color: var(--pt-brass); background: var(--pt-surface); box-shadow: inset 3px 0 0 var(--pt-brass); }
+.rk-side .rk-cables li[data-hover-mark] > .rk-tree-name { color: var(--pt-brass); }
 /* the row the keyboard is on is ringed as its name is */
 .rk-side .rk-cables li[role="treeitem"]:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 2px; border-radius: 3px; }
 .rk-side .rk-bundle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }

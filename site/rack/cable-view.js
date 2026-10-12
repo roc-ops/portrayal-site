@@ -20,9 +20,10 @@ import {bundleSummary, STRAP_DRAWN, bendViolations, drawnDiameter} from './bundl
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
+import {throughRings} from '../../vendor/rack/route-path.js';
 import {paneMarks, landedBends} from './route-context.js';
 import {spareText} from './spare.js';
-import {noteStrap, packSpan} from './strap-size.js';
+import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
@@ -343,12 +344,15 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   // THIS PANE DOES NOT DRAW THE NODE: the kit's rest height is the rack's,
   // the same on either pane, so it never places a node by itself - a front
   // lacer's ring has no point on the rear pane, and no stretch or strap there.
-  // A BUNDLE IS DRAWN WHERE ITS CABLES ARE (#190): a cable with a loose end is
-  // not drawn along its path (it hangs as a lead from the end that lands), so
-  // it holds up no stretch of its bundle and no strap. `landed` is the cables
-  // this pane draws along their paths.
-  const landed = new Set(plan.links.filter((link, i) => !loose(i, 'from') && !loose(i, 'to')).map(link => link.id));
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, landed, (e, f, i) => {
+  // WHERE EACH CABLE'S LINE IS ON THIS PANE, as the points it is drawn through
+  // (its waypoints here, before its corners are eased), for a strap to be put
+  // across its members by (strap-size.js): nothing is read back off the drawing.
+  // (through a ring it goes as it is drawn there, in at one face and out at the other: route-path.js throughRings, as routed2d runs it)
+  const lines = new Map(plan.links.filter(link => link.via2d?.[pane]?.length > 1).map(link => {
+    const via = link.via2d[pane], rings = link.rings2d?.[pane];
+    return [link.id, rings ? throughRings(via, rings, {lead: 4}).points : via];
+  }));
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
@@ -480,15 +484,12 @@ export function drawInFront(svg) {
 //   - a ring round a corner too tight for the bundle's bend radius.
 // A stretch of the trunk on the other face is not drawn here, nor are its
 // straps. They go in the cables' layer and take no click.
-// NOR WHERE NONE OF ITS CABLES IS DRAWN: a stretch is drawn only where a member
-// that rides it is drawn along its path (`landed`: a cable with a loose end is
-// not), and a strap only on such a stretch. Without this a bundle whose device
-// was removed left its straps up the lane with no cable in them.
+// `lines` is each cable's line on this pane as points (cable id -> [[x, y], ...]).
 // `turn(v)` turns a rack offset to this pane's axes; `base(e, f, i)` is trunk
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, landed, base) {
+function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -500,7 +501,6 @@ function drawBundles2d(svg, rack, routes, pane, turn, landed, base) {
     const pt = i => { if (!pts.has(i)) pts.set(i, base(lay.T[i], f, i)); return pts.get(i); };
     // a stretch's two ends on this pane: its nodes' points, moved to its pack's middle
     const ends = st => {
-      if (!st.members.some(id => landed.has(id))) return null;
       const p = pt(st.from), q = pt(st.to);
       if (!p || !q) return null;
       const a = turn(st.c0), b = turn(st.c1);
@@ -556,15 +556,16 @@ function drawBundles2d(svg, rack, routes, pane, turn, landed, base) {
                  svgEl('line', {...at, stroke: paint.rim, 'stroke-width': STRAP_MIN_PX + 2, 'data-strap-part': 'rim', ...least}),
                  svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_DRAWN, 'data-strap-part': 'core'}),
                  svgEl('line', {...at, stroke: paint.core, 'stroke-width': STRAP_MIN_PX, 'data-strap-part': 'core', ...least}));
-      // where the pack is, square across the run, for the page to size the strap by (strap-size.js):
-      // each member there, between its places at the stretch's two nodes. Kept beside the bar, not on it.
+      // WHERE THE PACK IS, square across the run, for the page to size the strap by (strap-size.js): its
+      // riders' own lines where they cross the strap; where none does (a rider this pane does not draw
+      // through here), each rider's place in the lay. Kept beside the bar, not on it: a sheet is as it was.
+      const riders = hit.stretch.members, reach = hit.stretch.diameter / 2 + 12;
       const p0 = pt(hit.stretch.from), p1 = pt(hit.stretch.to);
-      const riders = hit.stretch.members.filter(id => landed.has(id));
-      const there = riders.map(id => {
+      const laid = riders.map(id => {
         const a = turn(lay.offset(id, hit.stretch.from)), b = turn(lay.offset(id, hit.stretch.to));
         return [p0[0] + a[0] + (p1[0] + b[0] - p0[0] - a[0]) * hit.f, p0[1] + a[1] + (p1[1] + b[1] - p0[1] - a[1]) * hit.f];
       });
-      noteStrap(bar, {c, n, members: riders, ...packSpan(there, c, n, WIDTH, hit.stretch.diameter)});
+      noteStrap(bar, {c, n, ...(lineSpan(riders.map(id => lines.get(id)).filter(Boolean), c, n, WIDTH, reach) ?? packSpan(laid, c, n, WIDTH, hit.stretch.diameter))});
       bars.append(bar);
     }
   }

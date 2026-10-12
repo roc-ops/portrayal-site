@@ -131,9 +131,10 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // and every row is a treeitem with one Tab stop between them. A row that is
 // closed still says its name, how many cables it holds and its size, and how
 // many of them carry a warning (a loose end, a media mismatch, a cord shorter
-// than its route). `tree` is the page's: {open(key), peek (the key a hover
-// holds open), stop (the row that had the Tab stop), onToggle(key, open),
-// onStop(id)}; without it every row is open. A row's own button, its id and
+// than its route). `tree` is the page's: {open(key), stop (the row that had
+// the Tab stop), onToggle(key, open), onStop(id)}; without it every row is
+// open. Each row says where it is among its siblings that show (aria-setsize,
+// aria-posinset). A row's own button, its id and
 // its data-* are as they were.
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
 export const cableMeta = (c, spare = null) =>
@@ -200,23 +201,25 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
   // Each bundle's header, then its members in combing order beneath it; then the cables in no bundle.
   const groups = bundlesOf(rack);
   const inAny = new Set(groups.flatMap(b => b.members.map(m => m.cable)));
-  const isOpen = key => (tree ? tree.open(key) || tree.peek === key : true);
+  const isOpen = key => (tree ? tree.open(key) : true);
+  // where each row is among the rows of its level that the filter leaves in
+  const place = lis => { const shown = lis.filter(li => !li.hidden);
+    shown.forEach((li, k) => { li.setAttribute('aria-setsize', String(shown.length)); li.setAttribute('aria-posinset', String(k + 1)); }); return lis; };
   const some = n => `${n} cable${n === 1 ? '' : 's'} with a warning`;
   const rows = groups.map(b => {
     const members = b.members.map(m => cables.find(c => c.id === m.cable)).filter(Boolean);
-    const kids = members.map(c => rowOf(c, 2));
+    const kids = place(members.map(c => rowOf(c, 2)));
     return bundleHeader({bundle: b, fact: bundles?.get(b.id) ?? null, selected: selectedBundle === b.id, onSelect: onBundleSelect,
-      tree: {open: isOpen(b.id), peek: tree?.peek === b.id, rows: kids, warned: members.filter(c => warned.has(c.id)).length, some}});
+      tree: {open: isOpen(b.id), rows: kids, warned: members.filter(c => warned.has(c.id)).length, some}});
   });
   const free = cables.filter(c => !inAny.has(c.id));
   if (!groups.length) rows.push(...free.map(c => rowOf(c)));
   else if (free.length) {
-    const kids = free.map(c => rowOf(c, 2)), n = free.filter(c => warned.has(c.id)).length, open = isOpen(LOOSE);
+    const kids = place(free.map(c => rowOf(c, 2))), n = free.filter(c => warned.has(c.id)).length, open = isOpen(LOOSE);
     const group = el('ul', {role: 'group'}, kids);
     group.hidden = !open;
     rows.push(el('li', {'data-tree-group': LOOSE, 'data-tree-key': LOOSE, id: 'cableGroup-none', role: 'treeitem', 'aria-level': '1',
-      'aria-expanded': String(open), 'aria-labelledby': 'cableGroupName-none cableGroupCount-none', class: 'rk-tree-parent',
-      ...(tree?.peek === LOOSE ? {'data-peek': ''} : {})}, [
+      'aria-expanded': String(open), 'aria-labelledby': 'cableGroupName-none cableGroupCount-none', class: 'rk-tree-parent'}, [
       el('span', {class: 'rk-twist', 'data-tree-toggle': LOOSE, 'aria-hidden': 'true'}),
       el('span', {class: 'rk-tree-name', id: 'cableGroupName-none', 'data-tree-toggle': LOOSE, text: 'Not bundled'}),
       el('span', {class: 'rk-cable-meta rk-muted', id: 'cableGroupCount-none', 'data-group-count': String(free.length),
@@ -224,7 +227,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
       ...(n ? [el('span', {class: 'rk-warn', 'data-member-warnings': String(n), text: some(n)})] : []),
       group]));
   }
-  const list = el('ul', {role: 'tree', 'aria-label': 'Cables', class: 'rk-tree'}, rows);
+  const list = el('ul', {role: 'tree', 'aria-label': 'Cables', class: 'rk-tree'}, place(rows));
   wireTree(list, {stop: tree?.stop ?? null, onToggle: tree?.onToggle, onStop: tree?.onStop});
 
   return el('div', {id: 'cableList', class: 'rk-cables'}, [

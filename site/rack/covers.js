@@ -7,10 +7,11 @@
 //                through it (what the front pane has always drawn);
 //   off          the cover is not drawn.
 //
-// WHAT A COVER IS: what the library marks as one on a part that stands beside
-// the rack (rack.zeroU): the `cover` group of its drawing (data-group="cover")
-// and, on the views that draw the cover edge on, the nodes of kind cover
-// (data-kind="cover"). A lacer has none, and nothing else is touched.
+// WHAT A COVER IS: what the library marks as one, on any part: the `cover`
+// group of its drawing (data-group="cover") and, on the views that draw the
+// cover edge on, the nodes of kind cover (data-kind="cover"). A vertical
+// manager beside the rack has two, a rack-mounted finger duct has its own, a
+// lacer has none, and nothing else is touched.
 //
 // A VIEW SETTING. It is the reader's, remembered in this browser beside the
 // 2D/3D mode; it is never in the rack file and never in the URL. NO DOWNLOAD
@@ -95,6 +96,50 @@ export function mountCovers(host, onCovers) {
 // ── 2D ───────────────────────────────────────────────────────────────────
 /** The panes follow the setting: one attribute, and rack.css does the rest. */
 export function paintCovers2d(panes, state) { if (panes) panes.dataset.covers = state; }
+
+// A RACK-MOUNTED PART'S COVER (a horizontal finger duct's) is in its own
+// drawing, under the cables: the front pane lays only a zero-U part's covers
+// over them (cable-view.js drawInFront, which a sheet shares). So that the
+// setting means the same for every cover, the page lays a copy of each such
+// cover over the cables too, in a layer of its own straight after the
+// drawing's (data-covers-front), see-through as the drawing's copies are.
+// Paint only, as there: a copy carries no id, no data-* and no pointer, and
+// the layer takes none, so clicks and hovers reach what is under it. THE
+// PAGE'S, NOT THE DRAWING'S (data-pt-ui): a sheet is drawn elsewhere and is
+// the file it was.
+export const COVER_COPY_OPACITY = 0.34;
+function bare(node) {
+  for (const n of [node, ...node.querySelectorAll('*')]) {
+    if (n.localName === 'title' || n.localName === 'metadata') { n.remove(); continue; }
+    for (const a of [...n.attributes]) if (a.name === 'id' || a.name === 'pointer-events' || a.name === 'tabindex' || a.name.startsWith('data-')) n.removeAttribute(a.name);
+  }
+  return node;
+}
+/** Lay the page's copies of the mounted parts' covers over the cables of each pane in `svgs`. Run after the cables are drawn. */
+export function layCovers2d(svgs) {
+  for (const svg of svgs ?? []) {
+    if (!svg?.querySelector) continue;
+    svg.querySelector(':scope > [data-covers-front]')?.remove();
+    const cables = svg.querySelector(':scope > [data-cables]');
+    const covers = [...svg.querySelectorAll(':scope > [data-item-id][data-panel] [data-group="cover"]')];
+    if (!cables || !covers.length) continue;
+    const NS = 'http://www.w3.org/2000/svg', layer = document.createElementNS(NS, 'g'), inv = svg.getScreenCTM().inverse();
+    layer.setAttribute('data-covers-front', svg.dataset.pane ?? '');
+    layer.setAttribute('pointer-events', 'none');
+    layer.setAttribute('data-pt-ui', '*');
+    const r = v => Math.round(v * 1e6) / 1e6;
+    for (const el of covers) {
+      const m = inv.multiply(el.parentNode.getScreenCTM()), g = document.createElementNS(NS, 'g');
+      g.setAttribute('transform', `matrix(${r(m.a)} ${r(m.b)} ${r(m.c)} ${r(m.d)} ${r(m.e)} ${r(m.f)})`);
+      g.setAttribute('data-front', 'cover');
+      g.setAttribute('data-front-of', el.closest('[data-item-id]').dataset.itemId);
+      g.setAttribute('opacity', String(COVER_COPY_OPACITY));
+      g.append(bare(el.cloneNode(true)));
+      layer.append(g);
+    }
+    (svg.querySelector(':scope > [data-in-front]') ?? cables).after(layer);
+  }
+}
 
 // ── 3D ───────────────────────────────────────────────────────────────────
 const PATHS = new Map();

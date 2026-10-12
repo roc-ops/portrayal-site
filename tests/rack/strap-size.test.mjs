@@ -34,50 +34,55 @@ test('no pack is wider than its diameter, and with no member it is the diameter'
   assert.deepEqual(packSpan([], [0, 0], [1, 0], 3, 12), {lo: -6, hi: 6});
 });
 
-test('at scale a strap is its pack and the margin each side', () => {
+test('at scale a strap is its pack and the margin each side, with a pixel of rim past each end', () => {
   assert.equal(STRAP_MARGIN, 2);
-  assert.deepEqual(strapLengths(9, 4), {true: 13, least: 13});            // 300%: 52 px, nothing to make up
-  assert.deepEqual(strapLengths(9, 0), {true: 13, least: 13}, 'a pane not laid out is drawn at its true size');
+  const big = strapLengths(9, 4);                                          // 300%: 52 px, nothing to make up
+  assert.deepEqual([big.true, big.least], [13, 13]);
+  assert.ok(near(big.rimTrue, 13.5) && near(big.rimLeast, 13.5));
+  assert.deepEqual(strapLengths(9, 0), {true: 13, least: 13, rimTrue: 13, rimLeast: 13}, 'a pane not laid out is drawn at its true size');
 });
 
-test('at Fit the least size holds, but never makes a strap over twice its pack', () => {
+test('at Fit the least size holds, but no bar, its rim included, is over twice its pack unless its true length is', () => {
   assert.equal(STRAP_MOST, 2);
   // a thick pack, 15 mm at 0.45 px a mm: its true 19 mm is 8.6 px, over the least size already
-  assert.deepEqual(strapLengths(15, 0.45), {true: 19, least: 19});
-  // 9 mm: 13 mm true is 5.9 px, under the least size; the least size (15.6 mm) is within twice the pack
+  const thick = strapLengths(15, 0.45);
+  assert.deepEqual([thick.true, thick.least], [19, 19]);
+  assert.ok(near(thick.rimLeast, 19 + 2 / 0.45));
+  // 9 mm, three cables: the least size is 15.6 mm; with its rim that would be 20 mm, 2.2 packs: held to 18 in all
   const mid = strapLengths(9, 0.45);
-  assert.ok(near(mid.least * 0.45, STRAP_MIN_PX), `${mid.least * 0.45} px`);
-  // a thin pack, 6 mm: the least size would be 15.6 mm, 2.6 packs; it is held to twice the pack
+  assert.ok(near(mid.rimLeast, 18) && near(mid.least, 18 - 2 / 0.45), JSON.stringify(mid));
+  assert.ok(mid.least >= mid.true && mid.rimTrue <= 18 + 1e-9);
+  // a thin pack, 6 mm: twice the pack is 12 mm in all, and its true 10 mm is the floor
   const thin = strapLengths(6, 0.45);
-  assert.equal(thin.least, 12);
-  assert.ok(thin.least / 6 <= STRAP_MOST && thin.least >= thin.true);
-  // and a strap is never shorter than it truly is, however thin the pack
+  assert.deepEqual([thin.true, thin.least], [10, 10]);
+  assert.ok(near(thin.rimLeast, 12) && near(thin.rimTrue, 12));
+  // one cable, 3 mm: its true bar is 7 mm, over twice the pack by its margins alone; nothing is added to it
+  const one = strapLengths(3, 0.45);
+  assert.deepEqual([one.true, one.least, one.rimTrue, one.rimLeast], [7, 7, 7, 7]);
   for (const pack of [1, 3, 6, 9, 15, 30]) for (const scale of [0.2, 0.45, 1, 4]) {
-    const l = strapLengths(pack, scale);
-    assert.ok(l.least >= l.true && l.least <= Math.max(l.true, STRAP_MOST * pack) + 1e-9, `${pack} mm at ${scale}`);
+    const l = strapLengths(pack, scale), cap = Math.max(l.true, STRAP_MOST * pack) + 1e-9;
+    assert.ok(l.least >= l.true && l.rimLeast >= l.least && l.rimTrue >= l.true && l.rimLeast <= cap && l.rimTrue <= cap, `${pack} mm at ${scale}`);
   }
 });
 
-import {strokeSpan} from '../../site/rack/strap-size.js';
+import {lineSpan} from '../../site/rack/strap-size.js';
 
-test('the pack is read off the strokes where they cross the strap, wherever the trunk said it was', () => {
-  // three verticals at x = 103, 106, 109, points a millimetre apart; the strap is across them at y = 50,
-  // placed by the trunk at x = 100
-  const line = x => Array.from({length: 101}, (_, k) => [x, k]);
-  const s = strokeSpan([line(103), line(106), line(109)], [100, 50], [1, 0], 3, 20);
-  assert.deepEqual(s, {lo: 1.5, hi: 10.5, n: 3});
-  // a member that does not come near the strap's line (it ends before it) is left out
-  const short = Array.from({length: 30}, (_, k) => [112, k]);
-  assert.equal(strokeSpan([line(103), short], [100, 50], [1, 0], 3, 20).n, 1);
-  // one too far across the run is another cable's, not the pack's
-  assert.equal(strokeSpan([line(103), line(160)], [100, 50], [1, 0], 3, 20).n, 1);
-  assert.equal(strokeSpan([short], [100, 50], [1, 0], 3, 20), null);
-  assert.equal(strokeSpan([], [100, 50], [1, 0], 3, 20), null);
+test("the pack is where its cables' lines cross the strap, wherever the trunk said it was", () => {
+  // three verticals at x = 103, 106, 109, each two points; the strap is across them at y = 50, placed by the trunk at x = 100
+  const line = x => [[x, 0], [x, 100]];
+  assert.deepEqual(lineSpan([line(103), line(106), line(109)], [100, 50], [1, 0], 3, 20), {lo: 1.5, hi: 10.5, riders: 3});
+  // a line that ends before the strap is left out, and so is one too far across the run (another cable's)
+  assert.equal(lineSpan([line(103), [[112, 0], [112, 30]]], [100, 50], [1, 0], 3, 20).riders, 1);
+  assert.equal(lineSpan([line(103), line(160)], [100, 50], [1, 0], 3, 20).riders, 1);
+  assert.equal(lineSpan([[[112, 0], [112, 30]]], [100, 50], [1, 0], 3, 20), null);
+  assert.equal(lineSpan([], [100, 50], [1, 0], 3, 20), null);
+  // a line of several points is cut on the segment that crosses, and one that turns back is taken nearest the strap
+  assert.deepEqual(lineSpan([[[90, 0], [104, 40], [104, 60], [140, 60]]], [100, 50], [1, 0], 3, 20), {lo: 2.5, hi: 5.5, riders: 1});
 });
 
-test('on a slant the strokes are measured square across the run', () => {
+test('on a slant the lines are measured square across the run', () => {
   // two lines at 45 degrees, 3 mm apart in x: 2.12 mm apart across the run
-  const line = x0 => Array.from({length: 200}, (_, k) => [x0 + k * 0.5, k * 0.5]);
-  const s = strokeSpan([line(0), line(3)], [51.5, 50], [Math.SQRT1_2, -Math.SQRT1_2], 3, 20);
-  assert.ok(Math.abs((s.hi - s.lo) - (3 * Math.SQRT1_2 + 3)) < 0.01, `${s.hi - s.lo}`);
+  const line = x0 => [[x0, 0], [x0 + 100, 100]];
+  const s = lineSpan([line(0), line(3)], [51.5, 50], [Math.SQRT1_2, -Math.SQRT1_2], 3, 20);
+  assert.ok(Math.abs((s.hi - s.lo) - (3 * Math.SQRT1_2 + 3)) < 1e-9, `${s.hi - s.lo}`);
 });
