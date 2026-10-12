@@ -86,10 +86,11 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
     // put and its transaction committed in the caller's own turn, before the
     // first await, so whatever the page does next (a redraw that holds the
     // thread for seconds, a reload) the browser already has the whole write and
-    // finishes it without the page. Left to commit by itself, a transaction
-    // waits for the page to come back to its event loop, and a page that is
-    // reloaded first loses it. The promise settles when the transaction has:
-    // a store that is full refuses there, not at the put.
+    // finishes it without the page. The commit is asked for outright, not
+    // left for the browser to make when the page next comes back to its event
+    // loop: a page that never does (it is closed while busy) has still said
+    // all it had to. The promise settles when the transaction has: a store
+    // that is full refuses there, not at the put.
     async put(doc) {
       if (!db) return;
       const tx = db.transaction(STORE, 'readwrite');
