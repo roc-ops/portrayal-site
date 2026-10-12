@@ -3709,6 +3709,96 @@ def check_rack_drawio_projected_port_path(page, base):
     return bad
 
 
+# ── TWO SENTENCES OF A LOOSE END, PINNED (kit 0.23.0, ports.js settleEnd) ──
+# A rack file can hold a cable end that names a drawing's element id (`bay-1-rear--b02`): the free-ports list
+# offered ids before the page drew the back of a seated module, and a file is anyone's to write. The page makes no
+# such end (held below). The end is not connected, and since kit 0.23.0 the kit says why in its own words wherever
+# it says it: the assistant's answers, the sheet's notes, the draw.io notes, the cable schedule and both DCIM
+# READMEs. An end that names a real port of a seated module on the wrong panel is told which panel, in the
+# assistant's answers. Both sentences are held here so that a re-vendor that moves them again shows it.
+def loose_end_fixture():
+    cable = lambda n, path, view: {"id": f"c{n}", "a": {"item": "i1", "path": path, "view": view},
+                                   "b": {"item": "i2", "path": f"port-{n}", "view": "front"}, "media": "os2", "purpose": "", "label": "", "route": []}
+    return {"format": "portrayal-rack", "version": 4, "id": "doc-loose-ends",
+            "racks": [{"id": "r1", "name": "Loose ends",
+                       "frame": {"kind": "four-post", "heightRU": 24, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                                 "railDepth": 740, "usableDepth": 1000, "ref": None},
+                       "items": [{"id": "i1", "ref": "fhd-1ufce", "cfg": "base", "label": "panel", "ru": 20, "face": "front", "turned": False,
+                                  "swaps": {"bay-1": "fs/fhd-fap12lcd-os2@1"}, "fields": {}},
+                                 {"id": "i2", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "leaf", "ru": 18, "face": "front", "turned": False,
+                                  "swaps": {f"port-{k}": "generic/qsfp-lc@2" for k in range(1, 6)}, "fields": {}}],
+                       "zeroU": [], "bundles": [],
+                       "cables": [cable(1, "bay-1/module/b01", "rear"),        # lands: the back of the first adapter
+                                  cable(2, "bay-1-rear--b02", "rear"),         # an element id, as an old file may hold
+                                  cable(3, "bay-1/module/b03", "front"),       # a real port, on the wrong panel
+                                  cable(4, "bay-1/module/lc04", "front")]}]}    # lands: the front of the fourth adapter
+
+
+ELEMENT_ID_REASON = 'bay-1-rear--b02 is an element id of the drawing, not the address of a port; give {path: "bay-1/module/b02", view: "rear"}'
+WRONG_PANEL_REASON = 'bay-1 holds FHD-FAP12LCDXSMF, whose port b03 is on the rear panel; give view "rear"'
+
+
+@extra("rack.html: a cable end a file holds as a drawing's element id is not connected and every place the kit says so gives the kit's reason and the address to use (the assistant, the sheet, draw.io, the cable schedule, both DCIM READMEs); an end on the wrong panel is told the panel; and neither the page nor the assistant can make an element-id end")
+def check_rack_loose_end_sentences(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    open_fixture(page, base, loose_end_fixture())
+    wait_fn(page, "loose ends: the routes", "() => window.__rack.routesCurrent().current")
+    wait_fn(page, "loose ends: tools registered", "() => window.__tools && window.__tools.edit_rack && window.__tools.inspect")
+    reasons = page.evaluate("() => window.__rack.cableFacts().reasons")
+    # THE FIXTURE IS WHAT IT SAYS: two ends land and two do not.
+    for k, loose in (("i1|rear|bay-1/module/b01", False), ("i1|front|bay-1/module/lc04", False), ("i1|rear|bay-1-rear--b02", True), ("i1|front|bay-1/module/b03", True)):
+        if k not in reasons or (reasons[k] is not None) != loose:
+            bad.append(f"fixture: the end {k} reads {reasons.get(k, 'not read')!r}, expected {'a reason' if loose else 'connected'}")
+    flat = lambda t: re.sub(r"\s+", " ", t)
+    text = lambda name, args: flat("\n".join(c.get("text", "") for c in agent_call(page, name, args).get("content", [])))
+    # THE ASSISTANT'S ANSWERS
+    if f"Loose: the a end: {ELEMENT_ID_REASON}" not in text("inspect", {"id": "c2"}):
+        bad.append(f"inspect c2 does not give the kit's reason for an element id: {text('inspect', {'id': 'c2'})[-260:]!r}")
+    if f"Loose: the a end: {WRONG_PANEL_REASON}" not in text("inspect", {"id": "c3"}):
+        bad.append(f"inspect c3 does not say which panel the port is on: {text('inspect', {'id': 'c3'})[-220:]!r}")
+    said = text("describe_rack", {})
+    # (describe_rack cuts each reason short; inspect, above, has them whole)
+    if "c2: the i1 end does not land: bay-1-rear--b02 is an element id of the drawing" not in said or "c3: the i1 end does not land: bay-1 holds " not in said:
+        bad.append(f"describe_rack's loose ends are {said[said.find('Loose ends'):][:400]!r}")
+    # THE DOWNLOADS that carry the kit's reason for the element id. (The wrong-panel end keeps the page's reason in
+    # every download: the page hands the kit no parts lists there.)
+    read = lambda kind: pathlib.Path(export_file(page, kind).path()).read_text(encoding="utf-8")
+    import html as _html
+    for kind, label in (("sheet-svg", "the sheet"), ("drawio", "the draw.io file"), ("cables", "the cable schedule")):
+        got = flat(_html.unescape(read(kind))).replace('""', '"').replace("bay-1-rear-b02", "bay-1-rear--b02")
+        if ELEMENT_ID_REASON not in got:
+            at = got.find("is not connected")
+            bad.append(f"{label} does not give the kit's reason for the element-id end: {got[at:at + 260]!r}")
+    for target in ("netbox", "nautobot"):
+        _, kit = export_kit(page, target)
+        if ELEMENT_ID_REASON not in flat(kit["zip"].get("README.txt", "")):
+            bad.append(f"the {target} kit's README does not give the kit's reason for the element-id end")
+        if "c2" in "".join(v for n, v in kit["zip"].items() if n.endswith("cables.csv")).split("\n", 1)[-1]:
+            bad.append(f"the {target} kit's cables file holds the cable whose end is an element id")
+    # NO SUCH END CAN BE MADE HERE: by the page's command, by the assistant adding a cable, by the assistant moving
+    # an end, or from the free-ports list, which offers addresses only.
+    before = page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0].cables)")
+    end = {"item": "i1", "path": "bay-1-rear--b05", "view": "rear"}
+    no = page.evaluate("e => window.__rack.apply({op: 'cable.add', a: e, b: {item: 'i2', path: 'port-5', view: 'front'}, media: 'os2'}).error ?? null", end)
+    if not no or "bay-1/module/b05" not in no:
+        bad.append(f"the page's cable.add to an element id answered {no!r}")
+    for cmds, what in (([{"op": "cable.add", "a": end, "b": {"item": "i2", "path": "port-5", "view": "front"}, "media": "os2"}], "adding a cable to an element id"),
+                       ([{"op": "cable.update", "id": "c1", "a": end}], "moving an end to an element id")):
+        res = agent_call(page, "edit_rack", {"commands": cmds})
+        said = " ".join(c.get("text", "") for c in res.get("content", []))
+        if not res.get("isError") or "bay-1/module/b05" not in said:
+            bad.append(f"the assistant {what} was not refused with the address to use: {said[:200]!r}")
+    if page.evaluate("() => JSON.stringify(window.__rack.doc().racks[0].cables)") != before:
+        bad.append("a refused edit changed the rack's cables")
+    free = page.evaluate("async () => { const f = await window.__rack.query.freePorts('i1'); return (f.ports ?? f).map(p => p.path); }")
+    offered = text("list_free_ports", {"id": "i1"})
+    if any("--" in p for p in free) or "--" in offered or "bay-1/module/b05" not in free:
+        bad.append(f"the free ports of the panel offer an element id, or not the address: {[p for p in free if '--' in p][:3]} {offered[:200]!r}")
+    return bad
+
+
 @extra("draw.io port cells carry portrayal-path, including ports on a seated card")
 def check_drawio_port_paths(page, base):
     bad = []
