@@ -54,8 +54,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   // one saves it as entered; clearing the field saves no length, and the
   // routed upkeep resumes on the next render.
   const routedNote = el('p', {id: 'cRouted', class: 'rk-muted',
-    text: routed && Number.isFinite(routed.measured)
-      ? `${routed.value} ${routed.unit || 'm'} (routed, ${routed.measured} m measured). Type a length to override it.` : ''});
+    // (kit 0.22.0: a routed length holds `need`, what the cord must at least be, where it held `measured`)
+    text: routed && Number.isFinite(routed.need)
+      ? `${routed.value} ${routed.unit || 'm'} (routed: the route needs ${routed.need} m). Type a length to override it.` : ''});
   const warn = el('p', {id: 'cWarn', class: 'rk-warn', role: 'status'});
   const err = el('p', {id: 'cError', class: 'rk-error', role: 'alert'});
   const showWarn = () => { warn.textContent = mismatch(media.value, infoA, infoB).join(' '); };

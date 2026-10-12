@@ -73,7 +73,14 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
     async get(id) {
       if (!db) return null;
       const d = await done(store('readonly').get(id));
-      return d ? readDoc(d) : null;
+      if (!d) return null;
+      // `updatedAt` IS THE LIBRARY'S OWN, written beside the document by put().
+      // The reader keeps every key it does not know since rack file version 4
+      // (kit 0.22.0), so handed the stored record it would keep this one as
+      // the document's, and a saved rack file would carry it. It is taken off
+      // before the record is read as a document.
+      const {updatedAt: _stamp, ...doc} = d;
+      return readDoc(doc);
     },
     async put(doc) {
       if (!db) return;

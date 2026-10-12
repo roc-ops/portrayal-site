@@ -3351,7 +3351,7 @@ def check_rack_library(page, base):
     }""")
     want = {"available": True, "names": ["Beta", "Alpha"], "same": True, "renamed": "Alpha 3",
             "after": ["Alpha 3"], "off": [False, 0, None], "refused": "This is not a Portrayal rack file.",
-            "newer": "This rack file is version 99; this reader supports up to version 3. Reload to get the newer page."}
+            "newer": "This rack file is version 99; this reader supports up to version 4. Reload to get the newer page."}
     for k, v in want.items():
         if r.get(k) != v:
             bad.append(f"library: {k} is {r.get(k)!r}, expected {v!r}")
@@ -4610,6 +4610,16 @@ def read_csv(dl):
     return reader.fieldnames, list(reader), text
 
 
+# The kit's comment on the later of two devices that share a unit front and rear (kit 0.22.0), and a device's
+# unit as Nautobot's devices file gives it: its position, or, for one written with none, the unit its comment names.
+NAUTOBOT_PAIR = "In U{u} on the rear, opposite {by}; no position, since Nautobot refuses two devices in one unit, front and rear, while either type is full depth."
+
+
+def nautobot_u(row):
+    m = re.search(r"\bIn U([\d.]+) on the (?:front|rear), opposite ", row.get("comments") or "")
+    return row.get("position") or (m.group(1) if m else "")
+
+
 def device_rows(page, target="nautobot"):
     """The device import's rows for one target, as exported from the page. Nautobot's
     file is the default because it holds every device with a type: NetBox's leaves
@@ -4646,9 +4656,14 @@ def check_rack_export_device_csv(page, base):
     leaf = next((r for r in rows if r["name"] == "leaf-1"), {})
     if (leaf.get("device_type__model"), leaf.get("status__name")) != ("7726-32X-O-AC-F", "Planned"):
         bad.append(f"Nautobot devices: leaf-1 is {leaf}")
-    # Nautobot accepts the pair at U14, so its file keeps both, and calls neither refused.
-    if sorted(r["name"] for r in rows) != ["core-1", "demarc-i3", "demarc-i4", "leaf-1"] or any("refuses" in r["comments"] for r in rows):
-        bad.append(f"Nautobot devices: rows {[(r['name'], r['comments']) for r in rows]}")
+    # NAUTOBOT REFUSES THE PAIR AT U14 TOO, front and rear, while either type is full depth (kit 0.22.0: a fix;
+    # earlier kits wrote both with a position, and the import failed). Its file keeps all four devices; the later
+    # of the pair, demarc-i3, is written with no position and no face, and its comment says where it is and why.
+    odd = next((r for r in rows if r["name"] == "demarc-i3"), {})
+    if sorted(r["name"] for r in rows) != ["core-1", "demarc-i3", "demarc-i4", "leaf-1"] \
+            or (odd.get("position"), odd.get("face")) != ("", "") or NAUTOBOT_PAIR.format(u=14, by="leaf-1") not in odd.get("comments", "") \
+            or any("refuses" in r["comments"] or not r["position"] or not r["face"] for r in rows if r["name"] != "demarc-i3"):
+        bad.append(f"Nautobot devices: rows {[(r['name'], r['position'], r['face'], r['comments']) for r in rows]}")
 
     # A DCIM CSV is imported as is: a label that opens like a formula stays verbatim (only the BOM guards it).
     eq = page.evaluate("""async () => {
@@ -4668,8 +4683,10 @@ def check_rack_export_device_csv(page, base):
     if got != {"core-1": "14", "leaf-1": "11", "demarc-i4": "5"}:
         bad.append(f"NetBox devices: top-down positions {got}")
     got = {r["name"]: r["position"] for r in device_rows(page, "nautobot")}
-    if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "11", "demarc-i4": "5"}:
-        bad.append(f"Nautobot devices: top-down positions {got}")
+    # (demarc-i3 has no position in Nautobot's file; its comment names its unit as the frame counts it)
+    said = {r["name"]: r["comments"] for r in device_rows(page, "nautobot")}
+    if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "", "demarc-i4": "5"} or NAUTOBOT_PAIR.format(u=11, by="leaf-1") not in said.get("demarc-i3", ""):
+        bad.append(f"Nautobot devices: top-down positions {got}; demarc-i3 says {said.get('demarc-i3')!r}")
     return bad
 
 
@@ -4901,8 +4918,9 @@ def check_rack_cable_routes(page, base):
     page.click('#cableList [data-cable-row="c1"]')
     page.click("#cableEdit")
     routed_text = page.inner_text("#cRouted")
-    if not re.match(r"^\d+(\.\d+)? m \(routed, [\d.]+ m measured\)", routed_text):
-        bad.append(f"form: the routed length reads {routed_text!r}, not 'N m (routed, X m measured)'")
+    # (kit 0.22.0: a routed length holds what the cord must at least be, `need`, where it held `measured`)
+    if not re.match(r"^\d+(\.\d+)? m \(routed: the route needs [\d.]+ m\)", routed_text):
+        bad.append(f"form: the routed length reads {routed_text!r}, not 'N m (routed: the route needs X m)'")
     page.fill("#cLabel", "uplink-A")
     page.focus("#routeRow-0")
     page.keyboard.press("Enter")
@@ -5220,7 +5238,9 @@ def check_rack_bundle_2d_front(page, base):
     # The spacing, through the panel: 6 in gives more straps, drawn.
     page.fill("#bEvery", "6")
     page.press("#bEvery", "Enter")
-    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n", arg=f["count"], timeout=READY_MS)
+    # (more SPACING straps: the count of every kind need not rise, since a breakout strap is left out where a
+    # spacing strap already serves, kit 0.22.0)
+    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.kinds.spacing > n", arg=f["kinds"]["spacing"], timeout=READY_MS)
     page.wait_for_function("() => document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
                            timeout=READY_MS)
     # Peel c3 at left-front U27 on: it leaves the band there for its b end, the nearer (sw-2 at U30).
@@ -5496,6 +5516,12 @@ def hover_fixture(page, base):
                            " && document.querySelector('#paneFront [data-cable-id=\"c4\"]')"
                            " && document.querySelector('#cableList [data-bundle-row=\"b1\"]')", timeout=READY_MS)
     page.wait_for_timeout(400)
+    # THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0) go with the cables they tie, as a bundle's straps go with its
+    # members: each is lit while one of its cables is. Read from the page for this rack (route-context.js tieStraps).
+    for k in [k for k in HOVER_MEMBERS if k.startswith("tie:")]:
+        del HOVER_MEMBERS[k]
+    for m in page.evaluate("() => window.__rack.tieStraps()"):
+        HOVER_MEMBERS[f"tie:{m['item']}|{m['via']}|{m['tie']}"] = set(m["cables"])
     return res
 
 
@@ -6246,13 +6272,20 @@ def check_rack_bundle_exports(page, base):
     if not head:
         bad.append(f"schedule: no kit note for the bundle: {got['notes']}")
     else:
-        if f"{f['count']} straps every 12 in" not in head:
-            bad.append(f"schedule: the bundle note does not count the {f['count']} straps the page draws: {head!r}")
+        # by kind since kit 0.22.0: every strap the page draws, and how many of them are the spacing straps
+        k = f["kinds"]
+        said = f"{f['count']} straps every 12 in" if k["spacing"] == f["count"] else \
+            f"{f['count']} straps ({k['spacing']} every 12 in, {k['breakout']} where a cable leaves" if k["breakout"] and not k["anchor"] else f"{f['count']} straps ("
+        if said not in head or sum(k.values()) != f["count"]:
+            bad.append(f"schedule: the bundle note does not count the {f['count']} straps the page draws ({k}): {head!r}")
         if "bend radius" not in head or "bend not checked" in head:
             bad.append(f"schedule: the bundle note has no measured bend radius: {head!r}")
     strap = [l for l in got["bom"].split("\r\n") if "Hook-and-loop cable strap" in l]
-    if len(strap) != 1 or not strap[0].split(",")[1:2] == [str(f["count"])]:
-        bad.append(f"BOM: the strap line is {strap}, not one line of {f['count']}")
+    # the bundle's straps, and one more for each tray tie slot a single cable is tied at (kit 0.22.0): the kit's total
+    total = page.evaluate("""async () => { const B = await import('/vendor/rack/bundles.js'), RC = await import('/site/rack/route-context.js');
+      const rack = window.__rack.doc().racks[0]; return B.strapTotals(rack, RC.withCableTypes({route: window.__rack.routeContext()}, await RC.cableTypes())); }""")
+    if len(strap) != 1 or not strap[0].split(",")[1:2] == [str(total["total"])] or total["spacing"] + total["breakout"] != f["count"] - f["kinds"]["anchor"] or total["total"] < f["count"]:
+        bad.append(f"BOM: the strap line is {strap}, not one line of the kit's {total['total']} ({total}; the bundle has {f['count']})")
     return bad
 
 
@@ -7298,10 +7331,11 @@ def check_rack_pinned_highlight(page, base):
         page.wait_for_timeout(300)
         see({"c1", "c2", "c3"}, True, "2D, pinned again by the panel's control")
     # A BUNDLE COMMAND WHILE IT IS PINNED: the pin stays, and follows the bundle's members
-    n0 = page.evaluate("() => window.__rack.bundles()[0].count")
+    # (its SPACING straps: the count of every kind need not rise with them, kit 0.22.0)
+    n0 = page.evaluate("() => window.__rack.bundles()[0].kinds.spacing")
     page.fill("#bEvery", "6")
     page.press("#bEvery", "Enter")
-    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.count > n && document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
+    page.wait_for_function("n => (window.__rack.bundles() || [])[0]?.kinds.spacing > n && document.querySelectorAll('#paneFront [data-strap=\"b1\"]').length === window.__rack.bundles()[0].count",
                            arg=n0, timeout=READY_MS)
     park_mouse(page)
     page.wait_for_timeout(300)
@@ -7962,8 +7996,10 @@ def check_rack_side_cables(page, base):
     if res and res.get("error"):
         bad.append(f"the bundle was not made: {res['error']}")
     else:
-        BUN = """() => [...document.querySelectorAll('#panes svg[data-side]')].map(s => ({straps: [...s.querySelectorAll('[data-strap]')].map(g => [g.dataset.strap, g.dataset.members,
-          Math.round(+getComputedStyle(g).opacity * 100) / 100]), stretches: s.querySelectorAll('[data-bundle-trunk]').length,
+        # (the bundle's own straps; `ties` are the tie straps of single cables, kit 0.22.0, which go with the cables they tie)
+        BUN = """() => [...document.querySelectorAll('#panes svg[data-side]')].map(s => ({straps: [...s.querySelectorAll('[data-strap]:not([data-tie])')].map(g => [g.dataset.strap, g.dataset.members,
+          Math.round(+getComputedStyle(g).opacity * 100) / 100]),
+          ties: [...s.querySelectorAll('[data-strap][data-tie]')].map(g => [g.dataset.strap, g.dataset.members, Math.round(+getComputedStyle(g).opacity * 100) / 100]), stretches: s.querySelectorAll('[data-bundle-trunk]').length,
           env: [...s.querySelectorAll('[data-envelope]')].map(e => getComputedStyle(e).visibility), drawn: s.querySelectorAll('[data-cables] [data-cable][data-cable-id]').length}))"""
         page.wait_for_function("() => document.querySelectorAll('#panes svg[data-side] [data-strap]').length >= 2 && window.__rack.routesCurrent().current", timeout=READY_MS)
         park_mouse(page)
@@ -7978,12 +8014,17 @@ def check_rack_side_cables(page, base):
         b1 = page.evaluate(BUN)
         if any(m[2] > 0.25 for v in b1 for m in v["straps"]):
             bad.append(f"c2 pinned: the other bundle's straps are at {[m[2] for v in b1 for m in v['straps']]}; expected dimmed with the rest")
+        # ...and a tie strap is lit exactly while a cable it ties is: c2's own stays lit with it
+        if any((m[2] == 1) != ("c2" in m[1].split()) or (m[2] != 1 and m[2] > 0.25) for v in b1 for m in v["ties"]):
+            bad.append(f"c2 pinned: the tie straps are at {[m for v in b1 for m in v['ties']]}; expected lit where they tie c2 and dimmed elsewhere")
         page.click('#cableList [data-cable-row="c1"]')
         page.wait_for_function("() => document.querySelector('#paneRear [data-cable-id=\"c1\"].on')", timeout=READY_MS)
         park_mouse(page)
         b2 = page.evaluate(BUN)
         if any(m[2] != 1 for v in b2 for m in v["straps"]) or any(e != "visible" for v in b2 for e in v["env"]):
             bad.append(f"c1 pinned: its bundle's straps are at {[m[2] for v in b2 for m in v['straps']]} and its envelope {[v['env'] for v in b2]}; expected lit and shown")
+        if any((m[2] == 1) != ("c1" in m[1].split()) or (m[2] != 1 and m[2] > 0.25) for v in b2 for m in v["ties"]):
+            bad.append(f"c1 pinned: the tie straps are at {[m for v in b2 for m in v['ties']]}; expected lit where they tie c1 and dimmed elsewhere")
         page.keyboard.press("Escape")
         page.wait_for_function("() => !document.querySelector('#cableList [aria-pressed=\"true\"]')", timeout=READY_MS)
         # a member's end made loose (its port's device gone from under it): the cables not drawn take the bundle's drawing with them
@@ -9758,7 +9799,7 @@ def check_rack_zero_u(page, base):
     return bad
 
 
-@extra("rack.html: a version 2 rack an older page saved opens whole - sides, parts beside the rack and their ids - and is saved back as version 3")
+@extra("rack.html: a version 2 rack an older page saved opens whole - sides, parts beside the rack and their ids - and is saved back as version 4")
 def check_rack_v2_migrates(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9792,11 +9833,11 @@ def check_rack_v2_migrates(page, base):
     got = page.evaluate("""() => { const d = window.__rack.doc(), r = d.racks[0];
       return {id: d.id, version: d.version, side: r.items.map(i => i.side ?? null), zeroU: r.zeroU.map(z => [z.id, z.at, !!z.between]),
               drawn: ['z1', 'z2'].map(id => !!document.querySelector(`#paneFront svg [data-zerou-id="${id}"]`))}; }""")
-    want = {"id": "doc-v2-site", "version": 3, "side": ["right"], "zeroU": [["z1", "left", False], ["z2", "right", True]],
+    want = {"id": "doc-v2-site", "version": 4, "side": ["right"], "zeroU": [["z1", "left", False], ["z2", "right", True]],
             "drawn": [True, True]}
     if got != want:
-        bad.append(f"v2: the saved rack did not open whole as version 3: {got}, expected {want}")
-    # One edit, one save: the stored record is version 3, and keeps what it read.
+        bad.append(f"v2: the saved rack did not open whole as version 4: {got}, expected {want}")
+    # One edit, one save: the stored record is version 4 (kit 0.22.0), and keeps what it read.
     page.evaluate("() => window.__rack.apply({op: 'rename', name: 'Saved v3'})")
     stored = page.evaluate("""async () => { await window.__rack.flush();
       return await new Promise((res, rej) => { const o = indexedDB.open('portrayal-racks', 1);
@@ -9804,15 +9845,15 @@ def check_rack_v2_migrates(page, base):
           q.onsuccess = () => { o.result.close(); const d = q.result;
             res(d && {version: d.version, name: d.racks[0].name, side: d.racks[0].items[0]?.side ?? null, zeroU: d.racks[0].zeroU.map(z => z.id)}); };
           q.onerror = rej; }; }); }""")
-    if stored != {"version": 3, "name": "Saved v3", "side": "right", "zeroU": ["z1", "z2"]}:
-        bad.append(f"v2: after one save the stored rack is not version 3 with its sides and ids: {stored}")
-    # The downloaded file is version 3 too (serialize writes VERSION).
+    if stored != {"version": 4, "name": "Saved v3", "side": "right", "zeroU": ["z1", "z2"]}:
+        bad.append(f"v2: after one save the stored rack is not version 4 with its sides and ids: {stored}")
+    # The downloaded file is version 4 too (serialize writes VERSION).
     with page.expect_download(timeout=READY_MS) as dl:
         page.click("#libMenu summary")
         page.click("#libItems >> text=Save as .json")
     data = json.loads(pathlib.Path(dl.value.path()).read_text())
-    if data.get("version") != 3:
-        bad.append(f"v2: the downloaded rack file is version {data.get('version')}, not 3")
+    if data.get("version") != 4 or "updatedAt" in data:
+        bad.append(f"v2: the downloaded rack file is version {data.get('version')}, not 4, or carries the library's own updatedAt: {sorted(data)}")
     page.evaluate("""async () => { const L = await import('/site/rack/library.js'); const lib = await L.openLibrary(); await lib.remove('doc-v2-site'); }""")
     return bad
 
@@ -15968,7 +16009,8 @@ def check_rack_export_cable_failures(page, base):
           return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.dcimKit(rack, of, 'nautobot')).files['1-devices.csv']};
         }""", numbering)
         sched = list(csv.DictReader(io.StringIO(got["sched"].partition("\r\n\r\nNotes")[0])))
-        dev = {r["name"]: r["position"] for r in csv.DictReader(io.StringIO(got["dev"]))}
+        # (a device Nautobot's file leaves unpositioned says its unit in its comment: nautobot_u)
+        dev = {r["name"]: nautobot_u(r) for r in csv.DictReader(io.StringIO(got["dev"]))}
         seen = 0
         for row in sched:
             for side in ("a", "b"):
@@ -16832,7 +16874,7 @@ def check_rack_one_u(page, base):
     except RuntimeError as e:
         return bad + [f"one U: {e}"]
     # The device import's position is the reference: a DCIM's own word for it.
-    pos = {r["name"]: r["position"] for r in device_rows(page)}
+    pos = {r["name"]: nautobot_u(r) for r in device_rows(page)}
     if pos.get("core-1") != "14" or pos.get("leaf-1") != "11":
         return bad + [f"one U: the device import's positions are {pos}"]
     end = "core-1 (U14) slot-2/module/p1"
@@ -17633,11 +17675,13 @@ def check_rack_dcim_kit_nautobot(page, base):
     if kit["zip"].get("import_cables.py") != served or "NAUTOBOT_TOKEN" not in served:
         bad.append("Nautobot kit: import_cables.py is not the file the site serves")
 
-    # Nautobot accepted two devices at U14, front and rear: its file keeps all four.
+    # Nautobot refuses two devices in one unit, front and rear, while either type is full depth (kit 0.22.0): its
+    # file keeps all four, the later of the pair at U14 with no position and no face, and a comment saying where it is.
     devices = kit_rows(kit, "1-devices.csv")
     if [(r["name"], r["role__name"], r["location__name"], r["status__name"], r["position"], r["face"]) for r in devices] != [
             ("demarc-i4", "Router", "Lab 1", "Planned", "20", "rear"), ("leaf-1", "Router", "Lab 1", "Planned", "14", "front"),
-            ("demarc-i3", "Router", "Lab 1", "Planned", "14", "rear"), ("core-1", "Router", "Lab 1", "Planned", "2", "front")]:
+            ("demarc-i3", "Router", "Lab 1", "Planned", "", ""), ("core-1", "Router", "Lab 1", "Planned", "2", "front")] \
+            or NAUTOBOT_PAIR.format(u=14, by="leaf-1") not in next((r["comments"] for r in devices if r["name"] == "demarc-i3"), ""):
         bad.append(f"Nautobot kit: the devices file holds {devices}")
     # The rack is found by its name and its location together: a rack of the same name elsewhere is not the one.
     if kit["zip"]["1-devices.csv"].split("\r\n")[0] != "name,role__name,device_type__manufacturer__name,device_type__model,status__name," \
@@ -18108,7 +18152,7 @@ def _saved(page):
     """The rack file as Export > Rack file writes it, less the two keys that are the session's."""
     dl = export_file(page, "json")
     doc = json.loads(pathlib.Path(dl.path()).read_text())
-    return {k: v for k, v in doc.items() if k not in ("id", "updatedAt")}
+    return {k: v for k, v in doc.items() if k != "id"}      # (the document's id is the session's: an opened file gets a fresh one)
 
 
 def _diff(a, b, at=""):
@@ -18135,7 +18179,7 @@ def check_rack_v3_saves_v4(page, base):
     got = _saved(page)
     if got.get("version") != 4 or page.evaluate("async () => (await import('/vendor/rack/model.js')).VERSION") != 4:
         bad.append(f"v3: saved as version {got.get('version')}")
-    want = {k: v for k, v in V3_FIXTURE.items() if k not in ("id", "updatedAt")}
+    want = {k: v for k, v in V3_FIXTURE.items() if k != "id"}
     # what a version-4 save changes of it, and nothing else: the version; a routed length is measured again and
     # holds `need` where it held `measured` (its value may move a stock size); defaults the reader fills in
     def norm(doc):
@@ -18176,7 +18220,7 @@ def check_rack_v4_keys_kept(page, base):
     page.set_viewport_size({"width": 1600, "height": 1000})
     open_fixture(page, base, V4_FIXTURE)
     wait_fn(page, "v4: the notices", "() => /Mounted upside down/.test(document.getElementById('side').textContent)")
-    lost = _diff({k: v for k, v in V4_FIXTURE.items() if k not in ("id", "updatedAt")}, _saved(page))
+    lost = _diff({k: v for k, v in V4_FIXTURE.items() if k != "id"}, _saved(page))
     if lost:
         bad.append(f"v4: saved again, the file differs: {lost[:8]}")
     # THE NOTICES: the kit's own sentences, for what it keeps and does not act on, and the page's for what it does not draw.

@@ -351,9 +351,21 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     }
     const at = [];
     const vec = pts.map(p => (p ? [p.x, p.y, p.z] : null));
+    // ON THE TUBE AS IT IS DRAWN. The kit places a strap along the straight
+    // trunk; the tube rounds its corners by the bundle's bend radius, and a
+    // strap near one (a breakout strap stands 25 mm from where a cable
+    // leaves, which is often at a corner) would hang off the tube. Each band
+    // is stood at the nearest point of the drawn run, along its tangent there.
+    const drawn = runs.flatMap(curve => { const n = Math.max(40, Math.ceil(curve.getLength() / 2));
+      return Array.from({length: n + 1}, (_, i) => ({p: curve.getPointAt(i / n), t: curve.getTangentAt(i / n)})); });
+    const onTube = at => { const q = new THREE.Vector3(...at); let best = null, d2 = Infinity;
+      for (const x of drawn) { const d = x.p.distanceToSquared(q); if (d < d2) { d2 = d; best = x; } }
+      return best && d2 < 60 * 60 ? best : null; };
     (f.straps?.straps ?? []).forEach((s, k) => {
       const hit = strapAt(vec, s);
       if (!hit) return;
+      const snap = onTube(hit.at);
+      if (snap) { hit.at = [snap.p.x, snap.p.y, snap.p.z]; hit.dir = [snap.t.x, snap.t.y, snap.t.z]; }
       // a band round the pack, at the pack's diameter where the strap is
       const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
       // as wide along the run as its own width asks (kit 0.22.0 `width_mm`; a 19 mm strap is the band it always was)
@@ -394,13 +406,15 @@ async function hangBundles(scene, rack, facts, boxes = null) {
   // band at the tray's tie slot round the cables lying there, its axis along
   // their run, on the face of the plate they are on. Named by its slot, with
   // the cables it ties, so it is lit and dimmed with them (hover.js).
-  const ties = [];
+  // (a group of their own beside the bundles', 'tie-straps': a tie strap is no bundle, has no envelope and takes no pointer)
+  const ties = [], tieGroup = new THREE.Group();
+  tieGroup.name = 'tie-straps';
   if (facts.tieStraps?.length) {
     facts.tieStraps.forEach(m => {
       // a group and a material of its own, as a bundle has: hover.js dims a group's materials
       const slot = `${m.item}|${m.via}|${m.tie}`;
       const tg = new THREE.Group();
-      tg.name = `bundle-tie:${slot}`;
+      tg.name = `tie-${slot}`;
       tg.userData.tie = slot; tg.userData.members = [...m.cables];
       const mat = new THREE.MeshStandardMaterial({color: new THREE.Color(strapPaint(facts.stage ?? '#101214').core), roughness: 0.8});
       mat.userData.strap = true;
@@ -410,22 +424,23 @@ async function hangBundles(scene, rack, facts, boxes = null) {
       band.name = `tie-strap-${slot}`;
       band.userData.strap = {tie: slot, cables: [...m.cables], kind: 'anchor', width_mm: m.width_mm, held: m.held};
       tg.add(band);
-      group.add(tg);
+      tieGroup.add(tg);
       ties.push(band);
     });
   }
   world.add(group);
-  return {group, bundles: out, tight: drawnTight, ties};
+  if (ties.length) world.add(tieGroup);
+  return {group, bundles: out, tight: drawnTight, ties, tieGroup: ties.length ? tieGroup : null};
 }
 
 // THE STRAPS TURN WITH THE STAGE, as the rail labels do: every strap band's
 // material takes the stage's strap colour (a dimmed one keeps its dimming:
 // only the colour is set).
 function paintStraps3d(scene, stage) {
-  const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
-  if (!group) return;
   const color = strapPaint(stage).core;
-  group.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
+  // (a bundle's straps, and the tie straps of single cables in their own group)
+  for (const name of ['cable-bundles', 'tie-straps'])
+    scene?.three?.scene?.getObjectByName?.(name)?.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
