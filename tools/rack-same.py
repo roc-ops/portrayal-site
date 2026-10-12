@@ -100,7 +100,8 @@ SNAP_JS = """async () => {
   for (const d of document.querySelectorAll('#side details[data-route-more]:not([open])')) d.querySelector('summary').click();
   await sleep(30);
   const side = document.getElementById('side').cloneNode(true);
-  for (const n of side.querySelectorAll('details[data-route-more] > summary, .rk-notice:not([data-kept])')) n.remove();
+  // (the warnings are compared as a list, below: where and how the panel shows them is the panel's)
+  for (const n of side.querySelectorAll('[data-warnings], [data-route-warning], .rk-notice:not([data-kept])')) n.remove();
   const plain = v => JSON.parse(JSON.stringify(v ?? null));
   const pane = id => { const svg = document.querySelector(`#${id} > svg`); if (!svg) return null;
     const c = svg.cloneNode(true); c.removeAttribute('style');
@@ -320,6 +321,31 @@ def glb_content(data):
     return {"asset": js.get("asset"), "extensionsUsed": sorted(js.get("extensionsUsed", [])), "roots": roots}
 
 
+def glb_differs(a, b):
+    """Where two GLBs' contents part: the names down to the first nodes that are not in both, a few of them."""
+    out = []
+
+    def walk(xs, ys, trail):
+        xs, ys = [json.loads(x) for x in xs], [json.loads(y) for y in ys]
+        only_a = [x for x in xs if json.dumps(x, sort_keys=True) not in {json.dumps(y, sort_keys=True) for y in ys}]
+        only_b = [y for y in ys if json.dumps(y, sort_keys=True) not in {json.dumps(x, sort_keys=True) for x in xs}]
+        for x in only_a:
+            twin = next((y for y in only_b if y[0][0] == x[0][0]), None)
+            here = trail + [str(x[0][0])]
+            if twin is None:
+                out.append(" / ".join(here) + ": only in main")
+            elif x[0] != twin[0]:
+                what = [k for k, (p, q) in zip(("name", "translation", "rotation", "scale", "matrix", "mesh", "extras"), zip(x[0], twin[0])) if p != q]
+                out.append(" / ".join(here) + f": differs in its {', '.join(what)}")
+            else:
+                walk(x[1], twin[1], here)
+        for y in only_b:
+            if not any(x[0][0] == y[0][0] for x in only_a):
+                out.append(" / ".join(trail + [str(y[0][0])]) + ": only here")
+    walk(a["roots"], b["roots"], [])
+    return out
+
+
 def usdz_content(data):
     """A USDZ as what it holds, whatever numbers its parts were given. The exporter names each geometry, texture,
     material and object by the id three.js gave it, and those ids follow the order the scene's parts happened to
@@ -394,6 +420,9 @@ def as_entries(name, data):
     return None, None
 
 
+SAVE = None
+
+
 class Tally:
     def __init__(self):
         self.n, self.bad, self.notes = 0, [], []
@@ -459,11 +488,19 @@ def compare_models(t, where, A, B, settle):
                 t.same(f"{where}: the {kind} download (failed: {str(e).splitlines()[0]})", 0, 1, show=False)
                 continue
             t.same(f"{where}: the {kind} download's name", na, nb)
+            if da != db and SAVE:
+                SAVE.mkdir(parents=True, exist_ok=True)
+                stem = "".join(c if c.isalnum() else "-" for c in where)[:80]
+                (SAVE / f"{stem}.main.{kind}").write_bytes(da)
+                (SAVE / f"{stem}.here.{kind}").write_bytes(db)
             if da == db:
                 t.same(f"{where}: the {kind} download, byte for byte ({len(da)} bytes)", 1, 1)
             elif kind == "glb":
                 t.notes.append(f"{where}: the GLBs differ in bytes ({len(da)} and {len(db)}) and were compared by content")
-                t.same(f"{where}: the glb download, by content (the bytes differ)", glb_content(da), glb_content(db))
+                ca, cb = glb_content(da), glb_content(db)
+                if not t.same(f"{where}: the glb download, by content (the bytes differ)", ca, cb, show=False):
+                    for line in glb_differs(ca, cb)[:12]:
+                        print(f"      {line}", flush=True)
             else:
                 ca, cb = usdz_content(da), usdz_content(db)
                 t.notes.append(f"{where}: the USDZs differ in bytes ({len(da)} and {len(db)}) and were compared by content: "
@@ -502,7 +539,7 @@ def one_rack(t, browser, bases, name, doc, args):
                 t.same(f"{name}: {S.name} did not settle after the file opened", 0, 1, show=False)
         where = f"{name}, opened"
         compare_snaps(t, where, A.page.evaluate(SNAP_JS), B.page.evaluate(SNAP_JS))
-        tools_same(t, where, A, B, tool_calls(doc, "all"))
+        tools_same(t, where, A, B, tool_calls(doc, "few" if args.quick else "all"))
         # the tools again: an answer kept from the first call is the answer the other checkout works out again
         tools_same(t, f"{where}, asked again", A, B, tool_calls(doc, args.tools))
         sides_same(t, where, A, B, ms)
@@ -532,7 +569,7 @@ def one_rack(t, browser, bases, name, doc, args):
             done += 1
         where = f"{name}, after its {done} edits"
         now = A.page.evaluate("() => window.__rack.doc()")
-        tools_same(t, where, A, B, tool_calls(now, "all"))
+        tools_same(t, where, A, B, tool_calls(now, "few" if args.quick else "all"))
         sides_same(t, where, A, B, ms)
         compare_exports(t, where, A, B, ms)
         if args.glb:
@@ -568,11 +605,15 @@ def main():
     ap.add_argument("--fixtures", action="store_true", help="also every rack document the browser checks open")
     ap.add_argument("--edits", type=int, default=len(EDITS))
     ap.add_argument("--tools", choices=["few", "all"], default="few", help="how many tool calls after each edit (all of them after the open and at the end)")
+    ap.add_argument("--quick", action="store_true", help="two tool calls after the open and at the end as well (a large rack: the other checkout takes a minute a call)")
     ap.add_argument("--glb", action="store_true")
     ap.add_argument("--gpu", action="store_true", help="ask Chromium for the machine's GPU instead of software GL (a 3D scene of a large rack does not settle without one)")
     ap.add_argument("--settle", type=int, default=600, help="seconds a 3D scene gets")
     ap.add_argument("--timeout", type=int, default=900, help="seconds any one 2D step gets")
+    ap.add_argument("--save", type=pathlib.Path, help="a folder to keep each pair of GLB and USDZ downloads that differ in bytes")
     args = ap.parse_args()
+    global SAVE
+    SAVE = args.save
     if not args.urls and not args.main:
         sys.exit("rack-same: give --main (a checkout to compare with) or --urls")
     from playwright.sync_api import sync_playwright

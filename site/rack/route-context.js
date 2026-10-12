@@ -608,13 +608,60 @@ const notesMemo = new WeakMap();   // facts -> {rack, nameOf, rings, crossed}
 // its own way and does not pass it.
 export const routeNotes = (rack, facts, nameOf, opts) => routeNoteGroups(rack, facts, nameOf, opts).flatMap(g => g.notes);
 
-// THE SAME SENTENCES, BY KIND, in the order routeNotes gives them
-// (portrayal-site#192): [{kind, notes}] for `pathways` (fill, capacity, a
-// waypoint that is gone), `rings`, `bodies` and `bends`, a kind with none left
-// out. The cable list shows the first few of each kind and folds the rest
-// (cable-panel.js), so a rack with hundreds of tight bends does not lay
-// hundreds of sentences out at once; routeNotes is this list flattened, so
-// neither can say a sentence the other does not.
+// WHAT THE ROUTES WARN OF, AS THE SIDE PANEL LISTS IT (portrayal-site#192):
+// the same sentences, by kind and by what each is about. [{kind, rows}], a
+// kind with none left out; a row is {cable | item: id, or neither, texts}: ONE
+// FINDING, which is a cable (with every sentence the kit has for it of that
+// kind: a cable with three tight corners is one row of three sentences, as
+// the kit's describe counts cables), or a manager, or, where the kit's
+// sentence names neither, the sentence. The kinds: `fill` (a pathway past its
+// fill), `capacity` (more cables than a manager states), `gone` (a waypoint
+// that is gone), `rings`, `bodies`, `bends`. Every sentence is the kit's,
+// whole; flattened, kind by kind, they are routeNotes' list in its order.
+//
+// The kit gives the pathway notes as one list of sentences (export-data.js
+// fillNotes). Which pathway, manager or cable each is about is found by
+// asking it for one finding at a time, in its own order, and the pieces are
+// held to the whole: if they are not the list the kit gives for all of them
+// together, the list is shown as it is, about nothing in particular.
+export function routeWarnings(rack, facts, nameOf = id => id, opts = {}) {
+  const groups = routeNoteGroups(rack, facts, nameOf, opts);
+  const notesOf = kind => groups.find(g => g.kind === kind)?.notes ?? [];
+  const cableIds = new Set((rack.cables || []).map(c => c.id));
+  const bySubject = rows => {
+    const out = [], at = new Map();
+    for (const r of rows) {
+      const key = r.cable ? `c ${r.cable}` : r.item ? `i ${r.item}` : null;
+      if (key && at.has(key)) at.get(key).texts.push(...r.texts);
+      else { const row = {...r, texts: [...r.texts]}; out.push(row); if (key) at.set(key, row); }
+    }
+    return out;
+  };
+  // a ring's and a body's sentence begins with its cable's id
+  const led = text => { const id = /^(\S+) /.exec(text)?.[1]; return cableIds.has(id) ? {cable: id, texts: [text]} : {texts: [text]}; };
+  const kinds = [];
+  const whole = notesOf('pathways');
+  if (whole.length) {
+    const fills = (facts.fill || []).filter(f => f.over).map(f => ({item: f.item, texts: fillNotes(rack, {fill: [f]}, nameOf)}));
+    const over = (facts.over || []).map(o => ({item: o.item, texts: fillNotes(rack, {over: [o]}, nameOf)}));
+    const gone = (rack.cables || []).map(c => ({cable: c.id, texts: fillNotes({...rack, cables: [c], bundles: []}, {routes: facts.routes}, nameOf)}))
+      .filter(r => r.texts.length);
+    const said = [...fills, ...over, ...gone].flatMap(r => r.texts);
+    if (said.length <= whole.length && said.every((t, k) => t === whole[k])) {
+      // (what is left is the kit's sentences for a bundle's trunk: about no one cable)
+      const rest = whole.slice(said.length).map(t => ({texts: [t]}));
+      kinds.push({kind: 'fill', rows: fills}, {kind: 'capacity', rows: over}, {kind: 'gone', rows: [...gone, ...rest]});
+    } else kinds.push({kind: 'gone', rows: whole.map(t => ({texts: [t]}))});
+  }
+  kinds.push({kind: 'rings', rows: bySubject(notesOf('rings').map(led))}, {kind: 'bodies', rows: bySubject(notesOf('bodies').map(led))},
+             {kind: 'bends', rows: bySubject((opts.bends || []).map(f => (cableIds.has(f.cable) ? {cable: f.cable, texts: [f.text]} : {texts: [f.text]})))});
+  return kinds.filter(k => k.rows.length);
+}
+
+// THE SAME SENTENCES, BY KIND, in the order routeNotes gives them:
+// [{kind, notes}] for `pathways` (fill, capacity, a waypoint that is gone),
+// `rings`, `bodies` and `bends`, a kind with none left out. routeNotes is
+// this list flattened, so neither can say a sentence the other does not.
 export function routeNoteGroups(rack, facts, nameOf = id => id, {bodies = true, bends = [], asRead = false} = {}) {
   if (!facts) return [];
   let rings, crossed = [];

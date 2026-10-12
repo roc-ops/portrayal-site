@@ -8850,98 +8850,160 @@ def check_rack_speed_budgets(page, base):
     return bad
 
 
-# THE ROUTE WARNINGS, A KIND AT A TIME (portrayal-site#192, cable-panel.js noteGroupEls). A rack of 275 cables has
-# hundreds of them, and every one was laid out above the cable list. Each kind now shows its first three and folds the
-# rest under a line that counts them, built when it is opened. No sentence changes, and none is lost.
-WARNINGS_JS = """() => ({
-  shown: [...document.querySelectorAll('#cableList > [data-route-warning]')].map(p => p.textContent),
-  folds: [...document.querySelectorAll('#cableList > details[data-route-more]')].map(d => ({kind: d.dataset.routeMore, count: +d.dataset.routeCount, open: d.open,
-    line: d.querySelector('summary').textContent, built: d.querySelectorAll('[data-route-warning]').length,
-    inside: [...d.querySelectorAll('[data-route-warning]')].map(p => p.textContent),
-    laidOut: [...d.querySelectorAll('[data-route-warning]')].filter(p => p.getClientRects().length).length})),
-  bends: (window.__rack.bends() ?? []).map(f => f.text),
-  focus: document.activeElement?.id ?? null,
-})"""
+# THE WARNINGS, ONE SECTION THAT OPENS (portrayal-site#192, cable-panel.js warningsSection). Every route warning stood
+# above the cable list, a sentence each, and a rack with dozens of tight bends had its bundles and cables pushed out of
+# sight. They are one row above the tree now, "Warnings (N)", closed until the reader opens it.
+WARNINGS_JS = """() => {
+  const sec = document.querySelector('#cableList [data-warnings]'), head = document.getElementById('warningsToggle');
+  const first = document.querySelector('#cableList [role="tree"] > li'), side = document.getElementById('side');
+  const box = el => { const r = el.getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; };
+  return {
+    there: !!sec, n: sec ? +sec.dataset.count : 0, line: head?.textContent ?? null, open: head?.getAttribute('aria-expanded') === 'true',
+    colour: head ? getComputedStyle(head).color : null, ink: getComputedStyle(document.querySelector('#cableList h3')).color,
+    head: head ? box(head) : null, section: sec ? box(sec) : null,
+    firstRow: first ? {...box(first), id: first.id, inView: box(first).top >= side.getBoundingClientRect().top && box(first).top < Math.min(innerHeight, side.getBoundingClientRect().bottom)} : null,
+    kinds: [...document.querySelectorAll('#cableList [data-warning-kind]')].map(k => ({kind: k.dataset.warningKind, count: +k.dataset.count,
+      title: k.querySelector('.rk-warnings-row, .rk-warnings-title').textContent, folds: !!k.querySelector('.rk-warnings-row'),
+      open: !k.querySelector('ul').hidden, rows: k.querySelectorAll('[data-warning-row]').length,
+      picks: [...k.querySelectorAll('[data-warning-pick]')].map(b => b.dataset.warningPick),
+      texts: [...k.querySelectorAll('[data-route-warning], [data-warning-text]')].map(p => p.textContent)})),
+    laidOut: [...document.querySelectorAll('#cableList [data-warnings] p')].filter(p => p.getClientRects().length).length,
+    outside: [...document.querySelectorAll('#cableList [data-route-warning]')].filter(p => !p.closest('[data-warnings]')).length,
+    bends: (window.__rack.bends() ?? []).map(f => [f.cable, f.text]),
+    rowWarnings: [...document.querySelectorAll('#cableList [role="tree"] :is([data-loose], [data-warning], [data-spare-short])')].map(x => x.textContent),
+    pinned: [...document.querySelectorAll('#cableList [data-cable-row][aria-pressed="true"]')].map(b => b.dataset.cableRow),
+    stored: localStorage.getItem('portrayal.rack.tree'),
+  };
+}"""
 
 
-@extra("rack.html: the route warnings are listed a kind at a time - a kind with more than three shows its first three, in the kit's words and order, and folds the rest under a line that counts them, built only when it is opened; opened, every sentence is there once; it stays open, and keeps the keyboard, through a redraw of the panel, and closes again; a kind of three or fewer is listed whole as before; another document starts closed (#192)")
-def check_rack_route_warnings_fold(page, base):
+def warnings_fixture():
+    """The cable-lay rack with warnings of three kinds: an AOC between its leaves (tight bends), seven fibre cords
+    said to be copper (mismatches), and two cords into cages whose optics are taken out (loose ends)."""
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    rack = aoc_between_the_leaves(lay)
+    for c in rack["cables"]:
+        if c["id"] in ("c2", "c3", "c4", "c5", "c6", "c7", "c8"):
+            c["media"] = "cat6a"
+    leaf_b = next(i for i in rack["items"] if i["id"] == "i3")
+    leaf_b["swaps"] = {k: v for k, v in leaf_b["swaps"].items() if k not in ("port-55", "port-56")}
+    return {"format": "portrayal-rack", "version": 4, "id": "doc-warnings", "racks": [{**rack, "name": "Warnings"}]}
+
+
+@extra("rack.html: the warnings are one section that opens, above the cable tree - with warnings of three kinds it is one row, \"Warnings (N)\" in the warning colour, closed, N the findings (a cable with several tight corners is one), no warning is laid out and the tree's first bundle row is in view without scrolling; opened, each kind has its title and count and a kind of more than five opens on its own, every sentence is the kit's or the row's own, once; a finding pins its cable; what is open survives a redraw and a reload and does not open by itself; N follows an edit that clears a warning; a rack with none has no section (#192)")
+def check_rack_warnings_section(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
-    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.set_viewport_size({"width": 1280, "height": 720})
 
     def settled(n):
         page.wait_for_function(READING_SETTLED, arg=n, timeout=READY_MS)
         page.wait_for_timeout(150)
 
-    open_fixture(page, base, speed_fixture(3, 6))
+    open_fixture(page, base, warnings_fixture())
+    settled(0)
+    # a bundle, so the tree has a bundle row to keep in view
+    n = page.evaluate("() => window.__rack.drawn()")
+    r = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c10', 'c11'], label: 'pair'})")
+    if r.get("error"):
+        bad.append(f"the bundle was refused: {r['error']}")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if not st["there"]:
+        return bad + ["a rack with tight bends, loose ends and mismatches has no Warnings section"]
+    bent = list(dict.fromkeys(c for c, _ in st["bends"]))
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not {"bends", "loose", "mismatch"} <= set(by):
+        return bad + [f"the fixture gives warnings of {sorted(by)}; the check needs tight bends, loose ends and mismatches"]
+    want_n = sum(k["rows"] for k in st["kinds"])
+    if st["n"] != want_n or st["line"] != f"Warnings ({want_n})":
+        bad.append(f"the row reads {st['line']!r} for {st['n']}; expected 'Warnings ({want_n})', the findings of every kind")
+    if by["bends"]["count"] != len(bent):
+        bad.append(f"tight bends count {by['bends']['count']} for {len(st['bends'])} corners on {len(bent)} cables; expected one finding a cable")
+    if by["mismatch"]["count"] <= 5:
+        bad.append(f"the fixture gives {by['mismatch']['count']} mismatches; the check needs a kind of more than five")
+    if st["open"] or st["laidOut"]:
+        bad.append(f"the section starts {'open' if st['open'] else 'closed'} with {st['laidOut']} sentences laid out; expected closed and none")
+    if st["outside"]:
+        bad.append(f"{st['outside']} route warnings still stand outside the section, above the tree")
+    if st["colour"] == st["ink"]:
+        bad.append(f"the row is not in the warning colour: {st['colour']}")
+    if st["section"]["h"] > 40:
+        bad.append(f"closed, the section is {st['section']['h']:.0f} px tall; expected one line")
+    if not st["firstRow"] or not st["firstRow"]["id"].startswith("bundleItem-") or not st["firstRow"]["inView"]:
+        bad.append(f"the tree's first bundle row is not in view without scrolling at 1280 by 720: {st['firstRow']}")
+    if not st["rowWarnings"]:
+        bad.append("the cables' own rows no longer say their loose ends and mismatches")
+    # opened with the keyboard: the kinds, their counts, and every sentence once
+    page.focus("#warningsToggle")
+    page.keyboard.press("Enter")
+    st = page.evaluate(WARNINGS_JS)
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not st["open"]:
+        bad.append("Enter on the row did not open the section")
+    for kind, title in (("bends", "Tight bends"), ("loose", "Loose ends"), ("mismatch", "Media mismatches")):
+        k = by[kind]
+        if k["title"] != f"{title} ({k['count']})" or k["rows"] != k["count"]:
+            bad.append(f"the kind {kind} reads {k['title']!r} over {k['rows']} findings; expected '{title} ({k['count']})'")
+        if k["folds"] != (k["count"] > 5) or k["open"] != (k["count"] <= 5):
+            bad.append(f"the kind {kind}, of {k['count']}, {'is' if k['folds'] else 'is not'} a row that opens and is {'open' if k['open'] else 'closed'}; a kind of more than five opens on its own, and starts closed")
+    if by["bends"]["texts"] != [t for _, t in st["bends"]]:
+        bad.append("the tight bends listed are not the kit's sentences, each once and in its order")
+    own = sorted(by["loose"]["texts"] + by["mismatch"]["texts"])
+    if own != sorted(st["rowWarnings"]):
+        bad.append(f"the loose ends and mismatches listed are not the sentences the cables' own rows say: {own} against {sorted(st['rowWarnings'])}")
+    page.click("#warningKind-mismatch")
+    if not next(k for k in page.evaluate(WARNINGS_JS)["kinds"] if k["kind"] == "mismatch")["open"]:
+        bad.append("a click on Media mismatches did not open it")
+    # a finding pins its cable, as its row in the tree does
+    pick = by["mismatch"]["picks"][0]
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.click(f'[data-warning-kind="mismatch"] [data-warning-pick="{pick}"]')
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["pinned"] != [pick.split(" ")[1]]:
+        bad.append(f"a click on the finding {pick} pinned {st['pinned']}")
+    if not st["open"]:
+        bad.append("the section closed when the panel was drawn again for the pin")
+    # ...and what is open is the reader's, kept with the tree's rows: it survives a reload
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
     settled(0)
     st = page.evaluate(WARNINGS_JS)
-    bends = st["bends"]
-    if len(bends) <= 6:
-        return bad + [f"the fixture has {len(bends)} tight bends; the check needs more than six to fold"]
-    fold = next((f for f in st["folds"] if f["kind"] == "bends"), None)
-    if not fold:
-        return bad + [f"with {len(bends)} tight bends the list folds none of them: {len(st['shown'])} sentences shown, folds {[f['kind'] for f in st['folds']]}"]
-    rest = len(bends) - 3
-    if fold["count"] != len(bends) or fold["line"] != f"{rest} more tight bends ({len(bends)} in all)":
-        bad.append(f"the fold's line reads {fold['line']!r} for {fold['count']}; expected '{rest} more tight bends ({len(bends)} in all)'")
-    if fold["open"] or fold["built"]:
-        bad.append(f"the fold starts {'open' if fold['open'] else 'closed'} with {fold['built']} sentences built inside it; expected closed and none built until it is opened")
-    if st["shown"][-3:] != bends[:3]:
-        bad.append(f"the three sentences shown are not the kit's first three tight bends, in its order: {st['shown'][-3:]} against {bends[:3]}")
-    if len(st["shown"]) != len([s for s in st["shown"] if s not in bends]) + 3:
-        bad.append(f"more than three tight bends are shown outside the fold: {len(st['shown'])} sentences")
-    # opened with the keyboard: every sentence is there, once, in the kit's order, and laid out
-    page.focus("#routeMore-bends")
-    page.keyboard.press("Enter")
-    page.wait_for_function("() => document.querySelector('details[data-route-more=\"bends\"]').open && document.querySelectorAll('details[data-route-more=\"bends\"] [data-route-warning]').length > 0", timeout=READY_MS)
-    st = page.evaluate(WARNINGS_JS)
-    fold = next(f for f in st["folds"] if f["kind"] == "bends")
-    if st["shown"][-3:] + fold["inside"] != bends:
-        bad.append(f"opened, the sentences are not the kit's tight bends, each once and in order: {len(st['shown'][-3:] + fold['inside'])} against {len(bends)}")
-    if fold["laidOut"] != rest:
-        bad.append(f"opened, {fold['laidOut']} of the {rest} folded sentences are laid out")
-    # a redraw of the panel (a selection, an edit) leaves it open, with the keyboard where it was
+    kinds = {k["kind"]: k for k in st["kinds"]}
+    if not st["there"] or not st["open"] or not kinds.get("mismatch", {}).get("open"):
+        bad.append(f"after a reload the section is {'open' if st.get('open') else 'closed or gone'} and Media mismatches {'open' if kinds.get('mismatch', {}).get('open') else 'closed'}; expected both as the reader left them")
+    # N FOLLOWS THE RACK: a mismatch put right is one finding fewer, and nothing opens or closes for it
+    before = st["n"]
     n = page.evaluate("() => window.__rack.drawn()")
-    page.evaluate("() => { window.__rack.redraw(); }")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'om4'})")
     settled(n)
     st = page.evaluate(WARNINGS_JS)
-    fold = next((f for f in st["folds"] if f["kind"] == "bends"), None)
-    if not fold or not fold["open"] or st["shown"][-3:] + fold["inside"] != bends:
-        bad.append("after a redraw of the panel the opened kind is closed, or does not hold every sentence")
-    if st["focus"] != "routeMore-bends":
-        bad.append(f"after a redraw of the panel the keyboard is on {st['focus']!r}; expected the fold's line it was on")
-    # closed again, it stays closed through a redraw
-    page.keyboard.press("Enter")
-    page.wait_for_function("() => !document.querySelector('details[data-route-more=\"bends\"]').open", timeout=READY_MS)
+    left = next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0)
+    if left != by["mismatch"]["count"] - 1 or st["line"] != f"Warnings ({st['n']})" or st["n"] != sum(k["rows"] for k in st["kinds"]):
+        bad.append(f"after a mismatch was put right the row reads {st['line']!r} with {left} mismatches (it read Warnings ({before}) with {by['mismatch']['count']})")
+    # closed by the reader, a new warning does not open it
+    page.click("#warningsToggle")
     n = page.evaluate("() => window.__rack.drawn()")
-    page.evaluate("() => { window.__rack.redraw(); }")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'cat6a'})")
     settled(n)
-    fold = next((f for f in page.evaluate(WARNINGS_JS)["folds"] if f["kind"] == "bends"), None)
-    if not fold or fold["open"] or fold["built"]:
-        bad.append("closed again, the kind is open after a redraw, or built its sentences while closed")
-    # opened, then another document: its kinds start closed
-    page.click("#routeMore-bends")
-    page.wait_for_function("() => document.querySelector('details[data-route-more=\"bends\"]').open", timeout=READY_MS)
+    st = page.evaluate(WARNINGS_JS)
+    if st["open"] or st["laidOut"]:
+        bad.append("a warning that appeared opened the section the reader had closed")
+    if next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0) != by["mismatch"]["count"]:
+        bad.append("the count did not follow the warning that appeared")
+    # a rack with nothing to warn of has no section
     n = page.evaluate("() => window.__rack.drawn()")
-    page.evaluate("d => window.__rack.loadDoc(d)", {**speed_fixture(3, 6, name="Speed again"), "id": "doc-speed-again"})
-    settled(n)
-    fold = next((f for f in page.evaluate(WARNINGS_JS)["folds"] if f["kind"] == "bends"), None)
-    if not fold or fold["open"]:
-        bad.append("another document opened with the kind of warning the last one's reader had opened still open")
-    # A KIND OF THREE OR FEWER IS LISTED WHOLE, with no line: the cable-lay rack with one AOC between its leaves
     lay = json.loads(CABLE_LAY_FIXTURE.read_text())
     lay.pop("_note", None)
-    n = page.evaluate("() => window.__rack.drawn()")
-    page.evaluate("r => window.__rack.replaceRack(r)", aoc_between_the_leaves(lay))
+    page.evaluate("r => window.__rack.replaceRack(r)", lay)
     settled(n)
     st = page.evaluate(WARNINGS_JS)
-    few = st["bends"]
-    if not 1 <= len(few) <= 3:
-        bad.append(f"the small case has {len(few)} tight bends; it needs one to three to show a kind listed whole")
-    elif st["folds"] or st["shown"][-len(few):] != few:
-        bad.append(f"with {len(few)} tight bends the list folds some ({[f['line'] for f in st['folds']]}) or does not list each: {st['shown']}")
+    if st["there"] or st["outside"]:
+        bad.append(f"the cable-lay rack, which has no warning, shows a Warnings section ({st['line']!r})")
     return bad
 
 

@@ -287,3 +287,31 @@ test('describe asked of the read rack falls back to the rack as it is where a wi
   calls.pop();
   assert.ok(calls.some(c => c.route && c.rack === now), 'the rack as it is was asked whole');
 });
+
+// ── the warnings as the side panel lists them (route-context.js routeWarnings) ─
+import {routeWarnings} from '../../site/rack/route-context.js';
+
+test('the warnings are findings, by kind and by what each is about; a cable with three tight corners is one', () => {
+  const rack = {...empty(), items: [{id: 'i1', label: 'Leaf', ref: 'x'}, {id: 'i2', label: 'CM', ref: 'y'}],
+                cables: [{id: 'c1', label: ''}, {id: 'c2', label: ''}]};
+  const facts = {fill: [{item: 'i2', via: 'guide-1', count: 9, percent: 140, over: true, cables: []}, {item: 'i2', via: 'guide-2', count: 1, percent: 10, over: false, cables: []}],
+                 over: [{item: 'i2', count: 40, capacity: 30}],
+                 routes: new Map([['c1', {waypoints: [], gone: [{item: 'i9', via: 'duct'}]}], ['c2', {waypoints: []}]]),
+                 ringFindings: [{text: 'c1 would enter and leave CM ring 1 by the same face: route it through the ring, or past it.'}],
+                 bodyFindings: [{text: 'c2 passes through Leaf between x and y: route it round Leaf.'}, {text: 'c2 passes through CM between y and z: route it round CM.'}]};
+  const bends = [{cable: 'c1', text: 'c1 turns once.'}, {cable: 'c1', text: 'c1 turns twice.'}, {cable: 'c1', text: 'c1 turns thrice.'}, {cable: 'c2', text: 'c2 turns.'}];
+  const name = id => rack.items.find(i => i.id === id)?.label ?? id;
+  const kinds = routeWarnings(rack, facts, name, {bends, asRead: true});
+  assert.deepEqual(kinds.map(k => [k.kind, k.rows.length]), [['fill', 1], ['capacity', 1], ['gone', 1], ['rings', 1], ['bodies', 1], ['bends', 2]]);
+  const of = kind => kinds.find(k => k.kind === kind).rows;
+  assert.deepEqual(of('fill').map(r => r.item), ['i2']);
+  assert.deepEqual(of('capacity').map(r => r.item), ['i2']);
+  assert.deepEqual(of('gone').map(r => r.cable), ['c1']);
+  assert.deepEqual(of('rings').map(r => r.cable), ['c1']);
+  assert.deepEqual(of('bodies').map(r => [r.cable, r.texts.length]), [['c2', 2]]);
+  assert.deepEqual(of('bends').map(r => [r.cable, r.texts.length]), [['c1', 3], ['c2', 1]]);
+  // every sentence is the kit's, and flattened they are routeNotes' list in its order
+  assert.deepEqual(kinds.flatMap(k => k.rows.flatMap(r => r.texts)), routeNotes(rack, facts, name, {bends, asRead: true}));
+  assert.deepEqual(routeWarnings(rack, null), []);
+  assert.deepEqual(routeWarnings(rack, {fill: [], over: [], routes: new Map(), ringFindings: [], bodyFindings: []}, name, {asRead: true}), []);
+});

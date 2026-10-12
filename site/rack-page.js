@@ -38,7 +38,7 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeNoteGroups, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
+import {routeWarnings, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {routesOf, sameReading, askOf} from './rack/reading.js';
 import {describeOnce, inspectOnce} from './rack/agent-read.js';
@@ -110,8 +110,6 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   // (`state`, remembered in this browser), the row with the Tab stop (`stop`) and the cable whose pin last
   // opened its row (`pinned`). The viewer's, never the document's.
   tree: {doc: null, state: {}, stop: null, pinned: null, show: null},
-  // Which kinds of route warning the reader has opened in the cable list (cable-panel.js noteGroupEls): the viewer's.
-  notesOpen: new Set(),
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 // How tall a device is, in U: a device is named with its position (model.js
@@ -582,7 +580,6 @@ function setDoc(doc, notes = docNotes(doc)) {
   const {findings} = ed.loadDoc(doc, {notes});   // settles managers; clears history; saves a repair (onChange)
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
-  S.notesOpen = new Set();   // nor the kinds of warning its reader opened
   S.bendsSaid = '';          // nor its tight bends: this document's are said once of their own
   // (what the kit keeps and does not act on stands in the panel while it is true: sayKept. Not said twice.)
   const stands = new Set(frameNotices(rack(), chassisOf));
@@ -891,7 +888,8 @@ function treeHooks(r) {
       t.show = pin;
     }
   }
-  return {open, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
+  // (`state(key)`: what the reader set for a row, undefined if never: the Warnings section starts closed whatever the rack's size)
+  return {open, state: key => t.state[key], stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
 }
 function cableListPanel() {
   const r = rack();
@@ -903,17 +901,17 @@ function cableListPanel() {
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
-  const lap = lapsOf(), opened = S.notesOpen;
-  // (by kind: the list shows the first few of each and folds the rest, cable-panel.js noteGroupEls; which
-  // kinds the reader has opened is kept across a redraw of the panel, S.notesOpen)
-  const noteGroups = now ? routeNoteGroups(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
+  const lap = lapsOf();
+  // (by kind and by what each is about: the list shows them as one section that opens, cable-panel.js warningsSection;
+  // what the reader has opened there is kept with the tree's rows, per rack document)
+  const warnings = now ? routeWarnings(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
   lap('notes');
   const spares = sparesNow();
   lap('spares');
-  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: noteGroups.reduce((n, g) => n + g.notes.length, 0)}; });
-  return cableList({rack: r, ends: S.cableFacts.ends, noteGroups, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
-    // (the set this panel was built with: a fold of a panel since replaced, or of another document's, says nothing to this one)
-    notesOpen: opened, onNotesToggle: (kind, open) => { if (open) opened.add(kind); else opened.delete(kind); },
+  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: warnings.reduce((n, k) => n + k.rows.reduce((m, x) => m + x.texts.length, 0), 0)}; });
+  return cableList({rack: r, ends: S.cableFacts.ends, warnings, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    // a finding picked pins its cable, as its row in the tree does, or selects its manager
+    onWarningPick: w => select(w.cable ? {kind: 'cable', id: w.cable} : {kind: 'item', id: w.item}),
     spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
