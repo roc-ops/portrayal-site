@@ -210,7 +210,14 @@ export function createRackScene(container, opts = {}) {
   let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false, frameCost = 0, costDue = false;
   const onHandle = () => { handledAt = performance.now(); };
   const onHandleStart = () => { handling = true; }, onHandleEnd = () => { handling = false; handledAt = performance.now(); };
+  // A CAMERA THAT HAS MOVED IS ALWAYS DRAWN. The controls move the camera in their own pointer handlers as well as
+  // in the loop's update(), so "did update() move it" misses a drag's last step; their `change` event does not.
+  // Until that frame is drawn the camera's matrices are the last frame's, and a host asking what is under the
+  // pointer (the Rack Builder's hover) would be answered for a view that is no longer the one on screen.
+  let cameraMoved = false;
+  const onCameraMoved = () => { cameraMoved = true; };
   if (BUILD_FRAME_MS) {
+    controls.addEventListener('change', onCameraMoved);
     controls.addEventListener('start', onHandleStart);
     controls.addEventListener('end', onHandleEnd);
     for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.addEventListener(type, onHandle, {passive: true});
@@ -1173,10 +1180,11 @@ export function createRackScene(container, opts = {}) {
     // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
     const now = BUILD_FRAME_MS ? performance.now() : 0;
     if (costDue) { frameCost = now - lastFrame; costDue = false; }
-    // (the camera is kept where the controls have it at every animation frame, held back or not: a camera still
-    // easing to rest is drawn, and a host that asks what is under the pointer asks a camera that is where it looks)
-    const moved = controls.update();
-    if (moved || !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
+    // (the camera is kept where the controls have it at every animation frame, held back or not, and a camera
+    // that has moved since the last frame is drawn: `cameraMoved`, above)
+    controls.update();
+    if (cameraMoved || !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
+      cameraMoved = false;
       renderer.render(scene, camera);
       lastFrame = now;
       costDue = !!BUILD_FRAME_MS;
