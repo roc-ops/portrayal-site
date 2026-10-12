@@ -18384,6 +18384,16 @@ def units():
     return list(PAGES) + FIXED_UNITS + [fn.__name__ for _, fn in EXTRA_CHECKS] + [MARKS_UNIT]
 
 
+# THE FIVE CHECKS ADDED WITH KIT 0.25.0 ARE DEALT LAST, each a hair under the default. The plan deals units by weight
+# and then by name, so five more at the default would have moved every unlisted check to another shard: the first
+# run with them put the slowest unlisted checks together and that shard ran past its 20 minutes. Weighed just under
+# the default, they come after every other unit, and the four shards are the ones main has, each with one or two of
+# these on the end. (Kept apart from the table above, which other work is rewriting.)
+SECONDS.update({name: 1.9 for name in (
+    "check_rack_edit_survives_reload", "check_rack_save_failure_said", "check_rack_ring_rack_budgets",
+    "check_rack_drawio_projected_port_path", "check_rack_loose_end_sentences")})
+
+
 def shard_plan(n):
     """units() dealt into n lists: the heaviest unit first, each to whichever
     shard is lightest so far. Depends on nothing but this file, so every job of
