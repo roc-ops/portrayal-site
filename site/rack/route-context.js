@@ -360,7 +360,21 @@ export const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => 
 export const withCableTypes = (ctx, types) =>
   (types ? {...ctx, diameterOf: types.diameterOf, bendOf: types.bendOf} : ctx);
 
+// HOW OFTEN THE ROUTES ARE READ, AND HOW OFTEN THE KIT LAYS A CABLE (portrayal-site#192): two
+// counts a probe reads (rack-page.js window.__rack.reads, tools/rack-speed.py), and nothing else does.
+// `routeFacts` is every call of routeFacts below, each a new context, so every cable decided
+// again. `reach` is every time the kit asks a context made here for an end's plug reach, which
+// its layPath does once for each end of each lay: half of it is the cables the kit laid.
+// `last` is where the last reading's time went, in ms, by stage: the drawings (`faces`, `reach`) and
+// then the kit (`resolve`, `paths`, `marks`, `findings`, `bends`, `bundles`, `fill`).
+export const reads = {routeFacts: 0, reach: 0, last: null};
+const now = () => (typeof performance === 'object' ? performance.now() : 0);
+
 export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {}) {
+  reads.routeFacts++;
+  const took = {};
+  let lapAt = now();
+  const lap = k => { const t = now(); took[k] = t - lapAt; lapAt = t; };
   const guides = new Map(), ports = new Map(), failed = {n: 0};
   const typesReady = cableTypes();
   // The ducts beside the rack, read from their drawings with the faces.
@@ -394,7 +408,9 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // swapped or a plug's reach read is a new call and a new context, and
   // writing to this one throws. Nothing it closes over (the guides, the
   // ports, the channels, the reaches) is written to after this line.
+  lap('faces');
   const [channels, types, reachOf] = await Promise.all([ducts, typesReady, plugReaches(rack, given)]);
+  lap('reach');
   const itemOf = id => rack.items.find(i => i.id === id);
   const port = end => ports.get(`${end.item}|${end.view === 'rear' ? 'rear' : 'front'}|${portPathOf(end.path)}`) ?? null;
   const ctx = Object.freeze({
@@ -426,12 +442,14 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     ...(types ? {diameterOf: types.diameterOf, typeOf: types.typeOf, bendOf: types.bendOf} : {}),
     // Each end from the far end of its seated plug (kit 0.13.0), so every
     // length the page shows is the kit's, measured the way the 3D scene draws it.
-    plugReachOf: end => reachOf.get(endKey(end)) ?? null,
+    plugReachOf: end => { reads.reach++; return reachOf.get(endKey(end)) ?? null; },
   });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
+  lap('resolve');
   // THE PATH OF EACH CABLE, measured once (route.js routePath): its length,
   // its ring marks and its detours all come from this one reading.
   const paths = new Map((rack.cables || []).map(c => [c.id, routePath(rack, c, ctx)]));
+  lap('paths');
   const lengths = new Map((rack.cables || []).map(c => [c.id, pathLength(paths.get(c.id))]));
   // THE RINGS, DECIDED ONCE (Portrayal #930): per cable, one mark per
   // resolved waypoint - null for a lane, a duct or a pass, and for a ring the
@@ -452,8 +470,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // A ring a route would enter and leave by one face, and a body a route
   // still crosses after its detours: shown with fill and capacity.
   const labelOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
+  lap('marks');
   const rings = ringFindings(rack, ctx, labelOf);
   const bodies = bodyFindings(rack, ctx, labelOf);
+  lap('findings');
   // THE TIGHT BENDS ARE THE KIT'S (kit 0.17.0, #973: route.js bendFindings):
   // each corner of a cable's path with less room than its own installed bend
   // radius, with the kit's sentence and where it is (`at`, rack mm). The
@@ -473,6 +493,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // without them the kit counts each cable by its media), and where each
   // member rides its trunk. The 2D panes, the 3D scene, the cable list and the
   // sheet all read these, so they agree.
+  lap('bends');
   const bctx = withCableTypes({route: ctx}, types);
   const bundles = bundleFacts(rack, bctx);
   // WHERE EACH MEMBER LIES IN ITS BUNDLE, AND HOW THICK THE BUNDLE IS THERE
@@ -492,6 +513,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // of the second (a bundle's own are among its straps, along its trunk).
   const ties = tieStraps(rack, bctx, ctx, paths);
   const places = memberPlaces(rack, routes, bundles);
+  lap('bundles');
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
   // `types` goes with them, so a bundle command sent before the page's own
@@ -500,8 +522,11 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // rack asks whether it is still that one (rack-page.js routesNow).
   // (`readRack` is the rack these were read from, for good: `rack` is re-pointed when a rack that differs in
   // nothing a route reads takes its place, rack-page.js keepRoutes)
-  return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: fill(rack, ctx),
-          over: capacityOver(rack, ctx), ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
+  const filled = fill(rack, ctx), over = capacityOver(rack, ctx);
+  lap('fill');
+  reads.last = took;
+  return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, routes, paths, marks, detours, leads, fill: filled,
+          over, ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
           endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks};
 }
 

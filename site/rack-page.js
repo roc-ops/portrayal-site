@@ -38,7 +38,7 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
+import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -897,9 +897,14 @@ function cableListPanel() {
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
+  const lap = lapsOf();
   const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
+  lap('notes');
+  const spares = sparesNow();
+  lap('spares');
+  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: notes.length}; });
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
-    spares: sparesNow(),
+    spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
     onFilter: next => {
@@ -1192,6 +1197,17 @@ function flushDcimDraft() {
 const probeHeld = at => { const h = S.probeHold; if (!h || h.at !== at || h.taken) return null; h.taken = true; h.reach(); return h.gate; };
 // How many redraws are running: a bundle command waits for one (bundleCommand).
 let rendering = 0;
+// PROBE ONLY: WHERE A REDRAW'S TIME GOES (portrayal-site#192, tools/rack-speed.py). `lapsOf()` gives a
+// redraw a stopwatch: lap(name) adds the time since the last lap to `name`. Without ?probe=1 it is
+// a function that does nothing, and S.probeTimes is never set, so a redraw runs exactly as it did.
+const NO_LAP = Object.assign(() => {}, {times: null});
+function lapsOf() {
+  if (!PROBE) return NO_LAP;
+  const times = {}, t0 = performance.now();
+  let last = t0;
+  return Object.assign(k => { const now = performance.now(); times[k] = (times[k] ?? 0) + now - last; last = now; },
+    {times, t0, since: () => performance.now() - t0});
+}
 // `keepRoutes` (a switch of pair, setView): the rack has not changed, so what
 // the last redraw read of it is still true and is drawn from again (redraw).
 async function render(opts) {
@@ -1201,6 +1217,7 @@ async function render(opts) {
 async function redraw(keepRoutes = false) {
   flushDcimDraft();
   const mine = ++S.draws;
+  const lap = lapsOf();
   pruneCable();
   pruneFilter();
   // The route row and the typed fields belong to one open cable form too.
@@ -1250,6 +1267,7 @@ async function redraw(keepRoutes = false) {
         return UNCHECKED;
       });
     if (!kept && facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
+    lap('facts');
     // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
     // length is the document's, so when one changes it is stored by the
     // lengths.routed command, which is not an undo step - it is the page's
@@ -1304,6 +1322,7 @@ async function redraw(keepRoutes = false) {
       S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
+    lap('routes');
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
@@ -1327,6 +1346,7 @@ async function redraw(keepRoutes = false) {
     return;
   }
   if (mine !== S.draws) return;
+  lap('panes');
   S.cableFacts = facts;
   S.factsRack = r;       // the rack these were read for (a switch of pair draws from them again: `kept`, above)
   if (!kept) S.factsPending = pending.length;
@@ -1347,6 +1367,7 @@ async function redraw(keepRoutes = false) {
   if (!$('panes').hidden) {
     applyZoom($('panes'), S.svgs, S.zoom);
     setZoomLabel();
+    lap('layout');
     // Cables are measured off the laid-out panes (getScreenCTM), so they are
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled && sides) {
@@ -1384,11 +1405,14 @@ async function redraw(keepRoutes = false) {
       if (it) markPort(S.svgs.find(s => s.dataset.pane === paneOf(it, e.view)), it.id, e.path);
     }
   }
+  lap('cables');
   renderSide();
+  lap('side');
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
   if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
   paintTip();   // a cable under the pointer may have just changed its cord
+  if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cables: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -2189,6 +2213,13 @@ if (PROBE) {
     // Probe only: the 3D scene being built, from before its first device (scene() answers only once it is hung).
     loadingScene: () => S.probeLoading ?? null,
     redraw: () => render(),
+    // Probe only (portrayal-site#192): how many times the routes were read and the kit laid a cable
+    // (route-context.js reads), where the last finished redraw's time went (lapsOf), how many redraws
+    // have finished, and whether one is running or queued.
+    reads: () => ({routeFacts: reads.routeFacts, lays: reads.reach / 2, last: reads.last ? {...reads.last} : null}),
+    times: () => (S.probeTimes ? {...S.probeTimes, sidePanel: S.probeSide ? {...S.probeSide} : null} : null),
+    drawn: () => S.probeDone ?? 0,
+    idle: () => rendering === 0 && !renderQueued,
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),
     // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.
