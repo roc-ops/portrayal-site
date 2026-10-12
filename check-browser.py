@@ -8542,11 +8542,13 @@ READING_STATE_JS = """async () => {
   const R = window.__rack, plain = v => JSON.parse(JSON.stringify(v ?? null));
   for (const d of document.querySelectorAll('#side details[data-route-more]:not([open])')) d.querySelector('summary').click();
   await new Promise(r => setTimeout(r, 30));
-  // (less the zoom, which is the window's, and the outline an assistant's edit wears for three seconds)
+  // (less the zoom, which is the window's, and the outline an assistant's edit wears for three seconds; and every
+  // number to a millionth: the cable layer is measured off the laid-out pane, and two pages lay the same pane out
+  // to within the last digits of a float, 310.60001226425175 against 310.6000122642518 on CI's runner)
   const pane = id => { const svg = document.querySelector(`#${id} > svg`); if (!svg) return null;
     const c = svg.cloneNode(true); c.removeAttribute('style');
     for (const n of c.querySelectorAll('.rk-agent-touched')) { n.classList.remove('rk-agent-touched'); if (!n.getAttribute('class')) n.removeAttribute('class'); }
-    return c.outerHTML; };
+    return c.outerHTML.replace(/-?\\d+\\.\\d{7,}/g, m => String(Math.round(Number(m) * 1e6) / 1e6)); };
   return {"the front pane's drawing": pane('paneFront'), "the rear pane's drawing": pane('paneRear'),
     "the cable list's rows": [...document.querySelectorAll('#side [data-cable-item]')].map(li => li.textContent),
     'the route warnings': [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
