@@ -569,11 +569,14 @@ def one_rack(t, browser, bases, name, doc, args):
             where = f"{name}, after {label}"
             for S in (A, B):
                 S.page.evaluate(MARK_JS)
+            hist = A.page.evaluate("() => window.__rack.history()")
             ra, rb = (S.page.evaluate(DO_JS, e) for S in (A, B))
             t.same(f"{where}: what the edit answered", ra, rb)
             refused = bool(ra.get("error")) and not e.get("call")
+            # (an undo or a redo with nothing to take redraws nothing: its answer is the history as it was)
+            idle = e.get("call") and ra.get("history") == hist
             for S in (A, B):
-                if not S.settle(step and not refused and not ra.get("noop"), ms):
+                if not S.settle(step and not refused and not ra.get("noop") and not idle, ms):
                     t.same(f"{where}: {S.name} did not settle", 0, 1, show=False)
             snap_a, snap_b = A.page.evaluate(SNAP_JS), B.page.evaluate(SNAP_JS)
             compare_snaps(t, where, snap_a, snap_b)
