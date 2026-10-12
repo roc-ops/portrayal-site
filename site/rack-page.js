@@ -8,7 +8,7 @@ import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
 import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
-import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf} from '../vendor/rack/fit.js';
+import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
 import {zeroUEntries, hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
@@ -507,6 +507,8 @@ function onChange(ev) {
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
   if (ev.step) renderSoon();
+  // what the rack keeps and the page does not draw is said for the rack as it is now
+  if (ev.step) sayKept();
 }
 // A change the scene reads nothing of swaps the rack object under it. The scene
 // is kept and re-pointed at the new rack, but only if it was current for the
@@ -530,7 +532,9 @@ function setDoc(doc, notes = docNotes(doc)) {
   S.sel = null; S.cable.a = null; S.dcimDraft = null;
   S.routes = null;           // the last document's routes are not this one's (the 3D build reads them)
   S.bendsSaid = '';          // nor its tight bends: this document's are said once of their own
-  for (const f of findings) addNotice(f.text, 'note');
+  // (what the kit keeps and does not act on stands in the panel while it is true: sayKept. Not said twice.)
+  const stands = new Set(frameNotices(rack(), chassisOf));
+  for (const f of findings) if (!stands.has(f.text)) addNotice(f.text, 'note');
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
@@ -538,40 +542,53 @@ function setDoc(doc, notes = docNotes(doc)) {
   render();
   renderLibrary();
   if (S.mode === '3d') rebuild3d();
-  sayKept(docsSet);
+  S.kept = []; S.keptLate = [];
+  sayKept();
 }
 
-// WHAT A VERSION-4 FILE CARRIES THAT THIS PAGE KEEPS AND DOES NOT YET DRAW OR
-// SET (kit 0.22.0). The file is loaded, drawn and saved whole; what the page
-// cannot show is said once when the document opens, where its other notices
-// are, and never drawn as something it is not:
-//   - the kit's own sentences, which need the devices' parts lists (loadSlots),
-//     so the editor cannot give them on load as it gives frameNotices: a part
-//     hung on brackets that does not hang as its file says (zero-u.js
-//     hangNotices), and a state or a reading that is kept and not applied
-//     (states.js stateNotices);
+// WHAT THE RACK CARRIES THAT THIS PAGE KEEPS AND DOES NOT YET DRAW OR ACT ON
+// (rack file version 4, kit 0.22.0). The rack is loaded, drawn and saved
+// whole; what the page cannot show is SAID, beside its other notices, for as
+// long as it is true, and never drawn as something it is not:
+//   - the kit's sentences for what it keeps and does not act on (fit.js
+//     frameNotices: a rail width, a channel, a quarter turn, a held item);
+//   - the kit's sentences that need the devices' parts lists (loadSlots): a
+//     part hung on brackets that does not hang as the rack says (zero-u.js
+//     hangNotices), a state or a reading kept and not applied (states.js
+//     stateNotices);
 //   - a device mounted upside down, in the kit's sentence (rollNote): it is
 //     fitted, routed and exported as mounted, and drawn upright;
 //   - states and readings that do apply: kept, exported, and not drawn.
-// Only for a rack that carries one of these: a version-3 rack asks nothing.
+// DERIVED FROM THE RACK AS IT IS, AFTER EVERY CHANGE (setDoc, and onChange for
+// every step: an edit here, an assistant's, undo, redo), not said once when a
+// file opens: a roll, a state, a reading or a hang set by a command is said as
+// one read from a file is, and its sentence goes when the key does. They stand
+// in the side panel (keptParagraphs) until then; a version-3 rack has none.
 const keptOf = r => ({
   hung: zeroUOf(r).some(z => z.heldBy != null), rolled: r.items.filter(i => rollOf(i) === 180),
   set: [...r.items, ...zeroUOf(r)].filter(e => e.states != null || e.readings != null || e.readingsAsWritten != null)});
-async function sayKept(mine) {
-  const r = rack(), k = keptOf(r);
-  if (!k.hung && !k.rolled.length && !k.set.length) return;
-  const said = k.rolled.map(i => `${i.label}: ${rollNote(i)} It is fitted, routed and exported that way, and drawn upright here.`);
+let keptRun = 0;
+async function sayKept() {
+  const mine = ++keptRun, r = rack(), k = keptOf(r);
+  const said = [...frameNotices(r, chassisOf),
+    ...k.rolled.map(i => `${i.label}: ${rollNote(i)} It is fitted, routed and exported that way, and drawn upright here.`)];
   if (k.set.length) said.push(`${k.set.length === 1 ? `${k.set[0].label || k.set[0].ref} carries` : `${k.set.length} parts carry`} outlet states or readings: they are kept in the file and written to the exports, and not drawn here yet.`);
+  // what needs no parts list is said at once; the rest when the lists are read
+  const show = list => { if (mine !== keptRun || rack() !== r) return;
+    if (JSON.stringify(list) !== JSON.stringify(S.kept ?? [])) { S.kept = list; renderSoon(); } };
+  // (the kit's sentences of the last reading stand meanwhile, so the panel does not blink at every edit)
+  show([...said, ...(k.hung || k.set.length ? S.keptLate ?? [] : [])]);
+  if (!k.hung && !k.set.length) { S.keptLate = []; return; }
   try {
-    if (k.hung || k.set.length) {
-      const ctx = await agentContext(r, zeroUOf(r).map(z => z.ref));
-      said.push(...(k.hung ? hangNotices(r, ctx) : []), ...(k.set.length ? stateNotices(r, ctx) : []));
-    }
-  } catch (err) { console.warn('[portrayal] what the file keeps could not be checked', err); }
-  if (mine !== docsSet || !said.length) return;      // another document was opened meanwhile
-  for (const text of said) addNotice(text, 'note');
-  render();
+    const ctx = await agentContext(r, zeroUOf(r).map(z => z.ref));
+    const late = [...(k.hung ? hangNotices(r, ctx) : []), ...(k.set.length ? stateNotices(r, ctx) : [])];
+    if (mine !== keptRun || rack() !== r) return;
+    S.keptLate = late;
+    show([...said, ...late]);
+  } catch (err) { console.warn('[portrayal] what the rack keeps could not be checked', err); }
 }
+// The sentences of sayKept, as they stand in the side panel: status, not alerts.
+const keptParagraphs = () => (S.kept ?? []).map(text => el('p', {class: 'rk-notice rk-muted', role: 'status', 'data-kept': '', text}));
 
 // ── Cable mode (spec §9.2) ──────────────────────────────────────────────
 // A tool state beside 2D/3D: while it is on, a click in a pane picks a port
@@ -769,12 +786,40 @@ function pruneFilter() {
   for (const f of ['purpose', 'media']) if (on[f] != null && !countsBy(r.cables, f).has(on[f])) on[f] = null;
   S.cableFilter = on;
 }
+// WHETHER EVERY ROUTED LENGTH ALREADY STANDS AS THE KIT WOULD WRITE IT, from
+// the lengths routeFacts just read (the kit's pathLength of each cable's own
+// path): the test withRoutedLengths makes for each cable (route.js), without
+// laying the cables again. True only when it is certain: a cable that states
+// slack values is measured with them by the kit (routedLength), not by this
+// reading, so a rack with one is always asked.
+function lengthsStand(r, rf) {
+  for (const c of r.cables || []) {
+    if (c.lengthAsWritten != null || (c.length && c.length.source !== 'routed')) continue;
+    if (Array.isArray(c.slack) && c.slack.length) return false;
+    const got = rf.lengths.get(c.id);
+    if (!got) continue;
+    const need = Math.round(got.need * 100) / 100;
+    if (!(c.length?.value === got.value && c.length?.need === need && !('measured' in c.length))) return false;
+  }
+  return true;
+}
 // EACH CABLE'S SPARE (spare.js: the kit's spareOf), by the route context read
 // for the rack as it is (routesNow): none while it is another rack's, none for a cable with a
 // loose end, which is not drawn along its path, and none at all while the ends
 // could not be checked (an end not known to land is not said to have spare).
 // The list, the 2D titles and the hover label all read this, so they say one figure.
-const sparesNow = () => sparesOf(rack(), S.cableFacts.unchecked ? null : routesNow()?.ctx ?? null, looseIn(S.cableFacts.ends));
+// READ ONCE FOR A RACK, ITS ROUTES AND ITS ENDS: the list, the pane's titles
+// and the hover label each ask, on every redraw of the side panel, and the
+// kit's spareOf lays the cable again each time it is asked (it keeps which lay
+// it chose, not the lay). A rack is never changed in place, so the answer for
+// the same three objects is the same Map.
+let sparesMemo = null;
+const sparesNow = () => {
+  const r = rack(), ctx = S.cableFacts.unchecked ? null : routesNow()?.ctx ?? null, facts = S.cableFacts;
+  if (!sparesMemo || sparesMemo.rack !== r || sparesMemo.ctx !== ctx || sparesMemo.facts !== facts)
+    sparesMemo = {rack: r, ctx, facts, map: sparesOf(r, ctx, looseIn(facts.ends), ctx ? routesNow()?.readRack ?? null : null)};
+  return sparesMemo.map;
+};
 function cableListPanel() {
   const r = rack();
   pruneFilter();
@@ -784,7 +829,8 @@ function cableListPanel() {
   const now = routesNow();
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
-  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? []}) : [];
+  // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
+  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
   return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     spares: sparesNow(),
     ...bundleListHooks(),
@@ -1177,7 +1223,9 @@ async function redraw(keepRoutes = false) {
         // Not from facts with a face missing: a port not found there is not a port that is loose.
         if (rf.complete) {
           // onChange saves it and keeps the scene; the drawing below shows the length just kept.
-          const res = ed.apply({op: 'lengths.routed', routeCtx: rf.ctx}, {origin: 'system'});
+          // (asked only when a routed length would change: the command lays every cable again to find out, and
+          // on most redraws none has moved. lengthsStand says so from the lengths just read, by the kit's own rule.)
+          const res = lengthsStand(r, rf) ? {noop: true} : ed.apply({op: 'lengths.routed', routeCtx: rf.ctx}, {origin: 'system'});
           if (!res.error && !res.noop) r = rack();
         }
       }
@@ -1583,6 +1631,8 @@ function renderSide() {
   const kids = [body];
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
+  // what the rack keeps and the page does not draw, for as long as it is true (sayKept)
+  kids.push(...keptParagraphs());
   // Undo and Redo, each while there is a step to take, each saying what it would
   // take back or do again (spec §3.3). With nothing to undo the button is
   // absent, not disabled: a disabled button with no description is noise. The

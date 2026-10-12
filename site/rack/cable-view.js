@@ -16,7 +16,7 @@
 
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
-import {bundleSummary, strapDrawn, TIE_HALF, bendViolations, drawnDiameter} from './bundle-view.js';
+import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
@@ -587,7 +587,7 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
     if (!it || it.face !== pane) continue;
     if (!m.cables.some(id => drawn.has(id))) continue;
     // the band's middle: off the plate's face, on the side the cables are
-    const [cx, cy] = at2d({x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF)});
+    const [cx, cy] = at2d(tieCentre(m));
     // across the run: a run across the rack is seen along its length, and its band stands up; one in depth is seen end on, and its band lies flat
     const d = m.run === 'x' ? [0, TIE_HALF] : [TIE_HALF, 0];
     bars.append(strapBarEl(tieAttrs(m), {x1: cx - d[0], y1: cy - d[1], x2: cx + d[0], y2: cy + d[1]}, {kind: 'anchor', width_mm: m.width_mm}));

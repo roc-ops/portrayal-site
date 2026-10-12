@@ -36,16 +36,15 @@ import {spareOf as kitSpareOf} from '../../vendor/rack/route.js';
 import {lengthParts, endKey} from '../../vendor/rack/cable-rules.js';
 
 const M_PER = {m: 1, ft: 0.3048};
-// ROUNDING NEVER FLATTERS THE CORD. Figures are said to the centimetre (or
-// 0.01 ft). A spare is rounded DOWN, a shortfall UP and a route's need UP, so
-// no row says two figures that only rounding makes agree: a 0.62 m cord under
-// a need of 0.6232 m reads "needs 0.63 m", never "needs 0.62 m", and its
-// spare of 0.1968 m reads 0.19, never the 0.2 that would be dressing room.
-// The hair taken off before rounding keeps a figure that is exact in decimal
-// (0.3 m, 1 m) from moving a whole step on float noise.
-const HAIR = 1e-6;
-const down2 = x => Math.floor(x * 100 + HAIR) / 100;
-const up2 = x => Math.ceil(x * 100 - HAIR) / 100;
+// ONE ROUNDING RULE, THE KIT'S. Every figure is said to the nearest
+// centimetre (or 0.01 ft), as the kit says its own (slack.js mText, and the
+// cable schedule's `spare` cell): the list, the hover label, the assistant's
+// text and the schedule then give one figure for one cord. This page once
+// rounded a spare down and a need up, so that no row flattered a cord; the
+// schedule rounds, and a cord read 0.38 m on the page and 0.39 in the file.
+// The cost is at the edge: a cord a few millimetres under its need reads
+// "0 m short", with the need at the same figure as the cord.
+const r2 = x => Math.round(x * 100) / 100;
 
 /** A cable's spare by a route context, or null when it cannot be said: no
  *  context, no length on the cable, a length in a unit other than m or ft, or
@@ -55,12 +54,18 @@ const up2 = x => Math.ceil(x * 100 - HAIR) / 100;
  *  cord, need, spare, endPlay, toStore: the kit's stock_m, need_m, spare_m,
  *  end_play_m and to_store_m, in metres; pinned: the kit's; needs: the kit's
  *  need when a pinned cord is under it, else null. */
-export function spareFor(rack, cable, routeCtx) {
+export function spareFor(rack, cable, routeCtx, read = null) {
   if (!cable || !routeCtx) return null;
   const cord = lengthParts(cable.length);
   if (!cord || !Object.hasOwn(M_PER, cord.unit)) return null;
   let k = null;
-  try { k = kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
+  // ASKED OF THE RACK THE ROUTES WERE READ FROM, where that is the same
+  // question (`read`: {rack, cable}, from sparesOf). The kit keeps which lay
+  // of a cable it chose per rack object and cable object, and lays a cable
+  // from both ends the first time it is asked of a new one. The page's rack is
+  // a new object once its routed lengths are written, with a new object for
+  // each cable whose length was; nothing a route or a spare reads has moved.
+  try { k = read ? kitSpareOf(read.rack, read.cable, routeCtx) : kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
   if (!k) return null;
   const own = k.pinned ? {value: cord.value, unit: cord.unit} : {value: k.stock_m, unit: 'm'};
   return {...own, cord: k.stock_m, need: k.need_m, spare: k.spare_m, endPlay: k.end_play_m, toStore: k.to_store_m,
@@ -71,28 +76,39 @@ export function spareFor(rack, cable, routeCtx) {
  *  rack (route-context.js routeFacts' `ctx`). A cable with a loose end is left
  *  out: it is not drawn along its path. The caller hands no context when the
  *  ends could not be checked. */
-export function sparesOf(rack, routeCtx, isLoose = () => false) {
+export function sparesOf(rack, routeCtx, isLoose = () => false, readRack = null) {
   const out = new Map();
   if (!routeCtx) return out;
+  const was = new Map(readRack && readRack !== rack ? (readRack.cables || []).map(c => [c.id, c]) : []);
   for (const c of rack.cables || []) {
     if (isLoose(c.a) || isLoose(c.b)) continue;
-    const s = spareFor(rack, c, routeCtx);
+    const w = was.get(c.id);
+    const s = spareFor(rack, c, routeCtx, w && sameQuestion(w, c) ? {rack: readRack, cable: w} : null);
     if (s) out.set(c.id, s);
   }
   return out;
 }
+// Whether the kit's spareOf answers the same for two objects of one cable:
+// everything a route or a spare reads is the same object or value, and the
+// length is the same, or is a routed one on both (the kit reads a routed
+// length from the path, never from the cable) or absent on one.
+const routedOrNone = l => !l || l.source === 'routed';
+const sameQuestion = (w, c) => w === c || (w.a === c.a && w.b === c.b && w.media === c.media && w.type === c.type
+  && w.route === c.route && w.routeEdited === c.routeEdited && w.slack === c.slack && w.lay === c.lay && w.straps === c.straps
+  && w.lengthAsWritten === c.lengthAsWritten && (w.length === c.length || (routedOrNone(w.length) && routedOrNone(c.length))));
+
 /** sparesOf's `isLoose`, from cableFacts' ends (endKey -> {info, reason}). */
 export const looseIn = ends => e => ends?.get(endKey(e))?.reason != null;
 
 // A length of `metres` in the cord's own unit, to the centimetre (or 0.01 ft).
 const isShort = s => s.spare < -1e-9;
-/** "0.57 m": the spare alone (rounded down), or the shortfall (rounded up), in the cord's unit. */
-export const spareAmount = s => `${isShort(s) ? up2(-s.spare / M_PER[s.unit]) : down2(Math.max(0, s.spare) / M_PER[s.unit])} ${s.unit}`;
+/** "0.57 m": the spare alone, or the shortfall, in the cord's unit, to the nearest hundredth. */
+export const spareAmount = s => `${r2(Math.abs(s.spare) / M_PER[s.unit])} ${s.unit}`;
 /** "1 m cord, 0.57 m spare"; a cord under what its route needs reads "0.3 m
  *  cord, 0.18 m short". */
 export const spareText = s => `${s.value} ${s.unit} cord, ${spareAmount(s)} ${isShort(s) ? 'short' : 'spare'}`;
 /** "the route needs 0.68 m", in the cord's own unit, when a pinned length is
  *  under the kit's need, else null. */
-export const needsText = s => (s.needs == null ? null : `the route needs ${up2(s.needs / M_PER[s.unit])} ${s.unit}`);
+export const needsText = s => (s.needs == null ? null : `the route needs ${r2(s.needs / M_PER[s.unit])} ${s.unit}`);
 /** The cable list's one line of explanation. */
 export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';

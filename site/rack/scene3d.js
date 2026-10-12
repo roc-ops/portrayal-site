@@ -10,7 +10,7 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF} from './bundle-view.js';
+import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF, tieCentre} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom, uLabel} from '../../vendor/rack/model.js';
@@ -419,7 +419,7 @@ async function hangBundles(scene, rack, facts, boxes = null) {
       const mat = new THREE.MeshStandardMaterial({color: new THREE.Color(strapPaint(facts.stage ?? '#101214').core), roughness: 0.8});
       mat.userData.strap = true;
       const band = new THREE.Mesh(new THREE.CylinderGeometry(TIE_HALF, TIE_HALF, STRAP_BAND * strapDrawn(m) / STRAP_DRAWN, 16, 1, false), mat);
-      band.position.copy(toScene({x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z}));
+      band.position.copy(toScene(tieCentre(m)));
       band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), m.run === 'z' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0));
       band.name = `tie-strap-${slot}`;
       band.userData.strap = {tie: slot, cables: [...m.cables], kind: 'anchor', width_mm: m.width_mm, held: m.held};

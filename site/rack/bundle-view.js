@@ -30,6 +30,25 @@ export const strapDrawn = s => (Number(s?.width_mm) > 0 ? STRAP_DRAWN * Number(s
 // a tray's tie slot, round the cables lying there. How far it reaches each
 // side of them as drawn, mm.
 export const TIE_HALF = 5;
+/** A tie strap's mark for one tie slot (route-context.js tieStraps): `slot` is
+ *  the kit's anchor ({item, via, tie, width_mm, cables}), `tray` its tray
+ *  (solids.js traysOf: `top` and `under`, the heights of the plate's two
+ *  faces, `run`, and `ties`, plan rectangles), `rest` how the first of its
+ *  cables lies there (the path's `rests` entry: `role` held or resting). `at`
+ *  is on the FACE OF THE PLATE THE CABLES ARE ON: its underside for a cable
+ *  held under it, its top for one resting on it. Null without the slot. */
+export function tieMark(slot, tray, rest) {
+  const r = tray?.ties?.[slot.tie];
+  if (!r) return null;
+  const held = rest?.role === 'held';
+  return {item: slot.item, via: slot.via, tie: slot.tie, width_mm: slot.width_mm, cables: [...slot.cables], run: tray.run, held,
+          at: {x: (r.x0 + r.x1) / 2, y: held ? tray.under : tray.top, z: (r.z0 + r.z1) / 2}};
+}
+/** The middle of a tie strap's band as drawn, in rack mm: off the plate's
+ *  face by half the band, on the side the cables are (below the underside for
+ *  a held cable, above the top for a resting one). One answer for the panes,
+ *  the side panes and the 3D scene. */
+export const tieCentre = m => ({x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z});
 
 // THE STRAPS OF A BUNDLE IN WORDS, by kind, as the kit counts them
 // (straps().kinds): "9 straps (2 every 12 in, 7 where a cable leaves)". A

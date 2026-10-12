@@ -32,7 +32,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         zeroUNotes, zeroUImportItems, bundleExports, strapBomRows, strapBomNotes} from '../../vendor/rack/export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {routeFacts, routeNotes, withCableTypes, cableTypes, landedBends} from './route-context.js';
-import {LANE_GAP, bodyFindings, bendFindings, coverFindings} from '../../vendor/rack/route.js';
+import {LANE_GAP, bodyFindings, bendFindingsOf, coverFindingsOf} from '../../vendor/rack/route.js';
 import {spareExports} from '../../vendor/rack/slack.js';
 import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
 import {looseIn} from './spare.js';
@@ -824,8 +824,10 @@ export async function cableScheduleCsv(rack, chassisOf) {
   const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf), rf?.routes,
                                                    {bundles: rf?.bundleRecords ?? null,
                                                     bodies: rf?.ctx ? bodyFindings(rack, rf.ctx, name) : null,
-                                                    bends: rf?.ctx ? landed(bendFindings(rack, rf.ctx, name)) : null,
-                                                    covers: rf?.ctx ? landed(coverFindings(rack, rf.ctx, name)) : null,
+                                                    // (each from the path already read for its cable: what the kit's rack-wide
+                                                    // bendFindings and coverFindings call per cable, without laying it again)
+                                                    bends: rf?.ctx ? landed((rack.cables || []).flatMap(c => bendFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
+                                                    covers: rf?.ctx ? landed((rack.cables || []).flatMap(c => coverFindingsOf(rack, c, rf.ctx, name, rf.paths.get(c.id)))) : null,
                                                     spare: spareOf(rack, rf),
                                                     straps: rf?.bctx ? strapTexts(rack, rf.bctx, name) : null});
   notes.push(...routeNotes(rack, rf, labelOf(rack), {bodies: false}));

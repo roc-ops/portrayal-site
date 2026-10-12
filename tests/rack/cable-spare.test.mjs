@@ -65,8 +65,8 @@ test('the spare is the kit\'s for every media: stock less need, with the end pla
     assert.equal(s.needs, null);
     assert.equal(needsText(s), null);
     assert.deepEqual(Object.keys(s).sort(), ['cord', 'endPlay', 'need', 'needs', 'pinned', 'spare', 'toStore', 'unit', 'value']);
-    assert.equal(spareText(s), `${s.cord} m cord, ${Math.floor(s.spare * 100 + 1e-6) / 100} m spare`);
-    assert.equal(spareAmount(s), `${Math.floor(s.spare * 100 + 1e-6) / 100} m`);
+    assert.equal(spareText(s), `${s.cord} m cord, ${Math.round(s.spare * 100) / 100} m spare`);
+    assert.equal(spareAmount(s), `${Math.round(s.spare * 100) / 100} m`);
   }
   assert.equal(R.END_PLAY_M, 0.1);
 });
@@ -77,11 +77,11 @@ test('a length in feet is said in feet, cord and spare both', () => {
   const want = 3 * 0.3048 - needOf(r, c, ctx, 3 * 0.3048);
   near(s.spare, want, 'metres under the words');
   assert.equal(s.pinned, true);
-  assert.equal(spareText(s), `3 ft cord, ${Math.floor(want / 0.3048 * 100 + 1e-6) / 100} ft spare`);
+  assert.equal(spareText(s), `3 ft cord, ${Math.round(want / 0.3048 * 100) / 100} ft spare`);
   assert.equal(needsText(s), null);
   // the same cord entered in metres says the same length in metres
   const m = cord('om4', {value: 0.9144, unit: 'm', source: 'entered'});
-  assert.equal(spareText(spareFor(rackOf([m]), m, ctx)), `0.9144 m cord, ${Math.floor(want * 100 + 1e-6) / 100} m spare`);
+  assert.equal(spareText(spareFor(rackOf([m]), m, ctx)), `0.9144 m cord, ${Math.round(want * 100) / 100} m spare`);
   // and a length a DCIM gave is pinned as an entered one is
   assert.equal(spareFor(rackOf([{...c, length: {value: 3, unit: 'ft', source: 'dcim'}}]), {...c, length: {value: 3, unit: 'ft', source: 'dcim'}}, ctx).pinned, true);
 });
@@ -96,12 +96,12 @@ test('a pinned cord under the kit\'s need is short, and says the kit\'s need in 
   assert.ok(s.spare < 0);
   near(s.needs, need, 'the need is the kit\'s');
   assert.equal(R.spareOf(r, c, ctx).need_m, s.needs);
-  assert.equal(spareText(s), `${value} m cord, ${Math.ceil((need - value) * 100 - 1e-6) / 100} m short`);
-  assert.equal(needsText(s), `the route needs ${Math.ceil(need * 100 - 1e-6) / 100} m`);
+  assert.equal(spareText(s), `${value} m cord, ${Math.round((need - value) * 100) / 100} m short`);
+  assert.equal(needsText(s), `the route needs ${Math.round(need * 100) / 100} m`);
   // in feet
   const f = cord('om4', {value: 0.5, unit: 'ft', source: 'entered'}), sf = spareFor(rackOf([f]), f, ctx);
   assert.match(spareText(sf), /^0\.5 ft cord, [\d.]+ ft short$/);
-  assert.equal(needsText(sf), `the route needs ${Math.ceil(need / 0.3048 * 100 - 1e-6) / 100} ft`);
+  assert.equal(needsText(sf), `the route needs ${Math.round(need / 0.3048 * 100) / 100} ft`);
   // a routed length never is, whatever it says
   assert.equal(spareFor(r, {...c, length: {...c.length, source: 'routed'}}, ctx).needs, null);
 });
@@ -182,24 +182,24 @@ test('the list\'s line and the agent\'s text carry the same words, and the agent
   assert.doesNotMatch(src, /import\s*\{[^}]*(endAllowance|END_ALLOWANCE_BY_MEDIA|pathLength)[^}]*\}/);
 });
 
-test('rounding never flatters the cord: a need is said rounded up, a spare down, a shortfall up', () => {
+test('one rounding rule, the kit\'s: a spare, a shortfall and a need are each said to the nearest hundredth, as the schedule says them', () => {
   const ctx = ctxOf();
   const probe = cord('om4', {value: 9, unit: 'm', source: 'entered'}), need = needOf(rackOf([probe]), probe, ctx, 9);
-  for (const [value, unit] of [[need - 0.003, 'm'], [need - 0.2, 'm'], [need + 0.1968, 'm'], [need + 0.0049, 'm'],
+  const r2 = x => Math.round(x * 100) / 100;
+  for (const [value, unit] of [[need - 0.003, 'm'], [need - 0.2, 'm'], [need + 0.1968, 'm'], [need + 0.0049, 'm'], [need + 0.386, 'm'],
                                [(need - 0.001) / 0.3048, 'ft'], [(need + 0.1) / 0.3048, 'ft'], [1, 'ft'], [3, 'ft']]) {
-    const k = cord('om4', {value, unit, source: 'entered'}), sk = spareFor(rackOf([k]), k, ctx);
+    const k = cord('om4', {value, unit, source: 'entered'}), r = rackOf([k]), sk = spareFor(r, k, ctx);
     const per = unit === 'ft' ? 0.3048 : 1;
     const said = Number(spareText(sk).match(/, ([\d.]+) /)[1]);
-    if (/short/.test(spareText(sk))) {
-      assert.ok(said * per >= -sk.spare - 1e-9 && said > 0, `${value} ${unit}: the shortfall ${said} is not under-read`);
-      const n = Number(needsText(sk).match(/needs ([\d.]+) /)[1]);
-      assert.ok(n > value - 1e-9 && n * per >= sk.needs - 1e-9, `${value} ${unit}: the need ${n} is not under-read`);
-    } else {
-      assert.ok(said * per <= sk.spare + 1e-9, `${value} ${unit}: the spare ${said} is not over-read`);
-      assert.equal(needsText(sk), null);
+    assert.equal(said, r2(Math.abs(sk.spare) / per), `${value} ${unit}`);
+    if (unit === 'm' && sk.spare >= 0) {
+      // THE SCHEDULE'S CELL for the same cord is the same figure (export-data.js: Math.round(spare_m * 100) / 100)
+      assert.equal(said, Math.round(R.spareOf(r, k, ctx).spare_m * 100) / 100, `${value} m: the page and the schedule differ`);
     }
+    if (/short/.test(spareText(sk))) assert.equal(Number(needsText(sk).match(/needs ([\d.]+) /)[1]), r2(sk.needs / per));
+    else assert.equal(needsText(sk), null);
   }
-  // a spare of 0.1968 m is said as 0.19, never 0.2
-  const c = cord('om4', {value: need + 0.1968, unit: 'm', source: 'entered'});
-  assert.match(spareText(spareFor(rackOf([c]), c, ctx)), /, 0\.19 m spare$/);
+  // a spare of 0.386 m is 0.39 on the page, as in the file: it read 0.38 while the page rounded down
+  const c = cord('om4', {value: need + 0.386, unit: 'm', source: 'entered'});
+  assert.match(spareText(spareFor(rackOf([c]), c, ctx)), /, 0\.39 m spare$/);
 });

@@ -50,7 +50,7 @@ import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {elevationBox} from './elevation.js';
-import {bundleSummary, drawnDiameter, TIE_HALF} from './bundle-view.js';
+import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre} from './bundle-view.js';
 import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
@@ -413,7 +413,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   // of the plate the cables are on. From the side it stands across the tray.
   for (const m of routes.tieStraps ?? []) {
     if (!m.cables.some(id => onPane.has(id))) continue;
-    const [cx, cy] = project(pane, frame, {x: m.at.x, y: m.at.y + (m.held ? -TIE_HALF : TIE_HALF), z: m.at.z});
+    const [cx, cy] = project(pane, frame, tieCentre(m));
     bars.append(strapBarEl(tieAttrs(m), {x1: n3(cx), y1: n3(cy - TIE_HALF), x2: n3(cx), y2: n3(cy + TIE_HALF)}, {kind: 'anchor', width_mm: m.width_mm}));
   }
   if (bands.childElementCount) layer.prepend(bands);

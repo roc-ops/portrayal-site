@@ -19,7 +19,9 @@ import {withCableTypes} from './route-context.js';
 
 export function agentContextFor({loadSlots, chassisOf, cableFacts, routeFacts, cableTypes}) {
   return async (r, refs = [], {route = false} = {}) => {
-    const {slotsOf, compByRef} = await loadSlots([...new Set([...r.items.map(i => i.ref), ...refs])]);
+    // (the parts beside the rack too: a PDU's outlet states and readings, and what hangs on a bracket,
+    // are checked against its parts list: kit 0.22.0 state.set, readings.set, zerou.hang)
+    const {slotsOf, compByRef} = await loadSlots([...new Set([...r.items.map(i => i.ref), ...(Array.isArray(r.zeroU) ? r.zeroU : []).map(z => z?.ref).filter(Boolean), ...refs])]);
     const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
     if (!route) return ctx;
     const [rf, types] = await Promise.all([

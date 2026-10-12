@@ -5861,12 +5861,12 @@ SPARE_WANT_JS = """async () => {
     const need = mm / 1000 + 2 * R.END_ALLOWANCE_BY_MEDIA[c.media] + R.shortTolerance(c, cord);
     const spare = cord - need;
     const kit = R.spareOf(rack, c, window.__rack.routeContext());
-    // said so that rounding never flatters the cord: a spare down, a shortfall and a need up
-    const dn = x => Math.floor(x * 100 + 1e-6) / 100, up = x => Math.ceil(x * 100 - 1e-6) / 100;
-    const shown = spare < -1e-9 ? -up(-spare / PER[unit]) : dn(Math.max(0, spare) / PER[unit]);
+    // one rounding rule, the kit's: each figure to the nearest hundredth, as the schedule's cell says it
+    const up = x => Math.round(x * 100) / 100, short = spare < -1e-9;
+    const shown = up(Math.abs(spare) / PER[unit]);
     // a length that is not the page's own measurement, under what the cord must at least be
     const under = l.source !== 'routed' && cord < need - 1e-9;
-    const text = `${l.value} ${unit} cord, ${Math.abs(shown)} ${unit} ${shown < 0 ? 'short' : 'spare'}`;
+    const text = `${l.value} ${unit} cord, ${shown} ${unit} ${short ? 'short' : 'spare'}`;
     const asks = under ? `the route needs ${up(need / PER[unit])} ${unit}` : null;
     out[c.id] = {value: l.value, unit, source: l.source, stock: p.value, measured: p.measured, need, path_mm: Math.round(mm), spare,
       kit: kit && {spare: kit.spare_m, need: kit.need_m, stock: kit.stock_m, end_play: kit.end_play_m}, end_play: R.END_PLAY_M,
@@ -6143,14 +6143,15 @@ def check_rack_cable_spare(page, base):
     wait_fn(page, "spare: the routes after the press", ROUTES_CURRENT)
     park_mouse(page)
     # A CORD UNDER THE NEED BY LESS THAN A DISPLAYED STEP. c12's route needs about 0.4232 m; a cord cut to the
-    # centimetre under that is short, and the need it names is rounded up, so it reads more than the cord.
+    # centimetre under that is short, and says so. Its figures are rounded as the kit rounds every figure (one rule
+    # for the page and the schedule), so the need it names is the kit's to the nearest centimetre.
     near = math.floor(want["c12"]["need"] * 100) / 100
     give("c12", near, "short")
     want = page.evaluate(SPARE_WANT_JS)
     hair = want["c12"]
     m = re.fullmatch(r"the route needs ([\d.]+) m", hair["asks"] or "")
-    if not (near < hair["need"] < near + 0.01) or not m or float(m.group(1)) <= near or not hair["text"].endswith(" m short"):
-        bad.append(f"rounding: c12 at {near} m on a route needing {hair['need']} m should be short and name a need over {near} m: {hair}")
+    if not (near < hair["need"] < near + 0.01) or not m or float(m.group(1)) != round(hair["need"] * 100) / 100 or not hair["text"].endswith(" m short"):
+        bad.append(f"rounding: c12 at {near} m on a route needing {hair['need']} m should be short and name the kit's need to the centimetre: {hair}")
     read_list(f"2D list, c12 at {near} m")
     spare_hover(page, bad, f"2D hover, c12 at {near} m", SPARE_PT_2D_JS, "c12", hair)
     # The agent's text for each: its need on the length (the kit's, 0.22.0), then the cord, then what the route asks for.
@@ -15944,6 +15945,11 @@ def check_rack_export_cable_schedule(page, base):
             bad.append(f"cable schedule: {r['id']} says spare {r.get('spare')!r}, stored {r.get('stored')!r}, straps {r.get('straps')!r}; the kit gives {k}")
         if r.get("status") == "connected" and not (float(r["spare"] or 0) > 0 and r["stored"].endswith(" at the ends")):
             bad.append(f"cable schedule: {r['id']} is connected and says no spare: {r}")
+    # THE PAGE AND THE FILE SAY ONE FIGURE: each connected cable's row in the list ends with the schedule's spare.
+    listed = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('#cableList li[data-cable-item]')].map(li => [li.dataset.cableItem, li.querySelector('.rk-cable-meta')?.textContent ?? '']))")
+    for r in rows:
+        if r.get("status") == "connected" and not listed.get(r["id"], "").endswith(f", {r['spare']} m spare"):
+            bad.append(f"cable schedule: {r['id']}'s spare is {r['spare']} m in the file, and its row in the list reads {listed.get(r['id'])!r}")
     rows = [{k: v for k, v in r.items() if k not in ("spare", "stored", "straps")} for r in rows]
     want = [
         {"id": "c1", "cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
@@ -18393,6 +18399,17 @@ def check_rack_strap_kinds(page, base):
         if not x or abs(x["at"][0] - (450.85 / 2 + (slot["x0"] + slot["x1"]) / 2)) > 1e-6 or abs((H - x["at"][1]) - face) > 5 + 1e-6 \
                 or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
             bad.append(f"2D: the tie strap at {m['item']} {m['via']} slot {m['tie']} is {x}; its slot is at x {(slot['x0'] + slot['x1']) / 2}, the plate's face at {face}")
+    # WHICH FACE OF THE PLATE: a cord resting on the tray's top is tied above it, and one held under it is tied
+    # under it. Every tie strap here rests, and is above its plate; a held one is pinned by tests/rack/tie-straps.test.mjs,
+    # since no rack the page can build today holds a single cord under a tray.
+    def faces(state, where):
+        for m in state["ties"]:
+            tray = next(t for t in state["trays"] if t["item"] == m["item"] and t["via"] == m["via"])
+            x = next((x for x in state["front"] if x["strap"] == f"tie:{m['item']}|{m['via']}|{m['tie']}"), None)
+            y = x and H - x["at"][1]
+            if y is None or (m["held"] and not y < tray["under"]) or (not m["held"] and not y > tray["top"]):
+                bad.append(f"{where}: the tie strap of slot {m['tie']} ({'held under' if m['held'] else 'resting on'} the plate, top {tray['top']}, underside {tray['under']}) is drawn at height {y}")
+    faces(s, "2D")
     kit = bom_line("tie straps")
     if kit["bare"] or kit["totals"]["anchor"] != len(s["ties"]) or kit["totals"]["total"] != len(s["ties"]):
         bad.append(f"BOM: with no bundle, the strap line counts the single cables' {len(s['ties'])} tie slots only when handed them: without, {kit['bare']}; totals {kit['totals']}")
@@ -18524,6 +18541,16 @@ def check_explorer_position_control(page, base):
     said = page.evaluate("() => document.querySelector('#positions [role=status]').textContent")
     if said != "rail-setback on DINRAIL2U takes 51.2 to 271.2 mm. 300 is outside it." or page.evaluate(moved) != after:
         bad.append(f"positions: 300 mm reads {said!r}, and the panel {'moved' if page.evaluate(moved) != after else 'stayed'}")
+    # A VIEW THAT CANNOT SHOW THE MOTION names the views that do, and 3D, which this page offers (`threeD`).
+    page.goto(f"{base}/explorer.html?device=dinrail2u&view=front", wait_until="load")
+    wait_sel(page, "positions: the control on the front view", "#positions input[type=range]")
+    try:
+        wait_fn(page, "positions: the front view's line", "() => /The front view does not show this\\./.test(document.getElementById('positions').textContent)", timeout=15000)
+    except RuntimeError:
+        pass
+    line = page.evaluate("() => (document.getElementById('positions').textContent.match(/The front view does not show this\\.[^.]*\\./) || [null])[0]")
+    if not line or not line.endswith(", or 3D.") or "top" not in line:
+        bad.append(f"positions: on the front view the control says {line!r}; expected the views that show the motion, and 3D")
     # A LINK CARRIES THE VALUE BACK.
     page.goto(f"{base}/explorer.html?device=dinrail2u&view=top&fields=rail-panel~rail-setback~100", wait_until="load")
     wait_sel(page, "positions: the control from a link", "#positions input[type=number]")
@@ -18641,6 +18668,98 @@ def check_rack_rear_module_port(page, base):
       return {port: port ? [port.position.x, port.position.y, port.position.z - faceZ, port.path] : null, meshes: n, back: lo - faceZ}; }""")
     if not three["port"] or three["port"][3] != "bay-1/module/b01" or not (three["port"][2] < -100) or not three["meshes"] or three["back"] > three["port"][2] + 5:
         bad.append(f"3D: the rear port's anchor is {three['port']}, and c1's tube ({three['meshes']} meshes) reaches back to {three['back']} (it must reach the port, behind the rails)")
+    return bad
+
+
+
+KEPT_FIXTURE = {
+    "format": "portrayal-rack", "version": 3, "id": "doc-kept-notices",
+    "racks": [{"id": "r1", "name": "Kept notices",
+               "frame": {"kind": "four-post", "heightRU": 45, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                         "railDepth": 740, "usableDepth": 1000, "ref": None},
+               "items": [{"id": "i1", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "leaf", "ru": 20, "face": "front", "turned": False, "swaps": {}, "fields": {}}],
+               "zeroU": [{"id": "z1", "ref": "evma8365x", "cfg": "base", "label": "pdu-a", "at": "left-rear", "offsetMm": 0}],
+               "cables": []}]}
+
+
+@extra("rack.html: what the rack keeps and the page does not draw is said for the rack as it is after every change, not only when a file opens - a roll, a quarter turn, an outlet state, readings and a hang set by a command (the page's or the assistant's) each raise their sentence, undo and redo take it away and bring it back, and it goes when the key does")
+def check_rack_kept_notices_follow_edits(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)     # the assistant's tools
+    open_fixture(page, base, KEPT_FIXTURE)
+    kept = lambda: page.evaluate("() => [...document.querySelectorAll('#side [data-kept]')].map(p => p.textContent)")
+    def until(label, js, arg=None):
+        try:
+            wait_fn(page, f"kept: {label}", js, arg=arg, timeout=15000)
+        except RuntimeError:
+            bad.append(f"{label}: the panel's standing notices are {kept()}")
+    has = "t => [...document.querySelectorAll('#side [data-kept]')].some(p => p.textContent.includes(t))"
+    lacks = "t => ![...document.querySelectorAll('#side [data-kept]')].some(p => p.textContent.includes(t))"
+    page.wait_for_timeout(800)
+    if kept():
+        bad.append(f"a version-3 rack with none of these keys says {kept()}")
+    apply = lambda cmd: page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }", cmd)
+    tool = lambda cmds: page.evaluate("async c => { const out = await window.__tools.edit_rack.execute({commands: c}); return out.isError ? (out.content ?? []).map(x => x.text).join(' ') : null; }", cmds)
+    # 1. UPSIDE DOWN, by the page's own command: said; undone: gone; redone: back; unset: gone.
+    UP = "leaf: Mounted upside down. It is fitted, routed and exported that way, and drawn upright here."
+    if apply({"op": "patch", "id": "i1", "roll": 180}):
+        return bad + ["patch roll 180 was refused"]
+    until("after patch roll 180", has, UP)
+    page.evaluate("() => window.__rack.undo()")
+    until("after undoing the roll", lacks, "Mounted upside down")
+    page.evaluate("() => window.__rack.redo()")
+    until("after redoing the roll", has, UP)
+    apply({"op": "patch", "id": "i1", "roll": None})
+    until("after the roll is taken off", lacks, "Mounted upside down")
+    # 2. A QUARTER TURN, by the assistant: the kit's own sentence (fit.js frameNotices), and gone with it.
+    err = tool([{"op": "patch", "id": "i1", "roll": 90}])
+    if err:
+        bad.append(f"the assistant's patch roll 90 was refused: {err}")
+    kit = page.evaluate("""async () => { const F = await import('/vendor/rack/fit.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices; return F.frameNotices(window.__rack.doc().racks[0], x => cat[x] ?? null); }""")
+    if len(kit) != 1 or "rolled a quarter turn" not in kit[0]:
+        bad.append(f"fixture: the kit's frame notices for a quarter turn are {kit}")
+    else:
+        until("after the assistant's quarter turn", has, kit[0])
+    tool([{"op": "patch", "id": "i1", "roll": None}])
+    until("after the quarter turn is taken off", lacks, "rolled a quarter turn")
+    # 3. AN OUTLET STATE, by the assistant (it has the parts lists): said, with the kit's sentence for a state that is not one; cleared: gone.
+    SET = "pdu-a carries outlet states or readings: they are kept in the file and written to the exports, and not drawn here yet."
+    err = tool([{"op": "state.set", "id": "z1", "path": "outlet-a2", "state": "off"}])
+    if err:
+        bad.append(f"state.set was refused: {err}")
+    until("after state.set", has, SET)
+    if (page.evaluate("() => window.__rack.doc().racks[0].zeroU[0].states") or {}).get("outlet-a2") != "off":
+        bad.append("state.set did not store the state")
+    tool([{"op": "state.set", "id": "z1", "path": "outlet-a2", "state": None}])
+    until("after the state is cleared", lacks, "outlet states or readings")
+    # 4. READINGS, by the assistant: the same sentence; cleared: gone.
+    err = tool([{"op": "readings.set", "id": "z1", "readings": {"source": "snmp", "at": "2026-10-11T12:00:00Z", "values": {"outlet-a1": {"current-a": 1.2}}}}])
+    if err:
+        bad.append(f"readings.set was refused: {err}")
+    until("after readings.set", has, SET)
+    tool([{"op": "readings.set", "id": "z1", "readings": None}])
+    until("after the readings are cleared", lacks, "outlet states or readings")
+    # 5. A HANG. No part in the library offers a slot yet, so zerou.hang cannot hang one; a rack that says a part
+    # hangs (an edit that puts it there, as an opened file would) gets the kit's sentence, and loses it on undo.
+    no = tool([{"op": "zerou.hang", "id": "z1", "on": ["z9"]}])
+    if not no:
+        bad.append("fixture: zerou.hang onto a bracket that is not there was accepted")
+    page.evaluate("""() => { const r = structuredClone(window.__rack.doc().racks[0]); r.zeroU[0].heldBy = {parts: ['z9']};
+      window.__rack.replaceRack(r, {text: 'Hung pdu-a.'}); }""")
+    hang = page.evaluate("""async () => { const Z = await import('/vendor/rack/zero-u.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices, r = window.__rack.doc().racks[0], sl = await C.loadSlots('/assets/dist/', r.zeroU.map(z => z.ref));
+      return Z.hangNotices(r, {chassisOf: x => cat[x] ?? null, slotsOf: sl.slotsOf, compByRef: sl.compByRef}); }""")
+    if not hang:
+        bad.append("fixture: the kit has no hang notice for a part held by a bracket that is not there")
+    else:
+        until("after a part is said to hang", has, hang[0])
+        page.evaluate("() => window.__rack.undo()")
+        until("after the hang is undone", lacks, hang[0])
+    page.wait_for_timeout(500)
+    if kept():
+        bad.append(f"with every key taken off again, the panel still says {kept()}")
     return bad
 
 
