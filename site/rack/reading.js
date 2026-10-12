@@ -42,6 +42,8 @@ import {routeFacts} from './route-context.js';
 
 // rack -> {chassisOf, promise, dead}
 const kept = new WeakMap();
+// route context -> the rack it was read from (a context is made once, for one reading)
+const readFrom = new WeakMap();
 
 /** The routes of `rack` (route-context.js routeFacts' answer), read once for
  *  this rack object and `chassisOf`. `cableFacts` are the caller's, when it
@@ -53,7 +55,7 @@ export function routesOf(rack, chassisOf, {cableFacts = null} = {}) {
   if (hit && !hit.dead && hit.chassisOf === chassisOf) return hit.promise;
   const entry = {chassisOf, promise: null, dead: false};
   entry.promise = routeFacts(rack, chassisOf, {cableFacts}).then(
-    rf => { if (!rf?.whole) entry.dead = true; return rf; },
+    rf => { if (!rf?.whole) entry.dead = true; if (rf?.ctx && rf.readRack) readFrom.set(rf.ctx, rf.readRack); return rf; },
     err => { entry.dead = true; throw err; });
   kept.set(rack, entry);
   return entry.promise;
@@ -68,6 +70,47 @@ export function sameReading(before, after) {
 
 /** Whether a reading of `rack` is held (finished or on its way) for `chassisOf`. */
 export const hasReading = (rack, chassisOf) => { const hit = kept.get(rack); return !!hit && !hit.dead && hit.chassisOf === chassisOf; };
+
+// THE RACK TO ASK THE KIT OF. The kit keeps what it decides for a cable (which
+// side its route takes, where its turns are given room, which end it is laid
+// from) per rack object, context and cable object, and deciding is the dear
+// part of a reading: 37 of the 56 seconds a 288-cable rack takes. The page
+// writes the routed lengths it has just measured into the rack, which makes a
+// NEW rack object, with a new object for each cable whose length was written;
+// so the first question anyone then asked the kit of the rack as it is (an
+// assistant's describe_rack, an export) had every cable decided again, after
+// every edit that moved a length by a centimetre.
+//
+// `askOf(rack, routeCtx)` is the rack to hand the kit with that context: the
+// one the routes were READ from, when it differs from `rack` in nothing but
+// routed lengths rewritten and the DCIM settings, and `rack` itself otherwise.
+// It is for a question that reads no routed length's value: the kit measures a
+// routed cord off its path, never off the number stored, and only asks whether
+// a cable has a length at all, so a cable that had none when the routes were
+// read and has one now is NOT the same question, and `rack` is what is asked.
+// spare.js asks the same way for one cable (sameQuestion).
+const routed = l => !!l && l.source === 'routed';
+function sameCable(w, c) {
+  if (w === c) return true;
+  if (!w || !c) return false;
+  for (const k of new Set([...Object.keys(w), ...Object.keys(c)])) if (k !== 'length' && w[k] !== c[k]) return false;
+  return w.length === c.length || (routed(w.length) && routed(c.length));
+}
+export function sameButRoutedLengths(read, rack) {
+  if (read === rack) return true;
+  if (!read || !rack) return false;
+  for (const k of new Set([...Object.keys(read), ...Object.keys(rack)])) if (k !== 'cables' && k !== 'dcim' && read[k] !== rack[k]) return false;
+  const a = read.cables || [], b = rack.cables || [];
+  return a.length === b.length && a.every((w, i) => sameCable(w, b[i]));
+}
+const asked = new WeakMap();   // rack -> {read, same}
+export function askOf(rack, routeCtx) {
+  const read = routeCtx ? readFrom.get(routeCtx) : null;
+  if (!read || read === rack) return rack;
+  let hit = asked.get(rack);
+  if (!hit || hit.read !== read) asked.set(rack, hit = {read, same: sameButRoutedLengths(read, rack)});
+  return hit.same ? read : rack;
+}
 
 // AN ANSWER, ONCE FOR A RACK AND A QUESTION. `key` names the question and
 // `deps` are the objects the answer was built with (the route context, the

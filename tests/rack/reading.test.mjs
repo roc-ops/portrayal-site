@@ -211,3 +211,79 @@ test('inspect of a cable or a bundle with the routes is asked once; a device, an
   assert.equal(asked, 8);
   assert.notEqual(await inspectOnce(inspect, {...r}, 'c1', ctx, f => f === good), a, 'another rack object is asked afresh');
 });
+
+// ── the rack the kit is asked of (reading.js askOf) ────────────────────────
+import {askOf, sameButRoutedLengths} from '../../site/rack/reading.js';
+
+const routedLen = (value, need) => ({value, unit: 'm', source: 'routed', need});
+const cabled = cables => ({...empty(), cables});
+const cableOf = (id, extra = {}) => ({id, a: {item: 'i1', path: 'p1', view: 'front'}, b: {item: 'i2', path: 'p1', view: 'front'}, media: 'om4', ...extra});
+
+test('a rack that differs only in routed lengths rewritten, or the DCIM settings, is the same question for the kit', () => {
+  const c1 = cableOf('c1', {length: routedLen(1, 0.62)}), c2 = cableOf('c2', {length: {value: 3, unit: 'm', source: 'entered'}}), c3 = cableOf('c3');
+  const read = cabled([c1, c2, c3]);
+  assert.equal(sameButRoutedLengths(read, read), true);
+  // the page's own write: a new object for the cable whose routed length moved, the others as they were
+  assert.equal(sameButRoutedLengths(read, {...read, cables: [{...c1, length: routedLen(1.5, 1.21)}, c2, c3]}), true);
+  assert.equal(sameButRoutedLengths(read, {...read, dcim: {site: 'x', role: 'y'}}), true);
+  // a cable that had no length when the routes were read and has one now: the kit asks whether it has one
+  assert.equal(sameButRoutedLengths(read, {...read, cables: [c1, c2, {...c3, length: routedLen(0.5, 0.31)}]}), false);
+  // a pinned length is the user's, and the kit reads its value
+  assert.equal(sameButRoutedLengths(read, {...read, cables: [c1, {...c2, length: {value: 2, unit: 'm', source: 'entered'}}, c3]}), false);
+  assert.equal(sameButRoutedLengths(read, {...read, cables: [{...c1, length: {value: 1, unit: 'm', source: 'entered'}}, c2, c3]}), false);
+  // anything else of a cable or of the rack is another question: an end, a media, a label, a route, a device, the frame, a cable more or less
+  for (const patch of [{media: 'os2'}, {label: 'x'}, {a: {...c1.a}}, {route: []}, {slack: []}, {routeEdited: true}])
+    assert.equal(sameButRoutedLengths(read, {...read, cables: [{...c1, ...patch}, c2, c3]}), false, JSON.stringify(patch));
+  for (const patch of [{items: []}, {frame: {...read.frame}}, {name: 'other'}, {zeroU: []}, {bundles: []}, {cables: [c1, c2]}, {cables: [c2, c1, c3]}])
+    assert.equal(sameButRoutedLengths(read, {...read, ...patch}), false, Object.keys(patch)[0]);
+});
+
+test('askOf gives the rack the routes were read from only for a context read from it, and only when it is the same question', async () => {
+  // (a rack with no cable reads no drawing here; with cables the same is held in the browser, check_rack_reading_fresh_after_edit)
+  const read = empty();
+  const rf = await routesOf(read, chassisOf);
+  assert.equal(rf.readRack, read);
+  const settings = {...read, dcim: {site: 'x', role: 'y'}};
+  assert.equal(askOf(settings, rf.ctx), read, 'the DCIM settings changed: the kit is asked of the rack it has decided');
+  assert.equal(askOf(read, rf.ctx), read);
+  const edited = {...read, name: 'Renamed'};
+  assert.equal(askOf(edited, rf.ctx), edited, 'an edit is another question');
+  assert.equal(askOf(settings, {}), settings, 'a context that is no reading\'s');
+  assert.equal(askOf(settings, null), settings);
+});
+
+test('describe asked of the rack the routes were read from: its routes\' lines, with the lengths of the rack as it is', () => {
+  // a kit that says each cable's length in its window, and counts in its totals only what the routes give
+  const calls = [];
+  const describe = (rack, ctx, {offset = 0, limit = 20} = {}) => {
+    calls.push({rack, route: !!ctx.route});
+    return [`${rack.name}: ${rack.cables.length} cables.`, '42U.', ...(ctx.route ? ['Findings: 1 cable crosses a body.'] : []),
+      'Cables:', ...rack.cables.slice(offset, offset + limit).map(c => `${c.id}, ${c.length?.value ?? '?'} m`)].join('\n');
+  };
+  const read = {name: 'R', cables: [{id: 'c1', length: {value: 1}}, {id: 'c2', length: {value: 1}}], bundles: []};
+  const now = {...read, cables: [{id: 'c1', length: {value: 2}}, read.cables[1]]};
+  const ctx = {route: {}};
+  const got = describeOnce(describe, now, {offset: 0, limit: 10}, ctx, read);
+  assert.equal(got, describe(now, ctx, {offset: 0, limit: 10}), 'the answer is the kit\'s for the rack as it is');
+  calls.pop();
+  assert.deepEqual(calls.filter(c => c.route).map(c => c.rack === read), [true], 'with the routes the kit was asked of the rack they were read from, once');
+  assert.ok(calls.some(c => !c.route && c.rack === now), 'and without them of the rack as it is, for its lengths');
+  // a smaller window: nothing is asked with the routes at all
+  const n = calls.filter(c => c.route).length;
+  assert.equal(describeOnce(describe, now, {offset: 0, limit: 1}, ctx, read), describe(now, ctx, {offset: 0, limit: 1}));
+  calls.pop();
+  assert.equal(calls.filter(c => c.route).length, n);
+});
+
+test('describe asked of the read rack falls back to the rack as it is where a window\'s own lines read the routes', () => {
+  const calls = [];
+  const describe = (rack, ctx, {offset = 0, limit = 20} = {}) => {
+    calls.push({rack, route: !!ctx.route});
+    return [`${rack.name}`, '42U.', ...(ctx.route ? ['Findings: none.'] : []), 'Bundles:', `b1, ${ctx.route ? 'about 12 mm' : 'not checked'}, ${rack.tag}`].join('\n');
+  };
+  const read = {name: 'R', tag: 'read', cables: [], bundles: [{id: 'b1'}]}, now = {...read, tag: 'now'};
+  const ctx = {route: {}};
+  assert.equal(describeOnce(describe, now, {offset: 0, limit: 10}, ctx, read), describe(now, ctx, {offset: 0, limit: 10}));
+  calls.pop();
+  assert.ok(calls.some(c => c.route && c.rack === now), 'the rack as it is was asked whole');
+});

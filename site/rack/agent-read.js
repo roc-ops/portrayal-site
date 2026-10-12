@@ -53,27 +53,38 @@ const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /** describe(rack, ctx, win) of the kit, once for a rack object, a window and
  *  what `ctx` was built from. Without the routes it is the kit's, asked each
- *  time: it lays nothing. */
-export function describeOnce(describe, rack, win = {}, ctx = {}) {
+ *  time: it lays nothing.
+ *
+ *  `read` is the rack to ask the kit of WITH the routes (reading.js askOf):
+ *  the rack they were read from, when `rack` differs from it only in routed
+ *  lengths rewritten, for which the kit has every cable decided; else `rack`.
+ *  The routes' lines are the same for both (they read no stored length), and
+ *  the window's own lines, which say each cable's length, are always `rack`'s.
+ *  Where the routes' lines cannot be told apart from the window's (a bundle is
+ *  listed), `rack` is asked whole. */
+export function describeOnce(describe, rack, win = {}, ctx = {}, read = rack) {
   if (!ctx.route) return describe(rack, ctx, win);
   const deps = depsOf(ctx), {section = null, offset = null, limit = null} = win ?? {};
   return once(rack, `describe ${JSON.stringify([section, offset, limit])}`, deps, () => {
     const family = JSON.stringify([section, offset]);
-    const plain = () => describe(rack, {...ctx, route: undefined}, win);
-    let map = learnt.get(rack);
-    if (!map) learnt.set(rack, map = new Map());
+    const without = of => describe(of, {...ctx, route: undefined}, win);
+    let map = learnt.get(read);
+    if (!map) learnt.set(read, map = new Map());
     const known = map.get(family);
-    if (known?.lines && same(known.deps, deps) && Number.isInteger(limit) && limit <= known.limit) {
-      const without = plain();
-      if (typeof without === 'string') return put(without, known.lines);
+    const windowed = Number.isInteger(limit);
+    if (known?.lines && same(known.deps, deps) && windowed && limit <= known.limit) {
+      const plain = without(rack);
+      if (typeof plain === 'string') return put(plain, known.lines);
     }
-    const answer = describe(rack, ctx, win);
-    if (Number.isInteger(limit) && typeof answer === 'string' && !(known && same(known.deps, deps) && known.limit >= limit)) {
-      let lines = null;
-      try { lines = routeLines(answer, plain()); } catch { lines = null; }
-      map.set(family, {deps, limit, lines});
-    }
-    return answer;
+    if (!windowed) return describe(rack, ctx, win);
+    // asked of `read` with the routes and without: what the routes add, and whether it is only lines of their own
+    const answer = describe(read, ctx, win);
+    let lines = null;
+    if (typeof answer === 'string') { try { lines = routeLines(answer, without(read)); } catch { lines = null; } }
+    if (typeof answer === 'string' && !(known && same(known.deps, deps) && known.limit >= limit)) map.set(family, {deps, limit, lines});
+    if (read === rack) return answer;
+    if (lines) { const plain = without(rack); if (typeof plain === 'string') return put(plain, lines); }
+    return describe(rack, ctx, win);
   });
 }
 

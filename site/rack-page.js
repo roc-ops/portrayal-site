@@ -40,7 +40,7 @@ import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeNoteGroups, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
-import {routesOf, sameReading} from './rack/reading.js';
+import {routesOf, sameReading, askOf} from './rack/reading.js';
 import {describeOnce, inspectOnce} from './rack/agent-read.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
@@ -2194,7 +2194,8 @@ const facePorts = async (item, view) =>
 // routes, and the inspect of a cable or a bundle. A device's inspect lays nothing and is asked each time.
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
-  describe: (r, win, ctx = {}) => describeOnce(Q.describe, r, win, {...ctx, chassisOf}),
+  // (asked of the rack the routes were read from where that is the same question: reading.js askOf)
+  describe: (r, win, ctx = {}) => describeOnce(Q.describe, r, win, {...ctx, chassisOf}, askOf(r, ctx.route)),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),

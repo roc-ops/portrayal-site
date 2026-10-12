@@ -21,9 +21,11 @@ visitor has; the report names the renderer it got. It prints the median over
   first 2D draw          from the file being chosen to the page being idle
   redraw after an edit   one cable's end moved to another port; one device moved
                          (each taken back with Undo, which is timed as well)
-  each assistant tool    the page's own tools, run in sequence with no edit
-                         between them, the whole sequence twice: `first` is
-                         each tool's first call on the rack, `again` its second
+  each assistant tool    describe_rack straight after the file opens and
+                         straight after an edit; then the page's own tools, run
+                         in sequence with no edit between them, the whole
+                         sequence twice: `first` is each tool's first call on
+                         the rack as it then is, `again` its second
   pair switch            Front / Rear to Left / Right, and back
   3D                     first paint (a canvas), the cables hung, and settle
                          (the scene complete, every part's detail built), or
@@ -237,6 +239,8 @@ def one_run(browser, base, doc, args):
 
 def two_d(page, doc, out, ms):
     if True:
+        # the first thing an assistant does with a rack it has just been shown, and the first after an edit
+        out["tool describe_rack, the first call after opening"] = timed(page, TOOL_JS, ["describe_rack", {}], ms=ms, need_draw=False)
         out["redraw, nothing changed"] = timed(page, "() => { window.__rack.redraw(); }", ms=ms)
         for label, js in (("one cable's end moved", MOVE_END_JS), ("one device moved", MOVE_ITEM_JS)):
             got = timed(page, js, ms=ms)
@@ -244,6 +248,8 @@ def two_d(page, doc, out, ms):
                 out[f"redraw, {label}"] = {"skipped": got["out"]["error"]}
                 continue
             out[f"redraw, {label}"] = got
+            if label.startswith("one cable"):
+                out["tool describe_rack, the first call after that edit"] = timed(page, TOOL_JS, ["describe_rack", {}], ms=ms, need_draw=False)
             out[f"redraw, {label}, undone"] = timed(page, "() => { window.__rack.undo(); }", ms=ms)
         for turn in ("first", "again"):
             for label, name, a in tool_calls(doc):
