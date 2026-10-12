@@ -5438,6 +5438,90 @@ def check_rack_faces_and_tags(page, base):
     return bad
 
 
+# A STRAP STANDS ON ITS RUN AS THE RUN IS DRAWN (#195). Each bundle strap band
+# in the scene against its own bundle's envelope tubes (their centre lines,
+# sampled each mm): how far its centre is from the nearest point, and how far
+# its axis is turned from the tube's direction there (degrees).
+STRAPS_ON_TUBE_JS = """() => {
+  const s = window.__rack.scene(), {THREE, scene: world} = s.three;
+  world.updateMatrixWorld(true);
+  const tubes = {};
+  world.traverse(o => { const b = o.userData?.envelope?.bundle; if (!o.isMesh || !b) return;
+    const path = o.geometry.parameters.path, n = Math.max(40, Math.ceil(path.getLength()));
+    for (let i = 0; i <= n; i++) (tubes[b] ||= []).push([o.localToWorld(path.getPointAt(i / n).clone()), path.getTangentAt(i / n).clone().transformDirection(o.matrixWorld)]); });
+  const out = [];
+  world.traverse(o => { const u = o.userData?.strap; if (!o.isMesh || !u || typeof u !== 'object' || !u.bundle) return;
+    const p = o.getWorldPosition(new THREE.Vector3()), axis = new THREE.Vector3(0, 1, 0).applyQuaternion(o.getWorldQuaternion(new THREE.Quaternion()));
+    let d = Infinity, tan = null;
+    for (const [q, t] of tubes[u.bundle] ?? []) { const x = q.distanceTo(p); if (x < d) { d = x; tan = t; } }
+    out.push({name: o.name, d: Math.round(d * 10) / 10, turn: tan ? Math.round(Math.acos(Math.min(1, Math.abs(axis.dot(tan)))) * 1800 / Math.PI) / 10 : null}); });
+  return out;
+}"""
+# Each bundle strap bar on the side panes against the strokes of the cables it
+# ties, on its own pane: how far its middle is from the nearest point of one.
+STRAPS_ON_SIDE_JS = """() => [...document.querySelectorAll('#panes svg[data-pane]')].flatMap(svg => {
+  const inv = svg.getScreenCTM().inverse();
+  return [...svg.querySelectorAll('[data-strap]:not([data-tie])')].map(bar => {
+    const l = bar.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+    const c = [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2];
+    let d = Infinity;
+    for (const id of (bar.dataset.members || '').split(' ').filter(Boolean))
+      for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] > path`)) {
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 0.5) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); d = Math.min(d, Math.hypot(w.x - c[0], w.y - c[1])); }
+      }
+    return {pane: svg.dataset.pane, name: `${bar.dataset.strap} at ${bar.dataset.along} mm`, d: Math.round(d * 10) / 10};
+  });
+})"""
+
+
+@extra("rack.html: on the 96-cable rack every bundle strap stands on its run as drawn - within 3 mm of its bundle's tube in 3D and turned to it, and on its cables in the Left / Right views - and the strap counts are the kit's (#195)")
+def check_rack_straps_on_run(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1900, "height": 1400})
+    load_rack_3d_ready(page, base, faces_rack_96())
+    wait_fn(page, "straps: the bundles' routes", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 8")
+    page.wait_for_timeout(600)
+    # THE COUNTS ARE THE KIT'S, as they were: 48 on the eight bundles, and the BOM's line with the tie slots' 20.
+    kit = sum(b["count"] or 0 for b in page.evaluate("() => window.__rack.bundles()"))
+    cols, rows, text = read_csv(export_file(page, "bom"))
+    line = [r for r in rows if "strap" in " ".join(str(v) for v in r.values()).lower()]
+    if kit != 48 or len(line) != 1 or "68" not in [str(v) for v in line[0].values()]:
+        bad.append(f"counts: the kit gives the bundles {kit} straps (48 expected) and the BOM's strap line is {line} (one line of 68 expected)")
+
+    # THE SIDE VIEWS: every bar on the cables it ties.
+    page.click('#view2d [data-view="sides"]')
+    wait_fn(page, "straps: the side panes' cables", "() => document.querySelectorAll('#panes svg[data-pane=\"left\"] [data-cables] [data-cable]').length === 96"
+            " && document.querySelectorAll('#panes svg[data-pane=\"right\"] [data-cables] [data-cable]').length === 96")
+    page.wait_for_timeout(600)
+    side = page.evaluate(STRAPS_ON_SIDE_JS)
+    per = {p: [x for x in side if x["pane"] == p] for p in ("left", "right")}
+    if {p: len(v) for p, v in per.items()} != {"left": 46, "right": 46}:
+        bad.append(f"side: the panes draw { {p: len(v) for p, v in per.items()} } bundle straps, expected 46 each (two of the 48 are on a run seen end on)")
+    off = [x for x in side if x["d"] > 3]
+    if off:
+        bad.append(f"side: {len(off)} of {len(side)} strap bars stand more than 3 mm from the cables they tie: "
+                   f"{[(x['pane'], x['name'], x['d']) for x in off[:6]]}")
+    page.click('#view2d [data-view="faces"]')
+    wait_fn(page, "straps: the faces back", "() => document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96")
+
+    # THE SCENE: every band on its bundle's tube, turned to it.
+    page.click('#mode [data-mode="3d"]')
+    wait_fn(page, "straps: the scene's bundles", "() => window.__rack.scene()?.rackCables?.bundles && window.__rack.scene().three", timeout=READY_3D_MS)
+    page.wait_for_timeout(600)
+    bands = page.evaluate(STRAPS_ON_TUBE_JS)
+    if len(bands) != kit:
+        bad.append(f"3D: the scene has {len(bands)} bundle strap bands, the kit {kit} straps")
+    off = [x for x in bands if x["d"] > 3]
+    if off:
+        bad.append(f"3D: {len(off)} of {len(bands)} strap bands stand more than 3 mm from their bundle's tube: {[(x['name'], x['d']) for x in off]}")
+    turned = [x for x in bands if x["turn"] is None or x["turn"] > 10]
+    if turned:
+        bad.append(f"3D: {len(turned)} strap bands are turned more than 10 degrees from their tube's direction: {[(x['name'], x['turn']) for x in turned[:6]]}")
+    return bad
+
+
 # CABLE BUNDLES (portrayal-site#142). Three Cat6A cables from one copper
 # switch through one ring of its lacer, up the left-front lane to a second
 # switch: the kit works their trunk out as mgr-1 ring 1 > left-front U20-U30,

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {memberStretch, trunkLay, trunkMarks, strapAt, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
+import {memberStretch, trunkLay, trunkMarks, strapAt, alongLine, trunkSpanPoints, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
         trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes, peelText} from '../../site/rack/bundle-view.js';
 
 import {elementsOf} from '../../vendor/rack/bundle-route.js';
@@ -235,4 +235,39 @@ test('a strap is drawn at its own width: the 19 mm strap as the bar it always wa
   assert.ok(strapDrawn({width_mm: 12}) < DRAWN_19 && strapDrawn({width_mm: 25}) > DRAWN_19);
   assert.ok(Math.abs(strapDrawn({width_mm: 25}) / strapDrawn({width_mm: 12}) - 25 / 12) < 1e-9);
   assert.equal(strapDrawn({}), DRAWN_19);
+});
+
+// portrayal-site#195: a strap stands on its run as the run is drawn, by its length.
+test('alongLine finds a place by the length of a line of points, not by its ends', () => {
+  // 100 up, then 50 across: half of its 150 is 75 up the first leg, not the middle of the chord
+  const hit = alongLine([[0, 0], [0, 100], [50, 100]], 0.5);
+  assert.deepEqual([hit.k, hit.at, hit.dir], [0, [0, 75], [0, 1]]);
+  const far = alongLine([[0, 0], [0, 100], [50, 100]], 0.9);
+  assert.equal(far.k, 1);
+  assert.ok(Math.abs(far.at[0] - 35) < 1e-9 && far.at[1] === 100 && far.dir[0] === 1);
+  // the ends, a leg of no length stepped over, three dimensions, and a line of no length
+  assert.deepEqual(alongLine([[0, 0], [0, 100]], 0).at, [0, 0]);
+  assert.deepEqual(alongLine([[0, 0], [0, 100]], 1).at, [0, 100]);
+  assert.deepEqual(alongLine([[0, 0], [0, 0], [10, 0]], 0.5).at, [5, 0]);
+  assert.deepEqual(alongLine([[0, 0, 0], [0, 0, 10], [0, 0, 10]], 0.5).at, [0, 0, 5]);
+  assert.equal(alongLine([[3, 3], [3, 3]], 0.5), null);
+});
+
+test('trunkSpanPoints gives the points the kit lays a member through between two trunk stops, in order from the first', () => {
+  const trunk = [{item: 'm', via: 'guide-1'}, {lane: 'left-rear', ru: 2}, {lane: 'left-front', ru: 2}];
+  const y = 1.5 * 44.45;
+  const points = [{at: 'a', x: 0, y: 0, z: 0}, {item: 'm', via: 'guide-1', x: 1, y: 1, z: 1}, {at: 'lane', x: 2, y, z: -700},
+    {at: 'rest', x: 2, y: y - 20, z: -400}, {at: 'rest', x: 2, y: y - 20, z: -200}, {at: 'lane', x: 2, y, z: 0}, {at: 'b', x: 9, y: 9, z: 9}];
+  const paths = new Map([['c1', {points}]]);
+  // two lane stops at one height are told apart by their order on the member's own path
+  const span = trunkSpanPoints([trunk[1], trunk[2]], 0, ['c0', 'c1'], paths);
+  assert.equal(span, null);   // both stops match both lane points: the member does not run straight from one to the other
+  const ring = trunkSpanPoints(trunk, 0, ['c1'], new Map([['c1', {points: [points[0], points[1], {at: 'approach', x: 1, y: 5, z: 1}, points[2], points[6]]}]]));
+  assert.deepEqual([ring.a.length, ring.b.length, ring.mid.map(q => q.at)], [1, 1, ['approach']]);
+  // from the far stop back: the points between come in order from the first stop named
+  const back = trunkSpanPoints([trunk[1], trunk[0]], 0, ['c1'], new Map([['c1', {points: [points[0], points[1], {at: 'approach', x: 1, y: 5, z: 1}, {at: 'rest', x: 1, y: 6, z: 1}, points[2], points[6]]}]]));
+  assert.deepEqual(back.mid.map(q => q.at), ['rest', 'approach']);
+  // nothing between: a straight run; no member with a path: null
+  assert.deepEqual(trunkSpanPoints(trunk, 0, ['c1'], new Map([['c1', {points: [points[1], points[2]]}]])).mid, []);
+  assert.equal(trunkSpanPoints(trunk, 0, ['c1'], new Map()), null);
 });

@@ -17,6 +17,7 @@ import {bundlesOf, bundleName, bundleCheck, straps as strapsOf, strapSpacing, sp
         waypointText, onTrunk, bundleDiameter} from '../../vendor/rack/bundles.js';
 import {waypointKey} from '../../vendor/rack/bundle-route.js';
 import {pointOf, DIAMETERS} from '../../vendor/rack/route.js';
+import {RU} from '../../vendor/rack/rails.js';
 
 // A strap as drawn, along the run (mm). The kit keeps straps STRAP_W (20 mm)
 // off rings; a strap drawn half that wide reads as a strap, not a block.
@@ -356,6 +357,49 @@ export function strapAt(pts, s) {
   const d = p.map((v, k) => q[k] - v), L = Math.hypot(...d);
   if (!(L > 0)) return null;
   return {at: p.map((v, k) => v + d[k] * s.t), dir: d.map(v => v / L)};
+}
+
+// THE POINTS THE KIT LAYS A MEMBER THROUGH BETWEEN TWO TRUNK STOPS (waypoints
+// k and k + 1 of `trunk`): {a, b, mid}, the kit's own points (rack mm) at the
+// first stop, at the second, and between them in order from the first. Taken
+// from the first member whose path runs from one waypoint straight to the
+// other; null when none does. `mid` is [] where the kit adds no point there:
+// the run between the two stops is then straight. This is the run as it is
+// DRAWN (the 3D trunk and the side views' cables go through these points), so
+// it is what a strap is stood on (#195).
+export function trunkSpanPoints(trunk, k, members, paths) {
+  const at = (P, w) => P.map((q, i) => i).filter(i => (w.lane ? P[i].at === 'lane' && Math.abs(P[i].y - (w.ru - 0.5) * RU) < 1e-6
+    : P[i].item === w.item && P[i].via === w.via && P[i].at !== 'lead'));
+  for (const id of members ?? []) {
+    const P = paths?.get(id)?.points;
+    if (!P?.length || !trunk[k] || !trunk[k + 1]) continue;
+    const a = at(P, trunk[k]), b = at(P, trunk[k + 1]);
+    if (!a.length || !b.length) continue;
+    let mid;
+    if (Math.max(...a) < Math.min(...b)) mid = P.slice(Math.max(...a) + 1, Math.min(...b));
+    else if (Math.max(...b) < Math.min(...a)) mid = P.slice(Math.max(...b) + 1, Math.min(...a)).reverse();
+    else continue;
+    // (another stop, or a lead of the member's own, between them: it does not run straight from one to the other)
+    if (mid.some(q => q.item || q.at === 'lead' || q.at === 'lane' || q.at === 'reach' || q.end)) continue;
+    return {a: a.map(i => P[i]), b: b.map(i => P[i]), mid};
+  }
+  return null;
+}
+
+// A PLACE ALONG A LINE OF POINTS, BY ITS LENGTH: fraction `t` (0 to 1) of the
+// whole length of the line through `points` ([x, y] or [x, y, z] each), as
+// {k, f, at, dir}: the leg it falls on (from points[k]), how far along that
+// leg, the point, and the leg's direction. null for a line of no length.
+export function alongLine(points, t) {
+  const legs = points.slice(1).map((q, k) => Math.hypot(...q.map((v, n) => v - points[k][n])));
+  const total = legs.reduce((a, b) => a + b, 0);
+  if (!(total > 0)) return null;
+  let left = Math.min(1, Math.max(0, t)) * total, k = 0;
+  // (a leg of no length is stepped over; the last leg with any length takes what rounding leaves)
+  const last = legs.reduce((n, L, i) => (L > 0 ? i : n), 0);
+  while (k < last && (!(legs[k] > 0) || left > legs[k])) { left -= legs[k]; k++; }
+  const f = Math.min(1, Math.max(0, left / legs[k])), p = points[k], q = points[k + 1];
+  return {k, f, at: p.map((v, n) => v + (q[n] - v) * f), dir: p.map((v, n) => (q[n] - v) / legs[k])};
 }
 
 // The trunk's waypoints cut into stretches a view can draw: each a run of
