@@ -82,9 +82,24 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
       const {updatedAt: _stamp, ...doc} = d;
       return readDoc(doc);
     },
+    // THE WRITE IS HANDED OVER BEFORE THIS RETURNS (#198). The record is made,
+    // put and its transaction committed in the caller's own turn, before the
+    // first await, so whatever the page does next (a redraw that holds the
+    // thread for seconds, a reload) the browser already has the whole write and
+    // finishes it without the page. Left to commit by itself, a transaction
+    // waits for the page to come back to its event loop, and a page that is
+    // reloaded first loses it. The promise settles when the transaction has:
+    // a store that is full refuses there, not at the put.
     async put(doc) {
       if (!db) return;
-      await done(store('readwrite').put({...JSON.parse(serialize(doc)), updatedAt: Date.now()}));
+      const tx = db.transaction(STORE, 'readwrite');
+      const over = new Promise((res, rej) => {
+        tx.oncomplete = () => res();
+        tx.onabort = tx.onerror = () => rej(tx.error ?? new Error('the write was aborted'));
+      });
+      tx.objectStore(STORE).put({...JSON.parse(serialize(doc)), updatedAt: Date.now()});
+      tx.commit?.();
+      await over;
     },
     async remove(id) {
       if (!db) return;
@@ -93,18 +108,40 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
   };
 }
 
-// The last of a burst of edits is written, once, `delay` ms after it.
-export function autosaver(lib, delay = 500) {
-  let timer = null, pending = null, last = Promise.resolve();
-  const flush = () => {
-    clearTimeout(timer); timer = null;
-    if (pending) {
-      const doc = pending; pending = null;
-      last = lib.put(doc).catch(err => console.warn('[portrayal] autosave', err));
-    }
-    return last;
+// EVERY EDIT IS WRITTEN AT ONCE (#198), by hand or through the page's tools.
+// `save(doc)` hands the document to the library in the caller's own turn, so
+// the write is with the browser before the redraw the edit asks for begins.
+// It was a timer, 500 ms after the last edit of a burst, and the redraw ran
+// first: a tab reloaded inside the redraw, or within half a second of any
+// edit, came back without the edit, and the flush on `pagehide` could not
+// help, because a page that is busy is not told it is going and IndexedDB has
+// no write that finishes inside that event. One record a step is a few
+// milliseconds for the largest rack; writes land in the order they were made.
+//
+// A WRITE THAT FAILS IS SAID, NOT LOGGED AND LOST: a full or blocked store
+// refuses, and the person must hear it while Save (the file) can still keep
+// their work. `onState({failed, error})` is called when a write fails and
+// again when a later one lands; `failed()` is the same answer on demand.
+// `flush()` settles when every write made so far has landed or failed.
+export function autosaver(lib, {onState = () => {}} = {}) {
+  let last = Promise.resolve(), failed = null, n = 0;
+  const say = err => { const was = failed; failed = err; if (!!was !== !!err || (err && was !== err)) onState({failed: !!err, error: err}); };
+  return {
+    save(doc) {
+      const mine = ++n;
+      let put;
+      try { put = Promise.resolve(lib.put(doc)); } catch (err) { put = Promise.reject(err); }
+      // only the newest write speaks for the rack: an older one that lands late does not clear a newer failure
+      const done = put.then(() => { if (mine === n) say(null); }, err => {
+        console.warn('[portrayal] autosave', err);
+        if (mine === n) say(err ?? new Error('the write failed'));
+      });
+      last = Promise.all([last, done]).then(() => {});
+      return done;
+    },
+    flush: () => last,
+    failed: () => failed,
   };
-  return {saveSoon(doc) { pending = doc; clearTimeout(timer); timer = setTimeout(flush, delay); }, flush};
 }
 
 export const fileName = doc => `${fileStem(doc.racks[0]?.name)}.rack.json`;

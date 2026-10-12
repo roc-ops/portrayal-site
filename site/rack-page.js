@@ -246,6 +246,17 @@ function detailFailedLine() {
   return el('p', {id: 'detailFailed', class: 'rk-notice rk-error', role: 'status',
     text: [...S.detailFailed.values()].map(label => `${label} could not be drawn in detail.`).join(' ')});
 }
+// THE LAST EDIT IS NOT STORED (#198): the library refused the write (the
+// browser's storage is full, or blocked). Said for as long as it is true, as
+// the line above is, and gone when a later write lands. Save still writes the
+// file, which is the way to keep the work.
+function saveFailedLine() {
+  const err = S.save?.failed();
+  if (!err) return null;
+  const why = err.name === 'QuotaExceededError' ? "this browser's storage is full" : (err.message || String(err)).replace(/\.$/, '');
+  return el('p', {id: 'saveFailed', class: 'rk-notice rk-error', role: 'alert',
+    text: `This rack could not be saved in this browser (${why}), so a reload would lose your last changes. Use Save to keep it as a file.`});
+}
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on
 // those build the same scene. A rack-level field the scene comes to read later
@@ -523,7 +534,7 @@ function paintAgentMark() {
   S.agentMarkTimer = setTimeout(paintAgentMark, m.until - Date.now() + 20);
 }
 function onChange(ev) {
-  if (ev.cause === 'load') { if (ev.findings.length) S.save.saveSoon(theDoc()); return; }
+  if (ev.cause === 'load') { if (ev.findings.length) S.save.save(theDoc()); return; }
   if (ev.cause === 'apply' && ev.origin === 'agent') {
     if (ev.summary) addNotice(`Your assistant: ${ev.summary}`, 'note');
     if (agentHighlightOn()) S.agentMark = {ids: touchedIds(ev), until: Date.now() + AGENT_MARK_MS};
@@ -537,7 +548,8 @@ function onChange(ev) {
   if (ev.cause === 'apply' && ev.origin === 'agent' && ev.summary) S.saidStep = ev.summary;
   if (ev.cause === 'undo' || ev.cause === 'redo')
     addNotice(`${ev.cause === 'undo' ? 'Undid' : 'Redid'}: ${ev.summary}`, 'note');
-  S.save.saveSoon(theDoc());
+  // (written now, before the redraw this edit asks for: library.js autosaver)
+  S.save.save(theDoc());
   // The 3D view draws the cables: a change that adds or removes one, or
   // changes a cable's ends or media, changes the tubes and the plugs seated
   // for them, and goes the same debounced rebuild a device edit does. A change
@@ -1706,6 +1718,8 @@ function renderSide() {
   const kids = [body];
   const failed = detailFailedLine();
   if (failed) kids.push(failed);
+  const unsaved = saveFailedLine();
+  if (unsaved) kids.push(unsaved);
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
   // what the rack keeps and the page does not draw, for as long as it is true (sayKept)
@@ -1869,9 +1883,9 @@ async function offerDownloadIfNoLibrary() {
 // and frame into the new rack, so it opens as it was asked for.
 async function startNewRack(shape = r => r) {
   storeDcimDraft();       // typed for this rack: it must reach this rack, not the next one
-  // A document switch drops whatever the previous rack's last edit had
-  // queued (saveSoon fires 500ms later); flushing first means it lands
-  // before the switch instead of being silently skipped.
+  // The previous rack's last write may still be on its way (every edit is
+  // written at once: library.js autosaver); waiting for it here means it has
+  // landed before the switch.
   await S.save.flush();
   const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
   d.racks[0] = shape(d.racks[0]);
@@ -1914,11 +1928,9 @@ async function renderLibrary() {
     act('Delete…', async () => {
       if (!confirm(`Delete ${rack().name} from this browser? This can't be undone.`)) return;
       await offerDownloadIfNoLibrary();
-      // A pending autosave (queued by the last edit's saveSoon) writes 500ms
-      // after it, which can be after confirm()'s blocking dialog closes.
-      // Flushing it here - before remove() - means it either lands (and is
-      // then deleted with the rest) or is already clear, so it never queues
-      // a put() for a document that's already gone.
+      // The last edit's write may still be on its way. Waiting for it here,
+      // before remove(), means it has landed (and is then deleted with the
+      // rest), so no put() arrives for a document that's already gone.
       await S.save.flush();
       await S.lib.remove(theDoc().id);
       const next = (await S.lib.list())[0];
@@ -1971,7 +1983,8 @@ async function bootInner() {
   chassisOf = cat.chassisOf;
   S.entries = cat.entries;
   S.lib = await openLibrary();
-  S.save = autosaver(S.lib);
+  // a write the library refuses is said in the side panel for as long as it is true (saveFailedLine)
+  S.save = autosaver(S.lib, {onState: () => renderSide()});
   $('libNote').hidden = S.lib.available;
   let doc = null;
   let last = null;

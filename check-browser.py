@@ -3331,9 +3331,10 @@ def check_rack_library(page, base):
       await lib.put(a); await new Promise(r => setTimeout(r, 5)); await lib.put(b);
       const names = (await lib.list()).map(x => x.name);
       const got = await lib.get(a.id);
-      const save = L.autosaver(lib, 50);
-      save.saveSoon({...a, racks: [{...a.racks[0], name: 'Alpha 2'}]});
-      save.saveSoon({...a, racks: [{...a.racks[0], name: 'Alpha 3'}]});
+      // every edit is written at once, and the writes land in the order they were made (#198)
+      const save = L.autosaver(lib);
+      save.save({...a, racks: [{...a.racks[0], name: 'Alpha 2'}]});
+      save.save({...a, racks: [{...a.racks[0], name: 'Alpha 3'}]});
       await save.flush();
       const renamed = (await lib.get(a.id)).racks[0].name;
       await lib.remove(b.id);
@@ -3370,6 +3371,311 @@ def check_rack_library(page, base):
     }""")
     if listed != "42":
         bad.append(f"library: list() names a stored rack {listed!r}, expected '42' (read through parseDoc)")
+    return bad
+
+
+# ── AN EDIT IS STORED BEFORE ITS REDRAW (#198) ────────────────────────────
+# Autosave was a timer, 500 ms after the last edit, and the redraw an edit asks
+# for ran first: a tab reloaded inside the redraw, or within half a second of
+# any edit, came back without the edit. Each edit is now handed to IndexedDB,
+# and its transaction committed, in the turn the edit is made in.
+STORED_RACK_JS = """async id => { const {openLibrary} = await import('/site/rack/library.js');
+  const d = await (await openLibrary()).get(id); return d ? d.racks[0] : null; }"""
+
+
+def _reopened(page, base):
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+
+
+@extra("rack.html: an edit is in the library before its redraw - made through the assistant's tool or by hand and followed by a reload 10 ms later, and made while the page is too busy to be told it is going, the reloaded page and the stored record both have it")
+def check_rack_edit_survives_reload(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    open_fixture(page, base)
+    wait_fn(page, "reload: tools registered", "() => window.__tools && window.__tools.edit_rack")
+    page.evaluate("() => window.__rack.flush()")
+    rid = page.evaluate("() => window.__rack.doc().id")
+    label = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2')?.label")
+    ru = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.id === 'i4')?.ru")
+
+    def after_reload(what, read, want, stored):
+        _reopened(page, base)
+        if page.evaluate("() => window.__rack.doc().id") != rid:
+            bad.append(f"{what}: the reloaded page opened another rack")
+            return
+        if read() != want:
+            bad.append(f"{what}: the reloaded page has {read()!r}, expected {want!r}")
+        got = stored(page.evaluate(STORED_RACK_JS, rid) or {"items": []})
+        if got != want:
+            bad.append(f"{what}: the stored record has {got!r}, expected {want!r}")
+        wait_fn(page, "reload: tools registered again", "() => window.__tools && window.__tools.edit_rack")
+
+    # 1. THE ASSISTANT'S TOOL, AND A RELOAD 10 ms AFTER THE EDIT IS MADE. The tool is called and not waited for; the
+    #    reload is asked for 10 ms after the document changes, by the page's own timer.
+    with page.expect_navigation(wait_until="load", timeout=READY_MS):
+        page.evaluate("""() => { const R = window.__rack, was = R.doc();
+          window.__tools.edit_rack.execute({commands: [{op: 'patch', id: 'i2', label: 'kept-by-tool'}]});
+          const t = setInterval(() => { if (R.doc() !== was) { clearInterval(t); setTimeout(() => location.reload(), 10); } }, 1); }""")
+    after_reload("a tool's edit, reloaded 10 ms later", label, "kept-by-tool",
+                 lambda r: next((i.get("label") for i in r["items"] if i["id"] == "i2"), None))
+
+    # 2. BY HAND: a device is clicked and moved up a unit with the arrow key, and the reload follows 10 ms after.
+    was_ru = ru()
+    box = page.evaluate("""() => { const r = document.querySelector('#paneRear svg [data-item-id="i4"]').getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2]; }""")
+    page.mouse.click(box[0], box[1])
+    try:
+        wait_fn(page, "reload: the device is selected", "() => !!document.querySelector('#side #iRemove')", timeout=15000)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("""() => { const R = window.__rack, was = R.doc();
+      const t = setInterval(() => { if (R.doc() !== was) { clearInterval(t); setTimeout(() => location.reload(), 10); } }, 1); }""")
+    with page.expect_navigation(wait_until="load", timeout=READY_MS):
+        page.keyboard.press("ArrowUp")
+    after_reload("a hand edit (arrow key), reloaded 10 ms later", ru, was_ru + 1,
+                 lambda r: next((i.get("ru") for i in r["items"] if i["id"] == "i4"), None))
+
+    # 3. A PAGE TOO BUSY TO BE TOLD IT IS GOING. The redraw of a large rack holds the thread for seconds; here the
+    #    thread is held for 1.5 s from the turn after the edit, and the tab is closed in the middle of it, which
+    #    is what a reload of a frozen tab comes to: nothing the page does on `pagehide` runs. A new tab finds the edit.
+    #    (Two tabs of one context of its own, so they share storage: closing a page the runner made closes its context.)
+    ctx = page.context.browser.new_context(viewport={"width": 1400, "height": 900})
+    try:
+        one = ctx.new_page()
+        one.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+        one.add_init_script(STAND_IN_MODEL_CONTEXT)
+        open_fixture(one, base)
+        wait_fn(one, "busy: tools registered", "() => window.__tools && window.__tools.edit_rack")
+        one.evaluate("() => window.__rack.flush()")
+        rid = one.evaluate("() => window.__rack.doc().id")
+        other = ctx.new_page()
+        one.evaluate("""() => { const R = window.__rack, was = R.doc();
+          window.__tools.edit_rack.execute({commands: [{op: 'patch', id: 'i2', label: 'kept-while-busy'}]});
+          const t = setInterval(() => { if (R.doc() === was) return; clearInterval(t);
+            const end = performance.now() + 1500; while (performance.now() < end) { /* busy */ } }, 1); }""")
+        other.wait_for_timeout(300)                  # (the other tab's clock: the first is busy)
+        one.close(run_before_unload=False)
+        other.goto(f"{base}/rack.html?probe=1", wait_until="load")
+        _reopened(other, base)
+        got = other.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.id === 'i2')?.label")
+        if other.evaluate("() => window.__rack.doc().id") != rid or got != "kept-while-busy":
+            bad.append(f"an edit made as the page went busy, the tab closed mid-way: a new tab has the label {got!r}, expected 'kept-while-busy'")
+    finally:
+        ctx.close()
+    return bad
+
+
+@extra("rack.html: an edit the library cannot store is said in the side panel for as long as it is true - a full store refuses, the panel says the rack could not be saved and to use Save, and the line goes when a later edit is stored")
+def check_rack_save_failure_said(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    page.evaluate("() => window.__rack.flush()")
+    line = lambda: page.evaluate("() => document.querySelector('#side #saveFailed')?.textContent ?? null")
+    if line() is not None:
+        bad.append(f"before any failure the panel says {line()!r}")
+    # THE STORE IS FULL: every put is refused as a browser refuses one, until the stand-in is taken off.
+    page.evaluate("""() => { const P = IDBObjectStore.prototype; window.__realPut = P.put;
+      P.put = function () { throw new DOMException('The quota has been exceeded.', 'QuotaExceededError'); }; }""")
+    apply = lambda cmd: page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }", cmd)
+    if apply({"op": "patch", "id": "i2", "label": "not-stored"}):
+        return bad + ["the edit was refused"]
+    try:
+        wait_fn(page, "failure: the panel says so", "() => !!document.querySelector('#side #saveFailed')", timeout=15000)
+    except RuntimeError:
+        return bad + ["a refused write raised no line in the side panel"]
+    said = line()
+    for part in ("could not be saved in this browser", "storage is full", "Use Save"):
+        if part not in said:
+            bad.append(f"the line lacks {part!r}: {said!r}")
+    if page.evaluate("() => document.querySelector('#side #saveFailed').getAttribute('role')") != "alert":
+        bad.append("the line is not an alert")
+    # it stands through another redraw (a one-shot notice would be gone), and through another refused edit
+    page.evaluate("() => window.__rack.redraw()")
+    apply({"op": "patch", "id": "i2", "label": "still-not-stored"})
+    page.wait_for_timeout(500)
+    if line() != said:
+        bad.append(f"after a redraw and a second refused edit the panel says {line()!r}")
+    # the page's own Save still gives the file, with the edit that was not stored
+    text = pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8")
+    if next((i["label"] for i in json.loads(text)["racks"][0]["items"] if i["id"] == "i2"), None) != "still-not-stored":
+        bad.append("Save as .json does not hold the edit the library refused")
+    # THE STORE TAKES WRITES AGAIN: the next edit lands, and the line goes.
+    page.evaluate("() => { IDBObjectStore.prototype.put = window.__realPut; }")
+    apply({"op": "patch", "id": "i2", "label": "stored-again"})
+    try:
+        wait_fn(page, "failure: the line goes", "() => !document.querySelector('#side #saveFailed')", timeout=15000)
+    except RuntimeError:
+        bad.append(f"after a write that landed the panel still says {line()!r}")
+    rid = page.evaluate("() => window.__rack.doc().id")
+    page.evaluate("() => window.__rack.flush()")
+    got = next((i.get("label") for i in (page.evaluate(STORED_RACK_JS, rid) or {"items": []})["items"] if i["id"] == "i2"), None)
+    if got != "stored-again":
+        bad.append(f"the stored record has the label {got!r}, expected 'stored-again'")
+    return bad
+
+
+# ── A RACK OF RING MANAGERS, HELD TO A BUDGET (#199) ──────────────────────
+# The shape of the rack the issue was measured on, built here so no rack file is committed: a management switch
+# with a ring manager on it, 30 cat6 cables to it from ten devices below, four bundles, two pass-through ducts that
+# the rear ports' cables come forward through, 25 ring managers in all (most of them held by the device they
+# dress), 26 half-unit fibre panels, two vertical managers and two PDUs. Some 900 solid bodies: on kit 0.22.0 every
+# call that read the routes held the page for 20 to 50 s on it.
+def ring_rack_fixture():
+    items, cables = [], []
+    def put(id, ref, cfg, ru, face="front", label=None, swaps=None, **more):
+        items.append({"id": id, "ref": ref, "cfg": cfg, "label": label or id, "ru": ru, "face": face, "turned": False,
+                      "swaps": swaps or {}, "fields": {}, **more})
+    ring = lambda id, ru, face, on=None, unit=None: put(id, "fhd-cmp5dr", "base", ru, face, f"Ring manager {id}",
+                                                         **({"on": on, "unit": unit} if on else {}))
+    put("sw", "ds1000", "f2b", 40, label="Management switch")
+    ring("m-sw", 40, "front", "sw", 1)
+    ring("m-sw-rear", 40, "rear")
+    put("pp", "nrg300cb08-sens", "populated", 42, label="Power panel")
+    cards = {f"drawer/module/slot-{k}": "fibrain/xmn1021gb@1" for k in range(1, 5)}
+    for n, ru in enumerate((37, 34)):
+        put(f"r{n + 1}", "s9701-82dc", "dc", ru, label=f"Router {n + 1}")
+        ring(f"m-r{n + 1}a", ru, "front", f"r{n + 1}", 1)
+        ring(f"m-r{n + 1}b", ru + 1, "front", f"r{n + 1}", 2)
+    for n, ru in enumerate((39, 36, 33)):
+        for h in (0, 0.5):
+            put(f"fp{n + 1}{'ab'[int(h * 2)]}", "xcu", "xcu10-21ic", ru + h, label=f"Front panel {n + 1}{'ab'[int(h * 2)]}", swaps=dict(cards))
+    put("s0", "dl160-gen10", "base", 32, label="Server 0")
+    put("d1", "cmh-dfd1u", "base", 31, label="Duct 1")
+    for n, ru in enumerate((30, 29, 28)):
+        put(f"a{n + 1}", "sys-111e-fdwtr", "base", ru, label=f"Server A{n + 1}")
+    put("d2", "cmh-dfd1u", "base", 27, label="Duct 2")
+    for n, ru in enumerate((26, 25, 24)):
+        put(f"b{n + 1}", "sys-111e-wr", "base", ru, label=f"Server B{n + 1}")
+    put("b4", "sys-511e-wr", "base", 23, label="Server B4")
+    for n, ru in enumerate((14, 5)):
+        put(f"sh{n + 1}", "lmfs-f", "base", ru, label=f"Shelf {n + 1}", swaps={"nt-a": "nokia/lbnt-a@1", "nt-b": "nokia/lbnt-a@1"})
+        for unit in (3, 4, 5):
+            ring(f"m-sh{n + 1}-{unit}", ru + unit - 1, "front", f"sh{n + 1}", unit)
+        for k in range(5):
+            u = ru + 3 + k
+            put(f"rp{n + 1}-{k}a", "xcu", "xcu10-51id", u, "rear", f"Rear panel {n + 1}.{k}a")
+            put(f"rp{n + 1}-{k}b", "xcu", "xcu10-51id", u + 0.5, "rear", f"Rear panel {n + 1}.{k}b")
+            ring(f"m-rp{n + 1}-{k}", u, "rear", f"rp{n + 1}-{k}a", 1)
+    for ru in (1, 2, 3):
+        ring(f"m-low-{ru}", ru, "front")
+    left = [{"lane": "left-front", "ru": 40}, {"item": "m-sw", "via": "guide-1"}]
+    through = lambda duct: [{"item": duct, "via": "rear-duct"}, {"item": duct, "via": "front-duct"},
+                            {"lane": "right-front", "ru": 40}, {"item": "m-sw", "via": "guide-5"}]
+    def cable(item, path, view, port, metres, route):
+        n = len(cables) + 1
+        cables.append({"id": f"c{n}", "a": {"item": item, "path": path, "view": view}, "b": {"item": "sw", "path": f"port-{port}", "view": "front"},
+                       "media": "cat6", "purpose": "management", "label": f"Cable {n}", "route": route,
+                       "length": {"value": metres, "unit": "m", "source": "entered"}, "slack": [{"end": "b"}],
+                       **({"routeEdited": True} if route else {})})
+        return f"c{n}"
+    up, low = iter(range(1, 30)), iter(range(48, 20, -1))
+    b1 = [cable("r1", "mgmt-oob", "front", next(up), 1.3, []), cable("r2", "mgmt-oob", "front", next(up), 1.4, [])]
+    b4 = [cable("s0", "ilo", "rear", next(low), 2.4, through("d1"))]
+    b1 += [cable(f"a{n}", "bmc", "front", next(up), 1.5, list(left)) for n in (1, 2, 3)]
+    b5 = [cable(f"b{n}", "bmc", "rear", next(low), 2.6, through("d2")) for n in (1, 2, 3, 4)]
+    b3 = [cable(f"sh{n}", f"nt-{x}/module/oob", "front", next(low), 2.3 if n == 1 else 2.7, []) for n in (1, 2) for x in "ab"]
+    b1 += [cable(f"a{n}", f"lan-{k}", "front", next(up), 1.6, list(left)) for n in (1, 2, 3) for k in (1, 2)]
+    b4 += [cable("s0", f"nic-{k}", "rear", next(low), 2.5, through("d1")) for k in (1, 2)]
+    b5 += [cable(f"b{n}", f"lan-{k}", "rear", next(low), 2.8, through("d2")) for n in (1, 2, 3, 4) for k in (1, 2)]
+    bundle = lambda n, members, route: {"id": f"b{n}", "number": n, "label": f"Bundle {n}", "members": [{"cable": c} for c in members], "route": route}
+    bundles = [bundle(1, b1, [{"lane": "left-front", "ru": 29}, *left]),
+               bundle(3, b3, [{"lane": "right-front", "ru": 5}, {"lane": "right-front", "ru": 40}, {"item": "m-sw", "via": "guide-5"}, {"item": "m-sw", "via": "guide-4"}]),
+               bundle(4, b4, through("d1")), bundle(5, b5, through("d2"))]
+    zero = [{"id": "z1", "ref": "pdumv20hvnetlx", "cfg": "base", "label": "PDU A", "at": "left-rear", "offsetMm": 88.9},
+            {"id": "z2", "ref": "pdumv20hvnetlx", "cfg": "base", "label": "PDU B", "at": "right-rear", "offsetMm": 88.9},
+            {"id": "z3", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "Vertical manager left", "at": "left-front", "offsetMm": 0},
+            {"id": "z4", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "Vertical manager right", "at": "right-front", "offsetMm": 0}]
+    return {"format": "portrayal-rack", "version": 4, "id": "doc-ring-rack",
+            "racks": [{"id": "r1", "name": "Ring rack",
+                       "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                                 "railDepth": 740, "usableDepth": 1000, "ref": None},
+                       "items": items, "zeroU": zero, "cables": cables, "bundles": bundles}]}
+
+
+# What each call may take on this rack, in seconds. Generous: the kit that passes takes a tenth of each on a
+# laptop, and the kit before it (0.22.0) took 20 s to inspect a cable, 49 s to describe the rack and 40 s to redraw.
+RING_RACK_BUDGET = {"inspect": 3.0, "describe_rack": 5.0, "redraw": 5.0}
+TIMED_TOOL_JS = """async ([n, a]) => { const t0 = performance.now(); const res = await window.__tools[n].execute(a);
+  return {s: (performance.now() - t0) / 1000, isError: !!res?.isError, text: (res?.content ?? []).map(c => c.text).join('\\n')}; }"""
+# An edit through the assistant's tool, timed until the panes have been drawn again with routes read for the rack as it now is.
+TIMED_EDIT_JS = """async ([cmds, ms]) => { const R = window.__rack, was = document.querySelector('#paneFront > svg'), doc = R.doc(), t0 = performance.now();
+  const res = await window.__tools.edit_rack.execute({commands: cmds});
+  if (res?.isError) return {error: (res.content ?? []).map(c => c.text).join(' ')};
+  const answered = (performance.now() - t0) / 1000;
+  while (performance.now() - t0 < ms) {
+    if (R.doc() !== doc && document.querySelector('#paneFront > svg') !== was && R.routesCurrent().current
+        && !document.getElementById('panes').hasAttribute('aria-busy')) return {answered, s: (performance.now() - t0) / 1000};
+    await new Promise(r => setTimeout(r, 20));
+  }
+  return {answered, s: null}; }"""
+
+
+@extra("rack.html: a rack of 30 cables, 25 ring managers, 26 half-unit panels and two pass-through ducts answers in time - a cable inspected in under 3 s, the rack described in under 5 s, and the panes redrawn in under 5 s after an edit to a cable and after a device is removed")
+def check_rack_ring_rack_budgets(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    fixture = ring_rack_fixture()
+    rack = fixture["racks"][0]
+    count = lambda ref: sum(1 for i in rack["items"] if i["ref"] == ref)
+    if (len(rack["cables"]), count("fhd-cmp5dr"), count("xcu"), count("cmh-dfd1u"), len(rack["bundles"])) != (30, 25, 26, 2, 4):
+        return [f"fixture: {len(rack['cables'])} cables, {count('fhd-cmp5dr')} ring managers, {count('xcu')} half-unit panels, "
+                f"{count('cmh-dfd1u')} ducts, {len(rack['bundles'])} bundles; expected 30, 25, 26, 2, 4"]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.set_input_files("#openFile", files=[{"name": "ring.rack.json", "mimeType": "application/json", "buffer": json.dumps(fixture).encode()}])
+    # (five minutes: the kit this check was written against took most of one to draw this rack the first time)
+    wait_fn(page, "ring rack: opened and drawn with its routes",
+            "() => window.__rack.doc().racks[0].name === 'Ring rack' && window.__rack.routesCurrent().current"
+            " && document.querySelectorAll('#paneFront [data-cable-tag]').length > 0", timeout=300000)
+    wait_fn(page, "ring rack: tools registered", "() => window.__tools && window.__tools.edit_rack && window.__tools.inspect && window.__tools.describe_rack")
+    # THE RACK IS THE ONE MEANT, AS THE PAGE READ IT: nothing dropped on the way in, every cable connected and laid,
+    # and as many solid bodies as make the rack heavy. A fixture that lost its weight would pass any budget.
+    got = page.evaluate("""async () => { const R = window.__rack, r = R.doc().racks[0], routes = new Map(R.routes() ?? []), paths = R.paths() ?? {};
+      const loose = await R.query.looseEnds();
+      return {items: r.items.length, cables: r.cables.length, bundles: (r.bundles ?? []).length, zeroU: (r.zeroU ?? []).length,
+              routed: r.cables.filter(c => routes.has(c.id)).length, laid: r.cables.filter(c => paths[c.id]).length,
+              loose: Array.isArray(loose) ? loose.length : (loose?.ends ?? []).length, solids: R.solids().length}; }""")
+    want = {"items": len(rack["items"]), "cables": 30, "bundles": 4, "zeroU": 4, "routed": 30, "laid": 30, "loose": 0}
+    for k, v in want.items():
+        if got.get(k) != v:
+            bad.append(f"ring rack: {k} is {got.get(k)!r}, expected {v!r}")
+    if not got.get("solids") or got["solids"] < 600:
+        bad.append(f"ring rack: {got.get('solids')} solid bodies, expected 600 or more (the rack is heavy by its solids)")
+    if bad:
+        return bad
+    took = {}
+    for name, args, label in (("inspect", {"id": "c1"}, "inspect c1"), ("inspect", {"id": "c3"}, "inspect c3 (through a duct)"),
+                              ("describe_rack", {}, "describe_rack")):
+        r = page.evaluate(TIMED_TOOL_JS, [name, args])
+        took[label] = r["s"]
+        if r["isError"] or not r["text"].strip():
+            bad.append(f"{label}: answered {r['text'][:200]!r}")
+        if r["s"] > RING_RACK_BUDGET[name]:
+            bad.append(f"{label} took {r['s']:.1f} s, over its budget of {RING_RACK_BUDGET[name]:g} s")
+    for cmds, label in (([{"op": "cable.update", "id": "c1", "length": {"value": 2, "unit": "m"}}], "redraw after a cable's length is changed"),
+                        ([{"op": "remove", "id": "m-sw-rear"}], "redraw after a device is removed")):
+        r = page.evaluate(TIMED_EDIT_JS, [cmds, 120000])
+        if r.get("error"):
+            bad.append(f"{label}: the edit was refused: {r['error']}")
+            continue
+        took[label] = r["s"]
+        if r["s"] is None:
+            bad.append(f"{label}: the panes were not redrawn with current routes in 120 s")
+        elif r["s"] > RING_RACK_BUDGET["redraw"]:
+            bad.append(f"{label} took {r['s']:.1f} s, over its budget of {RING_RACK_BUDGET['redraw']:g} s")
+    # the same questions after the edits: an answer in time, for the rack as it now is
+    r = page.evaluate(TIMED_TOOL_JS, ["inspect", {"id": "c1"}])
+    took["inspect c1 after the edits"] = r["s"]
+    if r["isError"] or "2 m" not in r["text"]:
+        bad.append(f"inspect c1 after its length was changed does not say 2 m: {r['text'][:200]!r}")
+    if r["s"] > RING_RACK_BUDGET["inspect"]:
+        bad.append(f"inspect c1 after the edits took {r['s']:.1f} s, over its budget of {RING_RACK_BUDGET['inspect']:g} s")
+    print("      ring rack: " + ", ".join(f"{k} {v:.2f} s" for k, v in took.items() if v is not None), flush=True)
     return bad
 
 
@@ -17924,6 +18230,7 @@ MARKS_UNIT = "marks-harness"
 DEFAULT_SECONDS = 2.0
 SECONDS = {
     "index.html": 73,
+    "check_rack_ring_rack_budgets": 25, "check_rack_edit_survives_reload": 12,
     "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
     "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
     "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
