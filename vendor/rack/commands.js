@@ -19,7 +19,8 @@ import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey,
-        connectorOf, mediaKind, portPathOf, MEDIA, MEDIA_LABELS} from './cable-rules.js';
+        connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
+import {portIdsOf} from './ports.js';
 import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, lanesOf} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
@@ -229,9 +230,10 @@ function slotList(env, R, path) {
 const firstEight = refs => (refs.length > 8 ? `${refs.slice(0, 8).join(', ')} and ${refs.length - 8} more` : refs.join(', ') || 'nothing');
 
 // The ports a part in a bay has, by their ids on it: its cages, the parts it
-// composes and its own bays.
-const portIds = comp => new Set([...(Array.isArray(comp?.cages) ? comp.cages : []).map(g => g.id),
-  ...(comp?.parts || []).map(q => q.id), ...Object.keys(comp?.bays || {})]);
+// composes and its own bays, and those of its back (a panel's rear adapters,
+// a cassette's trunk connector), which a cable reaches from the host's other
+// panel at the same `<bay>/module/<part>` (ports.js portIdsOf).
+const portIds = (comp, compByRef) => portIdsOf(comp, compByRef);
 
 function fit(rack, {id, path, ref}, ctx) {
   const it = itemOf(rack, id);
@@ -275,7 +277,7 @@ function fit(rack, {id, path, ref}, ctx) {
   if (!isCage && holds !== undefined) {
     const comp = partOf(ctx.compByRef, holds);
     const known = holds === null || comp;
-    const ports = portIds(comp), under = `${path}/module/`;
+    const ports = portIds(comp, ctx.compByRef), under = `${path}/module/`;
     const cut = known ? (rack.cables || []).flatMap(c => [c.a, c.b].filter(e => e.item === id && e.path.startsWith(under)
       && !ports.has(portPathOf(e.path.slice(under.length)).split('/')[0])).map(e => ({c, e}))) : [];
     if (cut.length) {
@@ -601,8 +603,14 @@ function dcim(rack, p) {
 // ── cables ──────────────────────────────────────────────────────────────
 const lengthOf = l => (l ? {value: l.value, unit: l.unit ?? 'm', source: l.source ?? 'entered'} : null);
 
+// AN END NAMES A PORT BY ITS PATH. An element id of a drawing is refused, with
+// the address it stands for (cable-rules.js elementIdReason).
+const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); return e ? {error: `${elementIdReason(e.path)}.`} : null; };
+
 function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null}, {chassisOf}) {
   if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
+  const refused = endRefused([a, b]);
+  if (refused) return refused;
   const can = canCable(rack, a, b, {uOf: heightOf(chassisOf)});
   if (!can.ok) return {error: can.reason};
   const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length)});
@@ -620,6 +628,8 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
   if (moved.some(k => !itemOf(rack, ends[k].item))) return {error: GONE};
+  const refused = endRefused(moved.map(k => ends[k]));
+  if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
     const can = canCable(rack, ends.a, ends.b, {ignoreId: id, uOf});

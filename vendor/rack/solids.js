@@ -229,20 +229,20 @@ const AX = ['x', 'y', 'z'];
 const lerp = (a, b, t) => ({x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t});
 
 // The stretch [t0, t1] of the leg a-b strictly inside the box, or null. A leg
-// on a face, or outside it, is not inside.
-function inside(a, b, box, eps = EPS) {
-  let t0 = 0, t1 = 1;
-  for (const k of AX) {
-    const lo = box[`${k}0`] + eps, hi = box[`${k}1`] - eps;
-    if (!(hi > lo)) return null;
-    const p = a[k], dv = b[k] - a[k];
-    if (Math.abs(dv) < 1e-12) { if (p <= lo || p >= hi) return null; continue; }
-    let u = (lo - p) / dv, v = (hi - p) / dv;
-    if (u > v) [u, v] = [v, u];
-    t0 = Math.max(t0, u); t1 = Math.min(t1, v);
-    if (t1 - t0 <= 1e-9) return null;
-  }
-  return [t0, t1];
+// on a face, or outside it, is not inside. The box is given as its six
+// numbers, so that a list of boxes can be read from one flat array (below).
+function slab(t, p, dv, lo, hi) {
+  if (!(hi > lo)) return false;
+  if (Math.abs(dv) < 1e-12) return !(p <= lo || p >= hi);
+  let u = (lo - p) / dv, v = (hi - p) / dv;
+  if (u > v) { const w = u; u = v; v = w; }
+  t[0] = Math.max(t[0], u); t[1] = Math.min(t[1], v);
+  return !(t[1] - t[0] <= 1e-9);
+}
+function inside(a, b, x0, x1, y0, y1, z0, z1) {
+  const t = [0, 1];
+  return slab(t, a.x, b.x - a.x, x0 + EPS, x1 - EPS) && slab(t, a.y, b.y - a.y, y0 + EPS, y1 - EPS)
+    && slab(t, a.z, b.z - a.z, z0 + EPS, z1 - EPS) ? t : null;
 }
 
 const within = (p, box) => AX.every(k => p[k] >= box[`${k}0`] - EPS && p[k] <= box[`${k}1`] + EPS);
@@ -261,11 +261,62 @@ const within = (p, box) => AX.every(k => p[k] >= box[`${k}0`] - EPS && p[k] <= b
 // keeps for the last resort. Every other plate or envelope is met by the
 // centre line, as before: a cable lies against those at its radius.
 const RING_PART = /^ring\/[^/]+\/./;
+// The box of a solid as a cable of `diameter` meets it, kept for the solid
+// and the diameter it was last asked for: a lay asks for the same few
+// thousand times.
+const metOf = new WeakMap();
 const met = (s, diameter) => {
-  if (!(RING_PART.test(String(s?.part ?? '')) || s?.zeroU === true) || !(diameter > 0)) return s.box;
-  const r = diameter / 2, b = s.box;
-  return {x0: b.x0 - r, x1: b.x1 + r, y0: b.y0 - r, y1: b.y1 + r, z0: b.z0 - r, z1: b.z1 + r};
+  const kept = metOf.get(s);
+  if (kept && kept.diameter === diameter && kept.of === s.box) return kept.box;
+  let box = s.box;
+  if ((RING_PART.test(String(s?.part ?? '')) || s?.zeroU === true) && diameter > 0) {
+    const r = diameter / 2, b = s.box;
+    box = {x0: b.x0 - r, x1: b.x1 + r, y0: b.y0 - r, y1: b.y1 + r, z0: b.z0 - r, z1: b.z1 + r};
+  }
+  if (s !== null && typeof s === 'object') metOf.set(s, {diameter, of: s.box, box});
+  return box;
 };
+
+// A LIST OF SOLIDS, READY TO BE CROSSED (kit 0.25.0). A lay asks which solids
+// a leg crosses some thousands of times, of a list that is the same every
+// time (solidsOf's, kept per rack and context), and almost every solid is
+// nowhere near the leg. So for a list and a diameter the boxes are laid out
+// once, flat, with the solids of one item (which follow each other in the
+// list) under one box that holds them all: a leg that stays out of an item's
+// box crosses none of its parts, and a part is passed over on the same test
+// before its stretch is worked out. Nothing is decided here that `inside`
+// would not decide: a leg wholly to one side of a box on an axis has no
+// stretch inside it. The order of the list is kept, so the answer is the
+// same list in the same order. A short list is read as it is.
+// THE LIST IS NOT CHANGED IN PLACE: the boxes are laid out for the list as it
+// was when first read, and found again by the list itself. A list of another
+// length, or whose first or last solid or their boxes are other objects, is
+// laid out again; a solid swapped or moved in the middle of a list is not
+// seen (to look at every solid on every leg would cost what this saves), so
+// a caller with other solids hands in another list, as solidsOf does.
+const INDEX_FROM = 12;
+const indexOf = new WeakMap();
+function indexed(solids, diameter) {
+  let per = indexOf.get(solids);
+  if (!per) indexOf.set(solids, per = new Map());
+  let ix = per.get(diameter);
+  const n = solids.length, s0 = solids[0], s1 = solids[n - 1];
+  if (ix && ix.n === n && ix.s0 === s0 && ix.s1 === s1 && ix.b0 === s0?.box && ix.b1 === s1?.box) return ix;
+  const boxes = new Float64Array(6 * n), groups = [];
+  let g = null;
+  solids.forEach((s, i) => {
+    const b = met(s, diameter);
+    boxes.set([b.x0, b.x1, b.y0, b.y1, b.z0, b.z1], 6 * i);
+    if (!g || g.item !== s.item) groups.push(g = {item: s.item, from: i, to: i, x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity, z0: Infinity, z1: -Infinity, all: false});
+    g.to = i + 1;
+    // a box with a number that is not one is never passed over
+    if (![b.x0, b.x1, b.y0, b.y1, b.z0, b.z1].every(Number.isFinite)) g.all = true;
+    g.x0 = Math.min(g.x0, b.x0); g.x1 = Math.max(g.x1, b.x1); g.y0 = Math.min(g.y0, b.y0); g.y1 = Math.max(g.y1, b.y1);
+    g.z0 = Math.min(g.z0, b.z0); g.z1 = Math.max(g.z1, b.z1);
+  });
+  per.set(diameter, ix = {n, boxes, groups, s0, s1, b0: s0?.box, b1: s1?.box});
+  return ix;
+}
 
 // Every solid the leg a-b crosses, in the order it meets them: [{solid, t0,
 // t1, at}], `at` where it enters. A stretch that lies within a hole the
@@ -273,13 +324,31 @@ const met = (s, diameter) => {
 // A ring's part is crossed where the cable's tube would touch it (`met`).
 export function legCrossings(a, b, solids, {diameter = 0} = {}) {
   const out = [];
-  for (const s of solids) {
-    const span = inside(a, b, met(s, diameter));
-    if (!span) continue;
+  const hit = (s, span) => {
     const p = lerp(a, b, span[0]), q = lerp(a, b, span[1]);
     const through = (s.holes || []).some(h => within(p, h.box) && within(q, h.box)
       && diameter <= Math.min(...h.size) + 1e-9);
     if (!through) out.push({solid: s, t0: span[0], t1: span[1], at: p});
+  };
+  if (!Array.isArray(solids) || solids.length < INDEX_FROM) {
+    for (const s of solids) {
+      const m = met(s, diameter), span = inside(a, b, m.x0, m.x1, m.y0, m.y1, m.z0, m.z1);
+      if (span) hit(s, span);
+    }
+    return out.sort((x, y) => x.t0 - y.t0);
+  }
+  const {boxes: B, groups} = indexed(solids, diameter);
+  // the leg's own box: a comparison with a number that is not one is false,
+  // so such a leg is passed over by nothing
+  const lx = Math.min(a.x, b.x), hx = Math.max(a.x, b.x), ly = Math.min(a.y, b.y), hy = Math.max(a.y, b.y),
+    lz = Math.min(a.z, b.z), hz = Math.max(a.z, b.z);
+  for (const g of groups) {
+    if (!g.all && (hx < g.x0 || lx > g.x1 || hy < g.y0 || ly > g.y1 || hz < g.z0 || lz > g.z1)) continue;
+    for (let i = g.from, o = 6 * g.from; i < g.to; i++, o += 6) {
+      if (hx < B[o] || lx > B[o + 1] || hy < B[o + 2] || ly > B[o + 3] || hz < B[o + 4] || lz > B[o + 5]) continue;
+      const span = inside(a, b, B[o], B[o + 1], B[o + 2], B[o + 3], B[o + 4], B[o + 5]);
+      if (span) hit(solids[i], span);
+    }
   }
   return out.sort((x, y) => x.t0 - y.t0);
 }

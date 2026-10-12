@@ -243,19 +243,43 @@ export function holderPath(path) {
   const i = String(path).lastIndexOf('/module/');
   return i < 0 ? null : path.slice(0, i);
 }
+// AN ELEMENT ID IS NOT AN ADDRESS. The build joins the steps of an element's
+// id with two hyphens (`slot-2--module--p0`, and `bay-1-rear--b01` for a part
+// on the back of what bay-1 holds) and a path's with a slash, and no path in
+// the library holds two hyphens in a row. A reader that took an element's id
+// for its path offered one as an address; it is refused wherever an end is
+// set, with the address it most likely stands for.
+export const isElementId = path => String(path ?? '').includes('--');
+export function addressFor(path) {
+  const p = String(path ?? '');
+  const back = /^(.+?)-rear--(.+)$/.exec(p);
+  return back ? {path: `${back[1]}/module/${back[2].split('--').join('/')}`, view: 'rear'} : {path: p.split('--').join('/')};
+}
+// A phrase with no period, as every reason here is.
+export function elementIdReason(path) {
+  const to = addressFor(path);
+  return `${path} is an element id of the drawing, not the address of a port; give ${
+    to.view ? `{path: "${to.path}", view: "${to.view}"}` : `the path ${to.path}`}`;
+}
+
 // WHY AN END DOES NOT LAND, from what its panel has now - or null when it
-// lands. `facts` is what cable-plugs.js read off the face:
-//   {item, drawing, port, cage, occupied, holder: {path, part} | null}
+// lands. `facts` is what cable-plugs.js read off the face, or what ports.js
+// seatedPort answered from the catalogue:
+//   {item, drawing, port, cage, occupied, holder: {path, part} | null, onView?}
 // item: the device is still in the rack; drawing: its panel has one; port: a
 // port is drawn at the end's path; cage: that port takes an optic; occupied:
-// something is seated in it; holder: the bay above the path and what it holds.
+// something is seated in it; holder: the bay above the path and what it holds;
+// onView: where no port is at the path on the end's panel, the panel of the
+// same device that has it (the back of a part in a bay shows on the other one).
 export function looseReason(end, facts) {
   if (!facts || !facts.item) return 'the device was removed';
+  if (isElementId(end.path)) return elementIdReason(end.path);
   if (!facts.drawing) return 'this panel has no drawing';
   if (!facts.port) {
     const h = facts.holder;
     if (!h) return `${end.path} is not on this panel`;
     const leaf = end.path.slice(h.path.length + '/module/'.length);
+    if (h.part && facts.onView) return `${h.path} holds ${h.part}, whose port ${leaf} is on the ${facts.onView} panel; give view "${facts.onView}"`;
     return h.part ? `${h.path} holds ${h.part}, which has no port ${leaf}` : `${h.path} is empty`;
   }
   if (facts.cage && !facts.occupied) return `${end.path} holds no optic`;
