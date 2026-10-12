@@ -54,6 +54,7 @@ import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre} from './bundle-view.j
 import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
+import {noteStrap} from './strap-size.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
         paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
 
@@ -405,6 +406,9 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       if (!bar) continue;
       const xy = {x1: n3(bar.x1), y1: n3(bar.y1), x2: n3(bar.x2), y2: n3(bar.y2)};
       const el = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, xy, s);
+      // from the side the pack is its circle, as wide as its diameter whichever way the run goes (strap-size.js)
+      const len = Math.hypot(bar.x2 - bar.x1, bar.y2 - bar.y1) || 1;
+      noteStrap(el, {c: bar.at, n: [(bar.x2 - bar.x1) / len, (bar.y2 - bar.y1) / len], lo: -hit.stretch.diameter / 2, hi: hit.stretch.diameter / 2});
       bars.append(el);
     }
   }
