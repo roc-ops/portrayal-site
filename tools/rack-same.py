@@ -6,7 +6,7 @@ Not a check: it needs a second checkout to compare with, and CI has none.
 
     git worktree add /somewhere/main origin/main        # or: git archive origin/main | tar -x -C /somewhere/main
     python3 tools/rack-same.py --main /somewhere/main path/to/a.rack.json [...]
-        [--fixtures] [--edits 14] [--tools few|all] [--glb] [--settle 600]
+        [--fixtures] [--edits 15] [--tools few|all] [--glb] [--gpu] [--settle 600]
 
 It serves both checkouts, opens each rack file in both through Open .json
 (headless Chromium, ?probe=1), and compares, after the file opens and after
@@ -543,6 +543,7 @@ def main():
     ap.add_argument("--edits", type=int, default=len(EDITS))
     ap.add_argument("--tools", choices=["few", "all"], default="few", help="how many tool calls after each edit (all of them after the open and at the end)")
     ap.add_argument("--glb", action="store_true")
+    ap.add_argument("--gpu", action="store_true", help="ask Chromium for the machine's GPU instead of software GL (a 3D scene of a large rack does not settle without one)")
     ap.add_argument("--settle", type=int, default=600, help="seconds a 3D scene gets")
     ap.add_argument("--timeout", type=int, default=900, help="seconds any one 2D step gets")
     args = ap.parse_args()
@@ -564,7 +565,7 @@ def main():
             if not wait_for(f"{b}/rack.html"):
                 sys.exit(f"rack-same: no server answering at {b}")
         with sync_playwright() as pw:
-            browser = pw.chromium.launch()
+            browser = pw.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"] if args.gpu else [])
             for name, doc in docs.items():
                 before, t0 = (t.n, len(t.bad)), time.time()
                 one_rack(t, browser, bases, name, doc, args)
