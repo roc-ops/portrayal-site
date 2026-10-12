@@ -1519,6 +1519,9 @@ function wirePin() {
     const t = ev.target;
     if (!(t instanceof Element) || t.closest(NOT_NOTHING)) return;
     if (t.closest('#stage3d') && S.scene3d && hoverAt3d(S.scene3d, ev)) return;
+    // (nor, on a pane, one on a cable or a bundle: that click pins, #194)
+    const pane = t.closest('svg[data-pane]');
+    if (pane && !sidesShown() && hoverAt2d(pane, ev)) return;
     select(null);
   });
 }
@@ -1799,6 +1802,17 @@ function onPaneClick(ev) {
   // A bundle's tag (shown while its bundle is hovered or pinned, #194) selects its bundle.
   const btag = ev.target.closest('[data-cable-tags] [data-bundle-tag]');
   if (btag) return S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on) ? undefined : select({kind: 'bundle', id: btag.dataset.bundleTag});
+  // A CLICK OR A TAP ON A CABLE PINS IT (#194), or its bundle where it runs
+  // bundled (hover.js hoverAt2d), so its tag shows without a pointer to hover
+  // with - where the click is on nothing else: a bare gutter, the side
+  // column. Over a device, an empty U or a part beside the rack the stroke is
+  // still click-through, and the click is the device's, the U's or the
+  // part's, as it always was. Not in Cable mode or while a device is being moved, whose clicks
+  // are their own, nor over a cable form that selecting would discard.
+  if (!S.cable.on && S.sel?.kind !== 'move' && S.sel?.kind !== 'cable-form' && !ev.target.closest('[data-item-id][data-panel], [data-u], [data-zerou-id]')) {
+    const pane = ev.target.closest('svg[data-pane]'), on = pane ? hoverAt2d(pane, ev) : null;
+    if (on) return select({kind: on.kind, id: on.id});
+  }
   if (S.cable.on) return onCableClick(ev);
   if (S.sel?.kind === 'move') {
     const u = ev.target.closest('[data-u]');

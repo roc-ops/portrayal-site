@@ -50,7 +50,8 @@ import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {elevationBox} from './elevation.js';
-import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre, trunkSpanPoints, alongLine} from './bundle-view.js';
+import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre, trunkSpanPoints, alongLine, offLine} from './bundle-view.js';
+import {pointOf} from '../../vendor/rack/route.js';
 import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends} from './route-context.js';
@@ -316,7 +317,9 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   const lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
   const see = q => { lo[0] = Math.min(lo[0], q[0]); lo[1] = Math.min(lo[1], q[1]); hi[0] = Math.max(hi[0], q[0]); hi[1] = Math.max(hi[1], q[1]); };
   const loose = e => reasons.get(endKey(e)) != null;
-  const drawn = [];
+  const drawn = [], drawnLine = new Map();   // each drawn cable's line on this pane, as points
+  // the kit's own point for a lane waypoint, to tell two lanes at one U apart on a member's path (bundle-view.js trunkSpanPoints)
+  const laneAt = w => (routes.ctx ? pointOf(rack, w, routes.ctx) : null);
   rack.cables.forEach((c, i) => {
     const path = routes.paths.get(c.id);
     if (!path?.points?.length || loose(c.a) || loose(c.b)) return;
@@ -324,6 +327,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     const pts = packedPoints(c.id, path.points, routes.routes?.get(c.id)?.waypoints, place, lay, centreOf, WIDTH);
     const {d, points} = projectedPath(pane, frame, pts);
     if (!d) return;
+    drawnLine.set(c.id, points);
     points.forEach(see);
     const link = plan.links[i];
     const g = svgEl('g', {'data-cable': 'true', 'data-cable-id': c.id, 'data-link-index': String(i), 'data-media': link.media,
@@ -378,7 +382,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     // as the members' own are: side-geometry.js packedPoints); null where the
     // run is straight or a stop is not placed.
     const bentRun = (f, k) => {
-      const trunk = f.check?.layout?.trunk ?? [], span = trunkSpanPoints(trunk, k, f.members, routes.paths);
+      const trunk = f.check?.layout?.trunk ?? [], span = trunkSpanPoints(trunk, k, f.members, routes.paths, laneAt);
       if (!span?.mid.length) return null;
       const p0 = pt(lay.indexOf(trunk[k])), p1 = pt(lay.indexOf(trunk[k + 1]));
       if (!p0 || !p1) return null;
@@ -439,7 +443,10 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       // another in this pane (a run across the rack, seen end on) is counted, not drawn.
       const half = hit ? hit.stretch.diameter / 2 + 2 : 0, straight = p && q ? strapBar(p, q, hit.f, half) : null;
       const bent = straight ? bentRun(f, s.segment) : null, leg = bent && alongLine(bent.rack, s.t);
-      const bar = leg ? barOn(bent.pane, leg, half) ?? straight : straight;
+      // ...and never further from the cables it ties than the straight place was: of the two, the one nearer its riders' own lines on this pane
+      const onRun = leg ? barOn(bent.pane, leg, half) : null, lines = hit ? hit.stretch.members.map(id => drawnLine.get(id)).filter(Boolean) : [];
+      const off = b => Math.min(...lines.map(line => offLine(b.at, line)));
+      const bar = onRun && (!lines.length || off(onRun) <= off(straight)) ? onRun : straight;
       // a strap on a run across the rack is seen end on: counted, not drawn here
       if (!bar) continue;
       const xy = {x1: n3(bar.x1), y1: n3(bar.y1), x2: n3(bar.x2), y2: n3(bar.y2)};

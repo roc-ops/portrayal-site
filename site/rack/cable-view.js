@@ -16,7 +16,7 @@
 
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH, TAG_H} from './cables.js';
-import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
+import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter, fitText} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
@@ -26,7 +26,8 @@ import {paneMarks, landedBends} from './route-context.js';
 import {spareText} from './spare.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
-import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
+import {positionOf} from '../../vendor/rack/model.js';
+import {cablePlan, endKey, endName, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
 // own figure), and below it for a lead hanging from the lowest device.
@@ -158,6 +159,9 @@ export function pillText(text) {
   const cs = Array.from(String(text));
   return cs.length > MAX_CHARS ? `${cs.slice(0, MAX_CHARS - 1).join('')}…` : String(text);
 }
+
+// A tag's text is fitted to the pill by shortening the middle of a part, never its end (bundle-view.js fitText).
+const fitTag = (parts, cut) => fitText(parts, cut, MAX_CHARS);
 
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
 // `routes` is S.routes: its routes (cable id -> waypoints), the ring marks
@@ -303,9 +307,12 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
       const lead = (k, before) => { for (const l of leads) if (l.at === k && l.before === before)
         for (const q of l.points) { pts.push(detourAt(q)); rings.push(null); } };
       after(-1);
+      // where this pane's points stop before the first waypoint it cannot place, and start again after the last
+      let headEnd = null, tailFrom = 0;
       at.forEach((p, k) => {
         // A waypoint this pane cannot place is dropped, and its mark with it.
         if (p) { lead(k, true); pts.push(p); rings.push(turned?.[k] ?? null); lead(k, false); }
+        else { headEnd ??= pts.length; tailFrom = pts.length; }
         for (const q of between.get(k) ?? []) { pts.push(q); rings.push(null); }
         after(k);
       });
@@ -315,6 +322,13 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
         link.via2d = {[pane]: pts};
         if (turned) link.rings2d = {[pane]: rings};
       }
+      // BOTH ENDS HERE, AND A WAYPOINT BETWEEN THEM THAT IS NOT (#194): the
+      // cable leaves this face and comes back. It is drawn as it runs, a stub
+      // from each end to where it leaves (cables.js `away2d`), never as one
+      // line across the face from the last point before to the first after.
+      if (headEnd != null && link.from[2] === pane && link.to[2] === pane)
+        link.away2d = {[pane]: {head: pts.slice(0, headEnd), tail: pts.slice(tailFrom),
+                                headRings: turned ? rings.slice(0, headEnd) : null, tailRings: turned ? rings.slice(tailFrom) : null}};
     }
   }
   const endAt = (i, side) => cables[i][side === 'from' ? 'a' : 'b'];
@@ -328,36 +342,58 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   // drawCables2d hands a tag the far end as the plan's own array.
   const farEnd = (link, far) => { const i = plan.links.indexOf(link); return endAt(i, far === link.from ? 'from' : 'to'); };
   // A tag's pill sits in the side column, outboard of the point it labels.
-  const pill = (t, at, text) => {
+  // ITS REACH (#194): a tag shows only while its cable is under the pointer,
+  // so the gap from the cable's end to the pill would end the hover before
+  // the pointer got to the tag. An unpainted strip across that gap is the
+  // tag's too: from the cable's end (`lead` mm back from the tag's point) to
+  // the pill, and NO THICKER THAN THE CABLE'S OWN STROKE, so it lies over
+  // nothing the cable's end does not already lie over - never a port or a
+  // part beside the rack. A sheet leaves it out (exports.js paperTags).
+  const REACH = (WIDTH + 1.2) / 2;
+  const pill = (t, at, text, lead = 0) => {
     const label = pillText(text);
     const w = 7 * Array.from(label).length + 12;
-    const x = at[0] < OPENING / 2 ? at[0] - 4 - w : at[0] + 4;
+    const out = at[0] < OPENING / 2 ? -1 : 1;
+    const x = out < 0 ? at[0] - 4 - w : at[0] + 4;
     t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
-    // ITS REACH (#194): a tag shows only while its cable is under the pointer,
-    // so the gap from the cable's end to the pill would end the hover before
-    // the pointer got to the tag. This unpainted strip from over the cable's
-    // end to the pill is the tag's too, so the pointer stays on it on the way
-    // and the tag can be clicked. A sheet leaves it out (exports.js paperTags).
-    const out = at[0] < OPENING / 2 ? -1 : 1;
-    t.append(svgEl('path', {d: `M${at[0] - out * 12} ${at[1] - 9}H${at[0] + out * 4}V${at[1] + 9}H${at[0] - out * 12}Z`, fill: 'transparent', 'data-tag-reach': ''}));
+    t.append(svgEl('path', {d: `M${at[0] - out * (lead + REACH)} ${at[1] - REACH}H${at[0] + out * 4}V${at[1] + REACH}H${at[0] - out * (lead + REACH)}Z`, fill: 'transparent', 'data-tag-reach': ''}));
     return t;
   };
-  const tagAt = new Map(), farOf = new Map();   // cable id -> where its cross-face tag points from, and its far end
+  // a tag in a gutter points from 6 mm outboard of its cable's last point there (cables.js); one in the side column from the cable's end itself
+  const leadOf = at => (at[0] === edgeX ? 0 : 6);
+  // WHAT A FAR END IS CALLED ON A TAG: its device and its port. Two devices of
+  // one label are told apart by their U ("AS7816-64X U40"); a text too long
+  // loses the middle of the device's name, never the port.
+  const shared = new Set(rack.items.map(i => i.label).filter((l, k, all) => all.indexOf(l) !== k));
+  const uOfShared = it => (it && shared.has(it.label) ? ` U${positionOf(rack.frame, it.ru, uOf?.(it) ?? 1)}` : '');
+  const deviceOf = it => (it ? `${it.label}${uOfShared(it)}` : 'removed');
+  const otherFace = rear ? 'front' : 'rear';
+  // every cross-face tag drawn: {id, el, at, kind: 'far' | 'away', far: the far end's item, gutter}
+  const marks = [];
   const recs = drawCables2d(svg, plan, pane, {
     edgeX, outboard: rear ? -1 : 1, stackGutter: false,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
-    // Its title carries the full text, which the pill may have had to cut.
+    // Its title carries the full text, which the pill may have had to shorten.
     tag: (at, far, link) => {
       const t = svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'});
       const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item);
       const full = svgEl('title', {});
-      full.textContent = `→ ${it ? it.label : 'removed'} ${end.path}`;
+      full.textContent = `→ ${deviceOf(it)} ${end.path}`;
       t.append(full);
-      tagAt.set(link.id, at); farOf.set(link.id, end);
-      return pill(t, at, tagText(rack, end));
+      marks.push({id: link.id, el: t, at, kind: 'far', far: it ?? null});
+      return pill(t, at, fitTag(['→ ', it ? it.label : 'removed', uOfShared(it), ' ', end.path], [1, 4]), leadOf(at));
+    },
+    // Both ends are on this pane and the cable goes by the other face between them: each stub's tag says so.
+    awayTag: (at, link) => {
+      const t = svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'});
+      const c = cables[plan.links.indexOf(link)], full = svgEl('title', {});
+      full.textContent = `↔ by the ${otherFace} face: ${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}`;
+      t.append(full);
+      marks.push({id: link.id, el: t, at, kind: 'away', far: null});
+      return pill(t, at, `↔ by the ${otherFace} face`, leadOf(at));
     },
     // The far end does not land anywhere: the tag says so, and its title says why.
     looseTag: (at, far, link) => {
@@ -391,54 +427,73 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   });
   drawTieStraps2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
   drawInFront(svg);
-  // ONE TAG FOR A BUNDLE, where its cables leave this face (#194): at the
-  // middle of its members' own tag points in a gutter. A member that leaves
-  // the face somewhere else (more than LEAVE mm from the middle one) is not
-  // counted in it, and keeps its own tag. The tag names the bundle's group
-  // (data-bundle-tag), the cables it stands for (data-members) and its gutter.
+  // ONE TAG FOR A BUNDLE WHERE ITS CABLES LEAVE THIS FACE (#194): at the middle
+  // of its members' own tag points in a gutter. A bundle that leaves the face
+  // in more than one place (its members' points more than LEAVE mm apart, in
+  // another gutter, or some to a far end and some by the other face and back)
+  // has a tag for each group, each with its own count. A tag names the bundle
+  // (data-bundle-tag) and the cables it stands for (data-members).
   const LEAVE = 60;
   const tagLayer = svg.querySelector(':scope > [data-cable-tags]');
-  const routedTag = new Map(recs.filter(rec => rec.tag && rec.gutter && tagAt.has(cables[rec.i].id)).map(rec => [cables[rec.i].id, rec]));
-  const stood = new Set(), bundleTags = [];
+  const markOf = new Map(marks.map(m => [m.el, m]));
+  for (const rec of recs) for (const t of rec.tags ?? []) { const m = markOf.get(t.el); if (m) m.gutter = t.gutter; }
+  const groups = [];
   if (tags === 'hover' || tags === 'bundles') for (const f of routes?.bundles?.values() ?? []) {
-    const mine = f.members.filter(id => routedTag.has(id)).sort((a, b) => tagAt.get(a)[1] - tagAt.get(b)[1] || tagAt.get(a)[0] - tagAt.get(b)[0]);
-    if (!mine.length) continue;
-    const mid = tagAt.get(mine[mine.length >> 1]);
-    const here = mine.filter(id => Math.hypot(tagAt.get(id)[0] - mid[0], tagAt.get(id)[1] - mid[1]) <= LEAVE
-      && routedTag.get(id).gutter === routedTag.get(mine[mine.length >> 1]).gutter);
-    const at = [0, 1].map(k => here.reduce((a, id) => a + tagAt.get(id)[k], 0) / here.length);
-    // where they go: the one device every one of them ends on, else the other face
-    const fars = new Set(here.map(id => farOf.get(id).item)), far = rack.items.find(i => fars.size === 1 && fars.has(i.id));
-    const to = far ? far.label : `the ${rear ? 'front' : 'rear'} face`;
-    const t = svgEl('g', {class: 'cable-tag bundle-tag', tabindex: '0', role: 'button', 'data-bundle-tag': f.id, 'data-members': here.join(' ')});
-    const full = svgEl('title', {});
-    full.textContent = `${f.name}: ${here.length} cable${here.length === 1 ? '' : 's'} → ${to}`;
-    t.append(full);
-    tagLayer.append(pill(t, at, `→ ${to} ×${here.length} · ${f.name}`));
-    for (const id of here) stood.add(id);
-    bundleTags.push({tag: t, y: at[1], gutter: routedTag.get(here[0]).gutter});
-  }
-  if (tags !== 'hover') {
-    // what a file carries: the tags it does not are taken off, and the rest
-    // of each gutter's are stacked, top down, each at its own height or TAG_H
-    // below the one above it
-    const kept = [...bundleTags];
-    for (const rec of recs) {
-      const id = cables[rec.i].id;
-      if (!rec.tag || !tagAt.has(id)) continue;                 // no tag, or a not-connected one
-      if (tags === 'none' || (tags === 'bundles' && stood.has(id))) { rec.tag.remove(); rec.tag = null; }
-      else if (rec.gutter) kept.push({tag: rec.tag, y: tagAt.get(id)[1], gutter: rec.gutter});
+    const rides = new Set(f.members);
+    const mine = marks.filter(m => m.gutter && rides.has(m.id)).sort((a, b) => a.gutter - b.gutter || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0) || a.at[1] - b.at[1] || a.at[0] - b.at[0]);
+    const sets = [];
+    for (const m of mine) {
+      const g = sets.find(x => x[0].gutter === m.gutter && x[0].kind === m.kind && Math.hypot(x[0].at[0] - m.at[0], x[0].at[1] - m.at[1]) <= LEAVE);
+      if (g) g.push(m); else sets.push([m]);
     }
+    for (const set of sets) {
+      const at = [0, 1].map(k => set.reduce((a, m) => a + m.at[k], 0) / set.length), n = new Set(set.map(m => m.id)).size;
+      // where they go: the one device every one of them ends on, else the other face
+      const fars = new Set(set.map(m => m.far?.id ?? null)), far = fars.size === 1 ? set[0].far : null;
+      // [arrow, device or face, its U, count, name]: the device's name is shortened before the bundle's
+      const to = set[0].kind === 'away' ? ['↔ ', `by the ${otherFace} face`, ''] : ['→ ', far ? far.label : `${otherFace} face`, uOfShared(far)];
+      const t = svgEl('g', {class: 'cable-tag bundle-tag', tabindex: '0', role: 'button', 'data-bundle-tag': f.id, 'data-members': [...new Set(set.map(m => m.id))].join(' ')});
+      const full = svgEl('title', {});
+      full.textContent = `${f.name}: ${n} cable${n === 1 ? '' : 's'} ${to.join('')}`;
+      t.append(full);
+      for (const m of set) m.stood = true;
+      groups.push({el: t, at, gutter: set[0].gutter, parts: [...to, ` ×${n} · `, f.name], id: f.id});
+    }
+  }
+  // TWO GROUPS NEVER READ THE SAME: where shortening leaves two of this pane's
+  // bundle tags with one text, each says its bundle's id in place of its
+  // shortened name (the cable list and a sheet's notes give the id beside the name).
+  const said = groups.map(g => fitTag(g.parts, [1, 4]));
+  groups.forEach((g, k) => {
+    const twice = said.some((x, j) => j !== k && x === said[k] && groups[j].parts.join('') !== g.parts.join(''));
+    tagLayer.append(pill(g.el, g.at, twice ? fitTag([...g.parts.slice(0, 4), g.id], [1]) : said[k], 6));
+  });
+  if (tags !== 'hover') {
+    // WHAT A FILE CARRIES: the tags it does not are taken off; the rest of each
+    // gutter's stand at their own heights, and one that would lie on the one
+    // above it is moved TAG_H below it, with a leader back to its own point.
+    const kept = [...groups];
+    for (const rec of recs) for (const t of rec.tags ?? []) {
+      const m = markOf.get(t.el);
+      if (!m) continue;                                          // a not-connected tag
+      if (tags === 'none' || (tags === 'bundles' && m.stood)) { t.el.remove(); if (rec.tag === t.el) rec.tag = null; }
+      else kept.push(m);
+    }
+    for (const rec of recs) if (rec.tags) rec.tag ??= rec.tags.find(t => t.el.isConnected)?.el ?? null;
+    // (a tag in the side column stands on the side of the rack its pill opens to, with that gutter's)
     const low = new Map();
-    for (const k of kept.sort((a, b) => a.y - b.y)) {
-      const y = Math.max(k.y, (low.get(k.gutter) ?? -Infinity) + TAG_H);
-      low.set(k.gutter, y);
-      if (y !== k.y) k.tag.setAttribute('transform', `translate(0 ${Math.round((y - k.y) * 100) / 100})`);
+    for (const k of kept.sort((a, b) => a.at[1] - b.at[1])) {
+      const side = k.at[0] < OPENING / 2 ? -1 : 1, lead = leadOf(k.at);
+      const y = Math.max(k.at[1], (low.get(side) ?? -Infinity) + TAG_H), dy = Math.round((y - k.at[1]) * 100) / 100;
+      low.set(side, y);
+      if (!dy) continue;
+      k.el.setAttribute('transform', `translate(0 ${dy})`);
+      k.el.append(svgEl('path', {d: `M${k.at[0] - side * lead} ${k.at[1] - dy}L${k.at[0] + side * 4} ${k.at[1]}`, fill: 'none', stroke: '#5B636B', 'stroke-width': 0.7, 'data-tag-leader': ''}));
     }
   }
   for (const rec of recs) {
     const c = cables[rec.i];
-    for (const n of [rec.g, rec.tag]) if (n) n.setAttribute('data-cable-id', c.id);
+    for (const n of [rec.g, rec.tag, ...(rec.tags ?? []).map(t => t.el)]) if (n) n.setAttribute('data-cable-id', c.id);
     // A STROKE IS CLICK-THROUGH: nothing handles a click on it, so it must not
     // take the click meant for the device or the empty U beneath. Only its
     // tag is a control. (The showcase's cable is a focus stop; here it is not.)

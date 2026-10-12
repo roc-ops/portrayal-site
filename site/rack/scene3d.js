@@ -10,7 +10,7 @@ import {el} from './dom.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, cablePlan3d, endKey} from '../../vendor/rack/cable-rules.js';
 import {drawCables3d, WIDTH} from './cables.js';
-import {trunkSpanPoints, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF, tieCentre} from './bundle-view.js';
+import {trunkSpanPoints, strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF, tieCentre} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom, uLabel} from '../../vendor/rack/model.js';
@@ -211,8 +211,8 @@ export function stopCentre(rack, w, ctx, rt) {
 // were from the kit's points there (`pts`: the trunk's centre at each
 // waypoint). Taken from the first member whose path runs from one waypoint
 // straight to the other; [] when none does, or the kit adds no point there.
-function trunkSpan(trunk, k, members, paths, toScene, pts) {
-  const span = trunkSpanPoints(trunk, k, members, paths);
+function trunkSpan(trunk, k, members, paths, toScene, pts, laneAt = null) {
+  const span = trunkSpanPoints(trunk, k, members, paths, laneAt);
   if (!span?.mid.length) return [];
   const mean = list => list.reduce((s, q) => s.add(toScene(q)), toScene({x: 0, y: 0, z: 0}).set(0, 0, 0)).multiplyScalar(1 / list.length);
   const d0 = pts[k].clone().sub(mean(span.a)), d1 = pts[k + 1].clone().sub(mean(span.b));
@@ -265,7 +265,7 @@ function envelopePieces(THREE, lay, run, pts, curve, D) {
 // The bodies a trunk of radius `rt` is kept out of: a ring's part and a
 // zero-U part met by the trunk's tube (grown by its radius), the rest as they are.
 const trunkInside = (boxes, rt) => insideOf((boxes ?? []).map(b => (b.raw ? {...b, box: b.raw.clone().expandByScalar(rt)} : b)));
-async function hangBundles(scene, rack, facts, boxes = null) {
+async function hangBundles(scene, rack, facts, boxes = null, tubes = null) {
   const {THREE, scene: world} = scene.three;
   const toScene = inScene(THREE, scene.metrics().faceZ);
   const group = new THREE.Group(); group.name = 'cable-bundles';
@@ -297,12 +297,14 @@ async function hangBundles(scene, rack, facts, boxes = null) {
     // corners are eased as before.
     const R = f.check?.bend?.radius_mm > 0 ? f.check.bend.radius_mm : null;
     const runs = [], spans = [];
+    // the kit's own point for a lane waypoint, to tell two lanes at one U apart on a member's path (bundle-view.js trunkSpanPoints)
+    const laneAt = w => (facts.ctx ? pointOf(rack, w, facts.ctx) : null);
     for (const run of drawableRuns(pts)) {
       // through every point of each stop, and between two stops the points the
       // kit lays a member through there (trunkSpan), so the trunk lies on a
       // tray as its members do
       const path = run.points.flatMap((_, k) => [...stops[run.from + k],
-        ...(k + 1 < run.points.length ? trunkSpan(L.trunk, run.from + k, f.members ?? [], facts.paths, toScene, pts) : [])]);
+        ...(k + 1 < run.points.length ? trunkSpan(L.trunk, run.from + k, f.members ?? [], facts.paths, toScene, pts, laneAt) : [])]);
       let curve;
       if (R != null) curve = clearCurve(THREE, path, R, inside);
       else {
@@ -357,13 +359,45 @@ async function hangBundles(scene, rack, facts, boxes = null) {
         lo = best;
       }
     }
+    // NEVER FURTHER FROM ITS CABLES THAN THE STRAIGHT PLACE WAS. Where the
+    // trunk's curve is not where the members are drawn (a run the kit's points
+    // do not give the trunk), a band on the curve can stand off the cables it
+    // ties. So a band that is not on its pack (further from the nearest of its
+    // members' drawn tubes than the pack's radius and 3 mm) is compared with
+    // the place it had before: the kit's fraction of the straight line
+    // between its two stops, moved on to the curve from within 60 mm. The
+    // nearer of the two to the members is where it stands.
+    const vec = pts.map(p => (p ? [p.x, p.y, p.z] : null));
+    const tubeOf = new Map();
+    const memberLine = id => {
+      if (!tubeOf.has(id)) {
+        const path = (tubes ?? []).find(t => t.link?.id === id)?.mesh?.children?.[0]?.geometry?.parameters?.path ?? null;
+        tubeOf.set(id, path ? path.getSpacedPoints(Math.max(20, Math.ceil(path.getLength() / 3))) : null);
+      }
+      return tubeOf.get(id);
+    };
+    const offMembers = (ids, q) => { let d = Infinity; for (const id of ids) for (const m of memberLine(id) ?? []) d = Math.min(d, m.distanceTo(q)); return d; };
+    const straight = s => {
+      const hit = strapAt(vec, s);
+      if (!hit) return null;
+      const q = new THREE.Vector3(...hit.at);
+      let best = null, d2 = 60 * 60;
+      for (const r of spans) { const n = Math.max(40, Math.ceil(r.curve.getLength() / 2));
+        for (let i = 0; i <= n; i++) { const x = r.curve.getPointAt(i / n), d = x.distanceToSquared(q); if (d < d2) { d2 = d; best = {p: x, t: r.curve.getTangentAt(i / n)}; } } }
+      return best ? {p: best.p, tan: best.t} : {p: q, tan: new THREE.Vector3(...hit.dir)};
+    };
     (f.straps?.straps ?? []).forEach((s, k) => {
       const r = spans.find(x => x.from <= s.segment && s.segment + 1 <= x.to);
       // (either end of its segment is not in the scene: counted, not drawn)
       if (!r) return;
       const u0 = r.u[s.segment - r.from], u1 = r.u[s.segment + 1 - r.from];
       const u = Math.min(1, Math.max(0, u0 + Math.max(0, u1 - u0) * s.t));
-      const p = r.curve.getPointAt(u), tan = r.curve.getTangentAt(u);
+      let p = r.curve.getPointAt(u), tan = r.curve.getTangentAt(u);
+      const riders = lay?.stretchAt(s)?.stretch.members ?? f.members ?? [], off = offMembers(riders, p);
+      if (Number.isFinite(off) && off > (lay?.stretchAt(s)?.stretch.diameter ?? D) / 2 + 3) {
+        const was = straight(s);
+        if (was && offMembers(riders, was.p) < off) ({p, tan} = was);
+      }
       const hit = {at: [p.x, p.y, p.z], dir: [tan.x, tan.y, tan.z]};
       // a band round the pack, at the pack's diameter where the strap is
       const Ds = lay?.stretchAt(s)?.stretch.diameter ?? D;
@@ -577,7 +611,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     const landedId = id => { const c = (rack.cables || []).find(x => x.id === id); return !!c && !loose.has(endKey(c.a)) && !loose.has(endKey(c.b)); };
     const tieStraps = (bundles?.tieStraps ?? []).filter(m => m.cables.some(landedId));
     if (bundles?.bundles?.size || tieStraps.length) {
-      try { hung = await hangBundles(scene, rack, {...bundles, tieStraps, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
+      try { hung = await hangBundles(scene, rack, {...bundles, tieStraps, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes, drawn.tubes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }

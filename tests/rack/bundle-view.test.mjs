@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {memberStretch, trunkLay, trunkMarks, strapAt, alongLine, trunkSpanPoints, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
+import {memberStretch, trunkLay, trunkMarks, strapAt, alongLine, offLine, trunkSpanPoints, drawableRuns, bendLine, bendViolations, packOffset, drawnDiameter,
         trunkIndexOf, bundleSummary, bundleFacts, sheetBundleNotes, peelText} from '../../site/rack/bundle-view.js';
 
 import {elementsOf} from '../../vendor/rack/bundle-route.js';
@@ -259,9 +259,20 @@ test('trunkSpanPoints gives the points the kit lays a member through between two
   const points = [{at: 'a', x: 0, y: 0, z: 0}, {item: 'm', via: 'guide-1', x: 1, y: 1, z: 1}, {at: 'lane', x: 2, y, z: -700},
     {at: 'rest', x: 2, y: y - 20, z: -400}, {at: 'rest', x: 2, y: y - 20, z: -200}, {at: 'lane', x: 2, y, z: 0}, {at: 'b', x: 9, y: 9, z: 9}];
   const paths = new Map([['c1', {points}]]);
-  // two lane stops at one height are told apart by their order on the member's own path
-  const span = trunkSpanPoints([trunk[1], trunk[2]], 0, ['c0', 'c1'], paths);
-  assert.equal(span, null);   // both stops match both lane points: the member does not run straight from one to the other
+  // TWO LANE STOPS AT ONE HEIGHT (a rear lane and the front lane it crosses to) are two points of the
+  // member's path that carry no lane name. Without the kit's own point for a lane each stop matches both,
+  // and the run from one to the other reads as no run at all...
+  assert.equal(trunkSpanPoints([trunk[1], trunk[2]], 0, ['c0', 'c1'], paths), null);
+  // ...with it (route.js pointOf), each stop is the lane point nearest its own lane, and the run between is the kit's
+  const laneAt = w => ({x: 2, y, z: w.lane.endsWith('-rear') ? -700 : 0});
+  const span = trunkSpanPoints([trunk[1], trunk[2]], 0, ['c0', 'c1'], paths, laneAt);
+  assert.deepEqual([span.a.map(q => q.z), span.b.map(q => q.z), span.mid.map(q => q.z)], [[-700], [0], [-400, -200]]);
+  // the other way along the trunk: the points between come in order from the stop named first
+  assert.deepEqual(trunkSpanPoints([trunk[2], trunk[1]], 0, ['c1'], paths, laneAt).mid.map(q => q.z), [-200, -400]);
+  // a ring to a lane at a height two lane points share: the lane's own point, not both (their middle is in mid-depth)
+  assert.deepEqual(trunkSpanPoints(trunk, 0, ['c1'], paths, laneAt).b.map(q => q.z), [-700]);
+  // a resolver that fails leaves the stop as it was read without one
+  assert.equal(trunkSpanPoints([trunk[1], trunk[2]], 0, ['c1'], paths, () => { throw new Error('no context'); }), null);
   const ring = trunkSpanPoints(trunk, 0, ['c1'], new Map([['c1', {points: [points[0], points[1], {at: 'approach', x: 1, y: 5, z: 1}, points[2], points[6]]}]]));
   assert.deepEqual([ring.a.length, ring.b.length, ring.mid.map(q => q.at)], [1, 1, ['approach']]);
   // from the far stop back: the points between come in order from the first stop named
@@ -270,4 +281,12 @@ test('trunkSpanPoints gives the points the kit lays a member through between two
   // nothing between: a straight run; no member with a path: null
   assert.deepEqual(trunkSpanPoints(trunk, 0, ['c1'], new Map([['c1', {points: [points[1], points[2]]}]])).mid, []);
   assert.equal(trunkSpanPoints(trunk, 0, ['c1'], new Map()), null);
+});
+
+test('offLine is how far a point is from the nearest place on a line of points', () => {
+  assert.equal(offLine([5, 3], [[0, 0], [10, 0]]), 3);
+  assert.equal(offLine([13, 4], [[0, 0], [10, 0]]), 5);          // past the end: to the end
+  assert.equal(offLine([5, 5, 0], [[0, 0, 0], [0, 10, 0], [10, 10, 0]]), 5);
+  assert.equal(offLine([3, 4], [[0, 0]]), 5);
+  assert.equal(offLine([0, 0], []), Infinity);
 });
