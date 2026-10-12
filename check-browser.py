@@ -17144,8 +17144,10 @@ def check_rack_cable_tree(page, base):
         if now != was:
             moved.append((f"c{k}", now))
     park_mouse(page)
-    # (a cord from a lower port lies under its upper neighbour's for its whole length: about a third cannot be hovered at all)
-    if hovered < 20:
+    # (a cord from a lower port lies under its upper neighbour's for its whole length: about a third cannot be hovered at all.
+    # On kit 0.22.0, which lays a cord from whichever end gives the better lay, 19 of the 30 have a stretch of their own
+    # here, where 20 or more had: the bound, which only holds that a sweep was measured, is 18.)
+    if hovered < 18:
         bad.append(f"sweep: only {hovered} of 30 cables were hovered on the stage, so a sweep was not what was measured")
     if moved or tree_rows(page)[1]["b1"]["expanded"] != "false":
         bad.append(f"sweep: hovering {hovered} cables moved the panel from {was} {len(moved)} times (scroll, scroll height, list height): {moved[:4]}")
