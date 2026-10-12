@@ -8,11 +8,15 @@ check-browser.py (check_rack_speed_budgets), as ratios against a small rack.
 
     python3 tools/rack-speed.py path/to/a.rack.json [another.rack.json ...]
         [--runs 3] [--no-3d] [--settle 300] [--url http://127.0.0.1:8932]
-        [--json out.json]
+        [--gpu] [--json out.json]
 
 It opens each file through the page's own Open .json input, in headless
-Chromium (software GL, so the absolute figures are pessimistic and the ratios
-are the point), under ?probe=1, and prints the median over --runs of:
+Chromium, under ?probe=1. By default that is software GL (SwiftShader), as CI
+has: the absolute figures are pessimistic and the ratios are the point, and
+in 3D nearly all of the time is the frames themselves. --gpu asks Chromium for
+the machine's own GPU (ANGLE on Metal, on a Mac that has one), which is what a
+visitor has; the report names the renderer it got. It prints the median over
+--runs of:
 
   first 2D draw          from the file being chosen to the page being idle
   redraw after an edit   one cable's end moved to another port; one device moved
@@ -21,8 +25,11 @@ are the point), under ?probe=1, and prints the median over --runs of:
                          between them, the whole sequence twice: `first` is
                          each tool's first call on the rack, `again` its second
   pair switch            Front / Rear to Left / Right, and back
-  3D                     first paint (a canvas) and settle (the scene complete,
-                         its cables hung), or "not settled in N s"
+  3D                     first paint (a canvas), the cables hung, and settle
+                         (the scene complete, every part's detail built), or
+                         "not settled in N s"; with the longest stretch the
+                         page could not answer in, the frames drawn and what
+                         one frame draws (draw calls, triangles)
 
 and beside each: how many times the routes were read (route-context.js
 routeFacts, each a new context) and how many cables the kit laid, and for a
@@ -81,7 +88,10 @@ TIMED_JS = """async ([src, arg, ms, needDraw]) => {
 SETTLE_3D_JS = """async ({ms}) => {
   const sleep = t => new Promise(r => setTimeout(r, t));
   const t0 = performance.now(), deadline = Date.now() + ms;
-  let paint = null, longest = 0, lastTick = performance.now();
+  let paint = null, hung = null, longest = 0, lastTick = performance.now();
+  const gl = () => { const c = document.querySelector('#stage3d canvas'), g = c?.getContext('webgl2') ?? c?.getContext('webgl');
+    const e = g?.getExtension('WEBGL_debug_renderer_info'); return g ? (e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER)) : null; };
+  const drawn = s => { const i = s?.three?.renderer?.info; return i ? {frames: i.render.frame, calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures} : null; };
   // the longest stretch the page could not run a timer in: how long it would not have answered a click
   const beat = setInterval(() => { const n = performance.now(); longest = Math.max(longest, n - lastTick); lastTick = n; }, 50);
   try {
@@ -89,16 +99,17 @@ SETTLE_3D_JS = """async ({ms}) => {
       if (paint == null && document.querySelector('#stage3d canvas')) paint = performance.now() - t0;
       const s = window.__rack.scene();
       if (!s) { await sleep(100); continue; }
+      hung ??= performance.now() - t0;
       const done = await Promise.race([Promise.resolve(s.complete?.()).then(() => true),
                                        sleep(Math.max(0, deadline - Date.now())).then(() => false)]);
       if (!done) break;
       await sleep(500);           // past the page's 300 ms rebuild debounce
       if (window.__rack.scene() !== s) continue;
       const tubes = (s.rackCables?.tubes ?? []).length;
-      return {settled: true, paint, ms: performance.now() - t0 - 500, tubes, longest};
+      return {settled: true, paint, hung, ms: performance.now() - t0 - 500, tubes, longest, drawn: drawn(s), renderer: gl()};
     }
     const s = window.__rack.scene() ?? window.__rack.loadingScene?.();
-    return {settled: false, paint, ms: performance.now() - t0, tubes: (s?.rackCables?.tubes ?? []).length, longest};
+    return {settled: false, paint, hung, ms: performance.now() - t0, tubes: (s?.rackCables?.tubes ?? []).length, longest, drawn: drawn(s), renderer: gl()};
   } finally { clearInterval(beat); }
 }"""
 
@@ -204,12 +215,28 @@ def one_run(browser, base, doc, args):
     out = {}
     context = browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
     page = context.new_page()
+    # a click is answered when the page next has a moment, and a large rack keeps it busy for a minute at a time
+    page.set_default_timeout(args.timeout * 1000)
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.add_init_script(STAND_IN_MODEL_CONTEXT)
     try:
         ms = args.timeout * 1000
         out["first 2D draw"] = open_file(page, base, doc, ms)
+        if not args.only_3d:
+            two_d(page, doc, out, ms)
+        if not args.no_3d:
+            page.click('#mode [data-mode="3d"]')
+            out["3D"] = page.evaluate(SETTLE_3D_JS, {"ms": args.settle * 1000})
+            page.click('#mode [data-mode="2d"]')
+        out["errors"] = errors
+    finally:
+        context.close()
+    return out
+
+
+def two_d(page, doc, out, ms):
+    if True:
         out["redraw, nothing changed"] = timed(page, "() => { window.__rack.redraw(); }", ms=ms)
         for label, js in (("one cable's end moved", MOVE_END_JS), ("one device moved", MOVE_ITEM_JS)):
             got = timed(page, js, ms=ms)
@@ -223,14 +250,6 @@ def one_run(browser, base, doc, args):
                 out[f"tool {label} ({turn})"] = timed(page, TOOL_JS, [name, a], ms=ms, need_draw=False)
         out["pair switch to Left / Right"] = timed(page, "() => { document.querySelector('#view2d [data-view=\"sides\"]').click(); }", ms=ms)
         out["pair switch to Front / Rear"] = timed(page, "() => { document.querySelector('#view2d [data-view=\"faces\"]').click(); }", ms=ms)
-        if not args.no_3d:
-            page.click('#mode [data-mode="3d"]')
-            out["3D"] = page.evaluate(SETTLE_3D_JS, {"ms": args.settle * 1000})
-            page.click('#mode [data-mode="2d"]')
-        out["errors"] = errors
-    finally:
-        context.close()
-    return out
 
 
 def med(xs):
@@ -271,13 +290,16 @@ def report(name, doc, runs, settle):
             summary[k]["routes"] = rt
     three = [r["3D"] for r in runs if r.get("3D")]
     if three:
-        if all(t["settled"] for t in three):
-            print(f"{'3D first paint':46s} {secs(med([t['paint'] for t in three])):>10s}")
-            print(f"{'3D settle':46s} {secs(med([t['ms'] for t in three])):>10s}   {three[0]['tubes']} tubes; longest stall {med([t['longest'] for t in three]) / 1000:.1f} s")
+        t = three[len(three) // 2]
+        print(f"{'3D first paint':46s} {secs(med([x['paint'] for x in three])):>10s}")
+        print(f"{'3D cables hung':46s} {secs(med([x.get('hung') for x in three])):>10s}")
+        if all(x["settled"] for x in three):
+            print(f"{'3D settle':46s} {secs(med([x['ms'] for x in three])):>10s}   {t['tubes']} tubes; longest stall {med([x['longest'] for x in three]) / 1000:.1f} s")
         else:
-            t = three[0]
-            print(f"{'3D first paint':46s} {secs(t['paint']):>10s}")
             print(f"{'3D settle':46s} not settled in {settle} s   {t['tubes']} tubes hung; longest stall {t['longest'] / 1000:.1f} s")
+        d = t.get("drawn") or {}
+        if d:
+            print(f"{'':6s}a frame: {d['calls']} draw calls, {d['triangles']} triangles, {d['geometries']} geometries, {d['textures']} textures; {d['frames']} frames drawn; {t.get('renderer')}")
         summary["3D"] = three
     errs = [e for r in runs for e in r.get("errors", [])]
     if errs:
@@ -293,6 +315,8 @@ def main():
     ap.add_argument("--settle", type=int, default=300, help="seconds the 3D scene gets to settle")
     ap.add_argument("--timeout", type=int, default=900, help="seconds any one 2D step gets")
     ap.add_argument("--url", help="a server already running; otherwise one is started")
+    ap.add_argument("--gpu", action="store_true", help="ask Chromium for the machine's GPU instead of software GL")
+    ap.add_argument("--only-3d", action="store_true", help="open the file and time the 3D scene alone")
     ap.add_argument("--json", type=pathlib.Path)
     args = ap.parse_args()
     from playwright.sync_api import sync_playwright
@@ -307,7 +331,7 @@ def main():
         if not wait_for(f"{base}/rack.html"):
             sys.exit(f"rack-speed: no server answering at {base}")
         with sync_playwright() as pw:
-            browser = pw.chromium.launch()
+            browser = pw.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"] if args.gpu else [])
             for path in args.racks:
                 doc = json.loads(path.read_text())
                 runs = []

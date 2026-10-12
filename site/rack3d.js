@@ -188,6 +188,29 @@ export function createRackScene(container, opts = {}) {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  // FEWER FRAMES WHILE THE DETAIL IS BEING BUILT (`opts.buildFrameMs`,
+  // portrayal-site#192). A rack in full detail is tens of thousands of draw
+  // calls a frame (40,000 for 25 parts with 43 cables), and the loop below
+  // drew one at every animation frame while the relief pass was still adding
+  // to it: on a fast GPU a quarter of the build's time went on frames nobody
+  // was steering, and with software GL nearly all of it, so a large rack never
+  // finished. A host that passes `buildFrameMs` gets a frame at most that
+  // often WHILE A DETAIL PASS IS RUNNING AND NOBODY IS HANDLING THE VIEW: the
+  // scene still fills in as it is built, a few times a second. The moment the
+  // pointer moves over the stage, a button or the wheel is used, or the camera
+  // is still easing to rest, every frame is drawn as before; and once the
+  // detail is in, every frame is drawn as before. Nothing is drawn that was
+  // not, and no other caller passes the option.
+  const BUILD_FRAME_MS = opts.buildFrameMs > 0 ? opts.buildFrameMs : 0;
+  const HANDLED_MS = 1000;      // how long after the last touch the view counts as handled (the easing runs on)
+  let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false;
+  const onHandle = () => { handledAt = performance.now(); };
+  const onHandleStart = () => { handling = true; }, onHandleEnd = () => { handling = false; handledAt = performance.now(); };
+  if (BUILD_FRAME_MS) {
+    controls.addEventListener('start', onHandleStart);
+    controls.addEventListener('end', onHandleEnd);
+    for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.addEventListener(type, onHandle, {passive: true});
+  }
   controls.minDistance = 200;
   controls.maxDistance = 6000;
 
@@ -848,6 +871,8 @@ export function createRackScene(container, opts = {}) {
     })();
     // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
     if (opts.onDetailFailed) detail.catch(() => {});
+    // (counted while it runs, for the loop: fewer frames while a detail pass is in hand, `opts.buildFrameMs`)
+    if (BUILD_FRAME_MS) { detailing++; const done = () => { detailing--; }; detail.then(done, done); }
     pending.push(detail);
     return group;
   }
@@ -1141,8 +1166,13 @@ export function createRackScene(container, opts = {}) {
   let raf = 0, alive = true, running = true;
   function tick() {
     if (!alive || !running) { raf = 0; return; }
-    controls.update();
-    renderer.render(scene, camera);
+    // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
+    const now = BUILD_FRAME_MS ? performance.now() : 0;
+    if (!(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < BUILD_FRAME_MS)) {
+      controls.update();
+      renderer.render(scene, camera);
+      lastFrame = now;
+    }
     raf = requestAnimationFrame(tick);
   }
   tick();
@@ -1230,6 +1260,7 @@ export function createRackScene(container, opts = {}) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
+      if (BUILD_FRAME_MS) for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.removeEventListener(type, onHandle);
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;

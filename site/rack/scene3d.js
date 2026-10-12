@@ -683,6 +683,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // stood in its place as it is mounted, not once the whole stack is
       // built, so its box is never drawn at the middle of the rack first.
       standIn: true,
+      // A FRAME AT MOST EVERY 400 MS WHILE THE DETAIL IS BEING BUILT and nobody is handling the view (rack3d.js
+      // `buildFrameMs`, portrayal-site#192): a rack in detail is tens of thousands of draw calls a frame, and
+      // drawing one at every animation frame while the build was still adding to it took a quarter of the build's
+      // time on a fast GPU and nearly all of it without one.
+      buildFrameMs: 400,
       onDetailFailed: f => onDetailFailed?.(f),
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });

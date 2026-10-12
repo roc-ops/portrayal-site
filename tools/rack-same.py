@@ -324,6 +324,8 @@ class Side:
         self.name, self.base = name, base
         self.context = browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
         self.page = self.context.new_page()
+        # a click is answered when the page next has a moment, and a large rack's export keeps it busy for a minute
+        self.page.set_default_timeout(15 * 60 * 1000)
         self.errors = []
         self.page.on("pageerror", lambda e: self.errors.append(str(e)))
         self.page.add_init_script(STAND_IN_MODEL_CONTEXT)
