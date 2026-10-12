@@ -5560,8 +5560,10 @@ def open_bundle_rack(page, base, face="front", ports=("port-1", "port-2", "port-
     page.evaluate("() => window.__rack.ready")
     page.click('#mode [data-mode="2d"]')
     page.evaluate("r => window.__rack.replaceRack(r)", bundle_fixture(page, face, ports))
-    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)",
-                           timeout=READY_MS)
+    # (the routes of THIS rack: the page opens on the last rack, which in a check that calls this twice is the last
+    # call's, three routed cables as well, and those would answer for it)
+    page.wait_for_function("() => (window.__rack.routes() || []).length === 3 && window.__rack.routes().every(([, ws]) => ws.length)"
+                           " && window.__rack.routesCurrent().current", timeout=READY_MS)
 
 
 # The envelope of a bundle on a pane, measured: its stroke width, the x of its
