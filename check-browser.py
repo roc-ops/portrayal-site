@@ -15410,6 +15410,59 @@ def inspect_all(page, args):
     return "\n".join(out)
 
 
+@extra("rack.html: a latch colour set in the Explorer lens reaches 2D, 3D, the saved rack and a reload (#206)")
+def check_rack_lens_latch_colour(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "latch206")
+    out = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 20, as: 'sw'},
+      {op: 'fit', id: '@sw', path: 'port-1', ref: 'generic/qsfp-lc@2'}]).error ?? null""")
+    if out:
+        return [f"latch206: fitting an optic answered {out}"]
+    latch2d = "() => [...document.querySelectorAll('#panes svg [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed", timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    lens = page.frame_locator(".rk-lens iframe")
+    lens.locator('.nm:text-matches("^port-1 —")').click()
+    pick_colour = lens.locator(".optic-fields input[type=color]")
+    pick_colour.wait_for(timeout=READY_MS)
+    pick_colour.evaluate("i => { i.value = '#c22f2f'; i.dispatchEvent(new Event('input', {bubbles: true})); }")
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true", timeout=READY_MS)
+    page.click(".rk-lens-done")
+    try:
+        wait_fn(page, "latch206: the rack holds the colour",
+                "() => window.__rack.doc().racks[0].items[0].fields?.['port-1-occupant']?.['latch-color'] === '#c22f2f'")
+        wait_fn(page, "latch206: 2D shows it",
+                f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#c22f2f'); }}")
+    except RuntimeError as e:
+        bad.append(str(e))
+    if webgl_trouble(page):
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "latch206: the scene")
+    face = page.evaluate("""async () => { const s = window.__rack.scene(); const t = await s.faceText(0, 'front');
+      const d = new DOMParser().parseFromString(t, 'image/svg+xml');
+      return [...d.querySelectorAll('[data-fill-from="latch-color"]')].map(n => n.getAttribute('fill')); }""")
+    if not face or any(f != "#c22f2f" for f in face):
+        bad.append(f"latch206: the 3D face still draws the latch {sorted(set(face or []))}")
+    # saved with the rack: a reload brings the colour back, in 2D and in 3D
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    kept = page.evaluate("() => window.__rack.doc().racks[0].items[0]?.fields ?? null")
+    if (kept or {}).get("port-1-occupant", {}).get("latch-color") != "#c22f2f":
+        bad.append(f"latch206: after a reload the rack holds {kept}")
+    return bad
+
+
 @extra("rack.html: agent tools 2 - the page hint, new_rack, an optic fitted and its latch painted, a cassette swapped and its cable re-pointed, cables removed by selector")
 def check_rack_agent_tools_2(page, base):
     bad = []
