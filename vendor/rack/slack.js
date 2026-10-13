@@ -75,12 +75,13 @@ function ridesThrough(rack, b, cableId, entry, ctx) {
 //   store; `short` is true for a pinned length under the need, and then
 //   nothing is stored anywhere.
 export function slackOf(rack, cable, ctx) {
-  const spare = spareOf(rack, cable, ctx);
+  // the path is read once, for the spare and for where it can be stored
+  let path = null;
+  try { path = routePath(rack, cable, ctx); } catch { path = null; }
+  const spare = spareOf(rack, cable, ctx, path);
   if (!spare) return null;
   const said = Array.isArray(cable.slack);
   if (spare.spare_m < -1e-9) return {spare, said, entries: [], at_ends_m: 0, unplaced_m: 0, over_m: 0, short: true};
-  let path = null;
-  try { path = routePath(rack, cable, ctx); } catch { path = null; }
   const list = said ? cable.slack.filter(plain) : [];
   const stated = list.reduce((s, e) => s + (toMetres(e.value, e.unit) ?? 0), 0);
   const rest = Math.max(0, spare.to_store_m - stated);
@@ -139,11 +140,15 @@ export function slackFindings(rack, ctx, nameOf = id => id) {
 }
 // One line for the rack: "Spare: 14.2 m; 41 cords not placed." '' when no
 // cable has a path and a usable length.
-export function spareLine(rack, ctx) {
+export const spareLine = (rack, ctx) => lineOf(rack, c => slackTry(rack, c, ctx));
+// A cable's slack, or null where it cannot be read.
+function slackTry(rack, c, ctx) { try { return slackOf(rack, c, ctx); } catch { return null; } }
+// The two lines from each cable's slack, `slackFor(cable)`: spareExports
+// reads every cable's once and says both lines from that one reading.
+function lineOf(rack, slackFor) {
   let total = 0, unplaced = 0, n = 0;
   for (const c of rack.cables || []) {
-    let s = null;
-    try { s = slackOf(rack, c, ctx); } catch { s = null; }
+    const s = slackFor(c);
     if (!s || s.short || !c.length) continue;    // a cable with no length has no spare to count
     n++; total += s.spare.spare_m;
     if (!s.said && s.unplaced_m > 0.005) unplaced++;
@@ -152,11 +157,11 @@ export function spareLine(rack, ctx) {
 }
 // The one line of the BOM notes: "Spare cable: 14.2 m of 31 m bought; 41
 // cords have spare that is not placed." '' as spareLine is.
-export function spareBomLine(rack, ctx) {
+export const spareBomLine = (rack, ctx) => bomLineOf(rack, c => slackTry(rack, c, ctx));
+function bomLineOf(rack, slackFor) {
   let total = 0, bought = 0, unplaced = 0, n = 0;
   for (const c of rack.cables || []) {
-    let s = null;
-    try { s = slackOf(rack, c, ctx); } catch { s = null; }
+    const s = slackFor(c);
     if (!s || s.short || !c.length) continue;
     n++; total += s.spare.spare_m; bought += s.spare.stock_m;
     if (!s.said && s.unplaced_m > 0.005) unplaced++;
@@ -167,11 +172,11 @@ export function spareBomLine(rack, ctx) {
 // drawioCables, `spare`): each cable's resolved slack by id, the one line of
 // the schedule for the rack, and the one line of the BOM.
 export function spareExports(rack, ctx) {
-  const byCable = new Map();
+  const byCable = new Map(), read = new Map();
   for (const c of rack.cables || []) {
-    let s = null;
-    try { s = slackOf(rack, c, ctx); } catch { s = null; }
+    const s = slackTry(rack, c, ctx);
+    read.set(c, s);
     if (s) byCable.set(c.id, s);
   }
-  return {byCable, line: spareLine(rack, ctx), bom: spareBomLine(rack, ctx)};
+  return {byCable, line: lineOf(rack, c => read.get(c)), bom: bomLineOf(rack, c => read.get(c))};
 }

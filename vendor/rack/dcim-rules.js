@@ -5,10 +5,11 @@
 // (the page that builds the files) fetch the type files and the faces, and
 // ask here.
 
-import {endName, lengthParts} from './cable-rules.js';
+import {endName, lengthParts, portPathOf} from './cable-rules.js';
 import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate, flat} from './export-data.js';
 import {bundleOfCable, bundleName, bundlesOf} from './bundles.js';
 import {andList} from './bundle-route.js';
+import {fibrePorts} from './ports.js';
 export {DCIM_LIMITS, flat};
 
 // ── names a kit can write ───────────────────────────────────────────────
@@ -101,6 +102,7 @@ export function typeLists(text) {
   return {manufacturer: head.manufacturer ?? null, model: head.model ?? null, sections, bays};
 }
 
+const TYPE_OF = Object.fromEntries(SECTIONS);
 // A name's section and end type in one type file, first section first.
 function findName(lists, name) {
   for (const [section, type] of SECTIONS) if (lists.sections[section].includes(name)) return {section, type};
@@ -119,9 +121,21 @@ const MODULE = '/module/';
 //   device    typeLists of the item's device type, or null when it has none
 //   moduleAt  bay id -> typeLists of the module type seated there, or null
 //   consoles  the paths of the console ports the device's drawing has
+//   ports     ports.js fibrePorts for the end, or null: the fibre ports the
+//             part at the path is in its module's type (below)
 // Returns {ok: true, name, type}, or {ok: false, reason}: a phrase with no
 // period, for "Cable X is not in this file: end A, <end>, <reason>."
-export function resolveEnd({path, device, moduleAt = () => null, consoles = []}) {
+//
+// A FIBRE PORT OF A SEATED MODULE IS NOT NAMED BY ITS PART (#1020). A panel's
+// duplex adapter lc01 is the front ports 1 and 2, one per fibre; its back b01
+// is the rear port B01-1; a cassette's mtp is MTP-1. `ports` says which, from
+// what the build published for the module (the exporter's own walk), and each
+// name must still be in the matched type file's list of that kind, so a type
+// file a target was given without those ports leaves the cable out, with the
+// reason. Such an end answers `names` too: every port it lands on, in
+// position order, `name` being the first. An end with no `ports` (a cage, a
+// jack, a part the build published nothing for) is looked up by its own id.
+export function resolveEnd({path, device, moduleAt = () => null, consoles = [], ports = null}) {
   if (!device) return {ok: false, reason: 'its device has no device type'};
   const p = String(path), at = p.indexOf(MODULE);
   if (at < 0) {
@@ -142,9 +156,30 @@ export function resolveEnd({path, device, moduleAt = () => null, consoles = []})
   if (!bay) return {ok: false, reason: `the device type ${device.model} has no module bay at position ${bayId}`};
   const module = moduleAt(bayId);
   if (!module) return {ok: false, reason: `what is seated in ${bayId} has no module type`};
+  if (ports?.sections?.length) {
+    if (ports.sections.length > 1)
+      return {ok: false, reason: `${leaf} is ${andList(ports.sections.map(([s]) => KIND[TYPE_OF[s]] ?? s))} in the module type ${module.model}, and one end of a cable is one kind of port`};
+    const [section, own] = ports.sections[0], type = TYPE_OF[section];
+    const gone = type ? own.find(n => !module.sections[section].includes(`{module}/${n}`)) : own[0];
+    if (gone != null) return {ok: false, reason: `the module type ${module.model} lists no ${KIND[type] ? KIND[type].replace(/^an? /, '') : 'port'} named {module}/${gone}`};
+    const names = own.map(n => `${bay.position}/${n}`);
+    return {ok: true, name: names[0], names, type, bay};
+  }
   const hit = findName(module, `{module}/${leaf}`);
   if (!hit) return {ok: false, reason: `the module type ${module.model} lists no port named {module}/${leaf}`};
   return {ok: true, name: `${bay.position}/${leaf}`, type: hit.type, bay};
+}
+
+// resolveEnd FOR EVERY END OF ONE RACK, with the catalogue asked for each
+// end's fibre ports: what a page hands cableImportRows as `resolve`.
+//   ctx        {slotsOf, compByRef}, what `catalog.js` loadSlots returns
+//   deviceOf   item id -> typeLists of its device type, or null
+//   moduleAt   (item id, bay id) -> typeLists of the module type seated there
+//   consolesOf item id -> the paths of the console ports its drawing has
+export function endResolver({rack, ctx = null, deviceOf, moduleAt = () => null, consolesOf = () => []}) {
+  const items = new Map((rack?.items || []).map(i => [i.id, i]));
+  return end => resolveEnd({path: portPathOf(end.path), device: deviceOf(end.item), consoles: consolesOf(end.item) || [],
+    moduleAt: bay => moduleAt(end.item, bay), ports: fibrePorts(items.get(end.item), end, ctx)});
 }
 
 // ── the modules file ────────────────────────────────────────────────────
@@ -257,16 +292,44 @@ export const CABLE_IMPORT_COLUMNS = {
 // devices file; both ends named by the type files (`resolve`, resolveEnd over
 // this rack); no comma in a device or port name (NetBox reads one as a list);
 // two kinds of end a DCIM joins; and no port already used by an earlier row.
+//
+// AN END ON SEVERAL PORTS (#1020). A cord on a duplex adapter lands on two
+// fibre ports of the panel (resolveEnd's `names`). NetBox's cable has any
+// number of terminations a side, all of one kind, and its import form splits
+// the name column on commas and asks no equal count of the two sides (NetBox
+// v4.7.2 251458b8, dcim/forms/bulk_import.py CableImportForm._clean_side and
+// dcim/models/cables.py Cable.clean), so the cord is ONE row naming them all.
+// Nautobot's file is read by import_cables.py, which makes a cable of one
+// termination a side, so the cord is one row for each fibre: port k of one
+// end to port k of the other, each row with the cord's type, status and
+// length, and its label with " (k/n)" after it, which is what ties the rows
+// (and so is made unique among such cords, with the cable's id where needed).
+// Where one end is a single port (an optic's interface, a rear connector) and
+// the other is several, Nautobot gets one row, to the FIRST of them, and a
+// note names the ports left without a cable. THAT ROW TRACES ONLY BETWEEN
+// LIKE ENDS: a Type A cassette binds front port 1 to trunk position 1 and a
+// Type AF one binds it to position 2 (FHD-1MTP6LCDOS2A and -AF, as committed),
+// so across an A to AF pair the fibre arrives on the far end's second port,
+// which has no cable. The note says so. Ends on two different counts of
+// several ports have no such reading, and Nautobot's file leaves the cord out;
+// no part of the library gives such an end today (a part is one port or two),
+// and a test reaches the rule with a resolver of its own.
+// (Nautobot v3.2.6 3dc554b4 can hold several connectors a side on a cable
+// that names a cable type made for it: dcim/models/cables.py CableType. Such
+// a type must exist before a cable names it, as a NetBox bundle must, so the
+// kit writes none.)
 //   ends       cable-plugs.js cableFacts(rack).ends; unchecked: reading them failed
 //   names      uniqueNames(items); kept: the ids of the devices in the devices file
 //   resolve    end -> resolveEnd's answer for that end
 //   uOf        endName's: how tall a device is
+//   parts      the parts lists, {slotsOf, compByRef}: cableFindings settles the ends with them
 // `notes` are about rows that ARE written: a type left blank, a length changed.
-export function cableImportRows({rack, target = 'netbox', names, kept, resolve, ends = new Map(), unchecked = false, uOf}) {
+export function cableImportRows({rack, target = 'netbox', names, kept, resolve, ends = new Map(), unchecked = false, uOf, parts = null}) {
   const T = TARGET_NAME[target] || 'NetBox', nautobot = target === 'nautobot';
   const rows = [], left = [], notes = [], used = new Map(), inBundle = new Map();
+  const several = [], perFibre = [], firstOnly = [], tied = new Set();
   let dac = false;
-  for (const f of cableFindings(rack, ends)) {
+  for (const f of cableFindings(rack, ends, parts)) {
     const c = f.cable;
     let why = [], sides = [];
     if (unchecked || !f.checked) why = ['its ends could not be checked'];
@@ -278,22 +341,27 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
         if (!kept.has(end.item)) return {why: `end ${side} is on ${device}, which is not in the devices file`};
         const r = resolve(end);
         if (!r.ok) return {why: `end ${side}, ${endName(rack, end, uOf)}: ${r.reason}`};
-        const comma = [device, r.name].find(x => x.includes(','));
+        const ports = r.names?.length ? r.names : [r.name];
+        const comma = [device, ...ports].find(x => x.includes(','));
         if (!nautobot && comma != null) return {why: `end ${side}: NetBox reads a comma in a device or port name as a list, so "${comma}" cannot be written`};
-        return {side, end, device, name: r.name, type: r.type, key: JSON.stringify([device, r.type, r.name])};
+        return {side, end, device, name: ports[0], ports, type: r.type, keys: ports.map(n => JSON.stringify([device, r.type, n]))};
       });
       why = sides.filter(s => s.why).map(s => s.why);
       if (!why.length && !canMeet(sides[0].type, sides[1].type))
         why = [`${T} does not cable ${KIND[sides[0].type]} to ${KIND[sides[1].type]}`];
-      if (!why.length && sides[0].key === sides[1].key)
-        why = [`its two ends are the same port, ${sides[0].name} on ${sides[0].device}`];
+      const shared = why.length ? -1 : sides[0].keys.findIndex(k => sides[1].keys.includes(k));
+      if (shared >= 0)
+        why = [`its two ends are the same port, ${sides[0].ports[shared]} on ${sides[0].device}`];
       if (!why.length)
-        why = sides.filter(s => used.has(s.key))
-          .map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, already has cable ${used.get(s.key)} in this file`);
+        why = sides.filter(s => s.keys.some(k => used.has(k)))
+          .map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, already has cable ${used.get(s.keys.find(k => used.has(k)))} in this file`);
+      const [n, m] = sides.map(s => s.ports?.length ?? 0);
+      if (!why.length && nautobot && n !== m && n > 1 && m > 1)
+        why = [`its ends are on ${n} and ${m} ports, and Nautobot gives a cable one port at each end`];
     }
     if (why.length) { left.push(`Cable ${f.name} is not in the cables file: ${why.join('; ')}.`); continue; }
     const [a, b] = sides;
-    for (const s of sides) used.set(s.key, f.name);
+    for (const s of sides) for (const k of s.keys) used.set(k, f.name);
     const type = cableType(c.media);
     if (c.media && !type) notes.push(`Cable ${f.name}: its media (${c.media}) has no ${T} cable type, so its type is blank.`);
     dac ||= c.media === 'dac';
@@ -319,14 +387,50 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
       notes.push(`Cable ${f.name}: its description (${andList(parts.map(([k]) => k))}) is ${charCount(description)} characters and ${T} takes ${DCIM_LIMITS.cableDescription}, so the description is shortened to that.`);
       description = cutTo(description, DCIM_LIMITS.cableDescription);
     }
-    rows.push(nautobot
-      ? {a_device: a.device, a_type: a.type, a_name: a.name, b_device: b.device, b_type: b.type, b_name: b.name, type,
-         status: 'Planned', label, color: '', length: len.value, length_unit: len.unit}
-      : {side_a_device: a.device, side_a_type: a.type, side_a_name: a.name, side_b_device: b.device, side_b_type: b.type,
-         side_b_name: b.name, type, status: 'planned', label, color: '', length: len.value,
-         length_unit: len.unit, description});
+    if (!nautobot) {
+      if (a.ports.length > 1 || b.ports.length > 1) several.push(f.name);
+      rows.push({side_a_device: a.device, side_a_type: a.type, side_a_name: a.ports.join(','), side_b_device: b.device,
+                 side_b_type: b.type, side_b_name: b.ports.join(','), type, status: 'planned', label, color: '',
+                 length: len.value, length_unit: len.unit, description});
+      continue;
+    }
+    // Nautobot: a row for each fibre where both ends have as many; else one row, to the first port of the end with several.
+    const count = a.ports.length === b.ports.length ? a.ports.length : 1;
+    if (count > 1) perFibre.push(f.name);
+    else for (const s of sides) if (s.ports.length > 1) firstOnly.push(`${f.name} (${s.device} ${s.ports.slice(1).join(', ')})`);
+    // THE LABEL TIES THE ROWS OF ONE CORD, so no two cords may share it. A
+    // label that fits and no earlier cord took is written whole. One that is
+    // too long for " (k/n)" after it, or that another cord's rows already
+    // carry (labels repeat, and two long ones may share all that is kept), is
+    // cut to leave room for the cable's id, which no other cable has.
+    const room = DCIM_LIMITS.cableLabel - charCount(` (${count}/${count})`);
+    let stem = label;
+    if (count > 1 && (charCount(stem) > room || tied.has(stem))) {
+      const id = ` ${flat(c.id)}`, mark = charCount(id) <= room ? id : ` #${tied.size + 1}`;
+      stem = cutTo(label, room - charCount(mark)) + mark;
+      notes.push(`Cable ${f.name}: its ${count} rows are labelled ${stem}, the label ${charCount(label) > room ? 'shortened' : 'another cable has too'} ` +
+                 'and the id of the cable after it, so that the rows of one cord are not taken for those of another.');
+    }
+    if (count > 1) tied.add(stem);
+    for (let k = 0; k < count; k++) {
+      const tail = count > 1 ? ` (${k + 1}/${count})` : '';
+      rows.push({a_device: a.device, a_type: a.type, a_name: a.ports[k], b_device: b.device, b_type: b.type, b_name: b.ports[k], type,
+                 status: 'Planned', label: stem + tail, color: '', length: len.value, length_unit: len.unit});
+    }
   }
   if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');
+  // AN END ON SEVERAL PORTS: one note for each way it was written, naming the cables.
+  if (several.length)
+    notes.push(`A cord on a duplex adapter is on two fibre ports of its panel or cassette. Its row names both, separated by a comma, which NetBox's cable import reads as the ports of one end: ${andList(several)}.`);
+  if (perFibre.length)
+    notes.push('Nautobot gives a cable one port at each end, so a cord with two fibre ports at both ends is written as one row for each fibre, ' +
+               `first port to first port, each with the cord's type and length and its label followed by which fibre it is, as (1/2). ` +
+               `First to first is an order, not a polarity: the rack file does not say whether a cord is crossed. The cords: ${andList(perFibre)}.`);
+  if (firstOnly.length)
+    notes.push('Nautobot gives a cable one port at each end, so a cord from a single port (an interface, a rear connector) to two fibre ports ' +
+               'is written to the first of the two. Nautobot then traces a link whose two ends bind that first port to the same trunk position ' +
+               '(two cassettes of one type), and not one whose ends differ (a Type A cassette facing a Type AF one, which puts the fibre on the ' +
+               `second port at the far end): cable that second port by hand there. These ports have no cable in this file: ${firstOnly.join('; ')}.`);
   // THE BUNDLES (#923, decision 9). NetBox: each cable names its bundle first
   // in its description. NetBox 4.6 and later also has cable bundles of its own
   // (dcim.CableBundle, and the cable import's `bundle` column, by name: NetBox

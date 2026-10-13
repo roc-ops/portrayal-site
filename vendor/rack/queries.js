@@ -8,7 +8,8 @@ import {fits, isRackFace, heightOf, railOf, isZeroUPart, zeroUUnits, itemUnits, 
 import {placement, managersOf} from './managers.js';
 import {uLabel, zeroUOf, zeroUBottom, firstU, holderOf, rollOf, uText} from './model.js';
 import {whereText, carriesLane} from './zero-u.js';
-import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText} from './cable-rules.js';
+import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText, isElementId, addressFor} from './cable-rules.js';
+import {seatedPort, settleEnds} from './ports.js';
 import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf} from './route.js';
 import {catalogEntries} from './catalog.js';
 import {slackOf, spareLine, slackFindings} from './slack.js';
@@ -201,30 +202,51 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
   return out;
 }
 
-// The ports of a device with no cable, on either of its panels.
-export async function freePorts(rack, itemId, {portsOf}) {
+// The ports of a device with no cable, on either of its panels, each by its
+// ADDRESS: {path, view}. A port on the back of what a bay holds is
+// `<bay>/module/<part>` on the panel that shows the back (zones.js reads a
+// projected part's path so). An element id is never offered: a reader that
+// hands one in has it turned into the address it stands for where the
+// catalogue (`slotsOf`, `compByRef`) knows a port there, and dropped otherwise.
+export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef}) {
   const item = rack.items.find(i => i.id === itemId);
   if (!item) return {error: GONE};
-  const out = [];
+  const out = [], seen = new Set();
   for (const view of ['front', 'rear']) {
     for (const p of await portsOf(item, view)) {
       if (p.cls !== 'port') continue;
-      if (!portFree(rack, {item: itemId, path: p.path, view}).ok) continue;
-      out.push({path: p.path, view, label: p.path.replace(/-/g, ' '), media: p.media ?? null, speed: p.speed ?? null});
+      let path = p.path;
+      if (isElementId(path)) {
+        const to = addressFor(path);
+        if ((to.view ?? view) !== view || !seatedPort(item, {path: to.path, view}, {slotsOf, compByRef})?.port) continue;
+        path = to.path;
+      }
+      if (seen.has(`${view}|${path}`)) continue;
+      seen.add(`${view}|${path}`);
+      if (!portFree(rack, {item: itemId, path, view}).ok) continue;
+      out.push({path, view, label: path.replace(/-/g, ' '), media: p.media ?? null, speed: p.speed ?? null});
     }
   }
   return out;
 }
 
-export async function suggestMedia(rack, a, b, {cableFacts}) {
-  const facts = await cableFacts(rack, [a, b]);
-  const info = e => facts.ends.get(endKey(e))?.info || null;
+// THE PAGE'S FACTS, SETTLED: what `ctx.cableFacts` read off the drawings, with
+// what the catalogue knows of the parts in the bays laid over it (ports.js
+// settleEnds). A reader that fails is the caller's to catch.
+async function factsOf(rack, ctx, extra = []) {
+  const facts = await ctx.cableFacts(rack, extra);
+  return facts.unchecked ? facts : {...facts, ends: settleEnds(rack, facts.ends, ctx, extra)};
+}
+
+export async function suggestMedia(rack, a, b, ctx) {
+  const facts = await factsOf(rack, ctx, [a, b]);
+  const info = e => facts.ends?.get(endKey(e))?.info || null;
   const media = proposeMedia(info(a), info(b));
   return {media, warnings: mismatch(media, info(a), info(b))};
 }
 
-export async function looseEnds(rack, {cableFacts}) {
-  const facts = await cableFacts(rack);
+export async function looseEnds(rack, ctx) {
+  const facts = await factsOf(rack, ctx);
   const ends = (rack.cables || []).flatMap(c => [['a', c.a], ['b', c.b]]
     .map(([side, end]) => ({cable: c.id, side, end, reason: facts.ends.get(endKey(end))?.reason ?? null})))
     .filter(x => x.reason);
@@ -353,7 +375,7 @@ async function cableInfo(rack, cable, ctx) {
   let loose = null, warn = null, unchecked = false;
   if (typeof ctx.cableFacts === 'function') {
     let facts;
-    try { facts = await ctx.cableFacts(rack, [cable.a, cable.b]); } catch { facts = {unchecked: true}; }
+    try { facts = await factsOf(rack, ctx, [cable.a, cable.b]); } catch { facts = {unchecked: true}; }
     unchecked = !!facts.unchecked;
     if (!facts.unchecked) {
       const at = e => facts.ends.get(endKey(e)) || {};
@@ -467,7 +489,7 @@ export async function selectCables(rack, selector, ctx = {}) {
   if ('purpose' in s || 'media' in s) list = list.filter(c => matches(c, {purpose: s.purpose ?? null, media: s.media ?? null}));
   if (s.loose === true) {
     if (typeof ctx.cableFacts !== 'function') return {error: NO_FACTS};
-    const facts = await ctx.cableFacts(rack);
+    const facts = await factsOf(rack, ctx);
     list = list.filter(c => [c.a, c.b].some(e => facts.ends.get(endKey(e))?.reason));
     // some ends could not be checked: say so, as looseEnds does
     if (facts.unchecked) return {ids: list.map(c => c.id), unchecked: true};
