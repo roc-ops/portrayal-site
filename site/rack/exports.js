@@ -292,6 +292,13 @@ export async function drawioFile(rack, chassisOf) {
   const entries = ['front', 'rear'].flatMap(pane => lists[pane].map(it => ({pane, it, id: drawioId(it.id, pane, suffix)})));
   const finals = uniqueEntryIds(entries), idFor = new Map(entries.map((e, i) => [`${e.it.id}|${e.pane}`, finals[i]]));
   const racks = [], ports = new Set();
+  // TEMPORARY, AND ONLY TO KEEP THIS FILE AS IT IS. Kit 0.23.0 names the cell of a projected port (the back of a
+  // seated module) by its element id (zones.js exportName: `portrayal-path="bay-1-rear--b01"`), where this page has
+  // written its address (`bay-1/module/b01`) since the page first drew such ports. The kit was re-vendored for its
+  // speed alone, with no download to change, so the port is handed over without its `projected` mark and the kit
+  // writes the path, as before. Taking the kit's name is a change to this download, and is for the re-vendor that
+  // wires the rest of 0.23.0; this goes then. check_rack_drawio_projected_port_path holds the file to the address.
+  const asAddressed = ({projected: _projected, ...p}) => p;
   for (const pane of ['front', 'rear']) {
     const mounted = await Promise.all(lists[pane].map(async it => {
       const f = await faceOf(it, panelFor(it, pane));
@@ -301,7 +308,7 @@ export async function drawioFile(rack, chassisOf) {
       for (const p of f?.ports || []) if (p.cls === 'port' && !p.projected) ports.add(`${it.id}|${pane}|${p.path || p.id}`);
       // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
       return {id: idFor.get(`${it.id}|${pane}`), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
-              faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
+              faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports.map(asAddressed)}} : {}};
     }));
     racks.push({label, units: H, numDisp, mounted});
   }

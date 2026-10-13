@@ -1190,6 +1190,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "zones": "the ports and bays of a face in mm, for the diagram exports; no recipe yet",
     "drawio": "draw.io export; the draw.io page (drawio.html) is where the site shows it, with no kit recipe yet",
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
+    "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
 }
 _kpkg_f = VENDOR / "kit-package.json"
 try:

@@ -109,6 +109,22 @@ export function groundAt(surfaces, x, z, y) {
   }
   return best;
 }
+// groundAt for the points of one span (kit 0.25.0): a span asks for the
+// ground under some sixty points, every one on the line from p to q as seen
+// from above, of a list of every surface of the rack. So the surfaces that
+// reach within a millimetre of that line's box are picked out once, in the
+// list's order, and a point inside the box is judged against those alone:
+// a surface left out cannot be under it. A point outside the box is judged
+// against the whole list.
+function groundNear(surfaces, p, q) {
+  const x0 = Math.min(p.x, q.x) - 1, x1 = Math.max(p.x, q.x) + 1, z0 = Math.min(p.z, q.z) - 1, z1 = Math.max(p.z, q.z) + 1;
+  let near = null;
+  return (x, z, y) => {
+    if (!(x >= x0 && x <= x1 && z >= z0 && z <= z1)) return groundAt(surfaces, x, z, y);
+    near ??= surfaces.filter(s => !(s.x0 - EPS > x1 || s.x1 + EPS < x0 || s.z0 - EPS > z1 || s.z1 + EPS < z0));
+    return groundAt(near, x, z, y);
+  };
+}
 
 // THE DROP from a support onto a surface below it, h mm, as a cable lays it:
 // leaving level, a bend down and a bend back to level, each of radius R, so
@@ -197,10 +213,13 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
   // the ground under a point of the chord: surfaces no higher than the chord
   // less the cable's radius (a surface above the chord is a roof, not ground)
   const top = Math.max(p.y, q.y);
-  const fineOf = sag => Array.from({length: FINE + 1}, (_, k) => {
+  // (the ground does not depend on the sag, so it is found once a point)
+  const ground = groundNear(surfaces, p, q);
+  const chords = Array.from({length: FINE + 1}, (_, k) => {
     const t = k / FINE, chord = lerp(p, q, t);
-    return {t, chord, y: chord.y + sag * cat(t), g: groundAt(surfaces, chord.x, chord.z, Math.max(chord.y, top) - r)};
+    return {t, chord, g: ground(chord.x, chord.z, Math.max(chord.y, top) - r)};
   });
+  const fineOf = sag => chords.map(({t, chord, g}) => ({t, chord, y: chord.y + sag * cat(t), g}));
   const full = fineOf(S);
   const below = full.filter(s => s.t > 0 && s.t < 1 && s.g && s.y < s.g.y + r - EPS);
   // a span that sags less than a hundredth of a millimetre and lands on
@@ -228,7 +247,7 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
           ...[...db.points].reverse().map(([s, h]) => [L - lb - s, q.y - h])];
         const pts = prof.map(([s, y]) => ({...lerp(p, q, s / L), y}));
         for (const pt of pts) {
-          const g = groundAt(surfaces, pt.x, pt.z, pt.y - r);
+          const g = ground(pt.x, pt.z, pt.y - r);
           if (g && pt.y < g.y + r) pt.y = g.y + r;
         }
         const out = apart(p, q, pts);
@@ -248,7 +267,7 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
     const fine = sag === S ? full : fineOf(sag);
     const raised = fine.map(s => ({...s.chord, y: s.g ? Math.max(s.y, s.g.y + r) : s.y}));
     // what it lands on: each surface a point of it, as sampled, lies on
-    const landsOf = pts => { const on = []; for (const pt of pts) { const g = groundAt(surfaces, pt.x, pt.z, pt.y - r + 1e-3);
+    const landsOf = pts => { const on = []; for (const pt of pts) { const g = ground(pt.x, pt.z, pt.y - r + 1e-3);
       if (g && Math.abs(pt.y - (g.y + r)) < 1e-6 && !on.includes(g)) on.push(g); } return on; };
     const len = raised.reduce((m, pt, i) => (i ? m + gap3(raised[i - 1], pt) : 0), 0);
     let last = null;

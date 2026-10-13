@@ -15,7 +15,7 @@
 //
 // Finding the ports is zones.js's; this file only writes cells.
 
-import { readDrawing } from './zones.js';
+import { readDrawing, exportName } from './zones.js';
 import { normalise } from './marks.js';
 
 // Standalone entries are drawn at 2 px/mm, which is legible on a blank canvas.
@@ -134,7 +134,7 @@ export function splitCovers(svgText) {
 // A port is ON a bay's card when its path runs through the bay: slot-2/module/p0
 // is slot-2's. deviceCells nests such a port in its bay and makes the bay a
 // container that takes no line; connectable() counts by the same rule.
-const onBay = (p, b) => p.cls === 'port' && String(p.path || p.id).startsWith(`${b.id}/`);
+const onBay = (p, b) => p.cls === 'port' && String(exportName(p)).startsWith(`${b.id}/`);
 
 /**
  * How many cells deviceCells writes that a line can be drawn to: every port,
@@ -209,7 +209,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
       `parent="${esc(id)}"><mxGeometry x="${bx}" y="${by}" width="${bw}" ` +
       `height="${bh}" as="geometry"/></mxCell></object>`);
     for (const p of mine) {
-      out.push(portCell(`${id}-${p.id}`, p.path || p.id,
+      out.push(portCell(`${id}-${p.id}`, exportName(p),
         `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
         X(p.x) - bx, Y(p.y) - by,
         Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), `${id}-${b.id}`));
@@ -217,7 +217,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
   }
   for (const p of ports) {
     if (owned.has(p) || p.cls === 'bay') continue;
-    out.push(portCell(`${id}-${p.id}`, p.path || p.id, `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
+    out.push(portCell(`${id}-${p.id}`, exportName(p), `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
       X(p.x), Y(p.y), Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), id));
   }
   // A bay with no ports of its own is still worth being a cell - it is an empty
@@ -441,14 +441,17 @@ function rackPorts(groups, faces) {
           const sy = RACK.unit * (m.ru || 1) / f.vb[3];
           for (const p of f.ports) {
             if (p.cls !== 'port') continue;
-            const path = p.path || p.id;
-            const key = `${item}\n${path}`;
-            (at.get(key) || at.set(key, []).get(key)).push({
-              page: gi, face, cell: `${id}-${p.id}`,
-              y: top + (p.y + p.h / 2 - f.vb[1]) * sy,
-              stubX: fx + RACK.outer + 4,
-              far: [rack.label, m.name, `${face}/${path}`].filter(Boolean).join(' · '),
-            });
+            // a projected part (the back of a seated module) answers to its
+            // address and, as it always has, to its element id
+            for (const path of new Set([exportName(p), p.path || p.id])) {
+              const key = `${item}\n${path}`;
+              (at.get(key) || at.set(key, []).get(key)).push({
+                page: gi, face, cell: `${id}-${p.id}`,
+                y: top + (p.y + p.h / 2 - f.vb[1]) * sy,
+                stubX: fx + RACK.outer + 4,
+                far: [rack.label, m.name, `${face}/${path}`].filter(Boolean).join(' · '),
+              });
+            }
           }
         }
       });
@@ -657,7 +660,11 @@ function diagramOf(name, svgText, vb, ports, opts = {}) {
   // entry() names the device's cells by this slug, and these are its ports.
   const id = slug(name), here = new Map();
   for (const p of ports) {
-    if (p.cls === 'port') here.set(String(p.path || p.id), `${id}-${p.id}`);
+    if (p.cls === 'port') here.set(String(exportName(p)), `${id}-${p.id}`);
+  }
+  // a projected part (the back of a seated module) answers to its address too
+  for (const p of ports) {
+    if (p.cls === 'port' && p.projected && !here.has(String(p.path))) here.set(String(p.path), `${id}-${p.id}`);
   }
   const wired = cableCells(cables, end => {
     if (end.item != null && end.item !== item) return {reason: 'names a device this file does not draw'};

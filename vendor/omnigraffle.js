@@ -31,7 +31,7 @@
 // OmniGraffle will not paint images there, though it still shows them in the
 // sidebar thumbnails. That cost three rounds of the prototype.
 
-import { readDrawing } from './zones.js';
+import { readDrawing, exportName } from './zones.js';
 import { normalise } from './marks.js';
 
 const PT = 72 / 25.4;             // points per millimetre - faces are true size
@@ -176,10 +176,10 @@ function zoneShape(id, z, ox, oy, vb, item, tinted) {
        stroke: {Color: color(TINT[z.cls]), Width: real(0.5)}, shadow: {Draws: 'NO'}}
     : noDraw();
   const info = {'portrayal-device': item.ref, 'portrayal-face': item.face,
-                'portrayal-path': z.path || z.id, 'portrayal-class': z.cls};
+                'portrayal-path': exportName(z), 'portrayal-class': z.cls};
   for (const k of ['group', 'media', 'speed', 'model']) if (z[k]) info[`portrayal-${k}`] = String(z[k]);
   return {
-    Class: 'ShapedGraphic', ID: id, Shape: 'Rectangle', Name: z.path || z.id,
+    Class: 'ShapedGraphic', ID: id, Shape: 'Rectangle', Name: exportName(z),
     Bounds: rect(ox + (z.x - vb[0]) * PT, oy + (z.y - vb[1]) * PT,
                  Math.max(z.w, 0.5) * PT, Math.max(z.h, 0.5) * PT),
     Magnets: ['{0, 0}'],
