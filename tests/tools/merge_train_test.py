@@ -312,6 +312,17 @@ class Train(unittest.TestCase):
         self.state["checks"][sha] = []
         self.refused("2", why="no checks")
 
+    def test_a_required_check_that_never_reported_refuses(self):
+        sha = self.state["prs"]["2"]["headRefOid"]
+        self.state["checks"][sha] = self.state["checks"][sha][:1]
+        r = self.refused("2", why="'browser ('")
+        self.assertIn("#2", r.stdout + r.stderr)
+
+    def test_a_required_check_that_was_skipped_is_not_a_pass(self):
+        sha = self.state["prs"]["2"]["headRefOid"]
+        self.state["checks"][sha][1]["conclusion"] = "skipped"
+        self.refused("2", why="'browser ('")
+
     def test_the_workflow_not_having_succeeded_refuses_even_if_the_check_runs_are_green(self):
         sha = self.state["prs"]["2"]["headRefOid"]
         self.state["runs"][sha] = []

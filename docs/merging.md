@@ -48,7 +48,8 @@ first step that fails:
    `**Door:**` line of the template is two-way, or an `OWNER DECISION: approve`
    comment is the latest owner-decision comment (a missing `Door` line counts as
    one-way); the `checks` workflow has succeeded on the head, and every check run
-   on it has finished and passed.
+   on it has finished and passed, with `contract and modules` and the browser
+   shards among them (a skipped one is not a pass).
 2. **Builds the train** from `origin/main`, merging each head in order. This is
    done in git's object database (`git merge-tree`), so your checkout, index and
    branch are not touched. A conflict stops it and names the pull request, the

@@ -48,6 +48,10 @@ import time
 WORKFLOW_FILE = os.environ.get("TRAIN_WORKFLOW", "checks.yml")
 # The workflow's `name:` - what a check run's workflow is called on a commit.
 WORKFLOW_NAME = "checks"
+# Check runs that must be on the head and must have SUCCEEDED (a skip is not a
+# pass for these), by name prefix. Whatever else reported has to be finished and
+# not failed, but nothing else is required to exist.
+REQUIRED_CHECKS = ("contract and modules", "browser (")
 MERGE_FLAGS = "--merge"
 OK_CONCLUSIONS = {"success", "neutral", "skipped"}
 
@@ -131,6 +135,10 @@ def problems_with(n, base, repo):
             bad.append(f"check '{c['name']}' is not finished ({c.get('status')})")
         elif c.get("conclusion") not in OK_CONCLUSIONS:
             bad.append(f"check '{c['name']}' {c.get('conclusion')}")
+    for prefix in REQUIRED_CHECKS:
+        if checks and not any(c["name"].startswith(prefix) and c.get("conclusion") == "success"
+                              for c in checks):
+            bad.append(f"has no passing '{prefix}' check")
     return sha, bad
 
 
