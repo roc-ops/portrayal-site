@@ -135,19 +135,19 @@ const MARK = {type: ['integer', 'string'], minimum: 0,
 const AS = {type: 'string', minLength: 1, description: 'A name for the mark this adds; later commands in the same batch can use "@name".'};
 const FIELDS = {
   select: {type: 'string', description: "A CSS selector over the drawing, e.g. [data-path='psu-0'] or .led."},
-  color: {type: 'string', description: 'Ink: a ring drawn around what it selects, as a CSS colour; "" for none.'},
+  color: {type: 'string', description: 'Ink: a ring drawn around what it selects, as a CSS color; "" for none.'},
   state: {type: 'string', description: "A lamp state the selected parts show, from their own vocabulary (e.g. on, off, amber); \"\" for none."},
   label: {type: 'string', description: 'Text for the legend; "" for none.'},
-  lamp: {type: 'string', description: 'The colour the lamp itself shows, as hex like #00ff00; "" for however the drawing paints it.'},
+  lamp: {type: 'string', description: 'The color the lamp itself shows, as hex like #00ff00; "" for however the drawing paints it.'},
   id: {type: 'string', minLength: 1, description: 'A name for the mark, so later commands can address it.'},
 };
 const PATH = {type: 'string', minLength: 1, description: "A part's path in the drawing, as the tree lists it (e.g. psu-0 or port-4)."};
 const args = (required, properties) => ({type: 'object', required, additionalProperties: false, properties});
 
 export const COMMANDS = {
-  'mark.add': {run: markAdd, description: 'Add a mark: a statement about the parts a CSS selector matches - ink around them, a lamp state, a label, or the colour the lamp shows. Gets an id (m1, m2, ...) unless one is given.',
+  'mark.add': {run: markAdd, description: 'Add a mark: a statement about the parts a CSS selector matches - ink around them, a lamp state, a label, or the color the lamp shows. Gets an id (m1, m2, ...) unless one is given.',
     args: args(['select'], {...FIELDS, as: AS})},
-  'mark.update': {run: markUpdate, description: "Change a mark's selector, ink, state, label, lamp colour, or give it an id.",
+  'mark.update': {run: markUpdate, description: "Change a mark's selector, ink, state, label, lamp color, or give it an id.",
     args: args(['mark'], {mark: MARK, ...FIELDS})},
   'mark.remove': {run: markRemove, description: 'Remove a mark.', args: args(['mark'], {mark: MARK})},
   'mark.move': {run: markMove, description: 'Move a mark to another row; later marks draw over earlier ones.',
@@ -155,8 +155,8 @@ export const COMMANDS = {
   'marks.clear': {run: marksClear, description: 'Remove every mark.', args: args([], {})},
   'lamp.state': {run: lampState, description: "Set a part's lamp state, as the tree's state chips do: setting the state it already shows clears it.",
     args: args(['path', 'state'], {path: PATH, state: {type: 'string', description: 'The state, from the part\'s own vocabulary; "" clears it.'}})},
-  'lamp.color': {run: lampColor, description: "Say what colour a part's lamp shows, as the tree's swatch does, or clear it with null.",
-    args: args(['path', 'hex'], {path: PATH, hex: {type: ['string', 'null'], description: 'The colour as hex like #00ff00, or null to clear it.'}})},
+  'lamp.color': {run: lampColor, description: "Say what color a part's lamp shows, as the tree's swatch does, or clear it with null.",
+    args: args(['path', 'hex'], {path: PATH, hex: {type: ['string', 'null'], description: 'The color as hex like #00ff00, or null to clear it.'}})},
   crop: {run: crop, description: 'Crop the drawing to a rectangle, in millimetres of its own drawing, or remove the crop with null.',
     args: args(['rect'], {rect: {type: ['object', 'null'], required: ['x', 'y', 'w', 'h'], additionalProperties: false,
       description: 'The rectangle {x, y, w, h} in millimetres, or null.',

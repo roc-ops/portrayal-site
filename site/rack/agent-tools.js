@@ -13,6 +13,7 @@ import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {spareFor, spareText, needsText} from './spare.js';
 import {projectionIdRefusal} from './part-path.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
+import {american} from '../colors.js';
 
 export {LIMIT, fit, ranges};
 
@@ -55,7 +56,8 @@ const ARG_WORDS_BY_OP = {
 };
 const TOOL_WORDS = [[/\bdescribe\(\)/g, 'describe_rack'], [/\bfreePorts\(\)/g, 'list_free_ports'],
                     [/\bcatalog\(\)/g, 'find_devices'], [/\binspect\(\)/g, 'inspect']];
-const words = d => TOOL_WORDS.reduce((s, [re, w]) => s.replace(re, w), d);
+// and in US spelling: the kit's descriptions are written "colour"
+const words = d => american(TOOL_WORDS.reduce((s, [re, w]) => s.replace(re, w), d));
 // Every description at any depth, in this site's words.
 const reword = node => {
   if (Array.isArray(node)) return node.map(reword);
