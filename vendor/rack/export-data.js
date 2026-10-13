@@ -11,9 +11,9 @@ import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMe
 import {zeroUEntries, whereText, hungText} from './zero-u.js';
 import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts} from './bundles.js';
 export {positionOf};
-import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
+import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS, cableColorOf} from './cable-rules.js';
 import {storedText, mText} from './slack.js';
-import {settleEnds} from './ports.js';
+import {settleEnds, jacketsFor} from './ports.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -659,13 +659,20 @@ export const drawioCableStyle = color =>
 
 // `spare` is slack.js spareExports(rack, ctx): a cable with a length and a
 // path carries what is spare of it, which its edge label states.
-export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf, spare = null, parts = null}) {
+// A CABLE WHOSE COLOUR IS SAID carries it as `color` (#1028): its own, else
+// the one its two ends agree on (read from `ends` and `parts`, ports.js
+// jacketAt), else its named type's (`typeColorOf`, cable-types.js
+// jacketLookup). The vendor draws that colour for it, and a caller's own
+// `cableStyle` function reads it there. A cable coloured by its media alone
+// carries no `color`, and is filed under its media as before.
+export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf, spare = null, parts = null, typeColorOf = null}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   // Ends that could not be checked: an edge may run to an empty cage, which
   // says "connected" where nothing is. None is drawn, and the file says so.
   const n = (rack.cables || []).length;
   if (unchecked && n) return {cables: [], notes: [`${count(n, 'cable is', 'cables are')} not drawn because ${n === 1 ? 'its' : 'their'} ends could not be checked.`]};
   const cables = [], notes = cableNotes(rack, ends, {undrawn: true, uOf, parts});
+  const readers = {jacketOf: jacketsFor(rack, {ends, parts}), typeColorOf};
   for (const f of cableFindings(rack, ends, parts)) {
     if (f.loose.length) continue;
     const c = f.cable;
@@ -684,7 +691,9 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = ()
     }
     const [a, b] = sides.map(s => ({item: idOf(s.it.id, s.pane), path: s.end.path}));
     const s = c.length ? spare?.byCable?.get(c.id) : null;
+    const tint = cableColorOf(c, readers);
     cables.push({id: c.id, a, b, media: drawioMediaKey(c), purpose: c.purpose, label: c.label,
+                 ...(tint.from === 'media' ? {} : {color: tint.color}),
                  ...(c.length ? {length: c.length} : {}),
                  ...(s && !s.short && lengthText(c.length) ? {spare: mText(s.spare.spare_m)} : {})});
   }

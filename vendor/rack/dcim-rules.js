@@ -6,6 +6,7 @@
 // ask here.
 
 import {endName, lengthParts, portPathOf} from './cable-rules.js';
+import {hexColor} from './cable-geometry.js';
 import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate, flat} from './export-data.js';
 import {bundleOfCable, bundleName, bundlesOf} from './bundles.js';
 import {andList} from './bundle-route.js';
@@ -373,6 +374,16 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     dac ||= c.media === 'dac';
     const len = importLength(c, target);
     if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
+    // THE `color` COLUMN is the cable's OWN colour and nothing else (#1028):
+    // six lower case hex digits with no `#`, which is what both take (NetBox
+    // v4.7.2 251458b8, dcim/models/cables.py `Cable.color`, a ColorField whose
+    // utilities/validators.py ColorValidator is ^[0-9a-f]{6}$, and `color` in
+    // dcim/forms/bulk_import.py CableImportForm; Nautobot v3.2.6 3dc554b4,
+    // dcim/models/cables.py `Cable.color`, the same ColorField and validator in
+    // core/models/fields.py). A colour worked out from the ends, the type or
+    // the media is how the cable is drawn, not a fact someone recorded of it,
+    // so it is left blank, as every cable's was before.
+    const color = hexColor(c.color)?.slice(1) ?? '';
     // A label or a description over the field's length is cut to it, not the cable dropped.
     const along = c.length?.source === 'routed' && len.value !== '';
     let label = flat(c.label || c.id);
@@ -396,7 +407,7 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     if (!nautobot) {
       if (a.ports.length > 1 || b.ports.length > 1) several.push(f.name);
       rows.push({side_a_device: a.device, side_a_type: a.type, side_a_name: a.ports.join(','), side_b_device: b.device,
-                 side_b_type: b.type, side_b_name: b.ports.join(','), type, status: 'planned', label, color: '',
+                 side_b_type: b.type, side_b_name: b.ports.join(','), type, status: 'planned', label, color,
                  length: len.value, length_unit: len.unit, description});
       continue;
     }
@@ -421,7 +432,7 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     for (let k = 0; k < count; k++) {
       const tail = count > 1 ? ` (${k + 1}/${count})` : '';
       rows.push({a_device: a.device, a_type: a.type, a_name: a.ports[k], b_device: b.device, b_type: b.type, b_name: b.ports[k], type,
-                 status: 'Planned', label: stem + tail, color: '', length: len.value, length_unit: len.unit});
+                 status: 'Planned', label: stem + tail, color, length: len.value, length_unit: len.unit});
     }
   }
   if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');

@@ -2,11 +2,12 @@
 // panel and `node --test` all read one definition. A rule that says no gives
 // a sentence, in the style of fit.js.
 //
-// A cable is {id, a, b, media, purpose, label, length?, route}; an END is
+// A cable is `{id, a, b, media, purpose, label, length?, color?, route}`; an END is
 // {item, path, view}: the item's id, the port's data-path, and the device's
 // OWN panel ('front' or 'rear') the port is on - not the pane that shows it.
 
 import {nextId, positionOf, cableIdsInUse, withoutMembers} from './model.js';
+import {hexColor, cableColor} from './cable-geometry.js';
 
 // ── ends ────────────────────────────────────────────────────────────────
 export const endKey = end => `${end.item}|${end.view}|${end.path}`;
@@ -67,9 +68,11 @@ export function canCable(rack, a, b, opts = {}) {
 // An end keeps the plug it states (`plug`, below: THE PLUG AT AN END) and nothing else.
 const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
   ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
-export function withCable(rack, {a, b, media = '', purpose = '', label = '', length = null}) {
+// `color` is the cable's own colour, as hexColor reads one; anything else is
+// left off (the commands refuse a value that is no colour before this).
+export function withCable(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}) {
   const cable = {id: nextId(cableIdsInUse(rack), 'c'), a: endOf(a), b: endOf(b), media, purpose, label,
-                 ...(length ? {length} : {}), route: []};
+                 ...(length ? {length} : {}), ...(hexColor(color) ? {color: hexColor(color)} : {}), route: []};
   return {rack: {...rack, cables: [...(rack.cables || []), cable]}, cable};
 }
 // `length: null` in the patch removes the length; anything else is merged.
@@ -79,6 +82,8 @@ export function withCable(rack, {a, b, media = '', purpose = '', label = '', len
 // both as they are.
 // Similarly, a patch that names the route replaces what was written (model.js
 // `routeAsWritten`); a patch that does not name it leaves both as they are.
+// `color: null` removes the cable's own colour, and a patch that names the
+// colour at all replaces one the loader kept as written (`colorAsWritten`).
 export function updateCable(rack, id, patch) {
   return {...rack, cables: (rack.cables || []).map(c => {
     if (c.id !== id) return c;
@@ -86,7 +91,9 @@ export function updateCable(rack, id, patch) {
     for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k];   // undefined removes the key
     if (Object.hasOwn(patch, 'length')) delete next.lengthAsWritten;
     if (Object.hasOwn(patch, 'route')) delete next.routeAsWritten;
+    if (Object.hasOwn(patch, 'color')) delete next.colorAsWritten;
     if (next.length == null) delete next.length;
+    if (next.color == null) delete next.color;
     return next;
   })};
 }
@@ -116,15 +123,64 @@ export const lengthParts = l => (l && typeof l.value === 'number' && Number.isFi
   ? {value: l.value, unit: l.unit || 'm'} : null);
 export const lengthText = l => { const p = lengthParts(l); return p ? `${p.value} ${p.unit}` : ''; };
 
+// ── colour (#1028) ──────────────────────────────────────────────────────
+// A CABLE'S OWN COLOUR, as a form or a command gives it: empty or null is no
+// colour of its own (the ends, the type or the media then decide), `#rgb` or
+// `#rrggbb` is that colour, written `#rrggbb` in lower case, and anything
+// else is refused with a sentence. Nothing here draws a value that is no
+// colour: a name such as "red" is not guessed at, and never becomes black.
+export const COLOR_REFUSED = 'A cable color is # and three or six hex digits, such as #2bb3c8, or empty for none of its own.';
+export function parseColor(value) {
+  if (value == null || (typeof value === 'string' && !value.trim())) return {ok: true, color: null};
+  const color = hexColor(value);
+  return color ? {ok: true, color} : {ok: false, reason: COLOR_REFUSED};
+}
+
+// WHAT DECIDES A CABLE'S COLOUR, as the keys cable-geometry.js cableColor
+// reads, and only the keys that say something:
+//   `color`    the cable's own, when it states one;
+//   jackets    [end a's, end b's], when `jacketOf` is given and either end
+//              states one: `jacketOf(end)` is the jacket colour the part
+//              seated at that end states, or null (ports.js jacketsFor
+//              makes it from the page's cable facts and the catalogue);
+//   typeColor  its named type's, when `typeColorOf(cable)` gives one
+//              (cable-types.js jacketLookup).
+// A cable none of them speaks for has no key here, and is coloured by its
+// media as it always was. Neither reader is asked for a cable that states
+// its own colour: nothing they could answer would be drawn.
+export function colorFacts(cable, {jacketOf = null, typeColorOf = null} = {}) {
+  const own = hexColor(cable?.color);
+  if (own) return {color: own};
+  const jackets = typeof jacketOf === 'function' ? [cable.a, cable.b].map(e => hexColor(jacketOf(e))) : [];
+  const typeColor = typeof typeColorOf === 'function' ? hexColor(typeColorOf(cable)) : null;
+  return {...(jackets.some(Boolean) ? {jackets} : {}), ...(typeColor ? {typeColor} : {})};
+}
+// `{color, from}` of one cable of a rack, by the same order: what every drawing,
+// list and export of it shows. `from` is 'cable', 'ends', 'type' or 'media'.
+export const cableColorOf = (cable, readers = {}) =>
+  cableColor({media: cable?.media || 'unset', purpose: cable?.purpose || '', ...colorFacts(cable, readers)});
+// EVERY CABLE'S COLOUR AS ONE TEXT, for a view that draws the cables once and
+// keeps them (the 3D scene): two racks that give the same text are drawn in
+// the same colours. sameCables3d sees a cable's own colour change; a jacket
+// set on a seated end, or a table of types loaded later, changes no cable, so
+// a view that passes `jacketOf` or `typeColorOf` compares this as well.
+export const colorsKey = (rack, readers = {}) =>
+  (rack.cables || []).map(c => `${c.id}=${cableColorOf(c, readers).color}`).join(' ');
+
 // ── the plan cables.js draws ────────────────────────────────────────────
 // The rack's cables in the shape drawCables2d takes: an end is [item id,
 // path, PANE]. An end whose device is gone is on no pane ('none'), so the
 // drawer hangs the other end as an unplugged lead. A cable with no media is
 // 'unset', which cables.js colours neutral.
-export function cablePlan(rack) {
+// A LINK CARRIES WHAT DECIDES ITS COLOUR (colorFacts above): `color`,
+// `jackets` and `typeColor`, each only when it says something, so that
+// cable-geometry.js colorOf(link) answers the colour to draw. `readers` is
+// `{jacketOf, typeColorOf}`; without them a link carries the cable's own
+// colour and nothing else.
+export function cablePlan(rack, readers = {}) {
   const end = e => { const it = itemOf(rack, e); return [e.item, e.path, it ? paneOf(it, e.view) : 'none']; };
   return {links: (rack.cables || []).map(c =>
-    ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', from: end(c.a), to: end(c.b)}))};
+    ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', ...colorFacts(c, readers), from: end(c.a), to: end(c.b)}))};
 }
 
 // The same cables for the 3D scene (cables.js drawCables3d): there an end is
@@ -132,15 +188,17 @@ export function cablePlan(rack) {
 // face and its turn itself, so it asks which of the device's panels a port is
 // on, not which pane shows it. An end whose device is gone names no mount,
 // and the scene hangs the other end as an unplugged lead.
-export function cablePlan3d(rack) {
+// A link carries what decides its colour, as cablePlan's does.
+export function cablePlan3d(rack, readers = {}) {
   const end = e => [e.item, e.path, e.view === 'rear' ? 'rear' : 'front'];
   return {links: (rack.cables || []).map(c =>
-    ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', from: end(c.a), to: end(c.b)}))};
+    ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', ...colorFacts(c, readers), from: end(c.a), to: end(c.b)}))};
 }
 
 // WHAT THE 3D SCENE READS OF THE CABLES: which cables there are, in order,
-// where each one's two ends are, and its media (its colour; the showcase's
-// 'copper' is coloured by purpose, so there the purpose counts too). Two racks
+// where each one's two ends are, its media (its colour; the showcase's
+// 'copper' is coloured by purpose, so there the purpose counts too) and the
+// colour it states of its own. Two racks
 // that agree on those draw the same tubes and seat the same plugs. A label, a
 // length, or the purpose of any other media changes nothing in the scene, so
 // an edit to one of those need not rebuild it. An EDITED route does change
@@ -151,7 +209,7 @@ export function sameCables3d(a, b) {
   const ca = a.cables || [], cb = b.cables || [];
   if (ca === cb) return true;
   const key = c => JSON.stringify([c.id, endKey(c.a), endKey(c.b), c.media || '', c.media === 'copper' ? c.purpose || '' : '',
-    JSON.stringify(c.routeEdited ? c.route : null)]);
+    JSON.stringify(c.routeEdited ? c.route : null), hexColor(c.color) || '']);
   return ca.length === cb.length && ca.every((c, i) => key(c) === key(cb[i]));
 }
 
