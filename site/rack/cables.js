@@ -30,7 +30,7 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {svgEl} from './dom.js';
 import {OPENING} from '../../vendor/rack/rails.js';
-import {routed2d} from '../../vendor/rack/route-path.js';
+import {arcPath} from './bend2d.js';
 import {reverseMarks} from '../../vendor/rack/route.js';
 import {colorOf, WIDTH, TAG_H, sag2d, LEAD_DROP, mergeOf, routePoints3d, hangPoints3d,
         danglePoints3d, reaches, clearOf} from '../../vendor/rack/cable-geometry.js';
@@ -129,11 +129,14 @@ function leadDown(g, a, color, drop, outboard) {
 // above it allow - so no tag covers a port, a plug or another tag, and no
 // cable crosses one. A tag carries its cable's data-link-index, and the
 // record keeps it as `tag`.
+// `bendOf(link)` is the cable's bend radius in mm (bend3d.js radiusOf): a routed
+// cable's corners are arcs of it (bend2d.js arcPath), or the small cut of old
+// where it gives null.
 // `ends(svg, dev, path)` finds an end's connector points; it defaults to
 // ends2d, which looks a device up by its ref. The Rack Builder passes its
 // own (cable-view.js), which looks an item up by its id and panel.
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
-                                               outboard = 1, ends = ends2d}) {
+                                               outboard = 1, ends = ends2d, bendOf = () => null}) {
   // The CABLES are the drawing, and exports keep them (standalone() drops
   // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
   // controls - a cross-face button, a not-connected link to the stage that
@@ -171,7 +174,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
       const via = link.via2d?.[view], rings = link.rings2d?.[view];
-      stroke(g, via?.length ? routed2d([a, ...via, b], 4, rings ? [null, ...rings, null] : null)
+      stroke(g, via?.length ? arcPath([a, ...via, b], bendOf(link), rings ? [null, ...rings, null] : null).d
         : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
@@ -202,7 +205,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
         const rv = link.rings2d?.[view], rings = rv && (landedSide === 'from' ? rv : reverseMarks(rv));
         const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
         column.push({rec, want: last[1], lane: dir, place: y => {
-          stroke(g, routed2d([a, ...v], 4, rings ? [null, ...rings] : null), color, WIDTH);
+          stroke(g, arcPath([a, ...v], bendOf(link), rings ? [null, ...rings] : null).d, color, WIDTH);
           return tag([last[0] + dir * 6, y], other, link);
         }});
       } else column.push({rec, want: a[1] + 30, place: y => {

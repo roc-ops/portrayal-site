@@ -18,6 +18,7 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
+import {radiusOf} from './bend3d.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
@@ -318,6 +319,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   };
   const recs = drawCables2d(svg, plan, pane, {
     edgeX, outboard: rear ? -1 : 1,
+    bendOf: radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles}),
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.

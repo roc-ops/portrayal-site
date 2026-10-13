@@ -126,6 +126,28 @@ export function roundedCurve(THREE, pts, R, {cap = null} = {}) {
   return curve;
 }
 
+// THE BEND RADIUS A CABLE IS DRAWN TO, in 2D and 3D alike (portrayal-site#164,
+// #185): its installed radius from the cable types (`bendOf`, the kit's
+// cable-types.js bendLookup), and, while it rides a bundle, the bundle's radius
+// when that is larger (the kit's bundleCheck `bend.radius_mm`: the largest of
+// its members'), so a member turns with its trunk. `bundles` is {bundles: Map}.
+// Null when neither is known: the cable is then eased as before and its
+// corners are not checked.
+export function radiusOf(rack, bendOf, bundles) {
+  const byId = new Map((rack.cables || []).map(c => [c.id, c]));
+  const ofBundle = new Map();
+  for (const f of bundles?.bundles?.values() ?? []) {
+    const r = f.check?.bend?.radius_mm;
+    if (r > 0) for (const id of f.members ?? []) ofBundle.set(id, r);
+  }
+  return link => {
+    let own = null;
+    try { own = typeof bendOf === 'function' ? bendOf(byId.get(link.id)) : null; } catch { own = null; }
+    const rs = [own, ofBundle.get(link.id)].filter(r => typeof r === 'number' && r > 0);
+    return rs.length ? Math.max(...rs) : null;
+  };
+}
+
 // The solid body a point is strictly inside, as tubes_inside reads them:
 // 0.05 mm in from a face. `boxes` is [{ref, part, box}] (world Box3s); the
 // answer is the entry it is inside, so a caller can tell whose body it is,

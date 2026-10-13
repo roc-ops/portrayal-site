@@ -9321,8 +9321,12 @@ def check_rack_cable_lay(page, base):
         bad.append("lead points: the kit leads no cord of this rack square to its ring, so none was checked")
     off2d = page.evaluate(LEAD_2D_JS, leads)
     for cid, d in sorted(off2d.items()):
-        if d is None or d > 4.0 + 1e-6:
-            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within the corner's 4 mm")
+        # (#185) the corner is an arc of the cable's 25 mm (OM4) radius, which
+        # stands R (sec(theta/2) - 1) inside the vertex for a turn of theta:
+        # the plug's lead here turns some 120 degrees, 28 mm at most on this
+        # rack. The vertex itself is held to in 3D below.
+        if d is None or d > 30.0:
+            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within its arc, 30 mm at the most")
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
@@ -10126,6 +10130,33 @@ def check_rack_bend_radius_3d(page, base):
     for L in got["lengths"]:
         if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
+    return bad
+
+@extra("rack.html: a routed cable in 2D keeps its bend radius - every corner of its line is an arc of the cable's own radius (OM4's 25 mm) or a smaller one the room allows, never a square corner (#185)")
+def check_rack_bend_radius_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    got = page.evaluate("""() => {
+      const out = [];
+      for (const g of document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id], #paneRear svg [data-cables] [data-cable-id]')) {
+        const d = g.querySelector('path:last-of-type')?.getAttribute('d') || '';
+        out.push({cable: g.dataset.cableId, quad: /Q/.test(d), arcs: [...d.matchAll(/A([\\d.]+) ([\\d.]+) 0 0 [01] /g)].map(m => +m[1])});
+      }
+      return out;
+    }""")
+    routed = [c for c in got if c["arcs"] or c["quad"]]
+    if len(got) != 16 or not routed:
+        return bad + [f"2D: {len(got)} cables drawn, {len(routed)} routed: nothing to measure"]
+    for c in routed:
+        if c["quad"]:
+            bad.append(f"2D: {c['cable']}'s line still has a square-cut quadratic corner")
+        if any(r > 25 + 0.01 for r in c["arcs"]):
+            bad.append(f"2D: {c['cable']} has an arc of radius {max(c['arcs'])}, over OM4's 25 mm")
+    if not any(25 in c["arcs"] for c in routed):
+        bad.append(f"2D: no corner is drawn at the full 25 mm radius: {[c['arcs'] for c in routed]}")
     return bad
 
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
