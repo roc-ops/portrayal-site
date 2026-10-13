@@ -28,6 +28,8 @@ import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
 import {readSvg, portsOf} from '../../vendor/zones.js';
+import {loadSlots} from '../../vendor/rack/catalog.js';
+import {cableEndPaths} from '../../vendor/rack/ports.js';
 
 export const DIST = 'assets/dist/';
 const OPPOSITE = {front: 'rear', rear: 'front'};
@@ -83,8 +85,12 @@ const MEMO = new Map();
 export const setFaceMemoLimit = n => { limit = Math.max(1, n); while (MEMO.size > limit) MEMO.delete(MEMO.keys().next().value); };
 export const faceMemoSize = () => MEMO.size;
 
-export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {}, turned = false}) {
-  const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned};
+// `ends` asks for the slots a cable lands on besides the ports (a power inlet,
+// an outlet, a ground stud): the kit's cableEndPaths names them and zones.js
+// reads each as a port with `end: true`. Off, the ports are what they always
+// were, for the callers that list data ports only.
+export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {}, turned = false, ends = false}) {
+  const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned, ...(ends ? {ends: true} : {})};
   const key = JSON.stringify(canon(args));
   // `build` awaits several times (fetch, jdist, components) and, in the
   // showcase, the caller's `swaps`/`fields` are the SAME object it goes on
@@ -127,7 +133,7 @@ function faceText(url) {
   return hit;
 }
 
-async function build({ref, cfg, view, swaps, fields, turned}) {
+async function build({ref, cfg, view, swaps, fields, turned, ends}) {
   const shown = turned ? (OPPOSITE[view] || view) : view;
   let text = await faceText(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
   if (text == null) return null;
@@ -147,7 +153,12 @@ async function build({ref, cfg, view, swaps, fields, turned}) {
     if (hasFields) applyFields(root, fields);
     text = new XMLSerializer().serializeToString(root);
   }
-  const {vb, zones} = readSvg(text);
+  let endPaths = null;
+  if (ends) {
+    const {slotsOf, compByRef} = await loadSlots(DIST, [ref]);
+    endPaths = cableEndPaths({ref, cfg, swaps}, shown, {slotsOf, compByRef});
+  }
+  const {vb, zones} = readSvg(text, endPaths?.length ? {ends: endPaths} : {});
   // THE BACK OF A SEATED MODULE is a projection: its ports carry their path
   // as `data-of` and the kit's zones (0.22.0) give each its drawing id as
   // `path` ("bay-1-rear--b01"). A port is addressed by its path on either

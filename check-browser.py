@@ -6772,7 +6772,14 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
         return
     tip = page.evaluate(SPARE_TIP_JS)
     if not tip or tip["id"] != cid:
-        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
+        # (what the page's own hover finds at that point, and what is under it, so a red says why the label did not come)
+        seen = page.evaluate("""async ([x, y]) => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene?.();
+          const el = document.elementFromPoint(x, y);
+          return {hover: s ? H.hoverAt3d(s, {clientX: x, clientY: y}) : 'no scene', under: el ? el.tagName + '#' + el.id : null,
+                  tip: document.getElementById('cableTip')?.dataset.cableTip ?? null};
+        }""", pt) if find_js is SPARE_PT_3D_JS else None
+        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}" + (f" (at {pt}: {seen})" if seen else ""))
     else:
         if want["text"] not in tip["meta"]:
             bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
@@ -10717,6 +10724,187 @@ def check_rack_cable_lay_pdu(page, base):
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the PDU rack's scene", tubes=True)
     bad += tubes_inside(page, 1, want_parts=("z1|envelope",))
+    return bad
+
+
+# A RACK WITH A PDU AND TWO DEVICES THAT TAKE A C14 (portrayal-site#202): the
+# PDU on the front face so its C13 outlets are on the front pane, the two
+# MX150s with an inlet on the rear.
+POWER_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Power', kind: 'four-post'}), {heightRU: 24});
+  ({rack: r} = M.withItem(r, {ref: 'pdu12iec', cfg: cat['pdu12iec'].default, ru: 2, label: 'pdu-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 10, label: 'srv-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 14, label: 'srv-2'}));
+  return r;
+}"""
+
+
+def power_click(page, pane, item, path):
+    """Click the middle of the slot at `path` on `item`'s group in `pane`."""
+    sel = f'#pane{pane} svg [data-item-id="{item}"][data-panel] [data-path="{path}"]'
+    box = page.evaluate("""sel => { const e = document.querySelector(sel); if (!e) return null;
+      const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", sel)
+    if not box:
+        raise RuntimeError(f"power: {path} of {item} is not drawn on the {pane.lower()} pane")
+    page.mouse.click(box[0], box[1])
+
+
+@extra("rack.html: power cords - an inlet and a PDU outlet are picked in Cable mode, the form names each end and offers power, the cord is drawn in 2D and 3D with a plug at each end, listed, edited, warned and deleted, and the exports carry it")
+def check_rack_power_cords(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    click = page.click
+
+    def labelled(sel, **kw):
+        # a click that times out says which one, not just "Timeout 30000ms"
+        try:
+            return click(sel, **kw)
+        except Exception as e:
+            raise RuntimeError(f"power: click {sel}: {str(e).splitlines()[0]}") from e
+    page.click = labelled
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(POWER_RACK_JS))
+    try:
+        # Every slot a cord lands on is listed on the panel that draws it, and nothing else is.
+        wait_fn(page, "power: the PDU's outlets are listed for picking",
+                "() => (document.querySelector('#paneFront svg [data-item-id=\"i1\"][data-panel=\"mounted\"]')?.getAttribute('data-cable-ends') || '').includes('outlet-front-1')")
+        ends = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('[data-item-id][data-panel]')].map(g =>
+          [`${g.dataset.itemId}|${g.closest('svg').dataset.pane}`, (g.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean)]))""")
+        if ends.get("i1|front") != ["outlet-front-1", "outlet-front-2", "outlet-front-3", "outlet-front-4"]:
+            bad.append(f"picking: the PDU's front outlets are {ends.get('i1|front')}")
+        if sorted(ends.get("i2|rear", [])) != ["ground-studs", "inlet"]:
+            bad.append(f"picking: srv-1's rear slots are {ends.get('i2|rear')}")
+        if ends.get("i2|front"):
+            bad.append(f"picking: srv-1's front lists slots a cord lands on: {ends.get('i2|front')}")
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i2", "inlet")
+        step = page.text_content("#cableStep") or ""
+        if "srv-1" not in step or "inlet" not in step:
+            bad.append(f"picking: the inlet was not picked: {step!r}")
+        power_click(page, "Front", "i1", "outlet-front-1")
+        wait_sel(page, "power: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_a, end_b = page.text_content("#cEndA") or "", page.text_content("#cEndB") or ""
+    if "C14 inlet" not in end_a or "C13 outlet" not in end_b:
+        bad.append(f"form: the ends do not say what they are: {end_a!r} / {end_b!r}")
+    offered = page.eval_on_selector_all("#cMedia option", "o => o.map(x => x.value)")
+    if "power" not in offered or "ground" not in offered:
+        bad.append(f"form: the media offered are {offered}")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"form: the media proposed for an inlet and an outlet is {page.input_value('#cMedia')!r}")
+    if (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: a cord from an outlet to an inlet is warned: {page.text_content('#cWarn')!r}")
+    # A ground wire does not suit a power end, and the form says so before it is saved.
+    page.select_option("#cMedia", "ground")
+    if "does not suit" not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: a ground wire on a power end is not warned: {page.text_content('#cWarn')!r}")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the cord is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+        wait_sel(page, "power: the cord on the front pane", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
+        wait_sel(page, "power: the cord on the rear pane", 'svg[data-pane="rear"] [data-cables] [data-cable-id="c1"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["media"] != "power" or c1["a"] != {"item": "i2", "path": "inlet", "view": "rear"} \
+            or c1["b"] != {"item": "i1", "path": "outlet-front-1", "view": "front"}:
+        bad.append(f"saved: the cord is {c1}")
+    if page.evaluate("() => !!window.__rack.doc().racks[0].items.some(i => i.swaps && Object.keys(i.swaps).length)"):
+        bad.append("saved: a plug was written into an item's swaps (a derived plug is never stored)")
+    # A plug is drawn at each end, and the cord ends on its cable point, not on the port's middle.
+    seated = page.evaluate("""() => ({
+      inlet: !!document.querySelector('#paneRear svg [data-item-id="i2"][data-panel] [data-path="inlet-occupant"]'),
+      outlet: !!document.querySelector('#paneFront svg [data-item-id="i1"][data-panel] [data-path="outlet-front-1-occupant"]'),
+      refs: [...document.querySelectorAll('[data-path$="-occupant"][data-ref]')].map(e => e.getAttribute('data-ref')).sort()})""")
+    if not seated["inlet"] or not seated["outlet"]:
+        bad.append(f"2D: the plugs are not drawn at both ends: {seated}")
+    if not any("c13-plug" in r for r in seated["refs"]) or not any("c14-plug" in r for r in seated["refs"]):
+        bad.append(f"2D: the plugs are not a C13 in the inlet and a C14 in the outlet: {seated['refs']}")
+    if page.evaluate("() => document.querySelectorAll('[data-open-plug]').length"):
+        bad.append("2D: the cord hangs as an unplugged lead")
+    # The list, and the row's own words.
+    wait_sel(page, "power: the list row", '#cableList [data-cable-row="c1"]')
+    row = page.text_content('#cableItem-c1') or ""
+    if "inlet" not in row or "outlet-front-1" not in row or "Power cable" not in row:
+        bad.append(f"list: the row reads {row!r}")
+    if page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: a landed cord has a loose end: {row!r}")
+    # 3D: a tube for the cord, hung between the two devices. (Cable mode is left first.)
+    if page.get_attribute("#cableBtn", "aria-pressed") == "true":
+        page.click("#cableBtn")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "power: 3D", tubes=True)
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        got = page.evaluate("() => (window.__rack.scene().three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name)")
+        if got != ["cable-c1"]:
+            bad.append(f"3D: the scene's cables are {got}")
+    # EDIT: the media changes to ground and the row follows; delete takes the cord and its plugs.
+    page.click('#mode [data-mode="2d"]')
+    wait_sel(page, "power: the row after 2D", '#cableList [data-cable-row="c1"]')
+    if page.get_attribute('#cableList [data-cable-row="c1"]', "aria-pressed") != "true":   # a saved cord is left selected
+        page.click('#cableList [data-cable-row="c1"]')
+    wait_sel(page, "power: the row's Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the edit form", "#cableForm")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"edit: the form opens on {page.input_value('#cMedia')!r}")
+    page.select_option("#cMedia", "ground")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the media is saved", "() => window.__rack.doc().racks[0].cables[0].media === 'ground'")
+        wait_fn(page, "power: the list says the ground wire does not suit",
+                "() => /does not suit end A, which is power/.test(document.querySelector('#cableItem-c1')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    wait_sel(page, "power: Edit after a save", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the second edit form", "#cableForm")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    wait_fn(page, "power: back to power", "() => window.__rack.doc().racks[0].cables[0].media === 'power'")
+    # A second cord, outlet to outlet: a warning that is plain, in the list.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'outlet-front-2', view: 'front'},
+                                                 b: {item: 'i1', path: 'outlet-front-3', view: 'front'}, media: 'power'})""")
+    try:
+        wait_fn(page, "power: the outlet-to-outlet cord warns",
+                "() => /Both ends are outlets/.test(document.querySelector('#cableItem-c2')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    # A GROUND WIRE falls out of the same work: stud to stud, landed, and not called power.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i2', path: 'ground-studs', view: 'rear'},
+                                                 b: {item: 'i3', path: 'ground-studs', view: 'rear'}, media: 'ground'})""")
+    try:
+        wait_sel(page, "power: the ground wire is listed", "#cableItem-c3")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        g = page.text_content("#cableItem-c3") or ""
+        if "Ground wire" not in g or "Loose end" in g or "does not suit" in g:
+            bad.append(f"ground: the wire's row reads {g!r}")
+    # The exports carry the cord: the BOM counts it, the schedule lists it connected.
+    bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
+    if "Power cable" not in bom or "power at both ends" not in bom:
+        bad.append(f"BOM: the cords are not counted as landed power cables: {bom!r}")
+    sched = pathlib.Path(export_file(page, "cables").path()).read_text(encoding="utf-8")
+    if "srv-1,10,inlet,pdu-1,2,outlet-front-1,Power cable" not in sched or "loose end" in sched:
+        bad.append(f"schedule: the cords are not listed as connected: {sched!r}")
+    # Delete the second, then the first: no cable, no plug left drawn.
+    for cid in ("c2", "c1"):
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        page.click("#cableDelete")
+        wait_fn(page, f"power: {cid} is deleted", f"() => !window.__rack.doc().racks[0].cables.some(c => c.id === '{cid}')")
+    wait_fn(page, "power: no plug stays after the cords are deleted",
+            "() => !document.querySelector('[data-path$=\"-occupant\"][data-ref*=\"-plug\"]')")
     return bad
 
 
@@ -14790,7 +14978,7 @@ FORM_JS = """async (opts) => {
 }"""
 
 
-@extra("rack.html: the cable form offers the eight media, warns on a mismatch without blocking, and checks the length")
+@extra("rack.html: the cable form offers the ten media (power and ground too), warns on a mismatch without blocking, and checks the length")
 def check_rack_cable_form(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14813,7 +15001,7 @@ def check_rack_cable_form(page, base):
     if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
         bad.append("cable form: the two ends are not named")
     values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
-    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc"]:
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground"]:
         bad.append(f"cable form: the media offered are {values}")
     if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
         bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")

@@ -31,14 +31,12 @@ const button = (id, text, fn, type = 'button') => {
 // length field or its unit was changed, `length`: the new one, or null when
 // the field was emptied. No `length` key means the length was left alone -
 // the cable keeps whatever it has, including one kept as written.
-const POWER_MEDIA = new Set(['power', 'ground']);
 export function cableForm({title, endA, endB, cable, infoA = null, infoB = null, purposes = [], routed = null,
                            onSave, onCancel}) {
   const media = el('select', {id: 'cMedia', 'aria-describedby': 'cWarn'}, [
     option('', 'Not set', cable.media),
-    // (kit 0.30.0 adds `power` and `ground`: the page offers no power cabling yet, so a cable
-    // that already has one of them keeps it selectable, and the form offers it to no other)
-    ...MEDIA.filter(m => !POWER_MEDIA.has(m) || m === cable.media).map(m => option(m, MEDIA_LABELS[m], cable.media)),
+    // (kit 0.30.0: `power` is an AC cord or a DC feed, `ground` a bonding wire)
+    ...MEDIA.map(m => option(m, MEDIA_LABELS[m], cable.media)),
     // A media from a file this page does not know stays selectable as itself.
     ...(cable.media && !MEDIA.includes(cable.media) ? [option(cable.media, cable.media, cable.media)] : [])]);
   const purpose = el('input', {id: 'cPurpose', type: 'text', value: cable.purpose || '',
