@@ -14,7 +14,7 @@
 import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
 import {earHoles} from './ear-holes.js';
 import {configuredFace, earPlanFor} from './face.js';
-import {svgEl} from './dom.js';
+import {svgEl, importDrawingNode} from './dom.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
 import {itemBox} from '../../vendor/rack/fit.js';
@@ -236,7 +236,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       gz = svgEl('g', {transform: `translate(${zeroUPaneX(z, view) - w / 2} ${bottom - h})`, ...attrs});
       for (const kid of [...root.childNodes]) {
         if (kid.nodeName === 'style') { if (zStyled) continue; zStyled = true; }
-        gz.append(document.importNode(kid, true));
+        gz.append(importDrawingNode(kid) ?? []);
       }
       // The whole part takes a click: its backing rect, under its drawing.
       gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
@@ -366,7 +366,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // compiled drawing carries the same stylesheet.
     for (const kid of [...root.childNodes]) {
       if (kid.nodeName === 'style') { if (styled) continue; styled = true; }
-      g.append(document.importNode(kid, true));
+      g.append(importDrawingNode(kid) ?? []);
     }
     out.append(g);
     // A manager is mostly air: a click on its tray or ears is meant for the
