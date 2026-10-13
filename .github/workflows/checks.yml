@@ -77,22 +77,17 @@ jobs:
   browser:
     name: browser (${{ matrix.shard }} of 5)
     runs-on: ubuntu-latest
-    # PLAYWRIGHT'S OWN IMAGE, so there is no browser to install: Chromium, the
-    # system libraries it needs and Python 3.12 come in it, built for Playwright
-    # 1.63.0 - the tag and the pip pin below say the same version, and the
-    # package of another version would look for a browser build the image does
-    # not have. The tag resolved to sha256:72bd171a9ffc2b4b59532aaa6210e21014d07093120dc25528870c0b840da1f0
-    # when this was written (the pull's log prints the digest). It replaces a step that
-    # pip-installed Playwright, apt-installed its libraries and downloaded a
-    # browser, about half a minute in every job. The image runs as root, which
-    # is what Playwright's image expects; --ipc=host is what its documentation
-    # asks of Chromium, whose 3D pages would otherwise share the 64 MB /dev/shm
-    # a container gets by default.
-    container:
-      image: mcr.microsoft.com/playwright/python:v1.63.0-noble
-      options: --ipc=host
     # The slowest shard is about twelve minutes of checks; the stage rail alone
     # is most of five and cannot be split.
+    #
+    # NOT PLAYWRIGHT'S OWN CONTAINER, which was tried first
+    # (mcr.microsoft.com/playwright/python:v1.63.0-noble): the jobs started,
+    # checked out and installed, and then check_rack_straps_seen failed - a
+    # strap measured 6 x 5 px at Fit where it needs 6 - the same failure this
+    # check has on a local machine and not on the runner below, and the
+    # shards took 12 to 16 minutes where their weights say 12 at most. A different rendering
+    # environment is a different answer from the checks, so the browser is
+    # installed on the runner as before.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -102,18 +97,26 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with: {fetch-depth: 1}
 
-      # No setup-python: the image's own python3 is the interpreter, and this
-      # prints which, so a run log says what the checks ran under. The image
-      # carries the browsers but not the Python package that drives them (the
-      # first run of this job found none), so that is the one thing installed,
-      # pinned to the image's version: a few seconds, no browser, no apt. The
-      # system python is marked externally managed, hence the flag - the
-      # container is thrown away after the job.
-      - name: the interpreter, and Playwright pinned to the image's version
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with: {python-version: '3.12'}
+
+      # The browser Playwright downloads, kept between runs: a hit skips the
+      # download below, which is the slow half of the install on a runner (the
+      # libraries are apt packages and are installed every time). The key names
+      # the Playwright version, since that is what chooses the browser build;
+      # when the pin below moves, so does the key.
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
+
+      # PLAYWRIGHT IS PINNED to 1.63.0, the version the checks were last
+      # measured on. Unpinned, a new release's Chromium would arrive in the
+      # middle of a pull request and change what the pixel-sized checks see.
+      - name: install a browser
         run: |
-          python3 --version
-          python3 -m pip install --disable-pip-version-check --break-system-packages playwright==1.63.0
-          python3 -c "import importlib.metadata as m; print('playwright', m.version('playwright'))"
+          python3 -m pip install --disable-pip-version-check playwright==1.63.0
+          python3 -m playwright install --with-deps chromium
 
       # check-browser.py starts its own serve.py on a free port, so there is
       # nothing to start or stop around it here.
