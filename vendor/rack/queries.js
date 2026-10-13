@@ -19,6 +19,7 @@ import {bundlesOf, bundleName} from './model.js';
 import {bundleCheck, bundleOfCable, membersText, spacingText, strapSpacing, straps as strapsOf, trunkLength, straightText, fewText,
         layoutOf} from './bundles.js';
 import {slotEnv, slotTree, partName, partOf, resolverFor} from './slots.js';
+import {auditRack, readAsTexts, unknownTexts} from '../redirects.js';
 import {fieldRows} from '../fields.js';
 
 export function fitsAt(rack, {ref, face, ru}, {chassisOf}) {
@@ -228,7 +229,7 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
 // 'other'. A picker for a data cable asks for ['data'].
 const FREE_KINDS = ['data', 'power', 'ground', 'other'];
 const natural = new Intl.Collator('en', {numeric: true});
-export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef}, {kinds = null} = {}) {
+export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef, redirects = null}, {kinds = null} = {}) {
   const item = rack.items.find(i => i.id === itemId);
   if (!item) return {error: GONE};
   if (kinds != null && !(Array.isArray(kinds) && kinds.every(k => FREE_KINDS.includes(k))))
@@ -241,7 +242,7 @@ export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef}, {ki
     if (seats === undefined) {
       const slots = typeof slotsOf === 'function' && typeof compByRef === 'function' ? slotsOf(item.ref) : null;
       // the panels the item's configuration shows, and no other build's (ports.js shownEnv)
-      seats = slots && !slots.error ? resolverFor(shownEnv(item, slots, compByRef), item.swaps || {}) : null;
+      seats = slots && !slots.error ? resolverFor(shownEnv(item, slots, compByRef, redirects), item.swaps || {}) : null;
     }
     const slot = seats?.entryAt(path) ?? null;
     return slot && takesCableEnd(slot, compByRef) ? slot : null;
@@ -346,7 +347,7 @@ function itemFacts(rack, item, ctx) {
     out.notes = [`The ear holes of ${c.model ?? item.ref} are not stated, so its holes at ${uText(rack.frame, item.ru, out.u)} are not checked.`];
   if (!slots) out.slots = 'not loaded';
   else {
-    const env = slotEnv(item, slots, ctx.compByRef);
+    const env = slotEnv(item, slots, ctx.compByRef, ctx.redirects);
     const tree = slotTree(env, item.swaps || {});
     out.bays = tree.bays.map(b => ({...b, accepts: offers(ctx, b.accepts)}));
     out.cages = tree.cages.map(g => ({...g, accepts: offers(ctx, g.accepts)}));
@@ -355,6 +356,18 @@ function itemFacts(rack, item, ctx) {
     const parts = [...tree.bays.map(b => [`${b.path}/module`, b.holds]), ...tree.cages.map(g => [`${g.path}-occupant`, g.holds])];
     out.fields = parts.flatMap(([path, ref]) => fieldRows(partOf(ctx.compByRef, ref)?.fields, item.fields?.[path])
       .map(r => ({path, key: r.key, type: r.type, value: r.value, default: r.default, ...(r.type === 'choice' ? {choices: r.options} : {})})));
+  }
+  // A REF THE LIBRARY HAS REPLACED IS READ AS ITS REPLACEMENT, and a ref it no
+  // longer has is kept and named (kit/redirects.js): the file is not changed
+  // by either until it is next edited.
+  const {redirected, unknown} = auditRack({items: [item]}, ctx);
+  if (redirected.length) {
+    out.redirected = redirected.map(({path, from, to}) => ({path, from, to}));
+    out.notes = [...(out.notes || []), ...readAsTexts(redirected)];
+  }
+  if (unknown.length) {
+    out.unknown = unknown.map(({path, ref}) => ({path, ref}));
+    out.notes = [...(out.notes || []), ...unknownTexts(unknown)];
   }
   out.cables = (rack.cables || []).flatMap(cb => [['a', cb.a, cb.b], ['b', cb.b, cb.a]]
     .filter(([, e]) => e.item === item.id)

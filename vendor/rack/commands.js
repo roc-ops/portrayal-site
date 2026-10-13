@@ -25,6 +25,7 @@ import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, lanesOf} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
+import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
 import {fieldAccepts} from '../fields.js';
 
 export const GONE = 'That device is no longer in the rack.';
@@ -124,9 +125,21 @@ function patch(rack, {id, ...given}, ctx) {
     const s = slotsFor(ctx, it.ref);
     if (s?.error) return s;
     if (s) {
-      const {accepted, ignored} = acceptSwaps(p.swaps, slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef));
-      p.swaps = accepted;
-      if (ignored.length) findings.push(note(`Left out ${ignored.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      // A REF THE LIBRARY HAS REPLACED IS WRITTEN AS ITS REPLACEMENT before the
+      // slot is asked, and a ref it no longer has is kept, with what sits
+      // under it, and named (kit/redirects.js): neither is dropped.
+      p.swaps = followSwaps(p.swaps, ctx.redirects).swaps;
+      const env = slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef, ctx.redirects);
+      const {kept, rest, gone} = keptSwaps(p.swaps, ctx, path => resolverFor(env, p.swaps).entryAt(path));
+      const {accepted, ignored} = acceptSwaps(rest, env);
+      // what sits under a carrier the slot refuses goes with it
+      const orphan = path => ignored.some(c => underCarrier(path, c));
+      const stays = Object.fromEntries(Object.entries(kept).filter(([path]) => !orphan(path)));
+      const dropped = Object.keys(kept).filter(path => orphan(path));
+      p.swaps = {...accepted, ...stays};
+      const left = [...ignored, ...dropped];
+      if (left.length) findings.push(note(`Left out ${left.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      findings.push(...unknownTexts(gone.filter(u => !orphan(u.path)).map(u => ({...u, label: it.label}))).map(note));
     }
   }
   const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
@@ -235,10 +248,14 @@ const firstEight = refs => (refs.length > 8 ? `${refs.slice(0, 8).join(', ')} an
 // panel at the same `<bay>/module/<part>` (ports.js portIdsOf).
 const portIds = (comp, compByRef) => portIdsOf(comp, compByRef);
 
-function fit(rack, {id, path, ref}, ctx) {
+function fit(rack, {id, path, ref: given}, ctx) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
-  const was = it.swaps || {};
+  // A REF THE LIBRARY HAS REPLACED IS READ AS ITS REPLACEMENT, and so are the
+  // ones already on the device, so the slot is judged on the parts that will
+  // be written.
+  const ref = given === 'default' ? given : ctx.redirects?.follow(given) ?? given;
+  const was = followSwaps(it.swaps || {}, ctx.redirects).swaps;
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   // the swaps with only this slot changed: the map the slot is judged on
@@ -249,7 +266,7 @@ function fit(rack, {id, path, ref}, ctx) {
   if (!s && (ref === 'default' ? !own(was, path) : own(was, path) && was[path] === ref)) return unchanged(rack);
   let holds = ref === 'default' ? undefined : ref, isCage = false, view = null, next = flat;
   if (s) {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const target = resolverFor(env, flat).entryAt(path);
     // a part the slot does not take is refused even when it is the one held
     if (target && ref && ref !== 'default' && !(target.accepts || []).includes(ref))
@@ -272,6 +289,7 @@ function fit(rack, {id, path, ref}, ctx) {
     .filter(([k]) => k !== `${path}/module` && !underCarrier(k, path)));
   const name = holds === undefined ? null : partName(ctx.compByRef, holds);
   const findings = [];
+  if (ref !== given) findings.push(note(`${pairText(given, ref)}: ${ref} was fitted in ${path}.`));
   // A BAY'S PORTS GO WITH ITS PART: a cable on a port the new part does not
   // have is kept, as a loose end (remove's cables: 'keep').
   if (!isCage && holds !== undefined) {
@@ -310,7 +328,7 @@ function field(rack, {id, path, key, value}, ctx) {
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   if (s && typeof ctx.compByRef === 'function') {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const R = resolverFor(env, it.swaps || {});
     const slot = R.entryAt(path);
     if (slot) return {error: `${path} is a ${slot.isCage ? 'cage' : 'bay'}; the part in it is ${path}${slot.isCage ? '-occupant' : '/module'}.`};
@@ -1376,6 +1394,8 @@ export function apply(rack, cmds, ctx) {
   }
   const bound = new Map(), created = {}, ids = [], summaries = [], findings = [];
   let cur = rack, step = false;
+  // WHAT THIS RACK SAYS THAT THE LIBRARY HAS REPLACED, as the file has it
+  const said = ctx?.redirects?.size ? rewriteRack(rack, ctx.redirects).changed : [];
   for (const [index, raw] of list.entries()) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw) || typeof raw.op !== 'string')
       return {error: 'A command is an object with an op.', index};
@@ -1402,6 +1422,23 @@ export function apply(rack, cmds, ctx) {
       if (as != null) { bound.set(as, res.created.id); created[as] = res.created.id; }
     }
     cur = res.rack;
+  }
+  // THE FIRST EDIT THAT LANDS WRITES THE NEW REFS (kit/redirects.js), in the
+  // same step, so one undo takes both back; a plain load, a no-op, a refused
+  // edit and a command that is no step leave the rack as the file has it.
+  if (step && ctx?.redirects?.size) {
+    const out = rewriteRack(cur, ctx.redirects);
+    if (out.changed.length) {
+      cur = out.rack;
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const all = said.filter(a => there.has(a.item));
+      for (const c of out.changed) if (!all.some(a => a.item === c.item && a.path === c.path && a.from === c.from)) all.push(c);
+      findings.unshift(note(rewroteText(all)));
+    } else if (said.length) {
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const still = said.filter(a => there.has(a.item));
+      if (still.length) findings.unshift(note(rewroteText(still)));
+    }
   }
   return {rack: cur, summary: summaries.join(' '), findings, created: {...created, ids}, noop: cur === rack, step};
 }

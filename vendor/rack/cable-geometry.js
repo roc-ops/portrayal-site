@@ -106,6 +106,20 @@ export const PLUGS = {sm: '#2a6fd4', mm: JACKETS.mm};
 export const plugColorOf = j => PLUGS[j] || null;
 
 export const WIDTH = 3;          // mm: a patch lead, to scale
+
+// THE WIDTH A CABLE IS DRAWN AT (#1060), mm. A power cord is drawn at its real
+// outside diameter, so it meets the stub of the plug it lands on (a cord end's
+// stub is `cable-od` wide); every other media is WIDTH, as it always was.
+// `diameterOf` is the page's cable types lookup (cable-types.js
+// diameterLookup); a cord that names no type is the power-c13 cord, whose
+// figure is route.js DIAMETERS.power (held equal by rack-cord-width.mjs: this
+// file cannot import route.js, which imports it by way of solids.js).
+const POWER_OD = 7.1;
+export function widthOf(cable, diameterOf = null) {
+  if (cable?.media !== 'power') return WIDTH;
+  const d = typeof diameterOf === 'function' ? diameterOf(cable) : null;
+  return typeof d === 'number' && d > 0 ? d : POWER_OD;
+}
 // How far a cable hangs below the lower of its two ends: a little always, more
 // the farther apart they are, and a few mm more per cable already hung between
 // the same two devices, so parallel runs fan out instead of stacking.

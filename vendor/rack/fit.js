@@ -111,7 +111,8 @@ export function anchorY(rack, item, chassisOf) {
 export function laneY(ru) { return (ru - 0.5) * RU; }
 // THE NEIGHBOURS A ROUTE LOOKS TO FOR A MANAGER: the devices of a unit or less
 // just above an item and just below it, on any face, above first and nearest
-// first. A caller filters them by face and by what they carry.
+// first, and a manager of any height (one that lists guides). A caller filters
+// them by face and by what they carry.
 // - Above an item of a unit or more: one that starts on its top edge. Above an
 //   item under a unit: one that starts anywhere from its top edge to the next
 //   whole unit, so a half-unit panel in the lower half of a unit still finds
@@ -121,7 +122,10 @@ export function laneY(ru) { return (ru - 0.5) * RU; }
 //   a whole unit or is under a unit itself.
 export function neighbours(rack, item, chassisOf) {
   const [lo, hi] = spanOf(item, chassisOf), small = hi - lo < 1;
-  const near = rack.items.filter(o => o.id !== item.id && itemUnits(o, chassisOf) <= 1);
+  // a device taller than a unit is a neighbour when it is itself a manager
+  // (it lists guides, #1027): a 2U manager over a switch is one a route uses
+  const near = rack.items.filter(o => o.id !== item.id
+    && (itemUnits(o, chassisOf) <= 1 || Object.keys(chassisOf(o.ref)?.guides || {}).length > 0));
   const above = near.filter(o => (small ? o.ru >= hi && o.ru <= Math.ceil(hi) : o.ru === hi)).sort((p, q) => p.ru - q.ru);
   const under = Math.floor(lo) - 1;
   const below = near.filter(o => spanOf(o, chassisOf)[1] === lo

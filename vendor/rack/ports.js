@@ -104,7 +104,7 @@ export function seatedPort(item, end, ctx, {seen = false} = {}) {
   if (first < 0 || isElementId(p)) return null;
   const slots = ctx.slotsOf(item.ref);
   if (!slots || slots.error) return null;
-  const env = slotEnv(item, slots, ctx.compByRef), swaps = item.swaps || {};
+  const env = slotEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
   const bay = env.bays.find(b => b.id === p.slice(0, first));
   if (!bay || !OTHER[bay.view]) return null;
   // ONLY A BAY THAT IS SPOKEN FOR: by the item's swaps, or by the
@@ -236,7 +236,7 @@ function partJacket(comp, compByRef, seen = new Set()) {
 function seatsOf(item, ctx, kept) {
   if (kept?.has(item)) return kept.get(item);
   const slots = ctx.slotsOf(item.ref);
-  const seats = !slots || slots.error ? null : resolverFor(slotEnv(item, slots, ctx.compByRef), item.swaps || {});
+  const seats = !slots || slots.error ? null : resolverFor(slotEnv(item, slots, ctx.compByRef, ctx.redirects), item.swaps || {});
   kept?.set(item, seats);
   return seats;
 }
@@ -280,8 +280,8 @@ export const jacketsFor = (rack, facts = {}) => { const kept = new Map(); return
 // shows, each with `view` as the face it is on, so that a slot of another
 // build of the device is never taken for one of this build.
 const SIX = ['front', 'rear', 'left', 'right', 'top', 'bottom'];
-export function shownEnv(item, slots, compByRef = null) {
-  const env = slotEnv(item, slots, compByRef);
+export function shownEnv(item, slots, compByRef = null, redirects = null) {
+  const env = slotEnv(item, slots, compByRef, redirects);
   const faceOf = new Map(SIX.map(face => [env.cfg?.views?.[face] ?? face, face]));
   const shown = s => (faceOf.has(s.view) ? [{...s, view: faceOf.get(s.view)}] : []);
   return {...env, bays: env.bays.flatMap(shown), cages: env.cages.flatMap(shown)};
@@ -324,7 +324,7 @@ export function ownSlot(item, end, ctx) {
   const slots = ctx.slotsOf(item.ref);
   if (!slots || slots.error) return null;
   const view = end.view === 'rear' ? 'rear' : 'front';
-  const takes = shownEnv(item, slots, ctx.compByRef).cages.filter(g => g.id === p && takesCableEnd(g, ctx.compByRef));
+  const takes = shownEnv(item, slots, ctx.compByRef, ctx.redirects).cages.filter(g => g.id === p && takesCableEnd(g, ctx.compByRef));
   const here = takes.find(g => g.view === view);
   const drawn = drawnComp(end, ctx);
   if (here) return {facts: {port: true, slot: true, cage: false, occupied: false, onView: view},
@@ -347,7 +347,7 @@ export function cableEndPaths(item, view, ctx) {
   const slots = ctx.slotsOf(item.ref);
   if (!slots || slots.error) return [];
   // the panels this configuration shows, and no other build's (shownEnv)
-  const env = shownEnv(item, slots, ctx.compByRef), swaps = item.swaps || {};
+  const env = shownEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
   const R = resolverFor(env, swaps), out = new Set();
   const take = path => { if (takesCableEnd(R.entryAt(path), ctx.compByRef)) out.add(path); };
   const under = (comp, base, depth) => {

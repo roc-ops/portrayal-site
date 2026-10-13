@@ -9,12 +9,14 @@
 import {encodeSwaps} from '../../vendor/swap.js';
 import {encodeFields} from '../optics.js';
 import {el} from './dom.js';
+import {swapsForLens} from './lens-redirects.js';
 
 export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, title = ref,
-                          host = document.body}) {
+                          redirects = null, host = document.body}) {
   return new Promise(resolve => {
     const q = new URLSearchParams({embed: '1', device: ref, config: cfg, view});
-    const sw = encodeSwaps(swaps), fd = encodeFields(fields);
+    // a holder the library replaced goes in as its replacement (lens-redirects.js)
+    const sw = encodeSwaps(swapsForLens(swaps, redirects).swaps), fd = encodeFields(fields);
     // swap= and fields= carry their own escaping, so they are appended, not set.
     const frame = el('iframe', {title: `${title} in Explorer`,
       src: `explorer.html?${q}${sw ? `&swap=${sw}` : ''}${fd ? `&fields=${fd}` : ''}`});

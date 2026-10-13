@@ -35,6 +35,24 @@ export const pathwaysOf = chassis =>
 const laneFor = (frame, side, pane) => (frame.kind === 'two-post' ? side : `${side}-${pane}`);
 const itemOf = (rack, id) => rack.items.find(i => i.id === id) || null;
 
+// THE GUIDES OF AN ITEM, WITH THE DEPTH OF ITS RINGS (#1027). The page gives
+// where each ring stands across the face. How far back from the rail plane a
+// ring of a rack device stands, and how thick it is along its run, are the
+// part's own geometry, which rack.json carries per ring (`rings`, rack_index.py)
+// as `z` and `depth`. A ring the page gives its own `depth` keeps it; `in` is
+// the new key, mm behind the rail plane its face is mounted on. A device with
+// no `rings` in the catalogue (a rack-face part, or a ring on a tray) gives its
+// guides as the page does.
+function guidesFor(it, ctx, id = it?.id) {
+  const gs = ctx.guidesOf(id), made = it && ctx.chassisOf(it.ref)?.rings;
+  if (!made || !gs?.length) return gs;
+  return gs.map(g => {
+    const r = g.kind === 'ring' ? made[g.via] : null;
+    if (!r) return g;
+    return {...g, ...(g.depth > 0 || !(r.depth > 0) ? {} : {depth: r.depth}), ...(g.in == null && r.z > 0 ? {in: r.z} : {})};
+  });
+}
+
 // Which face an end's port is seen from: its item's face, or the other one
 // for the panel that faces away (a turned item swaps the two).
 // Mirrors cable-rules.js paneOf, duplicated so this file stays kit-ready.
@@ -62,7 +80,7 @@ export function ringOf(g) {
 // across its centre line from there, so the ring nearest a port is another
 // ring. An item rolled a quarter turn is an outline and offers none.
 function mountedGuides(m, ctx) {
-  const gs = ctx.guidesOf(m.id);
+  const gs = guidesFor(m, ctx);
   if (isQuarter(m)) return [];
   if (rollOf(m) !== 180) return gs;
   const cx = centreX(m, ctx.chassisOf);
@@ -696,7 +714,7 @@ export function pointOf(rack, w, ctx) {
     const [, pane = 'front'] = w.lane.split('-');
     return {x: laneXAt(rack, w.lane, w.ru, ctx?.chassisOf), y: laneY(w.ru), z: planeZ(f, pane)};
   }
-  const it = itemOf(rack, w.item), g = it && ctx.guidesOf(it.id).find(x => x.via === w.via);
+  const it = itemOf(rack, w.item), g = it && guidesFor(it, ctx).find(x => x.via === w.via);
   if (!g) {
     // a tray: the middle of its largest floor rectangle, on its upward face
     const t = it && trayOf(rack, w, ctx);
@@ -709,7 +727,9 @@ export function pointOf(rack, w, ctx) {
   const c = ctx.chassisOf(it.ref) || {};
   // A guide on a rack device's FAR panel is the chassis depth in, as portPoint puts a port there.
   const out = c.mount === 'rack-face' ? (c.d ?? 0) / 2 : 0;
-  const z = c.mount !== 'rack-face' ? panelZ(rack, it, g.face, ctx)
+  // A ring of a rack device on its own face stands `in` behind that rail.
+  const inward = c.mount !== 'rack-face' && g.in > 0 && g.face === it.face ? (it.face === 'front' ? -g.in : g.in) : 0;
+  const z = c.mount !== 'rack-face' ? panelZ(rack, it, g.face, ctx) + inward
     : g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
   // the guide where it is as mounted: turned with the item by its roll
   return {...rollPoint(rack, it, {x: g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
@@ -1470,7 +1490,7 @@ function layInputs(rack, cable, ctx, given, plain = false) {
   wps.forEach((w, i) => {
     let p = pointOf(rack, w, ctx);
     if (!p) return;
-    const g = w.lane ? null : ctx.guidesOf(w.item).find(x => x.via === w.via);
+    const g = w.lane ? null : guidesFor(itemOf(rack, w.item), ctx, w.item).find(x => x.via === w.via);
     const tray = !w.lane && !g ? trayOf(rack, w, ctx) : null;
     if (tray) { stops.push({p, w, i, tray}); return; }
     const ring = ringOf(g);
@@ -2240,7 +2260,7 @@ export function ringMarks(rack, cable, ctx) {
   const path = pathOf(rack, cable, ctx);
   if (path) return copyOf(path.marks);
   return routeOf(rack, cable, ctx).waypoints.map(w => {
-    const g = w.lane ? null : ringOf(ctx.guidesOf(w.item).find(x => x.via === w.via));
+    const g = w.lane ? null : ringOf(guidesFor(itemOf(rack, w.item), ctx, w.item).find(x => x.via === w.via));
     return g ? {run: g.run, depth: g.depth} : null;
   });
 }

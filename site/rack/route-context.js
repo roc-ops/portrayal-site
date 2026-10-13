@@ -7,7 +7,7 @@
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces, trunkLay, tieMark} from './bundle-view.js';
-import {WIDTH} from '../../vendor/rack/cable-geometry.js';
+import {WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {itemBox} from '../../vendor/rack/fit.js';
 import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindingsOf, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
@@ -349,6 +349,16 @@ export async function plugReaches(rack, facts = null) {
 // cannot be read: the kit then takes each cable's media's typical figure.
 let typesOnce = null;
 export const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => null));
+
+// THE WIDTH A PLAN LINK IS DRAWN AT, mm (kit 0.34.0 widthOf: a power cord at
+// its type's diameter, every other cable WIDTH), for drawCables2d and
+// drawCables3d. A plan link carries no `type`, so the rack's own cable
+// (`cables`, by id) is what the kit is asked about. `diameterOf` is the cable
+// types' lookup, or none: a cord is then the power-c13's 7.1 mm.
+export function widthLookup(diameterOf, cables) {
+  const byId = new Map((cables || []).map(c => [c.id, c]));
+  return link => widthOf(byId.get(link.id) ?? link, diameterOf ?? null);
+}
 
 // A BUNDLE'S CHECK READS THE CABLE TYPES (portrayal-site#164): each member's
 // diameter for its size, and its installed bend radius (`bendOf`) for its

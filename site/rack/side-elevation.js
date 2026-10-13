@@ -45,7 +45,7 @@
 import {RU} from '../../vendor/rack/rails.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isZeroUPart, itemBox} from '../../vendor/rack/fit.js';
-import {colorOf, WIDTH} from '../../vendor/rack/cable-geometry.js';
+import {colorOf, WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
@@ -294,7 +294,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
 }
 
 function stroke(g, d, color, w) {
-  g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.45, 'stroke-width': w + 1.2,
+  g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.45, 'stroke-width': Math.round((w + 1.2) * 100) / 100,
     'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
   g.append(svgEl('path', {d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
 }
@@ -331,7 +331,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     const t = svgEl('title', {});
     t.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
     g.append(t);
-    stroke(g, d, colorOf(link), WIDTH);
+    stroke(g, d, colorOf(link), widthOf(c, routes.types?.diameterOf));
     // THE PLUG AT EACH END, as a block (side-geometry.js plugSpans): the kit's
     // straight run out of the port by the plug's reach. No seated plug or
     // optic has a side drawing to seat here (the devices' indexes list side

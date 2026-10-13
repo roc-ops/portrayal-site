@@ -397,7 +397,7 @@
     },
     "path": {
      "type": "string",
-     "description": "The port's path on the face."
+     "description": "The port's path on the face. A power inlet, an outlet, a DC terminal or a ground stud is named by the path of its connector slot."
     },
     "view": {
      "enum": [
@@ -405,6 +405,11 @@
       "rear"
      ],
      "description": "Which of the device's own panels the port is on."
+    },
+    "plug": {
+     "type": "string",
+     "minLength": 1,
+     "description": "The plug or lug the cable has at this end, as a component ref. Stated only where the port takes more than one; absent, the plug is derived from what the port accepts."
     }
    }
   },
@@ -472,7 +477,7 @@
     },
     "media": {
      "type": "string",
-     "description": "The cable type (os2, om3, om4, om5, cat6, cat6a, dac, aoc), or empty."
+     "description": "The cable type (os2, om3, om4, om5, cat6, cat6a, dac, aoc, power, ground), or empty. power is a conductor that carries power, an AC cord or a DC feed; ground is a bonding conductor."
     },
     "purpose": {
      "type": "string",
@@ -519,6 +524,14 @@
     },
     "lengthAsWritten": {
      "description": "A length the loader could not use, kept whole as it was written."
+    },
+    "color": {
+     "type": "string",
+     "pattern": "^#[0-9a-f]{6}$",
+     "description": "The cable's own color: # and six lower-case hex digits. Absent, the jacket color of its two ends (when both state one and they agree), else its type's, else its media's is drawn."
+    },
+    "colorAsWritten": {
+     "description": "A color the loader could not use, kept whole as it was written. The cable then has no color of its own."
     },
     "route": {
      "type": "array",

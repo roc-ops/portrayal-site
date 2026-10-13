@@ -5728,7 +5728,9 @@ def check_rack_bundle_2d_front(page, base):
         bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
     # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
     head = page.inner_text('#cableList [data-bundle-item="b1"]')
-    if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
+    # (the strap summary is "N straps every 6 in" when every strap is a spacing strap, and "N straps (a every 6 in, b where a
+    # cable leaves)" when some are not: the kit counts a strap at the peel (0.28.0, straps on the routed path))
+    if "uplinks" not in head or "about" not in head or not re.search(r"\d+ straps? (every 6 in|\(\d+ every 6 in)", head):
         bad.append(f"list: the bundle's header does not give its name, size and straps: {head!r}")
     order = page.eval_on_selector_all("#cableList ul > li", "ls => ls.map(l => l.dataset.bundleItem ? 'B' : l.dataset.cableItem)")
     if order[:4] != ["B", "c1", "c2", "c3"]:
@@ -5960,6 +5962,17 @@ HOVER_3D_STATE = """() => {
       if (prefix === 'bundle-') { out['envelope-' + id] = env; out['straps-' + id] = read(straps); }
     }
   }
+  // each cable's plugs (#179): a device's meshes tagged with the port a cable ends at
+  const port = e => e.item + '|' + String(e.path).split('-occupant')[0];
+  for (const c of window.__rack.doc().racks[0].cables ?? []) {
+    const keys = new Set([port(c.a), port(c.b)]), mats = new Set();
+    for (const d of w.children) {
+      if (!d.name.startsWith('device-')) continue;
+      d.traverse(o => { if (o.isMesh && o.userData.portrayalPath && keys.has(d.name.slice(7) + '|' + String(o.userData.portrayalPath).split('-occupant')[0]))
+        for (const m of [].concat(o.material)) mats.add(m); });
+    }
+    out['plugs-' + c.id] = [...mats].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
+  }
   return out;
 }"""
 
@@ -6047,8 +6060,9 @@ def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
                 if dimmed and (not tr or dw or op > op0 * 0.2 + 1e-6):
                     bad.append(f"3D {k} should be dimmed (another cable or bundle is lit), its material is {(tr, op, dw)}")
             continue
+        lit_now = k in lit or (k.startswith("plugs-") and "cable-" + k[len("plugs-"):] in lit)
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
-            if k in lit:
+            if lit_now:
                 if (tr, op, dw) != (tr0, op0, dw0):
                     bad.append(f"3D {k} should stay lit, its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
             elif not tr or dw or op > op0 * 0.2 + 1e-6:
@@ -6211,6 +6225,8 @@ def check_rack_hover_dims(page, base):
     base3 = page.evaluate(HOVER_3D_STATE)
     if not base3.get("straps-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
         return bad + [f"3D: no tubes for c4, or no straps or no envelope for b1: {sorted(base3)}"]
+    if not all(base3.get(f"plugs-{c}") for c in ("c1", "c4")):
+        bad.append(f"3D: found no plug meshes for c1 or c4 (a plug is a device mesh tagged with its port): {sorted(k for k in base3 if k.startswith('plugs-'))}")
     if any(base3["envelope-b1"]):
         bad.append("3D: b1's envelope shows with nothing hovered or selected")
 
@@ -6458,17 +6474,28 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
             # ...and it comes back with the next free move over a cable.
             if drag > 1:
                 settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
-            back = page.evaluate(find_js, cid)
-            if not back:
-                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
-            else:
+            # (found again up to three times, as the first point is: where two cables lie close in 3D (c4 and c8 in ring 4
+            # since the ring is chosen by room, kit 0.27.0) a point found while the camera still eases may be under the
+            # other one by the time the pointer gets there)
+            back = None
+            for attempt in range(3):
+                back = page.evaluate(find_js, cid)
+                if not back:
+                    break
                 page.mouse.move(back[0] - 3, back[1] - 3)
                 page.mouse.move(back[0], back[1])
                 try:
                     wait_fn(page, f"{where}: {cid}'s label back", "id => { const t = document.getElementById('cableTip'); return t && !t.hidden && t.dataset.cableTip === id; }",
-                            arg=cid, timeout=10000)
+                            arg=cid, timeout=10000 if attempt == 2 else 2500)
+                    break
                 except RuntimeError:
-                    bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    if attempt == 2:
+                        bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    else:
+                        park_mouse(page)
+                        page.wait_for_timeout(600)
+            if not back:
+                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
     park_mouse(page)
     if page.evaluate(SPARE_TIP_JS):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
@@ -9238,7 +9265,7 @@ LEAD_3D_JS = """leads => {
 }"""
 
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c2, c3, c4, c7 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.55 m, lower 0.57-0.65 m; c2, c3, c4 and c7 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9267,7 +9294,9 @@ def check_rack_cable_lay(page, base):
         # per media since 0.16.0 (an LC cord adds 113.1 mm an end, not 150, so
         # each is 73.8 mm shorter), and since 0.17.0 a path leaves room for its
         # bends (each is about 10 to 104 mm longer here, by where its turns stand).
-        lo, hi = (0.48, 0.53) if int(cid[1:]) <= 8 else (0.57, 0.65)
+        # THE RING IS CHOSEN BY ROOM (kit 0.27.0, Portrayal #1026): c8's lead has no room to turn into ring 5, which it took
+        # before, and takes ring 4: 0.5418 m where it was 0.4881, and a 1 m cord where it was 0.5 m. No other cord moved.
+        lo, hi = (0.48, 0.55) if int(cid[1:]) <= 8 else (0.57, 0.65)
         if not (lo - 1e-9 <= (p["measured"] or 0) <= hi + 1e-9):
             bad.append(f"{cid}: measured {p['measured']} m, not {lo}-{hi} m")
         # ...and the stock size each rounds up to: c4 (0.4936 m) and c8 (0.4883,
@@ -9276,7 +9305,7 @@ def check_rack_cable_lay(page, base):
         # THE STOCK BREAK (kit 0.22.0, Portrayal #983): a cord up to 10 mm short of full end play is still chosen,
         # so c2 (0.5015 m), c3 (0.5050) and c7 (0.5017), each within 10 mm over the break, drop from 1 m to 0.5 m.
         # No measured length moved. Held as the rule too: a 0.5 m cord exactly where the measure is at most 0.51 m.
-        want = 0.5 if cid in ("c2", "c3", "c4", "c7", "c8") else 1
+        want = 0.5 if cid in ("c2", "c3", "c4", "c7") else 1
         if p["value"] != want or (p["value"] == 0.5) != ((p["measured"] or 9) <= 0.51 + 1e-9):
             bad.append(f"{cid}: a {p['value']} m cord for {p['measured']} m measured, not {want} m")
         if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
@@ -10130,6 +10159,180 @@ def check_rack_bend_radius_3d(page, base):
         if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
     return bad
+
+UNROUTED_HANG_JS = """async () => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const paths = window.__rack.paths() || {};
+  const out = [];
+  for (const t of s.rackCables?.tubes ?? []) {
+    if (!t.mesh) continue;
+    const p = paths[t.link.id];
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    if (!p || !main) continue;
+    const reach = e => p.points.find(q => q.at === 'reach' && q.end === e);
+    const a = reach('a'), b = reach('b');
+    // the whole path, port to port: the length the kit gives counts each plug's leg
+    const inner = p.points;
+    let kit = 0;
+    for (let k = 1; k < inner.length; k++) kit += Math.hypot(inner[k].x - inner[k - 1].x, inner[k].y - inner[k - 1].y, inner[k].z - inner[k - 1].z);
+    out.push({id: t.link.id, routed: !!t.routed, kit, drawn: main.geometry.parameters.path.getLength(), reach: !!(a && b)});
+  }
+  return out;
+}"""
+# The tube starts at the plug's far end and the kit's path at the port, so the tube is
+# short of the path by the plug's body at each end (about 5 mm) and the arcs of its
+# corners; the old hang was 48 and 52 mm LONG on this rack.
+UNROUTED_HANG_TOL_MM = 16
+
+
+UNROUTED_2D_JS = """panes => {
+  const paths = window.__rack.paths() || {};
+  const top = window.__rack.doc().racks[0].frame.heightRU * 44.45;
+  const out = [];
+  for (const id of Object.keys(paths)) {
+    const pts = paths[id].points;
+    const along = f => { let s = 0; for (let k = 1; k < pts.length; k++) { const a = f(pts[k - 1]), b = f(pts[k]); s += Math.hypot(...a.map((v, i) => b[i] - v)); } return s; };
+    const row = {id, kit: along(q => [q.x, q.y, q.z]), kitFront: along(q => [q.x, q.y]), kitSide: along(q => [q.z, q.y]),
+      kitLow: Math.max(...pts.map(q => top - q.y)), drawn: {}};
+    for (const pane of panes) {
+      const g = document.querySelector(`svg[data-pane="${pane}"] [data-cables] [data-cable-id="${id}"]`);
+      // the cable's main stroke is the last path its group draws (a duplex pair's strands come first)
+      const p = g ? [...g.querySelectorAll('path')].filter(n => !n.dataset.leader).at(-1) : null;
+      if (!p) continue;
+      let low = -Infinity;     // the lowest point it reaches: pane y runs down from the top of the rack
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) low = Math.max(low, p.getPointAtLength(t).y);
+      row.drawn[pane] = {len: p.getTotalLength(), low};
+    }
+    out.push(row);
+  }
+  return out;
+}"""
+# A pane drops the depth (front) or the width (side) of the kit's path, so it is as long as
+# the path seen from that side; what is left over is a duplex pair's join (MERGE, 10 mm) and
+# the easing of its corners. The old arc was far over that on this rack.
+UNROUTED_2D_TOL_MM = 16
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in the Front and Left/Right elevations on the kit's own points, as in 3D, so its drawn 2D length agrees with the kit's")
+def check_rack_unrouted_hang_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    drawn = "n => document.querySelectorAll('svg[data-pane=\"%s\"] [data-cables] [data-cable-id]').length === n"
+    page.wait_for_function(drawn % "front", arg=len(ends), timeout=READY_MS)
+    seen = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["front"])}
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(drawn % "left", arg=len(ends), timeout=READY_MS)
+    page.wait_for_function(drawn % "right", arg=len(ends), timeout=READY_MS)
+    sides = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["left", "right"])}
+    for n in range(1, len(ends) + 1):
+        f, s = seen.get(f"u{n}"), sides.get(f"u{n}")
+        if not f or not s:
+            bad.append(f"2D: u{n} has no kit path")
+            continue
+        for pane, t, want in (("front", f, f["kitFront"]), ("left", s, s["kitSide"]), ("right", s, s["kitSide"])):
+            d = t["drawn"].get(pane)
+            if not d:
+                bad.append(f"2D: u{n} is not drawn on the {pane} pane")
+            elif abs(d["len"] - want) > UNROUTED_2D_TOL_MM:
+                bad.append(f"2D {pane}: u{n} is drawn {d['len']:.1f} mm long; the kit's path seen from there is {want:.1f} mm (the whole path {t['kit']:.1f} mm)")
+        # no lower than the kit's own lowest point (the old arc went about four U under the lower switch)
+        d = f["drawn"].get("front")
+        if d and d["low"] > f["kitLow"] + UNROUTED_2D_TOL_MM:
+            bad.append(f"2D front: u{n} reaches {d['low']:.1f} mm down the pane; the kit's lowest point is {f['kitLow']:.1f}")
+    return bad
+
+
+CORD_WIDTH_JS = """(panes) => {
+  const out = {};
+  for (const pane of panes) for (const g of document.querySelectorAll(`svg[data-pane="${pane}"] [data-cables] [data-cable-id], svg[data-pane="${pane}"] [data-cables] [data-link-index]`)) {
+    const id = g.dataset.cableId ?? `link${g.dataset.linkIndex}`;
+    // the cable's main stroke is the last path its group draws, the outline the one before it
+    const ps = [...g.querySelectorAll('path')].filter(n => !n.dataset.leader && n.getAttribute('stroke-width'));
+    const p = ps.at(-1);
+    if (p) out[`${pane}:${id}`] = {media: g.dataset.media, w: +p.getAttribute('stroke-width'), outline: +ps.at(-2)?.getAttribute('stroke-width')};
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a power cord is drawn at its cable type's diameter - 7.1 mm for the C13 cord, 7.9 mm for a C19 - in Front / Rear and Left / Right, and every other cable keeps 3 mm (kit 0.34.0 widthOf)")
+def check_rack_cord_width(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    for typ, want in ((None, 7.1), ("power-c19", 7.9), ("power-c13", 7.1)):
+        rack = json.loads(json.dumps(CABLE_FIXTURE["racks"][0]))
+        cord = next(c for c in rack["cables"] if c["id"] == "c2")      # an RJ45 cable between two devices
+        cord["media"] = "power"
+        if typ:
+            cord["type"] = typ
+        page.evaluate("r => window.__rack.replaceRack(r)", rack)
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables] [data-link-index]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        got = {"front": page.evaluate(CORD_WIDTH_JS, ["front", "rear"])}
+        page.click('#view2d [data-view="sides"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"left\"] [data-cables] [data-cable-id]')", timeout=READY_MS)
+        got["sides"] = page.evaluate(CORD_WIDTH_JS, ["left", "right"])
+        page.click('#view2d [data-view="faces"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables]')", timeout=READY_MS)
+        for view, rows in got.items():
+            cords = [(k, r) for k, r in rows.items() if r["media"] == "power"]
+            if not cords:
+                bad.append(f"{view}, type {typ}: no power cord is drawn: {sorted(rows)}")
+            for k, r in cords:
+                if abs(r["w"] - want) > 0.01 or abs(r["outline"] - (want + 1.2)) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} is drawn {r['w']} wide with an outline {r['outline']}; expected {want} and {want + 1.2:.1f}")
+            for k, r in rows.items():
+                if r["media"] != "power" and abs(r["w"] - 3) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} ({r['media']}) is drawn {r['w']} wide; every other cable keeps 3")
+    return bad
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
+def check_rack_unrouted_hang_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    # two cords between the two switches with no manager in the rack: the kit
+    # gives them no waypoint and no detour
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the unrouted rack's scene", tubes=True)
+    got = {t["id"]: t for t in page.evaluate(UNROUTED_HANG_JS)}
+    for n in range(1, len(ends) + 1):
+        t = got.get(f"u{n}")
+        if not t or not t["reach"]:
+            bad.append(f"3D: u{n} has no tube or no kit reach points: {t}")
+            continue
+        if t["routed"]:
+            bad.append(f"3D: u{n} is drawn as a routed cable; the check wants an unrouted one")
+        if abs(t["drawn"] - t["kit"]) > UNROUTED_HANG_TOL_MM:
+            bad.append(f"3D: u{n}'s tube is {t['drawn']:.1f} mm long; the kit's path from port to port is {t['kit']:.1f} mm")
+    return bad
+
 
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
 def check_rack_cable_lay_pdu(page, base):
@@ -14129,7 +14332,8 @@ def check_rack_cables_drawn(page, base):
     if by(front, "tags", "c1"):
         bad.append("cables drawn: c1 has a tag, and both its ends are in one pane")
     # c2: front pane to rear pane - each pane hangs it off to the side column, with a tag naming the far end.
-    for pane, name, text in ((front, "front", "→ demarc port-2-1"), (rear, "rear", "→ leaf-1 mgmt-eth")):
+    # (a port is named in words, kit 0.26.0 portLabel: "port-2-1" is "port 2 1")
+    for pane, name, text in ((front, "front", "→ demarc port 2 1"), (rear, "rear", "→ leaf-1 mgmt eth")):
         tag = by(pane, "tags", "c2")
         if not tag or tag["text"] != text or tag["loose"]:
             bad.append(f"cables drawn: c2's tag on the {name} is {tag}, expected {text!r}")
@@ -14378,7 +14582,7 @@ def check_rack_cables_clicks(page, base):
         return bad + [f"cable clicks: {e}"]
     got = page.evaluate(PANES_JS)
     tag = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
-    if not tag or tag["text"] != f"→ {LIT} port-2-1":
+    if not tag or tag["text"] != f"→ {LIT} port 2 1":
         bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally")
     if page.evaluate("() => document.querySelectorAll('svg[data-pane] b').length"):
         bad.append("cable clicks: a label injected markup into the pane")
@@ -17124,8 +17328,8 @@ def check_rack_export_sheet_cables(page, base):
     if dl.suggested_filename != "Cable-test-sheet.svg":
         bad.append(f"sheet cables: named {dl.suggested_filename!r}")
     got = cables_of(text)
-    want = {"front": (["c1", "c2"], {"c2": "→ demarc port-2-1"}),
-            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt-eth", "c3": "✕ not connected"})}
+    want = {"front": (["c1", "c2"], {"c2": "→ demarc port 2 1"}),
+            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt eth", "c3": "✕ not connected"})}
     for pane, (ids, tags) in want.items():
         g = got.get(pane, {"cables": None, "tags": None})
         if g["cables"] != ids or g["tags"] != tags:
@@ -17183,7 +17387,7 @@ def check_rack_export_sheet_cables(page, base):
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
     # A cross-face cable's tag on a single face still names the far end.
-    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port-2-1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt-eth":
+    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port 2 1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt eth":
         bad.append("sheet cables, one face: the cross-face cable's tag does not name its far end")
     # c3 hangs as a lead in the rear pane only, c1 runs in the front pane only: the other face's sheet says so.
     for name, t, note in (("front", front, "1 cable is on the rear face only and is not on this sheet."),
