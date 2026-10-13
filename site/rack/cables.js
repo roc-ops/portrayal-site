@@ -81,7 +81,7 @@ const hang = (a, b, s) => `M${a[0]} ${a[1]} C${a[0]} ${Math.max(a[1], b[1]) + s}
 
 function stroke(g, d, color, w) {
   g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.45,
-    'stroke-width': w + 1.2, 'stroke-linecap': 'round'}));
+    'stroke-width': Math.round((w + 1.2) * 100) / 100, 'stroke-linecap': 'round'}));
   g.append(svgEl('path', {d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round'}));
 }
 

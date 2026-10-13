@@ -294,7 +294,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
 }
 
 function stroke(g, d, color, w) {
-  g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.45, 'stroke-width': w + 1.2,
+  g.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.45, 'stroke-width': Math.round((w + 1.2) * 100) / 100,
     'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
   g.append(svgEl('path', {d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
 }
