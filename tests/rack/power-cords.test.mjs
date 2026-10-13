@@ -1,5 +1,5 @@
 // tests/rack/power-cords.test.mjs
-// A POWER CORD IN THE RACK BUILDER (portrayal-site#202, kit 0.30.0 and 0.31.0).
+// A POWER CORD IN THE RACK BUILDER (portrayal-site#202, kit 0.30.0 on, as vendored at 0.34.0).
 // The rules are the kit's (cableLandsOn, settleEnd, plugSeats, mismatch) and
 // are tested there; these hold the site to asking them with the real library:
 // a cord from a device's inlet to a PDU's outlet lands, the plug at each end is
