@@ -18355,45 +18355,124 @@ def check_rack_strap_size(page, base):
 FIXED_UNITS = ["hero-2d", "hero-3d", "stage-rail", "rear-loose", "schema-coverage", "embed"]
 MARKS_UNIT = "marks-harness"
 
-# SECONDS A UNIT TAKES ON CI, for the units that take eight or more - read
-# from the lines took() prints in one green, unsharded run on the 2-CPU runner
-# (`gh run view <id> --log | grep 's  load '`), all from the same run because
-# runners differ by a third and only the proportions matter. The shards are
-# balanced by these, not by count: the stage rail alone is a fifth of the pass.
+# SECONDS A UNIT TAKES ON CI, for the units that take four or more - MEASURED,
+# not estimated: the median, over the browser jobs of several green runs on the
+# 2-CPU runner, of the line took() prints as each unit ends. The shards are
+# balanced by these, not by count: the stage rail alone is a seventh of the pass.
+# The table between the SECONDS markers is written by
+# `python3 tools/shard-weights.py --write <run id> ...` (which says how it reads
+# the logs); do not edit it by hand, regenerate it when the shards drift apart -
+# a shard that comes within a couple of minutes of its 20 is the sign.
 # A unit not listed weighs DEFAULT_SECONDS, which is about what the many small
-# ones take, so a new check needs no entry here until it is slow enough to
-# unbalance a shard - and a stale number costs balance, never coverage.
+# ones take (the 119 measured under four seconds averaged 1.8), so a new check
+# needs no entry here until it is slow enough to unbalance a shard - and a stale
+# number costs balance, never coverage.
 DEFAULT_SECONDS = 2.0
+# SECONDS: begin
+# Medians over the browser jobs of green checks runs 38318247936, 38315901175, 38313981648, from
+# tools/shard-weights.py; units under 4 s are left to DEFAULT_SECONDS.
+# (The 119 smaller measured units took 210 s between them.)
 SECONDS = {
-    "index.html": 73,
-    "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
-    "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
-    "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
-    "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
-    "hero-3d": 23, "stage-rail": 219,
-    "check_kit_page": 24, "check_takeaway_cables_3d": 100,
-    "check_rack_export_3d": 11, "check_narrow_tool_pages": 11,
-    "check_rack_mount_flag_3d_exports": 10, "check_rack_export_overtaken": 20,
-    "check_rack_3d": 64, "check_wide_tool_pages": 10, "check_annotate_3d": 49,
-    "check_rack_cables_3d": 40, "check_rack_export_after_cable_edit": 15,
-    "check_rack_export_cable_failures": 12, "check_rack_cables_3d_scene": 10,
-    "check_rack_export_3d_cables": 25,
+    "stage-rail": 270,
+    "check_rack_bend_notice": 247,
+    "check_rack_strap_kinds": 154,
+    "check_rack_ring_clearance": 142,
+    "check_rack_routes_follow_edits": 136,
+    "check_rack_cable_spare": 131,
+    "check_rack_covers": 118,
+    "check_3d_download_waits_for_scene": 116,
+    "check_rack_cables_3d": 93,
+    "check_rack_bend_radius_3d": 90,
+    "check_rack_side_exports_same": 90,
+    "check_takeaway_cables_3d": 86,
+    "check_rack_export_overtaken": 78,
+    "check_rack_export_3d_cables": 65,
+    "index.html": 62,
+    "check_rack_unchecked_3d_each_rack": 60,
+    "check_rack_cable_lay": 59,
+    "check_rack_3d": 56,
+    "check_rack_dcim_settings_scene": 55,
+    "check_rack_bundle_pack": 53,
+    "check_rack_3d_loading": 51,
+    "check_rack_pinned_highlight": 51,
+    "check_rack_side_cables": 47,
+    "check_rack_straps_seen": 44,
+    "check_rack_side_fresh_after_edit": 42,
+    "check_rack_cables_3d_scene": 40,
+    "check_rack_bundle_downloads": 38,
+    "check_annotate_3d": 38,
+    "check_rack_half_unit": 37,
+    "check_rack_stage": 36,
+    "check_rack_v4_keys_kept": 35,
+    "check_rack_hover_dims": 29,
+    "check_rack_export_after_cable_edit": 29,
+    "check_rack_rear_module_port": 27,
+    "check_rack_export_cable_failures": 26,
+    "check_kit_page": 23,
+    "check_rack_zero_u": 22,
+    "check_rack_export_3d": 22,
+    "hero-3d": 21,
+    "check_rack_ears_default": 21,
+    "check_rack_ring_doubles_back": 21,
+    "check_annotate_api": 19,
+    "check_rack_cable_routes": 19,
+    "check_rack_face_managers": 17,
+    "check_rack_cable_lay_pdu": 16,
+    "check_rack_cable_tree": 15,
+    "check_rack_bundle_3d": 14,
+    "check_rack_mount_flag_3d_exports": 13,
+    "check_narrow_tool_pages": 11,
+    "components.html": 10,
+    "check_wide_tool_pages": 10,
+    "rack.html": 9.7,
+    "check_rack_dcim_settings_draft": 9.5,
+    "annotate.html": 9.3,
+    "components/catalog.html": 9.3,
+    "drawings.html": 9.3,
+    "drawio.html": 9.3,
+    "kit.html": 9.3,
+    "lint.html": 9.3,
+    "schema.html": 9.3,
+    "contribute.html": 9.2,
+    "exporter.html": 9.2,
+    "schematic.html": 9.2,
+    "viewer3d-harness.html": 9.2,
+    "compare.html": 9.1,
+    "marks-harness.html": 9.1,
+    "check_rack_cable_list": 8.4,
+    "check_rack_ring_rack_budgets": 7.7,
+    "check_rack_cable_stale": 7.2,
+    "check_docs_menu": 7.1,
+    "check_rack_two_half_units": 6.8,
+    "check_annotate_export_survives_mode_switch": 6.6,
+    "marks-harness": 6.6,
+    "rear-loose": 6.2,
+    "check_rack_cables_behind": 5.9,
+    "check_lint_page": 5.7,
+    "check_hero_after_load": 5.6,
+    "check_rack_side_view_only": 5.6,
+    "check_rack_edit_survives_reload": 5.5,
+    "check_takeaway_drawio_loose": 5.5,
+    "check_rack_export_sheet_cables": 5.4,
+    "check_rack_strap_size": 5.4,
+    "check_rack_cable_undo": 5.2,
+    "check_components_catalog": 5.1,
+    "check_rack_cable_polish": 4.9,
+    "check_rack_side_switch": 4.9,
+    "check_rack_stale_handlers": 4.9,
+    "check_rack_agent_tools": 4.8,
+    "check_rack_bundle_2d_front": 4.8,
+    "check_rack_cable_lifecycle": 4.8,
+    "check_rack_dcim_settings": 4.7,
+    "check_mode_link_respects_gate": 4.5,
+    "check_rack_cable_length_units": 4.1,
 }
+# SECONDS: end
 
 
 def units():
     """Every unit of work main() does, in the order it does them."""
     return list(PAGES) + FIXED_UNITS + [fn.__name__ for _, fn in EXTRA_CHECKS] + [MARKS_UNIT]
-
-
-# THE FIVE CHECKS ADDED WITH KIT 0.25.0 ARE DEALT LAST, each a hair under the default. The plan deals units by weight
-# and then by name, so five more at the default would have moved every unlisted check to another shard: the first
-# run with them put the slowest unlisted checks together and that shard ran past its 20 minutes. Weighed just under
-# the default, they come after every other unit, and the four shards are the ones main has, each with one or two of
-# these on the end. (Kept apart from the table above, which other work is rewriting.)
-SECONDS.update({name: 1.9 for name in (
-    "check_rack_edit_survives_reload", "check_rack_save_failure_said", "check_rack_ring_rack_budgets",
-    "check_rack_drawio_projected_port_path", "check_rack_loose_end_sentences")})
 
 
 def shard_plan(n):
