@@ -171,7 +171,10 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
       const via = link.via2d?.[view], rings = link.rings2d?.[view];
+      // via2d = [] is the kit's free span with no point between the plugs (a
+      // straight run, cable-view.js freeSpan2d); no via2d at all is the old hang.
       stroke(g, via?.length ? routed2d([a, ...via, b], 4, rings ? [null, ...rings, null] : null)
+        : via ? `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`
         : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];

@@ -10087,6 +10087,75 @@ UNROUTED_HANG_JS = """async () => {
 UNROUTED_HANG_TOL_MM = 16
 
 
+UNROUTED_2D_JS = """panes => {
+  const paths = window.__rack.paths() || {};
+  const top = window.__rack.doc().racks[0].frame.heightRU * 44.45;
+  const out = [];
+  for (const id of Object.keys(paths)) {
+    const pts = paths[id].points;
+    const along = f => { let s = 0; for (let k = 1; k < pts.length; k++) { const a = f(pts[k - 1]), b = f(pts[k]); s += Math.hypot(...a.map((v, i) => b[i] - v)); } return s; };
+    const row = {id, kit: along(q => [q.x, q.y, q.z]), kitFront: along(q => [q.x, q.y]), kitSide: along(q => [q.z, q.y]),
+      kitLow: Math.max(...pts.map(q => top - q.y)), drawn: {}};
+    for (const pane of panes) {
+      const g = document.querySelector(`svg[data-pane="${pane}"] [data-cables] [data-cable-id="${id}"]`);
+      // the cable's main stroke is the last path its group draws (a duplex pair's strands come first)
+      const p = g ? [...g.querySelectorAll('path')].filter(n => !n.dataset.leader).at(-1) : null;
+      if (!p) continue;
+      let low = -Infinity;     // the lowest point it reaches: pane y runs down from the top of the rack
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) low = Math.max(low, p.getPointAtLength(t).y);
+      row.drawn[pane] = {len: p.getTotalLength(), low};
+    }
+    out.push(row);
+  }
+  return out;
+}"""
+# A pane drops the depth (front) or the width (side) of the kit's path, so it is as long as
+# the path seen from that side; what is left over is a duplex pair's join (MERGE, 10 mm) and
+# the easing of its corners. The old arc was far over that on this rack.
+UNROUTED_2D_TOL_MM = 16
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in the Front and Left/Right elevations on the kit's own points, as in 3D, so its drawn 2D length agrees with the kit's")
+def check_rack_unrouted_hang_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    drawn = "n => document.querySelectorAll('svg[data-pane=\"%s\"] [data-cables] [data-cable-id]').length === n"
+    page.wait_for_function(drawn % "front", arg=len(ends), timeout=READY_MS)
+    seen = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["front"])}
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(drawn % "left", arg=len(ends), timeout=READY_MS)
+    page.wait_for_function(drawn % "right", arg=len(ends), timeout=READY_MS)
+    sides = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["left", "right"])}
+    for n in range(1, len(ends) + 1):
+        f, s = seen.get(f"u{n}"), sides.get(f"u{n}")
+        if not f or not s:
+            bad.append(f"2D: u{n} has no kit path")
+            continue
+        for pane, t, want in (("front", f, f["kitFront"]), ("left", s, s["kitSide"]), ("right", s, s["kitSide"])):
+            d = t["drawn"].get(pane)
+            if not d:
+                bad.append(f"2D: u{n} is not drawn on the {pane} pane")
+            elif abs(d["len"] - want) > UNROUTED_2D_TOL_MM:
+                bad.append(f"2D {pane}: u{n} is drawn {d['len']:.1f} mm long; the kit's path seen from there is {want:.1f} mm (the whole path {t['kit']:.1f} mm)")
+        # no lower than the kit's own lowest point (the old arc went about four U under the lower switch)
+        d = f["drawn"].get("front")
+        if d and d["low"] > f["kitLow"] + UNROUTED_2D_TOL_MM:
+            bad.append(f"2D front: u{n} reaches {d['low']:.1f} mm down the pane; the kit's lowest point is {f['kitLow']:.1f}")
+    return bad
+
+
 @extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
 def check_rack_unrouted_hang_3d(page, base):
     bad = []
