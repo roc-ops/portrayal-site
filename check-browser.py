@@ -4284,6 +4284,31 @@ def check_exporter_first_device(page, base):
     return bad
 
 
+@extra("exporter.html: a pick in the Type menu stays picked and its file is the one shown and downloaded")
+def check_exporter_type_pick(page, base):
+    bad = []
+    page.goto(f"{base}/exporter.html?device={featured_device()}", wait_until="load")
+    wait_fn(page, "exporter type pick: the type's text",
+            "() => /^manufacturer: /m.test(document.querySelector('#out').textContent)")
+    n = page.evaluate("() => document.querySelector('#variant').options.length")
+    if n < 2:
+        return [f"exporter: {featured_device()} lists {n} types, so a second pick cannot be tested"]
+    for index in (1, n - 1):
+        want = page.evaluate("i => document.querySelectorAll('#variant option')[i].value", index)
+        page.select_option("#variant", index=index)
+        wait_fn(page, f"exporter type pick: file {index} shown",
+                "w => document.querySelector('#src').textContent === 'library/exports/' + w", arg=want)
+        got = page.evaluate("() => ({index: document.querySelector('#variant').selectedIndex, "
+                            "value: document.querySelector('#variant').value})")
+        if got["index"] != index or got["value"] != want:
+            bad.append(f"exporter: picked type {index} ({want}), the menu reads {got['index']} ({got['value']})")
+        with page.expect_download() as dl:
+            page.click("#dl")
+        if dl.value.suggested_filename != want.rsplit("/", 1)[-1]:
+            bad.append(f"exporter: picked type {index} ({want}) downloads {dl.value.suggested_filename!r}")
+    return bad
+
+
 @extra("drawio.html with no ?device= opens on the featured device; a named device still opens on it")
 def check_drawio_first_device(page, base):
     ready = "() => document.querySelector('#detail').textContent.length > 20 && document.querySelector('#scope').options.length"
@@ -6447,6 +6472,33 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     park_mouse(page)
     if page.evaluate(SPARE_TIP_JS):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
+
+
+# A drawing's own <title>s name its parts by drawing id ("port-24--jack"). The
+# page imports the drawings whole, so a hover on a jack under a cable showed
+# one as a browser tooltip (#186). None reaches the stage: the page's own
+# labels (a cable's, its tag's, an item's) are the page's, a child of the
+# group it made, never of the drawing's parts.
+PART_TITLES = """() => [...document.querySelectorAll('#panes svg [data-item-id], #panes svg [data-zerou-id]')]
+  .flatMap(g => [...g.querySelectorAll('title')].filter(t => t.parentElement !== g).map(t => t.textContent))"""
+
+
+@extra("rack.html: no drawing's native <title> (a raw part path such as port-24--jack) reaches the stage in Front / Rear or Left / Right, so a hover over a port under a cable shows none (#186)")
+def check_rack_no_part_titles(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    if not page.evaluate("() => document.querySelectorAll('#panes svg [data-item-id]').length"):
+        return bad + ["fixture: no item is drawn on the panes"]
+    got = page.evaluate(PART_TITLES)
+    if got:
+        bad.append(f"Front / Rear: {len(got)} part titles on the stage, e.g. {got[:3]}")
+    to_sides(page)
+    got = page.evaluate(PART_TITLES)
+    if got:
+        bad.append(f"Left / Right: {len(got)} part titles on the stage, e.g. {got[:3]}")
+    return bad
 
 
 @extra("rack.html: each routed cable says its cord and its spare in the list with no row marked for it, an entered cord under what its route needs warns, and the hover label carries the figures in 2D and 3D, in the cable's own unit")
@@ -18482,45 +18534,124 @@ def check_rack_strap_size(page, base):
 FIXED_UNITS = ["hero-2d", "hero-3d", "stage-rail", "rear-loose", "schema-coverage", "embed"]
 MARKS_UNIT = "marks-harness"
 
-# SECONDS A UNIT TAKES ON CI, for the units that take eight or more - read
-# from the lines took() prints in one green, unsharded run on the 2-CPU runner
-# (`gh run view <id> --log | grep 's  load '`), all from the same run because
-# runners differ by a third and only the proportions matter. The shards are
-# balanced by these, not by count: the stage rail alone is a fifth of the pass.
+# SECONDS A UNIT TAKES ON CI, for the units that take four or more - MEASURED,
+# not estimated: the median, over the browser jobs of several green runs on the
+# 2-CPU runner, of the line took() prints as each unit ends. The shards are
+# balanced by these, not by count: the stage rail alone is a seventh of the pass.
+# The table between the SECONDS markers is written by
+# `python3 tools/shard-weights.py --write <run id> ...` (which says how it reads
+# the logs); do not edit it by hand, regenerate it when the shards drift apart -
+# a shard that comes within a couple of minutes of its 20 is the sign.
 # A unit not listed weighs DEFAULT_SECONDS, which is about what the many small
-# ones take, so a new check needs no entry here until it is slow enough to
-# unbalance a shard - and a stale number costs balance, never coverage.
+# ones take (the 119 measured under four seconds averaged 1.8), so a new check
+# needs no entry here until it is slow enough to unbalance a shard - and a stale
+# number costs balance, never coverage.
 DEFAULT_SECONDS = 2.0
+# SECONDS: begin
+# Medians over the browser jobs of green checks runs 38318247936, 38315901175, 38313981648, 38382733381, from
+# tools/shard-weights.py; units under 4 s are left to DEFAULT_SECONDS.
+# (The 119 smaller measured units took 210 s between them.)
 SECONDS = {
-    "index.html": 73,
-    "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
-    "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
-    "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
-    "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
-    "hero-3d": 23, "stage-rail": 219,
-    "check_kit_page": 24, "check_takeaway_cables_3d": 100,
-    "check_rack_export_3d": 11, "check_narrow_tool_pages": 11,
-    "check_rack_mount_flag_3d_exports": 10, "check_rack_export_overtaken": 20,
-    "check_rack_3d": 64, "check_wide_tool_pages": 10, "check_annotate_3d": 49,
-    "check_rack_cables_3d": 40, "check_rack_export_after_cable_edit": 15,
-    "check_rack_export_cable_failures": 12, "check_rack_cables_3d_scene": 10,
-    "check_rack_export_3d_cables": 25,
+    "stage-rail": 286,
+    "check_rack_bend_notice": 248,
+    "check_rack_routes_follow_edits": 145,
+    "check_rack_strap_kinds": 134,
+    "check_rack_ring_clearance": 126,
+    "check_rack_cable_spare": 125,
+    "check_rack_covers": 119,
+    "check_3d_download_waits_for_scene": 117,
+    "check_takeaway_cables_3d": 107,
+    "check_rack_side_exports_same": 98,
+    "check_rack_cables_3d": 88,
+    "check_rack_bend_radius_3d": 80,
+    "check_rack_export_overtaken": 68,
+    "check_rack_export_3d_cables": 66,
+    "check_rack_cable_lay": 59,
+    "check_rack_3d": 56,
+    "check_rack_side_cables": 55,
+    "check_rack_unchecked_3d_each_rack": 55,
+    "index.html": 53,
+    "check_rack_bundle_pack": 53,
+    "check_rack_3d_loading": 52,
+    "check_rack_pinned_highlight": 49,
+    "check_rack_dcim_settings_scene": 48,
+    "check_rack_straps_seen": 45,
+    "check_rack_bundle_downloads": 44,
+    "check_rack_side_fresh_after_edit": 42,
+    "check_rack_cables_3d_scene": 41,
+    "check_rack_v4_keys_kept": 41,
+    "check_rack_stage": 39,
+    "check_annotate_3d": 39,
+    "check_rack_half_unit": 32,
+    "check_rack_hover_dims": 30,
+    "check_rack_export_after_cable_edit": 29,
+    "check_rack_rear_module_port": 28,
+    "check_rack_export_cable_failures": 26,
+    "hero-3d": 25,
+    "check_kit_page": 24,
+    "check_rack_export_3d": 23,
+    "check_rack_zero_u": 23,
+    "check_rack_cable_routes": 21,
+    "check_rack_ears_default": 19,
+    "check_annotate_api": 19,
+    "check_rack_ring_doubles_back": 18,
+    "check_rack_cable_lay_pdu": 18,
+    "check_rack_face_managers": 15,
+    "check_rack_cable_tree": 14,
+    "check_rack_bundle_3d": 14,
+    "check_rack_mount_flag_3d_exports": 13,
+    "check_narrow_tool_pages": 11,
+    "components.html": 10,
+    "check_wide_tool_pages": 10,
+    "rack.html": 9.7,
+    "check_rack_dcim_settings_draft": 9.6,
+    "annotate.html": 9.3,
+    "drawings.html": 9.3,
+    "drawio.html": 9.3,
+    "kit.html": 9.3,
+    "lint.html": 9.3,
+    "schema.html": 9.3,
+    "exporter.html": 9.2,
+    "components/catalog.html": 9.2,
+    "contribute.html": 9.2,
+    "schematic.html": 9.2,
+    "viewer3d-harness.html": 9.2,
+    "compare.html": 9.1,
+    "marks-harness.html": 9.1,
+    "check_rack_ring_rack_budgets": 7.6,
+    "check_rack_cable_stale": 7.2,
+    "check_docs_menu": 7.1,
+    "check_rack_cable_list": 7.1,
+    "marks-harness": 6.8,
+    "check_annotate_export_survives_mode_switch": 6.7,
+    "check_rack_two_half_units": 6.3,
+    "rear-loose": 6.0,
+    "check_rack_side_view_only": 5.7,
+    "check_hero_after_load": 5.6,
+    "check_rack_export_sheet_cables": 5.6,
+    "check_rack_strap_size": 5.5,
+    "check_lint_page": 5.4,
+    "check_rack_cable_polish": 5.3,
+    "check_takeaway_drawio_loose": 5.3,
+    "check_rack_cables_behind": 5.3,
+    "check_rack_edit_survives_reload": 5.2,
+    "check_rack_cable_lifecycle": 5.2,
+    "check_rack_cable_undo": 5.1,
+    "check_components_catalog": 5.0,
+    "check_rack_bundle_2d_front": 4.9,
+    "check_rack_side_switch": 4.8,
+    "check_rack_agent_tools": 4.8,
+    "check_rack_stale_handlers": 4.7,
+    "check_mode_link_respects_gate": 4.6,
+    "check_harness3d_first_device": 4.5,
+    "check_rack_dcim_settings": 4.4,
 }
+# SECONDS: end
 
 
 def units():
     """Every unit of work main() does, in the order it does them."""
     return list(PAGES) + FIXED_UNITS + [fn.__name__ for _, fn in EXTRA_CHECKS] + [MARKS_UNIT]
-
-
-# THE FIVE CHECKS ADDED WITH KIT 0.25.0 ARE DEALT LAST, each a hair under the default. The plan deals units by weight
-# and then by name, so five more at the default would have moved every unlisted check to another shard: the first
-# run with them put the slowest unlisted checks together and that shard ran past its 20 minutes. Weighed just under
-# the default, they come after every other unit, and the four shards are the ones main has, each with one or two of
-# these on the end. (Kept apart from the table above, which other work is rewriting.)
-SECONDS.update({name: 1.9 for name in (
-    "check_rack_edit_survives_reload", "check_rack_save_failure_said", "check_rack_ring_rack_budgets",
-    "check_rack_drawio_projected_port_path", "check_rack_loose_end_sentences")})
 
 
 def shard_plan(n):

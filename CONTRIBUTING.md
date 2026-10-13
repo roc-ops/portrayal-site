@@ -71,8 +71,8 @@ python3 check-browser.py --only <check>[,<check>]   # your change's own browser 
   uncaught exception, or a check of its own. Run the checks your change touches
   with `--only`, by function name; an unmatched name is an error, never an
   empty pass. The whole pass, `python3 check-browser.py` with no arguments,
-  takes many minutes on a laptop; CI runs it on every pull request in four
-  shards (`--shard 1/4` to `4/4`, `--plan 4` prints the split), so you rarely
+  takes many minutes on a laptop; CI runs it on every pull request in five
+  shards (`--shard 1/5` to `5/5`, `--plan 5` prints the split), so you rarely
   need to run it whole yourself.
 
 The pre-push hook (`hooks/pre-push`) runs the first two on every push. It runs
