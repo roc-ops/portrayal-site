@@ -6449,6 +6449,33 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
 
 
+# A drawing's own <title>s name its parts by drawing id ("port-24--jack"). The
+# page imports the drawings whole, so a hover on a jack under a cable showed
+# one as a browser tooltip (#186). None reaches the stage: the page's own
+# labels (a cable's, its tag's, an item's) are the page's, a child of the
+# group it made, never of the drawing's parts.
+PART_TITLES = """() => [...document.querySelectorAll('#panes svg [data-item-id], #panes svg [data-zerou-id]')]
+  .flatMap(g => [...g.querySelectorAll('title')].filter(t => t.parentElement !== g).map(t => t.textContent))"""
+
+
+@extra("rack.html: no drawing's native <title> (a raw part path such as port-24--jack) reaches the stage in Front / Rear or Left / Right, so a hover over a port under a cable shows none (#186)")
+def check_rack_no_part_titles(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_side_fixture(page, base)
+    if not page.evaluate("() => document.querySelectorAll('#panes svg [data-item-id]').length"):
+        return bad + ["fixture: no item is drawn on the panes"]
+    got = page.evaluate(PART_TITLES)
+    if got:
+        bad.append(f"Front / Rear: {len(got)} part titles on the stage, e.g. {got[:3]}")
+    to_sides(page)
+    got = page.evaluate(PART_TITLES)
+    if got:
+        bad.append(f"Left / Right: {len(got)} part titles on the stage, e.g. {got[:3]}")
+    return bad
+
+
 @extra("rack.html: each routed cable says its cord and its spare in the list with no row marked for it, an entered cord under what its route needs warns, and the hover label carries the figures in 2D and 3D, in the cable's own unit")
 def check_rack_cable_spare(page, base):
     bad = []
