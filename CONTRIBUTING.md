@@ -91,6 +91,13 @@ One change per pull request. The
 [template](.github/PULL_REQUEST_TEMPLATE.md) asks what changed, how you checked
 it, and the merge danger. A reviewer reads that before the diff.
 
+### Merging
+
+Only the maintainer merges. Before a set of ready pull requests is merged, the
+coordinator runs `python3 tools/merge-train.py <numbers in merge order>`, which
+tests them together once on a `train/` branch with the full checks and prints
+the merge commands. [docs/merging.md](docs/merging.md) says how and why.
+
 ### Merge danger
 
 **Every merge to `main` deploys to portrayal.dev.** So "it is only the site" is

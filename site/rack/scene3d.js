@@ -45,8 +45,9 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 const inScene = (THREE, faceZ) => q => new THREE.Vector3(q.x, q.y, faceZ + q.z);
 // link -> {points, kit: true}: the kit's points between the two ports (the
 // reach points included, the ports left out: the tube starts at the plugs).
-// A cable with no waypoints and nothing to go round is not routed, and
-// hangs as it always has.
+// A cable with no waypoints and nothing to go round gets its points too, with
+// `free: true`: it is not a routed cable (no ring, lane or tray), but it is
+// drawn on the kit's free span, not on a hang of the site's own.
 // `bundles` is routeFacts' Map of bundle facts, each with its lay
 // (bundle-view.js trunkLay), and `places` each member's stretch; `rack` and
 // `ctx` place a ring's opening (stopCentre).
@@ -60,7 +61,11 @@ function kitPointsFor(THREE, faceZ, paths, routes, places = null, bundles = null
   };
   return async link => {
     const p = paths?.get(link.id), ws = routes?.get(link.id)?.waypoints;
-    if (!p?.points?.length || (!ws?.length && !p.detours?.length)) return {points: []};
+    if (!p?.points?.length) return {points: []};
+    // A cable with no waypoints and no detour is drawn through the kit's points
+    // too (portrayal-site#178): its path is the free span as it hangs (`rest`
+    // points), the same one its length is measured on.
+    const free = !ws?.length && !p.detours?.length;
     // the reach points are where the plugs end: the scene's own plug points
     // stand there (the plug's cable-point z is the kit's reach), so the tube
     // starts at those, and the two reach points come along to say how far apart
@@ -123,7 +128,7 @@ function kitPointsFor(THREE, faceZ, paths, routes, places = null, bundles = null
         }
       }
     }
-    return {points: pts, reach, kit: true};
+    return {points: pts, reach, kit: true, ...(free ? {free: true} : {})};
   };
 }
 
