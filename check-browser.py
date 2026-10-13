@@ -4284,6 +4284,31 @@ def check_exporter_first_device(page, base):
     return bad
 
 
+@extra("exporter.html: a pick in the Type menu stays picked and its file is the one shown and downloaded")
+def check_exporter_type_pick(page, base):
+    bad = []
+    page.goto(f"{base}/exporter.html?device={featured_device()}", wait_until="load")
+    wait_fn(page, "exporter type pick: the type's text",
+            "() => /^manufacturer: /m.test(document.querySelector('#out').textContent)")
+    n = page.evaluate("() => document.querySelector('#variant').options.length")
+    if n < 2:
+        return [f"exporter: {featured_device()} lists {n} types, so a second pick cannot be tested"]
+    for index in (1, n - 1):
+        want = page.evaluate("i => document.querySelectorAll('#variant option')[i].value", index)
+        page.select_option("#variant", index=index)
+        wait_fn(page, f"exporter type pick: file {index} shown",
+                "w => document.querySelector('#src').textContent === 'library/exports/' + w", arg=want)
+        got = page.evaluate("() => ({index: document.querySelector('#variant').selectedIndex, "
+                            "value: document.querySelector('#variant').value})")
+        if got["index"] != index or got["value"] != want:
+            bad.append(f"exporter: picked type {index} ({want}), the menu reads {got['index']} ({got['value']})")
+        with page.expect_download() as dl:
+            page.click("#dl")
+        if dl.value.suggested_filename != want.rsplit("/", 1)[-1]:
+            bad.append(f"exporter: picked type {index} ({want}) downloads {dl.value.suggested_filename!r}")
+    return bad
+
+
 @extra("drawio.html with no ?device= opens on the featured device; a named device still opens on it")
 def check_drawio_first_device(page, base):
     ready = "() => document.querySelector('#detail').textContent.length > 20 && document.querySelector('#scope').options.length"
