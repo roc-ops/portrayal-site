@@ -9224,7 +9224,8 @@ def load_rack_3d_ready(page, base, rack):
 CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
 
 # How near a cable's drawn line passes each of its lead points (rack mm in,
-# pane mm out): {cable: the furthest of its lead points from its stroke}.
+# pane mm out): {cable: {off: each lead point's distance from its stroke, gap:
+# how far each of its arcs stands inside its vertex}}.
 LEAD_2D_JS = """async leads => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const svg = document.querySelector('#paneFront svg'), H = window.__rack.doc().racks[0].frame.heightRU * RU;
@@ -9237,7 +9238,18 @@ LEAD_2D_JS = """async leads => {
       const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
       for (let t = 0; t <= L; t += 0.2) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
     }
-    out[id] = pts.length ? Math.max(...qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))) : null;
+    // how far each corner's own arc stands inside its vertex: R (sec(theta/2) - 1)
+    // for an arc of radius R whose chord is c, theta = 2 asin(c / 2R)
+    const gap = [];
+    for (const p of g.querySelectorAll('path')) {
+      const d = p.getAttribute('d') || '', re = /(?:^|[ML])([\\d.-]+) ([\\d.-]+) A([\\d.]+) [\\d.]+ 0 0 [01] ([\\d.-]+) ([\\d.-]+)/g;
+      let m;
+      while ((m = re.exec(d))) {
+        const r = +m[3], c = Math.hypot(m[4] - m[1], m[5] - m[2]), th = 2 * Math.asin(Math.min(1, c / (2 * r)));
+        gap.push(r * (1 / Math.cos(th / 2) - 1));
+      }
+    }
+    out[id] = pts.length ? {gap, off: qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))} : null;
   }
   return out;
 }"""
@@ -9313,20 +9325,24 @@ def check_rack_cable_lay(page, base):
     # approach point, and the kit leads each square to it: level with its plug
     # to a lead point beside the approach point, then onto the run. In 2D the
     # pane's line turns at that point: joined straight from the plug to the
-    # ring it would pass some 30 mm from it; routed2d rounds a corner by 4, so
-    # the stroke comes within 4 of the vertex.
+    # ring it would pass some 30 mm from it; the line is drawn through the
+    # point with an arc of the cable's bend radius at it.
     leads = {cid: [q for q in p["points"] if q["at"] == "lead" and q.get("item")] for cid, p in paths.items()}
     leads = {cid: qs for cid, qs in leads.items() if qs}
     if not leads:
         bad.append("lead points: the kit leads no cord of this rack square to its ring, so none was checked")
     off2d = page.evaluate(LEAD_2D_JS, leads)
     for cid, d in sorted(off2d.items()):
-        # (#185) the corner is an arc of the cable's 25 mm (OM4) radius, which
-        # stands R (sec(theta/2) - 1) inside the vertex for a turn of theta:
-        # the plug's lead here turns some 120 degrees, 28 mm at most on this
-        # rack. The vertex itself is held to in 3D below.
-        if d is None or d > 30.0:
-            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within its arc, 30 mm at the most")
+        # (#185) the lead point is a vertex of the 2D line and its corner is an
+        # arc, which stands R (sec(theta/2) - 1) inside the vertex for a turn of
+        # theta (28 mm at most on this rack). So each lead point is either on the
+        # line (a corner too slight to round) or exactly an arc's own gap from it.
+        if d is None:
+            bad.append(f"2D: {cid} is not drawn")
+            continue
+        for off in d["off"]:
+            if off > 0.3 and not any(abs(off - g) < 0.3 for g in d["gap"]):
+                bad.append(f"2D: {cid}'s line passes {off:.2f} mm from a lead point; no arc of it stands that far inside its vertex (arcs: {[round(g, 2) for g in d['gap']]})")
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
@@ -10158,6 +10174,134 @@ def check_rack_bend_radius_2d(page, base):
     if not any(25 in c["arcs"] for c in routed):
         bad.append(f"2D: no corner is drawn at the full 25 mm radius: {[c['arcs'] for c in routed]}")
     return bad
+
+
+UNROUTED_HANG_JS = """async () => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const paths = window.__rack.paths() || {};
+  const out = [];
+  for (const t of s.rackCables?.tubes ?? []) {
+    if (!t.mesh) continue;
+    const p = paths[t.link.id];
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    if (!p || !main) continue;
+    const reach = e => p.points.find(q => q.at === 'reach' && q.end === e);
+    const a = reach('a'), b = reach('b');
+    // the whole path, port to port: the length the kit gives counts each plug's leg
+    const inner = p.points;
+    let kit = 0;
+    for (let k = 1; k < inner.length; k++) kit += Math.hypot(inner[k].x - inner[k - 1].x, inner[k].y - inner[k - 1].y, inner[k].z - inner[k - 1].z);
+    out.push({id: t.link.id, routed: !!t.routed, kit, drawn: main.geometry.parameters.path.getLength(), reach: !!(a && b)});
+  }
+  return out;
+}"""
+# The tube starts at the plug's far end and the kit's path at the port, so the tube is
+# short of the path by the plug's body at each end (about 5 mm) and the arcs of its
+# corners; the old hang was 48 and 52 mm LONG on this rack.
+UNROUTED_HANG_TOL_MM = 16
+
+
+UNROUTED_2D_JS = """panes => {
+  const paths = window.__rack.paths() || {};
+  const top = window.__rack.doc().racks[0].frame.heightRU * 44.45;
+  const out = [];
+  for (const id of Object.keys(paths)) {
+    const pts = paths[id].points;
+    const along = f => { let s = 0; for (let k = 1; k < pts.length; k++) { const a = f(pts[k - 1]), b = f(pts[k]); s += Math.hypot(...a.map((v, i) => b[i] - v)); } return s; };
+    const row = {id, kit: along(q => [q.x, q.y, q.z]), kitFront: along(q => [q.x, q.y]), kitSide: along(q => [q.z, q.y]),
+      kitLow: Math.max(...pts.map(q => top - q.y)), drawn: {}};
+    for (const pane of panes) {
+      const g = document.querySelector(`svg[data-pane="${pane}"] [data-cables] [data-cable-id="${id}"]`);
+      // the cable's main stroke is the last path its group draws (a duplex pair's strands come first)
+      const p = g ? [...g.querySelectorAll('path')].filter(n => !n.dataset.leader).at(-1) : null;
+      if (!p) continue;
+      let low = -Infinity;     // the lowest point it reaches: pane y runs down from the top of the rack
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) low = Math.max(low, p.getPointAtLength(t).y);
+      row.drawn[pane] = {len: p.getTotalLength(), low};
+    }
+    out.push(row);
+  }
+  return out;
+}"""
+# A pane drops the depth (front) or the width (side) of the kit's path, so it is as long as
+# the path seen from that side; what is left over is a duplex pair's join (MERGE, 10 mm) and
+# the easing of its corners. The old arc was far over that on this rack.
+UNROUTED_2D_TOL_MM = 16
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in the Front and Left/Right elevations on the kit's own points, as in 3D, so its drawn 2D length agrees with the kit's")
+def check_rack_unrouted_hang_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    drawn = "n => document.querySelectorAll('svg[data-pane=\"%s\"] [data-cables] [data-cable-id]').length === n"
+    page.wait_for_function(drawn % "front", arg=len(ends), timeout=READY_MS)
+    seen = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["front"])}
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(drawn % "left", arg=len(ends), timeout=READY_MS)
+    page.wait_for_function(drawn % "right", arg=len(ends), timeout=READY_MS)
+    sides = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["left", "right"])}
+    for n in range(1, len(ends) + 1):
+        f, s = seen.get(f"u{n}"), sides.get(f"u{n}")
+        if not f or not s:
+            bad.append(f"2D: u{n} has no kit path")
+            continue
+        for pane, t, want in (("front", f, f["kitFront"]), ("left", s, s["kitSide"]), ("right", s, s["kitSide"])):
+            d = t["drawn"].get(pane)
+            if not d:
+                bad.append(f"2D: u{n} is not drawn on the {pane} pane")
+            elif abs(d["len"] - want) > UNROUTED_2D_TOL_MM:
+                bad.append(f"2D {pane}: u{n} is drawn {d['len']:.1f} mm long; the kit's path seen from there is {want:.1f} mm (the whole path {t['kit']:.1f} mm)")
+        # no lower than the kit's own lowest point (the old arc went about four U under the lower switch)
+        d = f["drawn"].get("front")
+        if d and d["low"] > f["kitLow"] + UNROUTED_2D_TOL_MM:
+            bad.append(f"2D front: u{n} reaches {d['low']:.1f} mm down the pane; the kit's lowest point is {f['kitLow']:.1f}")
+    return bad
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
+def check_rack_unrouted_hang_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    # two cords between the two switches with no manager in the rack: the kit
+    # gives them no waypoint and no detour
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the unrouted rack's scene", tubes=True)
+    got = {t["id"]: t for t in page.evaluate(UNROUTED_HANG_JS)}
+    for n in range(1, len(ends) + 1):
+        t = got.get(f"u{n}")
+        if not t or not t["reach"]:
+            bad.append(f"3D: u{n} has no tube or no kit reach points: {t}")
+            continue
+        if t["routed"]:
+            bad.append(f"3D: u{n} is drawn as a routed cable; the check wants an unrouted one")
+        if abs(t["drawn"] - t["kit"]) > UNROUTED_HANG_TOL_MM:
+            bad.append(f"3D: u{n}'s tube is {t['drawn']:.1f} mm long; the kit's path from port to port is {t['kit']:.1f} mm")
+    return bad
+
 
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
 def check_rack_cable_lay_pdu(page, base):

@@ -174,7 +174,10 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
       const via = link.via2d?.[view], rings = link.rings2d?.[view];
+      // via2d = [] is the kit's free span with no point between the plugs (a
+      // straight run, cable-view.js freeSpan2d); no via2d at all is the old hang.
       stroke(g, via?.length ? arcPath([a, ...via, b], bendOf(link), rings ? [null, ...rings, null] : null).d
+        : via ? `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`
         : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
@@ -343,9 +346,13 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // solid body (kit 0.11.0, #949), so nothing pushes it about: clearOf is
     // for the hangs and the unplugged leads only, and a routed tube that
     // still meets metal is a drawing fault the browser check finds.
-    const routed = !dangling && wps.length > 0;
+    // The kit's FREE span (`got.free`: no waypoint, no detour) is drawn on the
+    // kit's points too, which are the span as it hangs and what its length is
+    // measured on (portrayal-site#178); it is not a routed cable.
+    const kitDrawn = !dangling && got?.kit === true;
+    const routed = !dangling && wps.length > 0 && !got?.free;
     let pts, bent = null, extended = null, reachGap = null;
-    if (routed && got?.kit) {
+    if (kitDrawn) {
       // THE KIT'S PATH (portrayal-site#166): its points are the drawing, from
       // each plug's reach point, which is where the tube leaves its connector
       // (route-context.js passes the plug's cable-point z as plugReachOf), so
@@ -379,7 +386,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     for (const e of landed) if (e.points.length > 1) {
       // into where the tube starts: the kit's path starts at the pair's middle,
       // at the plugs' far end; an eased route starts at mergeOf
-      const kit = routed && got?.kit, m = kit ? pts[e === ends[0] ? 0 : pts.length - 1] : mergeOf(THREE, e);
+      const kit = kitDrawn, m = kit ? pts[e === ends[0] ? 0 : pts.length - 1] : mergeOf(THREE, e);
       for (const p of e.points) {
         const s = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
           kit ? [p, m] : [p, p.clone().addScaledVector(e.normal, 12), m]), 16, WIDTH * 0.3, 6, false), mat);
