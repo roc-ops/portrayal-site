@@ -9340,17 +9340,25 @@ def check_rack_cable_lay(page, base):
 # sentences once per set of them and rings each corner where the kit puts it,
 # in both views; it measures no bend itself. On the reference cable-lay rack
 # the kit finds none, so nothing is said and nothing is ringed. The finding
-# here is a real one, made by an edit: the cord from LEAF-B port 49 becomes
-# an AOC to LEAF-A port 49 (an AOC head seated in each cage, c1 removed to
-# free the port). Its head stands 64.8 mm out of the cage, so on its way round
-# the tray's front edge to the lacer's ring it turns three times with less
-# room than the 30 mm an AOC needs.
+# here is a real one, made by an edit: the cord from LEAF-B port 52 becomes
+# an AOC to LEAF-A port 52 (an AOC head seated in each cage, the two cords that
+# used those ports removed to free them). Its head stands 64.8 mm out of the
+# cage, so on its way to the lacer's ring it turns with less room than the 30
+# mm an AOC needs. Kit 0.27.0 (#1026) chooses the ring by room, so the cord
+# from port 49 to port 49 that this check once used finds one with room and
+# has no finding; port 52 to port 52 still has none to turn into, and its
+# findings are one single bend and two pairs of turns on a short leg (a pair
+# is ONE finding with `turns`, ringed at each corner: route-context.js
+# bendPoints).
 # What is expected is the kit's own output, read two ways: the findings the
 # page holds, and the findings of a context built afresh in the page for the
 # same rack (BEND_FRESH_JS). NOT VACUOUS: it fails unless the edit produces
 # findings, each in the kit's words, for c9, an AOC, at 30 mm.
 AOC_HEAD = "fs/qsfp28-aoc@1"
 BEND_SENTENCE_RE = re.compile(r"^c\d+ (turns [\d.]+ degrees (at|between) .+ with room for an? [\d.]+ mm bend; "
+                              r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
+                              # two turns on one short leg, said as one (kit 0.27.0)
+                              r"|turns twice within [\d.]+ mm between .+ \([\d.]+ and [\d.]+ degrees\), with room for an? [\d.]+ mm bend; "
                               r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
                               r"|doubles back .+, with no room for a bend; the cable \([\w-]+\) needs [\d.]+ mm)\.$")
 # The page's routes are the ones read for the rack as it is now.
@@ -9360,12 +9368,14 @@ BEND_FRESH_JS = """async () => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const rack = window.__rack.doc().racks[0];
   const fresh = await RC.routeFacts(rack, (await C.loadCatalog('/assets/dist/')).chassisOf);
-  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point});
+  // `points` is where the finding is ringed: its `at`, or each of its two corners for a pair of turns (bendPoints)
+  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point, points: RC.bendPoints(f),
+    pair: Array.isArray(f.turns) && f.turns.length === 2});
   const page = (window.__rack.bends() || []).map(plain);
   return {page, fresh: fresh.bendFindings.map(plain), notice: RC.bendNotice(fresh.bendFindings),
     said: document.querySelector('.rk-side .rk-notice')?.textContent ?? '',
     // where a pane draws a rack point: x from the opening's middle (mirrored on the rear), y down from the top
-    want2d: page.map(f => [OPENING / 2 + f.at[0], rack.frame.heightRU * RU - f.at[1]]),
+    want2d: page.flatMap(f => f.points.map(p => [OPENING / 2 + p[0], rack.frame.heightRU * RU - p[1]])),
     rings2d: [...document.querySelectorAll('#paneFront svg [data-bend-finding], #paneRear svg [data-bend-finding]')].map(c => ({
       pane: c.closest('svg').dataset.pane, cable: c.dataset.bendFinding, at: [+c.getAttribute('cx'), +c.getAttribute('cy')],
       title: c.querySelector('title')?.textContent ?? '', ui: c.getAttribute('data-pt-ui')})),
@@ -9387,16 +9397,18 @@ BEND_RINGS_3D_JS = """async () => {
 
 
 def aoc_between_the_leaves(rack):
-    """The cable-lay rack with c9 as an AOC from LEAF-B port 49 to LEAF-A port 49: an AOC head in each cage, c1 gone."""
+    """The cable-lay rack with c9 as an AOC from LEAF-B port 52 to LEAF-A port 52: an AOC head in each cage, c4 and c12 gone
+    (they were the cords on those two ports)."""
     out = json.loads(json.dumps(rack))
     for it in out["items"]:
         if it["id"] in ("i1", "i3"):
-            it["swaps"] = {**it["swaps"], "port-49": AOC_HEAD}
-    out["cables"] = [c for c in out["cables"] if c["id"] != "c1"]
+            it["swaps"] = {**it["swaps"], "port-52": AOC_HEAD}
+    out["cables"] = [c for c in out["cables"] if c["id"] not in ("c4", "c12")]
     for c in out["cables"]:
         if c["id"] == "c9":
             c["media"] = "aoc"
-            c["b"] = {"item": "i1", "path": "port-49", "view": "front"}
+            c["a"] = {"item": "i3", "path": "port-52", "view": "front"}
+            c["b"] = {"item": "i1", "path": "port-52", "view": "front"}
     return out
 
 
@@ -9437,10 +9449,14 @@ def check_rack_bend_notice(page, base):
     wait_sel(page, "bend notice: the notice", ".rk-side .rk-notice")
     got = page.evaluate(BEND_FRESH_JS)
     finds = got["page"]
-    if got["media"].get("c9") != "aoc" or "c1" in got["media"]:
+    if got["media"].get("c9") != "aoc" or "c4" in got["media"] or "c12" in got["media"]:
         return bad + [f"the edit did not land: {got['media']}"]
     if len(finds) < 2:
         return bad + [f"the AOC gives {len(finds)} findings; expected at least two tight bends: {finds}"]
+    # NOT VACUOUS: a pair of turns on one short leg is one finding with two corners (kit 0.27.0), and is ringed at each
+    if not any(f["pair"] for f in finds) or not any(not f["pair"] for f in finds):
+        return bad + [f"the AOC gives no mix of a single bend and a pair of turns: {[(f['pair'], f['text']) for f in finds]}"]
+    points = sum(len(f["points"]) for f in finds)
     for f in finds:
         if f["cable"] != "c9" or f["need_mm"] != 30 or not BEND_SENTENCE_RE.match(f["text"]) or "(aoc) needs 30 mm" not in f["text"]:
             bad.append(f"a finding is not the kit's sentence for c9, an AOC, at 30 mm: {f}")
@@ -9456,11 +9472,12 @@ def check_rack_bend_notice(page, base):
     # and body findings are: the notice goes with the next redraw.
     if [n for n in got["listed"] if "needs 30 mm" in n] != [f["text"] for f in finds]:
         bad.append(f"the cable list's notes are {got['listed']}; expected the kit's sentences {[f['text'] for f in finds]}")
-    # 2D: one ring per finding on the front pane (both stops are there), at the finding's point, titled with its sentence
+    # 2D: a ring on the front pane (both stops are there) at each finding's point, and at each of a pair's two corners,
+    # each titled with its finding's sentence
     rings = got["rings2d"]
-    if [r["pane"] for r in rings] != ["front"] * len(finds):
-        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {len(finds)} on the front pane")
-    for r, f, want in zip(rings, finds, got["want2d"]):
+    if [r["pane"] for r in rings] != ["front"] * points:
+        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {points} on the front pane")
+    for r, f, want in zip(rings, [f for f in finds for _ in f["points"]], got["want2d"]):
         if r["cable"] != "c9" or r["title"] != f["text"] or not near(r["at"], want):
             bad.append(f"2D: a ring at {r['at']} titled {r['title']!r}; expected {want} for {f['text']!r}")
         if r["ui"] != "*":
@@ -9474,24 +9491,24 @@ def check_rack_bend_notice(page, base):
             " && !(document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('needs 30 mm')")
     again = page.evaluate("""() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length,
       listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent).filter(t => t.includes('needs 30 mm'))})""")
-    if again["n"] != len(finds) or again["bends"] != len(finds):
-        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {len(finds)} still")
+    if again["n"] != points or again["bends"] != len(finds):
+        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {points} for {len(finds)} still")
     if again["listed"] != [f["text"] for f in finds]:
         bad.append(f"after a redraw, with the notice gone, the cable list's notes are {again['listed']}; expected the sentences still")
 
     if webgl_trouble(page):
         return bad
-    # 3D: a ring in the cable's own group at each finding's point, and none in the file
+    # 3D: a ring in the cable's own group at each finding's point (each corner of a pair), and none in the file
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "bend notice: the AOC rack's scene", tubes=True)
     got3d = page.evaluate(BEND_RINGS_3D_JS)
-    if len(got3d["rings"]) != len(finds) or len(got3d["listed"]) != len(finds):
-        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {len(finds)}")
-    for k, (r, f) in enumerate(zip(got3d["rings"], finds)):
+    if len(got3d["rings"]) != points or len(got3d["listed"]) != points:
+        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {points}")
+    for k, (r, (f, want)) in enumerate(zip(got3d["rings"], [(f, p) for f in finds for p in f["points"]])):
         if r["name"] != f"cable-c9-bend-{k}" or r["parent"] != "cable-c9" or not r["visible"] or not r["mesh"]:
             bad.append(f"3D: ring {k} is {r['name']!r} in {r['parent']!r}, visible {r['visible']}; expected cable-c9-bend-{k} in cable-c9")
-        if not near(r["at"], f["at"], 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
-            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {f['at']} for {f['text']!r}")
+        if not near(r["at"], want, 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
+            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {want} for {f['text']!r}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF":
@@ -9503,7 +9520,7 @@ def check_rack_bend_notice(page, base):
         if any("-bend-" in n for n in names):
             bad.append(f"GLB: the file carries warning rings: {[n for n in names if '-bend-' in n]}")
     back = page.evaluate(BEND_RINGS_3D_JS)
-    if [r["visible"] for r in back["rings"]] != [True] * len(finds):
+    if [r["visible"] for r in back["rings"]] != [True] * points:
         bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
     # A REDRAW THAT CHANGES NOTHING KEEPS THE SCENE. The scene is rebuilt when
     # the routes' signature changes, and the signature counts the bends shown:
@@ -9526,9 +9543,9 @@ def check_rack_bend_notice(page, base):
     old = page.evaluate_handle("() => window.__rack.scene()")
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
-        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-49'))} : i))}); }""")
+        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); }""")
     wait_fn(page, "bend notice: the head taken out",
-            "() => window.__rack.routesCurrent().current && !('port-49' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
+            "() => window.__rack.routesCurrent().current && !('port-52' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
             " && Object.values(window.__rack.cableFacts().reasons).some(Boolean)")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
     settle_scene(page, "bend notice: the loose AOC's scene", tubes=True)

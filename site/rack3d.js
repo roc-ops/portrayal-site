@@ -715,10 +715,12 @@ export function createRackScene(container, opts = {}) {
     // side panes and the kit's solids have it. It stood on the bottom of its
     // lowest unit here, up to 6.35 mm below where the kit's routes took it to
     // be. Without a catalogue entry the span is the drawing's height in units.
-    // A part beside the rack is no rack item: it stands on its bottom unit.
+    // A part beside the rack is no rack item: it stands on its bottom, in
+    // millimetres (`mm`, the kit's zeroUBottomMm, as its solid does since kit
+    // 0.30.0, #1030), else on its bottom unit.
     const box = entry.chassis?.ru != null && entry.mount !== 'rack-side'
       ? itemBox(null, {ru: entry.ru, ref: entry.ref, roll: entry.roll}, () => entry.chassis)
-      : (u => ({lo: (entry.ru - 1) * RU, hi: (entry.ru - 1 + u) * RU}))(Math.max(1, Math.round(H / RU)));
+      : (u => { const lo = Number.isFinite(entry.mm) ? entry.mm : (entry.ru - 1) * RU; return {lo, hi: lo + u * RU}; })(Math.max(1, Math.round(H / RU)));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
     // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
     // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).

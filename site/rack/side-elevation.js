@@ -53,7 +53,7 @@ import {elevationBox} from './elevation.js';
 import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre} from './bundle-view.js';
 import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
-import {landedBends} from './route-context.js';
+import {landedBends, bendPoints} from './route-context.js';
 import {noteStrap} from './strap-size.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
         paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
@@ -424,14 +424,16 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   if (bars.childElementCount) layer.append(bars);
   // A corner short of its cable's bend radius, ringed where the kit puts it (as the front pane rings it).
   for (const f of landedBends(routes.bendFindings, rack, loose)) {
-    if (!drawn.includes(f.cable) || !Array.isArray(f.at)) continue;
-    const [cx, cy] = project(pane, frame, {x: f.at[0], y: f.at[1], z: f.at[2] ?? 0});
-    const ring = svgEl('circle', {cx: n3(cx), cy: n3(cy), r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
-      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
-    const t = svgEl('title', {});
-    t.textContent = f.text;
-    ring.append(t);
-    layer.append(ring);
+    if (!drawn.includes(f.cable)) continue;
+    for (const at of bendPoints(f)) {
+      const [cx, cy] = project(pane, frame, {x: at[0], y: at[1], z: at[2] ?? 0});
+      const ring = svgEl('circle', {cx: n3(cx), cy: n3(cy), r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+        'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
+      const t = svgEl('title', {});
+      t.textContent = f.text;
+      ring.append(t);
+      layer.append(ring);
+    }
   }
   if (!layer.childElementCount) return null;
   // over the bodies and the posts, under the part beside the near side and the selection ring

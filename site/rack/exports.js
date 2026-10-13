@@ -13,7 +13,7 @@
 // has no DOM and is tested with node --test.
 
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
-import {drawElevation, panelFor} from './elevation.js';
+import {drawElevation, panelFor, zeroUDrawn} from './elevation.js';
 import {holdUndimmed, withoutBendRings, withFileStraps} from './hover.js';
 import {withCoversAsBuilt} from './covers.js';
 import {STRAP_PAINT} from './stage.js';
@@ -163,7 +163,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   // What a pane could not show is judged on the items' own swaps: a plug
   // nobody chose is never "the part chosen".
   // The parts beside the rack are drawn (the kit's zero-u.js zeroUEntries), so the sheet says where each is, not that it is left out.
-  const zeroU = zeroUEntries(rack, chassisOf);
+  const zeroU = zeroUDrawn(rack, chassisOf);
   const notes = [...await faceNotesFor(rack, base, faces, chassisOf, {cables: false, zeroU: false}), ...zeroUNotes(rack, chassisOf)];
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
   const uOf = heightOf(chassisOf);
@@ -289,10 +289,11 @@ export async function drawioFile(rack, chassisOf) {
   const racks = [], ports = new Set();
   // TEMPORARY, AND ONLY TO KEEP THIS FILE AS IT IS. Kit 0.23.0 names the cell of a projected port (the back of a
   // seated module) by its element id (zones.js exportName: `portrayal-path="bay-1-rear--b01"`), where this page has
-  // written its address (`bay-1/module/b01`) since the page first drew such ports. The kit was re-vendored for its
-  // speed alone, with no download to change, so the port is handed over without its `projected` mark and the kit
-  // writes the path, as before. Taking the kit's name is a change to this download, and is for the re-vendor that
-  // wires the rest of 0.23.0; this goes then. check_rack_drawio_projected_port_path holds the file to the address.
+  // written its address (`bay-1/module/b01`) since the page first drew such ports. The port is handed over without
+  // its `projected` mark and the kit writes the path, as before, through the re-vendor to kit 0.30.0 as it was
+  // through the one for speed. Taking the kit's name is a change to this download, and is the site owner's to
+  // decide (it is the open question on the pull request that re-vendored 0.30.0); this goes if the answer is yes.
+  // check_rack_drawio_projected_port_path holds the file to the address.
   const asAddressed = ({projected: _projected, ...p}) => p;
   for (const pane of ['front', 'rear']) {
     const mounted = await Promise.all(lists[pane].map(async it => {

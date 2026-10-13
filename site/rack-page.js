@@ -7,9 +7,9 @@ import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf} fr
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
-import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
+import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevation.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
-import {zeroUEntries, hangNotices} from '../vendor/rack/zero-u.js';
+import {hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
@@ -1319,7 +1319,7 @@ async function redraw(keepRoutes = false) {
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
-    const zeroU = zeroUEntries(r, chassisOf);
+    const zeroU = zeroUDrawn(r, chassisOf);
     // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
     // from the same items, parts and routes. Nothing in it is a target for
     // placing, moving or cabling.
