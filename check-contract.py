@@ -2223,6 +2223,18 @@ check(_ksr is not None and _ksr.returncode == 0,
       "tools/dcim-verify/kits.py passes its self-test against a mock NetBox and Nautobot",
       (_ksr.stderr[-600:] if _ksr else "no tools/dcim-verify/selftest.py"))
 
+# THE MERGE TRAIN (tools/merge-train.py, docs/merging.md) is what a set of ready
+# pull requests is tested with before the owner merges them. It is run for real
+# against throwaway git repositories and a fake `gh`, so a change that breaks it
+# is found here and not on the day a set is waiting.
+_mtt = HERE / "tests" / "tools" / "merge_train_test.py"
+_mtr = _sp.run([sys.executable, str(_mtt)], capture_output=True, text=True) if _mtt.is_file() else None
+check(_mtr is not None and _mtr.returncode == 0,
+      "tools/merge-train.py passes its tests against throwaway git repositories and a fake gh",
+      (_mtr.stderr[-600:] if _mtr else "no tests/tools/merge_train_test.py"))
+check((HERE / "docs" / "merging.md").is_file() and "tools/merge-train.py" in (HERE / "docs" / "merging.md").read_text(),
+      "docs/merging.md says how a merge happens and names the script")
+
 # ── zeroU in every shipped rack fixture has the kit's shape ─────────────
 # zeroU was reserved until kit 0.6.0 (Portrayal #926) gave it its parts: an
 # entry is {id, ref, cfg, label, at, offsetMm, between?}, read and placed by
