@@ -638,12 +638,12 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // fetch, and reading the two views' sizes from one place is the whole
   // argument this rack makes for itself (see rack3d.js's own banner).
   //
-  // Optic fields (item.fields) are NOT carried over: createRackScene has no
-  // fields input yet, so a swap into a bay shows in 3D but a field edit on an
-  // optic does not, until that lands.
+  // Optic fields (item.fields: a latch colour, a label) are carried over, and
+  // the scene paints them into the device's own faces (rack3d.js overrideFaces),
+  // so a field edit shows in 3D as it does in 2D (portrayal-site#206).
   const stack = rack.items.map(item => ({
     id: item.id,
-    ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label,
+    ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label, fields: item.fields || {},
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
