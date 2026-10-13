@@ -4289,6 +4289,80 @@ def check_explorer_latch_color_one_control(page, base):
     return bad
 
 
+LATCH_3D_PORT29_JS = LATCH_3D_JS.replace("port-1-occupant", "port-29-occupant")
+PRESETS = {"blue": "#2f6fd6", "beige": "#d8c8a4", "red": "#c22f2f", "green": "#2fa84f",
+           "yellow": "#f2d02e", "black": "#1a1a1a", "default grey": "#6f6f6f"}
+
+
+@extra("Explorer: one click on a latch color preset sets 2D, 3D, the hex box, the swatch and the link like typing its hex; reset follows; presets are named by color alone")
+def check_explorer_latch_color_presets(page, base):
+    from urllib.parse import unquote
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fills = ("() => [...new Set([...document.querySelectorAll('#shell svg [data-path^=\"port-29-occupant\"] "
+             "[data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill')))]")
+    def all_fill(want):
+        return f"() => {{ const f = ({fills})(); return f.length === 1 && f[0] === '{want}'; }}"
+    explorer_port29(page, base)
+    page.evaluate(OPEN_ROW_JS, r"^port-29-occupant —")
+    page.wait_for_timeout(400)
+    names = page.evaluate("() => [...document.querySelectorAll('#inspect .colorfield button.preset')]"
+                          ".map(b => [b.getAttribute('aria-label'), b.title])")
+    want_names = [[f"Latch color: {n}", n] for n in PRESETS]
+    if names != want_names:
+        bad.append(f"presets: names/titles are {names}, expected {want_names}")
+    if page.evaluate("() => document.querySelectorAll('#inspect .row:not(:has(.colorfield[data-field=\"latch-color\"])) button.preset').length"):
+        bad.append("presets: a preset row appears outside the latch color field")
+    total = page.evaluate("() => document.querySelectorAll('#inspect .colorfield[data-field]:not([data-field=\"latch-color\"]) button.preset').length")
+    if total:
+        bad.append(f"presets: {total} presets on a color field that is not the latch color")
+    for name, hexv in PRESETS.items():
+        if name == "default grey":
+            continue
+        page.locator(f'#inspect button.preset[aria-label="Latch color: {name}"]').click()
+        try:
+            wait_fn(page, f"presets ({name}): the drawing", all_fill(hexv))
+        except RuntimeError as e:
+            bad.append(str(e))
+        got = agree(page, f"presets ({name})", bad)
+        if got and (got[0]["hex"] != hexv or not got[0]["reset"]):
+            bad.append(f"presets ({name}): the control reads {got}")
+        if LATCH_URL + hexv not in unquote(page.url):
+            bad.append(f"presets ({name}): the link does not carry the color: {unquote(page.url)}")
+    # 3D, with the last preset set (yellow is not last; set blue)
+    page.locator('#inspect button.preset[aria-label="Latch color: blue"]').click()
+    if not webgl_trouble(page):
+        page.click('#mode [data-mode="3d"]')
+        try:
+            wait_fn(page, "presets (blue): 3D face", f"() => ({LATCH_3D_PORT29_JS})('{PRESETS['blue']}')")
+        except RuntimeError as e:
+            bad.append(str(e))
+        page.click('#mode [data-mode="2d"]')
+    # the default grey preset writes that hex; reset then goes back to the default
+    page.locator('#inspect button.preset[aria-label="Latch color: default grey"]').click()
+    try:
+        wait_fn(page, "presets (default grey): the drawing", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    page.locator('#inspect .colorfield button.reset').first.click()
+    try:
+        wait_fn(page, "presets: reset after a preset", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    if "latch-color" in unquote(page.url):
+        bad.append(f"presets: the link keeps a latch color after reset: {unquote(page.url)}")
+    # a preset survives a reload on the link
+    page.locator('#inspect button.preset[aria-label="Latch color: green"]').click()
+    shared = page.url
+    page.goto(shared, wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    try:
+        wait_fn(page, "presets (green): after a reload", all_fill(PRESETS["green"]))
+    except RuntimeError as e:
+        bad.append(str(e))
+    return bad
+
+
 @extra("Explorer: no label, tooltip or message on the inspector says colour, and the highlight has a hex box that follows the picker")
 def check_explorer_us_spelling_and_highlight(page, base):
     bad = []
@@ -15709,6 +15783,53 @@ def check_rack_lens_latch_colour(page, base):
     kept = page.evaluate("() => window.__rack.doc().racks[0].items[0]?.fields ?? null")
     if (kept or {}).get("port-1-occupant", {}).get("latch-color") != "#c22f2f":
         bad.append(f"latch206: after a reload the rack holds {kept}")
+    return bad
+
+
+@extra("rack.html: a latch color preset clicked in the Explorer lens reaches 2D, the saved rack and 3D (S-0016)")
+def check_rack_lens_latch_preset(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "preset16")
+    out = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 20, as: 'sw'},
+      {op: 'fit', id: '@sw', path: 'port-1', ref: 'generic/qsfp-lc@2'}]).error ?? null""")
+    if out:
+        return [f"preset16: fitting an optic answered {out}"]
+    latch2d = "() => [...document.querySelectorAll('#panes svg [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed", timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    lens = page.frame_locator(".rk-lens iframe")
+    lens.locator('.nm:text-matches("^port-1 —")').click()
+    preset = lens.locator('.optic-fields button.preset[aria-label="Latch color: green"]')
+    preset.wait_for(timeout=READY_MS)
+    preset.click()
+    if lens.locator('.optic-fields input.hex').input_value() != "#2fa84f":
+        bad.append(f"preset16: the lens hex box reads {lens.locator('.optic-fields input.hex').input_value()}")
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true", timeout=READY_MS)
+    page.click(".rk-lens-done")
+    try:
+        wait_fn(page, "preset16: the rack holds the color",
+                "() => window.__rack.doc().racks[0].items[0].fields?.['port-1-occupant']?.['latch-color'] === '#2fa84f'")
+        wait_fn(page, "preset16: 2D shows it",
+                f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#2fa84f'); }}")
+    except RuntimeError as e:
+        bad.append(str(e))
+    if webgl_trouble(page):
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "preset16: the scene")
+    face = page.evaluate("""async () => { const s = window.__rack.scene(); const t = await s.faceText(0, 'front');
+      const d = new DOMParser().parseFromString(t, 'image/svg+xml');
+      return [...d.querySelectorAll('[data-fill-from="latch-color"]')].map(n => n.getAttribute('fill')); }""")
+    if not face or any(f != "#2fa84f" for f in face):
+        bad.append(f"preset16: the 3D face still draws the latch {sorted(set(face or []))}")
     return bad
 
 

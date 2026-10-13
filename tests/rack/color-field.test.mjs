@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {american, normalizeHex, isColorField, ownerOf} from '../../site/colors.js';
+import {american, normalizeHex, isColorField, ownerOf, LATCH_PRESETS} from '../../site/colors.js';
 import {editSchema, rackTools} from '../../site/rack/agent-tools.js';
 import {COMMANDS} from '../../vendor/rack/commands.js';
 
@@ -17,6 +17,13 @@ test('normalizeHex takes what a color input holds, and three digits', () => {
   assert.equal(normalizeHex('#abc'), '#aabbcc');
   for (const bad of ['', '#12', '#12345', '#1234567', 'red', '#ggg', null, undefined])
     assert.equal(normalizeHex(bad), null, String(bad));
+});
+
+test('latch presets are valid hexes, named by color alone, and include the default grey', () => {
+  assert.deepEqual(LATCH_PRESETS.map(p => p.name),
+    ['blue', 'beige', 'red', 'green', 'yellow', 'black', 'default grey']);
+  for (const p of LATCH_PRESETS) assert.equal(normalizeHex(p.hex), p.hex, p.name);
+  assert.equal(LATCH_PRESETS.at(-1).hex, '#6f6f6f');
 });
 
 test('a color field is a text field whose default is a hex', () => {

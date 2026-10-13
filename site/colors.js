@@ -79,6 +79,24 @@ export function colorControl(doc, o) {
   reset.textContent = '↺';
   reset.title = 'back to the default';
   el.append(swatch, hex, reset);
+  // PRESETS: one click is the same as typing that hex. The browser's own panel
+  // can leave a color grey when only its hue slider moves; these cannot.
+  if (o.presets?.length) {
+    const row = doc.createElement('span');
+    row.className = 'presets';
+    for (const p of o.presets) {
+      const b = doc.createElement('button');
+      b.type = 'button';
+      b.className = 'preset';
+      b.dataset.hex = p.hex;
+      b.style.background = p.hex;
+      b.title = p.name;
+      b.setAttribute('aria-label', `${o.label || 'Color'}: ${p.name}`);
+      b.addEventListener('click', () => { const n = normalizeHex(p.hex); if (n) write(n); });
+      row.appendChild(b);
+    }
+    el.appendChild(row);
+  }
 
   const fallback = normalizeHex(o.fallback) ?? '#000000';
   let held = null;
@@ -119,4 +137,15 @@ export const COLOR_CSS = `
                              background:none; cursor:pointer; }
   .colorfield input.hex { font:inherit; font-family:ui-monospace,monospace; width:6.5em; min-width:0; }
   .colorfield button.reset { font:inherit; padding:0 .3rem; cursor:pointer; }
-  .colorfield button.reset[hidden] { display:none; }`;
+  .colorfield button.reset[hidden] { display:none; }
+  .colorfield .presets { display:inline-flex; gap:.2rem; flex-wrap:wrap; }
+  .colorfield button.preset { width:1.1rem; height:1.1rem; padding:0; border:1px solid #888;
+                              border-radius:50%; cursor:pointer; }
+  .colorfield button.preset:hover, .colorfield button.preset:focus-visible { outline:2px solid currentColor; outline-offset:1px; }`;
+
+/** Named by color alone; no optic type is claimed for any of them. */
+export const LATCH_PRESETS = [
+  {name: 'blue', hex: '#2f6fd6'}, {name: 'beige', hex: '#d8c8a4'}, {name: 'red', hex: '#c22f2f'},
+  {name: 'green', hex: '#2fa84f'}, {name: 'yellow', hex: '#f2d02e'}, {name: 'black', hex: '#1a1a1a'},
+  {name: 'default grey', hex: '#6f6f6f'},
+];

@@ -16,7 +16,7 @@
 //                              swatch-and-hex control for every color field
 
 import { swapOverrides as swapDelta } from '../vendor/swap.js';
-import { american, normalizeHex, isColorField, ownerOf, colorControl, COLOR_CSS } from './colors.js';
+import { american, normalizeHex, isColorField, ownerOf, colorControl, COLOR_CSS, LATCH_PRESETS } from './colors.js';
 
 const flat = o => Object.values(o || {}).flat();
 
@@ -160,6 +160,7 @@ export function installOpticFields(shell) {
   function colorFieldFor(path, key, decl, label) {
     const ctl = colorControl(doc, {
       value: heldAt(path, key) || decl.default, fallback: decl.default, isSet: isSetAt(path, key), label,
+      presets: key === 'latch-color' ? LATCH_PRESETS : null,
       onSet: v => {
         shell.setFields(path, {[key]: v});
         // a value an older link left on a part inside this one is not a second copy
