@@ -78,9 +78,11 @@ jobs:
     name: browser (${{ matrix.shard }} of 5)
     runs-on: ubuntu-latest
     # PLAYWRIGHT'S OWN IMAGE, so there is no browser to install: Chromium, the
-    # system libraries it needs, Python 3.12 and the playwright package come in
-    # it, all at 1.63.0 - the tag is the pin, and the first step below fails the
-    # job if the package in it is ever not that. It replaces a step that
+    # system libraries it needs and Python 3.12 come in it, built for Playwright
+    # 1.63.0 - the tag and the pip pin below say the same version, and the
+    # package of another version would look for a browser build the image does
+    # not have. The tag resolved to sha256:72bd171a9ffc2b4b59532aaa6210e21014d07093120dc25528870c0b840da1f0
+    # when this was written (the pull's log prints the digest). It replaces a step that
     # pip-installed Playwright, apt-installed its libraries and downloaded a
     # browser, about half a minute in every job. The image runs as root, which
     # is what Playwright's image expects; --ipc=host is what its documentation
@@ -101,11 +103,17 @@ jobs:
         with: {fetch-depth: 1}
 
       # No setup-python: the image's own python3 is the interpreter, and this
-      # prints which, so a run log says what the checks ran under.
-      - name: the interpreter and Playwright, as the image has them
+      # prints which, so a run log says what the checks ran under. The image
+      # carries the browsers but not the Python package that drives them (the
+      # first run of this job found none), so that is the one thing installed,
+      # pinned to the image's version: a few seconds, no browser, no apt. The
+      # system python is marked externally managed, hence the flag - the
+      # container is thrown away after the job.
+      - name: the interpreter, and Playwright pinned to the image's version
         run: |
           python3 --version
-          python3 -c "import importlib.metadata as m; v = m.version('playwright'); print('playwright', v); assert v == '1.63.0', v"
+          python3 -m pip install --disable-pip-version-check --break-system-packages playwright==1.63.0
+          python3 -c "import importlib.metadata as m; print('playwright', m.version('playwright'))"
 
       # check-browser.py starts its own serve.py on a free port, so there is
       # nothing to start or stop around it here.
