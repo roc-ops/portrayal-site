@@ -10499,6 +10499,73 @@ def check_rack_bend_radius_2d(page, base):
     return bad
 
 
+BUNDLE_CORNERS_2D_JS = """() => {
+  const out = [];
+  for (const svg of document.querySelectorAll('#paneFront svg, #paneRear svg')) {
+    const inv = svg.getScreenCTM().inverse();
+    const sample = p => { const m = inv.multiply(p.getScreenCTM()), pts = [];
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+      return pts; };
+    for (const g of svg.querySelectorAll('[data-cables] [data-bundle-id]')) {
+      const ids = (g.dataset.members || '').split(' ').filter(Boolean), line = {};
+      for (const id of ids) {
+        const p = [...svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)].sort((a, b) => b.getTotalLength() - a.getTotalLength())[0];
+        line[id] = p ? sample(p) : [];
+      }
+      const stretches = [...g.querySelectorAll('[data-bundle-trunk]')].map(p => {
+        const n = +p.dataset.riders, w = +p.getAttribute('stroke-width'), d = p.getAttribute('d');
+        // every point of the trunk, arcs included: the n nearest members are all inside the band
+        const reach = sample(p).map(c => ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b)[n - 1]);
+        return {bundle: g.dataset.bundleId, pane: svg.dataset.pane, d, width: w, riders: n, reach: Math.max(...reach), arcs: [...d.matchAll(/A([\\d.]+) /g)].map(m => +m[1])};
+      });
+      const straps = [...svg.querySelectorAll(`[data-strap="${g.dataset.bundleId}"]`)].map(s => {
+        const l = s.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+        const c = [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2];
+        const near = ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b);
+        return {pack: +s.dataset.pack, nearest: near[0]};
+      });
+      out.push({bundle: g.dataset.bundleId, pane: svg.dataset.pane, stretches, straps});
+    }
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a bundle is drawn round the corners its members turn - in 2D its trunk, envelope and straps are arcs of the bundle's bend radius, so every cable it carries stays inside the band at every turn (#185)")
+def check_rack_bundle_corners_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    wait_fn(page, "bundle corners: agent tools registered", "() => window.__tools && window.__tools.edit_rack")
+    for g in ([f"c{i}" for i in range(1, 8)], [f"c{i}" for i in range(9, 13)], [f"c{i}" for i in range(13, 17)]):
+        said = agent_call(page, "edit_rack", {"commands": [{"op": "bundle.create", "cables": g}]})["content"][0]["text"]
+        if "not loaded" in said or "not checked" in said:
+            bad.append(f"agent: bundling {g[0]}-{g[-1]} answered {said!r}")
+    wait_fn(page, "bundle corners: three bundles", "() => (window.__rack.bundles() || []).length === 3")
+    wait_fn(page, "bundle corners: the trunks are drawn", "() => document.querySelector('#paneFront [data-bundle-trunk]') && window.__rack.routesCurrent().current")
+    page.wait_for_timeout(400)
+    got = page.evaluate(BUNDLE_CORNERS_2D_JS)
+    stretches = [s for b in got for s in b["stretches"]]
+    if not stretches:
+        return bad + ["no bundle trunk is drawn on either pane: nothing was measured"]
+    if not any(s["arcs"] for s in stretches):
+        bad.append(f"no bundle's trunk turns a corner on an arc, so the rounding was not measured: {[s['d'] for s in stretches][:4]}")
+    for s in stretches:
+        if any(r > 25 + 0.01 for r in s["arcs"]):
+            bad.append(f"{s['bundle']} on the {s['pane']} pane has a trunk arc of radius {max(s['arcs'])}, over OM4's 25 mm")
+        # (every rider's stroke inside the band: its centre line within the half width less half a 3 mm stroke)
+        if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+            bad.append(f"{s['bundle']} on the {s['pane']} pane, {s['riders']} riding: a member is {s['reach']:.2f} mm from the trunk's line, outside the half width {s['width'] / 2:.2f} ({s['d']})")
+    for b in got:
+        for st in b["straps"]:
+            if st["nearest"] > st["pack"] / 2 + 2:
+                bad.append(f"{b['bundle']} on the {b['pane']} pane has a strap {st['nearest']:.1f} mm from the nearest member, off the pack ({st['pack']} mm)")
+    return bad
+
+
 UNROUTED_HANG_JS = """async () => {
   const s = window.__rack.scene(); await s.complete?.();
   const paths = window.__rack.paths() || {};

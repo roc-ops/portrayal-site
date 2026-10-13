@@ -19,6 +19,7 @@ import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
 import {radiusOf} from './bend3d.js';
+import {trunkPaths, trunkPoint} from './bend2d.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
@@ -340,9 +341,10 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
     return t;
   };
+  const bendOf = radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles});
   const recs = drawCables2d(svg, plan, pane, {
     edgeX, outboard: rear ? -1 : 1,
-    bendOf: radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles}),
+    bendOf,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
@@ -378,7 +380,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const via = link.via2d[pane], rings = link.rings2d?.[pane];
     return [link.id, rings ? throughRings(via, rings, {lead: 4}).points : via];
   }));
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, (e, f, i) => {
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
@@ -516,7 +518,7 @@ export function drawInFront(svg) {
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
+function drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -543,12 +545,36 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     const env = svgEl('g', {'data-envelope': f.id, visibility: 'hidden', 'data-pt-ui': '*'});
     const rims = svgEl('g', {'data-envelope-rim': f.id, opacity: 0.4}), fills = svgEl('g', {opacity: 0.7});
     env.append(rims, fills);
-    let here = 0;
+    // THE TRUNK TURNS AS ITS MEMBERS DO (#185): the members are arcs of the bundle's radius (the
+    // largest of theirs), so the band is drawn round the same corners, a run of stretches that meet
+    // being one polyline (bend2d.js trunkPaths); each stretch's path is the one the arc at its far
+    // end is part of. The radius is the members' largest, which is the kit's bundle radius when it gives one.
+    const R = Math.max(0, f.check?.bend?.radius_mm ?? 0, ...f.members.map(id => bendOf({id}) ?? 0)) || null;
+    const lines2 = new Map();                 // stretch -> {d, pts, at, e}: its path, its chain's nodes, its place there
+    const chain = [];
+    const flush = () => {
+      if (chain.length) {
+        const pts = [chain[0].e[0], ...chain.slice(1).map((c, j) => [(chain[j].e[1][0] + c.e[0][0]) / 2, (chain[j].e[1][1] + c.e[0][1]) / 2]), chain[chain.length - 1].e[1]];
+        const paths = trunkPaths(pts, R);
+        chain.forEach((c, j) => lines2.set(c.st, {d: paths[j]?.d ?? `M${c.e[0][0]} ${c.e[0][1]} L${c.e[1][0]} ${c.e[1][1]}`, pts, at: j, e: c.e}));
+      }
+      chain.length = 0;
+    };
     for (const st of lay.stretches) {
       const e = ends(st);
-      if (!e) continue;
+      if (!e) { flush(); continue; }
+      // (a stretch of no length, or one that does not meet the last, starts its own run)
+      if (chain.length && (chain[chain.length - 1].st.to !== st.from || Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01)) flush();
+      chain.push({st, e});
+      if (Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01) flush();
+    }
+    flush();
+    let here = 0;
+    for (const st of lay.stretches) {
+      const L2 = lines2.get(st);
+      if (!L2) continue;
       here++;
-      const d = `M${e[0][0]} ${e[0][1]} L${e[1][0]} ${e[1][1]}`;
+      const d = L2.d;
       rims.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-width': st.diameter + 1.2, 'stroke-linecap': 'round'}));
       fills.append(svgEl('path', {d, fill: 'none', stroke: BAND, 'stroke-width': st.diameter, 'stroke-linecap': 'round',
                                   'data-bundle-trunk': f.id, 'data-stretch': `${st.from}-${st.to}`, 'data-riders': String(st.members.length)}));
@@ -569,12 +595,12 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     }
     bands.append(g);
     for (const s of f.straps?.straps ?? []) {
-      const hit = lay.stretchAt(s), e = hit && ends(hit.stretch);
+      const hit = lay.stretchAt(s), L2 = hit && lines2.get(hit.stretch), e = L2?.e;
       if (!e) continue;
       const len = Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]);
       if (!(len > 0)) continue;
-      const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
-      const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
+      // on the rounded trunk: across it, square to the run there, on a corner's arc where it falls on one
+      const {c, dir} = trunkPoint(L2.pts, R, L2.at, hit.f), n = [-dir[1], dir[0]];
       const half = hit.stretch.diameter / 2 + 2;
       const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
       const bar = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, at, s);
