@@ -9039,13 +9039,23 @@ def reading_text(name, text):
 
 @extra("rack.html: one reading of a rack, never a stale one - after each kind of edit (a cable's end, media and label, a cable removed and added, a device moved, renamed and an optic taken out by an assistant, the frame, a route by hand and reset, a bundle, undo, redo, the DCIM settings, the rack's name, another document with the same ids) every tool's text, both drawings, the list, the warnings, the routes and a download are those of the same document opened in a browser that has never seen it; a tool call on a rack that has not changed reads no route again, and asked twice lays no cable (#192)")
 def check_rack_reading_fresh_after_edit(page, base):
+    return reading_fresh_after_edit(page, base, False)
+
+
+def reading_fresh_after_edit(page, base, check_kept):
+    """The staleness run. With `check_kept` the page is opened with ?checkKept=1 (the kit lays every path it reads again
+    from nothing and compares it with the one it kept, route-context.js kept): the cold lays go through the same plug
+    reaches, so the counts of cables laid cannot hold in that pass and are not asked; a throw of the kit's is a failure
+    wherever it is raised, so the console is read too (the kit swallows some into console.warn)."""
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    if check_kept:
+        page.on("console", lambda m: bad.append(f"console {m.type}: {m.text[:300]}") if "checkKept" in m.text else None)
     page.add_init_script(STAND_IN_MODEL_CONTEXT)
     page.set_viewport_size({"width": 1600, "height": 1000})
     fixture = json.loads(CABLE_LAY_FIXTURE.read_text())
     fixture.pop("_note", None)
-    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.goto(f"{base}/rack.html?probe=1" + ("&checkKept=1" if check_kept else ""), wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     page.click('#mode [data-mode="2d"]')
@@ -9054,6 +9064,8 @@ def check_rack_reading_fresh_after_edit(page, base):
     other = page.context.browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
     fresh = other.new_page()
     fresh.on("pageerror", lambda e: bad.append(f"uncaught, in the fresh browser: {e}"))
+    if check_kept:
+        fresh.on("console", lambda m: bad.append(f"console {m.type}, in the fresh browser: {m.text[:300]}") if "checkKept" in m.text else None)
     fresh.add_init_script(STAND_IN_MODEL_CONTEXT)
 
     def settle(pg, drawn, where):
@@ -9083,7 +9095,7 @@ def check_rack_reading_fresh_after_edit(page, base):
         page.evaluate("() => { window.__rack.redraw(); }")
         settle(page, n, f"{where} (drawn again)")
         again_state, reads_after = page.evaluate(READING_STATE_JS), page.evaluate("() => window.__rack.reads()")
-        if rack["cables"] and (reads_after["routeFacts"] != reads["routeFacts"] or reads_after["lays"] != reads["lays"]):
+        if rack["cables"] and (reads_after["routeFacts"] != reads["routeFacts"] or (reads_after["lays"] != reads["lays"] and not check_kept)):
             bad.append(f"{where}: a redraw of a rack that had not changed read the routes {reads_after['routeFacts'] - reads['routeFacts']} times and laid {reads_after['lays'] - reads['lays']:g} cables; expected neither")
         for key in got_state:
             if again_state[key] != got_state[key]:
@@ -9094,7 +9106,7 @@ def check_rack_reading_fresh_after_edit(page, base):
             r = page.evaluate(READING_TOOL_JS, [name, a])
             if r["text"] != first["text"]:
                 bad.append(f"{where}: {name} {json.dumps(a)} answered differently the second time")
-            if r["reads"] or (r["lays"] and name != "edit_rack"):
+            if r["reads"] or (r["lays"] and name != "edit_rack" and not check_kept):
                 bad.append(f"{where}: {name} {json.dumps(a)}, asked a second time of a rack that had not changed, read the routes {r['reads']} times and laid {r['lays']:g} cables; expected neither")
         for name, a, first in got_tools:
             if first["reads"]:
@@ -9121,6 +9133,8 @@ def check_rack_reading_fresh_after_edit(page, base):
     drawn = page.evaluate("() => window.__rack.drawn()")
     page.evaluate("r => window.__rack.replaceRack(r)", fixture)
     rack = compare("the rack as loaded", drawn)
+    if page.evaluate("() => window.__rack.checkKept()") != check_kept:
+        bad.append(f"the route context the page read has the kit's checkKept {'off' if check_kept else 'on'}; expected it {'on' if check_kept else 'off'}")
     if len(rack["cables"]) != 16:
         return bad + [f"the fixture has {len(rack['cables'])} cables; expected the cable-lay rack's 16"]
     apply = lambda cmd: f"() => window.__rack.apply({json.dumps(cmd)})"
@@ -9169,39 +9183,49 @@ def check_rack_reading_fresh_after_edit(page, base):
     return bad
 
 
+@extra("rack.html: what the kit keeps is what it would lay afresh - the staleness run again with the kit's own check on (?probe=1&checkKept=1, kit ctx.checkKept: every path the kit reads is laid again from copies of the rack, the cable and the context and compared with the one it kept, and a difference throws), through every kind of edit; no page error, no console message of the check, no settle timeout, and every tool, drawing and download still that of the same document opened afresh (#192)")
+def check_rack_kept_paths_hold(page, base):
+    return reading_fresh_after_edit(page, base, True)
+
+
 # A LARGE RACK'S BUDGETS (portrayal-site#192). The rack the issue was measured on took 39 s to draw, 27 s to draw again
 # with nothing changed, and half a minute for each call an assistant made, because everything read every route again.
 # What holds that off is counted here, on a rack of 288 cables built in the check (speed_fixture), in two ways:
 #
 #   - BY COUNT, which no machine's load moves: how many times the routes were read (route-context.js routeFacts) and
-#     how many cables the kit laid (its asks for a plug's reach, halved), for the first draw, a redraw with nothing
-#     changed, an edit, and each thing an assistant reads, the first time and again;
+#     how many cables the kit read the inputs of (its asks for a plug's reach, halved; kit 0.25.0 asks when it reads a
+#     cable's inputs, `layInputs`, and not for a path it has kept, so this is no longer "cables laid"), for the first
+#     draw, a redraw with nothing changed, an edit, and each thing an assistant reads, the first time and again;
 #   - BY TIME, as a ratio to another time taken in the same run on the same machine, never in seconds: against the same
 #     rack's own first draw, and against the first draw of a rack of 12 cables.
 #
-# Each bound has about twice the room the page needs today, so a slow or busy runner does not trip one; a change that
-# reads the routes again where it did not, or lays every cable for a question already answered, goes past it by far.
-# The bounds are ceilings: when the kit keeps its own lays the counts fall, and nothing here minds.
+# Measured on kit 0.25.0 (this rack, an 80-core machine with other work running): a draw and the first describe_rack
+# 4.67 per cable, an edit's redraw 4.65, an inspect of a cable 0.01, everything else none; a first draw about 9 s, a
+# redraw with nothing changed about 2.5 s (the page's own drawing: the kit reads nothing), an edit's redraw about 5 s.
+# Each bound has about twice the room the page needs today (a count that was none is allowed a tenth, so a kit that
+# reads a few inputs again is not a failure; every cable again would be 4.67), so a slow or busy runner does not trip
+# one; a change that reads the routes again where it did not, or has the kit read every cable for a question already
+# answered, goes past it by far. The bounds are ceilings: when the kit keeps more, the counts fall, and nothing here minds.
 SPEED_BUDGETS = {
-    # (reads of the routes, kit lays per cable) at most
-    "first draw": (1, 14), "a redraw with nothing changed": (0, 0), "a redraw after one cable's end is moved": (1, 14),
+    # (reads of the routes, kit cable-input reads per cable) at most
+    "first draw": (1, 10), "a redraw with nothing changed": (0, 0), "a redraw after one cable's end is moved": (1, 10),
     # (the first question of a rack whose cables had no length until the page measured them is asked of the rack as it
-    # is, a new object, for which the kit decides every cable again; after that, and after an edit, it is not)
-    "describe_rack, first asked": (0, 9), "describe_rack, asked again": (0, 0), "describe_rack after the edit": (0, 4),
-    "describe_rack's next page, first asked": (0, 4),
-    "inspect of a cable, first asked": (0, 0.1), "inspect of a cable, asked again": (0, 0),
-    "the cable schedule, first downloaded": (0, 11), "the cable schedule, downloaded again": (0, 0),
+    # is, a new object; the kit reads each cable's inputs once for it. After that, and after an edit, it reads none)
+    "describe_rack, first asked": (0, 10), "describe_rack, asked again": (0, 0), "describe_rack after the edit": (0, 0.1),
+    "describe_rack's next page, first asked": (0, 0.1),
+    "inspect of a cable, first asked": (0, 0.05), "inspect of a cable, asked again": (0, 0),
+    "the cable schedule, first downloaded": (0, 0.1), "the cable schedule, downloaded again": (0, 0),
 }
-# a time, as a multiple of another time of the same run, at most
+# a time, as a multiple of another time of the same run, at most (measured: 0.27, 0.02, 0.005, 0.004, 0.00, 0.00, 0.59, 11.6)
 SPEED_RATIOS = [
-    ("a redraw with nothing changed", "first draw", 0.1),
-    ("describe_rack, first asked", "first draw", 1.2),
-    ("describe_rack's next page, first asked", "first draw", 0.34),
-    ("describe_rack after the edit", "first draw", 0.34),
+    ("a redraw with nothing changed", "first draw", 0.55),
+    ("describe_rack, first asked", "first draw", 0.1),
+    ("describe_rack's next page, first asked", "first draw", 0.1),
+    ("describe_rack after the edit", "first draw", 0.1),
     ("describe_rack, asked again", "the small rack's first draw", 1.0),
     ("inspect of a cable, asked again", "the small rack's first draw", 1.0),
-    ("a redraw after one cable's end is moved", "first draw", 1.5),
-    ("first draw", "the small rack's first draw", 110),
+    ("a redraw after one cable's end is moved", "first draw", 1.2),
+    ("first draw", "the small rack's first draw", 30),
 ]
 SPEED_TIMED_JS = """async ([src, arg, needDraw]) => {
   const R = window.__rack, sleep = t => new Promise(r => setTimeout(r, t));
@@ -9237,7 +9261,7 @@ def speed_open(page, base, doc):
     return {"ms": ms, **got}
 
 
-@extra("rack.html: a large rack keeps its budgets - on a rack of 288 cables built in the check, the routes are read once for the first draw and once for an edit and by nothing else (a redraw with nothing changed, describe_rack and its next page, the inspect of a cable, the cable schedule, each asked twice), the kit lays each cable at most 14 times for a draw, 9 for the first describe_rack of a rack just measured, 4 for its next page and for one after an edit, 11 for a first schedule, and none for anything asked again; and by the clock of the same run a redraw with nothing changed takes under a tenth of the first draw, a describe_rack after an edit under a third, an answer asked again less than a 12-cable rack's first draw, an edit's redraw no more than one and a half first draws, and the first draw no more than 110 times the 12-cable rack's (#192)")
+@extra("rack.html: a large rack keeps its budgets - on a rack of 288 cables built in the check, the routes are read once for the first draw and once for an edit and by nothing else (a redraw with nothing changed, describe_rack and its next page, the inspect of a cable, the cable schedule, each asked twice), the kit reads the inputs of each cable at most 10 times for a draw and for the first describe_rack of a rack just measured, a tenth of a time for its next page, one after an edit and a first schedule, and none for anything asked again; and by the clock of the same run a redraw with nothing changed takes under 0.55 of the first draw, a describe_rack under a tenth of it, an answer asked again less than a 12-cable rack's first draw, an edit's redraw no more than 1.2 first draws, and the first draw no more than 30 times the 12-cable rack's (#192)")
 def check_rack_speed_budgets(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9286,11 +9310,12 @@ def check_rack_speed_budgets(page, base):
         if got["reads"] > reads:
             bad.append(f"{what}: the routes were read {got['reads']} times; at most {reads}")
         if got["lays"] > per_cable * n:
-            bad.append(f"{what}: the kit laid {got['lays']:g} cables, {got['lays'] / n:.1f} for each of the rack's {n}; at most {per_cable:g} each")
+            bad.append(f"{what}: the kit read the inputs of {got['lays']:g} cables, {got['lays'] / n:.2f} for each of the rack's {n}; at most {per_cable:g} each")
     for what, of, most in SPEED_RATIOS:
         if took_ms[what] > most * took_ms[of]:
             bad.append(f"{what} took {took_ms[what] / 1000:.2f} s, {took_ms[what] / took_ms[of]:.2f} times {of} ({took_ms[of] / 1000:.2f} s); at most {most:g} times")
     print("          " + "; ".join(f"{k} {v / 1000:.2f} s" for k, v in took_ms.items()), flush=True)
+    print("          " + "; ".join(f"{k} {c['reads']} reads, {c['lays'] / n:.2f} per cable" for k, c in cost.items()), flush=True)
     return bad
 
 
@@ -18884,7 +18909,7 @@ SECONDS = {
     "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
     "hero-3d": 23, "stage-rail": 219,
     "check_kit_page": 24, "check_takeaway_cables_3d": 100,
-    "check_rack_speed_budgets": 150, "check_rack_reading_fresh_after_edit": 60,
+    "check_rack_speed_budgets": 150, "check_rack_reading_fresh_after_edit": 60, "check_rack_kept_paths_hold": 90,
     "check_rack_export_3d": 11, "check_narrow_tool_pages": 11,
     "check_rack_mount_flag_3d_exports": 10, "check_rack_export_overtaken": 20,
     "check_rack_3d": 64, "check_wide_tool_pages": 10, "check_annotate_3d": 49,

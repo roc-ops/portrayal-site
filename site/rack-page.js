@@ -38,7 +38,7 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeWarnings, withCableTypes, bendNotice, landedBends, reads} from './rack/route-context.js';
+import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {routesOf, sameReading, askOf} from './rack/reading.js';
 import {describeOnce, inspectOnce} from './rack/agent-read.js';
@@ -63,6 +63,9 @@ import {sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
 const PROBE = new URLSearchParams(location.search).get('probe') === '1';
+// PROBE ONLY: `?probe=1&checkKept=1` gives the kit's route context `checkKept: true` (route-context.js kept), so every
+// path the kit reads is laid again from nothing and compared with the one it kept; a difference throws. Not for a page in use.
+if (PROBE && new URLSearchParams(location.search).get('checkKept') === '1') kept.check = true;
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
@@ -2255,6 +2258,8 @@ if (PROBE) {
     reads: () => ({routeFacts: reads.routeFacts, lays: reads.reach / 2, last: reads.last ? {...reads.last} : null}),
     times: () => (S.probeTimes ? {...S.probeTimes, sidePanel: S.probeSide ? {...S.probeSide} : null} : null),
     drawn: () => S.probeDone ?? 0,
+    // Probe only: whether the route context the page last read had the kit's `checkKept` on (?probe=1&checkKept=1).
+    checkKept: () => S.routes?.ctx?.checkKept === true,
     idle: () => rendering === 0 && !renderQueued,
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),

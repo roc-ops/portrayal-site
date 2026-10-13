@@ -371,6 +371,10 @@ export const withCableTypes = (ctx, types) =>
 // `last` is where the last reading's time went, in ms, by stage: the drawings (`faces`, `reach`) and
 // then the kit (`resolve`, `paths`, `marks`, `findings`, `bends`, `bundles`, `fill`).
 export const reads = {routeFacts: 0, reach: 0, last: null};
+// THE KIT'S CHECK OF WHAT IT KEEPS (kit 0.25.0 `ctx.checkKept`): set only by the page under `?probe=1&checkKept=1`.
+// On, every path the kit reads is laid again from copies and compared with the one it kept, and a difference throws.
+// It lays every cable on every read (so `reads.reach` counts far more than the cables laid): for a page's tests only.
+export const kept = {check: false};
 const now = () => (typeof performance === 'object' ? performance.now() : 0);
 
 export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {}) {
@@ -448,6 +452,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // Each end from the far end of its seated plug (kit 0.13.0), so every
     // length the page shows is the kit's, measured the way the 3D scene draws it.
     plugReachOf: end => reachOf.get(endKey(end)) ?? null,
+    ...(kept.check ? {checkKept: true} : {}),
   });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
   lap('resolve');
