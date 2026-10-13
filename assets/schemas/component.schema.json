@@ -140,8 +140,16 @@
    "description": "WHICH connection point the `interface` is presented at; default `mate`. Allowed only beside `interface`. A plug mates INTO its receptacle at `mate` and presents its own interface to a boot at its REAR (`boot`), which is a different point: this names it. Paired with that point's `on:`, it is how a part seated on a plug lands on the plug's rear face rather than inside it."
   },
   "mates": {
-   "$ref": "#/$defs/segment",
-   "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host."
+   "oneOf": [
+    {"$ref": "#/$defs/segment"},
+    {
+     "type": "array",
+     "minItems": 1,
+     "uniqueItems": true,
+     "items": {"$ref": "#/$defs/segment"}
+    }
+   ],
+   "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host. ONE INTERFACE, OR A LIST OF THEM for a part that seats in more than one kind of receptacle: a NEMA 5-15P goes into a 5-15R and into a 5-20R, a C14 plug into a C13 outlet and an Eaton C39. Each receptacle keeps its own interface because what each accepts differs, so the part names every one it seats in and is offered by a slot presenting any of them. A single interface and a one-item list say the same thing; write the single interface. One `mate` point serves every interface listed."
   },
   "optical": {
    "type": "object",

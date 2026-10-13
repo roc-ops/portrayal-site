@@ -18,7 +18,7 @@ import {trayRefusal, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
-import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey,
+import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
 import {portIdsOf} from './ports.js';
 import {validate, same} from './validate.js';
@@ -607,13 +607,18 @@ const lengthOf = l => (l ? {value: l.value, unit: l.unit ?? 'm', source: l.sourc
 // the address it stands for (cable-rules.js elementIdReason).
 const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); return e ? {error: `${elementIdReason(e.path)}.`} : null; };
 
-function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null}, {chassisOf}) {
+// A CABLE'S OWN COLOUR (`color`, #1028) is `#rgb` or `#rrggbb`, stored as
+// lower case `#rrggbb`; null or "" is none of its own. Anything else is
+// refused with cable-rules.js COLOR_REFUSED, here and in cable.update.
+function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, {chassisOf}) {
   if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
   const refused = endRefused([a, b]);
   if (refused) return refused;
+  const tint = parseColor(color);
+  if (!tint.ok) return {error: tint.reason};
   const can = canCable(rack, a, b, {uOf: heightOf(chassisOf)});
   if (!can.ok) return {error: can.reason};
-  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length)});
+  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length), color: tint.color});
   return done(next, `Added cable ${cableName(cable)}.`, {created: {id: cable.id}});
 }
 
@@ -638,11 +643,19 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   }
   const {straps: tie, ...fields} = p;
   const want = 'length' in fields ? {...fields, length: lengthOf(fields.length)} : {...fields};
+  // its own colour: a colour sets it, null or "" takes it off (updateCable)
+  if ('color' in want) {
+    const tint = parseColor(want.color);
+    if (!tint.ok) return {error: tint.reason};
+    want.color = tint.color;
+  }
   // the straps of this cable alone: null takes the key off, which is the default
   const untie = tie === null && 'straps' in c;
   if (tie != null) want.straps = {...(c.straps && typeof c.straps === 'object' ? c.straps : {}), ...tie};
   // A length named at all replaces one the loader kept as written.
-  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c));
+  // (and a colour named at all, one kept as written)
+  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c)
+    || (k === 'color' && 'colorAsWritten' in c));
   // AN END NAMED AT THE PORT IT IS ON may still state another plug (`plug`,
   // cable-rules.js endPlug), or none where it stated one: that is an edit of
   // the cable and not a move.
@@ -1138,7 +1151,8 @@ const CABLE_FIELDS = {
   media: {enum: ['', ...MEDIA], description: `The cable type: ${MEDIA.join(', ')}, or "" for not known.`},
   purpose: {type: 'string', description: 'What the cable is for, in a word or two (e.g. uplink, management).'},
   label: {type: 'string', description: 'The text on its tags. Its id is used when there is none.'},
-  length: LENGTH};
+  length: LENGTH,
+  color: {type: ['string', 'null'], description: 'Its own color, as # and three or six hex digits (e.g. #2bb3c8); null for none of its own, so that its ends, its type or its media decide.'}};
 const WAYPOINT = {type: 'object', additionalProperties: false,
   description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
   properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
@@ -1242,7 +1256,7 @@ export const COMMANDS = {
     args: args(['id'], {id: ID('part beside the rack')})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
-  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label or length, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
+  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
     args: args(['id'], {id: ID('cable'), a: {...END, description: 'Move end A to this port; left where it is when left out.'},
       b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS, straps: CABLE_STRAPS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},

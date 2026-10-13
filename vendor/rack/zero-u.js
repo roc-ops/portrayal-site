@@ -101,6 +101,9 @@ export function runsThrough(waypoints, z, chassisOf) {
 // The connectors registry states no tolerance for any mounting interface
 // today, so this is the 1 mm the design gives for one that states none.
 export const HANG_TOL_MM = 1;
+// A mount point's `mates` is one interface or a list of them (the component
+// schema allows both, #1045): does it name this one?
+const matesIface = (m, iface) => (Array.isArray(m.mates) ? m.mates.includes(iface) : m.mates === iface);
 const round1 = v => Math.round(v * 10) / 10;
 const round2 = v => Math.round(v * 100) / 100;
 const factsOf = (z, ctx) => (typeof ctx?.slotsOf === 'function' ? configFacts(ctx.slotsOf(z.ref), z.cfg) : null);
@@ -123,7 +126,7 @@ export function fitsHang(rack, z, ctx) {
   const slots = [];
   for (const b of brackets) {
     const f = factsOf(b, ctx);
-    const offers = (f?.slots || []).filter(s => points.some(m => m.mates === s.interface));
+    const offers = (f?.slots || []).filter(s => points.some(m => matesIface(m, s.interface)));
     if (!offers.length) return {ok: false, reason: notBracket(b.id)};
     for (const s of offers) slots.push({id: b.id, interface: s.interface, h: (Number(b.offsetMm) || 0) + s.at});
   }
@@ -131,11 +134,11 @@ export function fitsHang(rack, z, ctx) {
   if (other) return {ok: false, reason: `${brackets[0].id} is at ${brackets[0].at} and ${other.id} at ${other.at}; a PDU hangs on one upright.`};
   if (!points.length) return {ok: false, reason: `${zeroUName(z, ctx.chassisOf)} has no mount point to hang by.`};
   slots.sort((a, b) => a.h - b.h);
-  const base = slots.find(s => s.interface === points[0].mates);
+  const base = slots.find(s => matesIface(points[0], s.interface));
   const offset = base.h - points[0].at;
   for (const m of points) {
     const want = m.at + offset;
-    const near = slots.filter(s => s.interface === m.mates).reduce((n, s) => (Math.abs(s.h - want) < Math.abs(n.h - want) ? s : n));
+    const near = slots.filter(s => matesIface(m, s.interface)).reduce((n, s) => (Math.abs(s.h - want) < Math.abs(n.h - want) ? s : n));
     if (Math.abs(near.h - want) <= HANG_TOL_MM) continue;
     const name = zeroUName(z, ctx.chassisOf);
     if (points.length === 2 && ids.length === 2 && near.id !== base.id) {

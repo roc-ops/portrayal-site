@@ -157,7 +157,9 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
   };
   const part = (z, short, full = false) => [`${z.id}${short ? '' : ` ${z.label}`} ${whereText(rack, z, chassisOf)}`,
     ...(full ? [`${z.ref} ${z.cfg || '(no configuration)'}`] : [])].join(', ');
+  // its own colour, when it states one, after its media
   const cable = (c, full = false) => [`${c.id}: ${sideOf(c.a)} <-> ${sideOf(c.b)}`, ...(c.media ? [c.media] : []),
+    ...(typeof c.color === 'string' && c.color ? [c.color] : []),
     ...(full && c.purpose ? [c.purpose] : []), ...(full && lengthText(c.length) ? [lengthText(c.length)] : [])].join(', ');
 
   if (section != null || offset != null || limit != null) {
@@ -450,6 +452,8 @@ async function cableInfo(rack, cable, ctx) {
     }
   }
   return {kind: 'cable', id: cable.id, a: end(cable.a), b: end(cable.b), media: cable.media, purpose: cable.purpose, label: cable.label,
+    // its own colour (`cable.update` sets and clears it), when it states one
+    ...(typeof cable.color === 'string' && cable.color ? {color: cable.color} : {}),
     length: l ? {value: l.value, unit: l.unit ?? 'm', source: l.source ?? 'entered', ...(need != null ? {need} : {})} : null, routed, slack,
     ...(spareNote?.length ? {spare_findings: spareNote} : {}),
     // how it was laid by hand in a pathway, as the file has it (`cable.lay`)

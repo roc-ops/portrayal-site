@@ -16,6 +16,7 @@
 
 import {slotEnv, resolverFor, holdsAt, partOf, slotTree} from './slots.js';
 import {portPathOf, looseReason, isElementId, connectorOf, endKey, takesCableEnd, receptacleOf, endPlug, connectorName} from './cable-rules.js';
+import {hexColor} from './cable-geometry.js';
 
 const MODULE = '/module/';
 const OTHER = {front: 'rear', rear: 'front'};
@@ -193,6 +194,80 @@ export function portIdsOf(comp, compByRef) {
   return new Set([...list(comp?.cages).map(g => g.id), ...list(comp?.parts).map(q => q.id), ...Object.keys(comp?.bays || {}),
                   ...list(rear?.cages).map(g => g.id), ...list(rear?.parts).map(q => q.id)]);
 }
+
+// ── the jacket colour an end states (#1028) ─────────────────────────────
+// A cable is drawn in the jacket colour of its two seated ends when both
+// state one and they agree (cable-geometry.js agreedJacket). This says what
+// one end states.
+//
+// A DEFAULT IS NOT A STATEMENT. Every generic cable end declares the field
+// `jacket-color` with a default (`#1c1c1c` on most), which is what its stub is
+// drawn in when nobody has said anything. If that counted, every DAC, AOC and
+// power cord between two generic ends would turn black. So an end states a
+// jacket colour only when something says it of THAT end:
+//   1. the rack: `fields` of the item holds `jacket-color` for the part
+//      seated in the port (`<port>-occupant`), set by the `field` command or
+//      the page's form. A value set to the very colour of the default is
+//      stated all the same: somebody chose it.
+//   2. else the part: a maker's part that composes a generic end and gives
+//      its jacket a colour (`attrs` of the part, or of a part it composes,
+//      to any depth; siemon/qsfp28-aoc@1 states its aqua this way).
+// The declared default of a field is never read. A value that is no hex
+// colour states nothing the kit can draw, and it does not fall through to the
+// part's own: the rack said something else of that end.
+export const JACKET_FIELD = 'jacket-color';
+function partJacket(comp, compByRef, seen = new Set()) {
+  if (!comp || seen.has(comp)) return null;
+  seen.add(comp);
+  if (comp.attrs && Object.hasOwn(comp.attrs, JACKET_FIELD)) return hexColor(comp.attrs[JACKET_FIELD]);
+  for (const q of list(comp.parts)) {
+    if (q?.attrs && Object.hasOwn(q.attrs, JACKET_FIELD)) return hexColor(q.attrs[JACKET_FIELD]);
+    const under = partJacket(partOf(compByRef, q?.ref), compByRef, seen);
+    if (under) return under;
+  }
+  return null;
+}
+// The jacket colour the part seated at a cable end states, as `#rrggbb`, or
+// null: nothing is seated in the port, the catalogue was not loaded or does
+// not know the part, or nothing states a colour of it. `ctx` is
+// {slotsOf, compByRef}, what `loadSlots` returns. `kept`, a Map, holds what
+// each item seats from one end to the next (jacketsFor passes one): a device
+// of sixty cabled ports is then read once and not sixty times.
+function seatsOf(item, ctx, kept) {
+  if (kept?.has(item)) return kept.get(item);
+  const slots = ctx.slotsOf(item.ref);
+  const seats = !slots || slots.error ? null : resolverFor(slotEnv(item, slots, ctx.compByRef), item.swaps || {});
+  kept?.set(item, seats);
+  return seats;
+}
+export function seatedJacket(item, end, ctx, kept = null) {
+  if (!item || !loaded(ctx)) return null;
+  const port = portPathOf(end?.path ?? '');
+  if (!port || isElementId(port)) return null;
+  const path = `${port}-occupant`;
+  const ref = seatsOf(item, ctx, kept)?.refAt(path);
+  if (!ref) return null;
+  const set = item.fields?.[path];
+  if (set && typeof set === 'object' && Object.hasOwn(set, JACKET_FIELD) && set[JACKET_FIELD] != null && set[JACKET_FIELD] !== '')
+    return hexColor(set[JACKET_FIELD]);
+  return partJacket(partOf(ctx.compByRef, ref), ctx.compByRef);
+}
+// One end of a rack's cable, with what a page read laid over the catalogue.
+// A PAGE SAYS WHAT IT READ by a `jacket` key on that end's entry of its cable
+// facts (`ends`, the Map `cableFacts(rack).ends` is: endKey -> {info, reason,
+// jacket}): a colour, or null for an end it found bare. Where the key is
+// there, it stands, since a page can see a part the rack file does not name
+// (a plug it seats for the cable). Where it is not, the catalogue answers
+// (seatedJacket). `parts` is {slotsOf, compByRef}.
+export function jacketAt(rack, end, {ends = null, parts = null} = {}, kept = null) {
+  const got = ends?.get?.(endKey(end));
+  if (got && Object.hasOwn(got, 'jacket')) return hexColor(got.jacket);
+  return seatedJacket((rack.items || []).find(i => i.id === end?.item) || null, end, parts, kept);
+}
+// The `jacketOf` reader the plans and the exports take (cable-rules.js
+// colorFacts): end -> the jacket colour it states, or null. Made for one
+// rack as it is, and made anew for the next: it keeps what each item seats.
+export const jacketsFor = (rack, facts = {}) => { const kept = new Map(); return end => jacketAt(rack, end, facts, kept); };
 
 // ── the panels this configuration shows ─────────────────────────────────
 // `configs.json` lists the bays and cages of EVERY panel the device has, each
