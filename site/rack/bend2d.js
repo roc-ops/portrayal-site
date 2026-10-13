@@ -26,7 +26,7 @@ export function arcPath(pts, R, rings = null, {lead = 4} = {}) {
   for (let k = 1; k < P.length - 1; k++) {
     const c = cuts[k];
     if (!c) { d += ` L${n2(P[k][0])} ${n2(P[k][1])}`; continue; }
-    corners.push({k, at: P[k], theta: c.theta, drawn_mm: Math.round(c.drawn * 10) / 10, short_mm: c.short});
+    corners.push({k, at: P[k], theta: c.theta, drawn_mm: Math.round(c.drawn * 10) / 10, short_mm: c.short, cut_mm: c.t, d1: c.d1, d2: c.d2});
     d += ` L${n2(c.i[0])} ${n2(c.i[1])}${arcTo(c)}`;
   }
   if (P.length > 1) d += ` L${n2(P[P.length - 1][0])} ${n2(P[P.length - 1][1])}`;

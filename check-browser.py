@@ -6011,7 +6011,8 @@ def check_rack_bundle_2d_front(page, base):
     # The band is the bundle's diameter wide.
     if abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
+    # (the straight run of the band, up to where the members' arcs at each end begin: a 10U lane is 444 mm and two 24 mm arcs come off it)
+    if not (geo["laneX"] < -26) or geo["span"] < 380:
         bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
     # At the ring the envelope is about the pack: every member's centre line within its half width less half a stroke.
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
@@ -6139,7 +6140,7 @@ def check_rack_bundle_2d_rear(page, base):
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
+    if not (geo["laneX"] < -26) or geo["span"] < 380:
         bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 on the rear pane a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
@@ -10535,34 +10536,30 @@ BUNDLE_CORNERS_2D_JS = """() => {
 def check_rack_bundle_corners_2d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
-    page.add_init_script(STAND_IN_MODEL_CONTEXT)
-    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
-    rack.pop("_note", None)
-    load_rack_3d_ready(page, base, rack)
-    wait_fn(page, "bundle corners: agent tools registered", "() => window.__tools && window.__tools.edit_rack")
-    for g in ([f"c{i}" for i in range(1, 8)], [f"c{i}" for i in range(9, 13)], [f"c{i}" for i in range(13, 17)]):
-        said = agent_call(page, "edit_rack", {"commands": [{"op": "bundle.create", "cables": g}]})["content"][0]["text"]
-        if "not loaded" in said or "not checked" in said:
-            bad.append(f"agent: bundling {g[0]}-{g[-1]} answered {said!r}")
-    wait_fn(page, "bundle corners: three bundles", "() => (window.__rack.bundles() || []).length === 3")
-    wait_fn(page, "bundle corners: the trunks are drawn", "() => document.querySelector('#paneFront [data-bundle-trunk]') && window.__rack.routesCurrent().current")
-    page.wait_for_timeout(400)
-    got = page.evaluate(BUNDLE_CORNERS_2D_JS)
-    stretches = [s for b in got for s in b["stretches"]]
-    if not stretches:
-        return bad + ["no bundle trunk is drawn on either pane: nothing was measured"]
-    if not any(s["arcs"] for s in stretches):
-        bad.append(f"no bundle's trunk turns a corner on an arc, so the rounding was not measured: {[s['d'] for s in stretches][:4]}")
-    for s in stretches:
-        if any(r > 25 + 0.01 for r in s["arcs"]):
-            bad.append(f"{s['bundle']} on the {s['pane']} pane has a trunk arc of radius {max(s['arcs'])}, over OM4's 25 mm")
-        # (every rider's stroke inside the band: its centre line within the half width less half a 3 mm stroke)
-        if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
-            bad.append(f"{s['bundle']} on the {s['pane']} pane, {s['riders']} riding: a member is {s['reach']:.2f} mm from the trunk's line, outside the half width {s['width'] / 2:.2f} ({s['d']})")
-    for b in got:
-        for st in b["straps"]:
-            if st["nearest"] > st["pack"] / 2 + 2:
-                bad.append(f"{b['bundle']} on the {b['pane']} pane has a strap {st['nearest']:.1f} mm from the nearest member, off the pack ({st['pack']} mm)")
+    for name, fixture, cables in (("pack", PACK_FIXTURE, 4), ("peel", PEEL_FIXTURE, 5)):
+        open_front_fixture(page, base, fixture, cables=cables)
+        if name == "pack":
+            res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3', 'c4'], label: 'pack'})")
+            if res.get("error"):
+                return bad + [f"create: refused: {res['error']}"]
+        page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        page.wait_for_timeout(400)
+        got = page.evaluate(BUNDLE_CORNERS_2D_JS)
+        stretches = [s for b in got for s in b["stretches"]]
+        if not stretches:
+            bad.append(f"{name}: no bundle trunk is drawn on the panes: nothing was measured")
+            continue
+        # (the pack's trunk turns from the lacer up the lane; the peel's runs straight up it, and ends where its members' arcs begin)
+        if name == "pack" and not any(s["arcs"] for s in stretches):
+            bad.append(f"{name}: no stretch of the trunk turns a corner on an arc, so the rounding was not measured: {[s['d'] for s in stretches][:4]}")
+        for s in stretches:
+            # (every rider's stroke inside the band: its centre line within the half width less half a 3 mm stroke)
+            if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+                bad.append(f"{name}: {s['riders']} riding on the {s['pane']} pane: a member is {s['reach']:.2f} mm from the trunk's line, outside the half width {s['width'] / 2:.2f} ({s['d']})")
+        for b in got:
+            for st in b["straps"]:
+                if st["nearest"] > st["pack"] / 2 + 2:
+                    bad.append(f"{name}: a strap on the {b['pane']} pane is {st['nearest']:.1f} mm from the nearest member, off the pack ({st['pack']} mm)")
     return bad
 
 

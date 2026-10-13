@@ -176,7 +176,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       const via = link.via2d?.[view], rings = link.rings2d?.[view];
       // via2d = [] is the kit's free span with no point between the plugs (a
       // straight run, cable-view.js freeSpan2d); no via2d at all is the old hang.
-      stroke(g, via?.length ? arcPath([a, ...via, b], bendOf(link), rings ? [null, ...rings, null] : null).d
+      stroke(g, via?.length ? bent(rec, [a, ...via, b], bendOf(link), rings ? [null, ...rings, null] : null)
         : via ? `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`
         : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
     } else if (otherHere || farLoose(i, otherSide)) {
@@ -208,7 +208,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
         const rv = link.rings2d?.[view], rings = rv && (landedSide === 'from' ? rv : reverseMarks(rv));
         const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
         column.push({rec, want: last[1], lane: dir, place: y => {
-          stroke(g, arcPath([a, ...v], bendOf(link), rings ? [null, ...rings] : null).d, color, WIDTH);
+          stroke(g, bent(rec, [a, ...v], bendOf(link), rings ? [null, ...rings] : null), color, WIDTH);
           return tag([last[0] + dir * 6, y], other, link);
         }});
       } else column.push({rec, want: a[1] + 30, place: y => {
@@ -242,6 +242,14 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
   drawn.sort((a, b) => b.top - a.top);
   for (const {g} of drawn) layer.append(g);
   return out;
+}
+
+// A routed cable's path, and its corners kept on its record (`rec.corners`, as
+// arcPath gives them) for a bundle's trunk to turn where its members do.
+function bent(rec, pts, R, rings) {
+  const {d, corners} = arcPath(pts, R, rings);
+  rec.corners = corners;
+  return d;
 }
 
 // Which ends of the plan do not land on `view`'s drawing: [[linkIndex,
