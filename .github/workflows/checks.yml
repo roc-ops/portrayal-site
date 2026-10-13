@@ -61,41 +61,55 @@ jobs:
       - name: the site's pure modules
         run: node --test tests/*/*.test.mjs
 
-  # THE PAGES, opened - in four jobs at once. As one job on a 2-CPU runner the
+  # THE PAGES, opened - in five jobs at once. As one job on a 2-CPU runner the
   # pass had grown to twenty minutes and into its own timeout; no check in it
   # waits on another, so check-browser.py deals them into shards balanced by
-  # how long each takes (see THE SHARDS there) and each job runs one.
+  # how long each takes (see THE SHARDS there, and tools/shard-weights.py for
+  # how the seconds it deals by are measured) and each job runs one. Four
+  # shards of measured time were still about a quarter of an hour each, too
+  # close to the timeout below; five are about twelve minutes of checks.
   #
   # The list below and the n after the slash say the same thing twice, and
   # check-contract.py fails if they stop agreeing - a shard nobody runs is a
-  # quarter of the checks gone quiet. fail-fast is off because a cancelled
+  # fifth of the checks gone quiet. fail-fast is off because a cancelled
   # shard says nothing about its checks, and one red shard is not the whole
   # answer to what a commit broke.
   browser:
-    name: browser (${{ matrix.shard }} of 4)
+    name: browser (${{ matrix.shard }} of 5)
     runs-on: ubuntu-latest
-    # The slowest shard measures about five minutes; the stage rail alone is
-    # most of one and cannot be split.
+    # PLAYWRIGHT'S OWN IMAGE, so there is no browser to install: Chromium, the
+    # system libraries it needs, Python 3.12 and the playwright package come in
+    # it, all at 1.63.0 - the tag is the pin, and the first step below fails the
+    # job if the package in it is ever not that. It replaces a step that
+    # pip-installed Playwright, apt-installed its libraries and downloaded a
+    # browser, about half a minute in every job. The image runs as root, which
+    # is what Playwright's image expects; --ipc=host is what its documentation
+    # asks of Chromium, whose 3D pages would otherwise share the 64 MB /dev/shm
+    # a container gets by default.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.63.0-noble
+      options: --ipc=host
+    # The slowest shard is about twelve minutes of checks; the stage rail alone
+    # is most of five and cannot be split.
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with: {fetch-depth: 1}
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
-        with: {python-version: '3.12'}
-
-      - name: install a browser
+      # No setup-python: the image's own python3 is the interpreter, and this
+      # prints which, so a run log says what the checks ran under.
+      - name: the interpreter and Playwright, as the image has them
         run: |
-          python3 -m pip install --disable-pip-version-check playwright
-          python3 -m playwright install --with-deps chromium
+          python3 --version
+          python3 -c "import importlib.metadata as m; v = m.version('playwright'); print('playwright', v); assert v == '1.63.0', v"
 
       # check-browser.py starts its own serve.py on a free port, so there is
       # nothing to start or stop around it here.
       - name: the pages, and the marks harness
         run: |
           echo "runner: $(nproc) CPUs, $(free -m | awk '/Mem:/ {print $2}') MB"
-          python3 check-browser.py --shard ${{ matrix.shard }}/4
+          python3 check-browser.py --shard ${{ matrix.shard }}/5
