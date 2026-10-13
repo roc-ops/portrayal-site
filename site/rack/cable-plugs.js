@@ -133,8 +133,9 @@ export async function cableFacts(rack, extra = []) {
   const hasCable = new Set(cabled.map(endKey));
   // The parts lists, for the kit to judge an end on a slot of its own (a power
   // inlet, a PDU outlet) that the panel shows and no port is at.
-  const {slotsOf, compByRef} = await loadSlots(DIST, [...new Set(ends.map(e => items.get(e.item)?.ref).filter(Boolean))]);
-  const kitCtx = {slotsOf, compByRef, drawnAt};
+  // Read only when an end needs it, and after its panel: a panel that fails to load must fail as it did.
+  let kit = null;
+  const kitCtx = async () => kit ??= {...await loadSlots(DIST, [...new Set(ends.map(e => items.get(e.item)?.ref).filter(Boolean))]), drawnAt};
   for (const end of ends) {
     const k = endKey(end);
     if (out.ends.has(k)) continue;
@@ -146,9 +147,10 @@ export async function cableFacts(rack, extra = []) {
     // A SLOT A CABLE LANDS ON THAT IS NOT A PORT (cable-rules.js cableLandsOn):
     // the kit answers what the end is, and the plug it takes is derived.
     if (item && panel && !got.reason && !got.facts.port) {
-      ans = settleEnd(rack, end, ans, kitCtx) ?? ans;
+      const ctx = await kitCtx();
+      ans = settleEnd(rack, end, ans, ctx) ?? ans;
       if (ans.facts?.slot)
-        seats = plugSeats(end.path, panel.slots, item.swaps || {}, {cls: got.cls, compByRef, plug: end.plug});
+        seats = plugSeats(end.path, panel.slots, item.swaps || {}, {cls: got.cls, compByRef: ctx.compByRef, plug: end.plug});
     }
     out.ends.set(k, ans);
     // seats is keyed by ITEM, as item.swaps is: a front-panel end's plugs and a

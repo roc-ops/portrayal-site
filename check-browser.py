@@ -14444,7 +14444,7 @@ FORM_JS = """async (opts) => {
 }"""
 
 
-@extra("rack.html: the cable form offers the eight media, warns on a mismatch without blocking, and checks the length")
+@extra("rack.html: the cable form offers the ten media (power and ground too), warns on a mismatch without blocking, and checks the length")
 def check_rack_cable_form(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14467,7 +14467,7 @@ def check_rack_cable_form(page, base):
     if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
         bad.append("cable form: the two ends are not named")
     values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
-    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc"]:
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground"]:
         bad.append(f"cable form: the media offered are {values}")
     if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
         bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")
