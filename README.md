@@ -144,7 +144,7 @@ refresh should run anywhere a build does.
 |---|---|---|---|
 | `check-contract.py` | yes, seconds | yes | any time |
 | `node --test tests/*/*.test.mjs` | yes, under a second | yes | any time |
-| `check-browser.py` | only with `PORTRAYAL_HOOK_BROWSER=1` | yes, four shards | your change's own `--only` checks, or the whole pass |
+| `check-browser.py` | only with `PORTRAYAL_HOOK_BROWSER=1` | yes, five shards | your change's own `--only` checks, or the whole pass |
 
 Install the hook once per clone:
 
@@ -198,12 +198,13 @@ broken. The hook runs against your tree, where that file is sitting there
 working. The front page's hero was missing from every fresh clone for exactly
 that reason, and only the workflow saw it.
 
-The workflow runs the browser pass as four jobs at once, `python3
-check-browser.py --shard 1/4` to `4/4`, because one job on a two-CPU runner had
+The workflow runs the browser pass as five jobs at once, `python3
+check-browser.py --shard 1/5` to `5/5`, because one job on a two-CPU runner had
 reached twenty minutes. The shards are balanced by how long each check takes on
-CI, from the table at THE SHARDS in `check-browser.py`; a check not in the table
-is weighed as a short one, so a new check needs no entry. `python3
-check-browser.py --plan 4` prints who runs what. The contract check fails if
+CI, from the table at THE SHARDS in `check-browser.py` (measured from green runs
+by `python3 tools/shard-weights.py --write <run id> ...`); a check not in the
+table is weighed as a short one, so a new check needs no entry. `python3
+check-browser.py --plan 5` prints who runs what. The contract check fails if
 the shards ever stop covering every check exactly once, or if the workflow
 stops asking for all of them. Without `--shard` the script runs everything, as
 the hook does when asked.

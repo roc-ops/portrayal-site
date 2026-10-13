@@ -48,7 +48,7 @@ import {isZeroUPart, itemBox} from '../../vendor/rack/fit.js';
 import {colorOf, WIDTH} from '../../vendor/rack/cable-geometry.js';
 import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
-import {svgEl} from './dom.js';
+import {svgEl, importDrawingNode} from './dom.js';
 import {elevationBox} from './elevation.js';
 import {bundleSummary, drawnDiameter, TIE_HALF, tieCentre, trunkSpanPoints, alongLine, offLine} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
@@ -163,7 +163,7 @@ export async function drawSideElevation({rack, items, zeroU = [], pane = 'left',
   const adopt = (g, root) => {
     for (const kid of [...root.childNodes]) {
       if (kid.nodeName === 'style') { if (styled) continue; styled = true; }
-      g.append(document.importNode(kid, true));
+      g.append(importDrawingNode(kid) ?? []);
     }
   };
   // One part's group: its drawing in its box, or a dashed outline saying the drawing is missing.

@@ -18,6 +18,17 @@ export const svgEl = (tag, attrs = {}) => {
   return n;
 };
 
+// A compiled drawing's child, imported for the stage WITHOUT its native
+// <title>s: they name parts by drawing id ("port-24--jack"), and a hover on a
+// jack under a cable showed one as a browser tooltip (#186). Null for a
+// title that is itself a child of the drawing.
+export const importDrawingNode = kid => {
+  if (kid.nodeName === 'title') return null;
+  const n = document.importNode(kid, true);
+  if (n.querySelectorAll) for (const t of n.querySelectorAll('title')) t.remove();
+  return n;
+};
+
 // A client (screen) point mapped into an <svg>'s own user-space y - shared by
 // drag.js (the pointer during a drag) and rack-page.js's onPaneClick (a click
 // on a through panel, to find the U under it).
