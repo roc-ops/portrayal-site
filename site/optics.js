@@ -128,6 +128,13 @@ const HEX = /^#[0-9a-f]{6}$/i;
 export function installOpticFields(shell) {
   const state = shell.state;
 
+  // THE KIT'S HIGHLIGHT PICKER listens for `input` alone (vendor/shell.js
+  // mountHl), so a picker that reports only when it closes changes nothing.
+  // Replay its close as the `input` it waits for; a picker that sent both
+  // repeats a value already set.
+  document.querySelector('#hl input[type=color]')?.addEventListener('change', e =>
+    e.target.dispatchEvent(new Event('input', {bubbles: true})));
+
   function opticFields() {
     const box = shell.el.inspect;
     const pick = box?.querySelector('#optic');
@@ -162,14 +169,17 @@ export function installOpticFields(shell) {
       inp.type = colour ? 'color' : 'text';
       inp.value = cur[k] ?? f.default ?? '';
       if (!colour) inp.placeholder = 'none';
-      // A PICKER PAINTS AS IT IS MOVED. It sends `change` only when it is
-      // dismissed - on macOS, when the colour panel is closed - so a colour
-      // waiting for `change` showed nothing while the reader chose it. The
-      // kit's own highlight picker listens the same way; the 3D scene's
-      // setFields coalesces, so a drag of updates costs one repaint. Words
-      // still land on `change`, once they are typed.
-      if (colour) inp.oninput = () => shell.setFields(occ, {[k]: inp.value});
-      else inp.onchange = () => shell.setFields(occ, {[k]: inp.value});
+      // A PICKER PAINTS AS IT IS MOVED, AND WHEN IT CLOSES. Most send `input`
+      // while the reader drags and `change` only when it is dismissed, so a
+      // colour waiting for `change` showed nothing while the reader chose it;
+      // others send `change` alone, on close (a dialog confirmed with Enter),
+      // so a colour waiting for `input` showed nothing at all. Both are
+      // listened to: the 3D scene's setFields coalesces, so a drag of updates
+      // costs one repaint, and the closing `change` repeats the last value.
+      // Words land on `change`, once they are typed.
+      const write = () => shell.setFields(occ, {[k]: inp.value});
+      if (colour) { inp.addEventListener('input', write); inp.addEventListener('change', write); }
+      else inp.addEventListener('change', write);
       row.append(name, inp);
       wrap.appendChild(row);
     }

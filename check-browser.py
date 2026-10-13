@@ -4066,6 +4066,100 @@ def check_explorer_latch_colour_live(page, base):
     return bad
 
 
+# What a colour picker sends depends on the browser: most send `input` as the
+# reader drags and `change` when the panel closes; some (Safari's panel, a
+# dialog confirmed with Enter) send `change` alone, on close. The control is the
+# one on the full page's PORT inspector.
+PICKER_SEQUENCES = {
+    "drag then close": ["input #112233", "input #c22f2f", "change #c22f2f"],
+    "close only": ["change #c22f2f"],
+}
+PICKER_JS = """(i, steps) => {
+  for (const s of steps) {
+    const [type, colour] = s.split(' ');
+    i.value = colour;
+    i.dispatchEvent(new Event(type, {bubbles: true}));
+  }
+}"""
+LATCH_3D_JS = """(want) => { const v = window.__viewer; if (!v) return false;
+  const recs = [...(v.three.LOD || [])].filter(r => (r.svgText || '').includes('data-path="port-1-occupant"'));
+  return recs.length > 0 && recs.every(r => r.svgText.includes(`data-latch-color="${want}"`)); }"""
+
+
+def explorer_open_optic_picker(page, base):
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front&debug=1"
+              f"&swap=port-1~generic%2Fqsfp-lc%402", wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('.nm:text-matches("^port-1 —")')
+    return page.wait_for_selector('.optic-fields input[type=color]', timeout=READY_MS)
+
+
+@extra("Explorer's PORT latch colour picker paints 2D and 3D however the picker reports, and survives a reload and the link")
+def check_explorer_latch_picker_full(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    latch2d = "() => [...document.querySelectorAll('#shell svg [data-path=\"port-1-occupant\"] [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    painted = f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#c22f2f'); }}"
+    for name, steps in PICKER_SEQUENCES.items():
+        pick = explorer_open_optic_picker(page, base)
+        pick.evaluate(PICKER_JS, steps)
+        try:
+            wait_fn(page, f"explorer picker ({name}): 2D latch", painted)
+        except RuntimeError as e:
+            bad.append(str(e))
+        if "latch-color~%23c22f2f" not in page.url:
+            bad.append(f"explorer picker ({name}): the link does not carry the colour: {page.url}")
+        if not webgl_trouble(page):
+            page.click('#mode [data-mode="3d"]')
+            try:
+                wait_fn(page, f"explorer picker ({name}): 3D face", f"() => ({LATCH_3D_JS})('#c22f2f')")
+            except RuntimeError as e:
+                bad.append(str(e))
+        shared = page.url
+        page.goto(shared, wait_until="load")
+        page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+        try:
+            wait_fn(page, f"explorer picker ({name}): 2D latch after a reload on the link", painted)
+        except RuntimeError as e:
+            bad.append(str(e))
+    return bad
+
+
+@extra("Explorer: every colour control the page offers - each optic's colour fields and the highlight picker - takes a picker that reports only on close")
+def check_explorer_every_colour_swatch(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front", wait_until="load")
+    page.wait_for_selector('#shell svg [data-class="port"]', timeout=READY_MS)
+    # the highlight picker: the page's --hl is what it sets
+    page.eval_on_selector('#hl input[type=color]', PICKER_JS, ["change #12ab34"])
+    hl = page.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim()")
+    if hl.lower() != "#12ab34":
+        bad.append(f"explorer: the highlight picker, closed without an input, left --hl at {hl!r}")
+    page.click('.nm:text-matches("^port-1 —")')
+    page.wait_for_selector('#optic', timeout=READY_MS)
+    refs = page.eval_on_selector('#optic', "s => [...s.options].map(o => o.value).filter(Boolean)")
+    seen = set()
+    for ref in refs:
+        page.select_option('#optic', ref)
+        page.wait_for_function(
+            "r => document.querySelector('#optic')?.value === r", arg=ref, timeout=READY_MS)
+        page.wait_for_timeout(300)
+        n = page.eval_on_selector_all('.optic-fields input[type=color]', "ns => ns.length")
+        for i in range(n):
+            want = f"#{0x10 + len(seen):02x}{0xa0 + i:02x}c0"
+            seen.add((ref, i))
+            # the control is looked up again each time: a swap redraws the inspector
+            page.locator('.optic-fields input[type=color]').nth(i).evaluate(PICKER_JS, [f"change {want}"])
+            page.wait_for_timeout(100)
+            from urllib.parse import unquote
+            if f"~{want}" not in unquote(page.url):
+                bad.append(f"explorer: {ref} colour control {i} left {want} out of the link after a close-only picker")
+    if not seen:
+        bad.append("explorer: no optic offered a colour control, so nothing was checked")
+    return bad
+
+
 # A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
 # the C100G's empty base: the Explorer, Annotate and the showcase each open on
 # site/featured.js's FEATURED_DEVICE, in a configuration that is not a base,
