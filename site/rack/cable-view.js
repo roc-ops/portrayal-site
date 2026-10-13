@@ -159,6 +159,20 @@ export function pillText(text) {
   return cs.length > MAX_CHARS ? `${cs.slice(0, MAX_CHARS - 1).join('')}…` : String(text);
 }
 
+// A FREE SPAN'S POINTS on a front or rear pane: the kit's points between the
+// plugs (not the ports, nor the reach points, which stand off the face and so
+// fall on the ports from the front), through `place` (rack mm to pane space),
+// with any point on the last one dropped.
+function freeSpan2d(points, place) {
+  const out = [];
+  for (const q of points ?? []) {
+    if (q.at === 'a' || q.at === 'b' || q.at === 'reach') continue;
+    const p = place(q), last = out.at(-1);
+    if (!last || Math.abs(p[0] - last[0]) > 1e-6 || Math.abs(p[1] - last[1]) > 1e-6) out.push(p);
+  }
+  return out;
+}
+
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
 // `routes` is S.routes: its routes (cable id -> waypoints), the ring marks
 // for them (cable id -> one per waypoint, route.js ringMarks) and fill.
@@ -213,7 +227,16 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
       // A cable with no waypoints is still drawn round a body it would cross.
-      if (!ws || (!ws.length && !routes.detours?.get(link.id)?.length)) continue;
+      if (!ws) continue;
+      if (!ws.length && !routes.detours?.get(link.id)?.length) {
+        // A FREE SPAN (nothing to go round, portrayal-site#178) is drawn on the
+        // kit's own points, the span as it hangs and what its length is measured
+        // on, as the side panes and the 3D scene draw it; not on a sag of the
+        // site's own. Both ends on this pane, as for a routed cable's ends.
+        const kit = routes.paths?.get(link.id)?.points;
+        if (kit?.length && link.from[2] === pane && link.to[2] === pane) link.via2d = {[pane]: freeSpan2d(kit, detourAt)};
+        continue;
+      }
       const marks = routes.marks?.get(link.id);
       const turned = marks?.length === ws.length ? paneMarks(marks, pane) : null;
       // One offset per cable and lane, so its own run up the lane is vertical.
