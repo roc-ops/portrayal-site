@@ -10254,6 +10254,53 @@ def check_rack_unrouted_hang_2d(page, base):
     return bad
 
 
+CORD_WIDTH_JS = """(panes) => {
+  const out = {};
+  for (const pane of panes) for (const g of document.querySelectorAll(`svg[data-pane="${pane}"] [data-cables] [data-cable-id], svg[data-pane="${pane}"] [data-cables] [data-link-index]`)) {
+    const id = g.dataset.cableId ?? `link${g.dataset.linkIndex}`;
+    // the cable's main stroke is the last path its group draws, the outline the one before it
+    const ps = [...g.querySelectorAll('path')].filter(n => !n.dataset.leader && n.getAttribute('stroke-width'));
+    const p = ps.at(-1);
+    if (p) out[`${pane}:${id}`] = {media: g.dataset.media, w: +p.getAttribute('stroke-width'), outline: +ps.at(-2)?.getAttribute('stroke-width')};
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a power cord is drawn at its cable type's diameter - 7.1 mm for the C13 cord, 7.9 mm for a C19 - in Front / Rear and Left / Right, and every other cable keeps 3 mm (kit 0.34.0 widthOf)")
+def check_rack_cord_width(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    for typ, want in ((None, 7.1), ("power-c19", 7.9), ("power-c13", 7.1)):
+        rack = json.loads(json.dumps(CABLE_FIXTURE["racks"][0]))
+        cord = next(c for c in rack["cables"] if c["id"] == "c2")      # an RJ45 cable between two devices
+        cord["media"] = "power"
+        if typ:
+            cord["type"] = typ
+        page.evaluate("r => window.__rack.replaceRack(r)", rack)
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables] [data-link-index]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        got = {"front": page.evaluate(CORD_WIDTH_JS, ["front", "rear"])}
+        page.click('#view2d [data-view="sides"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"left\"] [data-cables] [data-cable-id]')", timeout=READY_MS)
+        got["sides"] = page.evaluate(CORD_WIDTH_JS, ["left", "right"])
+        page.click('#view2d [data-view="faces"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables]')", timeout=READY_MS)
+        for view, rows in got.items():
+            cords = [(k, r) for k, r in rows.items() if r["media"] == "power"]
+            if not cords:
+                bad.append(f"{view}, type {typ}: no power cord is drawn: {sorted(rows)}")
+            for k, r in cords:
+                if abs(r["w"] - want) > 0.01 or abs(r["outline"] - (want + 1.2)) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} is drawn {r['w']} wide with an outline {r['outline']}; expected {want} and {want + 1.2:.1f}")
+            for k, r in rows.items():
+                if r["media"] != "power" and abs(r["w"] - 3) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} ({r['media']}) is drawn {r['w']} wide; every other cable keeps 3")
+    return bad
+
+
 @extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
 def check_rack_unrouted_hang_3d(page, base):
     bad = []
