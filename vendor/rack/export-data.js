@@ -6,7 +6,7 @@
 // fetching and drawing, and ask here.
 
 import {positionOf, uLabel, zeroUOf, bundlesOf, bundleName, firstU, railWidth, RAIL_WIDTH_IN, holderOf, rollOf} from './model.js';
-import {routeText, trunkRoute} from './route.js';
+import {routeText, trunkRoute, FILL_LIMIT} from './route.js';
 import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMeet, isQuarter} from './fit.js';
 import {zeroUEntries, whereText, hungText} from './zero-u.js';
 import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts} from './bundles.js';
@@ -304,7 +304,7 @@ function spareCells(rack, c, s) {
 // of the render (`ctx`: {route, diameterOf?, bendOf?}, as bundleCheck takes
 // it). One record per bundle, in the rack's order:
 //   {id, number, label, name, members: [cable ids], drawn, checked,
-//    length_m, every: {value, unit} | null, straps, size_mm, limit_mm,
+//    length_m, straight, few, every: {value, unit} | null, straps, size_mm, limit_mm,
 //    limit_at, limit_estimated, bend_mm, bend_by, bend_checked, warnings, notes}
 // `name` is what a tag prints (the label, else "Bundle N"), with control
 // characters as spaces; `number` and `label` are the bundle's own, for label
@@ -323,7 +323,11 @@ export function bundleExports(rack, ctx = {}) {
     const size = check.size, bend = check.bend;
     return {id: b.id, number: b.number, label: b.label || '', name: flat(bundleName(b)),
             members: b.members.map(m => m.cable), drawn, checked: !!check.checked,
-            length_m: len ? len.metres : null, every: strapSpacing(b),
+            length_m: len ? len.metres : null,
+            // where the length and the straps are an estimate for want of a cable's path (bundles.js):
+            // `straight`, measured along the straight line between waypoints, the shortest it could be;
+            // `few`, measured on fewer than half of the riders, which can be over. The notes say it too.
+            straight: !!(len?.straight || (drawn && st?.straight)), few: !!(len?.few || (drawn && st?.few)), every: strapSpacing(b),
             straps: !check.checked ? null : drawn ? (st ? st.count : null) : 0,
             // the three kinds, which `straps` is the sum of (bundles.js straps)
             strap_kinds: check.checked && drawn && st ? {...st.kinds} : null,
@@ -1129,11 +1133,11 @@ export function hardwareNotes(frame) {
 // cable-plugs.js read it (`ends`, as for cableFindings); the two ends are
 // said in one order, so A-to-B and B-to-A are one line. The plugs a cable is
 // drawn with are part of the cable: they are never lines of their own.
-const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC'};
+const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC', power: 'power', ground: 'ground'};
 const familyOf = info => (info && Object.hasOwn(FAMILY, info.family ?? '') ? FAMILY[info.family] : null);
 // WHAT THE LAY FINDS FOR ONE CABLE, as sentences for a notes cell (#1007):
 // its tight bends in one sentence (route.js bendFindings: the one finding's
-// own, or how many corners and the tightest of them), then the ports its
+// own, or how many bends and the tightest of them), then the ports its
 // spans cross in front of (coverFindings, #1013). `bends` and `covers` are
 // those lists for the whole rack, or null.
 export function layNotesOf(cableId, {bends = null, covers = null} = {}) {
@@ -1143,8 +1147,10 @@ export function layNotesOf(cableId, {bends = null, covers = null} = {}) {
   else if (tight.length) {
     const worst = tight.reduce((m, f) => (f.short_mm > m.short_mm ? f : m));
     const rest = worst.text.startsWith(`${cableId} `) ? worst.text.slice(cableId.length + 1) : worst.text;
-    out.push(`${cableId} has ${tight.length} corners with less room than the cable needs; the tightest ${rest}`);
+    out.push(`${cableId} has ${tight.length} bends with less room than the cable needs; the tightest ${rest}`);
   }
+  // what would give a lead its room (route.js bendFindingsOf `advice`, #1026), each said once
+  for (const said of new Set(tight.map(f => f.advice).filter(Boolean))) out.push(said);
   for (const f of covers || []) if (f.cable === cableId && f.text) out.push(f.text);
   return out;
 }
@@ -1176,16 +1182,44 @@ export function cableBomNotes(rack, ends = new Map(), {spare = null} = {}) {
   if (spare?.bom) out.push(spare.bom);
   return out;
 }
+// WHERE A MANAGER IS, after its name in a warning (#1032): two managers of
+// one model carry one label, and a line that does not say which is one line
+// for both. A rack-face part and a duct on the rails by U and face; a part
+// beside the rack by its attachment point. Nothing for an id the rack lacks.
+// The U is the one managerNotes gives a rack-face part (it sits on one whole
+// unit) and the device import gives any other; `chassisOf` answers its height.
+function placeOf(rack, id, chassisOf = () => null) {
+  const it = rack.items.find(i => i.id === id);
+  if (it) return ` (U${chassisOf(it.ref)?.mount === 'rack-face' ? positionOf(rack.frame, it.ru, 1) : uOfItem(rack.frame, it, chassisOf)} ${it.face})`;
+  const z = zeroUOf(rack).find(o => o.id === id);
+  return z ? ` (at ${z.at})` : '';
+}
+// A pathway as a warning names it: `guide-3` is the third ring (route.js
+// bodyFindings says it so); any other id, a duct's, as it is.
+const viaText = via => (/^guide-(\d+)$/.test(via) ? `ring ${via.slice(6)}` : via);
 // What the routes add to an export's notes: a pathway filled past its limit, a
-// manager with more cables through it than it states, and a stored waypoint
-// that no longer resolves. `facts` is route-context.js routeFacts (or null).
+// manager with more cables through it, of the kind its maker counted or
+// thicker, than its maker states (route.js capacityOver), and a stored
+// waypoint that no longer resolves. `facts` is
+// route-context.js routeFacts (or null); its `ctx`, where it carries one,
+// gives each manager's height for its U.
+// THE FILL IS A SHARE OF THE LIMIT, and the limit a share of the opening
+// (route.js FILL_LIMIT): the note says both, so 45% is not read as 45% of the
+// opening. A ring at 100% holds what 40% of its opening takes.
 export function fillNotes(rack, facts, nameOf = id => id) {
   if (!facts) return [];
-  const out = [];
+  const out = [], limit = Math.round(FILL_LIMIT * 100);
+  const named = id => `${nameOf(id)}${placeOf(rack, id, facts.ctx?.chassisOf)}`;
   for (const f of facts.fill || [])
-    if (f.over) out.push(`${f.via} on ${nameOf(f.item)}: ${f.count} cables, ${f.percent}% of a 40% fill.`);
-  for (const o of facts.over || [])
-    out.push(`${nameOf(o.item)}: ${o.count} cables through it, more than its stated ${o.capacity}.`);
+    if (f.over) out.push(`${viaText(f.via)} on ${named(f.item)}: ${f.count} cables, ${f.percent}% of its fill limit; the limit is ${limit}% of the opening.`);
+  for (const o of facts.over || []) {
+    // the kind the count is stated for, and every cable at least as thick;
+    // where the entry names no kind (an older catalogue, or a kind this kit
+    // does not know), the note gives the diameter
+    const kind = o.media ? mediaLabel(o.media) : '', thick = kind ? `at least as thick as ${kind}` : `of ${o.diameter} mm or more`;
+    out.push(`${named(o.item)}: ${o.through > o.count ? `${o.count} of the ${o.through} cables through it are ${thick}` : `${o.count} cables ${thick} through it`}, ` +
+             `more than the ${o.capacity}${kind ? ` ${kind} ${o.capacity === 1 ? 'cable' : 'cables'}` : ''} its maker states.`);
+  }
   for (const c of rack.cables || [])
     for (const w of facts.routes?.get(c.id)?.gone || [])
       out.push(`Cable ${cableName(c)}: waypoint ${w.lane ? `${w.lane} U${uLabel(rack.frame, w.ru)}` : `${w.via} on ${nameOf(w.item)}`} is gone, so the route skips it.`);

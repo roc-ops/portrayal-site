@@ -621,7 +621,8 @@ function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = nu
 // label and length - and checks the new port as cable.add would, with the
 // cable itself out of the way. A route drawn by hand is kept, and said to be
 // possibly stale.
-const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front'});
+const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
+  ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
 function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
@@ -642,8 +643,12 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   if (tie != null) want.straps = {...(c.straps && typeof c.straps === 'object' ? c.straps : {}), ...tie};
   // A length named at all replaces one the loader kept as written.
   const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c));
-  if (!changed.length && !moved.length && !untie) return unchanged(rack);
-  let next = updateCable(rack, id, {...want, ...Object.fromEntries(moved.map(k => [k, ends[k]]))});
+  // AN END NAMED AT THE PORT IT IS ON may still state another plug (`plug`,
+  // cable-rules.js endPlug), or none where it stated one: that is an edit of
+  // the cable and not a move.
+  const plugged = ['a', 'b'].filter(k => !moved.includes(k) && (ends[k].plug ?? null) !== (c[k].plug ?? null));
+  if (!changed.length && !moved.length && !plugged.length && !untie) return unchanged(rack);
+  let next = updateCable(rack, id, {...want, ...Object.fromEntries([...moved, ...plugged].map(k => [k, ends[k]]))});
   if (untie) next = {...next, cables: next.cables.map(x => { if (x.id !== id) return x; const {straps: _s, ...rest} = x; return rest; })};
   const name = cableName(cableOf(next, id));
   const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.`);
@@ -1122,7 +1127,8 @@ const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom si
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
   description: 'One end of a cable: a port on a device.',
   properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
-               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."}}};
+               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
+               plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
   description: 'How long the cable is, or null for not known.',
   properties: {value: {type: 'number', exclusiveMinimum: 0, description: 'The length, above 0.'},

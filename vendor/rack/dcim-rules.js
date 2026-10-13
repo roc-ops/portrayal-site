@@ -238,7 +238,10 @@ export function moduleImportRows({target = 'netbox', parts, names, kept, deviceO
 // ── the cables file ─────────────────────────────────────────────────────
 // The Rack Builder's media as a DCIM's cable type. Both targets accepted each
 // of these and refused "os2". A media this page does not know, or none, is a
-// blank type: the column is optional.
+// blank type: the column is optional. `power` has no row yet: a power cable
+// whose two ends the type files name is written with a blank type, and one
+// whose ends they do not name is left out with that reason, as any cable is
+// (docs/cable-ends-design.md section 7).
 export const CABLE_TYPE = {os2: 'smf-os2', om3: 'mmf-om3', om4: 'mmf-om4', om5: 'mmf-om5', cat6: 'cat6', cat6a: 'cat6a',
                            dac: 'dac-passive', aoc: 'aoc'};
 export const cableType = media => (Object.hasOwn(CABLE_TYPE, media ?? '') ? CABLE_TYPE[media] : '');
@@ -335,6 +338,9 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     if (unchecked || !f.checked) why = ['its ends could not be checked'];
     else if (f.loose.length)
       why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
+    // A GROUND WIRE IS NEVER A ROW: neither target has a termination for a
+    // ground stud. It is left out by name, not by failing to find a port.
+    else if (c.media === 'ground') why = ['it is a ground wire, and a DCIM has no termination for a ground stud'];
     else {
       sides = [['A', c.a], ['B', c.b]].map(([side, end]) => {
         const device = names.get(end.item)?.name ?? '';

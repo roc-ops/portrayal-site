@@ -14,7 +14,11 @@ export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '
   // AOC dark grey, and a neutral grey for a cable whose media is not set.
   // Added keys only: colorOf, and every colour the showcase draws, are unchanged.
   om3: '#2bb3c8', om4: '#2bb3c8', om5: '#9acd32', cat6: '#5aa7ff', cat6a: '#5aa7ff',
-  dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad'};
+  dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad',
+  // A power cable is the black every cord end of the library is drawn in
+  // (`jacket-color`, #1c1c1c), so the cable carries on from its plug's stub.
+  // A ground wire is green; the shade is an estimate, no source is held.
+  power: '#1c1c1c', ground: '#3f9b4b'};
 // Own keys only: a hand-edited media or purpose named like something every
 // object has (toString, constructor, __proto__) is unknown, not a colour.
 const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);

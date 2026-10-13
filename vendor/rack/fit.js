@@ -10,7 +10,7 @@
 // passes through, so there a U is never shared.
 
 import {RU, OPENING, SIDES as RAILS} from './rails.js';
-import {uLabel, uText, isPosition, zeroUOf, zeroUBottom, zeroUOffset, SIDES, holderOf, holdersOf, railWidth, RAIL_WIDTH_IN, firstU, rollOf} from './model.js';
+import {uLabel, uText, isPosition, zeroUOf, zeroUBottom, zeroUBottomMm, zeroUOffset, SIDES, holderOf, holdersOf, railWidth, RAIL_WIDTH_IN, firstU, rollOf} from './model.js';
 
 // ── HEIGHTS, SPANS AND BOXES (docs/rack-file-v4-design.md section 2.4) ─────
 // PUBLIC: unitsOf, spanOf, itemBox, spanText (kit/README.md). The other names
@@ -179,6 +179,13 @@ export const zeroUUnits = c => (Number(c?.ru) >= 1 ? Math.round(c.ru)
 export const zeroUSpan = (z, chassisOf) => {
   const lo = zeroUBottom(z);
   return [lo, lo + zeroUUnits(chassisOf(z.ref)) - 1];
+};
+// THE UNITS ITS MILLIMETRES TOUCH, for the lane a cable runs down: a part at a
+// whole unit runs lo..lo+u-1 as zeroUSpan says, one hung between units also
+// touches the unit it overlaps. A label says zeroUSpan, the nearest unit.
+export const zeroUTouched = (z, chassisOf) => {
+  const [from, to] = zeroUExtent(z, chassisOf);
+  return [Math.floor(from / RU + 1e-6) + 1, Math.max(1, Math.ceil(to / RU - 1e-6))];
 };
 const uSpanText = (frame, lo, hi) => {
   const [a, b] = [uLabel(frame, lo), uLabel(frame, hi)].sort((x, y) => x - y);
@@ -589,7 +596,7 @@ export function shrinkRack(rack, newHeight, chassisOf) {
 // holder is not in the rack is refused until it is hung again or freed.
 const MM_EPS = 1e-6;
 export const zeroUExtent = (z, chassisOf) => {
-  const lo = Number(z?.offsetMm) || 0;
+  const lo = zeroUBottomMm(z);
   return [lo, lo + zeroUUnits(chassisOf(z.ref)) * RU];
 };
 export const notBracket = id => `${id} is not a bracket in this rack.`;

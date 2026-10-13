@@ -13,7 +13,7 @@
 // each placeable entry with what a drawing needs.
 
 import {RU, RAIL_W, OPENING} from './rails.js';
-import {isZeroUPart, zeroUUnits, zeroUSpan, zeroUSpanText, notBracket} from './fit.js';
+import {isZeroUPart, zeroUUnits, zeroUTouched, zeroUSpanText, notBracket} from './fit.js';
 import {zeroUOf, zeroUBottom, zeroUById, zeroUOffset, holdersOf, uLabel} from './model.js';
 import {configFacts} from './catalog.js';
 
@@ -66,7 +66,7 @@ export function zeroUEntries(rack, chassisOf) {
 export const carriesLane = c => isZeroUPart(c) && Object.values(c?.guides || {}).some(l => Array.isArray(l) && l.length);
 export function zeroUOnLane(rack, lane, ru, chassisOf) {
   return zeroUOf(rack).find(z => z.at === lane && carriesLane(chassisOf(z.ref))
-    && ru >= zeroUSpan(z, chassisOf)[0] && ru <= zeroUSpan(z, chassisOf)[1]) ?? null;
+    && ru >= zeroUTouched(z, chassisOf)[0] && ru <= zeroUTouched(z, chassisOf)[1]) ?? null;
 }
 // Its centre line across the rack, in mm from the rack's centre line, right as
 // seen from the front: outside the rail, the stand-off and half its width out.
@@ -78,7 +78,7 @@ export function zeroUX(z, chassisOf) {
 // Does a run of lane waypoints pass through a part? A waypoint on its lane at a
 // U it spans, or two in a row on its lane whose run crosses its span.
 export function runsThrough(waypoints, z, chassisOf) {
-  const [lo, hi] = zeroUSpan(z, chassisOf);
+  const [lo, hi] = zeroUTouched(z, chassisOf);
   return waypoints.some((w, k) => {
     if (w.lane !== z.at) return false;
     if (w.ru >= lo && w.ru <= hi) return true;

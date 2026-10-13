@@ -190,7 +190,11 @@ export const holdersOf = z => (plainObject(z?.heldBy) && Array.isArray(z.heldBy.
   ? z.heldBy.parts.filter(id => typeof id === 'string' && id) : []);
 // A part's bottom U and its offset, each from the other: U1 is offset 0.
 export const zeroUOffset = ru => Math.round((ru - 1) * RU * 100) / 100;
-export const zeroUBottom = z => Math.max(1, Math.round((Number(z?.offsetMm) || 0) / RU) + 1);
+// THE ONE OWNER OF A ZERO-U PART'S BOTTOM is `offsetMm`, in mm (version 4): fit,
+// the solids and so the routes read it here. `zeroUBottom` is the nearest U to
+// it, for a label or a lane waypoint, and is never drawn from.
+export const zeroUBottomMm = z => Math.max(0, Number(z?.offsetMm) || 0);
+export const zeroUBottom = z => Math.max(1, Math.round(zeroUBottomMm(z) / RU) + 1);
 
 export const updateItem = (rack, id, patch) =>
   ({...rack, items: rack.items.map(i => (i.id === id ? {...i, ...patch} : i))});
