@@ -340,9 +340,13 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     // solid body (kit 0.11.0, #949), so nothing pushes it about: clearOf is
     // for the hangs and the unplugged leads only, and a routed tube that
     // still meets metal is a drawing fault the browser check finds.
-    const routed = !dangling && wps.length > 0;
+    // The kit's FREE span (`got.free`: no waypoint, no detour) is drawn on the
+    // kit's points too, which are the span as it hangs and what its length is
+    // measured on (portrayal-site#178); it is not a routed cable.
+    const kitDrawn = !dangling && got?.kit === true;
+    const routed = !dangling && wps.length > 0 && !got?.free;
     let pts, bent = null, extended = null, reachGap = null;
-    if (routed && got?.kit) {
+    if (kitDrawn) {
       // THE KIT'S PATH (portrayal-site#166): its points are the drawing, from
       // each plug's reach point, which is where the tube leaves its connector
       // (route-context.js passes the plug's cable-point z as plugReachOf), so
@@ -376,7 +380,7 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
     for (const e of landed) if (e.points.length > 1) {
       // into where the tube starts: the kit's path starts at the pair's middle,
       // at the plugs' far end; an eased route starts at mergeOf
-      const kit = routed && got?.kit, m = kit ? pts[e === ends[0] ? 0 : pts.length - 1] : mergeOf(THREE, e);
+      const kit = kitDrawn, m = kit ? pts[e === ends[0] ? 0 : pts.length - 1] : mergeOf(THREE, e);
       for (const p of e.points) {
         const s = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
           kit ? [p, m] : [p, p.clone().addScaledVector(e.normal, 12), m]), 16, WIDTH * 0.3, 6, false), mat);

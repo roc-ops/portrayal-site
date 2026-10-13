@@ -10062,6 +10062,64 @@ def check_rack_bend_radius_3d(page, base):
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
     return bad
 
+UNROUTED_HANG_JS = """async () => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const paths = window.__rack.paths() || {};
+  const out = [];
+  for (const t of s.rackCables?.tubes ?? []) {
+    if (!t.mesh) continue;
+    const p = paths[t.link.id];
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    if (!p || !main) continue;
+    const reach = e => p.points.find(q => q.at === 'reach' && q.end === e);
+    const a = reach('a'), b = reach('b');
+    // the whole path, port to port: the length the kit gives counts each plug's leg
+    const inner = p.points;
+    let kit = 0;
+    for (let k = 1; k < inner.length; k++) kit += Math.hypot(inner[k].x - inner[k - 1].x, inner[k].y - inner[k - 1].y, inner[k].z - inner[k - 1].z);
+    out.push({id: t.link.id, routed: !!t.routed, kit, drawn: main.geometry.parameters.path.getLength(), reach: !!(a && b)});
+  }
+  return out;
+}"""
+# The tube starts at the plug's far end and the kit's path at the port, so the tube is
+# short of the path by the plug's body at each end (about 5 mm) and the arcs of its
+# corners; the old hang was 48 and 52 mm LONG on this rack.
+UNROUTED_HANG_TOL_MM = 16
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
+def check_rack_unrouted_hang_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    # two cords between the two switches with no manager in the rack: the kit
+    # gives them no waypoint and no detour
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the unrouted rack's scene", tubes=True)
+    got = {t["id"]: t for t in page.evaluate(UNROUTED_HANG_JS)}
+    for n in range(1, len(ends) + 1):
+        t = got.get(f"u{n}")
+        if not t or not t["reach"]:
+            bad.append(f"3D: u{n} has no tube or no kit reach points: {t}")
+            continue
+        if t["routed"]:
+            bad.append(f"3D: u{n} is drawn as a routed cable; the check wants an unrouted one")
+        if abs(t["drawn"] - t["kit"]) > UNROUTED_HANG_TOL_MM:
+            bad.append(f"3D: u{n}'s tube is {t['drawn']:.1f} mm long; the kit's path from port to port is {t['kit']:.1f} mm")
+    return bad
+
+
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
 def check_rack_cable_lay_pdu(page, base):
     bad = []
