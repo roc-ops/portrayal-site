@@ -2263,7 +2263,7 @@ if (PROBE) {
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, kinds: f.straps?.kinds ?? null, widths: f.straps?.widths ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
-      warnings: [...f.check.warnings], checked: f.check.checked})) : null),
+      warnings: [...f.check.warnings], checked: f.check.checked, bend_mm: f.check.bend?.radius_mm ?? null})) : null),
     // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
     anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
     tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),

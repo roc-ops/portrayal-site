@@ -5975,11 +5975,28 @@ BAND_GEO = """([pane, id]) => {
     }
     memberX[c] = best;
   }
-  return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
+  // the radius of the first arc in the trunk's own paths
+  const arc = /A([\\d.]+)[ ,]/.exec([...g.querySelectorAll('[data-bundle-trunk]')].map(p => p.getAttribute('d') || '').join(' '));
+  return {width: +band.getAttribute('stroke-width'), laneX, arcR: arc ? +arc[1] : null, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
           ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
           shown: getComputedStyle(g.querySelector('[data-envelope]')).visibility === 'visible',
           strapXs: [...s.querySelectorAll(`[data-strap="${id}"] > line:not([data-strap-least])[data-strap-part="core"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
 }"""
+
+
+def bundle_run_problems(geo, bend_mm, what):
+    """The band's straight run, from the lane and the bend radius: the 10U trunk
+    is 10 x 44.45 mm, and a turn of up to 90 degrees at each end takes at most
+    one radius R off it (R tan(theta/2) <= R), less 1 mm for rounding. The
+    trunk's arcs are the bundle's bend radius."""
+    bad = []
+    if not bend_mm or not geo["arcR"] or abs(geo["arcR"] - bend_mm) > 0.05:
+        bad.append(f"2D: {what} turns on arcs of radius {geo['arcR']}, not the bundle's bend radius {bend_mm} mm")
+        return bad
+    least = 10 * 44.45 - 2 * bend_mm - 1
+    if not (geo["laneX"] < -26) or geo["span"] < least:
+        bad.append(f"2D: {what} does not run up the gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']}, at least {least:.1f} for a lane less two {bend_mm} mm arcs)")
+    return bad
 
 
 @extra("rack.html: a bundle made from the cable list is drawn on the front pane as one band its size wide, with its straps, and a peeled cable leaves it (portrayal-site#142)")
@@ -6011,9 +6028,7 @@ def check_rack_bundle_2d_front(page, base):
     # The band is the bundle's diameter wide.
     if abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
-    # (the straight run of the band, up to where the members' arcs at each end begin: a 10U lane is 444 mm and two 24 mm arcs come off it)
-    if not (geo["laneX"] < -26) or geo["span"] < 380:
-        bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the band")
     # At the ring the envelope is about the pack: every member's centre line within its half width less half a stroke.
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
@@ -6140,8 +6155,7 @@ def check_rack_bundle_2d_rear(page, base):
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
-    if not (geo["laneX"] < -26) or geo["span"] < 380:
-        bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the rear band")
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 on the rear pane a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
     # Nothing is hovered or selected: the envelope is drawn, and hidden.
