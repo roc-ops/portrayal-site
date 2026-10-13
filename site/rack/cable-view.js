@@ -22,7 +22,7 @@ import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {paneMarks, landedBends, bendPoints} from './route-context.js';
+import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
@@ -340,7 +340,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     return t;
   };
   const recs = drawCables2d(svg, plan, pane, {
-    edgeX, outboard: rear ? -1 : 1,
+    edgeX, outboard: rear ? -1 : 1, widthOf: widthLookup(routes?.types?.diameterOf, cables),
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.

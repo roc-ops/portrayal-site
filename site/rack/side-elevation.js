@@ -45,7 +45,7 @@
 import {RU} from '../../vendor/rack/rails.js';
 import {uLabel} from '../../vendor/rack/model.js';
 import {isZeroUPart, itemBox} from '../../vendor/rack/fit.js';
-import {colorOf, WIDTH} from '../../vendor/rack/cable-geometry.js';
+import {colorOf, WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {cablePlan, endKey, endName} from '../../vendor/rack/cable-rules.js';
 import {configuredFace} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
@@ -331,7 +331,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     const t = svgEl('title', {});
     t.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
     g.append(t);
-    stroke(g, d, colorOf(link), WIDTH);
+    stroke(g, d, colorOf(link), widthOf(c, routes.types?.diameterOf));
     // THE PLUG AT EACH END, as a block (side-geometry.js plugSpans): the kit's
     // straight run out of the port by the plug's reach. No seated plug or
     // optic has a side drawing to seat here (the devices' indexes list side

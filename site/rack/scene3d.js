@@ -19,7 +19,7 @@ import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf} from './bend3d.js';
-import {landedBends, bendPoints} from './route-context.js';
+import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
@@ -560,7 +560,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // part's plates are solid as well, and a ring's parts (kit 0.15.0), and a
     // hang or a rounded corner is kept out of them.
     const boxes = solidBoxes(THREE, rack, chassisOf, faceZ);
-    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, anchor: async (item, path, view) => {
+    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, widthOf: widthLookup(ctx?.diameterOf, rack.cables), anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
       const got = await scene.cableAnchor({id: item}, path, {view});
       if (got.length) return got;

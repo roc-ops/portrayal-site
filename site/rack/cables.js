@@ -40,7 +40,7 @@ import {kitRoute, insideOf} from './bend3d.js';
 export {COLORS, colorOf, JACKETS, colorOfJacket, PLUGS, plugColorOf, WIDTH, TAG_H, sag2d,
         LEAD_DROP, LEAD, routePoints3d, hangPoints3d, danglePoints3d, clearOf} from '../../vendor/rack/cable-geometry.js';
 
-const MERGE = 10;                // mm below a duplex pair where the two strands join
+const MERGE = 10;               // mm below a duplex pair where the two strands join
 
 const esc = s => (window.CSS && CSS.escape ? CSS.escape(s) : String(s));
 
@@ -95,10 +95,10 @@ const PLUG_W = 7, PLUG_H = 10;   // mm: the open plug outline at the free end
 // The lead from `a` down to its free end, and the open plug there - a hollow
 // outline, nose down, with its contacts showing: nothing is in it. Returns
 // the bottom of the plug, where the leader to its tag starts.
-function leadDown(g, a, color, drop, outboard) {
+function leadDown(g, a, color, drop, outboard, width) {
   const b = [a[0] + outboard * LEAD_SIDE, a[1] + drop];
   stroke(g, `M${a[0]} ${a[1]} C${a[0]} ${a[1] + drop * 0.55} ${b[0]} ${b[1] - drop * 0.45} ${b[0]} ${b[1]}`,
-         color, WIDTH);
+         color, width);
   const plug = svgEl('g', {'data-open-plug': 'true'});
   plug.append(svgEl('rect', {x: b[0] - PLUG_W / 2, y: b[1], width: PLUG_W, height: PLUG_H, rx: 1,
     fill: 'none', stroke: color, 'stroke-width': 1.2}));
@@ -132,8 +132,10 @@ function leadDown(g, a, color, drop, outboard) {
 // `ends(svg, dev, path)` finds an end's connector points; it defaults to
 // ends2d, which looks a device up by its ref. The Rack Builder passes its
 // own (cable-view.js), which looks an item up by its id and panel.
+// `widthOf(link)` is the width a cable is drawn at, mm: the kit's widthOf over
+// the cable types (a power cord at its real diameter); WIDTH when not given.
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
-                                               outboard = 1, ends = ends2d}) {
+                                               outboard = 1, ends = ends2d, widthOf = () => WIDTH}) {
   // The CABLES are the drawing, and exports keep them (standalone() drops
   // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
   // controls - a cross-face button, a not-connected link to the stage that
@@ -156,7 +158,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     const g = svgEl('g', {'data-cable': 'true', 'data-link-index': String(i),
       'data-media': link.media, 'data-purpose': link.purpose, tabindex: '0',
       'data-pt-ui': 'tabindex'});
-    const color = colorOf(link);
+    const color = colorOf(link), W = widthOf(link);
     const key = [link.from[0], link.to[0]].sort().join('|');
     const starts = live.map(([, p]) => {
       const [s, strands] = gather(p);
@@ -175,11 +177,11 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
       // straight run, cable-view.js freeSpan2d); no via2d at all is the old hang.
       stroke(g, via?.length ? routed2d([a, ...via, b], 4, rings ? [null, ...rings, null] : null)
         : via ? `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`
-        : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, WIDTH);
+        : hang(a, b, sag2d(Math.hypot(b[0] - a[0], b[1] - a[1]), fan)), color, W);
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
       const k = leads.get(dev) || 0; leads.set(dev, k + 1);
-      const at = leadDown(g, starts[0], color, LEAD_DROP + LEAD_STEP * k, outboard);
+      const at = leadDown(g, starts[0], color, LEAD_DROP + LEAD_STEP * k, outboard, W);
       g.setAttribute('data-loose-lead', otherSide);
       rec.dangling = true;
       column.push({rec, want: at[1] + 12, place: y => {
@@ -205,12 +207,12 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
         const rv = link.rings2d?.[view], rings = rv && (landedSide === 'from' ? rv : reverseMarks(rv));
         const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
         column.push({rec, want: last[1], lane: dir, place: y => {
-          stroke(g, routed2d([a, ...v], 4, rings ? [null, ...rings] : null), color, WIDTH);
+          stroke(g, routed2d([a, ...v], 4, rings ? [null, ...rings] : null), color, W);
           return tag([last[0] + dir * 6, y], other, link);
         }});
       } else column.push({rec, want: a[1] + 30, place: y => {
         const b = [edgeX, y];
-        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
+        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, W);
         return tag(b, other, link);
       }});
     }
@@ -302,8 +304,9 @@ function tubeEnds(THREE, mesh) {
 // true arc of that radius kept out of `boxes` (bend3d.js kitRoute,
 // clearCurve), and its `tight` lists the corners whose legs could not hold
 // one (bend3d.js fitCorners). Without it the corners are eased.
+// `widthOf(link)` is the width a tube is drawn at, mm (see drawCables2d).
 export async function drawCables3d(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null,
-                                                 bendOf = null} = {}) {
+                                                 bendOf = null, widthOf = () => WIDTH} = {}) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
   boxes ??= scene.deviceBoxes();
@@ -371,12 +374,12 @@ export async function drawCables3d(scene, plan, {live = () => true, anchor = nul
       const lead = R != null ? Math.max(30, R) : 30;
       pts = routePoints3d(THREE, ends[0], ends[1], wps, lead, marks);
     } else pts = clearOf(dangling ? danglePoints3d(THREE, landed[0]) : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
-    const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
+    const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6}), W = widthOf(link);
     const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
     // A rounded tube is sampled about every 3 mm, so each arc is drawn as one.
     const main = new THREE.Mesh(bent
-      ? new THREE.TubeGeometry(bent, Math.max(160, Math.ceil(bent.getLength() / 3)), WIDTH / 2, 8, false)
-      : new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), dangling ? 60 : 160, WIDTH / 2, 8, false), mat);
+      ? new THREE.TubeGeometry(bent, Math.max(160, Math.ceil(bent.getLength() / 3)), W / 2, 8, false)
+      : new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), dangling ? 60 : 160, W / 2, 8, false), mat);
     g.add(main);
     // A duplex end: a thinner strand from each connector into the merge.
     const strands = [];
