@@ -17,12 +17,14 @@
 
 import {withCableTypes} from './route-context.js';
 
-export function agentContextFor({loadSlots, chassisOf, cableFacts, routeFacts, cableTypes}) {
+// `drawnAt(end)` is the page's (cable-plugs.js): the ref of the part drawn at an
+// end, which the kit needs before it will word a power cord (kit 0.30.0).
+export function agentContextFor({loadSlots, chassisOf, cableFacts, routeFacts, cableTypes, drawnAt}) {
   return async (r, refs = [], {route = false} = {}) => {
     // (the parts beside the rack too: a PDU's outlet states and readings, and what hangs on a bracket,
     // are checked against its parts list: kit 0.22.0 state.set, readings.set, zerou.hang)
     const {slotsOf, compByRef} = await loadSlots([...new Set([...r.items.map(i => i.ref), ...(Array.isArray(r.zeroU) ? r.zeroU : []).map(z => z?.ref).filter(Boolean), ...refs])]);
-    const ctx = {chassisOf, slotsOf, compByRef, cableFacts};
+    const ctx = {chassisOf, slotsOf, compByRef, cableFacts, ...(drawnAt ? {drawnAt} : {})};
     if (!route) return ctx;
     const [rf, types] = await Promise.all([
       Promise.resolve().then(() => routeFacts(r)).catch(err => { console.warn('[portrayal] routes', err); return null; }),

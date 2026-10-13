@@ -8,7 +8,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {newDoc, serialize, withFrame, zeroUOf, zeroUBottom, VERSION} from '../../vendor/rack/model.js';
+import {newDoc, serialize, withFrame, zeroUOf, zeroUBottom, zeroUBottomMm, VERSION} from '../../vendor/rack/model.js';
+import {RU} from '../../vendor/rack/rails.js';
+import {zeroUDrawn, elevationBox} from '../../site/rack/elevation.js';
 import {createRackEditor} from '../../vendor/rack/editor.js';
 import {COMMANDS} from '../../vendor/rack/commands.js';
 import {isZeroUPart, isNarrow, fits, fitsZeroU} from '../../vendor/rack/fit.js';
@@ -115,6 +117,23 @@ test('what parseDoc says of a bundle it repaired reaches the editor\'s first fin
   assert.deepEqual(findings[0], {kind: 'note', text: notes[0]});
 });
 
+test('a zero-U part is drawn at its millimetres, as the kit\'s solid stands it (kit 0.30.0, #1030)', () => {
+  const ed = editorOf(rackOf());
+  ed.apply({op: 'zerou.place', ref: DUCT, at: 'left', ru: 1});
+  const whole = ed.rack();
+  assert.equal(zeroUBottomMm(zeroUOf(whole)[0]), 0);
+  assert.deepEqual(zeroUDrawn(whole, chassisOf).map(e => [e.ru, e.mm]), [[1, 0]]);
+  // hung between units (on brackets): `ru` is the nearest unit, `mm` is where the part is
+  const hung = {...whole, zeroU: whole.zeroU.map(z => ({...z, offsetMm: 100}))};
+  const [e] = zeroUDrawn(hung, chassisOf);
+  assert.equal(e.mm, 100);
+  assert.equal(e.ru, zeroUBottom(zeroUOf(hung)[0]));
+  assert.notEqual((e.ru - 1) * RU, e.mm, 'a case the nearest unit would misplace');
+  // the pane is raised for the part where it really is, not where its nearest unit is
+  const top = entries => elevationBox(hung.frame, entries).y;
+  assert.ok(top([e]) < top([{...e, mm: undefined}]), 'the box reads the millimetres: 100 mm up is higher than its nearest unit, 88.9 mm up');
+});
+
 test('a duct\'s channel is the site\'s estimate, marked so, and the kit counts the duct once', () => {
   // The guide rect on the duct's front view: 93.4 mm wide; the part is 165.1 mm deep.
   const ap = ductAperture([{id: 'guide--duct', cls: 'guide', x: 0, y: 0, w: 93.4, h: 2000}], chassisOf(DUCT).d);
@@ -130,7 +149,7 @@ test('a duct\'s channel is the site\'s estimate, marked so, and the kit counts t
   assert.deepEqual(capacityOver(r, ctx), []);
   // the notes read the kit's entries as they are
   assert.deepEqual(fillNotes(r, {fill: [{...got[0], over: true}], over: [], routes: new Map(), ctx}, () => 'vcm-1'),
-    [`${got[0].via} on vcm-1: 1 cables, ${got[0].percent}% of a 40% fill.`]);
+    [`${got[0].via} on vcm-1 (at left): 1 cables, ${got[0].percent}% of its fill limit; the limit is 40% of the opening.`]);
 });
 
 test('every guide carries its run; a duct\'s square aperture is marked estimated, a pass is not', () => {

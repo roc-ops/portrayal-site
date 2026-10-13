@@ -83,6 +83,13 @@ export function cavityShell(c, INTO) {
   // Walls and a back are what a box has round a recess; a sheet has nothing
   // round its floor, and built here they are the solid block a sheet body
   // exists not to be.
+  // A PASSAGE THROUGH A SHEET BODY IS AIR. The hole a bay's occupant is seen
+  // through from behind (`seeThrough`), and an open bay's mouth (`hollow`),
+  // have no floor in a box and no walls in a sheet: an open frame's slots
+  // share the one space between its plates. A floor here was a painted plane
+  // across every empty slot, 2 mm behind the face the slot opens in.
+  if (c.sheet && (c.seeThrough || c.hollow))
+    return {walls: false, floor: false, back: false, depth: 0};
   if (c.sheet) return {walls: false, floor: true, back: false, depth: Math.min(c.d, INTO - 2)};
   const open = !!(c.seeThrough || c.hollow);
   const depth = c.hollow ? Math.min(c.d, 6) : Math.min(c.d, INTO - 2);

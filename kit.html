@@ -105,7 +105,7 @@
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
           code beside each result is the file that just ran it. This page documents
-          <code>@portrayal/kit</code> <span data-kit-version="0.25.0">0.25.0</span>.
+          <code>@portrayal/kit</code> <span data-kit-version="0.34.0">0.34.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -539,7 +539,24 @@ const path = routePath(rack, cable, route);
 it. Since 0.21.0 <code>inspect</code> of a cable carries them as
               <code>route.bends</code>, <code>describe</code> counts them in its
               <code>Findings:</code> line, and <code>cableScheduleRows</code> takes them
-              as <code>bends</code> for a cable's notes.</p>
+              as <code>bends</code> for a cable's notes. Since 0.27.0 <strong>two turns on
+              one short leg are one finding</strong>, with <code>apart_mm</code> and
+              <code>turns: [{point, at, angle_deg}, {point, at, angle_deg}]</code>; its
+              <code>at</code> is the middle of the leg between them, so a page that marks
+              each corner marks <code>turns[].at</code>. Its sentence reads &ldquo;turns
+              twice within 22.8 mm&rdquo; and is longer than a single bend's, so do not
+              clip it at a fixed length. A finding for a lead put into a ring too close
+              for it also carries <code>advice</code> (one sentence) and
+              <code>tooClose</code>, and its <code>text</code> is the bend alone.</p>
+            <p><strong>The ring is chosen by room</strong> (since 0.27.0). Of the rings on
+              a lead's way to its gutter the first that the lead can turn into within its
+              cable's bend radius is taken, and one too close is passed over; a patch
+              along one manager takes the rings between its ports the same way. Where no
+              ring leaves room the nearest stands and its finding says so. <strong>Routed
+              lengths on a saved rack can move</strong>: a cable whose automatic route
+              takes another ring is measured differently the next time a page measures
+              it, and its stock size can change. An entered length and a route made by
+              hand are not touched.</p>
             <p><strong>A span in front of other ports</strong> (since 0.21.0). With no
               horizontal manager a cable runs from its lane to its port across the faces
               between. <code>routePath</code> returns <code>covers</code>, each port such
@@ -661,7 +678,7 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
                 <tr><td><code>rack/fit</code></td><td>Whether a device fits at a unit, on a face and on one rail; whether a zero-U part fits beside the rack (<code>fitsZeroU</code>); how a shrink trims a rack.</td></tr>
                 <tr><td><code>rack/zero-u</code></td><td>The parts beside the rack: where each stands, as words (<code>whereText</code>) and as x (<code>zeroUX</code>), and each placeable entry (<code>zeroUEntries</code>).</td></tr>
                 <tr><td><code>rack/managers</code></td><td>Cable managers: the <code>placement</code> of one onto the device behind it, and moving one.</td></tr>
-                <tr><td><code>rack/cable-rules</code></td><td>Which two ports may be joined, <code>withCable</code>, media and lengths.</td></tr>
+                <tr><td><code>rack/cable-rules</code></td><td>Which two ports may be joined, <code>withCable</code>, media and lengths. Since 0.30.0 a power cord, a DC feed or a ground wire can land (<code>cableLandsOn</code>: a part of class <code>port</code>, or a connector slot that accepts one; media <code>power</code> and <code>ground</code>; an end may state its <code>plug</code>). A page that offers power cabling supplies <code>ctx.drawnAt</code> first, or an outlet-to-outlet cord between two devices gets no warning. Since 0.26.0 a manager's stated count is compared only with the cables at least as thick as the kind it counts (<code>capacity.media</code> in <code>rack.json</code>; a catalogue built before it is compared with cables of 6 mm or more), and <code>portLabel</code> words a port.</td></tr>
                 <tr><td><code>rack/route</code></td><td><code>resolveRoute</code>, <code>routePath</code> (with each plug's reach point, each ring's approach points, each lead point, a tray's stretch and each free span's rest, and <code>rests</code>, <code>bends</code> and <code>allowance</code>), <code>trayOf</code>, <code>PLUG_REACH</code>, <code>endAllowance</code>, <code>END_ALLOWANCE_BY_MEDIA</code>, <code>routedLength</code>, <code>pathLength</code>, <code>ringMarks</code>, <code>orientMarks</code>, <code>reverseMarks</code>, <code>laneXAt</code>, pathway <code>fill</code>, <code>ringFindings</code>, <code>bodyFindings</code> and <code>bendFindings</code>.</td></tr>
                 <tr><td><code>rack/solids</code></td><td>The solid bodies a route may not pass through: <code>solidsOf</code> (since 0.15.0 with a ring's legs, bar, seat and hook, <code>ring/&lt;id&gt;/&lt;part&gt;</code>), <code>legCrossings</code>, <code>detour</code> (since 0.17.0 with <code>room</code>, far enough out for the bends at each end), <code>CLEAR</code>, the clearance a detour keeps, and <code>traysOf</code>, the trays a cable lies on.</td></tr>
                 <tr><td><code>rack/route-path</code></td><td>The 2D path through the rings (<code>routed2d</code>) and the geometry under it (<code>throughRings</code>, and <code>cornersOf</code>, the room each corner of a path leaves a bend).</td></tr>
@@ -691,6 +708,18 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
               <code>cable-types.json</code> and returns <code>diameterOf</code>, <code>bendOf</code> (the
               installed minimum bend radius) and <code>typeOf</code>. <code>straps</code> places the
               straps along the trunk, kept off rings.</p>
+            <p><strong>Straps are placed on the members' routed paths</strong> (since 0.28.0).
+              A trunk used to be measured along the straight line from one waypoint to the
+              next; the members do not run there, so a strap's <code>{segment, t}</code>
+              named a place off the cables. <code>straps</code> and <code>trunkLength</code>
+              now read the members' paths: <code>t</code> is the share of the segment's
+              <em>routed</em> length, and each strap carries its own place, <code>point</code>
+              (rack millimeters), <code>dir</code> (the way the trunk runs there) and
+              <code>on</code> (the cable whose path the point is on). The lengths and the
+              counts follow, so <strong>a saved rack's strap lines move</strong>. Where no path
+              can be read, <code>straps()</code> and <code>bundleExports</code> say so with
+              <code>straight</code>, or <code>few</code> where a minority of the riders have
+              one, and the length and count are an estimate.</p>
             <p>Given <code>bendOf</code> as well, the check also looks at the bend: at each
               corner of the trunk, and at each pathway that states a radius, against the
               largest bend radius among the members there, so one fiber makes a bundle as
@@ -727,11 +756,11 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
               <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
               three.js is a peer dependency, needed only for 3D:</p>
             <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
-            <p class="kit-note" data-kit-unpublished>This page documents kit 0.25.0, which is
+            <p class="kit-note" data-kit-unpublished>This page documents kit 0.34.0, which is
               not on npm yet: npm's latest is <span data-kit-npm="0.2.0">0.2.0</span>.
               The rack and bundle modules, and everything else added since 0.2.0, are
               in the unpublished version only, so <code>npm install</code> gets a kit
-              without them, and the CDN map below returns 404s. Until 0.25.0 is
+              without them, and the CDN map below returns 404s. Until 0.34.0 is
               published, use the files from a
               <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> checkout's
               <code>kit/</code> folder, or this site's own vendored copy
@@ -744,27 +773,27 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/shell.js",
-    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/ears2d.js",
-    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/states.js",
-    "@portrayal/kit/positions": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/positions.js",
-    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/catalog.js",
-    "@portrayal/kit/rack/fit": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/fit.js",
-    "@portrayal/kit/rack/rails": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/rails.js",
-    "@portrayal/kit/rack/slack": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/slack.js",
-    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/model.js",
-    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/editor.js",
-    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/queries.js",
-    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/route.js",
-    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/route-path.js",
-    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/solids.js",
-    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/bundles.js",
-    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/export-data.js",
-    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.25.0/rack/cable-types.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/shell.js",
+    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/ears2d.js",
+    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/states.js",
+    "@portrayal/kit/positions": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/positions.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/catalog.js",
+    "@portrayal/kit/rack/fit": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/fit.js",
+    "@portrayal/kit/rack/rails": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/rails.js",
+    "@portrayal/kit/rack/slack": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/slack.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/route.js",
+    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/route-path.js",
+    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/solids.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/export-data.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.34.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }

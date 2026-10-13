@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="435.0mm" height="115.6mm" viewBox="0 0 435.0 115.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="xpu-top-sheet" data-path="xpu-top-sheet" data-class="mechanical" data-behaviour="mounts" data-ref="fibrain/xpu-top-sheet@1:1.0.0" transform="translate(0,0)">
+    <title>xpu-top-sheet</title>
+    <path id="xpu-top-sheet--cover" fill="#1b1e21" fill-rule="evenodd" d="M 0 0 H 21 L 47 25.6 H 388.0 L 414.0 0 H 435.0 V 115.6 H 0 Z M 74.7 56.6 h 22 v 3 h -22 Z M 74.7 67.6 h 22 v 3 h -22 Z M 157.8 56.6 h 22 v 3 h -22 Z M 157.8 67.6 h 22 v 3 h -22 Z M 255.2 56.6 h 22 v 3 h -22 Z M 255.2 67.6 h 22 v 3 h -22 Z M 338.3 56.6 h 22 v 3 h -22 Z M 338.3 67.6 h 22 v 3 h -22 Z" data-path="xpu-top-sheet/cover" data-class="bezel" data-z-out="43.1" data-z-lift="42.3" data-z-color="#1b1e21" />
+    <g id="xpu-top-sheet--screws">
+      <circle cx="3.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="110.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="217.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="324.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="431.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+    </g>
+  </g>
+</svg>

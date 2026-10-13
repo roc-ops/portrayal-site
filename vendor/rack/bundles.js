@@ -11,7 +11,7 @@
 // route.js takes (`{chassisOf, guidesOf, portX, portY?, zeroUAperture?}`).
 
 import {bundlesOf, bundleName, isWaypoint, uLabel, withoutMembers} from './model.js';
-import {ownRoute, trunkRoute, trunkMeasures, pointOf, routePath, routeText, DIAMETERS} from './route.js';
+import {ownRoute, resolveRoute, trunkRoute, trunkMeasures, pointOf, routePath, routeText, DIAMETERS} from './route.js';
 import {traysOf} from './solids.js';
 import {elementsOf, elementText, waypointKey, followTrunk, andList} from './bundle-route.js';
 import {zeroUOnLane, carriesLane} from './zero-u.js';
@@ -33,6 +33,11 @@ const UNSET_D = 6.0;
 const MM = {in: 25.4, mm: 1};
 
 const round1 = v => Math.round(v * 10) / 10;
+// A place along a trunk to a tenth of a millimetre. A sum of lengths carries the
+// last bits of each, so a place that is 69.45 mm comes out a hair under or
+// over it, and would round either way: it is taken to a nanometre first, and a
+// half then always rounds up.
+const mm1 = v => Math.round(Math.round(v * 1e6) / 1e5) / 10;
 const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
 
 export const bundleById = (rack, id) => bundlesOf(rack).find(b => b.id === id) ?? null;
@@ -295,8 +300,9 @@ const an = t => (/^(8|1[18](\.|$))/.test(t) ? 'an' : 'a');
 //   pathwaysOn): it holds the bundle to that radius, so that is the room, and
 //   it is the part's own figure (`source: 'guide'`). No guide states one yet
 //   (decision 8);
-// - each corner of the trunk, measured as routed length and the straps
-//   measure the trunk (pointOf at each resolved waypoint), the room r_max
+// - each corner of the trunk, between the straight lines from one resolved
+//   waypoint to the next (pointOf at each; not the members' routed paths,
+//   which the straps and the length are measured along), the room r_max
 //   from its legs (cornersOf). That is the rack's own sketch of where things
 //   are, not a measured bend, so it is `source: 'legs'`, `estimated: true`.
 //   A corner on a pathway that states a radius is the pathway's.
@@ -379,6 +385,179 @@ export function bundleChecks(rack, ctx = {}) {
   });
 }
 
+// ── the trunk's own line (#1034) ─────────────────────────────────────────
+// WHERE A TRUNK RUNS, AND HOW LONG IT IS. A trunk is a list of waypoints, but
+// the cables of it do not run straight from one to the next: a member's path
+// (route.js routePath) passes through a ring by its opening, lies along a
+// tray, hangs between two pathways, and goes round a body by a detour point.
+// So the trunk is measured, and its straps are placed, on the members' paths
+// and never on the straight line between two waypoints.
+// A PIECE AT A TIME. The trunk is cut at every element that is a place
+// (bundle-route.js elementsOf: a pathway, and a lane at each unit), and each
+// piece between two neighbours is taken from ONE member that rides both:
+// - where a member's path is at a waypoint: a lane point is the point itself;
+//   a pathway, a ring and a tray are the middle, by length, of the points the
+//   path has there (a ring's entry and exit, a tray's stretch). A lane unit
+//   between two lane waypoints is that share of the way along the path
+//   between them;
+// - the piece is that member's path between the two places, and its length
+//   is the length of that path;
+// - where several members ride a piece, it is THE MIDDLE ONE BY LENGTH: the
+//   members whose paths can be read are put in order of how long each is on
+//   the piece (to a micron), then of their ids (by number, so c2 before c10,
+//   and by the plain text where the numbers are the same, so c02 before c2),
+//   and the one in the middle is taken, the earlier of two middles. A strap
+//   goes round the whole pack, so it belongs where most of the pack lies:
+//   one limp cord among stiff ones hangs lower and longer than the rest, and
+//   the middle one is never that cord while it is outnumbered. So one member
+//   sets neither the length, nor the count, nor the place. Members of one
+//   kind lie alike, tie, and the middle one by id is taken. The order the
+//   cables are written in, in the file or in the bundle, plays no part.
+// WHAT `on` THEN MEANS. Each cable is laid on its own, so two members of
+// unlike kinds hang a little apart between the same two places where a real
+// pack would hang as one. A strap's point is on the path of the member it
+// names, exactly; the members that lie like it are there too, and one that
+// hangs otherwise is off it by the difference of the two hangs.
+// A piece no member's path can be read for is the straight line between the
+// two places, as every piece was before #1034: one nobody rides (no strap
+// goes there), and one whose riders have no path (a port not found on its
+// drawing). The second is said: `straight` is true, and straps() and
+// trunkLength pass it on, since the length and the count there are an
+// estimate. An error a reader of the context throws is not caught here.
+// A PIECE FEWER THAN HALF OF WHOSE RIDERS HAVE A PATH is taken from the
+// middle one of those that have, which is then not the middle of the pack:
+// one AOC with a path among three DACs with none sets the trunk. That is
+// said too (`few`), in the same way.
+// WHERE TWO KINDS RIDE IN EQUAL NUMBERS the earlier of the two middles is of
+// the shorter kind, so the trunk follows the kind that hangs less and the
+// other half of the pack is off every strap by the difference of the hangs.
+// And where the member named changes kind from one piece to the next (at a
+// ring, where the riders change), the line steps sideways there by the
+// difference of where the two kinds stand in the ring, a few millimetres.
+// Returns {pts, cum, wcum, length, straight, pointAt}, or null when a trunk
+// waypoint has no point: `pts` is pointOf at each resolved waypoint; `cum[i]` is how
+// far along the trunk element `i` of `L.T` is, mm; `wcum[k]` the same for
+// resolved waypoint `k`; and `pointAt(a)` is the place `a` mm along, {point:
+// {x, y, z}, dir: {x, y, z} | null, on}: rack coordinates, the way the trunk
+// runs there as a unit vector, and the id of the cable whose path it is on
+// (null on a straight piece).
+const byNumber = (p, q) => String(p).localeCompare(String(q), 'en', {numeric: true}) || (String(p) < String(q) ? -1 : String(p) > String(q) ? 1 : 0);
+const CORE = new Set(['entry', 'exit', 'face', 'pathway', 'tray']);
+// How far along a path each waypoint of its route is: the arc length at each,
+// null for one the path has no point of.
+function stationsOf(P, arc, wps, pointAt) {
+  const out = [];
+  let n = 0;
+  const same = (p, w) => p.item === w.item && p.via === w.via;
+  for (const w of wps) {
+    if (w.lane) {
+      const q = pointAt(w);
+      let k = n;
+      while (q && k < P.length && !(P[k].at === 'lane' && dist(P[k], q) < 1e-6)) k++;
+      if (!q || k >= P.length) { out.push(null); continue; }
+      out.push(arc[k]); n = k + 1;
+      continue;
+    }
+    let k = n;
+    while (k < P.length && !same(P[k], w)) k++;
+    if (k >= P.length) { out.push(null); continue; }
+    // its points run on while they are its own, a detour between two of them counted in
+    let e = k;
+    for (let j = k + 1; j < P.length && (same(P[j], w) || P[j].at === 'detour'); j++) if (same(P[j], w)) e = j;
+    const core = [];
+    for (let j = k; j <= e; j++) if (same(P[j], w) && CORE.has(P[j].at)) core.push(j);
+    out.push(core.length ? (arc[core[0]] + arc[core.at(-1)]) / 2 : null);
+    n = e + 1;
+  }
+  return out;
+}
+// A member's path as a line to measure along: its points, the arc length at
+// each, and how far along each element of its route is, by key. null when it
+// is not laid as a member of this bundle, or has no path.
+function memberLine(rack, b, cableId, rc) {
+  const cable = (rack.cables || []).find(c => c.id === cableId);
+  if (!cable) return null;
+  // not caught: a reader that throws, or a path found changed (ctx.checkKept), is the caller's to hear of
+  const route = resolveRoute(rack, cable, rc), path = route.bundle === b.id ? routePath(rack, cable, rc) : null;
+  if (!path || path.points.length < 2) return null;
+  const P = path.points, arc = [0];
+  for (let k = 1; k < P.length; k++) arc.push(arc[k - 1] + dist(P[k - 1], P[k]));
+  const st = stationsOf(P, arc, route.waypoints, w => pointOf(rack, w, rc));
+  const pos = new Map();
+  for (const e of elementsOf(route.waypoints)) {
+    if (e.kind === 's' || pos.has(e.key)) continue;
+    const c0 = st[e.seg], c1 = st[e.seg + 1];
+    if (c0 == null || (e.t > 0 && c1 == null)) continue;
+    pos.set(e.key, e.t > 0 ? c0 + e.t * (c1 - c0) : c0);
+  }
+  return {id: cableId, P, arc, pos};
+}
+// The point `s` mm along a line of points, and the way the line runs there
+// (`sign` -1 for a member that rides the trunk the other way).
+function onLine(P, arc, s, sign) {
+  let k = 1;
+  while (k + 1 < P.length && arc[k] < s) k++;
+  // the way of the leg it is on; a leg of no length takes the nearest that has one
+  let i = k;
+  while (i + 1 < P.length && arc[i] - arc[i - 1] < 1e-9) i++;
+  while (i > 1 && arc[i] - arc[i - 1] < 1e-9) i--;
+  const len = arc[k] - arc[k - 1], f = len > 1e-9 ? Math.min(1, Math.max(0, (s - arc[k - 1]) / len)) : 0;
+  const [p, q] = [P[k - 1], P[k]], [u, v] = [P[i - 1], P[i]], d = dist(u, v);
+  return {point: {x: p.x + f * (q.x - p.x), y: p.y + f * (q.y - p.y), z: p.z + f * (q.z - p.z)},
+          dir: d > 1e-9 ? {x: sign * (v.x - u.x) / d, y: sign * (v.y - u.y) / d, z: sign * (v.z - u.z) / d} : null};
+}
+function trunkLine(rack, b, L, rc) {
+  const pts = L.trunk.map(w => pointOf(rack, w, rc));
+  if (!pts.length || pts.some(p => !p)) return null;
+  const T = L.T;
+  // a place on the straight line: the waypoint an element is at, or its share of the way to the next
+  const chordAt = e => { const p = pts[e.seg], q = pts[e.seg + 1];
+    return e.t > 0 && q ? {x: p.x + e.t * (q.x - p.x), y: p.y + e.t * (q.y - p.y), z: p.z + e.t * (q.z - p.z)} : p; };
+  const riding = L.members.filter(m => m.ji != null && m.li != null)
+    .map(m => ({id: m.cable, lo: Math.min(m.ji, m.li), hi: Math.max(m.ji, m.li)})).sort((p, q) => byNumber(p.id, q.id));
+  const lines = new Map();
+  const lineOf = id => { if (!lines.has(id)) lines.set(id, memberLine(rack, b, id, rc)); return lines.get(id); };
+  const nodes = T.map((e, i) => (e.kind === 's' ? -1 : i)).filter(i => i >= 0);
+  const cum = new Array(T.length).fill(0), pieces = [];
+  let straight = false, few = false;
+  for (let n = 1; n < nodes.length; n++) {
+    const i = nodes[n - 1], j = nodes[n];
+    const read = [];
+    let ridden = 0;
+    for (const m of riding) {
+      if (m.lo > i || m.hi < j) continue;
+      ridden++;
+      const line = lineOf(m.id), s0 = line?.pos.get(T[i].key), s1 = line?.pos.get(T[j].key);
+      if (s0 != null && s1 != null) read.push({line, s0, s1, len: Math.abs(s1 - s0)});
+    }
+    // the middle one by length; `riding` is in id order and the sort keeps it, so two as long stay in id order
+    read.sort((x, y) => Math.round(x.len * 1e3) - Math.round(y.len * 1e3));
+    const best = read.length ? read[Math.floor((read.length - 1) / 2)] : null;
+    if (ridden && !best) straight = true;
+    // the middle of a minority is not the middle of the pack
+    if (best && 2 * read.length < ridden) few = true;
+    const p = chordAt(T[i]), q = chordAt(T[j]);
+    const len = best ? best.len : dist(p, q);
+    pieces.push({from: cum[i], to: cum[i] + len, ...(best ?? {}), p, q});
+    cum[j] = cum[i] + len;
+    // a lane segment between two units is half way
+    for (let k = i + 1; k < j; k++) cum[k] = cum[i] + len / 2;
+  }
+  const wcum = [];
+  L.trunk.forEach((w, k) => { const i = T.findIndex(e => e.kind !== 's' && e.seg === k && e.t === 0); wcum.push(i >= 0 ? cum[i] : wcum.at(-1) ?? 0); });
+  const length = nodes.length ? cum[nodes.at(-1)] : 0;
+  const pointAt = a => {
+    const c = pieces.findLast(x => x.to - x.from > 1e-9 && a >= x.from - 1e-9) ?? pieces[0];
+    if (!c) return {point: {...pts[0]}, dir: null, on: null};
+    const f = c.to - c.from > 1e-9 ? Math.min(1, Math.max(0, (a - c.from) / (c.to - c.from))) : 0;
+    if (c.line) { const sign = c.s1 >= c.s0 ? 1 : -1; return {...onLine(c.line.P, c.line.arc, c.s0 + sign * f * c.len, sign), on: c.line.id}; }
+    const d = dist(c.p, c.q);
+    return {point: {x: c.p.x + f * (c.q.x - c.p.x), y: c.p.y + f * (c.q.y - c.p.y), z: c.p.z + f * (c.q.z - c.p.z)},
+            dir: d > 1e-9 ? {x: (c.q.x - c.p.x) / d, y: (c.q.y - c.p.y) / d, z: (c.q.z - c.p.z) / d} : null, on: null};
+  };
+  return {pts, cum, wcum, length, straight, few, pointAt};
+}
+
 // ── straps (section 6; docs/rack-file-v4-design.md section 3.10) ─────────
 // Three kinds, each entry with its `kind`:
 // SPACING. Along each RUN of the trunk (a longest stretch with two or more
@@ -401,26 +580,37 @@ export function bundleChecks(rack, ctx = {}) {
 // extent along the run, widened by half a strap each side) moves to the
 // stretch's nearer edge; one in a duct stays. The count is what the BOM buys:
 // the three kinds together, never raised for a move.
+// ALL OF IT IS MEASURED ALONG THE TRUNK'S OWN LINE (trunkLine, above, #1034):
+// the members' routed paths, not the straight line between two waypoints, so
+// a run is as long as the cable strapped in it and a strap is on a cable.
 // Returns {every, count, kinds: {spacing, breakout, anchor}, straps: [{kind,
-// segment, t, along_mm, item?, via?, tie?}], runs: [[from, to]]} (mm from the
-// trunk's start), or null without `ctx.route`. A straps entry names its trunk
-// segment (between resolved waypoints `segment` and `segment + 1`) and how far
-// along it, since each view draws the waypoints at its own positions; an
-// anchor also names its tray and the index of its tie slot.
+// segment, t, along_mm, point, dir, on, item?, via?, tie?}], runs: [[from,
+// to]]} (mm from the trunk's start), or null without `ctx.route`. A straps
+// entry names its trunk segment (between resolved waypoints `segment` and
+// `segment + 1`) and `t`, the share of that segment's routed length it is
+// along, for a view that draws the waypoints at its own positions; and it
+// carries its own place: `point`, {x, y, z} in rack coordinates (route.js)
+// to a hundredth of a millimetre, `dir`, the way the trunk runs there as a
+// unit vector (null where it has no length), and `on`, the id of the cable
+// whose path the point is on (null where no member's path could be read and
+// the straight line stands in; WHAT `on` THEN MEANS, above). An anchor also
+// names its tray and the index of its tie slot. `straight` is true where a
+// stretch that members ride was measured along the straight line, and `few`
+// where one was measured on fewer than half of its riders; `notes` then says
+// so.
 export function straps(rack, b, ctx = {}) {
   const every = strapSpacing(b), mm = strapEveryMm(b), want = strapKinds(b);
   const L = layoutOf(rack, b, ctx);
   if (!L) return null;
-  const empty = {every, count: 0, kinds: {spacing: 0, breakout: 0, anchor: 0}, widths: {}, straps: [], runs: []};
+  const empty = {every, count: 0, kinds: {spacing: 0, breakout: 0, anchor: 0}, widths: {}, straps: [], runs: [], straight: false, few: false};
   if (b.members.length < 2 || L.trunk.length < 2) return empty;
-  const pts = L.trunk.map(w => pointOf(rack, w, ctx.route));
-  if (pts.some(p => !p)) return empty;
-  const cum = [0];
-  for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + dist(pts[k - 1], pts[k]));
-  const along = e => cum[e.seg] + (e.seg + 1 < cum.length ? e.t * (cum[e.seg + 1] - cum[e.seg]) : 0);
+  const line = trunkLine(rack, b, L, ctx.route);
+  if (!line) return empty;
+  // `cum` is by resolved waypoint, as the stretches and the anchors below read it
+  const pts = line.pts, cum = line.wcum, alongAt = i => line.cum[i];
   // runs: where two or more members ride together
   const spans = L.members.filter(m => m.ji != null && m.li != null)
-    .map(m => [along(L.T[Math.min(m.ji, m.li)]), along(L.T[Math.max(m.ji, m.li)])]);
+    .map(m => [alongAt(Math.min(m.ji, m.li)), alongAt(Math.max(m.ji, m.li))]);
   const cuts = [...new Set(spans.flat())].sort((x, y) => x - y);
   const runs = [];
   for (let k = 1; k < cuts.length; k++) {
@@ -459,7 +649,7 @@ export function straps(rack, b, ctx = {}) {
   // the pack at a place along the trunk: the members riding there, and how wide a strap it takes
   const riders = L.members.filter(m => m.ji != null && m.li != null).map(m => {
     const c = (rack.cables || []).find(x => x.id === m.cable);
-    return {lo: along(L.T[Math.min(m.ji, m.li)]), hi: along(L.T[Math.max(m.ji, m.li)]), d: diameter(c, ctx.route)[0]};
+    return {lo: alongAt(Math.min(m.ji, m.li)), hi: alongAt(Math.max(m.ji, m.li)), d: diameter(c, ctx.route)[0]};
   });
   const packAt = a => bundleDiameter(riders.filter(x => x.lo <= a + 1e-9 && x.hi >= a - 1e-9).map(x => x.d));
   const baseWidth = a => (packAt(a) >= WIDE_PACK_MM ? STRAP_WIDE_MM : STRAP_BASE_MM);
@@ -510,17 +700,27 @@ export function straps(rack, b, ctx = {}) {
     let k = 0;
     while (k + 2 < cum.length && a > cum[k + 1]) k++;
     const len = cum[k + 1] - cum[k];
-    return {segment: k, t: len > 0 ? Math.round(((a - cum[k]) / len) * 1e4) / 1e4 : 0, along_mm: round1(a)};
+    const at = line.pointAt(a), r2 = v => Math.round(v * 100) / 100 || 0, r4 = v => Math.round(v * 1e4) / 1e4 || 0;
+    return {segment: k, t: len > 0 ? Math.round(((a - cum[k]) / len) * 1e4) / 1e4 : 0, along_mm: mm1(a),
+            point: {x: r2(at.point.x), y: r2(at.point.y), z: r2(at.point.z)},
+            dir: at.dir ? {x: r4(at.dir.x), y: r4(at.dir.y), z: r4(at.dir.z)} : null, on: at.on};
   };
   const list = [...spacing.map(a => ({kind: 'spacing', ...place(a), width_mm: baseWidth(a)})),
                 ...breakout.map(x => ({kind: 'breakout', ...place(x.a), width_mm: x.w})),
                 ...anchors.map(x => ({kind: 'anchor', ...place(x.a), width_mm: x.w, item: x.item, via: x.via, tie: x.tie}))]
     .sort((p, q) => p.along_mm - q.along_mm);
   return {every, count: list.length, kinds: {spacing: spacing.length, breakout: breakout.length, anchor: anchors.length},
-          widths: widthCounts(list.map(x => x.width_mm)), straps: list, runs: runs.map(([s, e]) => [round1(s), round1(e)]),
+          widths: widthCounts(list.map(x => x.width_mm)), straps: list, runs: runs.map(([s, e]) => [mm1(s), mm1(e)]),
           // a tie slot too short for any strap: said, and no strap is counted there
-          notes: misfits};
+          // where riders have no path the trunk is the straight line there: said, since the count is then an estimate
+          straight: line.straight, few: line.few,
+          notes: [...misfits, ...(line.straight ? [straightText(bundleName(b))] : []), ...(line.few ? [fewText(bundleName(b))] : [])]};
 }
+
+// What is said of a bundle measured, in part or whole, along the straight
+// lines between its waypoints (the trunk's own line, above).
+export const fewText = name => `${name} is measured in part on fewer than half of the cables that ride there, since no path could be read for the others (a port not found on its drawing), so its length and its straps are an estimate.`;
+export const straightText = name => `${name} is measured along the straight line between its waypoints where no path could be read for its cables (a port not found on its drawing), so its length and its straps are an estimate.`;
 
 // How many straps of each width: {19: 6, 12: 2}.
 export const widthCounts = ws => ws.reduce((m, w) => { m[w] = (m[w] || 0) + 1; return m; }, {});
@@ -657,28 +857,36 @@ export function strapTexts(rack, ctx = {}, nameOf = null) {
 // THE STRAPS A RACK BUYS: {spacing, breakout, anchor, total, widths}. Spacing
 // and breakout straps are each bundle's own; anchors are counted by slot.
 // `widths` is how many of each width, {19: 12, 12: 2}.
+// A DRAWN BUNDLE WHOSE STRAPS COULD NOT BE READ (a reader of the context
+// threw, or there are no routes) is left out, never guessed, here and in
+// anchorsOf; so the totals can be short of what the rack needs. Then, and only
+// then, the result also has `unread`, how many such bundles there are, and
+// `unreadBundles`, their ids: a caller that shows the total can say so.
 export function strapTotals(rack, ctx = {}) {
   let spacing = 0, breakout = 0;
-  const ws = [];
+  const ws = [], unread = [];
   for (const b of bundlesOf(rack)) {
     let st = null;
     try { st = straps(rack, b, ctx); } catch { st = null; }
+    if (!st && b.members.length >= 2) unread.push(b.id);
     spacing += st?.kinds.spacing ?? 0; breakout += st?.kinds.breakout ?? 0;
     for (const x of st?.straps || []) if (x.kind !== 'anchor') ws.push(x.width_mm);
   }
   const slots = anchorsOf(rack, ctx);
   for (const x of slots) ws.push(x.width_mm);
-  return {spacing, breakout, anchor: slots.length, total: spacing + breakout + slots.length, widths: widthCounts(ws)};
+  return {spacing, breakout, anchor: slots.length, total: spacing + breakout + slots.length, widths: widthCounts(ws),
+          ...(unread.length ? {unread: unread.length, unreadBundles: unread} : {})};
 }
 
 // The trunk's length along the rack's own measure, in metres; null when it
-// cannot be measured.
+// cannot be measured. It is the length of the trunk's own line (trunkLine,
+// #1034): the members' routed paths from its first waypoint to its last, as
+// the straps are counted along. `straight: true` is added where riders had no
+// path and the straight line stood in, and `few: true` where fewer than half
+// of a stretch's riders had one: the figure is then an estimate.
 export function trunkLength(rack, b, ctx = {}) {
   const L = layoutOf(rack, b, ctx);
   if (!L || L.trunk.length < 2) return null;
-  const pts = L.trunk.map(w => pointOf(rack, w, ctx.route));
-  if (pts.some(p => !p)) return null;
-  let mm = 0;
-  for (let k = 1; k < pts.length; k++) mm += dist(pts[k - 1], pts[k]);
-  return {metres: Math.round(mm / 10) / 100};
+  const line = trunkLine(rack, b, L, ctx.route);
+  return line ? {metres: Math.round(line.length / 10) / 100, ...(line.straight ? {straight: true} : {}), ...(line.few ? {few: true} : {})} : null;
 }

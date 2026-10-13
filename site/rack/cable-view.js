@@ -24,7 +24,7 @@ import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {paneMarks, landedBends} from './route-context.js';
+import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
@@ -343,7 +343,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   };
   const bendOf = radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles});
   const recs = drawCables2d(svg, plan, pane, {
-    edgeX, outboard: rear ? -1 : 1,
+    edgeX, outboard: rear ? -1 : 1, widthOf: widthLookup(routes?.types?.diameterOf, cables),
     bendOf,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
@@ -419,13 +419,15 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     if (!link || !f.stops) continue;
     const here = link.here2d?.[pane] ?? (k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : false));
     if (!f.stops.every(here)) continue;
-    const [cx, cy] = detourAt({x: f.at[0], y: f.at[1]});
-    const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
-      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
-    const t = svgEl('title', {});
-    t.textContent = f.text;
-    ring.append(t);
-    svg.append(ring);
+    for (const at of bendPoints(f)) {
+      const [cx, cy] = detourAt({x: at[0], y: at[1]});
+      const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+        'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
+      const t = svgEl('title', {});
+      t.textContent = f.text;
+      ring.append(t);
+      svg.append(ring);
+    }
   }
   // A pathway filled past its limit, and a manager with more cables through it
   // than it states, are outlined where this pane draws them.
@@ -768,15 +770,20 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
 // inside its cage - swap.js seats it beside the cage, at `<port>-occupant` -
 // so a click on either is mapped back to the port by its path
 // (cable-rules.js portPathOf), and counts only if that port is drawn.
+// A SLOT THAT TAKES A CABLE END (a power inlet or outlet, a ground stud) is
+// not class port: elevation.js lists the paths of the ones on the panel in
+// the group's data-cable-ends, and a click on one picks it by its path.
 export function portAt(target, group) {
+  const ends = (group.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean);
   let hit = null;
   for (let n = target; n && n !== group; n = n.parentNode) {
     // (its path, as its own drawing or as the projection of a seated module's back: part-path.js)
     const p = pathOfEl(n);
-    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
+    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant') || ends.includes(p))) hit = p;
   }
   if (hit == null) return null;
   const path = portPathOf(hit);
+  if (ends.includes(path)) return path;
   return group.querySelector(partSel(path, '[data-class="port"]')) ? path : null;
 }
 

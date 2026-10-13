@@ -219,7 +219,9 @@ export function cableText(c, {spare = null, needs = null} = {}) {
   // WHAT THE LAY FINDS (kit 0.21.0, #1007 and #1013: inspect's route.bends
   // and route.covers), each in the kit's sentence: a corner with less room
   // than the cable's bend radius, and the ports a span of it runs in front of.
-  for (const x of c.route?.bends ?? []) if (x.text) lines.push(`Tight bend: ${clip(x.text, 200)}`);
+  // (a pair of turns on one short leg is one sentence of up to 182 characters with the kit's own names, and
+  // longer with a long label: the kit's sentence is said whole, and its advice, where it gives one, after it)
+  for (const x of c.route?.bends ?? []) if (x.text) lines.push(`Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
   if (c.route?.covers?.text) lines.push(`In front of other ports: ${clip(c.route.covers.text, 300)}`);
   // What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
   for (const f of c.spare_findings ?? []) lines.push(`Spare: ${clip(f.text, 200)}`);

@@ -7,6 +7,7 @@
 // committed, and a shared, mutated rack is how a save would catch half an edit.
 
 import {RU} from './rails.js';
+import {hexColor} from './cable-geometry.js';
 
 export const FORMAT = 'portrayal-rack';
 // Zero-U parts and `side` (#926) did not raise it: both are optional keys a
@@ -190,7 +191,11 @@ export const holdersOf = z => (plainObject(z?.heldBy) && Array.isArray(z.heldBy.
   ? z.heldBy.parts.filter(id => typeof id === 'string' && id) : []);
 // A part's bottom U and its offset, each from the other: U1 is offset 0.
 export const zeroUOffset = ru => Math.round((ru - 1) * RU * 100) / 100;
-export const zeroUBottom = z => Math.max(1, Math.round((Number(z?.offsetMm) || 0) / RU) + 1);
+// THE ONE OWNER OF A ZERO-U PART'S BOTTOM is `offsetMm`, in mm (version 4): fit,
+// the solids and so the routes read it here. `zeroUBottom` is the nearest U to
+// it, for a label or a lane waypoint, and is never drawn from.
+export const zeroUBottomMm = z => Math.max(0, Number(z?.offsetMm) || 0);
+export const zeroUBottom = z => Math.max(1, Math.round(zeroUBottomMm(z) / RU) + 1);
 
 export const updateItem = (rack, id, patch) =>
   ({...rack, items: rack.items.map(i => (i.id === id ? {...i, ...patch} : i))});
@@ -367,6 +372,13 @@ const routesEqual = (a, b) => a.length === b.length && a.every((w, i) =>
 // at all - is not thrown away: it moves, whole, to the cable's
 // `lengthAsWritten`, so nothing downstream reads a bad number and the file
 // still holds what was written. Loading what was saved changes nothing more.
+//
+// A COLOUR IS READ THE SAME WAY (#1028). `color` is the cable's own colour:
+// `#rgb` or `#rrggbb`, kept as lower case `#rrggbb` (cable-geometry.js
+// hexColor). A cable with no such key has none, and loads as it always did.
+// A `color` that is no colour (a name, a number, an object) moves, whole, to
+// `colorAsWritten`, and the cable has no `color`: it is drawn by its ends,
+// its type or its media, never in a colour guessed from what was written.
 const readEnd = e => ({...(e && typeof e === 'object' && !Array.isArray(e) ? e : {}), item: String(e?.item ?? ''), path: String(e?.path ?? ''),
                        view: e?.view === 'rear' ? 'rear' : 'front'});
 // A length is a number, or a string of plain decimal digits: Number() would
@@ -412,7 +424,8 @@ export function readCables(list, bundles = []) {
   const out = [];
   const seen = new Set();
   for (const raw of list) {
-    const {length: len, slack: slackRaw, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    const {length: len, slack: slackRaw, color: colorRaw, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    const color = hexColor(colorRaw);
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
@@ -444,6 +457,7 @@ export function readCables(list, bundles = []) {
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
               route, ...(routeAsWritten ? {routeAsWritten} : {}),
               ...(routeEdited === true ? {routeEdited: true} : {}), ...readSlack(slackRaw),
+              ...(color ? {color} : colorRaw == null ? {} : {colorAsWritten: colorRaw}),
               ...(length ? {length} : len == null ? {} : {lengthAsWritten: len})});
   }
   return out;
