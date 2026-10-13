@@ -11,7 +11,8 @@
 // material (cables.js makes one per cable, scene3d.js one jacket and one strap
 // material per bundle) is made see-through and stops writing depth, so a
 // dimmed tube in front never hides the lit one; its own values are kept and
-// put back exactly when the hover ends.
+// put back exactly when the hover ends. The plugs of the other cables go with
+// their tubes (#179): a plug is a mesh of its device, found by its cable's end.
 //
 // HOVER ONLY. Nothing here selects, and nothing takes a click. A touch has no
 // hover, so a touch pointer is ignored: on a phone or a tablet the stage and
@@ -45,13 +46,28 @@ const DIM = 0.12;   // what a dimmed tube keeps of its own opacity
  *  (no target, or one the rack no longer has). */
 export function litFor(rack, target) {
   if (!target) return null;
+  let lit = null;
   if (target.kind === 'cable')
-    return (rack.cables || []).some(c => c.id === target.id) ? {cables: new Set([target.id]), bundles: new Set()} : null;
-  if (target.kind === 'bundle') {
+    lit = (rack.cables || []).some(c => c.id === target.id) ? {cables: new Set([target.id]), bundles: new Set()} : null;
+  else if (target.kind === 'bundle') {
     const b = (rack.bundles || []).find(x => x.id === target.id);
-    return b ? {cables: new Set(b.members.map(m => m.cable)), bundles: new Set([b.id])} : null;
+    lit = b ? {cables: new Set(b.members.map(m => m.cable)), bundles: new Set([b.id])} : null;
   }
-  return null;
+  if (lit) lit.plugs = plugsFor(rack, lit.cables);
+  return lit;
+}
+
+// THE PLUGS OF THE CABLES (#179): a cabled end's plug is a mesh of its device,
+// not of the cable's group, so the lit set names the ends as well, `item|port`
+// (a plug on `port-1-occupant/tx` is on `port-1`). `dim` holds the ends of
+// every cable not lit, less any end a lit cable also holds.
+const portKey = (item, path) => `${item}|${String(path).split('-occupant')[0]}`;
+function plugsFor(rack, litCables) {
+  const on = new Set(), dim = new Set();
+  for (const c of rack.cables || [])
+    for (const e of [c.a, c.b]) if (e) (litCables.has(c.id) ? on : dim).add(portKey(e.item, e.path));
+  for (const k of on) dim.delete(k);
+  return {dim};
 }
 
 /** 2D: dim every cable, tag and band on `svgs` but the lit ones, and every strap but those of a lit bundle or of a lit cable's bundle; null restores. */
@@ -110,6 +126,18 @@ function apply3d(world, lit) {
   for (const g of world.getObjectByName('tie-straps')?.children ?? []) {
     const dim = !!lit && !(g.userData.members ?? []).some(id => lit.cables.has(id));
     g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim); });
+  }
+  // THE PLUGS (#179): a device's meshes tagged with a port path (relief.js)
+  // dim when their end's cable is not lit, and are put back with the rest.
+  for (const g of world.children ?? []) {
+    if (!g.name?.startsWith('device-')) continue;
+    const item = g.name.slice('device-'.length);
+    g.traverse(o => {
+      const path = o.userData?.portrayalPath;
+      if (!o.isMesh || !path) return;
+      const dim = !!lit?.plugs?.dim.has(portKey(item, path));
+      for (const m of [].concat(o.material)) dimMaterial(m, dim);
+    });
   }
 }
 

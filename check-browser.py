@@ -5935,6 +5935,17 @@ HOVER_3D_STATE = """() => {
       if (prefix === 'bundle-') { out['envelope-' + id] = env; out['straps-' + id] = read(straps); }
     }
   }
+  // each cable's plugs (#179): a device's meshes tagged with the port a cable ends at
+  const port = e => e.item + '|' + String(e.path).split('-occupant')[0];
+  for (const c of window.__rack.doc().racks[0].cables ?? []) {
+    const keys = new Set([port(c.a), port(c.b)]), mats = new Set();
+    for (const d of w.children) {
+      if (!d.name.startsWith('device-')) continue;
+      d.traverse(o => { if (o.isMesh && o.userData.portrayalPath && keys.has(d.name.slice(7) + '|' + String(o.userData.portrayalPath).split('-occupant')[0]))
+        for (const m of [].concat(o.material)) mats.add(m); });
+    }
+    out['plugs-' + c.id] = [...mats].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
+  }
   return out;
 }"""
 
@@ -6022,8 +6033,9 @@ def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
                 if dimmed and (not tr or dw or op > op0 * 0.2 + 1e-6):
                     bad.append(f"3D {k} should be dimmed (another cable or bundle is lit), its material is {(tr, op, dw)}")
             continue
+        lit_now = k in lit or (k.startswith("plugs-") and "cable-" + k[len("plugs-"):] in lit)
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
-            if k in lit:
+            if lit_now:
                 if (tr, op, dw) != (tr0, op0, dw0):
                     bad.append(f"3D {k} should stay lit, its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
             elif not tr or dw or op > op0 * 0.2 + 1e-6:
@@ -6186,6 +6198,8 @@ def check_rack_hover_dims(page, base):
     base3 = page.evaluate(HOVER_3D_STATE)
     if not base3.get("straps-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
         return bad + [f"3D: no tubes for c4, or no straps or no envelope for b1: {sorted(base3)}"]
+    if not all(base3.get(f"plugs-{c}") for c in ("c1", "c4")):
+        bad.append(f"3D: found no plug meshes for c1 or c4 (a plug is a device mesh tagged with its port): {sorted(k for k in base3 if k.startswith('plugs-'))}")
     if any(base3["envelope-b1"]):
         bad.append("3D: b1's envelope shows with nothing hovered or selected")
 
