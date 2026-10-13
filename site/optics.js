@@ -11,10 +11,12 @@
 //                              share link's `fields` slot
 //   encodeFields/decodeFields  the same map as ONE QUERY PARAMETER, for a page
 //                              whose link is `?device=&config=&view=&swap=`
-//   installOpticFields(shell)  controls for an optic's FIELDS - its latch colour
-//                              and label - beneath the optic menu
+//   installOpticFields(shell)  controls for an optic's FIELDS - its latch color
+//                              and label - beneath the optic menu, and one
+//                              swatch-and-hex control for every color field
 
 import { swapOverrides as swapDelta } from '../vendor/swap.js';
+import { american, normalizeHex, isColorField, ownerOf, colorControl, COLOR_CSS } from './colors.js';
 
 const flat = o => Object.values(o || {}).flat();
 
@@ -109,84 +111,203 @@ export function decodeFields(s) {
   return out;
 }
 
-const HEX = /^#[0-9a-f]{6}$/i;
-
 /**
  * WHAT IS WRITTEN ON AN OPTIC. A seated optic declares fields (components.json
- * `fields`): the four generics carry a latch colour and a module label. The
+ * `fields`): the four generics carry a latch color and a module label. The
  * shell can set them - setFields paints the 2D drawing by the build's own rule,
- * text and colour alike, and emits `fields` for a host to tell a 3D scene - and
- * offers no control for them, so they go here, beneath the optic menu, for
- * whatever optic is in the selected cage. The optic itself is
- * `<cage>-occupant` - swap.js occupantNames, whose PATH is that string for a
- * cage on a device face and for one on a seated card alike, even where the
- * drawing's id for the latter is namespaced into its carrier.
+ * text and color alike, and emits `fields` for a host to tell a 3D scene - and
+ * offers them as text boxes in its inspector. This adds, for whatever optic is
+ * in the selected cage, a row under the optic menu, and turns every color field
+ * the inspector draws into the one control colorControl makes.
  *
- * `select` fires after the shell has drawn the inspector; `change` covers the
- * redraw after a swap. The rows are added once per drawn inspector.
+ * THE OPTIC ITSELF is `<cage>-occupant` - swap.js occupantNames, whose PATH is
+ * that string for a cage on a device face and for one on a seated card alike,
+ * even where the drawing's id for the latter is namespaced into its carrier.
+ *
+ * ONE FIELD, WRITTEN IN ONE PLACE. The pull tab drawn inside an optic is a part
+ * of its own (`<optic>/tab`, common/qsfp-pull-tab) that declares a `latch-color`
+ * too and is wired to the same nodes, so selecting the tab offered a second
+ * home for the optic's color and the two held different values. The nearest
+ * enclosing part that declares a key owns it: every control writes there, and a
+ * value that reaches the nested part by any other road (a link, a saved rack,
+ * the kit's own text box) is moved to the owner.
  */
 export function installOpticFields(shell) {
   const state = shell.state;
+  const doc = document;
 
-  // THE KIT'S HIGHLIGHT PICKER listens for `input` alone (vendor/shell.js
-  // mountHl), so a picker that reports only when it closes changes nothing.
-  // Replay its close as the `input` it waits for; a picker that sent both
-  // repeats a value already set.
-  document.querySelector('#hl input[type=color]')?.addEventListener('change', e =>
-    e.target.dispatchEvent(new Event('input', {bubbles: true})));
+  const faceRoots = () => [state.svg, ...Object.values(state.faces || {})].filter(Boolean);
+  const partEl = path => {
+    for (const r of faceRoots()) {
+      const e = r.querySelector(`[data-path="${CSS.escape(path)}"][data-ref]`);
+      if (e) return e;
+    }
+    return null;
+  };
+  const declared = (path, key) => {
+    const ref = partEl(path)?.dataset.ref?.split(':')[0];
+    if (!ref) return null;
+    try { return shell.fieldsOf(ref)?.[key] ?? null; } catch (e) { return null; }
+  };
+  const ownerFor = (path, key) => ownerOf(path, key, (p, k) => declared(p, k) != null);
+  // What the drawing holds: this session's value, else what the build wrote on
+  // the part's group.
+  const heldAt = (path, key) => state.cfgFields?.[path]?.[key]
+    ?? partEl(path)?.getAttribute(`data-${key}`) ?? undefined;
+  const isSetAt = (path, key) => Object.prototype.hasOwnProperty.call(state.cfgFields?.[path] || {}, key);
+
+  // One color field: the control for `key` of the part at `path`.
+  function colorFieldFor(path, key, decl, label) {
+    const ctl = colorControl(doc, {
+      value: heldAt(path, key) || decl.default, fallback: decl.default, isSet: isSetAt(path, key), label,
+      onSet: v => {
+        shell.setFields(path, {[key]: v});
+        // a value an older link left on a part inside this one is not a second copy
+        for (const p of Object.keys(state.cfgFields || {}))
+          if (p.startsWith(`${path}/`) && isSetAt(p, key) && ownerFor(p, key) === path) shell.resetField(p, key);
+      },
+      onReset: () => shell.resetField(path, key),
+    });
+    return ctl;
+  }
+
+  // THE PART THE INSPECTOR IS SHOWING: the selected element when it carries a
+  // component, else the module seated in it (the shell's own fieldPart).
+  function shownPart() {
+    if (state.sel == null) return null;
+    const sel = faceRoots().map(r => r.querySelector(`[data-path="${CSS.escape(state.sel)}"]`)).find(Boolean);
+    const own = sel?.dataset?.ref ? sel : sel?.querySelector?.('[data-ref][data-path]');
+    const path = own?.getAttribute('data-path');
+    const ref = own?.dataset.ref?.split(':')[0];
+    return path && ref ? {path, ref} : null;
+  }
+
+  // THE KIT'S ROWS, IN THIS SITE'S WORDS AND THIS SITE'S CONTROL. Idempotent:
+  // the inspector is redrawn wholesale, so every pass meets fresh rows.
+  function upgradeRows() {
+    const box = shell.el.inspect;
+    if (!box) return;
+    const part = shownPart();
+    for (const inp of box.querySelectorAll('[data-field]:not([data-upgraded])')) {
+      inp.dataset.upgraded = '1';
+      const row = inp.closest('.row');
+      const label = row?.querySelector('span');
+      if (label) label.textContent = american(label.textContent);
+      if (row?.title) row.title = american(row.title);
+      if (!part || inp.tagName !== 'INPUT') continue;
+      const key = inp.dataset.field;
+      let decl = null;
+      try { decl = shell.fieldsOf(part.ref)?.[key]; } catch (e) { /* not a component */ }
+      if (!isColorField(decl)) continue;
+      const owner = ownerFor(part.path, key);
+      const ctl = colorFieldFor(owner, key, decl, label?.textContent || key);
+      for (const x of row.querySelectorAll('[data-field],[data-reset]')) x.remove();
+      (label || row).after(ctl.el);
+      // the swatch and the box are this field's; the kit's own are gone
+      ctl.el.dataset.field = key;
+      ctl.el.dataset.owner = owner;
+    }
+  }
 
   function opticFields() {
     const box = shell.el.inspect;
     const pick = box?.querySelector('#optic');
     if (!pick || box.querySelector('.optic-fields')) return;
     const occ = `${pick.dataset.cage}-occupant`;
-    // THE KIT DRAWS A PART'S OWN FIELDS SINCE PORTRAYAL #817: select the optic
-    // itself and the shell's inspector already holds a control per field, for
-    // this same path. The rows below would be the same fields a second time.
-    // The CAGE's row is still this function's: a cage declares no fields, the
-    // kit draws none there, and that is where a reader picks the optic.
-    if (state.sel === occ && box.querySelector('[data-field]')) return;
-    // A DIFFERENT OPTIC STARTS FROM ITS OWN DEFAULTS, so a colour picked for
+    // A DIFFERENT OPTIC STARTS FROM ITS OWN DEFAULTS, so a color picked for
     // one part does not ride onto the next.
-    pick.addEventListener('change', () => shell.setFields(occ, null));
+    if (!pick.dataset.clears) {
+      pick.dataset.clears = '1';
+      pick.addEventListener('change', () => shell.setFields(occ, null));
+    }
     const ref = pick.value;
     const fields = ref ? shell.fieldsOf(ref) : {};
-    const keys = Object.keys(fields);
-    if (!keys.length) return;
-    const cur = state.cfgFields?.[occ] || {};
-    const wrap = document.createElement('div');
+    const wrap = doc.createElement('div');
     wrap.className = 'optic-fields';
-    for (const k of keys) {
+    // WHAT THE PANEL ALREADY OFFERS IS NOT OFFERED TWICE: select the optic, or
+    // a part inside it, and the kit's own row for the field is here, upgraded
+    // to the same control and writing to the same owner.
+    const shown = shownPart();
+    const offered = new Set(shown ? [...box.querySelectorAll('[data-field]')]
+      .map(i => i.dataset.field).filter(k => ownerFor(shown.path, k) === occ) : []);
+    for (const k of Object.keys(fields)) {
+      if (offered.has(k)) continue;
       const f = fields[k] || {};
-      // A colour is declared as text holding a hex value, so the default says
-      // which control fits: a picker for a colour, a box for words.
-      const colour = HEX.test(String(f.default || ''));
-      const row = document.createElement('div');
+      const label = american(f.label || k);
+      const row = doc.createElement('div');
       row.className = 'row';
-      const name = document.createElement('span');
-      name.textContent = (f.label || k).toLowerCase();
-      const inp = document.createElement('input');
-      inp.type = colour ? 'color' : 'text';
-      inp.value = cur[k] ?? f.default ?? '';
-      if (!colour) inp.placeholder = 'none';
-      // A PICKER PAINTS AS IT IS MOVED, AND WHEN IT CLOSES. Most send `input`
-      // while the reader drags and `change` only when it is dismissed, so a
-      // colour waiting for `change` showed nothing while the reader chose it;
-      // others send `change` alone, on close (a dialog confirmed with Enter),
-      // so a colour waiting for `input` showed nothing at all. Both are
-      // listened to: the 3D scene's setFields coalesces, so a drag of updates
-      // costs one repaint, and the closing `change` repeats the last value.
-      // Words land on `change`, once they are typed.
-      const write = () => shell.setFields(occ, {[k]: inp.value});
-      if (colour) { inp.addEventListener('input', write); inp.addEventListener('change', write); }
-      else inp.addEventListener('change', write);
-      row.append(name, inp);
+      const name = doc.createElement('span');
+      name.textContent = label.toLowerCase();
+      row.appendChild(name);
+      if (isColorField(f)) {
+        row.appendChild(colorFieldFor(occ, k, f, label).el);
+      } else {
+        const inp = doc.createElement('input');
+        inp.type = 'text';
+        inp.value = state.cfgFields?.[occ]?.[k] ?? f.default ?? '';
+        inp.placeholder = 'none';
+        // Words land on `change`, once they are typed.
+        inp.addEventListener('change', () => shell.setFields(occ, {[k]: inp.value}));
+        row.appendChild(inp);
+      }
       wrap.appendChild(row);
     }
-    pick.closest('.row').after(wrap);
+    if (wrap.children.length) pick.closest('.row').after(wrap);
   }
-  shell.on('select', () => queueMicrotask(opticFields));
-  shell.on('change', () => queueMicrotask(opticFields));
+
+  const refresh = () => { upgradeRows(); opticFields(); };
+  if (shell.el.inspect) new MutationObserver(() => queueMicrotask(refresh)).observe(shell.el.inspect, {childList: true});
+  shell.on('select', () => queueMicrotask(refresh));
+  shell.on('change', () => queueMicrotask(refresh));
+
+  // A VALUE THAT LANDS ON A PART INSIDE ANOTHER THAT OWNS THE KEY MOVES TO THE
+  // OWNER. Whatever wrote it - the kit's text box, `fields=` on a link, a saved
+  // rack, a replay - there is one stored value, and it is the owner's. The
+  // nested copy is put back first, or its restore would paint over the owner's.
+  shell.on('fields', ({path} = {}) => {
+    const mine = state.cfgFields?.[path];
+    if (!mine) return;
+    for (const key of Object.keys(mine)) {
+      const owner = ownerFor(path, key);
+      if (owner === path) continue;
+      const v = mine[key];
+      shell.resetField(path, key);
+      if (v == null || v === '') shell.resetField(owner, key);
+      else shell.setFields(owner, {[key]: v});
+    }
+  });
+
+  // THE KIT'S HIGHLIGHT PICKER listens for `input` alone (vendor/shell.js
+  // mountHl), so a picker that reports only when it closes changes nothing.
+  // Replay its close as the `input` it waits for; a picker that sent both
+  // repeats a value already set. Its hex box is beside it, and the two follow
+  // each other: the page's `hl` event says what the highlight now is.
+  const hl = doc.querySelector('#hl');
+  const hlPick = hl?.querySelector('input[type=color]');
+  if (hlPick) {
+    hl.title = american(hl.title);
+    hlPick.addEventListener('change', e =>
+      e.target.dispatchEvent(new Event('input', {bubbles: true})));
+    const hex = doc.createElement('input');
+    hex.type = 'text';
+    hex.className = 'hex';
+    hex.size = 8;
+    hex.maxLength = 7;
+    hex.spellcheck = false;
+    hex.setAttribute('aria-label', 'Selection color (hex)');
+    hex.title = 'Selection color (hex)';
+    const follow = c => { const n = normalizeHex(c); if (n) hex.value = n; };
+    follow(getComputedStyle(doc.documentElement).getPropertyValue('--hl').trim() || hlPick.value);
+    hex.addEventListener('input', () => {
+      const n = normalizeHex(hex.value);
+      if (!n || !/^#?[0-9a-f]{6}$/i.test(hex.value.trim())) return;
+      hlPick.value = n;
+      hlPick.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    hex.addEventListener('change', () => follow(hlPick.value));
+    hl.appendChild(hex);
+    shell.on('hl', c => { follow(c); });
+  }
 
   // THE COLOUR USED TO BE PAINTED HERE. It is not any more: kit/fields.js does
   // it, called from shell.js setFields for the 2D drawing and relief.js for the
@@ -217,7 +338,7 @@ export function installOpticFields(shell) {
 }
 
 /** The controls' styles, for a page to drop into its own sheet. */
-export const OPTIC_CSS = `
+export const OPTIC_CSS = `${COLOR_CSS}
   .optic-fields input[type=text] { flex:1; min-width:0; font:inherit; }
-  .optic-fields input[type=color] { width:2.2rem; height:1.3rem; padding:0; border:none;
-                                    background:none; cursor:pointer; }`;
+  .optic-fields .colorfield input.hex { flex:none; }
+  #hl input.hex { font:inherit; font-family:ui-monospace,monospace; width:6.5em; min-width:0; margin-left:.3rem; }`;

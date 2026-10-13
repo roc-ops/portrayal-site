@@ -4160,6 +4160,161 @@ def check_explorer_every_colour_swatch(page, base):
     return bad
 
 
+# ONE CONTROL PER COLOR FIELD, AND ONE FIELD PER COLOR. The seated optic and
+# the pull tab drawn inside it both declare `latch-color`, and the inspector
+# offered a text box for one and a picker for the other: two stored values
+# (`port-29-occupant` and `port-29-occupant/tab`), two answers on screen.
+COLOR_FIELDS_JS = """() => [...document.querySelectorAll('#inspect .colorfield')].map(f => ({
+  swatch: f.querySelector('input[type=color]').value, hex: f.querySelector('input.hex').value,
+  reset: !f.querySelector('button.reset').hidden, label: (f.closest('.row')?.innerText || '').trim().split('\\n')[0]}))"""
+OPEN_ROW_JS = """(re) => { const r = [...document.querySelectorAll('.nm')].filter(n => new RegExp(re).test(n.innerText));
+  if (r.length) r[0].click(); return r.length; }"""
+LATCH_URL = "port-29-occupant:latch-color~"
+PORT29 = "port-29~generic%2Fqsfp-lc%402"
+
+
+def explorer_port29(page, base, extra=""):
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front&debug=1&swap={PORT29}{extra}",
+              wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+
+
+def agree(page, what, bad, want=1):
+    """Every color control on the panel shows one value, in swatch and box."""
+    got = page.evaluate(COLOR_FIELDS_JS)
+    if len(got) != want:
+        bad.append(f"{what}: {len(got)} color controls on the panel, expected {want}: {got}")
+    for g in got:
+        if g["swatch"] != g["hex"]:
+            bad.append(f"{what}: the swatch reads {g['swatch']} and the box {g['hex']}")
+    if len({g["swatch"] for g in got}) > 1:
+        bad.append(f"{what}: the controls disagree: {got}")
+    return got
+
+
+@extra("Explorer: a seated optic's latch color is one field with one control on the port, the transceiver and the latch panel, driven by the picker's own events or typed hex, with reset, a reload and a link")
+def check_explorer_latch_color_one_control(page, base):
+    from urllib.parse import unquote
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fills = ("() => [...new Set([...document.querySelectorAll('#shell svg [data-path^=\"port-29-occupant\"] "
+             "[data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill')))]")
+    def all_fill(want):
+        return f"() => {{ const f = ({fills})(); return f.length === 1 && f[0] === '{want}'; }}"
+    panels = {"port": r"^port-29 —", "transceiver": r"^port-29-occupant —",
+              "latch": r"^tab — qsfp-pull-tab"}
+    for panel, row in panels.items():
+        explorer_port29(page, base)
+        if not page.evaluate(OPEN_ROW_JS, row):
+            bad.append(f"explorer {panel} panel: no tree row for it")
+            continue
+        page.wait_for_timeout(400)
+        got = agree(page, f"explorer {panel} panel", bad)
+        if page.evaluate("() => document.querySelectorAll('#inspect [data-field=\"latch-color\"]:not(.colorfield)').length"):
+            bad.append(f"explorer {panel} panel: the kit's text box for the latch color is still here")
+        for name, steps in PICKER_SEQUENCES.items():
+            explorer_port29(page, base)
+            page.evaluate(OPEN_ROW_JS, row)
+            page.wait_for_timeout(400)
+            page.locator('#inspect .colorfield input[type=color]').first.evaluate(PICKER_JS, steps)
+            try:
+                wait_fn(page, f"explorer {panel} panel ({name}): the drawing", all_fill("#c22f2f"))
+            except RuntimeError as e:
+                bad.append(str(e))
+            got = agree(page, f"explorer {panel} panel ({name})", bad)
+            if got and got[0]["hex"] != "#c22f2f":
+                bad.append(f"explorer {panel} panel ({name}): the box reads {got[0]['hex']} after the picker")
+            url = unquote(page.url)
+            if LATCH_URL + "#c22f2f" not in url or url.count("latch-color") != 1:
+                bad.append(f"explorer {panel} panel ({name}): the link does not hold exactly one latch color: {url}")
+            shared = page.url
+            page.goto(shared, wait_until="load")
+            page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+            try:
+                wait_fn(page, f"explorer {panel} panel ({name}): the drawing after a reload", all_fill("#c22f2f"))
+            except RuntimeError as e:
+                bad.append(str(e))
+            page.evaluate(OPEN_ROW_JS, row)
+            page.wait_for_timeout(400)
+            got = agree(page, f"explorer {panel} panel ({name}) after a reload", bad)
+            if got and got[0]["swatch"] != "#c22f2f":
+                bad.append(f"explorer {panel} panel ({name}): after a reload the control reads {got[0]['swatch']}")
+
+    # typed hex, an invalid box, and the reset, on the latch panel
+    explorer_port29(page, base)
+    page.evaluate(OPEN_ROW_JS, panels["latch"])
+    page.wait_for_timeout(400)
+    box = page.locator('#inspect .colorfield input.hex').first
+    box.fill("#707070")
+    try:
+        wait_fn(page, "explorer latch panel: a typed hex", all_fill("#707070"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    got = agree(page, "explorer latch panel (typed)", bad)
+    if got and got[0]["swatch"] != "#707070":
+        bad.append(f"explorer latch panel: the swatch reads {got[0]['swatch']} after typing #707070")
+    box.fill("#12")
+    box.dispatch_event("change")
+    agree(page, "explorer latch panel (a hex left half typed)", bad)
+    if page.evaluate(fills) != ["#707070"]:
+        bad.append(f"explorer latch panel: half a hex changed the drawing: {page.evaluate(fills)}")
+    # the other panels read the same value
+    page.evaluate(OPEN_ROW_JS, panels["transceiver"])
+    page.wait_for_timeout(400)
+    got = agree(page, "explorer transceiver panel after typing on the latch panel", bad)
+    if got and got[0]["swatch"] != "#707070":
+        bad.append(f"explorer transceiver panel reads {got[0]['swatch']}, the latch panel wrote #707070")
+    page.evaluate(OPEN_ROW_JS, panels["latch"])
+    page.wait_for_timeout(400)
+    page.locator('#inspect .colorfield button.reset').first.click()
+    try:
+        wait_fn(page, "explorer latch panel: reset", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    got = agree(page, "explorer latch panel (reset)", bad)
+    if got and (got[0]["hex"] != "#6f6f6f" or got[0]["reset"]):
+        bad.append(f"explorer latch panel: after reset the control reads {got}")
+    if "latch-color" in unquote(page.url):
+        bad.append(f"explorer: the link still carries a latch color after a reset: {unquote(page.url)}")
+
+    # a link written while the tab had a field of its own is the optic's value
+    explorer_port29(page, base, "&fields=port-29-occupant%2Ftab:latch-color~%23707070")
+    try:
+        wait_fn(page, "explorer: an old link's tab color", all_fill("#707070"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    url = unquote(page.url)
+    if LATCH_URL + "#707070" not in url or "/tab:latch-color" in url:
+        bad.append(f"explorer: the link keeps the color on the tab instead of the optic: {url}")
+    return bad
+
+
+@extra("Explorer: no label, tooltip or message on the inspector says colour, and the highlight has a hex box that follows the picker")
+def check_explorer_us_spelling_and_highlight(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    explorer_port29(page, base)
+    for panel in (r"^port-29 —", r"^port-29-occupant —", r"^tab — qsfp-pull-tab"):
+        page.evaluate(OPEN_ROW_JS, panel)
+        page.wait_for_timeout(400)
+        said = page.evaluate("""() => [...document.querySelectorAll('#inspect, #inspect *')].flatMap(e =>
+          [e.title, e.getAttribute('aria-label'), e.placeholder, e.children.length ? '' : e.textContent]).filter(Boolean).join('\\n')""")
+        if re.search(r"colour", said, re.I):
+            bad.append(f"explorer {panel}: the inspector says colour: {re.findall(r'.{0,30}colour.{0,20}', said, re.I)[:3]}")
+    if re.search(r"colour", page.evaluate("() => document.querySelector('#hl').title"), re.I):
+        bad.append("explorer: the highlight's tooltip says colour")
+    page.fill('#hl input.hex', '#12ab34')
+    hl = page.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim()")
+    if hl.lower() != "#12ab34":
+        bad.append(f"explorer: typing a hex in the highlight box left --hl at {hl!r}")
+    if page.eval_on_selector('#hl input[type=color]', "i => i.value") != "#12ab34":
+        bad.append("explorer: the highlight picker did not follow the box")
+    page.eval_on_selector('#hl input[type=color]', PICKER_JS, ["change #ab12cd"])
+    if page.input_value('#hl input.hex') != "#ab12cd":
+        bad.append(f"explorer: the highlight box reads {page.input_value('#hl input.hex')!r} after the picker closed on #ab12cd")
+    return bad
+
+
 # A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
 # the C100G's empty base: the Explorer, Annotate and the showcase each open on
 # site/featured.js's FEATURED_DEVICE, in a configuration that is not a base,
