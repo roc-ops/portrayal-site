@@ -44,7 +44,9 @@ first step that fails:
 
 1. **Checks each pull request is ready**, and lists every problem with every
    one of them before it stops: open, not a draft, aimed at `main`; the latest
-   `REVIEW:` comment is `approve` and newer than the head commit; the
+   `REVIEW:` comment is `approve` and newer than the head commit (`REVIEW:` and
+   `OWNER DECISION:` comments count only from the owner, members and
+   collaborators); the
    `**Door:**` line of the template is two-way, or an `OWNER DECISION: approve`
    comment is the latest owner-decision comment (a missing `Door` line counts as
    one-way); the `checks` workflow has succeeded on the head, and every check run

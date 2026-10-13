@@ -82,10 +82,17 @@ DECISION = re.compile(r"\A\s*OWNER DECISION:\s*(\w+)", re.I)
 DOOR = re.compile(r"\*\*Door:\*\*\s*(.*)")
 
 
+# Only these may give a verdict or a decision: anyone can comment on a public
+# repository, and a stranger's `OWNER DECISION: approve` is not one.
+TRUSTED = {"OWNER", "MEMBER", "COLLABORATOR"}
+
+
 def latest(comments, pattern):
-    """(match, comment) for the newest comment whose first line matches."""
+    """(match, comment) for the newest trusted comment whose first line matches."""
     found = None
     for c in sorted(comments, key=lambda c: c.get("createdAt", "")):
+        if c.get("authorAssociation") not in TRUSTED:
+            continue
         m = pattern.match(c.get("body") or "")
         if m:
             found = (m, c)
@@ -105,7 +112,12 @@ def problems_with(n, base, repo):
         bad.append(f"is aimed at {p['baseRefName']}, not {base}")
     sha = p["headRefOid"]
 
-    head_date = (p.get("commits") or [{}])[-1].get("committedDate", "")
+    # The head commit by its id, not the last in the list: gh returns at most 100
+    # commits, and after a force-push the head can be older than the others. If it
+    # is not in the list, the newest date there is.
+    commits = p.get("commits") or [{}]
+    head_date = next((c.get("committedDate", "") for c in commits if c.get("oid") == sha),
+                     max(c.get("committedDate", "") for c in commits))
     review = latest(p.get("comments") or [], VERDICT)
     if not review:
         bad.append("has no `REVIEW: approve` comment")
@@ -263,7 +275,14 @@ def main():
         return
 
     push_train(branch, tip)
-    run(["gh", "workflow", "run", WORKFLOW_FILE, "--ref", branch])
+    # A branch pushed a moment ago can be a 404 to the workflow API for a few seconds.
+    for attempt in range(5):
+        r = run(["gh", "workflow", "run", WORKFLOW_FILE, "--ref", branch], check=False)
+        if r.returncode == 0:
+            break
+        time.sleep(poll if attempt < 4 else 0)
+    else:
+        die(3, f"{branch} was pushed but the run could not be started: {r.stderr.strip()}")
     print(f"Pushed {branch} ({tip[:9]}): {base} {base_sha[:9]} + {order}. Started {WORKFLOW_FILE}; waiting.")
     sys.stdout.flush()
     run_id, v = wait_for_run(branch, tip, poll, timeout)

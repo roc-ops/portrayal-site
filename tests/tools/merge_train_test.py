@@ -142,8 +142,8 @@ class Train(unittest.TestCase):
             "state": state, "isDraft": draft, "baseRefName": base,
             "headRefOid": sha, "headRefName": f"pr{n}",
             "body": f"## Merge danger\n\n{door}\n", "comments": comments,
-            "commits": [{"committedDate": "2000-01-01T00:00:00Z"},
-                        {"committedDate": "2026-10-13T08:00:00Z"}],
+            "commits": [{"oid": "0" * 40, "committedDate": "2000-01-01T00:00:00Z"},
+                        {"oid": sha, "committedDate": "2026-10-13T08:00:00Z"}],
         }
         ok = [{"name": "contract and modules", "status": "completed", "conclusion": "success"},
               {"name": "browser (1 of 5)", "status": "completed", "conclusion": "success"}]
@@ -156,7 +156,7 @@ class Train(unittest.TestCase):
     @staticmethod
     def review(verdict, when="2026-10-13T09:00:00Z", body=None):
         return {"body": body or f"REVIEW: {verdict} [T-1] looks fine", "createdAt": when,
-                "author": {"login": "someone"}}
+                "author": {"login": "someone"}, "authorAssociation": "OWNER"}
 
     def run_train(self, *args, env=None):
         self.state_path.write_text(json.dumps(self.state))
@@ -264,6 +264,22 @@ class Train(unittest.TestCase):
             self.review("approve", "2026-10-13T10:00:00Z")]
         self.assertEqual(self.run_train("--dry-run", "1").returncode, 0)
 
+    def test_a_stranger_cannot_approve_or_decide(self):
+        self.state["prs"]["1"]["body"] = "**Door:** one-way\n"
+        self.state["prs"]["1"]["comments"] = [
+            {**self.review("approve"), "authorAssociation": "NONE"},
+            {"body": "OWNER DECISION: approve", "createdAt": "2026-10-13T09:30:00Z",
+             "author": {"login": "x"}, "authorAssociation": "CONTRIBUTOR"}]
+        r = self.refused("1", why="REVIEW: approve")
+        self.assertIn("OWNER DECISION", r.stdout + r.stderr)
+
+    def test_the_head_commit_is_found_by_id_not_by_position(self):
+        # the head is older than another commit in the list (a force-push back)
+        p = self.state["prs"]["1"]
+        p["commits"] = [{"oid": p["headRefOid"], "committedDate": "2026-10-13T08:00:00Z"},
+                        {"oid": "1" * 40, "committedDate": "2026-10-13T12:00:00Z"}]
+        self.assertEqual(self.run_train("--dry-run", "1").returncode, 0)
+
     def test_an_approve_older_than_the_head_commit_does_not_count(self):
         self.state["prs"]["1"]["comments"] = [self.review("approve", "2026-10-13T07:00:00Z")]
         self.refused("1", why="before the head commit")
@@ -282,14 +298,14 @@ class Train(unittest.TestCase):
         self.state["prs"]["1"]["body"] = "**Door:** one-way, it changes the workflow\n"
         self.state["prs"]["1"]["comments"].append(
             {"body": "OWNER DECISION: approve, merge it", "createdAt": "2026-10-13T09:30:00Z",
-             "author": {"login": "owner"}})
+             "author": {"login": "owner"}, "authorAssociation": "OWNER"})
         self.assertEqual(self.run_train("--dry-run", "1").returncode, 0)
 
     def test_an_owner_decision_that_says_no_is_not_one(self):
         self.state["prs"]["1"]["body"] = "**Door:** one-way\n"
         self.state["prs"]["1"]["comments"].append(
             {"body": "OWNER DECISION: hold until Friday", "createdAt": "2026-10-13T09:30:00Z",
-             "author": {"login": "owner"}})
+             "author": {"login": "owner"}, "authorAssociation": "OWNER"})
         self.refused("1", why="OWNER DECISION")
 
     def test_no_door_line_is_treated_as_one_way(self):
