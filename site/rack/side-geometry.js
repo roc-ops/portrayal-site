@@ -36,7 +36,7 @@
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {railOf, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
-import {zeroUBottom} from '../../vendor/rack/model.js';
+import {zeroUBottomMm} from '../../vendor/rack/model.js';
 
 export const SIDE_PANES = ['left', 'right'];
 const OTHER = {left: 'right', right: 'left'};
@@ -91,7 +91,7 @@ export function zeroUDepth(rack, z, c) {
   const zFront = rear ? zc - d / 2 : zc + d / 2, outward = rear ? -1 : 1;
   const zBack = zFront - outward * d, cx = zeroUX(z, () => c), half = w > 0 ? w / 2 : 0;
   return {z0: Math.min(zFront, zBack), z1: Math.max(zFront, zBack), x0: cx - half, x1: cx + half,
-          zFront, outward, flip: false, y0: (zeroUBottom(z) - 1) * RU};
+          zFront, outward, flip: false, y0: zeroUBottomMm(z)};
 }
 
 /** Which of a part's own side drawings a pane shows, and whether it is

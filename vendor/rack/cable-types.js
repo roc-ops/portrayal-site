@@ -10,6 +10,7 @@
 // checked against; the loaded one (while a cable is pulled) is data only.
 
 import {jdist} from '../dist.js';
+import {hexColor} from './cable-geometry.js';
 
 const urlOf = (dist, path) => (typeof dist === 'function' ? dist(path) : `${String(dist).replace(/\/$/, '')}/${path}`);
 const positive = v => typeof v === 'number' && Number.isFinite(v) && v > 0;
@@ -52,10 +53,20 @@ export const diameterLookup = types => cable => {
   return positive(t?.od_mm) ? t.od_mm : null;
 };
 
+// cable => the jacket colour of its NAMED type, as `#rrggbb`, or null: the
+// plans' `typeColorOf` (cable-rules.js colorFacts, #1028). Only the type a
+// cable names in its own `type` is read, and never the bare type its media
+// names: a media's colour is cable-geometry.js `COLORS` and nothing else, so
+// that one table holds the defaults (cable_types_index.py refuses a `jacket`
+// on a bare media type for the same reason). A type's `jacket` is
+// `{color, basis, sources, note}`.
+export const jacketLookup = types => cable => hexColor(typeOf(types, cable?.type)?.jacket?.color);
+
 export async function loadCableTypes(dist) {
   const j = await jdist(urlOf(dist, 'cable-types.json'));
   if (j?.format !== 1) throw new Error(`cable-types.json: format ${j?.format}; this kit reads format 1`);
   const types = j.types || {};
   return {types, version: j.version ?? null, sources: j.sources || {},
-          typeOf: id => typeOf(types, id), bendOf: bendLookup(types), diameterOf: diameterLookup(types)};
+          typeOf: id => typeOf(types, id), bendOf: bendLookup(types), diameterOf: diameterLookup(types),
+          typeColorOf: jacketLookup(types)};
 }

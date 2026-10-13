@@ -18,13 +18,14 @@ import {trayRefusal, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
-import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey,
+import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
 import {portIdsOf} from './ports.js';
 import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, lanesOf} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
+import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
 import {fieldAccepts} from '../fields.js';
 
 export const GONE = 'That device is no longer in the rack.';
@@ -124,9 +125,21 @@ function patch(rack, {id, ...given}, ctx) {
     const s = slotsFor(ctx, it.ref);
     if (s?.error) return s;
     if (s) {
-      const {accepted, ignored} = acceptSwaps(p.swaps, slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef));
-      p.swaps = accepted;
-      if (ignored.length) findings.push(note(`Left out ${ignored.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      // A REF THE LIBRARY HAS REPLACED IS WRITTEN AS ITS REPLACEMENT before the
+      // slot is asked, and a ref it no longer has is kept, with what sits
+      // under it, and named (kit/redirects.js): neither is dropped.
+      p.swaps = followSwaps(p.swaps, ctx.redirects).swaps;
+      const env = slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef, ctx.redirects);
+      const {kept, rest, gone} = keptSwaps(p.swaps, ctx, path => resolverFor(env, p.swaps).entryAt(path));
+      const {accepted, ignored} = acceptSwaps(rest, env);
+      // what sits under a carrier the slot refuses goes with it
+      const orphan = path => ignored.some(c => underCarrier(path, c));
+      const stays = Object.fromEntries(Object.entries(kept).filter(([path]) => !orphan(path)));
+      const dropped = Object.keys(kept).filter(path => orphan(path));
+      p.swaps = {...accepted, ...stays};
+      const left = [...ignored, ...dropped];
+      if (left.length) findings.push(note(`Left out ${left.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      findings.push(...unknownTexts(gone.filter(u => !orphan(u.path)).map(u => ({...u, label: it.label}))).map(note));
     }
   }
   const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
@@ -235,10 +248,14 @@ const firstEight = refs => (refs.length > 8 ? `${refs.slice(0, 8).join(', ')} an
 // panel at the same `<bay>/module/<part>` (ports.js portIdsOf).
 const portIds = (comp, compByRef) => portIdsOf(comp, compByRef);
 
-function fit(rack, {id, path, ref}, ctx) {
+function fit(rack, {id, path, ref: given}, ctx) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
-  const was = it.swaps || {};
+  // A REF THE LIBRARY HAS REPLACED IS READ AS ITS REPLACEMENT, and so are the
+  // ones already on the device, so the slot is judged on the parts that will
+  // be written.
+  const ref = given === 'default' ? given : ctx.redirects?.follow(given) ?? given;
+  const was = followSwaps(it.swaps || {}, ctx.redirects).swaps;
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   // the swaps with only this slot changed: the map the slot is judged on
@@ -249,7 +266,7 @@ function fit(rack, {id, path, ref}, ctx) {
   if (!s && (ref === 'default' ? !own(was, path) : own(was, path) && was[path] === ref)) return unchanged(rack);
   let holds = ref === 'default' ? undefined : ref, isCage = false, view = null, next = flat;
   if (s) {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const target = resolverFor(env, flat).entryAt(path);
     // a part the slot does not take is refused even when it is the one held
     if (target && ref && ref !== 'default' && !(target.accepts || []).includes(ref))
@@ -272,6 +289,7 @@ function fit(rack, {id, path, ref}, ctx) {
     .filter(([k]) => k !== `${path}/module` && !underCarrier(k, path)));
   const name = holds === undefined ? null : partName(ctx.compByRef, holds);
   const findings = [];
+  if (ref !== given) findings.push(note(`${pairText(given, ref)}: ${ref} was fitted in ${path}.`));
   // A BAY'S PORTS GO WITH ITS PART: a cable on a port the new part does not
   // have is kept, as a loose end (remove's cables: 'keep').
   if (!isCage && holds !== undefined) {
@@ -310,7 +328,7 @@ function field(rack, {id, path, key, value}, ctx) {
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   if (s && typeof ctx.compByRef === 'function') {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const R = resolverFor(env, it.swaps || {});
     const slot = R.entryAt(path);
     if (slot) return {error: `${path} is a ${slot.isCage ? 'cage' : 'bay'}; the part in it is ${path}${slot.isCage ? '-occupant' : '/module'}.`};
@@ -607,13 +625,18 @@ const lengthOf = l => (l ? {value: l.value, unit: l.unit ?? 'm', source: l.sourc
 // the address it stands for (cable-rules.js elementIdReason).
 const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); return e ? {error: `${elementIdReason(e.path)}.`} : null; };
 
-function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null}, {chassisOf}) {
+// A CABLE'S OWN COLOUR (`color`, #1028) is `#rgb` or `#rrggbb`, stored as
+// lower case `#rrggbb`; null or "" is none of its own. Anything else is
+// refused with cable-rules.js COLOR_REFUSED, here and in cable.update.
+function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, {chassisOf}) {
   if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
   const refused = endRefused([a, b]);
   if (refused) return refused;
+  const tint = parseColor(color);
+  if (!tint.ok) return {error: tint.reason};
   const can = canCable(rack, a, b, {uOf: heightOf(chassisOf)});
   if (!can.ok) return {error: can.reason};
-  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length)});
+  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length), color: tint.color});
   return done(next, `Added cable ${cableName(cable)}.`, {created: {id: cable.id}});
 }
 
@@ -621,7 +644,8 @@ function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = nu
 // label and length - and checks the new port as cable.add would, with the
 // cable itself out of the way. A route drawn by hand is kept, and said to be
 // possibly stale.
-const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front'});
+const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
+  ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
 function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
@@ -637,13 +661,25 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   }
   const {straps: tie, ...fields} = p;
   const want = 'length' in fields ? {...fields, length: lengthOf(fields.length)} : {...fields};
+  // its own colour: a colour sets it, null or "" takes it off (updateCable)
+  if ('color' in want) {
+    const tint = parseColor(want.color);
+    if (!tint.ok) return {error: tint.reason};
+    want.color = tint.color;
+  }
   // the straps of this cable alone: null takes the key off, which is the default
   const untie = tie === null && 'straps' in c;
   if (tie != null) want.straps = {...(c.straps && typeof c.straps === 'object' ? c.straps : {}), ...tie};
   // A length named at all replaces one the loader kept as written.
-  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c));
-  if (!changed.length && !moved.length && !untie) return unchanged(rack);
-  let next = updateCable(rack, id, {...want, ...Object.fromEntries(moved.map(k => [k, ends[k]]))});
+  // (and a colour named at all, one kept as written)
+  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c)
+    || (k === 'color' && 'colorAsWritten' in c));
+  // AN END NAMED AT THE PORT IT IS ON may still state another plug (`plug`,
+  // cable-rules.js endPlug), or none where it stated one: that is an edit of
+  // the cable and not a move.
+  const plugged = ['a', 'b'].filter(k => !moved.includes(k) && (ends[k].plug ?? null) !== (c[k].plug ?? null));
+  if (!changed.length && !moved.length && !plugged.length && !untie) return unchanged(rack);
+  let next = updateCable(rack, id, {...want, ...Object.fromEntries([...moved, ...plugged].map(k => [k, ends[k]]))});
   if (untie) next = {...next, cables: next.cables.map(x => { if (x.id !== id) return x; const {straps: _s, ...rest} = x; return rest; })};
   const name = cableName(cableOf(next, id));
   const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.`);
@@ -1122,7 +1158,8 @@ const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom si
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
   description: 'One end of a cable: a port on a device.',
   properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
-               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."}}};
+               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
+               plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
   description: 'How long the cable is, or null for not known.',
   properties: {value: {type: 'number', exclusiveMinimum: 0, description: 'The length, above 0.'},
@@ -1132,7 +1169,8 @@ const CABLE_FIELDS = {
   media: {enum: ['', ...MEDIA], description: `The cable type: ${MEDIA.join(', ')}, or "" for not known.`},
   purpose: {type: 'string', description: 'What the cable is for, in a word or two (e.g. uplink, management).'},
   label: {type: 'string', description: 'The text on its tags. Its id is used when there is none.'},
-  length: LENGTH};
+  length: LENGTH,
+  color: {type: ['string', 'null'], description: 'Its own color, as # and three or six hex digits (e.g. #2bb3c8); null for none of its own, so that its ends, its type or its media decide.'}};
 const WAYPOINT = {type: 'object', additionalProperties: false,
   description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
   properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
@@ -1236,7 +1274,7 @@ export const COMMANDS = {
     args: args(['id'], {id: ID('part beside the rack')})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
-  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label or length, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
+  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
     args: args(['id'], {id: ID('cable'), a: {...END, description: 'Move end A to this port; left where it is when left out.'},
       b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS, straps: CABLE_STRAPS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},
@@ -1356,6 +1394,8 @@ export function apply(rack, cmds, ctx) {
   }
   const bound = new Map(), created = {}, ids = [], summaries = [], findings = [];
   let cur = rack, step = false;
+  // WHAT THIS RACK SAYS THAT THE LIBRARY HAS REPLACED, as the file has it
+  const said = ctx?.redirects?.size ? rewriteRack(rack, ctx.redirects).changed : [];
   for (const [index, raw] of list.entries()) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw) || typeof raw.op !== 'string')
       return {error: 'A command is an object with an op.', index};
@@ -1382,6 +1422,23 @@ export function apply(rack, cmds, ctx) {
       if (as != null) { bound.set(as, res.created.id); created[as] = res.created.id; }
     }
     cur = res.rack;
+  }
+  // THE FIRST EDIT THAT LANDS WRITES THE NEW REFS (kit/redirects.js), in the
+  // same step, so one undo takes both back; a plain load, a no-op, a refused
+  // edit and a command that is no step leave the rack as the file has it.
+  if (step && ctx?.redirects?.size) {
+    const out = rewriteRack(cur, ctx.redirects);
+    if (out.changed.length) {
+      cur = out.rack;
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const all = said.filter(a => there.has(a.item));
+      for (const c of out.changed) if (!all.some(a => a.item === c.item && a.path === c.path && a.from === c.from)) all.push(c);
+      findings.unshift(note(rewroteText(all)));
+    } else if (said.length) {
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const still = said.filter(a => there.has(a.item));
+      if (still.length) findings.unshift(note(rewroteText(still)));
+    }
   }
   return {rack: cur, summary: summaries.join(' '), findings, created: {...created, ids}, noop: cur === rack, step};
 }

@@ -6051,7 +6051,9 @@ def check_rack_bundle_2d_front(page, base):
         bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
     # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
     head = page.inner_text('#cableList [data-bundle-item="b1"]')
-    if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
+    # (the strap summary is "N straps every 6 in" when every strap is a spacing strap, and "N straps (a every 6 in, b where a
+    # cable leaves)" when some are not: the kit counts a strap at the peel (0.28.0, straps on the routed path))
+    if "uplinks" not in head or "about" not in head or not re.search(r"\d+ straps? (every 6 in|\(\d+ every 6 in)", head):
         bad.append(f"list: the bundle's header does not give its name, size and straps: {head!r}")
     order = page.eval_on_selector_all("#cableList ul > li", "ls => ls.map(l => l.dataset.bundleItem ? 'B' : l.dataset.cableItem)")
     if order[:4] != ["B", "c1", "c2", "c3"]:
@@ -6795,17 +6797,28 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
             # ...and it comes back with the next free move over a cable.
             if drag > 1:
                 settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
-            back = page.evaluate(find_js, cid)
-            if not back:
-                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
-            else:
+            # (found again up to three times, as the first point is: where two cables lie close in 3D (c4 and c8 in ring 4
+            # since the ring is chosen by room, kit 0.27.0) a point found while the camera still eases may be under the
+            # other one by the time the pointer gets there)
+            back = None
+            for attempt in range(3):
+                back = page.evaluate(find_js, cid)
+                if not back:
+                    break
                 page.mouse.move(back[0] - 3, back[1] - 3)
                 page.mouse.move(back[0], back[1])
                 try:
                     wait_fn(page, f"{where}: {cid}'s label back", "id => { const t = document.getElementById('cableTip'); return t && !t.hidden && t.dataset.cableTip === id; }",
-                            arg=cid, timeout=10000)
+                            arg=cid, timeout=10000 if attempt == 2 else 2500)
+                    break
                 except RuntimeError:
-                    bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    if attempt == 2:
+                        bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    else:
+                        park_mouse(page)
+                        page.wait_for_timeout(600)
+            if not back:
+                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
     park_mouse(page)
     if page.evaluate(SPARE_TIP_JS):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
@@ -9575,7 +9588,7 @@ LEAD_3D_JS = """leads => {
 }"""
 
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c2, c3, c4, c7 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.55 m, lower 0.57-0.65 m; c2, c3, c4 and c7 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9604,7 +9617,9 @@ def check_rack_cable_lay(page, base):
         # per media since 0.16.0 (an LC cord adds 113.1 mm an end, not 150, so
         # each is 73.8 mm shorter), and since 0.17.0 a path leaves room for its
         # bends (each is about 10 to 104 mm longer here, by where its turns stand).
-        lo, hi = (0.48, 0.53) if int(cid[1:]) <= 8 else (0.57, 0.65)
+        # THE RING IS CHOSEN BY ROOM (kit 0.27.0, Portrayal #1026): c8's lead has no room to turn into ring 5, which it took
+        # before, and takes ring 4: 0.5418 m where it was 0.4881, and a 1 m cord where it was 0.5 m. No other cord moved.
+        lo, hi = (0.48, 0.55) if int(cid[1:]) <= 8 else (0.57, 0.65)
         if not (lo - 1e-9 <= (p["measured"] or 0) <= hi + 1e-9):
             bad.append(f"{cid}: measured {p['measured']} m, not {lo}-{hi} m")
         # ...and the stock size each rounds up to: c4 (0.4936 m) and c8 (0.4883,
@@ -9613,7 +9628,7 @@ def check_rack_cable_lay(page, base):
         # THE STOCK BREAK (kit 0.22.0, Portrayal #983): a cord up to 10 mm short of full end play is still chosen,
         # so c2 (0.5015 m), c3 (0.5050) and c7 (0.5017), each within 10 mm over the break, drop from 1 m to 0.5 m.
         # No measured length moved. Held as the rule too: a 0.5 m cord exactly where the measure is at most 0.51 m.
-        want = 0.5 if cid in ("c2", "c3", "c4", "c7", "c8") else 1
+        want = 0.5 if cid in ("c2", "c3", "c4", "c7") else 1
         if p["value"] != want or (p["value"] == 0.5) != ((p["measured"] or 9) <= 0.51 + 1e-9):
             bad.append(f"{cid}: a {p['value']} m cord for {p['measured']} m measured, not {want} m")
         if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
@@ -9677,17 +9692,25 @@ def check_rack_cable_lay(page, base):
 # sentences once per set of them and rings each corner where the kit puts it,
 # in both views; it measures no bend itself. On the reference cable-lay rack
 # the kit finds none, so nothing is said and nothing is ringed. The finding
-# here is a real one, made by an edit: the cord from LEAF-B port 49 becomes
-# an AOC to LEAF-A port 49 (an AOC head seated in each cage, c1 removed to
-# free the port). Its head stands 64.8 mm out of the cage, so on its way round
-# the tray's front edge to the lacer's ring it turns three times with less
-# room than the 30 mm an AOC needs.
+# here is a real one, made by an edit: the cord from LEAF-B port 52 becomes
+# an AOC to LEAF-A port 52 (an AOC head seated in each cage, the two cords that
+# used those ports removed to free them). Its head stands 64.8 mm out of the
+# cage, so on its way to the lacer's ring it turns with less room than the 30
+# mm an AOC needs. Kit 0.27.0 (#1026) chooses the ring by room, so the cord
+# from port 49 to port 49 that this check once used finds one with room and
+# has no finding; port 52 to port 52 still has none to turn into, and its
+# findings are one single bend and two pairs of turns on a short leg (a pair
+# is ONE finding with `turns`, ringed at each corner: route-context.js
+# bendPoints).
 # What is expected is the kit's own output, read two ways: the findings the
 # page holds, and the findings of a context built afresh in the page for the
 # same rack (BEND_FRESH_JS). NOT VACUOUS: it fails unless the edit produces
 # findings, each in the kit's words, for c9, an AOC, at 30 mm.
 AOC_HEAD = "fs/qsfp28-aoc@1"
 BEND_SENTENCE_RE = re.compile(r"^c\d+ (turns [\d.]+ degrees (at|between) .+ with room for an? [\d.]+ mm bend; "
+                              r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
+                              # two turns on one short leg, said as one (kit 0.27.0)
+                              r"|turns twice within [\d.]+ mm between .+ \([\d.]+ and [\d.]+ degrees\), with room for an? [\d.]+ mm bend; "
                               r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
                               r"|doubles back .+, with no room for a bend; the cable \([\w-]+\) needs [\d.]+ mm)\.$")
 # The page's routes are the ones read for the rack as it is now.
@@ -9697,12 +9720,14 @@ BEND_FRESH_JS = """async () => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const rack = window.__rack.doc().racks[0];
   const fresh = await RC.routeFacts(rack, (await C.loadCatalog('/assets/dist/')).chassisOf);
-  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point});
+  // `points` is where the finding is ringed: its `at`, or each of its two corners for a pair of turns (bendPoints)
+  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point, points: RC.bendPoints(f),
+    pair: Array.isArray(f.turns) && f.turns.length === 2});
   const page = (window.__rack.bends() || []).map(plain);
   return {page, fresh: fresh.bendFindings.map(plain), notice: RC.bendNotice(fresh.bendFindings),
     said: document.querySelector('.rk-side .rk-notice')?.textContent ?? '',
     // where a pane draws a rack point: x from the opening's middle (mirrored on the rear), y down from the top
-    want2d: page.map(f => [OPENING / 2 + f.at[0], rack.frame.heightRU * RU - f.at[1]]),
+    want2d: page.flatMap(f => f.points.map(p => [OPENING / 2 + p[0], rack.frame.heightRU * RU - p[1]])),
     rings2d: [...document.querySelectorAll('#paneFront svg [data-bend-finding], #paneRear svg [data-bend-finding]')].map(c => ({
       pane: c.closest('svg').dataset.pane, cable: c.dataset.bendFinding, at: [+c.getAttribute('cx'), +c.getAttribute('cy')],
       title: c.querySelector('title')?.textContent ?? '', ui: c.getAttribute('data-pt-ui')})),
@@ -9724,16 +9749,18 @@ BEND_RINGS_3D_JS = """async () => {
 
 
 def aoc_between_the_leaves(rack):
-    """The cable-lay rack with c9 as an AOC from LEAF-B port 49 to LEAF-A port 49: an AOC head in each cage, c1 gone."""
+    """The cable-lay rack with c9 as an AOC from LEAF-B port 52 to LEAF-A port 52: an AOC head in each cage, c4 and c12 gone
+    (they were the cords on those two ports)."""
     out = json.loads(json.dumps(rack))
     for it in out["items"]:
         if it["id"] in ("i1", "i3"):
-            it["swaps"] = {**it["swaps"], "port-49": AOC_HEAD}
-    out["cables"] = [c for c in out["cables"] if c["id"] != "c1"]
+            it["swaps"] = {**it["swaps"], "port-52": AOC_HEAD}
+    out["cables"] = [c for c in out["cables"] if c["id"] not in ("c4", "c12")]
     for c in out["cables"]:
         if c["id"] == "c9":
             c["media"] = "aoc"
-            c["b"] = {"item": "i1", "path": "port-49", "view": "front"}
+            c["a"] = {"item": "i3", "path": "port-52", "view": "front"}
+            c["b"] = {"item": "i1", "path": "port-52", "view": "front"}
     return out
 
 
@@ -9774,10 +9801,14 @@ def check_rack_bend_notice(page, base):
     wait_sel(page, "bend notice: the notice", ".rk-side .rk-notice")
     got = page.evaluate(BEND_FRESH_JS)
     finds = got["page"]
-    if got["media"].get("c9") != "aoc" or "c1" in got["media"]:
+    if got["media"].get("c9") != "aoc" or "c4" in got["media"] or "c12" in got["media"]:
         return bad + [f"the edit did not land: {got['media']}"]
     if len(finds) < 2:
         return bad + [f"the AOC gives {len(finds)} findings; expected at least two tight bends: {finds}"]
+    # NOT VACUOUS: a pair of turns on one short leg is one finding with two corners (kit 0.27.0), and is ringed at each
+    if not any(f["pair"] for f in finds) or not any(not f["pair"] for f in finds):
+        return bad + [f"the AOC gives no mix of a single bend and a pair of turns: {[(f['pair'], f['text']) for f in finds]}"]
+    points = sum(len(f["points"]) for f in finds)
     for f in finds:
         if f["cable"] != "c9" or f["need_mm"] != 30 or not BEND_SENTENCE_RE.match(f["text"]) or "(aoc) needs 30 mm" not in f["text"]:
             bad.append(f"a finding is not the kit's sentence for c9, an AOC, at 30 mm: {f}")
@@ -9793,11 +9824,12 @@ def check_rack_bend_notice(page, base):
     # and body findings are: the notice goes with the next redraw.
     if [n for n in got["listed"] if "needs 30 mm" in n] != [f["text"] for f in finds]:
         bad.append(f"the cable list's notes are {got['listed']}; expected the kit's sentences {[f['text'] for f in finds]}")
-    # 2D: one ring per finding on the front pane (both stops are there), at the finding's point, titled with its sentence
+    # 2D: a ring on the front pane (both stops are there) at each finding's point, and at each of a pair's two corners,
+    # each titled with its finding's sentence
     rings = got["rings2d"]
-    if [r["pane"] for r in rings] != ["front"] * len(finds):
-        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {len(finds)} on the front pane")
-    for r, f, want in zip(rings, finds, got["want2d"]):
+    if [r["pane"] for r in rings] != ["front"] * points:
+        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {points} on the front pane")
+    for r, f, want in zip(rings, [f for f in finds for _ in f["points"]], got["want2d"]):
         if r["cable"] != "c9" or r["title"] != f["text"] or not near(r["at"], want):
             bad.append(f"2D: a ring at {r['at']} titled {r['title']!r}; expected {want} for {f['text']!r}")
         if r["ui"] != "*":
@@ -9811,24 +9843,24 @@ def check_rack_bend_notice(page, base):
             " && !(document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('needs 30 mm')")
     again = page.evaluate("""() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length,
       listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent).filter(t => t.includes('needs 30 mm'))})""")
-    if again["n"] != len(finds) or again["bends"] != len(finds):
-        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {len(finds)} still")
+    if again["n"] != points or again["bends"] != len(finds):
+        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {points} for {len(finds)} still")
     if again["listed"] != [f["text"] for f in finds]:
         bad.append(f"after a redraw, with the notice gone, the cable list's notes are {again['listed']}; expected the sentences still")
 
     if webgl_trouble(page):
         return bad
-    # 3D: a ring in the cable's own group at each finding's point, and none in the file
+    # 3D: a ring in the cable's own group at each finding's point (each corner of a pair), and none in the file
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "bend notice: the AOC rack's scene", tubes=True)
     got3d = page.evaluate(BEND_RINGS_3D_JS)
-    if len(got3d["rings"]) != len(finds) or len(got3d["listed"]) != len(finds):
-        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {len(finds)}")
-    for k, (r, f) in enumerate(zip(got3d["rings"], finds)):
+    if len(got3d["rings"]) != points or len(got3d["listed"]) != points:
+        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {points}")
+    for k, (r, (f, want)) in enumerate(zip(got3d["rings"], [(f, p) for f in finds for p in f["points"]])):
         if r["name"] != f"cable-c9-bend-{k}" or r["parent"] != "cable-c9" or not r["visible"] or not r["mesh"]:
             bad.append(f"3D: ring {k} is {r['name']!r} in {r['parent']!r}, visible {r['visible']}; expected cable-c9-bend-{k} in cable-c9")
-        if not near(r["at"], f["at"], 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
-            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {f['at']} for {f['text']!r}")
+        if not near(r["at"], want, 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
+            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {want} for {f['text']!r}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF":
@@ -9840,7 +9872,7 @@ def check_rack_bend_notice(page, base):
         if any("-bend-" in n for n in names):
             bad.append(f"GLB: the file carries warning rings: {[n for n in names if '-bend-' in n]}")
     back = page.evaluate(BEND_RINGS_3D_JS)
-    if [r["visible"] for r in back["rings"]] != [True] * len(finds):
+    if [r["visible"] for r in back["rings"]] != [True] * points:
         bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
     # A REDRAW THAT CHANGES NOTHING KEEPS THE SCENE. The scene is rebuilt when
     # the routes' signature changes, and the signature counts the bends shown:
@@ -9863,9 +9895,9 @@ def check_rack_bend_notice(page, base):
     old = page.evaluate_handle("() => window.__rack.scene()")
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
-        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-49'))} : i))}); }""")
+        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); }""")
     wait_fn(page, "bend notice: the head taken out",
-            "() => window.__rack.routesCurrent().current && !('port-49' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
+            "() => window.__rack.routesCurrent().current && !('port-52' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
             " && Object.values(window.__rack.cableFacts().reasons).some(Boolean)")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
     settle_scene(page, "bend notice: the loose AOC's scene", tubes=True)
@@ -10542,6 +10574,53 @@ def check_rack_unrouted_hang_2d(page, base):
         d = f["drawn"].get("front")
         if d and d["low"] > f["kitLow"] + UNROUTED_2D_TOL_MM:
             bad.append(f"2D front: u{n} reaches {d['low']:.1f} mm down the pane; the kit's lowest point is {f['kitLow']:.1f}")
+    return bad
+
+
+CORD_WIDTH_JS = """(panes) => {
+  const out = {};
+  for (const pane of panes) for (const g of document.querySelectorAll(`svg[data-pane="${pane}"] [data-cables] [data-cable-id], svg[data-pane="${pane}"] [data-cables] [data-link-index]`)) {
+    const id = g.dataset.cableId ?? `link${g.dataset.linkIndex}`;
+    // the cable's main stroke is the last path its group draws, the outline the one before it
+    const ps = [...g.querySelectorAll('path')].filter(n => !n.dataset.leader && n.getAttribute('stroke-width'));
+    const p = ps.at(-1);
+    if (p) out[`${pane}:${id}`] = {media: g.dataset.media, w: +p.getAttribute('stroke-width'), outline: +ps.at(-2)?.getAttribute('stroke-width')};
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a power cord is drawn at its cable type's diameter - 7.1 mm for the C13 cord, 7.9 mm for a C19 - in Front / Rear and Left / Right, and every other cable keeps 3 mm (kit 0.34.0 widthOf)")
+def check_rack_cord_width(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    for typ, want in ((None, 7.1), ("power-c19", 7.9), ("power-c13", 7.1)):
+        rack = json.loads(json.dumps(CABLE_FIXTURE["racks"][0]))
+        cord = next(c for c in rack["cables"] if c["id"] == "c2")      # an RJ45 cable between two devices
+        cord["media"] = "power"
+        if typ:
+            cord["type"] = typ
+        page.evaluate("r => window.__rack.replaceRack(r)", rack)
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables] [data-link-index]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        got = {"front": page.evaluate(CORD_WIDTH_JS, ["front", "rear"])}
+        page.click('#view2d [data-view="sides"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"left\"] [data-cables] [data-cable-id]')", timeout=READY_MS)
+        got["sides"] = page.evaluate(CORD_WIDTH_JS, ["left", "right"])
+        page.click('#view2d [data-view="faces"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables]')", timeout=READY_MS)
+        for view, rows in got.items():
+            cords = [(k, r) for k, r in rows.items() if r["media"] == "power"]
+            if not cords:
+                bad.append(f"{view}, type {typ}: no power cord is drawn: {sorted(rows)}")
+            for k, r in cords:
+                if abs(r["w"] - want) > 0.01 or abs(r["outline"] - (want + 1.2)) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} is drawn {r['w']} wide with an outline {r['outline']}; expected {want} and {want + 1.2:.1f}")
+            for k, r in rows.items():
+                if r["media"] != "power" and abs(r["w"] - 3) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} ({r['media']}) is drawn {r['w']} wide; every other cable keeps 3")
     return bad
 
 
@@ -14395,7 +14474,8 @@ def check_rack_cables_drawn(page, base):
     if by(front, "tags", "c1"):
         bad.append("cables drawn: c1 has a tag, and both its ends are in one pane")
     # c2: front pane to rear pane - each pane hangs it off to the side column, with a tag naming the far end.
-    for pane, name, text in ((front, "front", "→ demarc port-2-1"), (rear, "rear", "→ leaf-1 mgmt-eth")):
+    # (a port is named in words, kit 0.26.0 portLabel: "port-2-1" is "port 2 1")
+    for pane, name, text in ((front, "front", "→ demarc port 2 1"), (rear, "rear", "→ leaf-1 mgmt eth")):
         tag = by(pane, "tags", "c2")
         if not tag or tag["text"] != text or tag["loose"]:
             bad.append(f"cables drawn: c2's tag on the {name} is {tag}, expected {text!r}")
@@ -14644,7 +14724,7 @@ def check_rack_cables_clicks(page, base):
         return bad + [f"cable clicks: {e}"]
     got = page.evaluate(PANES_JS)
     tag = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
-    if not tag or tag["text"] != f"→ {LIT} port-2-1":
+    if not tag or tag["text"] != f"→ {LIT} port 2 1":
         bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally")
     if page.evaluate("() => document.querySelectorAll('svg[data-pane] b').length"):
         bad.append("cable clicks: a label injected markup into the pane")
@@ -17490,8 +17570,8 @@ def check_rack_export_sheet_cables(page, base):
     if dl.suggested_filename != "Cable-test-sheet.svg":
         bad.append(f"sheet cables: named {dl.suggested_filename!r}")
     got = cables_of(text)
-    want = {"front": (["c1", "c2"], {"c2": "→ demarc port-2-1"}),
-            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt-eth", "c3": "✕ not connected"})}
+    want = {"front": (["c1", "c2"], {"c2": "→ demarc port 2 1"}),
+            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt eth", "c3": "✕ not connected"})}
     for pane, (ids, tags) in want.items():
         g = got.get(pane, {"cables": None, "tags": None})
         if g["cables"] != ids or g["tags"] != tags:
@@ -17549,7 +17629,7 @@ def check_rack_export_sheet_cables(page, base):
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
     # A cross-face cable's tag on a single face still names the far end.
-    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port-2-1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt-eth":
+    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port 2 1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt eth":
         bad.append("sheet cables, one face: the cross-face cable's tag does not name its far end")
     # c3 hangs as a lead in the rear pane only, c1 runs in the front pane only: the other face's sheet says so.
     for name, t, note in (("front", front, "1 cable is on the rear face only and is not on this sheet."),

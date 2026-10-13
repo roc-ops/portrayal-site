@@ -119,11 +119,11 @@ export function groundAt(surfaces, x, z, y) {
 function groundNear(surfaces, p, q) {
   const x0 = Math.min(p.x, q.x) - 1, x1 = Math.max(p.x, q.x) + 1, z0 = Math.min(p.z, q.z) - 1, z1 = Math.max(p.z, q.z) + 1;
   let near = null;
-  return (x, z, y) => {
-    if (!(x >= x0 && x <= x1 && z >= z0 && z <= z1)) return groundAt(surfaces, x, z, y);
-    near ??= surfaces.filter(s => !(s.x0 - EPS > x1 || s.x1 + EPS < x0 || s.z0 - EPS > z1 || s.z1 + EPS < z0));
-    return groundAt(near, x, z, y);
-  };
+  const picked = () => (near ??= surfaces.filter(s => !(s.x0 - EPS > x1 || s.x1 + EPS < x0 || s.z0 - EPS > z1 || s.z1 + EPS < z0)));
+  const at = (x, z, y) => (!(x >= x0 && x <= x1 && z >= z0 && z <= z1) ? groundAt(surfaces, x, z, y) : groundAt(picked(), x, z, y));
+  // the surfaces picked out, for another reader of the same span (overEdges)
+  at.near = picked;
+  return at;
 }
 
 // THE DROP from a support onto a surface below it, h mm, as a cable lays it:
@@ -155,6 +155,52 @@ function apart(p, q, pts) {
   const out = [];
   for (const pt of pts) if (gap3(pt, out.length ? out[out.length - 1] : p) >= NEAR) out.push(pt);
   while (out.length && gap3(out[out.length - 1], q) < NEAR) out.pop();
+  return out;
+}
+// OFF A SURFACE AT ITS EDGE (#987). A span's points are samples, and a
+// sample that lies on a surface can be followed by one past the surface's
+// edge and lower: the straight leg between them then starts down while it
+// is still over the surface, and for the rest of the way to the edge the
+// cable is drawn in the plate it lies on (a fifth of a millimetre into a
+// tray's floor, over 8 mm, where it was found). So wherever a leg of p,
+// `pts`, q has one end over a surface, at or above where a cable lies on
+// it, and the other end beyond its edge and below that, the point where the
+// leg passes the edge is added, at the height a cable lies on the surface:
+// level to the edge, and down from there. Returns `pts` with those points.
+function overEdges(p, q, pts, surfaces, r) {
+  if (!pts.length || !surfaces.length) return pts;
+  const chain = [p, ...pts, q], out = [];
+  const inside = (s, o) => o.x >= s.x0 - EPS && o.x <= s.x1 + EPS && o.z >= s.z0 - EPS && o.z <= s.z1 + EPS;
+  // a leg passes an edge only from at or above where a cable lies on the
+  // surface to below it, so a surface whose lie is not within the heights
+  // of the span cannot have one
+  let yLo = Infinity, yHi = -Infinity;
+  for (const o of chain) { if (o.y < yLo) yLo = o.y; if (o.y > yHi) yHi = o.y; }
+  const level = surfaces.filter(s => s.y + r > yLo - EPS && s.y + r <= yHi + EPS);
+  if (!level.length) return pts;
+  for (let k = 1; k < chain.length; k++) {
+    const u = chain[k - 1], v = chain[k], add = [];
+    for (const s of level) {
+      const lie = s.y + r;
+      for (const [a, b] of [[u, v], [v, u]]) {
+        if (!inside(s, a) || inside(s, b) || a.y < lie - EPS || b.y >= lie - EPS) continue;
+        // where a-b leaves the footprint: the last t at which it is inside
+        let t = 1;
+        for (const [k0, k1, ax] of [['x0', 'x1', 'x'], ['z0', 'z1', 'z']]) {
+          const d = b[ax] - a[ax];
+          if (Math.abs(d) < 1e-12) continue;
+          t = Math.min(t, Math.max((s[k0] - a[ax]) / d, (s[k1] - a[ax]) / d));
+        }
+        const e = lerp(a, b, Math.max(0, Math.min(1, t)));
+        // only where the leg is below the lie there: a leg that is still
+        // above it at the edge has not dipped
+        if (e.y < lie - EPS && gap3(e, a) > 1e-3 && gap3(e, b) > 1e-3) add.push({pt: {...e, y: lie}, t: a === u ? t : 1 - t});
+      }
+    }
+    // one point an edge: a tray's floor is a surface twice, as a tray and as a body
+    for (const x of add.sort((m, n) => m.t - n.t)) if (!out.length || gap3(out[out.length - 1], x.pt) > 1e-3) out.push(x.pt);
+    if (k < chain.length - 1) out.push(v);
+  }
   return out;
 }
 // How finely the curve is worked before it is sampled evenly along its arc.
@@ -204,7 +250,7 @@ function evenly(fine, n) {
 //     is held does not also sag.
 // Near-duplicate points are dropped (NEAR). Without `fits` the first of each
 // is laid, as before #973.
-export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = null} = {}) {
+export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = null, edges = true} = {}) {
   const L = Math.hypot(q.x - p.x, q.z - p.z);
   if (L < MIN_SPAN) return {points: [], lands: []};
   const ok = pts => typeof fits !== 'function' || fits(pts);
@@ -215,6 +261,19 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
   const top = Math.max(p.y, q.y);
   // (the ground does not depend on the sag, so it is found once a point)
   const ground = groundNear(surfaces, p, q);
+  // (the edges a span passes are those of the same surfaces, less the ones
+  // above both its ends, which nothing of it lies on: overEdges)
+  let over = null;
+  // `edges: false` leaves them out, as a span was hung before kit 0.27.0
+  // (route.js layOf, PLAIN); a hang for which one was found says so (`edged`)
+  let added = false;
+  const edged = pts => {
+    if (!edges) return pts;
+    const out = overEdges(p, q, pts, over ??= ground.near().filter(s => s.y + r <= top + EPS), r);
+    // (of any hang tried: one refused for its edge point leaves another laid)
+    if (out.length > pts.length) added = true;
+    return out;
+  };
   const chords = Array.from({length: FINE + 1}, (_, k) => {
     const t = k / FINE, chord = lerp(p, q, t);
     return {t, chord, g: ground(chord.x, chord.z, Math.max(chord.y, top) - r)};
@@ -250,8 +309,8 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
           const g = ground(pt.x, pt.z, pt.y - r);
           if (g && pt.y < g.y + r) pt.y = g.y + r;
         }
-        const out = apart(p, q, pts);
-        if (out.length && ok(out)) return {points: out, lands: [land]};
+        const out = edged(apart(p, q, pts));
+        if (out.length && ok(out)) return {points: out, lands: [land], ...(added ? {edged: true} : {})};
         if (typeof fits !== 'function') break;
       }
     }
@@ -275,13 +334,13 @@ export function hang(p, q, {r = 0, drape = 1, bend = 25, surfaces = [], fits = n
       const n = Math.min(24, Math.round(len / step));
       if (n < 2 || n === last) continue;
       last = n;
-      const out = apart(p, q, evenly(raised, n));
-      if (out.length && ok(out)) return {points: out, lands: landsOf(out)};
+      const out = edged(apart(p, q, evenly(raised, n)));
+      if (out.length && ok(out)) return {points: out, lands: landsOf(out), ...(added ? {edged: true} : {})};
       if (typeof fits !== 'function') break;
     }
     if (typeof fits !== 'function') break;
   }
-  return {points: [], lands: []};
+  return {points: [], lands: [], ...(added ? {edged: true} : {})};
 }
 
 // THE HELD FACE OF A TRAY (section 2.3): a cable strapped up against the

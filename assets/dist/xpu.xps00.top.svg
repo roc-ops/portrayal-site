@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="484.6mm" height="250mm" viewBox="0 0 484.6 250" data-device="xpu" data-view="top" data-shell="sheet" data-material="powder paint coated steel frame, plastic guides" data-color="Black RAL 9005" data-operating-temp="-40 to 70 C" data-ingress-protection="IP 20 (EN 60529)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Fibrain XPU00","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"fibrain/xpu-cable-bar@1":"1.0.0","fibrain/xpu-floor@1":"1.0.0","fibrain/xpu-grounding-bar@1":"1.0.0","fibrain/xpu-side@1":"1.0.0","fibrain/xpu-top-sheet@1":"1.0.0"},"source-sha256":"7df0261fe01fb26b6e30e284c5fbaf6c05f15864fecd06f8b6bc555d02a623e3","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XPU00" data-sku="XPS00" data-part-number="XPS00" x="0" y="0" width="484.6" height="250" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="ear-left-edge" data-kind="rack-ear" x="0" y="248.5" width="24.7" height="1.5" rx="0.6" fill="#1b1e21" />
+    <rect id="ear-right-edge" data-kind="rack-ear" x="459.9" y="248.5" width="24.7" height="1.5" rx="0.6" fill="#1b1e21" />
+  </g>
+  <g id="interior" data-path="interior" data-class="mechanical" data-ref="fibrain/xpu-floor@1:1.0.0" data-depth="43.15" data-wall="#1b1e21" data-rel-pos="8" transform="translate(24.8,0.0)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar.">
+    <title>interior</title>
+    <path id="interior--floor" fill="#1b1e21" d="M 0 198.0 H 7 L 34 219.5 H 401.0 L 428.0 198.0 H 435.0 V 250.0 H 0 Z" data-path="interior/floor" data-class="bezel" />
+  </g>
+  <g id="side-left" data-path="side-left" data-class="mechanical" data-ref="fibrain/xpu-side@1:1.0.0" data-rel-pos="11" transform="translate(24.8,29.0)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar." data-z-lift="-43.15" data-in="interior" data-under="top-sheet">
+    <title>side-left</title>
+    <rect id="side-left--arm" x="0" y="0" width="0.8" height="105.4" fill="#1b1e21" data-path="side-left/arm" data-class="bezel" data-z-out="-10.5" data-z-lift="9.65" data-z-color="#1b1e21" />
+    <rect id="side-left--wall" x="0" y="105.4" width="0.8" height="115.6" fill="#1b1e21" data-path="side-left/wall" data-class="bezel" data-z-out="-0.05" data-z-color="#1b1e21" />
+  </g>
+  <g id="side-right" data-path="side-right" data-class="mechanical" data-ref="fibrain/xpu-side@1:1.0.0" data-rel-pos="12" transform="translate(459,29.0)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar." data-z-lift="-43.15" data-in="interior" data-under="top-sheet">
+    <title>side-right</title>
+    <rect id="side-right--arm" x="0" y="0" width="0.8" height="105.4" fill="#1b1e21" data-path="side-right/arm" data-class="bezel" data-z-out="-10.5" data-z-lift="9.65" data-z-color="#1b1e21" />
+    <rect id="side-right--wall" x="0" y="105.4" width="0.8" height="115.6" fill="#1b1e21" data-path="side-right/wall" data-class="bezel" data-z-out="-0.05" data-z-color="#1b1e21" />
+  </g>
+  <g id="grounding-bar" data-path="grounding-bar" data-class="mechanical" data-ref="fibrain/xpu-grounding-bar@1:1.0.0" data-finish="#b87333" data-rel-pos="13" transform="translate(33.4,198)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar." data-z-lift="-43.15" data-in="interior" data-under="top-sheet">
+    <title>grounding-bar</title>
+    <rect id="grounding-bar--bar" x="0" y="0" width="417.8" height="12.0" fill="#b87333" data-fill-from="finish" data-path="grounding-bar/bar" data-class="bezel" />
+  </g>
+  <g id="cable-bar" data-path="cable-bar" data-class="mechanical" data-ref="fibrain/xpu-cable-bar@1:1.0.0" data-rel-pos="10" transform="translate(24.8,0.0)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar." data-z-lift="-43.15" data-in="interior">
+    <title>cable-bar</title>
+    <path id="cable-bar--upper" fill="#1b1e21" fill-rule="evenodd" d="M 0 0 H 435.0 V 14.5 H 0 Z M 11.00 3.0 h 4 v 8 h -4 Z M 25.00 3.0 h 4 v 8 h -4 Z M 46.42 3.0 h 4 v 8 h -4 Z M 60.42 3.0 h 4 v 8 h -4 Z M 81.83 3.0 h 4 v 8 h -4 Z M 95.83 3.0 h 4 v 8 h -4 Z M 117.25 3.0 h 4 v 8 h -4 Z M 131.25 3.0 h 4 v 8 h -4 Z M 152.67 3.0 h 4 v 8 h -4 Z M 166.67 3.0 h 4 v 8 h -4 Z M 188.08 3.0 h 4 v 8 h -4 Z M 202.08 3.0 h 4 v 8 h -4 Z M 223.50 3.0 h 4 v 8 h -4 Z M 237.50 3.0 h 4 v 8 h -4 Z M 258.92 3.0 h 4 v 8 h -4 Z M 272.92 3.0 h 4 v 8 h -4 Z M 294.33 3.0 h 4 v 8 h -4 Z M 308.33 3.0 h 4 v 8 h -4 Z M 329.75 3.0 h 4 v 8 h -4 Z M 343.75 3.0 h 4 v 8 h -4 Z M 365.17 3.0 h 4 v 8 h -4 Z M 379.17 3.0 h 4 v 8 h -4 Z M 400.58 3.0 h 4 v 8 h -4 Z M 414.58 3.0 h 4 v 8 h -4 Z" data-path="cable-bar/upper" data-class="bezel" data-z-out="-12.5" data-z-lift="29.45" data-z-color="#1b1e21" />
+    <path id="cable-bar--lower" fill="#22262a" fill-rule="evenodd" d="M 0 14.5 H 435.0 V 29.0 H 0 Z M 11.00 18.0 h 4 v 8 h -4 Z M 25.00 18.0 h 4 v 8 h -4 Z M 46.42 18.0 h 4 v 8 h -4 Z M 60.42 18.0 h 4 v 8 h -4 Z M 81.83 18.0 h 4 v 8 h -4 Z M 95.83 18.0 h 4 v 8 h -4 Z M 117.25 18.0 h 4 v 8 h -4 Z M 131.25 18.0 h 4 v 8 h -4 Z M 152.67 18.0 h 4 v 8 h -4 Z M 166.67 18.0 h 4 v 8 h -4 Z M 188.08 18.0 h 4 v 8 h -4 Z M 202.08 18.0 h 4 v 8 h -4 Z M 223.50 18.0 h 4 v 8 h -4 Z M 237.50 18.0 h 4 v 8 h -4 Z M 258.92 18.0 h 4 v 8 h -4 Z M 272.92 18.0 h 4 v 8 h -4 Z M 294.33 18.0 h 4 v 8 h -4 Z M 308.33 18.0 h 4 v 8 h -4 Z M 329.75 18.0 h 4 v 8 h -4 Z M 343.75 18.0 h 4 v 8 h -4 Z M 365.17 18.0 h 4 v 8 h -4 Z M 379.17 18.0 h 4 v 8 h -4 Z M 400.58 18.0 h 4 v 8 h -4 Z M 414.58 18.0 h 4 v 8 h -4 Z" data-path="cable-bar/lower" data-class="bezel" data-z-out="-30.3" data-z-lift="11.65" data-z-color="#1b1e21" />
+    <rect id="cable-bar--upright" x="8.6" y="13.9" width="417.8" height="1.2" fill="#0c0d0e" data-path="cable-bar/upright" data-class="bezel" data-z-out="-12.5" data-z-lift="11.65" data-z-color="#1b1e21" />
+  </g>
+  <g id="top-sheet" data-path="top-sheet" data-class="mechanical" data-behaviour="mounts" data-ref="fibrain/xpu-top-sheet@1:1.0.0" data-rel-pos="9" transform="translate(24.8,134.4)" data-group="frame" data-group-role="furniture" data-description="the metal and plastic of the frame itself: two ears, five guide posts, the floor, the top sheet, the rear cable bar and two sides; on XPS00 the grounding bar." data-z-lift="-43.15" data-in="interior">
+    <title>top-sheet</title>
+    <path id="top-sheet--cover" fill="#1b1e21" fill-rule="evenodd" d="M 0 0 H 21 L 47 25.6 H 388.0 L 414.0 0 H 435.0 V 115.6 H 0 Z M 74.7 56.6 h 22 v 3 h -22 Z M 74.7 67.6 h 22 v 3 h -22 Z M 157.8 56.6 h 22 v 3 h -22 Z M 157.8 67.6 h 22 v 3 h -22 Z M 255.2 56.6 h 22 v 3 h -22 Z M 255.2 67.6 h 22 v 3 h -22 Z M 338.3 56.6 h 22 v 3 h -22 Z M 338.3 67.6 h 22 v 3 h -22 Z" data-path="top-sheet/cover" data-class="bezel" data-z-out="-0.05" data-z-lift="42.3" data-z-color="#1b1e21" />
+    <g id="top-sheet--screws">
+      <circle cx="3.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="110.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="217.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="324.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+      <circle cx="431.505" cy="88.6" r="1.6" fill="#b8bdc2" stroke="#6d7379" stroke-width="0.3" />
+    </g>
+  </g>
+</svg>

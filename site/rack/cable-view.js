@@ -22,7 +22,7 @@ import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {paneMarks, landedBends} from './route-context.js';
+import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
@@ -340,7 +340,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     return t;
   };
   const recs = drawCables2d(svg, plan, pane, {
-    edgeX, outboard: rear ? -1 : 1,
+    edgeX, outboard: rear ? -1 : 1, widthOf: widthLookup(routes?.types?.diameterOf, cables),
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
@@ -414,13 +414,15 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     if (!link || !f.stops) continue;
     const here = link.here2d?.[pane] ?? (k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : false));
     if (!f.stops.every(here)) continue;
-    const [cx, cy] = detourAt({x: f.at[0], y: f.at[1]});
-    const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
-      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
-    const t = svgEl('title', {});
-    t.textContent = f.text;
-    ring.append(t);
-    svg.append(ring);
+    for (const at of bendPoints(f)) {
+      const [cx, cy] = detourAt({x: at[0], y: at[1]});
+      const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+        'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
+      const t = svgEl('title', {});
+      t.textContent = f.text;
+      ring.append(t);
+      svg.append(ring);
+    }
   }
   // A pathway filled past its limit, and a manager with more cables through it
   // than it states, are outlined where this pane draws them.

@@ -7,7 +7,7 @@
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
 import {bundleFacts, memberPlaces, trunkLay, tieMark} from './bundle-view.js';
-import {WIDTH} from '../../vendor/rack/cable-geometry.js';
+import {WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {itemBox} from '../../vendor/rack/fit.js';
 import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindingsOf, orientMarks} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
@@ -350,6 +350,16 @@ export async function plugReaches(rack, facts = null) {
 let typesOnce = null;
 export const cableTypes = () => (typesOnce ??= loadCableTypes(DIST).catch(() => null));
 
+// THE WIDTH A PLAN LINK IS DRAWN AT, mm (kit 0.34.0 widthOf: a power cord at
+// its type's diameter, every other cable WIDTH), for drawCables2d and
+// drawCables3d. A plan link carries no `type`, so the rack's own cable
+// (`cables`, by id) is what the kit is asked about. `diameterOf` is the cable
+// types' lookup, or none: a cord is then the power-c13's 7.1 mm.
+export function widthLookup(diameterOf, cables) {
+  const byId = new Map((cables || []).map(c => [c.id, c]));
+  return link => widthOf(byId.get(link.id) ?? link, diameterOf ?? null);
+}
+
 // A BUNDLE'S CHECK READS THE CABLE TYPES (portrayal-site#164): each member's
 // diameter for its size, and its installed bend radius (`bendOf`) for its
 // bend. Without `bendOf` the kit says the bend "is not checked: the cable
@@ -542,12 +552,32 @@ export function landedBends(findings, rack, isLoose) {
   return (findings || []).filter(f => { const c = byId.get(f.cable); return !!c && !isLoose(c.a) && !isLoose(c.b); });
 }
 
+// WHERE A TIGHT BEND IS RINGED, as rack mm [x, y, z] (kit 0.27.0, Portrayal
+// #1026). Two turns on one short leg are ONE finding, whose `at` is the middle
+// of the leg between them: a ring there rings neither corner. The kit's
+// `turns[].at` are the two corners, so a pair is ringed at each, with the
+// finding's one sentence for both; a single bend has no `turns` and is ringed
+// at its `at`, as it always was.
+export function bendPoints(f) {
+  const turns = (f?.turns || []).map(t => t.at).filter(Array.isArray);
+  if (turns.length) return turns;
+  return Array.isArray(f?.at) ? [f.at] : [];
+}
+
 // THE BEND NOTICE (kit 0.17.0, Portrayal #973): the kit's sentences for the
 // corners of the cables' paths that are short of their bend radius, the first
 // three and how many more. '' when there is none.
+// A finding that put a lead into a ring too close for it (kit 0.27.0) carries
+// what would give it room in a field of its own, `advice`; the kit's schedule
+// notes say it once for each. So does this: after the sentences, each distinct
+// advice of the findings the notice names, once.
 export function bendNotice(findings, most = 3) {
-  const said = (findings || []).map(f => f.text).filter(Boolean);
-  return said.length > most ? `${said.slice(0, most).join(' ')} And ${said.length - most} more.` : said.join(' ');
+  const all = (findings || []).filter(f => f.text);
+  const shown = all.length > most ? all.slice(0, most) : all;
+  const said = shown.map(f => f.text);
+  if (all.length > most) said.push(`And ${all.length - most} more.`);
+  for (const advice of new Set(shown.map(f => f.advice).filter(Boolean))) said.push(advice);
+  return said.join(' ');
 }
 
 // WHAT THE ROUTES WARN OF, as sentences: the kit's fill, capacity and gone

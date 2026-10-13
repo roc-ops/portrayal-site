@@ -306,10 +306,16 @@ export const CABLE_COLOURS = {
 const CABLE_EDGE = 'edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;' +
   'startArrow=none;strokeWidth=2;fontSize=8;labelBackgroundColor=#FFFFFF;';
 
+// A cable that carries its own `color` (`#rgb` or `#rrggbb`) is drawn in it,
+// ahead of the map: a rack plan says so of a cable whose colour was stated
+// (rack/export-data.js drawioCables). A `cableStyle` function is handed the
+// cable and reads `color` itself.
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 function cableStyleOf(cable, opt) {
   if (typeof opt === 'function') return String(opt(cable));
   const map = opt ? {...CABLE_COLOURS, ...opt} : CABLE_COLOURS;
-  const colour = map[String(cable.media || '').toLowerCase()] || map.default;
+  const own = typeof cable.color === 'string' && HEX.test(cable.color) ? cable.color : null;
+  const colour = own || map[String(cable.media || '').toLowerCase()] || map.default;
   return `${CABLE_EDGE}strokeColor=${colour};`;
 }
 

@@ -40,7 +40,7 @@
 // check and the detours read only boxes.
 
 import {RU, SIDES} from './rails.js';
-import {zeroUOf, zeroUBottom} from './model.js';
+import {zeroUOf, zeroUBottomMm} from './model.js';
 import {isZeroUPart, railOf, itemBox, setbackOf, isQuarter} from './fit.js';
 import {rollOf} from './model.js';
 import {zeroUX, faceOfAt, carriesLane} from './zero-u.js';
@@ -127,7 +127,7 @@ function zeroUPlacer(rack, z, c) {
   // centred on its upright's depth, behind the mounting face; a rear upright
   // carries its part facing rearward
   const zc = rear ? -railDepthOf(f) + POST_D / 2 : -POST_D / 2;
-  return placer({cx: zeroUX(z, () => c), w, y0: (zeroUBottom(z) - 1) * RU, h,
+  return placer({cx: zeroUX(z, () => c), w, y0: zeroUBottomMm(z), h,
                  zFront: rear ? zc - d / 2 : zc + d / 2, outward: rear ? -1 : 1, mirror: rear, flipY: false});
 }
 
@@ -390,8 +390,21 @@ const gap = (p, q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
 // stands further out, `room` from that end; an end that is already beyond the
 // plane is left alone, and so is a plane a lane sets. The plane only moves
 // away from the body, so what it cleared it still clears.
+// BEHIND THE BACK EDGE (#1026). Rule 1 takes a floor's front edge first
+// because a port at the rail plane ends its plug under the floor: the cable
+// comes out past the front edge and back in over it. A device set back from
+// its rails ends its plug behind the floor's BACK edge instead, and the near
+// edge is then that one: the cable rises behind the plate and comes forward
+// onto it, one slight turn where the other way is out, up and back in, three
+// right angles. With `rear`, a floor one of whose ends stands at or behind
+// its back plane (the back edge less the cable's radius and CLEAR) is gone
+// round there first, by ONE point: on the back plane, on the far end's side
+// of the plate and clear of it by the same, and along x where a taut line
+// from end to end would cross that edge. route.js offers it only where the
+// front edge leaves a corner short (ROOM ROUND A BODY), so a path with room
+// is as it was.
 const plane = (p, k, v) => set(p, k, v);
-function waysRound(a, b, solid, {diameter, lanes, room = 0}) {
+function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false}) {
   const box = met(solid, diameter), m = diameter / 2 + CLEAR;
   const out = (k, v) => {
     if (!(room > 0)) return v;
@@ -414,7 +427,18 @@ function waysRound(a, b, solid, {diameter, lanes, room = 0}) {
   const front = solid.away === -1 ? box.z0 - m : box.z1 + m, back = solid.away === -1 ? box.z1 + m : box.z0 - m;
   const opposite = (a.z <= box.z0 && b.z >= box.z1) || (b.z <= box.z0 && a.z >= box.z1);
   const zeroU = solid.zeroU === true && edge === 'z';
-  const tiers = edge === 'z' && across === 'y' ? [[flat('z', front)], [flat('z', back)]]
+  // behind the back edge (above): the end at or behind the back plane is
+  // `q`, the other `p`; the one point stands on p's side of the plate
+  const behind = p => (solid.away === -1 ? p.z >= back - 1e-9 : p.z <= back + 1e-9);
+  const rearWay = () => {
+    if (!rear || behind(a) === behind(b)) return null;
+    const [p, q] = behind(a) ? [b, a] : [a, b];
+    const y = p.y >= (box.y0 + box.y1) / 2 ? box.y1 + m : box.y0 - m;
+    const dp = Math.hypot(p.z - back, p.y - y), dq = Math.hypot(q.z - back, q.y - y);
+    return [{x: p.x + (q.x - p.x) * (dp + dq > 1e-9 ? dp / (dp + dq) : 0.5), y, z: back}];
+  };
+  const round = edge === 'z' && across === 'y' ? rearWay() : null;
+  const tiers = edge === 'z' && across === 'y' ? [...(round ? [[round]] : []), [flat('z', front)], [flat('z', back)]]
     : zeroU ? [[flat('z', back), corner('z', back)]] : [both(edge)];
   tiers.push(both(end));
   if (opposite) tiers.push([...new Set(lanes)].map(v => flat('x', v, true)));
@@ -439,13 +463,13 @@ const lengthOf = pts => pts.reduce((s, p, i) => (i ? s + gap(pts[i - 1], p) : 0)
 // with room are tried first, and the ways as they were without it only when
 // none of those resolves, so a body that leaves no room is still gone round
 // the same preferred way, and the short leg is left for the bend check.
-export function detour(a, b, solids, {diameter = 0, lanes = [], room = 0} = {}) {
+export function detour(a, b, solids, {diameter = 0, lanes = [], room = 0, rear = false, loose = false} = {}) {
   const lanesAt = typeof lanes === 'function' ? lanes : () => lanes;
   const clear = (u, w, only = null) => gap(u, w) < 1e-9 || !legCrossings(u, w, only ? [only] : solids, {diameter}).length;
   const go = (p, q, depth) => {
     const first = legCrossings(p, q, solids, {diameter})[0];
     if (!first) return [];
-    const opts = {diameter, lanes: lanesAt((p.y + q.y) / 2)};
+    const opts = {diameter, lanes: lanesAt((p.y + q.y) / 2), rear};
     const plain = waysRound(p, q, first.solid, opts);
     const roomy = room > 0 ? waysRound(p, q, first.solid, {...opts, room}) : null;
     for (let t = 0; t < plain.length; t++) for (const tier of roomy ? [roomy[t], plain[t]] : [plain[t]]) {
@@ -471,9 +495,44 @@ export function detour(a, b, solids, {diameter = 0, lanes = [], room = 0} = {}) 
   if (!pts?.length) return pts;
   // A point whose neighbours see each other clear is not needed: a way round
   // one body and then another can step back on itself, and is pulled taut.
+  // NOT PULLED TAUT WHERE THAT TAKES A TURN'S ROOM (#1026, `loose`): a way
+  // out past an edge, across and back in is three right angles, each with
+  // its leg; without the point where it turns back in, the cable runs
+  // straight from the first to its far end, and that one turn is wider than
+  // a right angle on the same leg. With `loose` and `room`, a point stays
+  // when the way without it would leave a turn less than half of `room`
+  // (the bend radius) and less than the way with it does. Only round a plate
+  // met from above or below, where the way is rule 1's (out past its edge
+  // and back in, as a lead is dressed by hand): a way up over a ring's leg
+  // and down again is no dressing, and stays taut and short of room.
   const all = [a, ...pts, b];
+  const met0 = legCrossings(a, b, solids, {diameter})[0]?.solid;
+  // (a ring's seat and bar are thin and level too, and are no plate: RING_PART)
+  const plate = !!met0 && !RING_PART.test(String(met0.part ?? '')) && crossAxis(a, b, met(met0, diameter)) === 'y';
+  const keeps = i => loose && plate && room > 0
+    && leastRoom([...all.slice(0, i), ...all.slice(i + 1)]) < Math.min(leastRoom(all), room / 2) - 1e-6;
   for (let i = 1; i < all.length - 1;) {
-    if (clear(all[i - 1], all[i + 1])) all.splice(i, 1); else i++;
+    if (clear(all[i - 1], all[i + 1]) && !keeps(i)) all.splice(i, 1); else i++;
   }
   return all.slice(1, -1);
+}
+// The least room the turns of a way have for a bend, in mm, each leg shared
+// by what its two turns need of it (route-path.js cornersOf, `share: 'need'`),
+// and each END of the way taken as a right angle: an end's move is where the
+// cable turns onto the way, which is what `room` is for (waysRound).
+function leastRoom(chain) {
+  const tan = chain.map((p, i) => {
+    if (i === 0 || i === chain.length - 1) return 1;
+    const u = [p.x - chain[i - 1].x, p.y - chain[i - 1].y, p.z - chain[i - 1].z], v = [chain[i + 1].x - p.x, chain[i + 1].y - p.y, chain[i + 1].z - p.z];
+    const nu = Math.hypot(...u), nv = Math.hypot(...v);
+    if (nu < 1e-9 || nv < 1e-9) return 0;
+    const c = Math.max(-1, Math.min(1, (u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) / (nu * nv)));
+    return c <= -1 + 1e-12 ? Infinity : Math.tan(Math.acos(c) / 2);
+  });
+  let least = Infinity;
+  for (let i = 1; i < chain.length; i++) {
+    const sum = tan[i - 1] + tan[i];
+    if (sum > 1e-9) least = Math.min(least, gap(chain[i - 1], chain[i]) / sum);
+  }
+  return least;
 }
