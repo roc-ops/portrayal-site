@@ -625,15 +625,20 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
 // inside its cage - swap.js seats it beside the cage, at `<port>-occupant` -
 // so a click on either is mapped back to the port by its path
 // (cable-rules.js portPathOf), and counts only if that port is drawn.
+// A SLOT THAT TAKES A CABLE END (a power inlet or outlet, a ground stud) is
+// not class port: elevation.js lists the paths of the ones on the panel in
+// the group's data-cable-ends, and a click on one picks it by its path.
 export function portAt(target, group) {
+  const ends = (group.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean);
   let hit = null;
   for (let n = target; n && n !== group; n = n.parentNode) {
     // (its path, as its own drawing or as the projection of a seated module's back: part-path.js)
     const p = pathOfEl(n);
-    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
+    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant') || ends.includes(p))) hit = p;
   }
   if (hit == null) return null;
   const path = portPathOf(hit);
+  if (ends.includes(path)) return path;
   return group.querySelector(partSel(path, '[data-class="port"]')) ? path : null;
 }
 
