@@ -6772,7 +6772,14 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
         return
     tip = page.evaluate(SPARE_TIP_JS)
     if not tip or tip["id"] != cid:
-        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
+        # (what the page's own hover finds at that point, and what is under it, so a red says why the label did not come)
+        seen = page.evaluate("""async ([x, y]) => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene?.();
+          const el = document.elementFromPoint(x, y);
+          return {hover: s ? H.hoverAt3d(s, {clientX: x, clientY: y}) : 'no scene', under: el ? el.tagName + '#' + el.id : null,
+                  tip: document.getElementById('cableTip')?.dataset.cableTip ?? null};
+        }""", pt) if find_js is SPARE_PT_3D_JS else None
+        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}" + (f" (at {pt}: {seen})" if seen else ""))
     else:
         if want["text"] not in tip["meta"]:
             bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
