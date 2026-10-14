@@ -6408,6 +6408,32 @@ SPARE_PT_3D_JS = """async id => {
 }"""
 
 
+# THE CAMERA AT REST. A settled scene is not a still camera: after an orbit the controls ease it for as many FRAMES
+# as it takes (damping), which is many seconds where a frame takes a tenth of a second or more, and a point found on a
+# cable while it eases is a few pixels from that cable by the time the pointer reaches it (the label shows the
+# cable beside it, or none). Where it comes to rest also depends on how many frames the easing ran, so a cable that
+# shows well in one run lies behind its neighbours in the next. The check turns the easing off before it orbits
+# (the label under test is the page's, not the controls'), so the view stops where the pointer lets go, and waits
+# until three frames in a row moved the camera under 0.05 mm each or `ms` pass. True when it is still.
+CAMERA_REST_JS = """async ms => {
+  const s = window.__rack.scene();
+  if (!s?.three) return true;
+  const {camera, renderer, controls} = s.three, sleep = t => new Promise(r => setTimeout(r, t));
+  controls.enableDamping = false;
+  const deadline = Date.now() + ms, last = camera.position.clone();
+  let frame = renderer.info.render.frame, calm = 0;
+  while (Date.now() < deadline) {
+    await sleep(100);
+    const f = renderer.info.render.frame;
+    if (f === frame) continue;
+    calm = camera.position.distanceTo(last) / (f - frame) < 0.05 ? calm + 1 : 0;
+    last.copy(camera.position); frame = f;
+    if (calm >= 3) return true;
+  }
+  return false;
+}"""
+
+
 def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     """Put the pointer on `cid` and read the label beside it against `want`. With
     `drag`, a button held and let go hides it until the pointer next moves."""
@@ -6417,6 +6443,8 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     # until the pointer put on it shows the label. A cable whose label never shows still fails below.
     pt = None
     for attempt in range(3):
+        if find_js is SPARE_PT_3D_JS:
+            page.evaluate(CAMERA_REST_JS, 30000)
         pt = page.evaluate(find_js, cid)
         if not pt:
             break
@@ -6458,6 +6486,7 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
             # ...and it comes back with the next free move over a cable.
             if drag > 1:
                 settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
+                page.evaluate(CAMERA_REST_JS, 30000)
             back = page.evaluate(find_js, cid)
             if not back:
                 bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
