@@ -314,7 +314,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const topOf = ruH => totalH - (it.ru - baseRU + ruH) * RU;
     const panel = panelFor(it, view);
     const face = await configuredFace({ref: it.ref, cfg: it.cfg, view: panel,
-                                       swaps: it.swaps || {}, fields: it.fields || {}});
+                                       swaps: it.swaps || {}, fields: it.fields || {}, ends: true});
     // One height for this item, computed before the `!face` branch: `it.u`
     // when it is known (every real caller sets it via fit.js's itemsWithU, in
     // halves since rack file version 4), falling back to the compiled
@@ -368,6 +368,10 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${fx - ox} ${fy - oy})`, ...common,
                           ...(isFace(it) && SIDED.has(it.side) ? {'data-side': it.side} : {}),
                           'data-panel': through ? 'through' : 'mounted'});
+    // THE SLOTS A CABLE LANDS ON besides the ports (a power inlet or outlet, a
+    // ground stud: kit ports.js cableEndPaths), for portAt to take a click on.
+    const slotEnds = (face.ports || []).filter(p => p.end).map(p => p.path ?? p.id);
+    if (slotEnds.length) g.setAttribute('data-cable-ends', slotEnds.join(' '));
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
     // no url(#...) and no href="#...", so there is nothing to collide - and
     // renaming them would break swap.js, which finds a seated module by the

@@ -5975,11 +5975,28 @@ BAND_GEO = """([pane, id]) => {
     }
     memberX[c] = best;
   }
-  return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
+  // the radius of the first arc in the trunk's own paths
+  const arc = /A([\\d.]+)[ ,]/.exec([...g.querySelectorAll('[data-bundle-trunk]')].map(p => p.getAttribute('d') || '').join(' '));
+  return {width: +band.getAttribute('stroke-width'), laneX, arcR: arc ? +arc[1] : null, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
           ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
           shown: getComputedStyle(g.querySelector('[data-envelope]')).visibility === 'visible',
           strapXs: [...s.querySelectorAll(`[data-strap="${id}"] > line:not([data-strap-least])[data-strap-part="core"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
 }"""
+
+
+def bundle_run_problems(geo, bend_mm, what):
+    """The band's straight run, from the lane and the bend radius: the 10U trunk
+    is 10 x 44.45 mm, and a turn of up to 90 degrees at each end takes at most
+    one radius R off it (R tan(theta/2) <= R), less 1 mm for rounding. The
+    trunk's arcs are the bundle's bend radius."""
+    bad = []
+    if not bend_mm or not geo["arcR"] or abs(geo["arcR"] - bend_mm) > 0.05:
+        bad.append(f"2D: {what} turns on arcs of radius {geo['arcR']}, not the bundle's bend radius {bend_mm} mm")
+        return bad
+    least = 10 * 44.45 - 2 * bend_mm - 1
+    if not (geo["laneX"] < -26) or geo["span"] < least:
+        bad.append(f"2D: {what} does not run up the gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']}, at least {least:.1f} for a lane less two {bend_mm} mm arcs)")
+    return bad
 
 
 @extra("rack.html: a bundle made from the cable list is drawn on the front pane as one band its size wide, with its straps, and a peeled cable leaves it (portrayal-site#142)")
@@ -6011,8 +6028,7 @@ def check_rack_bundle_2d_front(page, base):
     # The band is the bundle's diameter wide.
     if abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
-        bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the band")
     # At the ring the envelope is about the pack: every member's centre line within its half width less half a stroke.
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
@@ -6141,8 +6157,7 @@ def check_rack_bundle_2d_rear(page, base):
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
-        bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the rear band")
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 on the rear pane a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
     # Nothing is hovered or selected: the envelope is drawn, and hidden.
@@ -6772,7 +6787,14 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
         return
     tip = page.evaluate(SPARE_TIP_JS)
     if not tip or tip["id"] != cid:
-        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
+        # (what the page's own hover finds at that point, and what is under it, so a red says why the label did not come)
+        seen = page.evaluate("""async ([x, y]) => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene?.();
+          const el = document.elementFromPoint(x, y);
+          return {hover: s ? H.hoverAt3d(s, {clientX: x, clientY: y}) : 'no scene', under: el ? el.tagName + '#' + el.id : null,
+                  tip: document.getElementById('cableTip')?.dataset.cableTip ?? null};
+        }""", pt) if find_js is SPARE_PT_3D_JS else None
+        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}" + (f" (at {pt}: {seen})" if seen else ""))
     else:
         if want["text"] not in tip["meta"]:
             bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
@@ -9560,7 +9582,8 @@ def load_rack_3d_ready(page, base, rack):
 CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
 
 # How near a cable's drawn line passes each of its lead points (rack mm in,
-# pane mm out): {cable: the furthest of its lead points from its stroke}.
+# pane mm out): {cable: {off: each lead point's distance from its stroke, gap:
+# how far each of its arcs stands inside its vertex}}.
 LEAD_2D_JS = """async leads => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const svg = document.querySelector('#paneFront svg'), H = window.__rack.doc().racks[0].frame.heightRU * RU;
@@ -9573,7 +9596,18 @@ LEAD_2D_JS = """async leads => {
       const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
       for (let t = 0; t <= L; t += 0.2) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
     }
-    out[id] = pts.length ? Math.max(...qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))) : null;
+    // how far each corner's own arc stands inside its vertex: R (sec(theta/2) - 1)
+    // for an arc of radius R whose chord is c, theta = 2 asin(c / 2R)
+    const gap = [];
+    for (const p of g.querySelectorAll('path')) {
+      const d = p.getAttribute('d') || '', re = /(?:^|[ML])([\\d.-]+) ([\\d.-]+) A([\\d.]+) [\\d.]+ 0 0 [01] ([\\d.-]+) ([\\d.-]+)/g;
+      let m;
+      while ((m = re.exec(d))) {
+        const r = +m[3], c = Math.hypot(m[4] - m[1], m[5] - m[2]), th = 2 * Math.asin(Math.min(1, c / (2 * r)));
+        gap.push(r * (1 / Math.cos(th / 2) - 1));
+      }
+    }
+    out[id] = pts.length ? {gap, off: qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))} : null;
   }
   return out;
 }"""
@@ -9651,16 +9685,24 @@ def check_rack_cable_lay(page, base):
     # approach point, and the kit leads each square to it: level with its plug
     # to a lead point beside the approach point, then onto the run. In 2D the
     # pane's line turns at that point: joined straight from the plug to the
-    # ring it would pass some 30 mm from it; routed2d rounds a corner by 4, so
-    # the stroke comes within 4 of the vertex.
+    # ring it would pass some 30 mm from it; the line is drawn through the
+    # point with an arc of the cable's bend radius at it.
     leads = {cid: [q for q in p["points"] if q["at"] == "lead" and q.get("item")] for cid, p in paths.items()}
     leads = {cid: qs for cid, qs in leads.items() if qs}
     if not leads:
         bad.append("lead points: the kit leads no cord of this rack square to its ring, so none was checked")
     off2d = page.evaluate(LEAD_2D_JS, leads)
     for cid, d in sorted(off2d.items()):
-        if d is None or d > 4.0 + 1e-6:
-            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within the corner's 4 mm")
+        # (#185) the lead point is a vertex of the 2D line and its corner is an
+        # arc, which stands R (sec(theta/2) - 1) inside the vertex for a turn of
+        # theta (28 mm at most on this rack). So each lead point is either on the
+        # line (a corner too slight to round) or exactly an arc's own gap from it.
+        if d is None:
+            bad.append(f"2D: {cid} is not drawn")
+            continue
+        for off in d["off"]:
+            if off > 0.3 and not any(abs(off - g) < 0.3 for g in d["gap"]):
+                bad.append(f"2D: {cid}'s line passes {off:.2f} mm from a lead point; no arc of it stands that far inside its vertex (arcs: {[round(g, 2) for g in d['gap']]})")
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
@@ -10483,6 +10525,97 @@ def check_rack_bend_radius_3d(page, base):
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
     return bad
 
+@extra("rack.html: a routed cable in 2D keeps its bend radius - every corner of its line is an arc of the cable's own radius (OM4's 25 mm) or a smaller one the room allows, never a square corner (#185)")
+def check_rack_bend_radius_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    got = page.evaluate("""() => {
+      const out = [];
+      for (const g of document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id], #paneRear svg [data-cables] [data-cable-id]')) {
+        const d = g.querySelector('path:last-of-type')?.getAttribute('d') || '';
+        out.push({cable: g.dataset.cableId, quad: /Q/.test(d), arcs: [...d.matchAll(/A([\\d.]+) ([\\d.]+) 0 0 [01] /g)].map(m => +m[1])});
+      }
+      return out;
+    }""")
+    routed = [c for c in got if c["arcs"] or c["quad"]]
+    if len(got) != 16 or not routed:
+        return bad + [f"2D: {len(got)} cables drawn, {len(routed)} routed: nothing to measure"]
+    for c in routed:
+        if c["quad"]:
+            bad.append(f"2D: {c['cable']}'s line still has a square-cut quadratic corner")
+        if any(r > 25 + 0.01 for r in c["arcs"]):
+            bad.append(f"2D: {c['cable']} has an arc of radius {max(c['arcs'])}, over OM4's 25 mm")
+    if not any(25 in c["arcs"] for c in routed):
+        bad.append(f"2D: no corner is drawn at the full 25 mm radius: {[c['arcs'] for c in routed]}")
+    return bad
+
+
+BUNDLE_CORNERS_2D_JS = """() => {
+  const out = [];
+  for (const svg of document.querySelectorAll('#paneFront svg, #paneRear svg')) {
+    const inv = svg.getScreenCTM().inverse();
+    const sample = p => { const m = inv.multiply(p.getScreenCTM()), pts = [];
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+      return pts; };
+    for (const g of svg.querySelectorAll('[data-cables] [data-bundle-id]')) {
+      const ids = (g.dataset.members || '').split(' ').filter(Boolean), line = {};
+      for (const id of ids) {
+        const p = [...svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)].sort((a, b) => b.getTotalLength() - a.getTotalLength())[0];
+        line[id] = p ? sample(p) : [];
+      }
+      const stretches = [...g.querySelectorAll('[data-bundle-trunk]')].map(p => {
+        const n = +p.dataset.riders, w = +p.getAttribute('stroke-width'), d = p.getAttribute('d');
+        // every point of the trunk, arcs included: the n nearest members are all inside the band
+        const reach = sample(p).map(c => ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b)[n - 1]);
+        return {bundle: g.dataset.bundleId, pane: svg.dataset.pane, d, width: w, riders: n, reach: Math.max(...reach), arcs: [...d.matchAll(/A([\\d.]+) /g)].map(m => +m[1])};
+      });
+      const straps = [...svg.querySelectorAll(`[data-strap="${g.dataset.bundleId}"]`)].map(s => {
+        const l = s.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+        const c = [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2];
+        const near = ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b);
+        return {pack: +s.dataset.pack, nearest: near[0]};
+      });
+      out.push({bundle: g.dataset.bundleId, pane: svg.dataset.pane, stretches, straps});
+    }
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a bundle is drawn round the corners its members turn - in 2D its trunk, envelope and straps are arcs of the bundle's bend radius, so every cable it carries stays inside the band at every turn (#185)")
+def check_rack_bundle_corners_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    for name, fixture, cables in (("pack", PACK_FIXTURE, 4), ("peel", PEEL_FIXTURE, 5)):
+        open_front_fixture(page, base, fixture, cables=cables)
+        if name == "pack":
+            res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3', 'c4'], label: 'pack'})")
+            if res.get("error"):
+                return bad + [f"create: refused: {res['error']}"]
+        page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        page.wait_for_timeout(400)
+        got = page.evaluate(BUNDLE_CORNERS_2D_JS)
+        stretches = [s for b in got for s in b["stretches"]]
+        if not stretches:
+            bad.append(f"{name}: no bundle trunk is drawn on the panes: nothing was measured")
+            continue
+        # (the pack's trunk turns from the lacer up the lane; the peel's runs straight up it, and ends where its members' arcs begin)
+        if name == "pack" and not any(s["arcs"] for s in stretches):
+            bad.append(f"{name}: no stretch of the trunk turns a corner on an arc, so the rounding was not measured: {[s['d'] for s in stretches][:4]}")
+        for s in stretches:
+            # (every rider's stroke inside the band: its centre line within the half width less half a 3 mm stroke)
+            if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+                bad.append(f"{name}: {s['riders']} riding on the {s['pane']} pane: a member is {s['reach']:.2f} mm from the trunk's line, outside the half width {s['width'] / 2:.2f} ({s['d']})")
+        for b in got:
+            for st in b["straps"]:
+                if st["nearest"] > st["pack"] / 2 + 2:
+                    bad.append(f"{name}: a strap on the {b['pane']} pane is {st['nearest']:.1f} mm from the nearest member, off the pack ({st['pack']} mm)")
+    return bad
+
+
 UNROUTED_HANG_JS = """async () => {
   const s = window.__rack.scene(); await s.complete?.();
   const paths = window.__rack.paths() || {};
@@ -10717,6 +10850,187 @@ def check_rack_cable_lay_pdu(page, base):
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the PDU rack's scene", tubes=True)
     bad += tubes_inside(page, 1, want_parts=("z1|envelope",))
+    return bad
+
+
+# A RACK WITH A PDU AND TWO DEVICES THAT TAKE A C14 (portrayal-site#202): the
+# PDU on the front face so its C13 outlets are on the front pane, the two
+# MX150s with an inlet on the rear.
+POWER_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Power', kind: 'four-post'}), {heightRU: 24});
+  ({rack: r} = M.withItem(r, {ref: 'pdu12iec', cfg: cat['pdu12iec'].default, ru: 2, label: 'pdu-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 10, label: 'srv-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 14, label: 'srv-2'}));
+  return r;
+}"""
+
+
+def power_click(page, pane, item, path):
+    """Click the middle of the slot at `path` on `item`'s group in `pane`."""
+    sel = f'#pane{pane} svg [data-item-id="{item}"][data-panel] [data-path="{path}"]'
+    box = page.evaluate("""sel => { const e = document.querySelector(sel); if (!e) return null;
+      const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", sel)
+    if not box:
+        raise RuntimeError(f"power: {path} of {item} is not drawn on the {pane.lower()} pane")
+    page.mouse.click(box[0], box[1])
+
+
+@extra("rack.html: power cords - an inlet and a PDU outlet are picked in Cable mode, the form names each end and offers power, the cord is drawn in 2D and 3D with a plug at each end, listed, edited, warned and deleted, and the exports carry it")
+def check_rack_power_cords(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    click = page.click
+
+    def labelled(sel, **kw):
+        # a click that times out says which one, not just "Timeout 30000ms"
+        try:
+            return click(sel, **kw)
+        except Exception as e:
+            raise RuntimeError(f"power: click {sel}: {str(e).splitlines()[0]}") from e
+    page.click = labelled
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(POWER_RACK_JS))
+    try:
+        # Every slot a cord lands on is listed on the panel that draws it, and nothing else is.
+        wait_fn(page, "power: the PDU's outlets are listed for picking",
+                "() => (document.querySelector('#paneFront svg [data-item-id=\"i1\"][data-panel=\"mounted\"]')?.getAttribute('data-cable-ends') || '').includes('outlet-front-1')")
+        ends = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('[data-item-id][data-panel]')].map(g =>
+          [`${g.dataset.itemId}|${g.closest('svg').dataset.pane}`, (g.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean)]))""")
+        if ends.get("i1|front") != ["outlet-front-1", "outlet-front-2", "outlet-front-3", "outlet-front-4"]:
+            bad.append(f"picking: the PDU's front outlets are {ends.get('i1|front')}")
+        if sorted(ends.get("i2|rear", [])) != ["ground-studs", "inlet"]:
+            bad.append(f"picking: srv-1's rear slots are {ends.get('i2|rear')}")
+        if ends.get("i2|front"):
+            bad.append(f"picking: srv-1's front lists slots a cord lands on: {ends.get('i2|front')}")
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i2", "inlet")
+        step = page.text_content("#cableStep") or ""
+        if "srv-1" not in step or "inlet" not in step:
+            bad.append(f"picking: the inlet was not picked: {step!r}")
+        power_click(page, "Front", "i1", "outlet-front-1")
+        wait_sel(page, "power: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_a, end_b = page.text_content("#cEndA") or "", page.text_content("#cEndB") or ""
+    if "C14 inlet" not in end_a or "C13 outlet" not in end_b:
+        bad.append(f"form: the ends do not say what they are: {end_a!r} / {end_b!r}")
+    offered = page.eval_on_selector_all("#cMedia option", "o => o.map(x => x.value)")
+    if "power" not in offered or "ground" not in offered:
+        bad.append(f"form: the media offered are {offered}")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"form: the media proposed for an inlet and an outlet is {page.input_value('#cMedia')!r}")
+    if (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: a cord from an outlet to an inlet is warned: {page.text_content('#cWarn')!r}")
+    # A ground wire does not suit a power end, and the form says so before it is saved.
+    page.select_option("#cMedia", "ground")
+    if "does not suit" not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: a ground wire on a power end is not warned: {page.text_content('#cWarn')!r}")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the cord is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+        wait_sel(page, "power: the cord on the front pane", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
+        wait_sel(page, "power: the cord on the rear pane", 'svg[data-pane="rear"] [data-cables] [data-cable-id="c1"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["media"] != "power" or c1["a"] != {"item": "i2", "path": "inlet", "view": "rear"} \
+            or c1["b"] != {"item": "i1", "path": "outlet-front-1", "view": "front"}:
+        bad.append(f"saved: the cord is {c1}")
+    if page.evaluate("() => !!window.__rack.doc().racks[0].items.some(i => i.swaps && Object.keys(i.swaps).length)"):
+        bad.append("saved: a plug was written into an item's swaps (a derived plug is never stored)")
+    # A plug is drawn at each end, and the cord ends on its cable point, not on the port's middle.
+    seated = page.evaluate("""() => ({
+      inlet: !!document.querySelector('#paneRear svg [data-item-id="i2"][data-panel] [data-path="inlet-occupant"]'),
+      outlet: !!document.querySelector('#paneFront svg [data-item-id="i1"][data-panel] [data-path="outlet-front-1-occupant"]'),
+      refs: [...document.querySelectorAll('[data-path$="-occupant"][data-ref]')].map(e => e.getAttribute('data-ref')).sort()})""")
+    if not seated["inlet"] or not seated["outlet"]:
+        bad.append(f"2D: the plugs are not drawn at both ends: {seated}")
+    if not any("c13-plug" in r for r in seated["refs"]) or not any("c14-plug" in r for r in seated["refs"]):
+        bad.append(f"2D: the plugs are not a C13 in the inlet and a C14 in the outlet: {seated['refs']}")
+    if page.evaluate("() => document.querySelectorAll('[data-open-plug]').length"):
+        bad.append("2D: the cord hangs as an unplugged lead")
+    # The list, and the row's own words.
+    wait_sel(page, "power: the list row", '#cableList [data-cable-row="c1"]')
+    row = page.text_content('#cableItem-c1') or ""
+    if "inlet" not in row or "outlet-front-1" not in row or "Power cable" not in row:
+        bad.append(f"list: the row reads {row!r}")
+    if page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: a landed cord has a loose end: {row!r}")
+    # 3D: a tube for the cord, hung between the two devices. (Cable mode is left first.)
+    if page.get_attribute("#cableBtn", "aria-pressed") == "true":
+        page.click("#cableBtn")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "power: 3D", tubes=True)
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        got = page.evaluate("() => (window.__rack.scene().three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name)")
+        if got != ["cable-c1"]:
+            bad.append(f"3D: the scene's cables are {got}")
+    # EDIT: the media changes to ground and the row follows; delete takes the cord and its plugs.
+    page.click('#mode [data-mode="2d"]')
+    wait_sel(page, "power: the row after 2D", '#cableList [data-cable-row="c1"]')
+    if page.get_attribute('#cableList [data-cable-row="c1"]', "aria-pressed") != "true":   # a saved cord is left selected
+        page.click('#cableList [data-cable-row="c1"]')
+    wait_sel(page, "power: the row's Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the edit form", "#cableForm")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"edit: the form opens on {page.input_value('#cMedia')!r}")
+    page.select_option("#cMedia", "ground")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the media is saved", "() => window.__rack.doc().racks[0].cables[0].media === 'ground'")
+        wait_fn(page, "power: the list says the ground wire does not suit",
+                "() => /does not suit end A, which is power/.test(document.querySelector('#cableItem-c1')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    wait_sel(page, "power: Edit after a save", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the second edit form", "#cableForm")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    wait_fn(page, "power: back to power", "() => window.__rack.doc().racks[0].cables[0].media === 'power'")
+    # A second cord, outlet to outlet: a warning that is plain, in the list.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'outlet-front-2', view: 'front'},
+                                                 b: {item: 'i1', path: 'outlet-front-3', view: 'front'}, media: 'power'})""")
+    try:
+        wait_fn(page, "power: the outlet-to-outlet cord warns",
+                "() => /Both ends are outlets/.test(document.querySelector('#cableItem-c2')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    # A GROUND WIRE falls out of the same work: stud to stud, landed, and not called power.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i2', path: 'ground-studs', view: 'rear'},
+                                                 b: {item: 'i3', path: 'ground-studs', view: 'rear'}, media: 'ground'})""")
+    try:
+        wait_sel(page, "power: the ground wire is listed", "#cableItem-c3")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        g = page.text_content("#cableItem-c3") or ""
+        if "Ground wire" not in g or "Loose end" in g or "does not suit" in g:
+            bad.append(f"ground: the wire's row reads {g!r}")
+    # The exports carry the cord: the BOM counts it, the schedule lists it connected.
+    bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
+    if "Power cable" not in bom or "power at both ends" not in bom:
+        bad.append(f"BOM: the cords are not counted as landed power cables: {bom!r}")
+    sched = pathlib.Path(export_file(page, "cables").path()).read_text(encoding="utf-8")
+    if "srv-1,10,inlet,pdu-1,2,outlet-front-1,Power cable" not in sched or "loose end" in sched:
+        bad.append(f"schedule: the cords are not listed as connected: {sched!r}")
+    # Delete the second, then the first: no cable, no plug left drawn.
+    for cid in ("c2", "c1"):
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        page.click("#cableDelete")
+        wait_fn(page, f"power: {cid} is deleted", f"() => !window.__rack.doc().racks[0].cables.some(c => c.id === '{cid}')")
+    wait_fn(page, "power: no plug stays after the cords are deleted",
+            "() => !document.querySelector('[data-path$=\"-occupant\"][data-ref*=\"-plug\"]')")
     return bad
 
 
@@ -14790,7 +15104,7 @@ FORM_JS = """async (opts) => {
 }"""
 
 
-@extra("rack.html: the cable form offers the eight media, warns on a mismatch without blocking, and checks the length")
+@extra("rack.html: the cable form offers the ten media (power and ground too), warns on a mismatch without blocking, and checks the length")
 def check_rack_cable_form(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14813,7 +15127,7 @@ def check_rack_cable_form(page, base):
     if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
         bad.append("cable form: the two ends are not named")
     values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
-    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc"]:
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground"]:
         bad.append(f"cable form: the media offered are {values}")
     if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
         bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")

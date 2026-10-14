@@ -195,7 +195,7 @@ export function guideRunsOf(roots) {
 }
 
 // A face that could not be read is null, and `failed.n` counts it: the facts are then incomplete.
-const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}})
+const faceOf = (it, failed) => view => configuredFace({ref: it.ref, cfg: it.cfg, view, swaps: it.swaps || {}, fields: it.fields || {}, ends: true})
   .catch(() => { failed.n++; return null; });
 
 // A ZERO-U DUCT'S CHANNEL: as wide as its drawn guide (`data-guide-run="y"`, the

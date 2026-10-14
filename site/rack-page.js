@@ -28,7 +28,7 @@ import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
-import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
+import {cableFacts, drawnAt, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
@@ -728,8 +728,10 @@ function cableFormPanel(sel) {
   if (sel.id && !cable) { S.sel = null; return homePanel(); }
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
+  // An end on a power or ground slot says what it is: "C13 outlet", "C20 inlet".
+  const named = e => `${endName(r, e, uOf)}${info(e)?.connector ? ` (${info(e).connector})` : ''}`;
   const form = cableForm({
-    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
+    title: cable ? 'Edit cable' : 'New cable', endA: named(a), endB: named(b),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
     routed: cable?.length?.source === 'routed' ? cable.length : null,
@@ -2171,7 +2173,7 @@ async function bootInner() {
 // The queries, bound to this page's readers: the probe hook and the agent tools
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
-  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields, ends: true}))?.ports ?? []);
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
   describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
@@ -2190,7 +2192,7 @@ const boundQueries = () => ({
 // loadSlots memoizes through the dist fetch, so a warm call fetches nothing.
 const agentContext = agentContextFor({
   // chassisOf is read through, not captured: the catalog replaces it once loaded.
-  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts,
+  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts, drawnAt,
   routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
@@ -2271,7 +2273,7 @@ if (PROBE) {
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, kinds: f.straps?.kinds ?? null, widths: f.straps?.widths ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
-      warnings: [...f.check.warnings], checked: f.check.checked})) : null),
+      warnings: [...f.check.warnings], checked: f.check.checked, bend_mm: f.check.bend?.radius_mm ?? null})) : null),
     // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
     anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
     tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),
