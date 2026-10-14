@@ -19,8 +19,9 @@ import {configuredFace, components, findComp, DIST} from './face.js';
 import {jdist} from '../../vendor/dist.js';
 import {faceCages} from '../../vendor/swap.js';
 import {endKey, plugSeats, connectorOf, looseReason, holderPath, portPathOf} from '../../vendor/rack/cable-rules.js';
-import {settleEnd} from '../../vendor/rack/ports.js';
+import {settleEnd, settleEnds} from '../../vendor/rack/ports.js';
 import {loadSlots} from '../../vendor/rack/catalog.js';
+import {zeroUById} from '../../vendor/rack/model.js';
 import {partSel, pathOfProjectionId} from './part-path.js';
 
 // WHAT IS DRAWN AT AN END, for the kit (ctx.drawnAt, kit 0.30.0): the ref of
@@ -88,6 +89,35 @@ function readEnd(end, item, panel, list) {
           ...(meant ? {reason: `${end.path} is a drawing id, not a port: the port is ${meant} on the ${end.view === 'rear' ? 'rear' : 'front'}.`} : {})};
 }
 
+// THE ENDS ON A PART BESIDE THE RACK (kit 0.36.0, Portrayal #1068): a cord
+// to an outlet of a vertical PDU. No page reads a panel of such a part, so
+// the catalogue answers for the end whole (ports.js settleEnds): what the
+// outlet is, and the plug it takes. At a slot that takes two plugs (a C39) it
+// is the one that pairs with the plug at the cord's other end, so `ends` is
+// what the page read of every other end; the end's own `plug` is not it.
+// Returns {ends: Map(endKey -> {facts, info, reason}), seats: {partId: {path:
+// plugRef}}}, for the ends on such parts only: nothing the page said of a
+// device's end is changed. An end the catalogue cannot answer (its parts list
+// not loaded) is left out: not checked, never called loose. `extra` ends (a
+// cable still being made) are answered and seat nothing.
+export function zeroUFacts(rack, ends, ctx, extra = []) {
+  const items = new Set((rack.items || []).map(i => i.id));
+  const beside = e => !!e?.item && !items.has(e.item) && !!zeroUById(rack, e.item);
+  const cabled = (rack.cables || []).flatMap(c => [c.a, c.b]).filter(beside);
+  const out = {ends: new Map(), seats: {}};
+  if (!cabled.length && !extra.some(beside)) return out;
+  const settled = settleEnds(rack, ends, ctx, extra.filter(beside));
+  for (const e of [...cabled, ...extra.filter(beside)]) {
+    const k = endKey(e), got = settled.get(k);
+    if (got) out.ends.set(k, got);
+  }
+  for (const e of cabled) {
+    const got = out.ends.get(endKey(e)), plug = got && got.reason == null ? got.info?.plug : null;
+    if (plug) out.seats[e.item] = {...out.seats[e.item], [portPathOf(e.path)]: plug};
+  }
+  return out;
+}
+
 // What the page falls back to when reading the cables' faces fails: no plugs,
 // and no end judged, so none is marked loose. Frozen, like every answer.
 export const UNCHECKED = Object.freeze({seats: Object.freeze({}), ends: new Map(), unchecked: true});
@@ -120,7 +150,7 @@ export async function cableFacts(rack, extra = []) {
   if (!ends.length) return NONE;
   const items = new Map(rack.items.map(i => [i.id, i]));
   const key = JSON.stringify([cabled.map(endKey), extra.map(endKey),
-    [...new Set(ends.map(e => e.item))].map(id => items.get(id) || null)
+    [...new Set(ends.map(e => e.item))].map(id => items.get(id) || zeroUById(rack, id) || null)
       .map(i => i && [i.id, i.ref, i.cfg, i.swaps, i.fields])]);
   if (memo.key === key) return memo.value;
   if (reading.key === key) return reading.promise;
@@ -153,10 +183,13 @@ async function readFacts(rack, cabled, ends, items, key) {
   // inlet, a PDU outlet) that the panel shows and no port is at.
   // Read only when an end needs it, and after its panel: a panel that fails to load must fail as it did.
   let kit = null;
-  const kitCtx = async () => kit ??= {...await loadSlots(DIST, [...new Set(ends.map(e => items.get(e.item)?.ref).filter(Boolean))]), drawnAt};
+  const hostRef = e => items.get(e.item)?.ref ?? zeroUById(rack, e.item)?.ref;
+  const kitCtx = async () => kit ??= {...await loadSlots(DIST, [...new Set(ends.map(hostRef).filter(Boolean))]), drawnAt};
+  // (an end on a part beside the rack is the catalogue's to answer, after the rest: zeroUFacts)
+  const beside = e => !items.has(e.item) && !!zeroUById(rack, e.item);
   for (const end of ends) {
     const k = endKey(end);
-    if (out.ends.has(k)) continue;
+    if (out.ends.has(k) || beside(end)) continue;
     const item = items.get(end.item) || null;
     const panel = item ? await panelOf(item, end.view) : null;
     const got = readEnd(end, item, panel, list);
@@ -174,6 +207,16 @@ async function readFacts(rack, cabled, ends, items, key) {
     // seats is keyed by ITEM, as item.swaps is: a front-panel end's plugs and a
     // rear-panel end's share one map, and mergeSeats lays it over both panels.
     if (item && hasCable.has(k)) out.seats[item.id] = {...(out.seats[item.id] || {}), ...seats};
+  }
+  // THE OUTLETS OF A PART BESIDE THE RACK: answered from its parts list, each
+  // plug paired with what the page read at the cord's other end (zeroUFacts).
+  // A parts list that failed to load is a fetch that failed: not kept.
+  if (ends.some(beside)) {
+    const ctx = await kitCtx();
+    if (ends.filter(beside).some(e => !ctx.slotsOf(hostRef(e)))) failed = true;
+    const got = zeroUFacts(rack, out.ends, ctx, ends.slice(cabled.length));
+    for (const [k, v] of got.ends) out.ends.set(k, v);
+    Object.assign(out.seats, got.seats);
   }
   // What is returned is shared (the memo, S.cableFacts, the probe): frozen.
   for (const m of Object.values(out.seats)) Object.freeze(m);

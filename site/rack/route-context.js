@@ -6,6 +6,7 @@
 
 import {configuredFace, DIST} from './face.js';
 import {loadCableTypes} from '../../vendor/rack/cable-types.js';
+import {loadSlots} from '../../vendor/rack/catalog.js';
 import {bundleFacts, memberPlaces, trunkLay, tieMark} from './bundle-view.js';
 import {WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {itemBox} from '../../vendor/rack/fit.js';
@@ -388,6 +389,14 @@ export const reads = {routeFacts: 0, reach: 0, last: null};
 export const kept = {check: false};
 const now = () => (typeof performance === 'object' ? performance.now() : 0);
 
+// THE PARTS LISTS A ROUTE READS (kit 0.36.0, Portrayal #1068): a cord can end
+// on an outlet of a part beside the rack (a vertical PDU), and no page reads a
+// panel of that part, so the kit places the outlet from the part's own parts
+// list (route.js zeroUEndPoint: ports.js zeroUEnds, from `slotsOf` and
+// `compByRef`). Without them such a cord has no length. A device's ports are
+// still the page's (portX, portY), so only the parts beside the rack are loaded.
+export const slotRefsOf = rack => [...new Set(zeroUOf(rack).map(z => z.ref).filter(r => typeof r === 'string' && r))];
+
 export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {}) {
   reads.routeFacts++;
   const took = {};
@@ -395,6 +404,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   const lap = k => { const t = now(); took[k] = t - lapAt; lapAt = t; };
   const guides = new Map(), ports = new Map(), failed = {n: 0}, lost = {n: 0};
   const typesReady = cableTypes();
+  // (a parts list that cannot be read leaves its cords unmeasured: what is read is then not kept)
+  const refs = slotRefsOf(rack);
+  const partsReady = refs.length ? loadSlots(DIST, refs).then(p => { if (refs.some(r => !p.slotsOf(r))) lost.n++; return p; })
+    .catch(() => { lost.n++; return null; }) : null;
   // The ducts beside the rack, read from their drawings with the faces.
   const ducts = zeroUApertures(rack, chassisOf, lost);
   await Promise.all(rack.items.map(async it => {
@@ -427,7 +440,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // writing to this one throws. Nothing it closes over (the guides, the
   // ports, the channels, the reaches) is written to after this line.
   lap('faces');
-  const [channels, types, reached] = await Promise.all([ducts, typesReady, plugReaches(rack, given, lost)]);
+  const [channels, types, reached, parts] = await Promise.all([ducts, typesReady, plugReaches(rack, given, lost), partsReady]);
   // (each ask is counted, for a probe: `reads.reach`, above)
   const reachOf = {get: key => { reads.reach++; return reached.get(key); }};
   lap('reach');
@@ -463,6 +476,8 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // Each end from the far end of its seated plug (kit 0.13.0), so every
     // length the page shows is the kit's, measured the way the 3D scene draws it.
     plugReachOf: end => reachOf.get(endKey(end)) ?? null,
+    // The parts lists of the parts beside the rack (slotRefsOf, above): where an outlet on one is.
+    ...(parts ? {slotsOf: parts.slotsOf, compByRef: parts.compByRef, redirects: parts.redirects} : {}),
     ...(kept.check ? {checkKept: true} : {}),
   });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));

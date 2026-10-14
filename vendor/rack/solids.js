@@ -131,6 +131,19 @@ function zeroUPlacer(rack, z, c) {
                  zFront: rear ? zc - d / 2 : zc + d / 2, outward: rear ? -1 : 1, mirror: rear, flipY: false});
 }
 
+// A POINT ON A PANEL OF A PART BESIDE THE RACK (P-0019), in rack mm: `x`
+// across its panel as drawn and `y` up from its bottom, on its front panel
+// (`view` 'front', the face it looks out of) or its back. Placed as its body
+// is, so an outlet is where the PDU drawn round it is. null for a part the
+// catalogue gives no size.
+export function zeroUPanelPoint(rack, z, c, {x, y}, view = 'front') {
+  if (!(pos(c?.w) && pos(c?.h) && pos(c?.d))) return null;
+  const back = view === 'rear';
+  // the back panel is drawn as seen from behind: its x runs the other way
+  const b = zeroUPlacer(rack, z, c)({x: back ? num(c.w) - x : x, y, z: back ? num(c.d) : 0, w: 0, h: 0, d: 0});
+  return {x: b.x0, y: b.y0, z: b.z0};
+}
+
 const memo = new WeakMap();
 
 // EVERY SOLID IN THE RACK, placed: [{item, part, box, holes: [{via, box,
