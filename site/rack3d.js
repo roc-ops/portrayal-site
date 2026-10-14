@@ -54,10 +54,13 @@ const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a fla
 // picture and the tags fall off the edge without it; obliquely the margin
 // already swallows it.
 const VIEWS = {
+  // `span` and `centre` are `wide` and `aimX` for a scene whose tags are laid
+  // out: `span` times the width from the farthest tag to the right rail, and how
+  // much of the way to the middle of that width the camera looks.
   iso:   {dir: [0.4647, 0.1608, 0.8707], aim: 0.42, margin: 1.72, z: -60,
-          wide: 1.1, aimX: 0},
+          wide: 1.1, aimX: 0, span: 0.75, centre: 0.5},
   front: {dir: [0, 0, 1],                aim: 0.50, margin: 1.12, z: -60,
-          wide: 2.4, aimX: -0.28},
+          wide: 2.4, aimX: -0.28, span: 1.5, centre: 1},
 };
 // Face raster density for the rack. The single-device viewer defaults to 4 and
 // is looked at from arm's length; a rack is seen from further back, across six
@@ -466,6 +469,10 @@ export function createRackScene(container, opts = {}) {
   // build meant the whole rack assembled itself somewhere above the default
   // camera and then snapped into place - and did it again on every rebuild,
   // throwing away wherever the viewer had orbited to.
+  // (tagMinX: x of the farthest tag's outer edge, null until layoutTags has run;
+  // framed: the view last framed; cameraTouched: the viewer has moved it since)
+  let tagMinX = null, framed, cameraTouched = false;
+  controls.addEventListener('start', () => { cameraTouched = true; });
   function frameCamera(which) {
     const v = VIEWS[which] || VIEWS[VIEW] || VIEWS.iso;
     const H = UNITS * RU;
@@ -490,8 +497,14 @@ export function createRackScene(container, opts = {}) {
     //
     // The viewing DIRECTION is the one the stage was composed with, kept as a
     // unit vector so the look does not change - only how far back it sits.
-    const target = new THREE.Vector3(RACK_W * (v.aimX || 0), H * v.aim, v.z);
+    // THE TAGS' OWN REACH, once they are laid out (layoutTags): the picture is
+    // centred on the span from the farthest tag's edge to the right rail's outer
+    // edge, and given room by that span, not by a fixed guess at it.
+    const left = tagMinX === null ? null : tagMinX, right = RACK_W / 2 + 10;
+    const target = new THREE.Vector3(left === null ? RACK_W * (v.aimX || 0) : (left + right) / 2 * v.centre, H * v.aim, v.z);
     controls.target.copy(target);
+    framed = which;
+    cameraTouched = false;
 
     // The container may not have been measured yet - resize() runs after the
     // first framing - so take the aspect from the element rather than from a
@@ -508,7 +521,8 @@ export function createRackScene(container, opts = {}) {
     // being checked against the height and width of what is directly in
     // front of the camera.
     const depth = FRAME ? RACK_FACE_Z - REAR_FACE_Z : 0;
-    const need = Math.max(H / (2 * half), (RACK_W * v.wide) / (2 * half * aspect),
+    const across = left === null ? RACK_W * v.wide : (right - left) * v.span;
+    const need = Math.max(H / (2 * half), across / (2 * half * aspect),
                           (depth * 1.15) / (2 * half * aspect));
     camera.position.copy(target)
       .addScaledVector(new THREE.Vector3(...v.dir), need * v.margin);
@@ -683,7 +697,66 @@ export function createRackScene(container, opts = {}) {
 
   // ── devices ────────────────────────────────────────────────────────────
   const mounted = [];   // {entry, group}
-  const tagRow = new Map();   // half-U row -> mm of rail label already laid out there (cleared on rebuild)
+  // The leader lines from each device tag to its device. Their own group, so an
+  // export can set them aside (withoutLeaders) and they are cleared on rebuild.
+  const leaders = new THREE.Group();
+  leaders.name = 'tag-leaders';
+  scene.add(leaders);
+  const TAG_GAP = 120;      // mm clear between the farthest part beside the rack and the tags' inner edge
+  const TAG_GAP_Z = 40;   // mm clear in front of the rack's frontmost part, so a tag clears it from the side too
+  const TAG_STEP = 4;       // mm between two tags in a column
+  // The scene without its leaders for as long as `fn` runs (an export): a Line is
+  // written to a GLB, unlike a sprite.
+  async function withoutLeaders(fn) {
+    scene.remove(leaders);
+    try { return await fn(); } finally { if (alive) scene.add(leaders); }
+  }
+  function clearLeaders() {
+    for (const l of [...leaders.children]) { leaders.remove(l); l.geometry.dispose(); l.material.dispose(); }
+  }
+
+  // THE TAGS STAND IN ONE COLUMN OUTSIDE EVERYTHING BESIDE THE RACK, each with a
+  // leader to its device. The column's inner edge is read from the scene - the
+  // farthest left of anything in it but the tags: a part beside the rack, a cable
+  // run - and its depth from the frontmost part, so from the side a tag is beside
+  // the rack rather than over it. Tags are right-aligned, so a leader leaves each
+  // at one x. Two devices at one height do not share a place: the column steps
+  // down, a tag never above the one before it. Run when the scene is complete,
+  // and again by a host that stands parts or hangs cables after build().
+  const extent = new THREE.Box3(), partBox = new THREE.Box3();
+  function layoutTags() {
+    clearLeaders();
+    const tags = mounted.filter(m => m.tag).sort((a, b) => b.group.position.y - a.group.position.y);
+    if (!tags.length) { tagMinX = null; requestFrame(); return; }
+    let outer = -RACK_W / 2, front = RACK_FACE_Z;
+    for (const o of scene.children) {
+      if (o === leaders || o.isLight || o.isSprite) continue;
+      partBox.makeEmpty().expandByObject(o);
+      if (partBox.isEmpty()) continue;
+      outer = Math.min(outer, partBox.min.x);
+      if (o.name !== 'patch-cables') front = Math.max(front, partBox.max.z);   // (a cable run is not a part a tag must clear in depth)
+    }
+    const col = outer - TAG_GAP;
+    let floor = Infinity, min = col;
+    for (const m of tags) {
+      const w = m.tag.scale.x, h = m.tag.scale.y;
+      const y = Math.min(m.group.position.y, floor - h / 2 - TAG_STEP);   // (floor: the bottom edge of the tag above)
+      m.tag.position.set(col - w / 2, y, front + TAG_GAP_Z + w / 2);
+      floor = y - h / 2;
+      min = Math.min(min, col - w);
+      // the leader ends on the device: inside its left edge, at the tag's own height or the nearest the device has
+      extent.setFromObject(m.group);
+      const end = new THREE.Vector3(extent.min.x + 20, Math.min(Math.max(y, extent.min.y + 4), extent.max.y - 4), extent.max.z);
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(col, y, m.tag.position.z), end]),
+                                  new THREE.LineBasicMaterial({color: new THREE.Color(LABEL.unit), depthTest: false, transparent: true, opacity: 0.85}));
+      line.userData.labelTone = 'unit';
+      line.renderOrder = 1;
+      leaders.add(line);
+    }
+    tagMinX = min;
+    if (!cameraTouched) frameCamera(framed);   // the opening view is fitted to the tags; one the viewer has moved is left alone
+    requestFrame();   // (the tags moved and the leaders are new)
+  }
 
   // A FACE BELONGS TO A MOUNT, NOT TO A MODEL. The override table is keyed by
   // the URL a face is fetched from, and that URL is `<ref>.<cfg>.<view>.svg` -
@@ -997,15 +1070,16 @@ export function createRackScene(container, opts = {}) {
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with
-    // the rails.
+    // the rails. None for a part the caller marks `untagged` (the Rack Builder
+    // marks its cable managers): they take no row either, so the equipment
+    // tags close up toward the rail.
     let tag = null;
-    if (RAILS) {
+    if (RAILS && !entry.untagged) {
       tag = labelSprite(entry.label, 30, 'tag');
-      // Labels at one height (a manager and its host, a rear and a front part at one U) sit
-      // side by side, outward from the rail, not on top of one another.
-      const k = Math.round(group.position.y / (RU / 2)), used = tagRow.get(k) || 0;
-      tag.position.set(-(RACK_W / 2 + 120) - used - tag.scale.x / 2, group.position.y, 46);
-      tagRow.set(k, used + tag.scale.x + 12);
+      tag.userData.tagOf = entry.id ?? null;   // (the device it names, by the id its group is named by)
+      // (where it stands is layoutTags's, once the whole rack is: this is only
+      // a place for it while the rack is still being built)
+      tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
       scene.add(tag);
     }
     scene.add(group);
@@ -1389,8 +1463,9 @@ export function createRackScene(container, opts = {}) {
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
+    clearLeaders();
+    tagMinX = null;
     requestFrame();
-    tagRow.clear();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
     SHARED.clear();           // and the parts built once for those mounts
@@ -1417,6 +1492,7 @@ export function createRackScene(container, opts = {}) {
       if (mine !== epoch) return;
       await buildDevice(entry);
     }
+    layoutTags();
   }
 
   function resize() {
@@ -1554,9 +1630,11 @@ export function createRackScene(container, opts = {}) {
     setBackground(c) { scene.background = new THREE.Color(c); requestFrame(); },
     setLabelColors(o = {}) {
       LABEL = labelTones(o);
-      scene.traverse(x => { if (x.isSprite && x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
+      // (the sprites and the tags' leaders)
+      scene.traverse(x => { if (x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
       requestFrame();
     },
+    layoutTags,
     resize,
     reframe: frameCamera,
     // Ask for a frame: a host that has changed what the scene shows (a
@@ -1578,9 +1656,10 @@ export function createRackScene(container, opts = {}) {
     // The text one mounted device's face was cut from (`slot` is its place in the
     // stack): its seated parts and written fields are in it, as the texture has them.
     faceText: (slot, view) => RESOLVED[slot] ? svgSource(faceSrc(RESOLVED[slot], view), relief) : Promise.resolve(null),
-    // (written in full detail, the faces as built, even from a camera still moving: `opts.lightWhileMoving`)
-    toGLB: () => { if (light) setLight(false); return toGLB(scene); },
-    toUSDZ: () => { if (light) setLight(false); return toUSDZ(scene); },
+    // (written in full detail, the faces as built, even from a camera still moving: `opts.lightWhileMoving`;
+    // the tags' leaders are the page's, as the tags are: never in a file)
+    toGLB: () => { if (light) setLight(false); return withoutLeaders(() => toGLB(scene)); },
+    toUSDZ: () => { if (light) setLight(false); return withoutLeaders(() => toUSDZ(scene)); },
     three: {THREE, scene, camera, renderer, controls},
     // Resolves when the deferred faces - sides, rear, underside - have all been
     // installed. build() does not wait for these on purpose; this is here for a

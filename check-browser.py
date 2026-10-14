@@ -5599,20 +5599,182 @@ def check_rack_face_managers(page, base):
         bad.append("3D: the manager's sheet body is drawn as a solid box")
     if not got["anchor"]:
         bad.append("3D: guideAnchor finds no guide-1 on the manager")
-    # The rail labels of the host and its manager are at one height: they sit side by side.
+    # Only the host has a rail label at its height: its manager has none.
     tags = page.evaluate("""() => {
-      const sc = window.__rack.scene().three.scene, y = sc.getObjectByName('device-i1').position.y;
-      return sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1)
-        .map(c => [c.position.x - c.scale.x / 2, c.position.x + c.scale.x / 2]);
+      const sc = window.__rack.scene().three.scene;
+      return sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(c => c.userData.tagOf);
     }""")
-    if len(tags) < 2:
-        bad.append(f"3D: the host and its manager do not both have a rail label at their height: {tags}")
-    elif any(a[0] < b[1] and b[0] < a[1] for i, a in enumerate(tags) for b in tags[i + 1:]):
-        bad.append(f"3D: the host's and the manager's rail labels overlap: {tags}")
+    if tags != ["i1"]:
+        bad.append(f"3D: expected one device tag (the host's), none for either manager: {tags}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
         bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB with the manager's node")
+    return bad
+
+
+@extra("rack.html: the 3D scene tags each piece of equipment and no cable manager - a lacer, a horizontal and a vertical manager have none, a PDU keeps its tag")
+def check_rack_3d_no_manager_tags(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags'});
+      const put = (ref, ru, label, extra = {}) => ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, label, ...extra}));
+      put('as7726-32x', 20, 'leaf-1');
+      put('fhd-cmp5dr', 20, 'hmgr', {on: 'i1', unit: 1});
+      put('cmh-5dr1u', 24, 'lacer-1');
+      put('as7726-32x', 28, 'leaf-2');
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags scene")
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const sc = s.three.scene, at = id => sc.getObjectByName('device-' + id);
+      const sprites = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined);
+      const tagged = id => at(id) ? sprites.filter(c => c.userData.tagOf === id).length : null;
+      return {built: ['i1', 'i2', 'i3', 'i4', 'z1', 'z2'].map(id => [id, !!at(id)]), tags: sprites.length,
+              equipment: [tagged('i1'), tagged('i4')], mgrs: [tagged('i2'), tagged('i3')], pdu: tagged('z2'), vmgr: tagged('z1')};
+    }""")
+    if not all(ok for _, ok in got["built"]):
+        bad.append(f"3D: a part is not in the scene: {got['built']}")
+    # Three rail labels in all: the two switches and the PDU, and nothing for the three managers.
+    # (the PDU and the vertical manager stand at one height, so the PDU's own tag is the one there.)
+    if got["pdu"] != 1:
+        bad.append(f"3D: the PDU should keep one rail label: {got}")
+    if got["equipment"] != [1, 1]:
+        bad.append(f"3D: each switch should have exactly one rail label at its height: {got}")
+    if got["mgrs"][1] != 0:
+        bad.append(f"3D: the lacer panel has a rail label: {got}")
+    if got["tags"] != 3:
+        bad.append(f"3D: expected 3 rail labels (two switches and the PDU), none for the horizontal, lacer or vertical manager: {got}")
+    return bad
+
+
+@extra("rack.html: the 3D device tags stand clear of the rack, the parts and cable runs beside it and each other, at the front, three-quarter and side views, each with a leader to its device, in no export")
+def check_rack_3d_tags_out(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    # Two devices at one height (a front and a rear one), a PDU and a vertical manager beside the
+    # rack at that height too, and cables run up the lanes beside the rails.
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags out'});
+      const optic = {'port-1': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1',
+        swaps: {'bay-1': 'fs/fhd-splice-12-lc@3', 'bay-4': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, face: 'rear', label: 'leaf-rear'}));
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 21, label: 'leaf-2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-4/module/lc2', view: 'front'}, media: 'os2'}));
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags-out scene", tubes=True)
+    page.evaluate("async () => { await window.__rack.scene().complete?.(); }")
+    # Screen boxes (client px) of the tags, of everything a tag must clear and of the devices, from the live camera.
+    measure = """async (view) => {
+      const s = window.__rack.scene(), {THREE, scene: sc, camera, controls, renderer} = s.three;
+      const m = s.metrics();
+      if (view === 'front' || view === 'iso') s.reframe(view);
+      else if (view !== 'default') {
+        const t = controls.target.clone(), d = camera.position.distanceTo(t) * 1.4;
+        const dir = {'side-left': [-1, 0.05, 0], 'side-right': [1, 0.05, 0], 'three-quarter-right': [0.5, 0.15, 0.85]}[view];
+        camera.position.copy(t).addScaledVector(new THREE.Vector3(...dir).normalize(), d);
+        controls.update();
+      }
+      camera.updateMatrixWorld(); camera.updateProjectionMatrix();
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const cv = renderer.domElement.getBoundingClientRect();
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+      const px = v => { const p = v.clone().project(camera); return [cv.left + (p.x + 1) / 2 * cv.width, cv.top + (1 - p.y) / 2 * cv.height]; };
+      const hull = pts => { const q = pts.map(px); return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
+      const boxOf = o => { const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return null;
+        const c = [];
+        for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) c.push(new THREE.Vector3(x, y, z));
+        return hull(c); };
+      const tags = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(c => {
+        const w = c.scale.x / 2, h = c.scale.y / 2, p = c.position;
+        return {of: c.userData.tagOf, ...hull([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => p.clone().addScaledVector(right, a * w).addScaledVector(up, b * h))),
+                y: p.y, x: p.x, w: c.scale.x}; });
+      // the things a tag must clear: the rack's own parts (one box each), the parts beside it, each cable run
+      const parts = [];
+      for (const o of sc.children) {
+        if (o.isLight || o.isSprite || o.name === 'tag-leaders') continue;
+        if (o.name === 'patch-cables') { for (const c of o.children) { const b = boxOf(c); if (b) parts.push({name: c.name || 'cable', ...b}); } continue; }
+        const b = boxOf(o); if (b) parts.push({name: o.name || 'rack', ...b});
+      }
+      const devices = {};
+      for (const t of tags) { const g = sc.getObjectByName('device-' + t.of); devices[t.of] = g && boxOf(g); }
+      const leaders = (sc.getObjectByName('tag-leaders')?.children || []).map(l => {
+        const a = l.geometry.attributes.position;
+        return {from: px(new THREE.Vector3(a.getX(0), a.getY(0), a.getZ(0))), to: px(new THREE.Vector3(a.getX(1), a.getY(1), a.getZ(1))), tone: l.userData.labelTone};
+      });
+      return {tags, parts, devices, leaders, view: {w: innerWidth, h: innerHeight, cv: [cv.left, cv.top, cv.right, cv.bottom]}};
+    }"""
+    hit = lambda a, b: a["l"] + 0.5 < b["r"] and b["l"] + 0.5 < a["r"] and a["t"] + 0.5 < b["b"] and b["t"] + 0.5 < a["b"]
+    for view in ("default", "front", "iso", "three-quarter-right", "side-right", "side-left"):
+        got = page.evaluate(measure, view)
+        tags, tag_of = got["tags"], {t["of"] for t in got["tags"]}
+        if tag_of != {"i1", "i3", "i4", "i5", "z2"}:   # leaf-1, pp-1, leaf-rear, leaf-2 and the PDU
+            bad.append(f"{view}: tags for {sorted(map(str, tag_of))}, expected leaf-1, pp-1, leaf-rear, leaf-2 and the PDU only")
+            continue
+        for t in tags:
+            for p in got["parts"]:
+                if hit(t, p):
+                    bad.append(f"{view}: tag of {t['of']} overlaps {p['name']} on screen")
+                    break
+        for i, t in enumerate(tags):
+            for o in tags[i + 1:]:
+                if hit(t, o):
+                    bad.append(f"{view}: tag of {t['of']} overlaps the tag of {o['of']} on screen")
+        cv = got["view"]["cv"]
+        if view in ("default", "front", "iso") and not all(cv[0] <= t["l"] and t["r"] <= cv[2] and cv[1] <= t["t"] and t["b"] <= cv[3] for t in tags):
+            bad.append(f"{view}: a tag is off the stage: {[(t['of'], round(t['l']), round(t['r'])) for t in tags]} in {cv}")
+        if view in ("default", "front", "iso"):
+            if len(got["leaders"]) != len(tags):
+                bad.append(f"{view}: {len(got['leaders'])} leaders for {len(tags)} tags")
+            for t in tags:
+                d = got["devices"].get(t["of"])
+                near = [l for l in got["leaders"] if abs(l["from"][0] - t["r"]) < 6 and t["t"] - 4 <= l["from"][1] <= t["b"] + 4]
+                if not near or not d:
+                    bad.append(f"{view}: no leader from the tag of {t['of']} (device {d})")
+                elif not any(d["l"] - 2 <= l["to"][0] <= d["r"] + 2 and d["t"] - 2 <= l["to"][1] <= d["b"] + 2 for l in near):
+                    bad.append(f"{view}: the leader of {t['of']} ends at {[l['to'] for l in near]}, off its device {d}")
+    # Tags and leaders turn with the stage's label colours, and the leaders are in no file.
+    cols = page.evaluate("""() => { const s = window.__rack.scene(); s.setLabelColors({labelColor: '#123456', labelUnitColor: '#654321'});
+      const sc = s.three.scene, hex = o => o.material.color.getHexString();
+      return {tags: sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(hex),
+              leaders: sc.getObjectByName('tag-leaders').children.map(hex)}; }""")
+    if set(cols["tags"]) != {"123456"} or set(cols["leaders"]) != {"654321"}:
+        bad.append(f"stage colours: the tags are {set(cols['tags'])} and the leaders {set(cols['leaders'])}, expected 123456 and 654321")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if b'"mode":1' in glb or b'tag-leaders' in glb:
+        bad.append("GLB: carries the tags' leaders")
+    if not page.evaluate("() => !!window.__rack.scene().three.scene.getObjectByName('tag-leaders')"):
+        bad.append("GLB: the leaders were not put back after the export")
     return bad
 
 

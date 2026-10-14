@@ -14,7 +14,11 @@ import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, stra
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom, zeroUBottomMm, uLabel} from '../../vendor/rack/model.js';
-import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
+import {isZeroUPart, isNarrow, isRackFace, setbackOf} from '../../vendor/rack/fit.js';
+
+// A cable manager, by the library's own classification (the part's kind, or the
+// kit's rack-face mount), never by its name. A PDU is power, not management.
+const isCableManager = c => c?.kind === 'cable manager' || isRackFace(c);
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
@@ -712,6 +716,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
+    ...(isCableManager(chassisOf?.(item.ref)) ? {untagged: true} : {}),
     // how far its faceplate stands behind its rail, and its roll, which sets the span it fills (rack file version 4: the kit's setbackOf, itemBox)
     ...(chassisOf?.(item.ref) ? {setback: setbackOf(rack, item, chassisOf)} : {}), ...(item.roll ? {roll: item.roll} : {}),
   }));
@@ -722,7 +727,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   for (const z of sideParts) {
     stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), mm: zeroUBottomMm(z), label: z.label,
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: {}, share: plain(z.id, {}, null),
-                chassis: chassisOf(z.ref), mount: 'rack-side'});
+                chassis: chassisOf(z.ref), mount: 'rack-side',
+                ...(isCableManager(chassisOf(z.ref)) ? {untagged: true} : {})});
   }
 
   // Imported here, not at module load: rack-page.js pulls this module in on
@@ -811,6 +817,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       at = performance.now();
       built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
       if (cabled) phase('cables', at, performance.now(), {cables: (rack.cables || []).length, failed: !!built.rackCables?.failed});
+      // The device tags stand outside the parts and the cable runs beside the rack, which are all in place now
+      // (it asks for a frame, and fits the opening camera to the tags unless the viewer has moved it).
+      built.layoutTags();
       // (the hidden faces every end was read off: nothing here asks for an anchor again, rack3d.js releaseAnchors)
       built.releaseAnchors();
     } finally {
