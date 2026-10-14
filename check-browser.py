@@ -5885,6 +5885,15 @@ def check_rack_cable_routes(page, base):
     }""")
     if rear["right"] is None or rear["left"] is None or not (rear["right"] < rear["left"]):
         bad.append(f"rear pick: the left gutter's target is not named right-rear: {rear}")
+    # (kit 0.42.0) the inner lane is offered too, on the rail itself: a rail wide, the pane's mirrored side
+    inner = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg');
+      const b = n => { const r = s.querySelector(`[data-pick-lane="${n}"][data-pick-ru="20"]`)?.getBBox(); return r ? [r.x, r.width] : null; };
+      return {right: b('right-rear-inner'), left: b('left-rear-inner'), count: s.querySelectorAll('[data-pick-lane$="-inner"]').length};
+    }""")
+    near = lambda got, want: got is not None and all(abs(g - w) < 0.01 for g, w in zip(got, want))
+    if not near(inner["right"], [-26, 26]) or not near(inner["left"], [450.85, 26]) or inner["count"] != 2 * page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU"):
+        bad.append(f"rear pick: the inner lanes are not offered on the rails: {inner}")
     page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="25"]')
     page.keyboard.press("Escape")
     got = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
@@ -10404,7 +10413,8 @@ def check_rack_spare_vertical_loop(page, base):
         bad.append(f"Front: the loop does not go with its cable when one is selected (another selected {other}, its own {own})")
     page.keyboard.press("Escape")
     txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
-    for want in ("as a loop in z1 duct (a duct whose maker states no cable capacity)", "Spare, capacity not stated:"):
+    # VCM's maker states none, and since kit 0.40.0 the library estimates one for cat6; c2 is fibre, which that count does not take in
+    for want in ("as a loop in z1 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "Spare, capacity not stated:"):
         if want not in txt:
             bad.append(f"inspect c2: no {want!r} in {txt!r}")
     z = agent_call(page, "inspect", {"id": "z1"})["content"][0]["text"]
@@ -10423,6 +10433,33 @@ def check_rack_spare_vertical_loop(page, base):
       return L ? L.loops.map(g => ({members: g.userData.members, run: g.userData.spare.run})) : null; }""")
     if s3 != [{"members": ["c2"], "run": "y"}]:
         bad.append(f"3D: not one loop of c2 up the duct: {s3}")
+    return bad
+
+
+@extra("rack.html: a manager whose maker states no cable capacity shows the library's estimate as an estimate in its panel, and a cat6 cord's spare stored in its duct reads against the estimate in the agent's text (kit 0.40.0, Portrayal #1074)")
+def check_rack_estimated_capacity(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    # CMV-SFD42U9W states none: 2002 cat6 cables' worth is the library's estimate (rack.json capacity.estimated)
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "cable.update", "id": "c2", "media": "cat6"},
+                                                      {"op": "cable.slack", "id": "c2", "at": {"item": "z1", "via": "duct"}}]})
+    if res.get("isError"):
+        return bad + [f"setup: a cat6 cord's spare in VCM's duct was refused: {res['content'][0]['text']}"]
+    txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
+    for want in ("as a loop in z1 duct (a duct holding 1 cat6 cables' worth against an estimated 2002 cat6 cables' worth (its maker states none))",
+                 "Spare, capacity estimated:"):
+        if want not in txt:
+            bad.append(f"inspect c2: no {want!r} in {txt!r}")
+    if "its maker states)" in txt:
+        bad.append(f"inspect c2: still calls the estimate a count its maker states: {txt!r}")
+    page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
+    page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
+    cap = page.text_content("#zCapacity") or ""
+    if not cap.startswith("an estimated 2002 cat6 cables' worth (its maker states none): ESTIMATE, not stated by FS"):
+        bad.append(f"the panel: VCM's capacity is not said to be an estimate: {cap!r}")
     return bad
 
 
@@ -12207,6 +12244,15 @@ def check_rack_pdu_cords(page, base):
         m = paths[cid]["measured"]
         if not 0.2 < m < 3:
             bad.append(f"length: {cid} is measured {m} m")
+    # (kit 0.42.0) a cord arrives from beside its PDU, so it does not count its own PDU as a body it crosses,
+    # and the assistant is told the inner lanes it may route through
+    for cid in ("c1", "c2"):
+        said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+          return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        if "Crosses a body" in said:
+            bad.append(f"route: {cid} is found crossing a body: {said!r}")
+        if "left-rear-inner" not in said or "right-front-inner" not in said:
+            bad.append(f"agent: inspect {cid} does not list the inner lanes it can take: {said!r}")
     for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
         at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, zid, path])
         if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:

@@ -27,6 +27,19 @@ const SHORT = 2;                     // U: a jumper this close, with no manager,
 
 export const lanesOf = frame => (frame.kind === 'two-post'
   ? ['left', 'right'] : ['left-front', 'right-front', 'left-rear', 'right-rear']);
+// THE INNER LANE (P-0037): on a four-post, each upright's lane has a second
+// one named for it, `left-rear-inner`, on the upright's own centre line, so
+// between the rail and a zero-U part fixed against it. A cord to an outlet of
+// a PDU there runs down it to the outlet's unit and turns out to the outlet
+// from beside it; the gutter lane is beyond the PDU, and a cord through that
+// one overshoots and comes back. It is a lane for a route to name, and no
+// more: the automatic route does not use it, and a detour (solids.js) does not
+// take it for a side lane. A two-post has none: its one pair of uprights has
+// the lane `left` and `right` alone.
+export const INNER = '-inner';
+export const innerLanesOf = frame => (frame.kind === 'two-post' ? [] : lanesOf(frame).map(l => `${l}${INNER}`));
+// every lane a waypoint may name
+export const waypointLanesOf = frame => [...lanesOf(frame), ...innerLanesOf(frame)];
 // The rings, ducts, pass-throughs and trays a device offers a route, as
 // rack.json lists them (guides and passes per view, trays by id): one sorted
 // list of ids, whatever the view. A tray's id shares the namespace of the
@@ -547,7 +560,7 @@ function leadFrom(inp, world) {
 // reads off the drawings, or a tray the catalogue lists; or a duct or a
 // window of a zero-U part, as the catalogue lists them (issue 13).
 function resolves(rack, w, ctx) {
-  if (w.lane) return lanesOf(rack.frame).includes(w.lane) && w.ru >= 1 && w.ru <= rack.frame.heightRU;
+  if (w.lane) return waypointLanesOf(rack.frame).includes(w.lane) && w.ru >= 1 && w.ru <= rack.frame.heightRU;
   if (!itemOf(rack, w.item)) return zeroUPathways(rack, zeroUById(rack, w.item), ctx).some(p => p.via === w.via);
   return ctx.guidesOf(w.item).some(g => g.via === w.via) || !!trayOf(rack, w, ctx);
 }
@@ -863,7 +876,10 @@ const besideLane = (rack, lane, ru, chassisOf) => zeroUOf(rack).find(z => {
   const [lo, hi] = zeroUTouched(z, chassisOf);
   return ru >= lo && ru <= hi;
 }) ?? null;
+// The inner lane (above) stands on the centre line of the upright, a rail wide.
+export const innerLaneX = side => (side === 'left' ? -1 : 1) * (OPENING / 2 + RAIL_W / 2);
 export function laneXAt(rack, lane, ru, chassisOf) {
+  if (String(lane).endsWith(INNER)) return innerLaneX(String(lane).split('-')[0]);
   if (typeof chassisOf !== 'function') return laneX(String(lane).split('-')[0]);
   const z = zeroUOnLane(rack, lane, ru, chassisOf);
   if (z) return zeroUX(z, chassisOf);
@@ -1748,8 +1764,11 @@ function layInputs(rack, cable, ctx, given, plain = false) {
     rested({kind: 'tray', item: s.w.item, via: s.w.via, face: laid.face, role: laid.role, ...(laid.ties ? {ties: laid.ties} : {})});
     stops.splice(k, 1, ...laid.points.map((p, j) => ({p, w: s.w, i: s.i, trayAt: true, hold: j > 0 && laid.hold[j]})));
   }
+  // the part beside the rack each end is on, whose body its plug leg is not
+  // found crossing (layFrom); null for an end on a rack device
+  const own = e => (itemOf(rack, e.item) ? null : zeroUById(rack, e.item)?.id ?? null);
   return {...(plain ? {plain: true} : {}), media: cable.media, a, b, diameter, need: bendOf(cable, ctx), drape: drapeOf(cable, ctx),
-    wps, stops, rests};
+    ends: {a: own(cable.a), b: own(cable.b)}, wps, stops, rests};
 }
 // One more thing a cable rests on, unless it is listed.
 const restedIn = rests => o => { if (!rests.some(x => x.kind === o.kind && x.item === o.item && (x.via ?? x.part) === (o.via ?? o.part))) rests.push(o); };
@@ -2222,7 +2241,13 @@ function layFrom(inp, world) {
   const crossings = [];
   const r1 = v => Math.round(v * 10) / 10;
   for (let k = 1; k < final.length && solids.length; k++) {
+    // A CORD ENTERS THE PART IT ENDS ON (P-0037): the plug leg of an end on a
+    // zero-U part's outlet runs into that part's body, so the body is not
+    // found crossed there. Only there: any other leg through it, and the plug
+    // leg through another part, are found.
+    const plug = legs[k - 1][0].end !== undefined && legs[k - 1][0].end === legs[k - 1][1].end ? inp.ends?.[legs[k - 1][0].end] : null;
     for (const x of legCrossings(final[k - 1], final[k], solids, {diameter})) {
+      if (plug && x.solid.item === plug) continue;
       const dup = crossings.some(c => c.item === x.solid.item && c.part === x.solid.part
         && JSON.stringify(c.between) === JSON.stringify(legs[k - 1]));
       if (!dup) crossings.push({kind: 'crosses-body', cable: null, item: x.solid.item, part: x.solid.part,
@@ -2809,7 +2834,7 @@ function zeroUThrough(rack, ctx) {
 export function capacityBasis(cap) {
   if (!(cap?.count > 0) || cap.media === null) return null;
   const known = ownMedia(DIAMETERS, cap.media) > 0, diameter = known ? DIAMETERS[cap.media] : UNSET_D;
-  return {count: cap.count, media: known ? cap.media : null, diameter,
+  return {count: cap.count, media: known ? cap.media : null, diameter, ...(cap.estimated === true ? {estimated: true} : {}),
           counts: c => (ownMedia(DIAMETERS, c?.media) ?? UNSET_D) >= diameter};
 }
 // THE CABLES A PART CARRIES, as capacityOver counts them: for a rack item,
@@ -2834,7 +2859,7 @@ export function capacityOver(rack, ctx) {
     const b = capacityBasis(cap);
     if (!b) return null;
     const count = cables.filter(b.counts).length;
-    return count > b.count ? {count, through: cables.length, capacity: b.count, media: b.media, diameter: b.diameter} : null;
+    return count > b.count ? {count, through: cables.length, capacity: b.count, media: b.media, diameter: b.diameter, ...(b.estimated ? {estimated: true} : {})} : null;
   };
   const out = [];
   for (const [item, cables] of by) {

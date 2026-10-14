@@ -7,6 +7,7 @@ import {el} from './dom.js';
 import {attachPoints} from '../../vendor/rack/fit.js';
 import {zeroUBottom, uLabel} from '../../vendor/rack/model.js';
 import {whereText, carriesLane} from '../../vendor/rack/zero-u.js';
+import {capacityText} from './capacity-text.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
@@ -43,7 +44,7 @@ export function zeroUInspector({z, rack, chassis, chassisOf, onUpdate, onRemove}
     el('label', {}, ['Beside the upright', at]),
     el('label', {}, [`Bottom U (counted from the bottom; labelled U${uLabel(rack.frame, ru)})`, bottom]),
     el('label', {class: 'rk-check'}, [between, ' Between racks (serves the next rack too)']),
-    ...(cap ? [el('p', {id: 'zCapacity', class: 'rk-muted', text: `${cap.count} cables (${cap.basis})`})] : []),
+    ...(cap ? [el('p', {id: 'zCapacity', class: 'rk-muted', text: capacityText(cap)})] : []),
     el('div', {class: 'rk-actions'}, [button('zRemove', 'Remove', onRemove)]),
     err,
   ]);

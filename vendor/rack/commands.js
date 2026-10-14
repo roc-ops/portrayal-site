@@ -23,7 +23,7 @@ import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, 
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
 import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
 import {validate, same} from './validate.js';
-import {withRoutedLengths, pathwaysOf, lanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
+import {withRoutedLengths, pathwaysOf, waypointLanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
 import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
@@ -743,7 +743,7 @@ function cableRemove(rack, {id}) {
 // holds its id. {error} or {route}.
 function waypointsChecked(rack, route, stored, {chassisOf, guidesOf} = {}) {
   if (typeof chassisOf !== 'function') return {route};
-  const lanes = lanesOf(rack.frame);
+  const lanes = waypointLanesOf(rack.frame);
   const out = [];
   for (const [k, w] of route.entries()) {
     const n = k + 1;
@@ -1130,7 +1130,7 @@ function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
       let load = null;
       try { load = spareLoad(updateCable(rack, id, {slack: next}), entry.item, ctx.route, c); } catch { load = null; }
       if (load?.over) return {error: `${loadText(rack, entry.item, load)} Store less there, or in another duct or tray. ${spareWhere(rack, c, ctx.route, path ?? undefined)}`};
-      if (load && !load.compared) findings.push(note(loadText(rack, entry.item, load)));
+      if (load && (!load.compared || load.estimated)) findings.push(note(loadText(rack, entry.item, load)));
     }
   }
   if (same(next, had) && Array.isArray(c.slack)) return unchanged(rack);
@@ -1280,7 +1280,7 @@ const WAYPOINT = {type: 'object', additionalProperties: false,
   description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
   properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
                via: {type: 'string', minLength: 1, description: "The pathway on that device's drawing, such as a ring or a duct, with item."},
-               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru.'},
+               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru. A four-post also has the lane between a rail and a part beside it, such as left-rear-inner.'},
                ru: {type: 'integer', description: 'The U the gutter is crossed at, with lane.'}},
   dependentRequired: {item: ['via'], via: ['item'], lane: ['ru'], ru: ['lane']}};
 const SUMMARY = {type: 'string', description: 'How the step is described in Undo and the notice; set by the caller.'};
@@ -1388,7 +1388,7 @@ export const COMMANDS = {
       route: {type: 'array', description: 'In order: {item, via} for a pathway on a device or a part beside the rack (its duct, a window), {lane, ru} for a gutter at a U.',
         items: WAYPOINT},
       summary: SUMMARY})},
-  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against the capacity its maker states. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
+  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against its capacity, stated or estimated. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
     args: args(['id', 'at'], {id: ID('cable'),
       at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a duct or a tray on a device or on a part beside the rack, or {end} for an end of the cable.',
         properties: {item: {type: 'string', minLength: 1, description: 'The device or the part beside the rack the duct or tray is on, with via.'},

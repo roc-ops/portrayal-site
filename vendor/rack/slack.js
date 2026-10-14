@@ -262,7 +262,7 @@ function loadOf(rack, id, ctx) {
     try { s = ownSlack(rack, cable, ctx); } catch { s = null; }
     for (const e of s?.entries || []) if (e.item === id && e.ok && e.metres > 0 && run > 0) count += Math.ceil(e.metres / run - 1e-9);
   }
-  return {stated: true, compared: true, count, capacity: b.count, media: b.media, over: count > b.count};
+  return {stated: true, compared: true, ...(b.estimated ? {estimated: true} : {}), count, capacity: b.count, media: b.media, over: count > b.count};
 }
 // The sentence of a load: what the part holds against what its maker states.
 // A count of one is "1 cat6 cable's worth". A cable the count does not take in
@@ -270,7 +270,13 @@ function loadOf(rack, id, ctx) {
 // a cat6 figure". Where the maker states none the wording is its own.
 export const loadText = (rack, id, load) => {
   const name = labelOf(rack, id);
-  if (load.compared) return `${name} holds ${load.count} ${load.media ?? ''}${load.media ? ' ' : ''}${load.count === 1 ? "cable's" : "cables'"} worth with the spare stored in it, past the ${load.capacity} its maker states.`;
+  if (load.compared) {
+    const held = `${name} holds ${load.count} ${load.media ?? ''}${load.media ? ' ' : ''}${load.count === 1 ? "cable's" : "cables'"} worth with the spare stored in it, `;
+    // an estimated count (P-0027) is said to be one, and the maker to state none
+    return load.estimated
+      ? `${held}${load.over ? 'past' : 'against'} an estimated ${load.capacity} ${load.media ?? ''}${load.media ? ' ' : ''}${load.capacity === 1 ? "cable's" : "cables'"} worth (its maker states none).`
+      : `${held}past the ${load.capacity} its maker states.`;
+  }
   if (load.notCounted) {
     const kind = load.cableMedia ? (FAMILY[load.cableMedia] === 'fiber' ? `fibre (${load.cableMedia})` : load.cableMedia) : 'a thinner cable';
     return load.media ? `${name} states its cable capacity for ${load.media} cables, and ${kind} is not counted against a ${load.media} figure, so the spare stored in it is not counted.`
@@ -358,6 +364,7 @@ export function slackFindings(rack, ctx, nameOf = id => id) {
       if (!e.ok || !e.load) continue;
       if (e.load.over) out.push({kind: 'spare-over-capacity', cable: c.id, text: loadText(rack, e.item, e.load)});
       else if (!e.load.compared) out.push({kind: 'spare-capacity-unstated', cable: c.id, text: loadText(rack, e.item, e.load)});
+      else if (e.load.estimated) out.push({kind: 'spare-capacity-estimated', cable: c.id, text: loadText(rack, e.item, e.load)});
     }
   }
   return out;

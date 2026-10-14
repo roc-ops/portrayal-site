@@ -698,7 +698,7 @@ export function routeWarnings(rack, facts, nameOf = id => id, opts = {}) {
   const whole = notesOf('pathways');
   if (whole.length) {
     const fills = (facts.fill || []).filter(f => f.over).map(f => ({item: f.item, texts: fillNotes(rack, {fill: [f]}, nameOf)}));
-    const over = (facts.over || []).map(o => ({item: o.item, texts: fillNotes(rack, {over: [o]}, nameOf)}));
+    const over = (facts.over || []).map(o => ({item: o.item, ...(o.estimated === true ? {estimated: true} : {}), texts: fillNotes(rack, {over: [o]}, nameOf)}));
     const gone = (rack.cables || []).map(c => ({cable: c.id, texts: fillNotes({...rack, cables: [c], bundles: []}, {routes: facts.routes}, nameOf)}))
       .filter(r => r.texts.length);
     const said = [...fills, ...over, ...gone].flatMap(r => r.texts);

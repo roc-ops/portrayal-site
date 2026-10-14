@@ -14,7 +14,7 @@ import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds} from './port
 import {zeroUById, zeroUBottomMm} from './model.js';
 import {RU} from './rails.js';
 import {configFacts} from './catalog.js';
-import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ringFindingsOf, ductsThrough,
+import {waypointLanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ringFindingsOf, ductsThrough,
   zeroUPathways, pathwaysAt, windowsOf} from './route.js';
 import {catalogEntries} from './catalog.js';
 import {slackOf, slackFindings, sparePlaces, holdsSpare, spareExports, trayText, mText, labelOf} from './slack.js';
@@ -424,7 +424,8 @@ const offers = (ctx, refs) => refs.map(ref => ({ref, name: partName(ctx.compByRe
 // with the cables at least that thick), or null where the catalogue names
 // none.
 const capacityFact = c => (c?.capacity?.count != null
-  ? {capacity: {count: c.capacity.count, basis: c.capacity.basis ?? '', media: c.capacity.media ?? null}} : {});
+  ? {capacity: {count: c.capacity.count, basis: c.capacity.basis ?? '', media: c.capacity.media ?? null,
+                ...(c.capacity.estimated === true ? {estimated: true} : {})}} : {});
 
 function itemFacts(rack, item, ctx) {
   const c = ctx.chassisOf?.(item.ref) || null;
@@ -639,7 +640,7 @@ async function cableInfo(rack, cable, ctx) {
     // how it was laid by hand in a pathway, as the file has it (`cable.lay`)
     ...(Array.isArray(cable.lay) && cable.lay.length ? {lay: cable.lay} : {}),
     route: {edited, waypoints, text: routeText(waypoints, label, rack.frame, ductsThrough(rack, ctx.chassisOf, label, windows)), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {}),
-            ...(bends ? {bends} : {}), ...(covers ? {covers} : {}), ...(ringNote ? {ring_findings: ringNote} : {})}, lanes: lanesOf(rack.frame), passes,
+            ...(bends ? {bends} : {}), ...(covers ? {covers} : {}), ...(ringNote ? {ring_findings: ringNote} : {})}, lanes: waypointLanesOf(rack.frame), passes,
     loose, mismatch: warn, ...(unchecked ? {unchecked: true} : {})};
 }
 

@@ -461,6 +461,22 @@ function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false}) {
   const tiers = edge === 'z' && across === 'y' ? [...(round ? [[round]] : []), [flat('z', front)], [flat('z', back)]]
     : zeroU ? [[flat('z', back), corner('z', back)]] : [both(edge)];
   tiers.push(both(end));
+  // A CORD THAT LANDS ON A ZERO-U PART'S FACE (P-0037): an end of the leg
+  // stands in front of the part's outward face (a PDU outlet's reach point),
+  // level with some part of it, and the other end is inboard. The cord is
+  // taken in past the part's side that faces the rails, at the height it is
+  // at, and so arrives at the outlet from beside it; over the top or under
+  // the foot of the part, a cord to an outlet near its end would run the
+  // whole way up and back down.
+  if (solid.zeroU === true && across === 'z' && edge === 'y') {
+    const outer = p => (solid.away === -1 ? p.z < solid.box.z0 : p.z > solid.box.z1);
+    const over = p => p.x > solid.box.x0 && p.x < solid.box.x1 && p.y > solid.box.y0 && p.y < solid.box.y1;
+    const lands = [a, b].some(p => outer(p) && over(p));
+    if (lands) {
+      const inboard = (box.x0 + box.x1) / 2 < 0 ? box.x1 + m : box.x0 - m;
+      tiers.unshift([flat('x', inboard)]);
+    }
+  }
   // A ZERO-U PART crossed front to back with pass-through holes (a vertical
   // duct's back): first through the nearest hole, along y to its middle on this
   // side, across, and along y on the far side; over its top or bottom edge only
