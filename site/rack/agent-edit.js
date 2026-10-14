@@ -11,11 +11,13 @@ export const refsFor = (rack, commands) => [...new Set([
   ...rack.items.map(i => i.ref),
   ...commands.filter(c => c?.op === 'place' && typeof c.ref === 'string').map(c => c.ref)])];
 
-// Whether a batch routes a cable by hand, or makes or changes a bundle (kit
-// 0.7.0): then the call also needs the route context, so the kit checks
-// waypoints against the configured faces (K8), works a bundle's trunk out from
-// its cables' routes and checks its size.
-export const routes = commands => commands.some(c => c?.op === 'cable.route'
+// Whether a batch routes a cable by hand, lays or slackens one, or makes or
+// changes a bundle (kit 0.7.0): then the call also needs the route context, so
+// the kit checks waypoints against the configured faces (K8), checks a lay's
+// face and position and a slack's pathway, works a bundle's trunk out from its
+// cables' routes and checks its size.
+const ROUTED = new Set(['cable.route', 'cable.lay', 'cable.slack', 'cable.slack.clear']);
+export const routes = commands => commands.some(c => ROUTED.has(c?.op)
   || (typeof c?.op === 'string' && c.op.startsWith('bundle.')));
 
 // SELECTORS (spec 2026-10-08 D4): cable.remove and cable.update may name their
