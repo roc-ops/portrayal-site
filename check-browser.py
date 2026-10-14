@@ -10404,7 +10404,8 @@ def check_rack_spare_vertical_loop(page, base):
         bad.append(f"Front: the loop does not go with its cable when one is selected (another selected {other}, its own {own})")
     page.keyboard.press("Escape")
     txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
-    for want in ("as a loop in z1 duct (a duct whose maker states no cable capacity)", "Spare, capacity not stated:"):
+    # VCM's maker states none, and since kit 0.40.0 the library estimates one for cat6; c2 is fibre, which that count does not take in
+    for want in ("as a loop in z1 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "Spare, capacity not stated:"):
         if want not in txt:
             bad.append(f"inspect c2: no {want!r} in {txt!r}")
     z = agent_call(page, "inspect", {"id": "z1"})["content"][0]["text"]
@@ -10423,6 +10424,33 @@ def check_rack_spare_vertical_loop(page, base):
       return L ? L.loops.map(g => ({members: g.userData.members, run: g.userData.spare.run})) : null; }""")
     if s3 != [{"members": ["c2"], "run": "y"}]:
         bad.append(f"3D: not one loop of c2 up the duct: {s3}")
+    return bad
+
+
+@extra("rack.html: a manager whose maker states no cable capacity shows the library's estimate as an estimate in its panel, and a cat6 cord's spare stored in its duct reads against the estimate in the agent's text (kit 0.40.0, Portrayal #1074)")
+def check_rack_estimated_capacity(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    # CMV-SFD42U9W states none: 2002 cat6 cables' worth is the library's estimate (rack.json capacity.estimated)
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "cable.update", "id": "c2", "media": "cat6"},
+                                                      {"op": "cable.slack", "id": "c2", "at": {"item": "z1", "via": "duct"}}]})
+    if res.get("isError"):
+        return bad + [f"setup: a cat6 cord's spare in VCM's duct was refused: {res['content'][0]['text']}"]
+    txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
+    for want in ("as a loop in z1 duct (a duct holding 1 cat6 cables' worth against an estimated 2002 cat6 cables' worth (its maker states none))",
+                 "Spare, capacity estimated:"):
+        if want not in txt:
+            bad.append(f"inspect c2: no {want!r} in {txt!r}")
+    if "its maker states)" in txt:
+        bad.append(f"inspect c2: still calls the estimate a count its maker states: {txt!r}")
+    page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
+    page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
+    cap = page.text_content("#zCapacity") or ""
+    if not cap.startswith("an estimated 2002 cat6 cables' worth (its maker states none): ESTIMATE, not stated by FS"):
+        bad.append(f"the panel: VCM's capacity is not said to be an estimate: {cap!r}")
     return bad
 
 
