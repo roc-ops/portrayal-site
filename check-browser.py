@@ -11347,6 +11347,48 @@ BEND_SAMPLE_JS = """async ([tol, step]) => {
 }"""
 
 
+# EACH CORNER AGAINST THE BODIES NEAR IT (S-0049, bend3d.js insideOf `near`):
+# every routed tube of the scene rounded again from its own polyline, once
+# against the whole list of solid bodies (a plain function, as clearCurve tested
+# it before) and once with `near`; the two must agree to the last digit. Also
+# how long each took, and how many corners met a body (so a scene where none
+# did is not taken for a comparison).
+BEND_NEAR_SAME_JS = """async () => {
+  const B = await import('/site/rack/bend3d.js');
+  const s = window.__rack.scene(), THREE = s.three.THREE, boxes = s.rackCables.boxes;
+  const all = B.insideOf(boxes), whole = q => all(q);
+  const read = c => JSON.stringify({len: c.getLength(), corners: c.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))});
+  const out = {tubes: 0, corners: 0, body: 0, differ: [], wholeMs: 0, nearMs: 0, boxes: boxes.length};
+  for (const t of s.rackCables.tubes) {
+    if (!t.bend?.radius_mm || !t.points?.length) continue;
+    out.tubes++;
+    let t0 = performance.now();
+    const a = B.clearCurve(THREE, t.points, t.bend.radius_mm, whole);
+    out.wholeMs += performance.now() - t0; t0 = performance.now();
+    const b = B.clearCurve(THREE, t.points, t.bend.radius_mm, B.insideOf(boxes));
+    out.nearMs += performance.now() - t0;
+    if (read(a) !== read(b)) out.differ.push(t.link.id);
+    // ...and both as the scene drew it
+    else if (read(b) !== JSON.stringify({len: t.bend.length_mm, corners: t.bend.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))})) out.differ.push(t.link.id + ' (as drawn)');
+    out.corners += a.corners.length;
+    out.body += a.corners.filter(k => k.why === 'body').length;
+  }
+  out.wholeMs = Math.round(out.wholeMs); out.nearMs = Math.round(out.nearMs);
+  return out;
+}"""
+
+
+def bend_near_same(page, label):
+    """BEND_NEAR_SAME_JS on the page's settled scene: problems, and the line it prints."""
+    got = page.evaluate(BEND_NEAR_SAME_JS)
+    bad = [f"{label}: a corner is drawn differently against the bodies near it than against all of them: {got['differ'][:8]}"] if got["differ"] else []
+    if not got["tubes"] or not got["corners"]:
+        bad.append(f"{label}: no rounded tube to compare ({got})")
+    print(f"[{label}] {got['tubes']} rounded tubes, {got['corners']} corners ({got['body']} kept out of a body) against {got['boxes']} bodies: "
+          f"the same against those near each corner, {got['nearMs']} ms against {got['wholeMs']} ms for all of them")
+    return bad
+
+
 @extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged in the scene where its legs cannot hold one")
 def check_rack_bend_radius_3d(page, base):
     bad = []
@@ -11396,6 +11438,8 @@ def check_rack_bend_radius_3d(page, base):
     for L in got["lengths"]:
         if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
+    # each corner kept out of the bodies near it answers as against all of them (S-0049)
+    bad += bend_near_same(page, "check_rack_bend_radius_3d")
     return bad
 
 @extra("rack.html: a routed cable in 2D keeps its bend radius - every corner of its line is an arc of the cable's own radius (OM4's 25 mm) or a smaller one the room allows, never a square corner (#185)")
@@ -20351,6 +20395,8 @@ def check_rack_3d_large_once(page, base):
             bad.append(f"large: the plain {ref} mounts draw with {share['sets'].get(ref)} sets of body materials, expected one shared set")
     print(f"[check_rack_3d_large_once] built in {took:.1f} s with {len(renderers)} renderer, {len(gl['made'])} contexts in all; "
           f"{share['textures']} textures in the scene ({share['gl']} on the GPU), the longest {share['longest']} px; material sets {share['sets']}")
+    # each corner kept out of the bodies near it answers as against all of them, on the large rack too (S-0049)
+    bad += bend_near_same(page, "check_rack_3d_large_once")
     # A BUNDLE, THEN A CABLE TYPE, picked and put down twice: the scene stays, no context is made.
     scene_was = page.evaluate("() => { window.__was = window.__rack.scene(); return window.__gl.made.length; }")
     idle = "() => window.__rack.idle()"

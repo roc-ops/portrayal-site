@@ -152,8 +152,19 @@ export function radiusOf(rack, bendOf, bundles) {
 // 0.05 mm in from a face. `boxes` is [{ref, part, box}] (world Box3s); the
 // answer is the entry it is inside, so a caller can tell whose body it is,
 // or null.
-export const insideOf = boxes => q => (boxes ?? []).find(({box}) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05
-  && q.y > box.min.y + 0.05 && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05) ?? null;
+// `near(c, h)` is the same test over only the boxes that reach into the cube
+// c ± h, in the same order (so the same first box answers): for a caller
+// whose points all lie in that cube, it answers exactly as the whole list does.
+const inBox = (q, box) => q.x > box.min.x + 0.05 && q.x < box.max.x - 0.05
+  && q.y > box.min.y + 0.05 && q.y < box.max.y - 0.05 && q.z > box.min.z + 0.05 && q.z < box.max.z - 0.05;
+const insideList = list => q => list.find(({box}) => inBox(q, box)) ?? null;
+export const insideOf = boxes => {
+  const all = boxes ?? [];
+  const inside = insideList(all);
+  inside.near = (c, h) => insideList(all.filter(({box}) => box.min.x < c.x + h && box.max.x > c.x - h
+    && box.min.y < c.y + h && box.max.y > c.y - h && box.min.z < c.z + h && box.max.z > c.z - h));
+  return inside;
+};
 
 // A CORNER KEPT OUT OF THE METAL. An arc lies inside its corner, so a corner
 // the route takes round a solid body (a detour round a PDU, a tray's edge)
@@ -166,6 +177,13 @@ export const insideOf = boxes => q => (boxes ?? []).find(({box}) => q.x > box.mi
 // Only the ARC is sampled: a straight leg inside a body (a lead leaving a
 // plug recessed in its own device) is no bend fault, and tubes_inside's to
 // find, not this.
+// AGAINST THE BODIES NEAR THE CORNER ONLY, when `inside` can say which
+// (insideOf's `near`): an arc lies in its corner's triangle (its two tangent
+// points and the corner, each tangent point `t` from the corner), so every
+// point of it is within `t` of the corner, and a body that does not reach into
+// the cube corner ± (t + NEAR_SLACK) holds none of them. The answers are the
+// same; on a large rack each sample was tested against about 900 bodies.
+const NEAR_SLACK = 0.1;   // mm past the triangle, for the samples' rounding
 export function clearCurve(THREE, pts, R, inside, {tries = 10, step = 0.25} = {}) {
   let curve = roundedCurve(THREE, pts, R);
   if (typeof inside !== 'function') return curve;
@@ -178,9 +196,10 @@ export function clearCurve(THREE, pts, R, inside, {tries = 10, step = 0.25} = {}
       const L = curve.getLength(), at = curve.lengthTo(c.k), half = (c.t / Math.tan(c.theta / 2)) * c.theta / 2;
       const from = Math.max(0, at - half), to = Math.min(L, at + half);
       let hit = null, body = null;
+      const test = typeof inside.near === 'function' ? inside.near(c.at, c.t + NEAR_SLACK) : inside;
       for (let d = from; d <= to + 1e-9 && !hit; d += Math.min(step, (to - from) / 2 || step)) {
         const q = curve.getPointAt(L ? Math.min(1, d / L) : 0);
-        body = inside(q);
+        body = test(q);
         if (body) hit = q;
       }
       if (hit) {
