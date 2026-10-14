@@ -23,7 +23,7 @@ import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, 
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
 import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
 import {validate, same} from './validate.js';
-import {withRoutedLengths, pathwaysOf, lanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
+import {withRoutedLengths, pathwaysOf, waypointLanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
 import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
@@ -743,7 +743,7 @@ function cableRemove(rack, {id}) {
 // holds its id. {error} or {route}.
 function waypointsChecked(rack, route, stored, {chassisOf, guidesOf} = {}) {
   if (typeof chassisOf !== 'function') return {route};
-  const lanes = lanesOf(rack.frame);
+  const lanes = waypointLanesOf(rack.frame);
   const out = [];
   for (const [k, w] of route.entries()) {
     const n = k + 1;
@@ -1280,7 +1280,7 @@ const WAYPOINT = {type: 'object', additionalProperties: false,
   description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
   properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
                via: {type: 'string', minLength: 1, description: "The pathway on that device's drawing, such as a ring or a duct, with item."},
-               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru.'},
+               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru. A four-post also has the lane between a rail and a part beside it, such as left-rear-inner.'},
                ru: {type: 'integer', description: 'The U the gutter is crossed at, with lane.'}},
   dependentRequired: {item: ['via'], via: ['item'], lane: ['ru'], ru: ['lane']}};
 const SUMMARY = {type: 'string', description: 'How the step is described in Undo and the notice; set by the caller.'};
