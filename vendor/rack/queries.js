@@ -4,16 +4,20 @@
 // are handed their readers in `ctx`, since reading a face needs the network and
 // a DOMParser, which this module never touches.
 
-import {fits, isRackFace, heightOf, railOf, isZeroUPart, zeroUUnits, itemUnits, spanText, isHeld, isRackMount, isQuarter} from './fit.js';
+import {fits, isRackFace, heightOf, railOf, isZeroUPart, zeroUUnits, itemUnits, spanText, isHeld, isRackMount, isQuarter, zeroUTouched, spanOf} from './fit.js';
 import {placement, managersOf} from './managers.js';
 import {uLabel, zeroUOf, zeroUBottom, firstU, holderOf, rollOf, uText} from './model.js';
 import {whereText, carriesLane} from './zero-u.js';
 import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText, isElementId, addressFor, portLabel,
-        takesCableEnd, receptacleOf, endKind, connectorName, endPlug} from './cable-rules.js';
-import {seatedPort, settleEnds, shownEnv} from './ports.js';
-import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf} from './route.js';
+        takesCableEnd, receptacleOf, endKind, connectorName, endPlug, couplerRole} from './cable-rules.js';
+import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds} from './ports.js';
+import {zeroUById, zeroUBottomMm} from './model.js';
+import {RU} from './rails.js';
+import {configFacts} from './catalog.js';
+import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ductsThrough, zeroUPathways,
+  pathwaysAt} from './route.js';
 import {catalogEntries} from './catalog.js';
-import {slackOf, spareLine, slackFindings} from './slack.js';
+import {slackOf, slackFindings, sparePlaces, holdsSpare, spareExports, trayText} from './slack.js';
 import {GONE, CABLE_GONE, ZERO_GONE, BUNDLE_GONE} from './commands.js';
 import {bundlesOf, bundleName} from './model.js';
 import {bundleCheck, bundleOfCable, membersText, spacingText, strapSpacing, straps as strapsOf, trunkLength, straightText, fewText,
@@ -137,8 +141,11 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
     + (typeof f.setback === 'number' ? ` Faceplates ${setText(f.setback)}.` : '') + options;
   // ONE LINE OF TOTALS FOR THE FINDINGS (#949), when routes can be read and
   // there is any: an agent that only describes the rack still sees them.
-  let spare = '';
-  if (ctx?.route) { try { spare = spareLine(rack, ctx.route); } catch { spare = ''; } }
+  // and where each cable's spare is stored in a duct or on a tray, on its line
+  let spare = '', byCable = new Map();
+  if (ctx?.route) { try { const x = spareExports(rack, ctx.route); spare = x.line; byCable = x.byCable; } catch { spare = ''; } }
+  const storedIn = c => (byCable.get(c.id)?.entries || []).filter(e => e.item && e.ok && e.metres > 0.005)
+    .map(e => `${Math.round(e.metres * 100) / 100} m spare in ${trayText(rack, e)}`);
   const findingsLine = findingsText(rack, ctx);
   const span = i => spanText(f, i, chassisOf);
   // `full` is a window's line: the ref and configuration, the purpose and length
@@ -161,7 +168,7 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
   // its own colour, when it states one, after its media
   const cable = (c, full = false) => [`${c.id}: ${sideOf(c.a)} <-> ${sideOf(c.b)}`, ...(c.media ? [c.media] : []),
     ...(typeof c.color === 'string' && c.color ? [c.color] : []),
-    ...(full && c.purpose ? [c.purpose] : []), ...(full && lengthText(c.length) ? [lengthText(c.length)] : [])].join(', ');
+    ...(full && c.purpose ? [c.purpose] : []), ...(full && lengthText(c.length) ? [lengthText(c.length)] : []), ...storedIn(c)].join(', ');
 
   if (section != null || offset != null || limit != null) {
     if (section != null && !SECTIONS.includes(section)) return {error: `There is no section ${section}. Ask for items, zeroU, cables or bundles, or leave it out for all of them.`};
@@ -227,14 +234,34 @@ export function describe(rack, ctx, {section, offset, limit} = {}) {
 // A PORT OF CLASS `port` IS LISTED EXACTLY AS BEFORE, with none of those keys.
 // `kinds` narrows the list: any of 'data' (the ports), 'power', 'ground',
 // 'other'. A picker for a data cable asks for ['data'].
+// THE CATALOGUE'S ENDS TOO (P-0019): a slot that takes a cable end on a panel
+// the item's configuration shows (ports.js cableEndPaths: a supply's C14 or
+// C20 inlet, a DC terminal's screws, a ground stud) is listed whether or not
+// the reader handed it in, so an agent is offered a device's power inlets
+// beside its data ports. What it is comes from the part it is one piece of
+// (a supply), else from the coupler it is (cable-rules.js couplerRole).
+//
+// A PART BESIDE THE RACK (a zero-U PDU, P-0019) has no panel a reader reads:
+// its ends are its own connector slots, from the catalogue alone (ports.js
+// zeroUEnds), each with `type` (C13, C19, C39), `name` (A2, as the device
+// names the outlet), and `u`, the unit it stands at as the rack numbers them.
+// `type` narrows the list to one coupler, on any part; `near`, a unit as the
+// rack numbers them, orders a part's outlets nearest it first: "the free C39
+// outlets on PDU-A nearest U35" is {kinds: ['power'], type: 'C39', near: 35}.
 const FREE_KINDS = ['data', 'power', 'ground', 'other'];
 const natural = new Intl.Collator('en', {numeric: true});
-export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef, redirects = null}, {kinds = null} = {}) {
+export async function freePorts(rack, itemId, ctx, {kinds = null, type = null, near = null} = {}) {
+  const {portsOf, slotsOf, compByRef, redirects = null} = ctx;
   const item = rack.items.find(i => i.id === itemId);
-  if (!item) return {error: GONE};
+  const z = item ? null : zeroUById(rack, itemId);
+  if (!item && !z) return {error: GONE};
   if (kinds != null && !(Array.isArray(kinds) && kinds.every(k => FREE_KINDS.includes(k))))
     return {error: `kinds is a list of ${FREE_KINDS.join(', ')}.`};
+  if (type != null && !(typeof type === 'string' && type)) return {error: 'type is a coupler, such as C13, C19 or C39.'};
+  if (near != null && !(typeof near === 'number' && Number.isFinite(near))) return {error: 'near is a unit, as the rack numbers them (e.g. 35).'};
   const want = k => kinds == null || kinds.includes(k);
+  const ofType = e => type == null || String(e.type ?? '').toLowerCase() === type.toLowerCase();
+  if (z) return zeroUFree(rack, z, ctx, {want, ofType, near});
   const out = [], seen = new Set();
   // the catalogue's slots of this device, read once and only when a slot is asked about
   let seats;
@@ -277,6 +304,14 @@ export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef, redi
       if (!portFree(rack, {item: itemId, path, view}).ok) continue;
       out.push({path, view, label: portLabel(path), media: p.media ?? null, speed: p.speed ?? null});
     }
+    // the catalogue's ends the reader did not hand in (above)
+    if (!(want('power') || want('ground') || want('other'))) continue;
+    for (const e of slotEnds(item, {slotsOf, compByRef, redirects}).filter(x => x.view === view)) {
+      if (seen.has(`${view}|${e.path}`)) continue;
+      seen.add(`${view}|${e.path}`);
+      if (!want(e.kind) || !portFree(rack, {item: itemId, path: e.path, view}).ok) continue;
+      out.push({path: e.path, view, label: portLabel(e.path), media: null, speed: null, kind: e.kind, connector: e.connector, plug: e.plug});
+    }
   }
   // SEVERAL SLOTS UNDER ONE PART THAT IS NO SLOT ITSELF: grouped by that part,
   // the first in natural order marked as the one a cable takes.
@@ -287,7 +322,54 @@ export async function freePorts(rack, itemId, {portsOf, slotsOf, compByRef, redi
     const first = [...list].sort((a, b) => natural.compare(a.path, b.path))[0];
     for (const e of list) { e.of = key.slice(key.indexOf('|') + 1); if (e === first) e.first = true; }
   }
-  return out;
+  // a coupler asked for: an end whose connector is one ("C14 inlet")
+  return type == null ? out : out.filter(e => e.connector && ofType({type: String(e.connector).split(' ')[0]}));
+}
+// THE SLOTS OF A RACK ITEM A CABLE LANDS ON, from the catalogue alone (ports.js
+// cableEndPaths) that are power or ground ends, front then rear: {path, view,
+// kind, connector, plug}. What each is comes from the part it is one piece of
+// (a supply says it is an AC inlet), else from the coupler it is; [] without
+// the catalogue.
+export function slotEnds(item, {slotsOf, compByRef, redirects = null} = {}) {
+  const slots = typeof slotsOf === 'function' && typeof compByRef === 'function' ? slotsOf(item.ref) : null;
+  if (!slots || slots.error) return [];
+  const seats = resolverFor(shownEnv(item, slots, compByRef, redirects), item.swaps || {});
+  return ['front', 'rear'].flatMap(view => cableEndPaths(item, view, {slotsOf, compByRef, redirects}).flatMap(path => {
+    const slot = seats.entryAt(path);
+    if (!slot || !takesCableEnd(slot, compByRef) || (slot.view && slot.view !== view)) return [];
+    let info = receptacleOf(null);
+    for (let q = path; !info.family && q.lastIndexOf('/') > 0;) {
+      q = q.slice(0, q.lastIndexOf('/'));
+      info = receptacleOf(partOf(compByRef, seats.refAt(q)));
+    }
+    if (!info.family && couplerRole(slot.interface)) info = {family: 'power', mode: null, role: couplerRole(slot.interface)};
+    // a power or ground end only: a slot whose part says neither (an RJ45
+    // jack) is a data port, which the reader of the drawing lists
+    if (endKind(info) === 'other') return [];
+    return [{path, view, kind: endKind(info), connector: connectorName(slot, info), plug: endPlug(slot, compByRef).plug}];
+  }));
+}
+// The rack's unit a slot of a part beside the rack stands in, or null where
+// the catalogue does not place it.
+const slotRu = (rack, z, e) => (e.y == null ? null
+  : Math.min(rack.frame.heightRU, Math.max(1, Math.floor((zeroUBottomMm(z) + e.y) / RU) + 1)));
+// The free ends of a part beside the rack (freePorts, above).
+function zeroUFree(rack, z, ctx, {want, ofType, near}) {
+  const f = rack.frame, names = configFacts(ctx.slotsOf?.(z.ref), z.cfg)?.names || {};
+  const ruOf = e => slotRu(rack, z, e);
+  // `near` is a unit as the rack numbers them; the rack's own unit for it
+  const at = near == null ? null : Array.from({length: f.heightRU}, (_, k) => k + 1).find(ru => uLabel(f, ru) === near) ?? null;
+  if (near != null && at == null) return {error: `This rack has no U${near}.`};
+  const out = zeroUEnds(z, ctx)
+    .filter(e => want(e.kind) && ofType(e) && portFree(rack, {item: z.id, path: e.path, view: e.view}).ok)
+    .map(e => { const ru = ruOf(e);
+      return {path: e.path, view: e.view, label: names[e.path] ?? portLabel(e.path), media: null, speed: null, kind: e.kind,
+              connector: e.connector, plug: e.plug, type: e.type, u: ru == null ? null : uLabel(f, ru),
+              mm: e.y == null ? null : zeroUBottomMm(z) + e.y}; });
+  // nearest the middle of that unit first, by the mm between; one not placed last
+  const off = e => Math.abs(e.mm - (at - 0.5) * RU);
+  if (at != null) out.sort((a, b) => (a.mm == null) - (b.mm == null) || (a.mm == null ? 0 : off(a) - off(b)) || natural.compare(a.path, b.path));
+  return out.map(({mm: _mm, ...e}) => e);
 }
 
 // THE PAGE'S FACTS, SETTLED: what `ctx.cableFacts` read off the drawings, with
@@ -339,6 +421,9 @@ function itemFacts(rack, item, ctx) {
     ...(rollOf(item) ? {roll: rollOf(item)} : {}),
     on: item.on ?? null, unit: item.unit ?? null, side: railOf(item, ctx.chassisOf ?? (() => null)),
     managers: managersOf(rack, item.id).map(m => m.id), ...capacityFact(c)};
+  // its rings, ducts, pass-throughs and trays, and which hold spare (issue 1)
+  const ways = pathwayFacts(rack, item.id, ctx);
+  if (ways.length) out.pathways = ways;
   // A DEVICE OF A HEIGHT THAT IS NO WHOLE NUMBER OF UNITS may start on a
   // whole unit or on a half, and whether its ears meet the rail holes there
   // is checked only when the catalogue states its ear slot heights. None
@@ -372,18 +457,72 @@ function itemFacts(rack, item, ctx) {
   out.cables = (rack.cables || []).flatMap(cb => [['a', cb.a, cb.b], ['b', cb.b, cb.a]]
     .filter(([, e]) => e.item === item.id)
     .map(([end, e, o]) => ({id: cb.id, end, path: e.path, view: e.view, other: `${o.item}/${o.path}`})));
+  // THE SLOTS A CABLE LANDS ON (P-0019): its power inlets, DC terminals and
+  // ground studs, with the cable on each (null when free); its data ports are
+  // the free-port answer's, which reads its drawing
+  const ends = slotEnds(item, ctx);
+  if (ends.length) out.ends = ends.map(e => ({...e, cable: cableAt(rack, item.id, e)}));
   return out;
 }
+// The id of the cable on an end, or null.
+const cableAt = (rack, id, {path, view}) => (rack.cables || [])
+  .find(c => [c.a, c.b].some(e => e.item === id && portPathOf(e.path) === path && (e.view === 'rear' ? 'rear' : 'front') === view))?.id ?? null;
 
 // The pathway ids a route may name on a device: its rings and ducts
-// (`guides`) and pass-throughs (`passes`), every view, from rack.json.
+// (`guides`) and pass-throughs (`passes`), every view, from rack.json; on a
+// part beside the rack, its duct and windows (route.js zeroUPathways).
 const pathwayIds = pathwaysOf;
+function partPathways(rack, id, ctx) {
+  const it = rack.items.find(i => i.id === id);
+  if (it) return pathwayIds(ctx.chassisOf?.(it.ref));
+  const z = zeroUOf(rack).find(x => x.id === id);
+  return z && ctx.chassisOf ? zeroUPathways(rack, z, ctx).map(p => p.via).sort() : [];
+}
+// THE PARTS WITH A PATHWAY NEAR A CABLE (issue 1): every rack item and part
+// beside the rack with a pathway whose units come within two of the units of
+// the cable's ends or of a lane point of its route. A standalone manager is
+// no device's, so managersOf does not find it.
+const NEAR_U = 2;
+function nearRoute(rack, cable, waypoints, ctx) {
+  if (!ctx.chassisOf) return [];
+  // a span as fit.js gives it: from its unit to the one past its top
+  const us = [...[cable.a, cable.b].map(e => rack.items.find(i => i.id === e?.item)).filter(Boolean)
+    .flatMap(i => spanOf(i, ctx.chassisOf)), ...(waypoints || []).filter(w => w.lane).map(w => w.ru)];
+  if (!us.length) return [];
+  const lo = Math.min(...us) - NEAR_U, hi = Math.max(...us) + NEAR_U;
+  const meets = ([from, past]) => from <= hi && past > lo;
+  return [...rack.items.filter(i => meets(spanOf(i, ctx.chassisOf)) && partPathways(rack, i.id, ctx).length).map(i => i.id),
+          ...zeroUOf(rack).filter(z => meets(zeroUTouched(z, ctx.chassisOf).map((u, k) => u + k)) && partPathways(rack, z.id, ctx).length).map(z => z.id)];
+}
+// A PART'S PATHWAYS, each with its kind and whether it holds spare (slack.js
+// SPARE_HOLDS): as the routes know them when they are known, else as the
+// catalogue lists them (a ring is a guide rack.json gives a depth, a duct a
+// guide named one, a pass-through a `passes` id, a tray a `trays` id; any
+// other guide is of no known kind). [] for a part with none.
+function pathwayFacts(rack, id, ctx) {
+  let ps = [];
+  if (ctx.route) { try { ps = pathwaysAt(rack, id, ctx.route); } catch { ps = []; } }
+  if (!ps.length) {
+    const it = rack.items.find(i => i.id === id);
+    const c = it ? ctx.chassisOf?.(it.ref) : null;
+    if (it && c) {
+      const kindOf = via => (Object.values(c.passes || {}).flat().includes(via) ? 'pass'
+        : (Array.isArray(c.trays) && c.trays.some(t => t?.id === via)) ? 'tray'
+        : c.rings && Object.hasOwn(c.rings, via) ? 'ring' : /duct/.test(via) ? 'duct' : /^guide-\d+$|ring/.test(via) ? 'ring' : null);
+      ps = pathwayIds(c).map(via => ({via, kind: kindOf(via)}));
+    } else {
+      const z = zeroUOf(rack).find(x => x.id === id);
+      ps = z && ctx.chassisOf ? zeroUPathways(rack, z, ctx) : [];
+    }
+  }
+  return ps.map(p => ({via: p.via, kind: p.kind ?? null, holds_spare: holdsSpare(p.kind)}));
+}
 
 async function cableInfo(rack, cable, ctx) {
   const uOf = ctx.chassisOf ? heightOf(ctx.chassisOf) : carriedU;
   const end = e => ({item: e.item, path: e.path, view: e.view, name: endName(rack, e, uOf)});
   const l = cable.length;
-  const label = id => rack.items.find(i => i.id === id)?.label ?? id;
+  const label = id => rack.items.find(i => i.id === id)?.label ?? (zeroUOf(rack).find(z => z.id === id)?.label || id);
   const edited = cable.routeEdited === true;
   // A route context's readers come from the page's drawings and may throw; a
   // measure that fails is "not measured", never an error.
@@ -440,18 +579,25 @@ async function cableInfo(rack, cable, ctx) {
         need = r2(s.spare.need_m);
         slack = {metres: r2(s.spare.spare_m), at_ends_m: r2(s.at_ends_m), said: s.said,
                  stored: s.entries.map(e => (e.end ? {end: e.end, metres: e.metres == null ? null : r2(e.metres)}
-                   : {item: e.item, via: e.via, form: e.form, metres: e.metres == null ? null : r2(e.metres), ok: e.ok, ...(e.why ? {why: e.why} : {})})),
+                   : {item: e.item, via: e.via, form: e.form, metres: e.metres == null ? null : r2(e.metres), ok: e.ok, ...(e.why ? {why: e.why} : {}),
+                      // a duct: its kind, and how full it is against what its maker states (slack.js spareLoad)
+                      ...(e.kind ? {kind: e.kind} : {}), ...(e.load ? {load: e.load} : {})})),
                  unplaced_m: r2(s.unplaced_m)};
         spareNote = slackFindings({...rack, cables: [cable]}, ctx.route, label).map(f => ({kind: f.kind, text: f.text}));
       }
     } catch { slack = null; }
   }
-  // the devices a route through this cable's ends can name: its two, and the
-  // cable managers bolted on them
+  // the devices a route through this cable's ends can name: its two, the
+  // cable managers bolted on them, and every other part with a pathway that
+  // stands within two units of its ends or its route, beside the rack too
+  // (issue 1)
   const near = [...new Set([cable.a.item, cable.b.item])].filter(id => rack.items.some(i => i.id === id))
     .flatMap(id => [id, ...managersOf(rack, id).map(m => m.id)]);
-  const passes = Object.fromEntries(near.map(id => [id, pathwayIds(ctx.chassisOf?.(rack.items.find(i => i.id === id).ref))])
-    .filter(([, ids]) => ids.length));
+  const passes = Object.fromEntries([...new Set([...near, ...nearRoute(rack, cable, waypoints, ctx)])]
+    .map(id => [id, partPathways(rack, id, ctx)]).filter(([, ids]) => ids.length));
+  // where its spare can go: the ducts and trays on its route (slack.js sparePlaces)
+  let places = null;
+  if (ctx.route) { try { places = sparePlaces(rack, cable, ctx.route).map(p => ({item: p.item, via: p.via, kind: p.kind})); } catch { places = null; } }
   // a reader that fails leaves the ends unchecked, never an error
   let loose = null, warn = null, unchecked = false;
   if (typeof ctx.cableFacts === 'function') {
@@ -468,10 +614,10 @@ async function cableInfo(rack, cable, ctx) {
     // its own colour (`cable.update` sets and clears it), when it states one
     ...(typeof cable.color === 'string' && cable.color ? {color: cable.color} : {}),
     length: l ? {value: l.value, unit: l.unit ?? 'm', source: l.source ?? 'entered', ...(need != null ? {need} : {})} : null, routed, slack,
-    ...(spareNote?.length ? {spare_findings: spareNote} : {}),
+    ...(spareNote?.length ? {spare_findings: spareNote} : {}), ...(places ? {spare_places: places} : {}),
     // how it was laid by hand in a pathway, as the file has it (`cable.lay`)
     ...(Array.isArray(cable.lay) && cable.lay.length ? {lay: cable.lay} : {}),
-    route: {edited, waypoints, text: routeText(waypoints, label, rack.frame), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {}),
+    route: {edited, waypoints, text: routeText(waypoints, label, rack.frame, ductsThrough(rack, ctx.chassisOf, label)), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {}),
             ...(bends ? {bends} : {}), ...(covers ? {covers} : {})}, lanes: lanesOf(rack.frame), passes,
     loose, mismatch: warn, ...(unchecked ? {unchecked: true} : {})};
 }
@@ -480,10 +626,28 @@ async function cableInfo(rack, cable, ctx) {
 // that upright runs through it. `kind` is 'zeroU'.
 function zeroUFacts(rack, z, ctx) {
   const c = ctx.chassisOf?.(z.ref) || null;
+  const on = (rack.cables || []).flatMap(cb => [['a', cb.a, cb.b], ['b', cb.b, cb.a]].filter(([, e]) => e.item === z.id)
+    .map(([end, e, o]) => ({id: cb.id, end, path: e.path, view: e.view, other: `${o.item}/${o.path}`})));
   return {kind: 'zeroU', id: z.id, ref: z.ref, model: c?.model ?? null, manufacturer: c?.manufacturer ?? null,
     label: z.label ?? null, cfg: z.cfg ?? '', at: z.at, ru: zeroUBottom(z), u: isZeroUPart(c) ? zeroUUnits(c) : null,
     between: z.between === true, mount: c?.mount ?? null, lane: carriesLane(c) ? z.at : null,
-    where: c ? whereText(rack, z, ctx.chassisOf) : null, ...capacityFact(c)};
+    where: c ? whereText(rack, z, ctx.chassisOf) : null, ...capacityFact(c),
+    // its duct and windows, which a route and cable.slack may name, and which hold spare
+    ...(ctx.chassisOf && pathwayFacts(rack, z.id, ctx).length ? {pathways: pathwayFacts(rack, z.id, ctx)} : {}),
+    // ITS ENDS (P-0019): each outlet a cable can end on, by type, the unit
+    // it stands at and the cable on it (null when free), from the catalogue
+    // and the cables on it, when there are any
+    ...zeroUEndFacts(rack, z, ctx), ...(on.length ? {cables: on} : {})};
+}
+function zeroUEndFacts(rack, z, ctx) {
+  if (typeof ctx.slotsOf !== 'function' || typeof ctx.compByRef !== 'function') return {};
+  const ends = zeroUEnds(z, ctx);
+  if (!ends.length) return {};
+  const names = configFacts(ctx.slotsOf(z.ref), z.cfg)?.names || {};
+  const f = rack.frame, ruOf = e => slotRu(rack, z, e);
+  return {ends: ends.map(e => ({path: e.path, view: e.view, name: names[e.path] ?? portLabel(e.path), type: e.type, connector: e.connector,
+    kind: e.kind, plug: e.plug, u: ruOf(e) == null ? null : uLabel(f, ruOf(e)),
+    cable: cableAt(rack, z.id, e)}))};
 }
 
 // A BUNDLE (#921), `kind: 'bundle'`: its members with where each joins and
