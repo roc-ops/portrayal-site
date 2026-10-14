@@ -292,9 +292,10 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const o = await Promise.resolve(queries.inspect(rack, which, ctx)).catch(() => ({}));
         const holds = new Map((o.cages ?? []).map(c => [`${c.view}|${c.path}`, c.holds ?? null]));
         const order = new Intl.Collator('en', {numeric: true});
-        // (the outlets near a unit come nearest first, as the kit sorts them)
+        // (a PDU's outlets near a unit come nearest first, as the kit sorts them; a device's ports by path)
+        const byNear = near != null && ports.some(p => p.u !== undefined);
         const shown = ports.filter(p => !view || p.view === view)
-          .sort((a, b) => (a.view !== b.view ? (a.view === 'front' ? -1 : 1) : near != null ? 0 : order.compare(a.path, b.path)))
+          .sort((a, b) => (a.view !== b.view ? (a.view === 'front' ? -1 : 1) : byNear ? 0 : order.compare(a.path, b.path)))
           .map(p => {
             // Only the cage's own port is the cage: an optic's own ports
             // (port-1-occupant/...) are ports on the optic, not cages.
