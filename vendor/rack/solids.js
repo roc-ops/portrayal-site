@@ -326,7 +326,14 @@ export function legCrossings(a, b, solids, {diameter = 0} = {}) {
   const out = [];
   const hit = (s, span) => {
     const p = lerp(a, b, span[0]), q = lerp(a, b, span[1]);
-    const through = (s.holes || []).some(h => within(p, h.box) && within(q, h.box)
+    // A hole is judged on the stretch inside the TRUE plate. A solid met grown
+    // by the cable's radius (`met`: a zero-U part, a ring's part) has a stretch
+    // that starts and ends up to r outside the plate, so outside the depth of
+    // a hole cut through it, and no cable would pass any hole.
+    const grown = met(s, diameter) !== s.box;
+    const own = grown ? inside(a, b, s.box.x0, s.box.x1, s.box.y0, s.box.y1, s.box.z0, s.box.z1) : null;
+    const [hp, hq] = own ? [lerp(a, b, own[0]), lerp(a, b, own[1])] : [p, q];
+    const through = (s.holes || []).some(h => within(hp, h.box) && within(hq, h.box)
       && diameter <= Math.min(...h.size) + 1e-9);
     if (!through) out.push({solid: s, t0: span[0], t1: span[1], at: p});
   };
@@ -441,6 +448,17 @@ function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false}) {
   const tiers = edge === 'z' && across === 'y' ? [...(round ? [[round]] : []), [flat('z', front)], [flat('z', back)]]
     : zeroU ? [[flat('z', back), corner('z', back)]] : [both(edge)];
   tiers.push(both(end));
+  // A ZERO-U PART crossed front to back with pass-through holes (a vertical
+  // duct's back): first through the nearest hole, along y to its middle on this
+  // side, across, and along y on the far side; over its top or bottom edge only
+  // when no hole clears. Horizontal managers keep the ways above.
+  if (solid.zeroU === true && across === 'z' && edge === 'y' && Array.isArray(solid.holes)) {
+    const at = (a.y + b.y) / 2;
+    const ways = solid.holes.filter(h => diameter <= Math.min(...h.size) + 1e-9)
+      .map(h => (h.box.y0 + h.box.y1) / 2).sort((p, q) => Math.abs(p - at) - Math.abs(q - at))
+      .map(v => flat('y', v, true));
+    if (ways.length) tiers.unshift(ways);
+  }
   if (opposite) tiers.push([...new Set(lanes)].map(v => flat('x', v, true)));
   if (zeroU) tiers.push([flat('z', front), corner('z', front)]);
   return tiers;

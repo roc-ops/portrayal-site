@@ -37,12 +37,14 @@ import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.j
 import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
+import {zeroUTargets} from './rack/spare-loops.js';
+import {routeEditSession} from './rack/route-edit.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {routesOf, sameReading, askOf} from './rack/reading.js';
 import {describeOnce, inspectOnce} from './rack/agent-read.js';
-import {LANE_GAP, routeText} from '../vendor/rack/route.js';
+import {LANE_GAP, routeText, ductsThrough} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
 import * as Q from '../vendor/rack/queries.js';
@@ -103,6 +105,7 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   routes: null,
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
+  routeEdit: null,   // the open cable form's route edit (route-edit.js): Cancel takes back its picks
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
   saidStep: null,    // the summary of the step the notice says, which Undo may take as its description
   // Cable mode: on or off, and the A end picked and waiting for its B.
@@ -176,6 +179,8 @@ const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id
   rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
   // and the kit's tight bends (kit 0.17.0): a cable's type can change what it needs with no point moving
   + JSON.stringify((rf.bendsShown ?? []).map(f => [f.cable, f.at, f.text]))
+  // and where spare is stored (kit 0.35.0): a loop stored or moved moves no point of a path
+  + JSON.stringify((rf.spareLoops ?? []).map(l => [l.cable, l.item, l.via, l.metres, l.at]))
   + bundlesSig(rf) : '');
 // How long a rebuild waits for the routes of the rack as it now is (below):
 // STALE_3D_TRIES times STALE_3D_MS, then it builds without them.
@@ -209,7 +214,7 @@ async function rebuild3d() {
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
-    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, spares: live?.spareLoops ?? null, stage, covers: S.covers,
     onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
     onContextLost: s => { if (mine === stage3dEpoch) contextLost3d(s); },
     onContextRestored: () => { if (mine === stage3dEpoch) contextRestored3d(); },
@@ -782,7 +787,7 @@ function cableFormPanel(sel) {
         // The cable may be gone: then there is nothing to save, and nothing is sent.
         const cur = now.cables.find(c => c.id === cable.id);
         if (!cur) { S.sel = null; render(); return; }
-        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null;
+        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null; S.routeEdit = null;   // the route edits stand
         // A media from a file this page does not know stays as itself: left
         // alone, it is not sent, so the command's list of media never refuses it.
         const {media, ...rest} = fields;
@@ -793,8 +798,17 @@ function cableFormPanel(sel) {
       const res = edit({op: 'cable.add', a, b, ...fields});
       S.sel = res.error ? null : {kind: 'cable', id: res.created.ids[0]};
     },
-    onCancel: () => { S.cableDraft = null; select(cable ? {kind: 'cable', id: cable.id} : null); }});
+    // Cancel takes back the route edits made since the form opened, as one
+    // step, and adds no Undo step of its own (route-edit.js).
+    onCancel: () => {
+      S.cableDraft = null; S.routePick = null;
+      const undone = cable && S.routeEdit?.cableId === cable.id ? S.routeEdit.cancel() : 0;
+      S.routeEdit = null;
+      if (undone) S.notice = {kind: 'note', text: `Route edits cancelled: the route is as it was (${undone === 1 ? 'one step' : `${undone} steps`} undone; Redo brings ${undone === 1 ? 'it' : 'them'} back).`};
+      select(cable ? {kind: 'cable', id: cable.id} : null);
+    }});
   if (!cable) return form;
+  if (S.routeEdit?.cableId !== cable.id) S.routeEdit = routeEditSession(ed, cable.id);   // the route as the edit begins
   const d = S.cableDraft?.id === cable.id ? S.cableDraft.values : null;
   if (d) {
     for (const [k, v] of Object.entries(d)) form.querySelector(`#${k}`).value = v;
@@ -823,18 +837,22 @@ function editRoute(cableId, list, text) {
     S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
   }
   S.focusNext = 'routeAdd';
-  edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
-            : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  const res = edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
+                        : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  if (S.routeEdit?.cableId === cableId) S.routeEdit.noteEdit(res);   // Cancel takes these back (route-edit.js)
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
   const res = routesNow()?.routes.get(cable.id);
-  const nameOf = id => itemById(id)?.label ?? id;
+  // (a part beside the rack by its label too: a route may name its duct or a window, kit 0.35.0)
+  const nameOf = id => itemById(id)?.label ?? (rack().zeroU || []).find(z => z.id === id)?.label ?? id;
   const frame = rack().frame;
   const list = cable.routeEdited ? cable.route ?? [] : res?.waypoints ?? [];
   const gone = new Set(cable.routeEdited ? (res?.gone ?? []) : []);
+  // a lane run says the ducts beside the rack it goes through (route.js ductsThrough)
+  const through = ductsThrough(rack(), chassisOf, nameOf);
   return {list, auto: !cable.routeEdited,
-    rows: list.map(w => ({text: routeText([w], nameOf, frame), gone: gone.has(w)}))};
+    rows: list.map(w => ({text: routeText([w], nameOf, frame, through), gone: gone.has(w)}))};
 }
 function routePanel(cable) {
   const id = cable.id, {list, auto, rows} = shownRoute(cable);
@@ -859,14 +877,23 @@ function routePanel(cable) {
 }
 
 // Pick targets for a route being edited: every pathway the pane draws, and a
-// lane target per U on each gutter (the rear pane mirrors the sides).
+// lane target per U on each gutter (the rear pane mirrors the sides). A PART
+// BESIDE THE RACK (kit 0.35.0) offers its duct, the whole part, under the
+// lanes, and each window through its back over them (spare-loops.js
+// zeroUTargets): a click adds {item: <its id>, via}, which the kit resolves
+// to the lane run through it.
 function drawRoutePicking() {
   const r = rack(), ctx = routesNow()?.ctx;
   for (const svg of S.svgs) {
-    const view = svg.dataset.pane, targets = [];
+    const view = svg.dataset.pane, targets = [], windows = [];
     if (ctx) for (const it of r.items) for (const g of ctx.guidesOf(it.id)) {
       const e = wayEl(svg, {item: it.id, via: g.via});
       if (e) targets.push({item: it.id, via: g.via, box: inPane(svg, e)});
+    }
+    if (ctx) for (const z of r.zeroU || []) {
+      const e = svg.querySelector(`[data-zerou-id="${CSS.escape(z.id)}"]`);
+      if (!e) continue;
+      for (const t of zeroUTargets(r, ctx, z, inPane(svg, e))) (t.kind === 'pass' ? windows : targets).push(t);
     }
     const sides = r.frame.kind === 'two-post' ? ['left', 'right'] : ['left', 'right'].map(sd => `${sd}-${view}`);
     for (const lane of sides) {
@@ -875,7 +902,7 @@ function drawRoutePicking() {
       for (let ru = 1; ru <= r.frame.heightRU; ru++)
         targets.push({lane, ru, x, y: (r.frame.heightRU - ru) * RU, w: LANE_GAP, h: RU});
     }
-    drawPickTargets(svg, targets);
+    drawPickTargets(svg, [...targets, ...windows]);
   }
 }
 
@@ -1085,8 +1112,8 @@ const homePanel = () => el('div', {}, [
 
 // Undo and Redo walk the editor's history (spec §3.3); onChange says what was
 // undone or redone, saves and redraws.
-function undoStep() { ed.undo(); }
-function redoStep() { ed.redo(); }
+function undoStep() { if (ed.undo()) S.routeEdit?.noteUndo(); }
+function redoStep() { if (ed.redo()) S.routeEdit?.noteRedo(); }
 
 // ── Export (spec §8) ────────────────────────────────────────────────────
 // Every export is built from the rack by exports.js, never from the panes. A
@@ -1289,6 +1316,7 @@ async function redraw(keepRoutes = false) {
   const formOf = S.sel?.kind === 'cable-form' ? S.sel.id : null;
   if (S.routeSel && S.routeSel.cableId !== formOf) S.routeSel = null;
   if (S.cableDraft && S.cableDraft.id !== formOf) S.cableDraft = null;
+  if (S.routeEdit && S.routeEdit.cableId !== formOf) S.routeEdit = null;
   // Picking belongs to one open cable form, outside Cable mode.
   // (nor from the side: there is no ring, duct or gutter to click there, and the page says so)
   if (S.routePick && sidesShown()) { S.routePick = null; addNotice(PICK_SIDES, 'note'); }
@@ -2368,6 +2396,8 @@ if (PROBE) {
     // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
     anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
     tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),
+    // Probe only: the stored loops of spare the page draws (kit 0.35.0 spareMarks; spare-loops.js).
+    spareLoops: () => (S.routes?.spareLoops ?? []).map(l => ({...l, at: {...l.at}})),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

@@ -83,6 +83,9 @@ export function paintHover2d(svgs, lit) {
     // it, is lit, and dimmed with the rest otherwise.
     for (const n of svg.querySelectorAll('[data-strap]'))
       n.classList.toggle('hot', !!lit && (lit.bundles.has(n.dataset.strap) || (n.dataset.members || '').split(' ').some(id => lit.cables.has(id))));
+    // A STORED LOOP (spare-loops.js) goes with its cable.
+    for (const n of svg.querySelectorAll('[data-spare-loop]'))
+      n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.members));
     // a member under the pointer shows the envelope of the bundle it rides (rack.css)
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot-member', !!lit && (n.dataset.members || '').split(' ').some(id => lit.cables.has(id)));
@@ -123,7 +126,8 @@ function apply3d(world, lit) {
   }
   // THE TIE STRAPS OF SINGLE CABLES (scene3d.js, group `tie-straps`): each goes
   // with the cables it ties, lit while one of them is, dimmed with the rest.
-  for (const g of world.getObjectByName('tie-straps')?.children ?? []) {
+  // ...and the stored loops of spare (scene3d.js hangLoops, group `spare-loops`), each with its cable.
+  for (const g of [...(world.getObjectByName('tie-straps')?.children ?? []), ...(world.getObjectByName('spare-loops')?.children ?? [])]) {
     const dim = !!lit && !(g.userData.members ?? []).some(id => lit.cables.has(id));
     g.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) dimMaterial(m, dim); });
   }
