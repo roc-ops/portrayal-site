@@ -14,7 +14,11 @@ import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, stra
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {zeroUOf, zeroUBottom, zeroUBottomMm, uLabel} from '../../vendor/rack/model.js';
-import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
+import {isZeroUPart, isNarrow, isRackFace, setbackOf} from '../../vendor/rack/fit.js';
+
+// A cable manager, by the library's own classification (the part's kind, or the
+// kit's rack-face mount), never by its name. A PDU is power, not management.
+const isCableManager = c => c?.kind === 'cable manager' || isRackFace(c);
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
@@ -685,6 +689,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
+    ...(isCableManager(chassisOf?.(item.ref)) ? {untagged: true} : {}),
     // how far its faceplate stands behind its rail, and its roll, which sets the span it fills (rack file version 4: the kit's setbackOf, itemBox)
     ...(chassisOf?.(item.ref) ? {setback: setbackOf(rack, item, chassisOf)} : {}), ...(item.roll ? {roll: item.roll} : {}),
   }));
@@ -698,7 +703,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
                 // a part with a cord on it is not shared, `plain` counts the cabled ends)
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: mergeSeats({}, facts.seats[z.id]),
                 share: plain(z.id, mergeSeats({}, facts.seats[z.id]), null),
-                chassis: chassisOf(z.ref), mount: 'rack-side'});
+                chassis: chassisOf(z.ref), mount: 'rack-side',
+                ...(isCableManager(chassisOf(z.ref)) ? {untagged: true} : {})});
   }
 
   // Imported here, not at module load: rack-page.js pulls this module in on

@@ -5599,20 +5599,67 @@ def check_rack_face_managers(page, base):
         bad.append("3D: the manager's sheet body is drawn as a solid box")
     if not got["anchor"]:
         bad.append("3D: guideAnchor finds no guide-1 on the manager")
-    # The rail labels of the host and its manager are at one height: they sit side by side.
+    # Only the host has a rail label at its height: its manager has none.
     tags = page.evaluate("""() => {
       const sc = window.__rack.scene().three.scene, y = sc.getObjectByName('device-i1').position.y;
       return sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1)
         .map(c => [c.position.x - c.scale.x / 2, c.position.x + c.scale.x / 2]);
     }""")
-    if len(tags) < 2:
-        bad.append(f"3D: the host and its manager do not both have a rail label at their height: {tags}")
-    elif any(a[0] < b[1] and b[0] < a[1] for i, a in enumerate(tags) for b in tags[i + 1:]):
-        bad.append(f"3D: the host's and the manager's rail labels overlap: {tags}")
+    if len(tags) != 1:
+        bad.append(f"3D: expected one rail label (the host's) at the host's height, none for its manager: {tags}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
         bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB with the manager's node")
+    return bad
+
+
+@extra("rack.html: the 3D scene tags each piece of equipment and no cable manager - a lacer, a horizontal and a vertical manager have none, a PDU keeps its tag")
+def check_rack_3d_no_manager_tags(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags'});
+      const put = (ref, ru, label, extra = {}) => ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, label, ...extra}));
+      put('as7726-32x', 20, 'leaf-1');
+      put('fhd-cmp5dr', 20, 'hmgr', {on: 'i1', unit: 1});
+      put('cmh-5dr1u', 24, 'lacer-1');
+      put('as7726-32x', 28, 'leaf-2');
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags scene")
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const sc = s.three.scene, at = id => sc.getObjectByName('device-' + id);
+      const tagged = id => { const y = at(id)?.position.y;
+        return y === undefined ? null : sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1).length; };
+      const sprites = sc.children.filter(c => c.isSprite && c.position.z === 46);
+      return {built: ['i1', 'i2', 'i3', 'i4', 'z1', 'z2'].map(id => [id, !!at(id)]), tags: sprites.length,
+              equipment: [tagged('i1'), tagged('i4')], mgrs: [tagged('i2'), tagged('i3')], pdu: tagged('z2'), vmgr: tagged('z1')};
+    }""")
+    if not all(ok for _, ok in got["built"]):
+        bad.append(f"3D: a part is not in the scene: {got['built']}")
+    # Three rail labels in all: the two switches and the PDU, and nothing for the three managers.
+    # (the PDU and the vertical manager stand at one height, so the PDU's own tag is the one there.)
+    if got["pdu"] != 1:
+        bad.append(f"3D: the PDU should keep one rail label: {got}")
+    if got["equipment"] != [1, 1]:
+        bad.append(f"3D: each switch should have exactly one rail label at its height: {got}")
+    if got["mgrs"][1] != 0:
+        bad.append(f"3D: the lacer panel has a rail label: {got}")
+    if got["tags"] != 3:
+        bad.append(f"3D: expected 3 rail labels (two switches and the PDU), none for the horizontal, lacer or vertical manager: {got}")
     return bad
 
 
@@ -20317,6 +20364,66 @@ SCENE_SHARING_JS = """() => {
   return {textures: seen.size, longest, gl: s.three.renderer.info.memory.textures,
           sets: Object.fromEntries([...bodies].map(([r, m]) => [r, m.size]))};
 }"""
+
+
+@extra("rack.html: in 3D, picking a cable purpose or a media in the list lights those cables' tubes (and the plugs, and a bundle with one of them as a member) and dims every other, clearing the pick restores every material exactly, and neither rebuilds the scene or makes a renderer (S-0046)")
+def check_rack_3d_filter_dims(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(GL_COUNTER_JS)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_bundle_rack(page, base, "front")
+    r = page.evaluate("""async () => {
+      const K = await import('/vendor/rack/cable-rules.js');
+      let r = window.__rack.doc().racks[0];
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-24', view: 'front'}, b: {item: 'i3', path: 'port-24', view: 'front'}, media: 'cat6', purpose: 'storage'}));
+      r = {...r, cables: r.cables.map(c => c.id === 'c3' ? {...c, purpose: 'storage'} : c.id === 'c4' ? c : {...c, purpose: 'management'})};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && document.querySelector('#cableList [data-cable-row=\"c4\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_filter_dims] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("""() => { const s = window.__rack.scene(); const w = s?.three.scene;
+      return w && w.getObjectByName('cable-c4') && w.getObjectByName('bundle-b1'); }""", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the filter rack's scene", tubes=True)
+    park_mouse(page)
+    base3 = page.evaluate(HOVER_3D_STATE)
+    page.evaluate("() => { window.__was = window.__rack.scene(); window.__wasGl = window.__rack.scene().three.renderer; window.__made = window.__gl.made.length; }")
+    def judge(label, lit):
+        st = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+        bad.extend(f"3D {label}: {m}" for m in hover_3d_dims(st, base3, lit))
+        same = page.evaluate("() => ({scene: window.__rack.scene() === window.__was, gl: window.__rack.scene().three.renderer === window.__wasGl, made: window.__gl.made.length})")
+        if not same["scene"] or not same["gl"] or same["made"] != page.evaluate("() => window.__made"):
+            bad.append(f"3D {label}: the scene was rebuilt or a renderer made: {same}")
+    def pick(sel, label, lit):
+        page.evaluate("s => document.querySelector(s).click()", sel)
+        page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+        park_mouse(page)
+        judge(label, lit)
+        page.evaluate("s => document.querySelector(s + '[aria-pressed=\"true\"]').click()", sel)
+        page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+        park_mouse(page)
+        if page.evaluate(HOVER_3D_STATE) != base3:
+            bad.append(f"3D {label}: clearing the pick did not restore every material exactly")
+    pick('[data-filter-purpose="management"]', "purpose management", {"cable-c1", "cable-c2", "bundle-b1"})
+    pick('[data-filter-purpose="storage"]', "purpose storage", {"cable-c3", "cable-c4", "bundle-b1"})
+    pick('[data-filter-media="cat6"]', "media cat6", {"cable-c4"})
+    # a hover outranks the pick, and gives it back on leaving
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"management\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    page.hover('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(350)
+    judge("hover c1 over the purpose pick (c2 is in the pick, and dims)", {"cable-c1"})
+    park_mouse(page)
+    judge("purpose pick after the hover", {"cable-c1", "cable-c2", "bundle-b1"})
+    return bad
 
 
 @extra("rack.html: a large rack is built in 3D once, with one renderer, no context lost and no page error; its plain parts share their materials and no face texture is over 4096 px; picking a bundle or a cable type keeps the scene and makes no context; and a lost context stops the scene, says so, and builds it again once when the context comes back, never deleting into the new one (S-0043)")

@@ -918,9 +918,11 @@ export function createRackScene(container, opts = {}) {
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with
-    // the rails.
+    // the rails. None for a part the caller marks `untagged` (the Rack Builder
+    // marks its cable managers): they take no row either, so the equipment
+    // tags close up toward the rail.
     let tag = null;
-    if (RAILS) {
+    if (RAILS && !entry.untagged) {
       tag = labelSprite(entry.label, 30, 'tag');
       // Labels at one height (a manager and its host, a rear and a front part at one U) sit
       // side by side, outward from the rail, not on top of one another.
