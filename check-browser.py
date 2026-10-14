@@ -9977,7 +9977,9 @@ def check_rack_fs_manager_guides(page, base):
         const want = [];
         for (const key of ['guides', 'passes'])
           for (const [view, ids] of Object.entries(cat[ref][key] || {}))
-            if (view !== 'top') for (const id of ids) want.push(`${view}|${id}`);
+            // the route context reads the front and rear faces, as the kit reads guides; the side views' passes
+            // (the CMH-4DRB1U's end holes, exported since Portrayal #1066) are pathways the kit lists, not guides it draws
+            if (!['top', 'left', 'right'].includes(view)) for (const id of ids) want.push(`${view}|${id}`);
         out.managers[ref] = {complete: rf.complete, want: want.sort(),
           got: rf.ctx.guidesOf('i1').map(g => ({key: `${g.face}|${g.via}`, kind: g.kind, aperture: g.aperture}))};
       }

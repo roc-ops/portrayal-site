@@ -214,6 +214,17 @@ const ENDS = 'at an end ({end: a} or {end: b})';
 const placesLine = ps => (ps.length ? `Spare can go in: ${cutList(ps.map(p => `${p.item} ${p.via}`), 8)}, or ${ENDS}.` : `Spare can go only ${ENDS}.`);
 // The kit's spare findings named by kind where the kind says more than the sentence.
 const FINDING_KIND = {'spare-capacity-unstated': 'capacity not stated', 'spare-over-capacity': 'over capacity'};
+// A bend is the kit's sentence and its advice, said whole (a pair of turns on one short leg is one sentence of up
+// to 182 characters with the kit's own names, and longer with a long label).
+const bendLines = c => (c.route?.bends ?? []).filter(x => x.text).map(x => `Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
+// A cable that enters and leaves a ring by one face (kit 0.35.0, #1067: inspect's route.ring_findings,
+// `{item, via, text}`), one whole sentence each.
+const ringLines = c => (c.route?.ring_findings ?? []).filter(x => x.text).map(x => `Ring: ${clip(x.text, 300)}`);
+// What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
+// (0.35.0: spare-capacity-unstated and spare-over-capacity, a duct's load, named by kind)
+const spareLines = c => (c.spare_findings ?? []).map(f => `Spare${FINDING_KIND[f.kind] ? `, ${FINDING_KIND[f.kind]}` : ''}: ${clip(f.text, 200)}`);
+/** What the kit finds of one cable's lay, as inspect says it: bends, ring findings and spare findings. */
+export const findingLines = c => [...bendLines(c), ...ringLines(c), ...spareLines(c)];
 export function cableText(c, {spare = null, needs = null} = {}) {
   const stock = len(c.routed?.stock);
   const lines = [
@@ -258,11 +269,9 @@ export function cableText(c, {spare = null, needs = null} = {}) {
   // than the cable's bend radius, and the ports a span of it runs in front of.
   // (a pair of turns on one short leg is one sentence of up to 182 characters with the kit's own names, and
   // longer with a long label: the kit's sentence is said whole, and its advice, where it gives one, after it)
-  for (const x of c.route?.bends ?? []) if (x.text) lines.push(`Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
+  lines.push(...bendLines(c), ...ringLines(c));
   if (c.route?.covers?.text) lines.push(`In front of other ports: ${clip(c.route.covers.text, 300)}`);
-  // What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
-  // (0.35.0: spare-capacity-unstated and spare-over-capacity, a duct's load, named by kind)
-  for (const f of c.spare_findings ?? []) lines.push(`Spare${FINDING_KIND[f.kind] ? `, ${FINDING_KIND[f.kind]}` : ''}: ${clip(f.text, 200)}`);
+  lines.push(...spareLines(c));
   if (Array.isArray(c.spare_places)) lines.push(placesLine(c.spare_places));
   // How it was pinned by hand in a pathway, as the file has it (cable.lay).
   if (c.lay?.length) lines.push(`Laid by hand: ${cutList(c.lay.map(e => `${e.item} ${e.via}${e.face ? `, ${e.face} face` : ''}${e.position != null ? `, position ${e.position}` : ''}`), 6)}.`);
