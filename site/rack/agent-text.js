@@ -6,6 +6,10 @@
 // Chrome's WebMCP guidance: tool output of about 1.5K characters at most.
 export const LIMIT = 1500;
 
+// What each figure in a cable's lengths means, in one sentence: said in the
+// cable's text here and under the cable list (spare.js re-exports it).
+export const FIGURES_HELP = 'Needs is the path inside the ports, less the maker\'s allowance; routed is the measured path; stock size is the next stock length; short means the cord is shorter than it needs.';
+
 // Cut at the last whole line that fits, and say how many lines were left out.
 export function fit(text, limit = LIMIT) {
   if (text.length <= limit) return text;
@@ -190,6 +194,7 @@ export function cableText(c, {spare = null, needs = null} = {}) {
       // else the kit's figure; then where the kit says it is.
       (spare ? `; ${spare}${needs ? `; ${needs}` : ''}` : c.slack ? `; spare ${len(c.slack.metres)}` : '') +
       (c.slack && c.slack.metres >= 0 ? ` (${storedWords(c.slack)}; spare is listed, not drawn)` : spare || c.slack ? ' (the drawing shows the path only)' : ''),
+    ...(c.length?.need != null || c.routed ? [FIGURES_HELP] : []),
     `route: ${c.route?.edited ? 'drawn by hand' : 'its own'}${c.route?.text ? `: ${clip(c.route.text, 300)}` : ''}`,
   ];
   // A bundled cable (kit 0.7.0): which bundle, and where it joins and leaves it.

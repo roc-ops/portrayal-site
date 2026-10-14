@@ -9,7 +9,7 @@ import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, 
         matches} from '../../vendor/rack/cable-rules.js';
 import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
-import {spareText, needsText, SPARE_HELP} from './spare.js';
+import {spareText, needsText, SPARE_HELP, FIGURES_HELP} from './spare.js';
 import {LOOSE, wireTree} from './cable-tree.js';
 
 const option = (value, text, current) =>
@@ -328,7 +328,7 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     filterRow('media', 'Media'),
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
-    ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP})] : []),
+    ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP}), el('p', {class: 'rk-muted', 'data-figures-help': 'true', text: FIGURES_HELP})] : []),
     // (one section that opens, above the tree, when the page gives the routes' warnings by kind: warningsSection;
     // else every sentence, as before)
     ...(warnings ? [warningsSection({kinds: [...warnings.map(k => ({...k, rows: k.rows.map(r => ({...r, route: true}))})), ...ownWarnings()],
