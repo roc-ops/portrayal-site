@@ -5599,20 +5599,67 @@ def check_rack_face_managers(page, base):
         bad.append("3D: the manager's sheet body is drawn as a solid box")
     if not got["anchor"]:
         bad.append("3D: guideAnchor finds no guide-1 on the manager")
-    # The rail labels of the host and its manager are at one height: they sit side by side.
+    # Only the host has a rail label at its height: its manager has none.
     tags = page.evaluate("""() => {
       const sc = window.__rack.scene().three.scene, y = sc.getObjectByName('device-i1').position.y;
       return sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1)
         .map(c => [c.position.x - c.scale.x / 2, c.position.x + c.scale.x / 2]);
     }""")
-    if len(tags) < 2:
-        bad.append(f"3D: the host and its manager do not both have a rail label at their height: {tags}")
-    elif any(a[0] < b[1] and b[0] < a[1] for i, a in enumerate(tags) for b in tags[i + 1:]):
-        bad.append(f"3D: the host's and the manager's rail labels overlap: {tags}")
+    if len(tags) != 1:
+        bad.append(f"3D: expected one rail label (the host's) at the host's height, none for its manager: {tags}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
         bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB with the manager's node")
+    return bad
+
+
+@extra("rack.html: the 3D scene tags each piece of equipment and no cable manager - a lacer, a horizontal and a vertical manager have none, a PDU keeps its tag")
+def check_rack_3d_no_manager_tags(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags'});
+      const put = (ref, ru, label, extra = {}) => ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, label, ...extra}));
+      put('as7726-32x', 20, 'leaf-1');
+      put('fhd-cmp5dr', 20, 'hmgr', {on: 'i1', unit: 1});
+      put('cmh-5dr1u', 24, 'lacer-1');
+      put('as7726-32x', 28, 'leaf-2');
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags scene")
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const sc = s.three.scene, at = id => sc.getObjectByName('device-' + id);
+      const tagged = id => { const y = at(id)?.position.y;
+        return y === undefined ? null : sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1).length; };
+      const sprites = sc.children.filter(c => c.isSprite && c.position.z === 46);
+      return {built: ['i1', 'i2', 'i3', 'i4', 'z1', 'z2'].map(id => [id, !!at(id)]), tags: sprites.length,
+              equipment: [tagged('i1'), tagged('i4')], mgrs: [tagged('i2'), tagged('i3')], pdu: tagged('z2'), vmgr: tagged('z1')};
+    }""")
+    if not all(ok for _, ok in got["built"]):
+        bad.append(f"3D: a part is not in the scene: {got['built']}")
+    # Three rail labels in all: the two switches and the PDU, and nothing for the three managers.
+    # (the PDU and the vertical manager stand at one height, so the PDU's own tag is the one there.)
+    if got["pdu"] != 1:
+        bad.append(f"3D: the PDU should keep one rail label: {got}")
+    if got["equipment"] != [1, 1]:
+        bad.append(f"3D: each switch should have exactly one rail label at its height: {got}")
+    if got["mgrs"][1] != 0:
+        bad.append(f"3D: the lacer panel has a rail label: {got}")
+    if got["tags"] != 3:
+        bad.append(f"3D: expected 3 rail labels (two switches and the PDU), none for the horizontal, lacer or vertical manager: {got}")
     return bad
 
 
