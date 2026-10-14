@@ -68,6 +68,32 @@ const PXMM_RELIEF = 5;
 // COARSE below.
 const PXMM_HIDDEN = 2;
 
+// THE FACES ARE RASTERISED ON THE CPU while a scene that asks for it is alive
+// (`opts.cpuCanvases`; the Rack Builder's). relief.js cuts every face, and
+// every part of one, as a 2D canvas, and keeps it as its texture's image. A
+// browser puts a 2D canvas of any size on the GPU, so on a large rack those
+// canvases held more GPU memory than the textures drawn from them: 1.6 GB of
+// 2.5 GB, measured on one, before a single cable was hung. A 2D context asked
+// for with no options is asked for with `willReadFrequently`, which keeps it
+// in main memory; the textures uploaded from it are the same. One rule for the
+// page while any such scene is alive (counted), and gone with the last.
+let cpuCanvasScenes = 0, ownGetContext = null;
+function holdCpuCanvases() {
+  if (cpuCanvasScenes++ === 0) {
+    ownGetContext = HTMLCanvasElement.prototype.getContext;
+    const own = ownGetContext;
+    HTMLCanvasElement.prototype.getContext = function (kind, options, ...rest) {
+      return own.call(this, kind, kind === '2d' && options === undefined ? {willReadFrequently: true} : options, ...rest);
+    };
+  }
+}
+function releaseCpuCanvases() {
+  if (cpuCanvasScenes > 0 && --cpuCanvasScenes === 0) {
+    HTMLCanvasElement.prototype.getContext = ownGetContext;
+    ownGetContext = null;
+  }
+}
+
 // BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
 const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
 
@@ -184,6 +210,9 @@ export function createRackScene(container, opts = {}) {
   // drawing shortcut to fix.
   const REAR_MOUNT_Z = FRAME ? REAR_FACE_Z : RACK_FACE_Z - 34;
 
+  // (faces rasterised in main memory while this scene is alive: holdCpuCanvases, above)
+  const CPU_CANVASES = !!opts.cpuCanvases;
+  if (CPU_CANVASES) holdCpuCanvases();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
@@ -281,7 +310,28 @@ export function createRackScene(container, opts = {}) {
   // reaches the top view must still reach it. roc-ops/portrayal-site#13.
   const COARSE = createReliefScope({PXMM: opts.hiddenPxmm || PXMM_HIDDEN});
   COARSE.overrides = relief.overrides;
-  const scopeFor = view => (view === 'top' || view === 'bottom') ? COARSE : relief;
+  // NO FACE RASTER LONGER THAN `opts.maxFacePx` ON A SIDE (opt-in; the Rack
+  // Builder passes 4096). A part standing the height of the rack is 1867 mm
+  // tall: at 5 px/mm one face is a 9335 px canvas and a 9335 px texture,
+  // past what many GPUs take at all, and the four on one large rack held more
+  // GPU memory between them than a dozen switches. Such a part is drawn at
+  // the density that fits, its own scope copied from the one it would have
+  // had, with only the density changed (same overrides, states and paths).
+  const MAX_FACE_PX = opts.maxFacePx > 0 ? opts.maxFacePx : 0;
+  const capped = new Map();
+  const cappedScope = (base, mm) => {
+    const px = base.pxmm ?? PXMM;
+    if (!MAX_FACE_PX || !(mm * px > MAX_FACE_PX)) return base;
+    const want = Math.floor(MAX_FACE_PX / mm * 100) / 100, key = `${base === COARSE ? 'c' : 'r'}${want}`;
+    if (!capped.has(key)) capped.set(key, {...base, pxmm: want});
+    return capped.get(key);
+  };
+  // (the face's longest side in mm, as faceFrames lays it: front and rear W x H, the sides D x H, top and bottom W x D)
+  const scopeFor = (view, chassis = null) => {
+    const {w = 0, h = 0, d = 0} = chassis || {};
+    return (view === 'top' || view === 'bottom') ? cappedScope(COARSE, Math.max(w, d))
+      : cappedScope(relief, view === 'left' || view === 'right' ? Math.max(d, h) : Math.max(w, h));
+  };
 
   // ── parts taken off ────────────────────────────────────────────────────
   // WHAT IS NOT THERE. A set of data-paths a device is drawn without - a
@@ -571,6 +621,22 @@ export function createRackScene(container, opts = {}) {
   const faceKey = (entry, view) => `${faceUrl(entry, view)}#mount-${entry.slot}`;
   const faceSrc = (entry, view) =>
     SYNTH.has(faceKey(entry, view)) ? faceKey(entry, view) : faceUrl(entry, view);
+  // ONE BUILD FOR EVERY MOUNT OF A PLAIN PART (opt-in, `entry.share`). Fifty-six
+  // of one lacer on a large rack were fifty-six identical sets of canvases,
+  // textures and relief meshes - most of the build's time and of its GPU
+  // memory. A mount the host marks `share` (the Rack Builder: a part no cable,
+  // swap or written field reaches, so nothing is seated in it and nothing of it
+  // is dimmed or painted for itself) and that has no face of its own in this
+  // scene (SYNTH: a bay swap, a part pulled) is built from the first mount of
+  // the same faces at the same size: one geometry, one set of materials and
+  // textures. Cleared with the mounts (buildAll, dispose).
+  const SHARED = new Map();
+  function shareKey(entry) {
+    if (!entry.share || pulledFor(entry).size) return null;
+    if (RACK_VIEWS.some(v => SYNTH.has(faceKey(entry, v)))) return null;
+    const {w, h, d, shell} = entry.chassis || {};
+    return `${faceUrl(entry, 'front')}|${w}x${h}x${d}|${shell ?? ''}`;
+  }
   function putFace(entry, view, text) {
     const k = faceKey(entry, view);
     setSvgOverride(k, text, relief);
@@ -709,15 +775,21 @@ export function createRackScene(container, opts = {}) {
     // So the box goes up with plain rasterised faces, which is the whole
     // picture minus the depth, and the relief is added afterwards for anyone
     // who zooms in. Same end state, reached with nobody watching a scrim.
+    // A PART BUILT ONCE FOR EVERY MOUNT OF IT (`shareKey`, below): a mount after
+    // the first takes the first's materials and, as they arrive, its detail.
+    const key = shareKey(entry);
+    const tpl = key && SHARED.get(key);
     const flatCv = {};
-    await Promise.all([
+    if (!tpl) await Promise.all([
       ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false,
-                                  scopeFor(F.view))
+                                  scopeFor(F.view, entry.chassis))
         .then(cv => { flatCv[F.view] = cv; }).catch(() => {})),
-      svgCanvas(f('bottom'), W, D, true, true, COARSE)
+      svgCanvas(f('bottom'), W, D, true, true, scopeFor('bottom', entry.chassis))
         .then(cv => { flatCv.bottom = cv; }).catch(() => {}),
     ]);
-    const mats = ['right', 'left', 'top', 'bottom', 'front', 'rear']
+    // (the same array, not a copy, for a shared part: the detail pass puts each
+    // face's finished material into it, and every mount of the part shows it)
+    const mats = tpl ? tpl.body.material : ['right', 'left', 'top', 'bottom', 'front', 'rear']
       .map(v => mat(flatCv[v]));
 
     const group = new THREE.Group();
@@ -725,13 +797,18 @@ export function createRackScene(container, opts = {}) {
     // item's id, so its GLB says which node is which device; the showcase and
     // the hero pass none, so their scenes and exports are exactly as before.
     if (entry.id) group.name = `device-${entry.id}`;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mats);
+    const body = new THREE.Mesh(tpl ? tpl.body.geometry : new THREE.BoxGeometry(W, H, D), mats);
     // A SHEET BODY HAS NO SIDES (upstream docs/cable-managers-design.md §4):
     // its views are elevations, so painting them on a box stands a picture of
     // the part on every side. The box stays, invisible, as the frame its relief
     // is built in - as kit/viewer3d.js does.
+    // (a shared part's materials are the first mount's, already set, and perhaps lent to its stand-in now)
     const sheet = entry.chassis?.shell === 'sheet';
-    if (sheet) for (const m of mats) m.visible = false;
+    if (sheet && !tpl) for (const m of mats) m.visible = false;
+    if (tpl?.body.userData.standIn) body.userData.standIn = tpl.body.userData.standIn;
+    // (the first mount of a shared part keeps the record the others are built from)
+    const rec = key && !tpl ? {body, sharers: [], faces: [], detail: null} : null;
+    if (rec) SHARED.set(key, rec);
     group.add(body);
     meshes.forEach(m => group.add(m));
     // A SHEET BODY STANDS AS A PLAIN BOX UNTIL ITS DETAIL ARRIVES
@@ -748,7 +825,7 @@ export function createRackScene(container, opts = {}) {
     // parts by those, so every file after would differ by a number. No other
     // caller passes the option.
     let stoodIn = null;
-    if (sheet && opts.standIn) {
+    if (sheet && opts.standIn && !tpl) {
       stoodIn = mats.map(m => ({m, own: {visible: m.visible, map: m.map, color: m.color.getHex(), transparent: m.transparent, opacity: m.opacity,
                                          alphaTest: m.alphaTest, depthWrite: m.depthWrite}}));
       for (const {m} of stoodIn) {
@@ -763,7 +840,7 @@ export function createRackScene(container, opts = {}) {
         m.visible = own.visible; m.map = own.map; m.color.setHex(own.color); m.transparent = own.transparent; m.opacity = own.opacity;
         m.alphaTest = own.alphaTest; m.depthWrite = own.depthWrite; m.needsUpdate = true;
       }
-      delete body.userData.standIn;
+      for (const b of [body, ...(rec?.sharers ?? []).map(s => s.body)]) delete b.userData.standIn;
       stoodIn = null;
     };
 
@@ -866,6 +943,24 @@ export function createRackScene(container, opts = {}) {
     // a viewer who is already looking gets depth before the hidden sides do.
     // `mine` guards a rebuild or dispose landing mid-pass, when this group and
     // its materials are gone.
+    // A LATER MOUNT OF A SHARED PART builds no detail of its own: each face's
+    // detail, as the first mount's pass lands it, is copied into this group
+    // (Object3D.clone: new meshes on the same geometry and materials), and
+    // the host styles it as it would its own (`opts.onFace`). Its scene is
+    // complete when the first mount's is.
+    if (tpl) {
+      const take = (view, per) => {
+        const copies = per.map(m => m.clone());
+        copies.forEach(m => group.add(m));
+        if (copies.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view, group, meshes: copies});
+      };
+      tpl.sharers.push({entry, body, take});
+      for (const {view, per} of tpl.faces) take(view, per);
+      if (tpl.body.userData.standIn === 'failed')
+        opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: null});
+      pending.push(tpl.detail);
+      return group;
+    }
     const mine = epoch;
     const shownNow = VISIBLE_FACES[VIEW] || VISIBLE_FACES.iso;
     const order = [...FACES].sort((a, b) =>
@@ -874,7 +969,7 @@ export function createRackScene(container, opts = {}) {
       try {
         for (const F of order) {
           const per = [];
-          await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
+          await buildFaceRelief(F, {scope: scopeFor(F.view, entry.chassis), src: f(F.view), faceCv, faceSvg,
             facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
             D, bodyBoxMesh: null});
           if (mine !== epoch) return;
@@ -884,6 +979,8 @@ export function createRackScene(container, opts = {}) {
           // between. The Rack Builder reads the covers off it (rack/covers.js).
           // No other caller passes it, and nothing here changes without it.
           if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
+          // (and every other mount of a shared part takes it, in the same task)
+          if (rec && per.length) { rec.faces.push({view: F.view, per}); for (const s of rec.sharers) s.take(F.view, per); }
           if (per.length) dropStandIn();
           const i = MAT_SLOT[F.view], cv = faceCv[F.view];
           if (cv && body.material[i] && !sheet) {
@@ -902,12 +999,15 @@ export function createRackScene(container, opts = {}) {
         // failure is still the pass's: complete() rejects as it did.
         if (mine === epoch && stoodIn) {
           for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.opacity = 0.2; m.needsUpdate = true; }
-          body.userData.standIn = 'failed';
-          opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: err});
+          for (const {entry: e, body: b} of [{entry, body}, ...(rec?.sharers ?? [])]) {
+            b.userData.standIn = 'failed';
+            opts.onDetailFailed?.({id: e.id ?? null, ref: e.ref, label: e.label ?? e.ref, error: err});
+          }
         }
         throw err;
       }
     })();
+    if (rec) rec.detail = detail;
     // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
     if (opts.onDetailFailed) detail.catch(() => {});
     // (counted while it runs, for the loop: fewer frames while a detail pass is in hand, `opts.buildFrameMs`)
@@ -1048,7 +1148,11 @@ export function createRackScene(container, opts = {}) {
       // An RJ45 plug's point is the occupant itself, `<prefix>-occupant`; an
       // optic's LC plugs, or a duplex plug's two, are below it. Never
       // `port-10-occupant` for `port-1`.
-      const pts = cablePoints(doc.svg).filter(p => p.at && (p.path === prefix + '-occupant'
+      // (the face's cable points read once for it, not once for every cable
+      // end asked after: 900 ends of one large rack read a 600-port face's
+      // points 900 times, ten seconds of its build. The face text, and so
+      // its points, are fixed for as long as the doc is cached: faceDoc.)
+      const pts = (doc.cablePoints ??= cablePoints(doc.svg)).filter(p => p.at && (p.path === prefix + '-occupant'
         || p.path.startsWith(prefix + '-occupant/')));
       if (!pts.length) continue;
       const inv = doc.svg.getScreenCTM().inverse();
@@ -1167,8 +1271,15 @@ export function createRackScene(container, opts = {}) {
     tagRow.clear();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
+    SHARED.clear();           // and the parts built once for those mounts
     dropAnchorDocs();         // measured against overrides that are now gone
+    // A BUILD OVERTAKEN STOPS (dispose, a lost context, another build: each
+    // bumps `epoch`): the devices still to come are not built for a scene
+    // nobody will see, holding canvases and textures the next one needs.
+    const mine = epoch;
+    if (!alive) return;       // (disposed before it was asked to build)
     await hydrate();
+    if (mine !== epoch) return;
     if (FIT) {
       const want = fitUnits();
       if (want !== UNITS) {
@@ -1180,6 +1291,7 @@ export function createRackScene(container, opts = {}) {
     for (const entry of RESOLVED) {
       await overrideFaces(entry);
       await pullFaces(entry);      // after the bay override: it composes onto it
+      if (mine !== epoch) return;
       await buildDevice(entry);
     }
   }
@@ -1328,8 +1440,15 @@ export function createRackScene(container, opts = {}) {
     // installed. build() does not wait for these on purpose; this is here for a
     // host that wants a complete scene before exporting or grabbing a still.
     complete: async () => { await Promise.all(pending); },
+    // Whether the scene is still the host's: false once disposed.
+    alive: () => alive,
     dispose() {
+      // ONCE. A second dispose would force the loss of a context already lost,
+      // which the browser reports ("loseContext: context lost").
+      if (!alive) return;
       alive = false;
+      SHARED.clear();
+      if (CPU_CANVASES) releaseCpuCanvases();
       dropAnchorDocs();
       epoch++;      // stops any deferred relief pass from touching a dead scene
       pending = [];  // and drops the closures it was holding

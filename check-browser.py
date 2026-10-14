@@ -19873,6 +19873,151 @@ STRAP_SIZE_JS = """() => {
 }"""
 
 
+# Every WebGL context the page makes, whether it was a probe (never in the
+# document) or a renderer's, and each one lost or restored; and each
+# loseContext call, with whether its context was already lost (which the browser
+# reports as "loseContext: context lost").
+GL_COUNTER_JS = """(() => {
+  const M = window.__gl = {made: [], lost: [], restored: [], lose: []};
+  const get = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+    const known = this.__glId != null, c = get.call(this, kind, ...rest);
+    if (c && /webgl/.test(kind) && !known) {
+      const id = this.__glId = M.made.length, rec = {id, attached: null};
+      M.made.push(rec);
+      setTimeout(() => { rec.attached = this.isConnected; });
+      this.addEventListener('webglcontextlost', () => M.lost.push(id));
+      this.addEventListener('webglcontextrestored', () => M.restored.push(id));
+    }
+    return c;
+  };
+  for (const P of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
+    const ext = P.getExtension;
+    P.getExtension = function (name) {
+      const x = ext.call(this, name);
+      if (x && name === 'WEBGL_lose_context' && !x.__counted) {
+        const gl = this, lose = x.loseContext.bind(x);
+        x.loseContext = () => { M.lose.push({id: gl.canvas.__glId ?? null, already: gl.isContextLost()}); return lose(); };
+        x.__counted = true;
+      }
+      return x;
+    };
+  }
+})();"""
+# The scene's textures and the device materials it shares: how many textures, the longest side of any, and for
+# each plain model mounted more than once whether every mount draws with one set of body materials.
+SCENE_SHARING_JS = """() => {
+  const s = window.__rack.scene(), seen = new Set(), bodies = new Map();
+  let longest = 0;
+  s.three.scene.traverse(o => {
+    for (const m of [].concat(o.material || [])) for (const k of ['map', 'alphaMap']) {
+      const t = m?.[k]; if (!t || seen.has(t)) continue;
+      seen.add(t); longest = Math.max(longest, t.image?.width ?? 0, t.image?.height ?? 0);
+    }
+  });
+  const r0 = window.__rack.doc().racks[0], ref = new Map([...r0.items, ...(r0.zeroU ?? [])].map(i => [i.id, i.ref]));
+  for (const g of s.three.scene.children) {
+    if (!g.name?.startsWith('device-')) continue;
+    const r = ref.get(g.name.slice(7)); if (!r) continue;
+    (bodies.get(r) ?? bodies.set(r, new Set()).get(r)).add(g.children[0]?.material);
+  }
+  return {textures: seen.size, longest, gl: s.three.renderer.info.memory.textures,
+          sets: Object.fromEntries([...bodies].map(([r, m]) => [r, m.size]))};
+}"""
+
+
+@extra("rack.html: a large rack is built in 3D once, with one renderer, no context lost and no page error; its plain parts share their materials and no face texture is over 4096 px; picking a bundle or a cable type keeps the scene and makes no context; and a lost context stops the scene, says so, and builds it again once when the context comes back, never deleting into the new one (S-0043)")
+def check_rack_3d_large_once(page, base):
+    bad, said = [], []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("console", lambda m: said.append(m.text))
+    page.add_init_script(GL_COUNTER_JS)
+    page.set_viewport_size({"width": 1400, "height": 900})
+    fixture = ring_rack_fixture()
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_large_once] WebGL unavailable - not exercised")
+        return bad
+    page.click('#mode [data-mode="2d"]')
+    page.set_input_files("#openFile", files=[{"name": "ring.rack.json", "mimeType": "application/json", "buffer": json.dumps(fixture).encode()}])
+    wait_fn(page, "large: opened and drawn with its routes",
+            "() => window.__rack.doc().racks[0].name === 'Ring rack' && window.__rack.routesCurrent().current", timeout=300000)
+    page.evaluate("() => { const M = window.__gl; M.made.length = 0; M.lost.length = 0; M.restored.length = 0; M.lose.length = 0; }")
+    t0 = time.time()
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "large: the 3D scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    took = time.time() - t0
+    gl = page.evaluate("() => JSON.parse(JSON.stringify(window.__gl))")
+    renderers = [c for c in gl["made"] if c["attached"]]
+    if len(renderers) != 1:
+        bad.append(f"large: {len(renderers)} renderers made while the scene loaded, expected one (contexts: {gl['made']})")
+    probes_lost = [c["id"] for c in gl["made"] if not c["attached"]]
+    if sorted(gl["lost"]) != sorted(probes_lost) or gl["restored"] or any(x["already"] for x in gl["lose"]):
+        bad.append(f"large: contexts lost {gl['lost']} (only the probes {probes_lost} should be), restored {gl['restored']}, loseContext calls {gl['lose']}")
+    share = page.evaluate(SCENE_SHARING_JS)
+    if share["longest"] > 4096:
+        bad.append(f"large: a face texture {share['longest']} px long, over 4096")
+    for ref in ("fhd-cmp5dr", "cmv-sfd42u9w", "pdumv20hvnetlx"):
+        if ref in share["sets"] and share["sets"][ref] != 1:
+            bad.append(f"large: the plain {ref} mounts draw with {share['sets'][ref]} sets of body materials, expected one shared set")
+    print(f"[check_rack_3d_large_once] built in {took:.1f} s with {len(renderers)} renderer, {len(gl['made'])} contexts in all; "
+          f"{share['textures']} textures in the scene ({share['gl']} on the GPU), the longest {share['longest']} px; material sets {share['sets']}")
+    # A BUNDLE, THEN A CABLE TYPE, picked and put down twice: the scene stays, no context is made.
+    scene_was = page.evaluate("() => { window.__was = window.__rack.scene(); return window.__gl.made.length; }")
+    idle = "() => window.__rack.idle()"
+    # (each control clicked as a reader's click reaches it; where it sits in a long side panel is not what is checked)
+    def press(sel):
+        wait_fn(page, f"large: {sel} to press", "s => document.querySelector(s)", arg=sel)
+        page.evaluate("s => document.querySelector(s).click()", sel)
+    rows = page.evaluate("() => [...document.querySelectorAll('[data-bundle-row]')].map(b => b.dataset.bundleRow)")
+    if len(rows) < 2:
+        return bad + [f"large: the side panel in 3D lists {len(rows)} bundles ({rows}); expected the fixture's four"]
+    for turn in range(2):
+        press(f'[data-bundle-row="{rows[0] if turn == 0 else rows[-1]}"]')
+        wait_fn(page, "large: the bundle's panel", "() => document.querySelector('#bDone')")
+        wait_fn(page, "large: idle after the bundle", idle)
+        press("#bDone")
+        wait_fn(page, "large: the list again", "() => document.querySelector('[data-filter-row] button')")
+        press('[data-filter-row] button')
+        wait_fn(page, "large: idle after the filter", idle)
+        press('[data-filter-row] button[aria-pressed="true"]')
+        wait_fn(page, "large: idle after the filter is off", idle)
+    page.wait_for_timeout(800)   # past the page's 300 ms rebuild debounce
+    after = page.evaluate("() => ({same: window.__rack.scene() === window.__was, made: window.__gl.made.length})")
+    if not after["same"] or after["made"] != scene_was:
+        bad.append(f"large: picking a bundle and a cable type rebuilt the scene ({not after['same']}) or made {after['made'] - scene_was} contexts")
+    # A LOST CONTEXT: the loop stops, the stage says so; the context back, the scene is built again, once.
+    said.clear()
+    page.evaluate("() => { window.__lostExt = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__lostExt.loseContext(); }")
+    wait_fn(page, "lost: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    lost = page.evaluate("() => ({running: window.__rack.scene().running(), lost: window.__rack.scene().contextLost()})")
+    if lost["running"] or not lost["lost"]:
+        bad.append(f"lost: the scene after its context was lost: {lost}; expected stopped and lost")
+    page.evaluate("() => { window.__was = window.__rack.scene(); window.__lostExt.restoreContext(); }")
+    try:
+        settle_scene(page, "lost: the scene built again", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    again = page.evaluate("() => ({fresh: window.__rack.scene() !== window.__was, notice: !!document.querySelector('#lost3d')})")
+    if not again["fresh"] or again["notice"]:
+        bad.append(f"lost: after the context came back: {again}; expected a new scene and the notice gone")
+    # ...and only once: lost again, it waits for the button.
+    page.evaluate("() => { const x = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__was = window.__rack.scene(); x.loseContext(); setTimeout(() => x.restoreContext(), 300); }")
+    wait_fn(page, "lost again: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    page.wait_for_timeout(1500)
+    if page.evaluate("() => window.__rack.scene() !== window.__was || !document.querySelector('#lost3d')"):
+        bad.append("lost again: the scene was built again by itself a second time; expected the notice and its button to stay")
+    noisy = [t for t in said if "does not belong to this context" in t or "loseContext: context lost" in t or "reading 'trim'" in t]
+    if noisy:
+        bad.append(f"lost: the console said {len(noisy)} GL errors, the first: {noisy[0]}")
+    return bad
+
+
 @extra("rack.html: a strap is as long as its pack is wide where it sits - the members there, square across the run, and a small margin, on a diagonal stretch as on a straight one; it lies square across its run; at Fit on a 42U rack it is never under the least size along the run, and across it only up to twice its pack; at 300% it is its true size; and the sheet's straps are the ones they were (#190)")
 def check_rack_strap_size(page, base):
     bad = []

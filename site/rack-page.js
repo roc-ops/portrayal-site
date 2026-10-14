@@ -137,6 +137,11 @@ let stage3dEpoch = 0;
 // scene is disposed, so it is always the most recent real camera, in-flight
 // build or not.
 function disposeScene3d() {
+  // A SCENE STILL BEING BUILT IS LET GO TOO (S.loading3d, from mountRack3d's
+  // onScene): it stops building, and its canvases and textures go now rather
+  // than when its build would have finished. Left to finish, an overtaken
+  // build of a large rack held a second full set of them beside the new one's.
+  if (S.loading3d) { S.loading3d.dispose(); S.loading3d = null; }
   if (!S.scene3d) return;
   S.camera3d = {position: S.scene3d.three.camera.position.clone(),
                 target: S.scene3d.three.controls.target.clone()};
@@ -207,7 +212,10 @@ async function rebuild3d() {
     bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
     onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
     onContextLost: s => { if (mine === stage3dEpoch) contextLost3d(s); },
-    ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
+    onContextRestored: () => { if (mine === stage3dEpoch) contextRestored3d(); },
+    onScene: s => { if (mine === stage3dEpoch) S.loading3d = s; else s.dispose(); if (PROBE) S.probeLoading = s; }});
+  // (the scene being built is now the one built; one whose build failed is let go)
+  if (mine === stage3dEpoch && S.loading3d) { if (S.loading3d !== built) S.loading3d.dispose(); S.loading3d = null; }
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -237,8 +245,10 @@ async function rebuild3d() {
 // THE BROWSER TOOK THE 3D VIEW'S GL CONTEXT AWAY (a GPU reset, or the GPU out
 // of memory): the scene has stopped drawing (rack3d.js onContextLost) and holds
 // nothing on the GPU any more. The stage says so, over the dead canvas, with a
-// button to build it again; nothing rebuilds by itself, so a rack too big for
-// this GPU is not built, lost and built again in a loop. 2D is unaffected.
+// button to build it again. When the browser gives the context back the view
+// is built again by itself, ONCE for a rack document (S.lost3dRebuilt): a
+// second loss leaves the notice and its button, so a rack too big for this
+// GPU is not built, lost and built again in a loop. 2D is unaffected.
 const LOST_3D = 'The 3D view stopped: the browser took away its graphics context (the GPU was reset or ran out of memory). 2D is unaffected.';
 function contextLost3d(scene) {
   $('lost3d')?.remove();
@@ -246,6 +256,12 @@ function contextLost3d(scene) {
   const again = el('button', {type: 'button', id: 'lost3dRebuild', text: 'Build the 3D view again'});
   again.addEventListener('click', () => { clearTimeout(rebuild3dTimer); rebuild3d(); });
   $('stage3d').append(el('div', {id: 'lost3d', class: 'rk-notice', role: 'alert'}, [el('p', {text: LOST_3D}), again]));
+}
+function contextRestored3d() {
+  if (S.lost3dRebuilt || S.mode !== '3d') return;
+  S.lost3dRebuilt = true;
+  clearTimeout(rebuild3dTimer);
+  rebuild3d();
 }
 // A PART WHOSE DETAIL COULD NOT BE BUILT IN 3D (a file of its drawing did not
 // load) stays the plain box it stood as while loading (rack3d.js standIn),
@@ -625,6 +641,7 @@ function setDoc(doc, notes = docNotes(doc)) {
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
+  S.lost3dRebuilt = false;   // (and another rack's 3D view may be built again once after a lost context: contextRestored3d)
   try { localStorage.setItem(LAST, theDoc().id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
