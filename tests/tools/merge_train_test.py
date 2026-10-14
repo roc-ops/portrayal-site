@@ -289,6 +289,37 @@ class Train(unittest.TestCase):
             self.review("approve", body="I would say REVIEW: approve if it were mine")]
         self.refused("1", why="#1")
 
+    def test_a_workers_task_id_before_the_verdict_is_accepted(self):
+        self.state["prs"]["1"]["comments"] = [
+            self.review("approve", body="[S-0030-2] REVIEW: approve")]
+        self.assertEqual(self.run_train("--dry-run", "1").returncode, 0)
+
+    def test_a_verdict_without_a_task_id_still_counts(self):
+        self.state["prs"]["1"]["comments"] = [self.review("approve", body="REVIEW: approve")]
+        self.assertEqual(self.run_train("--dry-run", "1").returncode, 0)
+
+    def test_a_task_id_changes_verdict_still_counts_as_changes(self):
+        self.state["prs"]["1"]["comments"] = [
+            self.review("approve", "2026-10-13T09:00:00Z"),
+            self.review("changes", "2026-10-13T10:00:00Z", body="[S-0030-2] REVIEW: changes")]
+        self.refused("1", why="#1")
+
+    def test_a_verdict_buried_after_a_task_id_and_words_is_not_a_verdict(self):
+        self.state["prs"]["1"]["comments"] = [
+            self.review("approve", body="[S-0030-2] I would say REVIEW: approve")]
+        self.refused("1", why="#1")
+
+    def test_only_one_bracketed_id_may_precede_the_verdict(self):
+        self.state["prs"]["1"]["comments"] = [
+            self.review("approve", body="[x] [y] REVIEW: approve")]
+        self.refused("1", why="#1")
+
+    def test_a_strangers_task_id_verdict_does_not_count(self):
+        self.state["prs"]["1"]["comments"] = [
+            {**self.review("approve", body="[S-0030-2] REVIEW: approve"),
+             "authorAssociation": "NONE"}]
+        self.refused("1", why="REVIEW: approve")
+
     def test_a_one_way_door_needs_an_owner_decision(self):
         self.state["prs"]["1"]["body"] = "**Door:** one-way, it changes the workflow\n"
         r = self.refused("1", why="OWNER DECISION")

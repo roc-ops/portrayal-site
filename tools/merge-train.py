@@ -77,7 +77,10 @@ def gh_json(*args):
 
 
 # ── readiness ────────────────────────────────────────────────────────────────
-VERDICT = re.compile(r"\A\s*REVIEW:\s*(approve|changes)\b", re.I)
+# Workers start every comment with their task id, `[S-0030-2] REVIEW: approve`; the
+# id is optional. An owner decision is the coordinator's and has no id, so
+# DECISION takes none.
+VERDICT = re.compile(r"\A\s*(?:\[[A-Za-z0-9-]+\]\s+)?REVIEW:\s*(approve|changes)\b", re.I)
 DECISION = re.compile(r"\A\s*OWNER DECISION:\s*(\w+)", re.I)
 DOOR = re.compile(r"\*\*Door:\*\*\s*(.*)")
 
