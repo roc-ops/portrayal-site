@@ -134,7 +134,7 @@ export const spareText = s => `${s.value} ${s.unit} cord, ${spareAmount(s)} ${is
 /** "the route needs 0.68 m", in the cord's own unit, when a pinned length is
  *  under the kit's need, else null. */
 export const needsText = s => (s.needs == null ? null : `the route needs ${r2(s.needs / M_PER[s.unit])} ${s.unit}`);
-/** The cable list's one line of explanation. */
 /** What each figure in a cable's lengths means, in one sentence (agent-text.js has it). */
 export {FIGURES_HELP};
+/** The cable list's one line of explanation. */
 export const SPARE_HELP ='The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';
