@@ -209,6 +209,8 @@ const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${
 // kit's `load`, how full the duct is with the spare in it against the count
 // its maker states (slack.js spareLoad); never a capacity the data lacks.
 const loadWords = l => (!l ? '' : !l.stated ? ' (a duct whose maker states no cable capacity)'
+  // (kit 0.39.0: a cable the count does not take in, a fibre cord against a count of cat6, is not counted against it)
+  : l.notCounted ? ` (a duct whose stated capacity is for ${l.media ? `${l.media} cables` : `cables of ${l.diameter} mm or more`}, which ${l.cableMedia ?? 'this cable'} is not counted against)`
   : !l.compared ? ' (a duct whose stated capacity names no kind of cable)'
   : ` (a duct holding ${l.count} ${l.media ? `${l.media} ` : ''}cables' worth of the ${l.capacity} its maker states${l.over ? ', past it' : ''})`);
 const storedWords = s => [

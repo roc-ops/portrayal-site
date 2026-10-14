@@ -10179,7 +10179,8 @@ def check_rack_spare_duct_loop(page, base):
         bad.append("Rear: a loop in a front duct is drawn on the rear pane")
     # The agent's text.
     txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
-    for want in ("as a loop in i3 duct (a duct holding", "the stored loop is drawn", "Spare can go in: i3 duct"):
+    # c1 is fibre and hm-1 states its count for cat6, which kit 0.39.0 does not count a fibre cord against
+    for want in ("as a loop in i3 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "the stored loop is drawn", "Spare can go in: i3 duct"):
         if want not in txt:
             bad.append(f"inspect c1: no {want!r} in {txt!r}")
     if "listed, not drawn" in txt:

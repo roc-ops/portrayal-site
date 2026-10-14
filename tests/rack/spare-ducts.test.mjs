@@ -145,6 +145,14 @@ test('cableText says a loop in a duct, how full the duct is with it, and that th
   assert.doesNotMatch(t, /listed, not drawn/);
   const none = cableText({...base, slack: slack([{item: 'z1', via: 'duct', form: 'loop', metres: 1.54, ok: true, kind: 'duct', load: {stated: false}}])});
   assert.match(none, /1\.54 m as a loop in z1 duct \(a duct whose maker states no cable capacity\)/);
+  // a cable the duct's count does not take in (kit 0.39.0: a fibre cord against a count of cat6) is said so, not "names no kind of cable"
+  const fibre = cableText({...base, media: 'os2', slack: slack([{item: 'hm', via: 'duct', form: 'loop', metres: 1.54, ok: true, kind: 'duct',
+    load: {stated: true, compared: false, notCounted: true, media: 'cat6', diameter: 6, cableMedia: 'os2'}}])});
+  assert.match(fibre, /1\.54 m as a loop in hm duct \(a duct whose stated capacity is for cat6 cables, which os2 is not counted against\)/);
+  assert.doesNotMatch(fibre, /names no kind of cable/);
+  const thin = cableText({...base, slack: slack([{item: 'hm', via: 'duct', form: 'loop', metres: 1.54, ok: true, kind: 'duct',
+    load: {stated: true, compared: false, notCounted: true, media: null, diameter: 6, cableMedia: null}}])});
+  assert.match(thin, /a duct whose stated capacity is for cables of 6 mm or more, which this cable is not counted against/);
   // spare at an end only, or a place it cannot be stored, is listed and not drawn
   assert.match(cableText({...base, slack: slack([{end: 'a', metres: 1.54}])}), /spare is listed, not drawn/);
   assert.match(cableText({...base, slack: slack([{item: 'hm', via: 'guide-1', form: 'coil', metres: 1.54, ok: false, why: 'x'}])}), /spare is listed, not drawn/);
