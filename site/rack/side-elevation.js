@@ -55,6 +55,7 @@ import {strapBarEl, tieAttrs} from './cable-view.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {landedBends, bendPoints} from './route-context.js';
 import {noteStrap} from './strap-size.js';
+import {loopEl} from './spare-loops.js';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, paintOrder, onNearSide, postsOf, depthExtent,
         paneSpanX, sideX, sideY, project, projectedPath, packedPoints, strapBar, labelSize, plugSpans} from './side-geometry.js';
 
@@ -422,6 +423,17 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   }
   if (bands.childElementCount) layer.prepend(bands);
   if (bars.childElementCount) layer.append(bars);
+  // THE STORED LOOPS (kit 0.35.0; spare-loops.js): a loop at the kit's point
+  // for each duct or tray a cable stores spare in, where the cable is drawn,
+  // seen from the side (z across, y up).
+  const nameOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
+  const loops = svgEl('g', {'data-spare-loops': pane, 'pointer-events': 'none'});
+  for (const l of routes.spareLoops ?? []) {
+    if (!onPane.has(l.cable)) continue;
+    const [cx, cy] = project(pane, frame, l.at);
+    loops.append(loopEl(l, [n3(cx), n3(cy)], ['z', 'y'], nameOf));
+  }
+  if (loops.childElementCount) layer.append(loops);
   // A corner short of its cable's bend radius, ringed where the kit puts it (as the front pane rings it).
   for (const f of landedBends(routes.bendFindings, rack, loose)) {
     if (!drawn.includes(f.cable)) continue;

@@ -11,12 +11,12 @@
 // to the right as seen from the FRONT. This file imports no DOM and nothing of
 // the site's pages, so the rack kit can take it as it is.
 
-import {uLabel, zeroUOf, bundlesOf, rollOf} from './model.js';
+import {uLabel, zeroUOf, zeroUById, bundlesOf, rollOf} from './model.js';
 import {followTrunk} from './bundle-route.js';
 import {RU, OPENING, RAIL_W} from './rails.js';
 import {throughRings, cornersOf, STRAIGHT_DEG} from './route-path.js';
 import {zeroUOnLane, zeroUX, carriesLane, runsThrough, STANDOFF} from './zero-u.js';
-import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, isQuarter, unitsOf} from './fit.js';
+import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, railOf, isQuarter, unitsOf} from './fit.js';
 import {solidsOf, traysOf, detour, legCrossings, CLEAR} from './solids.js';
 import {surfacesOf, hang, heldStretch, drapeOf, bendOf, newCrossing} from './resting.js';
 
@@ -524,10 +524,134 @@ function leadFrom(inp, world) {
 }
 
 // Does a waypoint still stand for something in this rack? A guide the page
-// reads off the drawings, or a tray the catalogue lists.
+// reads off the drawings, or a tray the catalogue lists; or a duct or a
+// window of a zero-U part, as the catalogue lists them (issue 13).
 function resolves(rack, w, ctx) {
   if (w.lane) return lanesOf(rack.frame).includes(w.lane) && w.ru >= 1 && w.ru <= rack.frame.heightRU;
-  return !!itemOf(rack, w.item) && (ctx.guidesOf(w.item).some(g => g.via === w.via) || !!trayOf(rack, w, ctx));
+  if (!itemOf(rack, w.item)) return zeroUPathways(rack, zeroUById(rack, w.item), ctx).some(p => p.via === w.via);
+  return ctx.guidesOf(w.item).some(g => g.via === w.via) || !!trayOf(rack, w, ctx);
+}
+
+// ── the pathways of a part, by name (issues 2 and 13) ───────────────────
+// THE PATHWAYS OF A ZERO-U PART, as the catalogue lists them: each `guides`
+// id is a duct (a zero-U part's guide is its channel), each `passes` id a
+// window through its back, [{via, kind: 'duct' | 'pass', face}]. The page
+// reads a rack item's rings off its drawing; a zero-U part has no face of
+// its own in the elevation, so the catalogue is the source. [] for no part.
+export function zeroUPathways(rack, z, ctx) {
+  const c = z && typeof ctx?.chassisOf === 'function' ? ctx.chassisOf(z.ref) : null;
+  if (!c || !isZeroUPart(c)) return [];
+  const out = [];
+  for (const [key, kind] of [['guides', 'duct'], ['passes', 'pass']])
+    for (const [face, ids] of Object.entries(c[key] || {}))
+      for (const via of Array.isArray(ids) ? ids : []) if (!out.some(p => p.via === via)) out.push({via, kind, face});
+  return out;
+}
+// THE PATHWAYS OF ANY PART A ROUTE CAN NAME, [{via, kind}], kind one of
+// 'ring', 'duct', 'pass', 'tray' or null (a guide the page gives no kind):
+// a rack item's guides as the page reads them and its trays; a zero-U part's
+// as zeroUPathways. A ring or a duct of an id wins over a tray of it, as
+// trayOf says. [] for an id that is neither.
+export function pathwaysAt(rack, id, ctx) {
+  const it = itemOf(rack, id);
+  if (!it) return zeroUPathways(rack, zeroUById(rack, id), ctx).map(({via, kind}) => ({via, kind}));
+  const out = [];
+  let gs = [];
+  try { gs = typeof ctx?.guidesOf === 'function' ? ctx.guidesOf(id) || [] : []; } catch { gs = []; }
+  for (const g of gs) if (!out.some(p => p.via === g.via)) out.push({via: g.via, kind: g.kind ?? null});
+  for (const t of traysOf(rack, ctx).filter(x => x.item === id)) if (!out.some(p => p.via === t.via)) out.push({via: t.via, kind: 'tray'});
+  // a pass-through the catalogue lists that the page does not draw on this face
+  const c = typeof ctx?.chassisOf === 'function' ? ctx.chassisOf(it.ref) : null;
+  for (const via of Object.values(c?.passes || {}).flat()) if (typeof via === 'string' && !out.some(p => p.via === via)) out.push({via, kind: 'pass'});
+  return out;
+}
+
+// SPOKEN NAMES OF A PATHWAY (issue 2). An id is never renamed: saved racks
+// hold them. A route or a place for spare may name a pathway as the route
+// summary says it, and is stored by its id: "ring 3" for guide-3, "left end
+// ring" or "end ring left" for end-ring-left, "pass-through 2" for
+// pass-through-2; and the one duct of a side whatever the part calls it,
+// "duct" or "front-duct" for the front one, "rear-duct" or "duct-rear" for
+// the rear. `ids` are the part's own; null when nothing matches.
+const DUCTS = {front: ['duct', 'front-duct'], rear: ['duct-rear', 'rear-duct']};
+export function pathwayId(ids, via) {
+  if (typeof via !== 'string') return null;
+  if (ids.includes(via)) return via;
+  const v = via.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  if (ids.includes(v)) return v;
+  let m = /^ring-?(\d+)$/.exec(v);
+  if (m) return ids.includes(`guide-${m[1]}`) ? `guide-${m[1]}` : null;
+  m = /^(?:(left|right)-end-ring|end-ring-(left|right))$/.exec(v);
+  if (m) return ids.includes(`end-ring-${m[1] || m[2]}`) ? `end-ring-${m[1] || m[2]}` : null;
+  m = /^pass-?through-?(\d+)$/.exec(v);
+  if (m) return ids.includes(`pass-through-${m[1]}`) ? `pass-through-${m[1]}` : null;
+  for (const names of Object.values(DUCTS)) if (names.includes(v)) return names.find(n => ids.includes(n)) ?? null;
+  return null;
+}
+// A pathway id as the route summary says it: a ring by its number, an end
+// ring in words; any other as it is.
+export const viaText = v => (/^guide-\d+$/.test(v) ? `ring ${v.slice(6)}`
+  : /^end-ring-(left|right)$/.test(v) ? `${v.slice(9)} end ring` : v);
+
+// A WAYPOINT ON A ZERO-U PART IS A RUN OF ITS LANE (issue 13). The part
+// stands on the lane beside its upright, and a lane waypoint at a unit it
+// spans is already in its channel (zero-u.js carriesLane), so naming the
+// part changes no geometry: its duct is the lane from the unit nearest the
+// waypoint before to the unit nearest the one after, inside the units the
+// part spans; a window is the lane at the unit whose middle is nearest the
+// window's, and the next leg crosses the rack there. The route is stored as
+// written, and only resolves so. `before` and `after` are the units of the
+// neighbours (null where there is none: the port's own unit is taken).
+function zeroUHole(rack, z, via, ctx) {
+  for (const s of solidsOf(rack, ctx)) {
+    if (s.item !== z.id) continue;
+    const h = (s.holes || []).find(x => x.via === via);
+    if (h) return h.box;
+  }
+  return null;
+}
+function zeroULanes(rack, w, before, after, ctx) {
+  const z = zeroUById(rack, w.item);
+  const lane = lanesOf(rack.frame).includes(z.at) ? z.at : String(z.at).split('-')[0];
+  const [lo, hi] = zeroUTouched(z, ctx.chassisOf);
+  const clamp = u => Math.min(hi, Math.max(lo, Math.round(u)));
+  const p = zeroUPathways(rack, z, ctx).find(x => x.via === w.via);
+  if (p?.kind === 'pass') {
+    const h = zeroUHole(rack, z, w.via, ctx);
+    return [{lane, ru: clamp(h ? (h.y0 + h.y1) / 2 / RU + 0.5 : (before ?? after ?? (lo + hi) / 2))}];
+  }
+  const from = clamp(before ?? after ?? (lo + hi) / 2), to = clamp(after ?? before ?? (lo + hi) / 2);
+  return from === to ? [{lane, ru: from}] : [{lane, ru: from}, {lane, ru: to}];
+}
+// The unit a waypoint stands at, for its neighbour on a zero-U part: a lane's
+// own, an item's lowest, a window's; null for a duct (it takes its own
+// neighbours') or anything not found.
+function unitOf(rack, w, ctx) {
+  if (!w) return null;
+  if (w.lane) return w.ru;
+  const it = itemOf(rack, w.item);
+  if (it) return it.ru;
+  const z = zeroUById(rack, w.item);
+  return z && zeroUPathways(rack, z, ctx).find(x => x.via === w.via)?.kind === 'pass' ? zeroULanes(rack, w, null, null, ctx)[0].ru : null;
+}
+// The waypoints that resolve, with each on a zero-U part as its lane run.
+// `ends` are the units of the cable's two ports, or none for a trunk.
+function resolvedList(rack, list, ctx, ends = [null, null]) {
+  const kept = [], gone = [];
+  for (const w of list) (resolves(rack, w, ctx) ? kept : gone).push(w);
+  // a route that names no zero-U part is as it was, waypoint for waypoint
+  if (kept.every(w => w.lane || itemOf(rack, w.item))) return {waypoints: kept, gone};
+  const out = [];
+  kept.forEach((w, k) => {
+    if (w.lane || itemOf(rack, w.item)) { out.push(w); return; }
+    const near = (from, step, end) => {
+      for (let j = from; j >= 0 && j < kept.length; j += step) { const u = unitOf(rack, kept[j], ctx); if (u != null) return u; }
+      return end;
+    };
+    out.push(...zeroULanes(rack, w, near(k - 1, -1, ends[0]), near(k + 1, 1, ends[1]), ctx));
+  });
+  // two lane points in a row at one unit are one (a duct entered and left there)
+  return {waypoints: out.filter((w, i) => i === 0 || !(w.lane && sameWp(w, out[i - 1]))), gone};
 }
 
 // THE TRAY A WAYPOINT NAMES (docs/cable-lay-design.md section 2.1), placed
@@ -543,17 +667,15 @@ export const trayOf = (rack, w, ctx) => (w?.item && !w.lane
 export function ownRoute(rack, cable, ctx, {gutter = false} = {}) {
   const auto = cable.routeEdited !== true;
   const list = auto ? autoRoute(rack, cable, ctx, {gutter}) : (cable.route || []);
-  const waypoints = [], gone = [];
-  for (const w of list) (resolves(rack, w, ctx) ? waypoints : gone).push(w);
+  const ends = [cable.a, cable.b].map(e => itemOf(rack, e?.item)?.ru ?? null);
+  const {waypoints, gone} = resolvedList(rack, list, ctx, ends);
   return {waypoints, gone, auto};
 }
 
 // A BUNDLE'S TRUNK as it resolves today: its stored waypoints, less those that
 // no longer stand for anything (reported as `gone`, and skipped).
 export function trunkRoute(rack, bundle, ctx) {
-  const waypoints = [], gone = [];
-  for (const w of bundle.route || []) (resolves(rack, w, ctx) ? waypoints : gone).push(w);
-  return {waypoints, gone};
+  return resolvedList(rack, bundle.route || [], ctx);
 }
 
 // The bundle a cable is drawn in: one holding it and at least one other cable
@@ -649,17 +771,28 @@ export function trunkMeasures(rack, cable, trunk, ctx) {
 // The route as a line of text: "mgr-1 ring 3 > left-front U12-U24 > ...".
 // Consecutive points on one lane read as one run. `nameOf(itemId)` names an item.
 // U's are as stored; pass `frame` to label them the way the rack counts.
-export function routeText(route, nameOf = id => id, frame = null) {
+// `through(lane, from, to)`, when given, names the ducts a lane run goes
+// through (ductsThrough below): "right-front U41-U25, through z2 duct".
+export function routeText(route, nameOf = id => id, frame = null, through = null) {
   const u = n => (frame ? uLabel(frame, n) : n);
-  const viaText = v => (/^guide-(\d+)$/.test(v) ? `ring ${v.slice(6)}` : v);
   const out = [];
   for (const w of route) {
     const last = out[out.length - 1];
     if (w.lane && last?.lane === w.lane) { last.to = w.ru; continue; }
     out.push(w.lane ? {lane: w.lane, from: w.ru, to: w.ru} : {text: `${nameOf(w.item)} ${viaText(w.via)}`});
   }
-  return out.map(p => (p.lane ? `${p.lane} U${u(p.from)}${p.to !== p.from ? `-U${u(p.to)}` : ''}` : p.text)).join(' > ');
+  const ducts = p => (typeof through === 'function' ? through(p.lane, p.from, p.to) : []);
+  return out.map(p => (p.lane ? `${p.lane} U${u(p.from)}${p.to !== p.from ? `-U${u(p.to)}` : ''}${ducts(p).length ? `, through ${ducts(p).join(' and ')}` : ''}` : p.text)).join(' > ');
 }
+// THE DUCTS A LANE RUN GOES THROUGH, for routeText: the zero-U parts that
+// carry a lane, on this one, over any unit of the run, each as "<name> <its
+// duct>". `nameOf(id)` names a part.
+export const ductsThrough = (rack, chassisOf, nameOf = id => id) => (lane, from, to) => {
+  if (typeof chassisOf !== 'function') return [];
+  const run = [{lane, ru: from}, {lane, ru: to}];
+  return zeroUOf(rack).filter(z => carriesLane(chassisOf(z.ref)) && runsThrough(run, z, chassisOf))
+    .map(z => `${nameOf(z.id)} ${zeroUPathways(rack, z, {chassisOf}).find(p => p.kind === 'duct')?.via ?? 'duct'}`);
+};
 
 // ── geometry, in rack coordinates (mm) ────────────────────────────────────
 // x from the centre line, right as seen from the front; y up from the floor of
@@ -732,7 +865,11 @@ export function pointOf(rack, w, ctx) {
   const z = c.mount !== 'rack-face' ? panelZ(rack, it, g.face, ctx) + inward
     : g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
   // the guide where it is as mounted: turned with the item by its roll
-  return {...rollPoint(rack, it, {x: g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
+  // A narrow rack-face part on a rail stands over its hole line, as solids.js
+  // itemPlacer places its body: its guide's x is from the part's centre, and a
+  // part on the right rail is turned end over end there, so its x is mirrored.
+  const turned = railOf(it, ctx.chassisOf) === 'right' ? -1 : 1;
+  return {...rollPoint(rack, it, {x: centreX(it, ctx.chassisOf) + turned * g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
 }
 
 export function portPoint(rack, end, ctx) {
@@ -1073,6 +1210,9 @@ export const stockLength = (need, {values = 0} = {}) => chooseStock(() => need, 
 //   `turns: [{point, at, angle_deg}, {point, at, angle_deg}]`; its `at` is
 //   the middle of that leg, `point` the first turn's, `angle_deg` the wider
 //   of the two, and `legs_mm` the leg into the first and out of the second.
+//   A corner of one turn that is at a stop of the route (a ring, a lane
+//   point) also has `stop`, that waypoint (P-0018), which the sentence names
+//   before the two stops either side; a corner in a lead or a detour has none.
 //   The path is laid to leave none (the approach points, lead points and
 //   detours below, and no hang that would make one), so what is here is a
 //   bend the kit's rules found no room for: often the parts leave none, but
@@ -1464,6 +1604,7 @@ function turnPath(path) {
     crossings: rev(path.crossings).map(c => ({...c, between: between(c.between)})),
     detours: rev(path.detours).map(d => ({between: between(d.between), points: rev(d.points)})),
     bends: rev(path.bends).map(f => ({...f, between: between(f.between), legs_mm: rev(f.legs_mm),
+      ...(f.stop ? {stop: between([f.stop, f.stop])[0]} : {}),
       ...(f.turns ? {turns: rev(f.turns), point: f.turns.at(-1).point} : {})})),
     covers: path.covers.map(c => ({...c, between: between(c.between)})),
     rests: path.rests};
@@ -2026,6 +2167,8 @@ function layFrom(inp, world) {
     at: d ? [0, 1, 2].map(i => r1((spot(c.k)[i] + spot(d.k)[i]) / 2)) : spot(c.k),
     angle_deg: d ? Math.max(c.angle_deg, d.angle_deg) : c.angle_deg, legs_mm: d ? [c.legs_mm[0], d.legs_mm[1]] : c.legs_mm,
     room_mm: c.room_mm, need_mm: need, short_mm: r1(need - c.room_mm),
+    // the stop the corner is at (P-0018): the leg into the corner ends at the stop the leg out of it starts from
+    ...(!d && legs[c.k] && JSON.stringify(legs[c.k - 1][1]) === JSON.stringify(legs[c.k][0]) ? {stop: legs[c.k - 1][1]} : {}),
     ...(d ? {apart_mm: c.legs_mm[1], turns: [c, d].map(x => ({point: final[x.k].at, at: spot(x.k), angle_deg: x.angle_deg}))} : {})}));
   return {path: {points: final, rings, findings, marks, crossings, detours, rests, bends, covers: [], allowance: endAllowance({media: inp.media}), media: inp.media},
     legs, need, r, novel: usedNovel};
@@ -2322,8 +2465,13 @@ export function spareOf(rack, cable, ctx, path = undefined) {
 // with a sentence for each: what the page and an agent report. A cable whose
 // port is not found is not judged.
 export function ringFindings(rack, ctx, nameOf = id => id) {
-  return (rack.cables || []).flatMap(c => (pathOf(rack, c, ctx)?.findings || []).map(f => ({...f,
-    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`})));
+  return (rack.cables || []).flatMap(c => ringFindingsOf(rack, c, ctx, nameOf));
+}
+// The same for one cable (P-0018): what `inspect` carries. `path` is the
+// cable's routePath, for a caller that already has it.
+export function ringFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(rack, c, ctx)) {
+  return (path?.findings || []).map(f => ({...f,
+    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`}));
 }
 
 // EVERY CORNER OF A CABLE'S PATH WITH LESS ROOM THAN ITS BEND RADIUS (#973,
@@ -2344,7 +2492,12 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
   // each finding a copy, so that none handed out is part of the path kept
   return copyOf(path?.bends || []).map(f => {
     const [a, b] = f.between.map(w => lab(w, c));
-    const where = a === b ? `at ${a}` : `between ${a} and ${b}`;
+    // THE STOP WHERE THE CABLE TURNS (P-0018), when the corner is at one: "at
+    // ring 5, between ring 4 and its port". A corner in a lead or a detour is
+    // no stop's, and is named by the two stops either side, as before.
+    const turn = f.stop && !f.stop.end ? lab(f.stop, c) : null;
+    const named = turn != null && turn !== a && turn !== b;
+    const where = named ? `at ${turn}, between ${a} and ${b}` : a === b ? `at ${a}` : `between ${a} and ${b}`;
     const kind = c.type || c.media;
     const needs = `${kind ? `the cable (${kind})` : 'the cable'} needs ${f.need_mm} mm`;
     // A LEAD LEFT IN A RING IT HAS NO ROOM TO TURN INTO (#1026): no ring on
@@ -2363,7 +2516,7 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
     return {...f, ...(close ? {tooClose: {manager: close.manager, device: close.device}, advice: help} : {}),
       text: `${f.room_mm === 0 ? `${c.id} doubles back ${where}, with no room for a bend; ${needs}.`
         : f.turns ? `${c.id} turns twice within ${f.apart_mm} mm ${where} (${f.turns.map(t => t.angle_deg).join(' and ')} degrees), with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`
-        : `${c.id} turns ${f.angle_deg} degrees ${where} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
+        : `${c.id} turns ${f.angle_deg} degrees ${where}${named ? ',' : ''} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
   });
 }
 // THE MANAGER A TIGHT LEAD IS TOO CLOSE TO (#1026). A finding between a port
@@ -2571,6 +2724,27 @@ function zeroUThrough(rack, ctx) {
 // kind, the stated `capacity`, its `media` (null where the kit knows no kind) and
 // `diameter`, the least diameter counted, in mm. As in fill, a ring a cable
 // only doubles back from does not carry it.
+// THE BASIS A STATED CAPACITY IS COMPARED ON, as capacityOver reads it:
+// null where there is nothing to compare (no count, or `media: null`), else
+// {count, media (null where the kit knows no such kind), diameter, counts(cable)},
+// `counts` true for a cable at least that thick.
+export function capacityBasis(cap) {
+  if (!(cap?.count > 0) || cap.media === null) return null;
+  const known = ownMedia(DIAMETERS, cap.media) > 0, diameter = known ? DIAMETERS[cap.media] : UNSET_D;
+  return {count: cap.count, media: known ? cap.media : null, diameter,
+          counts: c => (ownMedia(DIAMETERS, c?.media) ?? UNSET_D) >= diameter};
+}
+// THE CABLES A PART CARRIES, as capacityOver counts them: for a rack item,
+// those whose route names one of its pathways (a ring a cable only doubles
+// back from does not carry it); for a zero-U part that carries a lane, those
+// whose lane runs through it.
+export function cablesThrough(rack, id, ctx) {
+  if (!itemOf(rack, id)) return zeroUThrough(rack, ctx).find(x => x.z.id === id)?.cables ?? [];
+  return (rack.cables || []).filter(c => {
+    const notThrough = new Set((pathOf(rack, c, ctx)?.findings || []).map(f => `${f.item}|${f.via}`));
+    return routeOf(rack, c, ctx).waypoints.some(w => w.item === id && !notThrough.has(`${w.item}|${w.via}`));
+  });
+}
 export function capacityOver(rack, ctx) {
   const by = new Map();
   for (const c of rack.cables || []) {
@@ -2579,10 +2753,10 @@ export function capacityOver(rack, ctx) {
       if (w.item && !notThrough.has(`${w.item}|${w.via}`)) (by.get(w.item) || by.set(w.item, new Map()).get(w.item)).set(c.id, c);
   }
   const over = (cap, cables) => {
-    if (!(cap?.count > 0) || cap.media === null) return null;
-    const known = ownMedia(DIAMETERS, cap.media) > 0, diameter = known ? DIAMETERS[cap.media] : UNSET_D;
-    const count = cables.filter(c => (ownMedia(DIAMETERS, c.media) ?? UNSET_D) >= diameter).length;
-    return count > cap.count ? {count, through: cables.length, capacity: cap.count, media: known ? cap.media : null, diameter} : null;
+    const b = capacityBasis(cap);
+    if (!b) return null;
+    const count = cables.filter(b.counts).length;
+    return count > b.count ? {count, through: cables.length, capacity: b.count, media: b.media, diameter: b.diameter} : null;
   };
   const out = [];
   for (const [item, cables] of by) {

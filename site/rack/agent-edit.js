@@ -3,7 +3,7 @@
 // a batch needs, selectors expanded into plain commands, and the answer built
 // in the round-1 order. Pure apart from the readers it is handed.
 
-import {LIMIT} from './agent-text.js';
+import {LIMIT, clip, findingLines} from './agent-text.js';
 
 // Every device the rack holds and every device the batch places: the kit checks
 // a batch against their parts lists, which the page loads for the call.
@@ -74,6 +74,24 @@ export async function expandSelectors(rack, commands, select) {
 export function reached(x) {
   const ops = [...new Set(x.selected.map(s => s.op))];
   return ops.map(op => ({op, ids: [...new Set(x.commands.filter(c => c?.op === op).map(c => c.id))]}));
+}
+
+// WHAT AN EDIT TOUCHED (kit 0.35.0, #1067: apply returns no findings of a lay). The cables a batch created or
+// names, by id or in a `cables` list, that the rack has after it: inspect reads those, from the routes after the
+// edit. A cable only moved by another part (a manager placed in its way) is not here; inspect finds it.
+export function touchedCables(rack, commands, res) {
+  const have = new Set((rack.cables ?? []).map(c => c.id));
+  const ids = [...(res?.created?.ids ?? []), ...commands.flatMap(c => [c?.id, ...(Array.isArray(c?.cables) ? c.cables : [])])];
+  return [...new Set(ids.filter(id => typeof id === 'string' && have.has(id)))];
+}
+
+// THE NOTES FOR THEM: each finding of `[{id, o}]` (o is inspect's answer for the cable) as one `Note:` led by the
+// cable, in the kit's own sentence. At most 12 are said; the rest are counted.
+const MAX_FINDINGS = 12;
+export function findingNotes(read) {
+  const all = read.flatMap(({id, o}) => findingLines(o ?? {}).map(l => `Note: ${id}: ${clip(l, 310 - id.length)}`));
+  return all.length <= MAX_FINDINGS ? all
+    : [...all.slice(0, MAX_FINDINGS), `Note: ${all.length - MAX_FINDINGS} more findings on other cables; inspect names them.`];
 }
 
 // THE ANSWER, in the round-1 order: names bound, ids created, ids a selector

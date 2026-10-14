@@ -5748,6 +5748,28 @@ def check_rack_cable_routes(page, base):
     page.click("#routeReset")
     if page.evaluate("() => window.__rack.doc().racks[0].cables.some(c => 'routeEdited' in c)"):
         bad.append("reset: a cable still has a routeEdited key")
+    # CANCEL TAKES BACK THE EDIT (S-0042): the reset above and one more pick were made since
+    # this form opened; Cancel puts the route back as the form found it, and adds no Undo step.
+    page.click("#routeAdd")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-pick-lane]')", timeout=READY_MS)
+    page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="30"]')
+    page.keyboard.press("Escape")
+    mid = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').routeEdited === true")
+    steps = page.evaluate("() => window.__rack.history().undoSummary")
+    if not mid:
+        bad.append("cancel: the pick did not edit the route")
+    page.click("#cCancel")
+    back = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
+    if back["route"] != stored or not back["edited"]:
+        bad.append(f"cancel: the route is {back}, not the one the form opened with ({stored})")
+    if page.evaluate("() => window.__rack.history().undoSummary") == steps:
+        bad.append(f"cancel: the last Undo step is still {steps!r}: the pick was not taken back")
+    if not page.evaluate("() => window.__rack.history().canRedo"):
+        bad.append("cancel: Redo is empty: the edits were not undone as steps")
+    # (the 3D part below reads the automatic route)
+    page.click("#cableEdit")
+    page.click("#routeReset")
+    page.click("#cSave")
     # 3D: a lone cable's tube passes through its ring's opening and up its lane, outside the switch.
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
@@ -9961,7 +9983,9 @@ def check_rack_fs_manager_guides(page, base):
         const want = [];
         for (const key of ['guides', 'passes'])
           for (const [view, ids] of Object.entries(cat[ref][key] || {}))
-            if (view !== 'top') for (const id of ids) want.push(`${view}|${id}`);
+            // the route context reads the front and rear faces, as the kit reads guides; the side views' passes
+            // (the CMH-4DRB1U's end holes, exported since Portrayal #1066) are pathways the kit lists, not guides it draws
+            if (!['top', 'left', 'right'].includes(view)) for (const id of ids) want.push(`${view}|${id}`);
         out.managers[ref] = {complete: rf.complete, want: want.sort(),
           got: rf.ctx.guidesOf('i1').map(g => ({key: `${g.face}|${g.via}`, kind: g.kind, aperture: g.aperture}))};
       }
@@ -10058,6 +10082,227 @@ def check_rack_pass_through_rear(page, base):
     if rear and rear["u30"] is not None and rear["u34"] is not None:
         if rear["top"] > rear["u34"] + 60 or rear["bottom"] < rear["u30"] - 20:
             bad.append(f"Rear view: the cable is not drawn from U30 up to the lane at U34 ({rear})")
+    return bad
+
+
+# SPARE IN A FINGER DUCT AND A VERTICAL MANAGER IN A ROUTE (kit 0.35.0,
+# Portrayal #1065; site/rack/spare-loops.js). Two switches at U30 and U26, a
+# CMH-BS-SFDS1U at U28, a CMH-6DR1U ring manager at U24, a CMV-SFD42U9W
+# beside the right front upright from U1, and two cords between the switches:
+# c1 through the horizontal duct, c2 down the right front lane, which runs
+# through the vertical's duct. The agent's edit_rack stores and is refused.
+SPARE_DUCTS_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Spare in ducts'}), {heightRU: 45});
+  const optic = {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2'};
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 30, label: 'leaf-1', swaps: optic}));
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 26, label: 'leaf-2', swaps: optic}));
+  ({rack: r} = M.withItem(r, {ref: 'cmh-bs-sfds1u', cfg: cat['cmh-bs-sfds1u'].default, ru: 28, label: 'hm-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'cmh-6dr1u', cfg: cat['cmh-6dr1u'].default, ru: 24, label: 'rings-1'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i2', path: 'port-1', view: 'front'}, media: 'os2'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-2', view: 'front'}, b: {item: 'i2', path: 'port-2', view: 'front'}, media: 'os2'}));
+  return r;
+}"""
+
+
+def open_spare_ducts(page, base):
+    """The spare-ducts rack, open in Front / Rear, with the agent's tools and the vertical placed; [] or what failed."""
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(SPARE_DUCTS_RACK_JS))
+    wait_fn(page, "spare ducts: agent tools registered", "() => window.__tools && window.__tools.edit_rack && window.__tools.inspect")
+    res = agent_call(page, "edit_rack", {"commands": [
+        {"op": "zerou.place", "ref": "cmv-sfd42u9w", "at": "right-front", "ru": 1, "label": "VCM"},
+        {"op": "cable.route", "id": "c1", "route": [{"item": "i3", "via": "duct"}]},
+        {"op": "cable.route", "id": "c2", "route": [{"lane": "right-front", "ru": 30}, {"lane": "right-front", "ru": 26}]}]})
+    if res.get("isError"):
+        return [f"setup: {res['content'][0]['text']}"]
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length === 2", timeout=READY_MS)
+    return []
+
+
+# A loop on a pane, as plain data: its cable, its centre in the pane's user space and its box.
+SPARE_LOOPS_JS = """sel => [...document.querySelectorAll(`${sel} [data-spare-loops] [data-spare-loop]`)].map(g => {
+  const s = g.ownerSVGElement, m = s.getScreenCTM().inverse().multiply(g.getScreenCTM()), b = g.getBBox();
+  const c = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2).matrixTransform(m);
+  return {loop: g.dataset.spareLoop, members: g.dataset.members, run: g.dataset.spareRun, x: c.x, y: c.y, w: b.width, h: b.height,
+          title: g.querySelector('title')?.textContent ?? ''};
+})"""
+# A part's box on a pane, in its user space.
+PART_BOX_JS = """([pane, sel]) => { const s = document.querySelector(`#pane${pane} svg`), e = s && s.querySelector(sel);
+  if (!e) return null;
+  const m = s.getScreenCTM().inverse().multiply(e.getScreenCTM()), b = e.getBBox();
+  const p = new DOMPoint(b.x, b.y).matrixTransform(m), q = new DOMPoint(b.x + b.width, b.y + b.height).matrixTransform(m);
+  return {x0: Math.min(p.x, q.x), x1: Math.max(p.x, q.x), y0: Math.min(p.y, q.y), y1: Math.max(p.y, q.y)}; }"""
+
+
+@extra("rack.html: an agent stores a cord's spare in a horizontal manager's finger duct its route uses; the loop is drawn in the duct in Front, in Left / Right and in 3D, the agent's text says it, and spare in a ring is refused with where it can go (kit 0.35.0, Portrayal #1065)")
+def check_rack_spare_duct_loop(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    # A ring holds no spare: refused, with where the spare can go.
+    ring = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c1", "at": {"item": "i4", "via": "guide-1"}}]})
+    said = ring["content"][0]["text"]
+    if not ring.get("isError") or "holds no spare" not in said or "can go in" not in said or "hm-1 duct" not in said:
+        bad.append(f"a ring: spare in rings-1 guide-1 is not refused with where the spare can go: {said!r}")
+    ok = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c1", "at": {"item": "i3", "via": "duct"}}]})
+    if ok.get("isError"):
+        return bad + [f"the duct: storing c1's spare in hm-1 duct was refused: {ok['content'][0]['text']}"]
+    page.wait_for_function("() => (window.__rack.spareLoops() || []).length === 1", timeout=READY_MS)
+    loop = page.evaluate("() => window.__rack.spareLoops()[0]")
+    if (loop["cable"], loop["item"], loop["via"], loop["kind"], loop["run"]) != ("c1", "i3", "duct", "duct", "x"):
+        bad.append(f"the loop: not c1's in i3 duct, a duct running across the rack: {loop}")
+    # Front: one loop, inside the manager's drawing.
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-spare-loops] [data-spare-loop]').length === 1", timeout=READY_MS)
+    front = page.evaluate(SPARE_LOOPS_JS, "#paneFront svg")
+    mgr = page.evaluate(PART_BOX_JS, ["Front", '[data-item-id="i3"][data-panel]'])
+    f = front[0]
+    if not mgr or not (mgr["x0"] <= f["x"] <= mgr["x1"] and mgr["y0"] - 2 <= f["y"] <= mgr["y1"] + 2):
+        bad.append(f"Front: the loop at ({f['x']:.1f}, {f['y']:.1f}) is not in hm-1's drawing {mgr}")
+    if not (f["w"] > f["h"]):
+        bad.append(f"Front: the loop does not lie along the duct across the rack ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # THE LOOP GROWS WITH ITS SPARE (S-0042): long radius 22 mm x clamp(0.5 + 0.5 m, 0.6, 1.5); the box is two turns 5 mm apart.
+    scale = min(1.5, max(0.6, 0.5 + 0.5 * loop["metres"]))
+    if abs(f["w"] - (2 * 22 * scale + 5)) > 1.5:
+        bad.append(f"Front: a loop of {loop['metres']:.2f} m is {f['w']:.1f} wide, not {2 * 22 * scale + 5:.1f}")
+    if "c1:" not in f["title"] or "hm-1 duct" not in f["title"]:
+        bad.append(f"Front: the loop's title does not name the cable and the duct: {f['title']!r}")
+    if page.evaluate(SPARE_LOOPS_JS, "#paneRear svg"):
+        bad.append("Rear: a loop in a front duct is drawn on the rear pane")
+    # The agent's text.
+    txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
+    for want in ("as a loop in i3 duct (a duct holding", "the stored loop is drawn", "Spare can go in: i3 duct"):
+        if want not in txt:
+            bad.append(f"inspect c1: no {want!r} in {txt!r}")
+    if "listed, not drawn" in txt:
+        bad.append(f"inspect c1: still says the spare is listed, not drawn: {txt!r}")
+    item = agent_call(page, "inspect", {"id": "i3"})["content"][0]["text"]
+    if "Pathways: duct duct (holds spare)" not in item:
+        bad.append(f"inspect i3: its pathways are not said with which hold spare: {item!r}")
+    # Left / Right: a loop on each side pane, at the duct's height.
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-spare-loops] [data-spare-loop]').length === 1)", timeout=READY_MS)
+    for side in ("left", "right"):
+        got = page.evaluate(SPARE_LOOPS_JS, f'#panes svg[data-side][data-pane="{side}"]')
+        if len(got) != 1 or got[0]["members"] != "c1":
+            bad.append(f"{side.title()}: not one loop of c1: {got}")
+    # 3D: one loop, named for its place, with its cable.
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "spare duct 3D", tubes=True)
+    s3 = page.evaluate("""() => { const s = window.__rack.scene(), L = s?.rackCables?.loops;
+      return L ? L.loops.map(g => ({name: g.name, members: g.userData.members, spare: g.userData.spare, meshes: g.children.length})) : null; }""")
+    if not s3 or len(s3) != 1 or s3[0]["members"] != ["c1"] or s3[0]["meshes"] != 2:
+        bad.append(f"3D: not one loop of c1, of two turns: {s3}")
+    return bad
+
+
+@extra("rack.html: an agent stores a cord's spare in the duct of a vertical manager beside the rack that its lane runs through; the loop is drawn up the duct beside the rack in Front, in Left / Right and in 3D, with the finding that the part states no capacity (kit 0.35.0, Portrayal #1065)")
+def check_rack_spare_vertical_loop(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    ok = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c2", "at": {"item": "z1", "via": "duct"}}]})
+    if ok.get("isError"):
+        return bad + [f"the vertical: storing c2's spare in VCM duct was refused: {ok['content'][0]['text']}"]
+    page.wait_for_function("() => (window.__rack.spareLoops() || []).length === 1", timeout=READY_MS)
+    loop = page.evaluate("() => window.__rack.spareLoops()[0]")
+    if (loop["cable"], loop["item"], loop["run"]) != ("c2", "z1", "y"):
+        bad.append(f"the loop: not c2's in z1, running up the rack: {loop}")
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-spare-loops] [data-spare-loop]').length === 1", timeout=READY_MS)
+    f = page.evaluate(SPARE_LOOPS_JS, "#paneFront svg")[0]
+    part = page.evaluate(PART_BOX_JS, ["Front", '[data-zerou-id="z1"]'])
+    u28 = page.evaluate("""() => { const r = document.querySelector('#paneFront svg [data-u="28"]'); const q = r && r.getBBox(); return q && q.y + q.height / 2; }""")
+    if not part or not (part["x0"] <= f["x"] <= part["x1"]):
+        bad.append(f"Front: the loop at x {f['x']:.1f} is not beside the rack in the vertical's drawing {part}")
+    if u28 is not None and abs(f["y"] - u28) > 23:
+        bad.append(f"Front: the loop at y {f['y']:.1f} is not at U28, the middle of c2's run from U30 to U26 ({u28:.1f})")
+    if not (f["h"] > f["w"]):
+        bad.append(f"Front: the loop does not lie up the duct ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # The loop goes with its cable: another cable selected, it dims; its own, it stays lit.
+    loop_opacity = "() => Number(getComputedStyle(document.querySelector('#paneFront svg [data-spare-loop]')).opacity)"
+    page.click('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(400)
+    other = page.evaluate(loop_opacity)
+    page.click('#cableList [data-cable-row="c2"]')
+    page.wait_for_timeout(400)
+    own = page.evaluate(loop_opacity)
+    if not (other < 0.5 and own == 1):
+        bad.append(f"Front: the loop does not go with its cable when one is selected (another selected {other}, its own {own})")
+    page.keyboard.press("Escape")
+    txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
+    for want in ("as a loop in z1 duct (a duct whose maker states no cable capacity)", "Spare, capacity not stated:"):
+        if want not in txt:
+            bad.append(f"inspect c2: no {want!r} in {txt!r}")
+    z = agent_call(page, "inspect", {"id": "z1"})["content"][0]["text"]
+    if "Pathways: duct duct (holds spare); pass-through pass-through-1" not in z:
+        bad.append(f"inspect z1: its duct and windows are not said with which hold spare: {z!r}")
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-spare-loops] [data-spare-loop]').length === 1)", timeout=READY_MS)
+    for side in ("left", "right"):
+        got = page.evaluate(SPARE_LOOPS_JS, f'#panes svg[data-side][data-pane="{side}"]')
+        if len(got) != 1 or not (got[0]["h"] > got[0]["w"]):
+            bad.append(f"{side.title()}: not one loop of c2 standing up the duct: {got}")
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "spare vertical 3D", tubes=True)
+    s3 = page.evaluate("""() => { const L = window.__rack.scene()?.rackCables?.loops;
+      return L ? L.loops.map(g => ({members: g.userData.members, run: g.userData.spare.run})) : null; }""")
+    if s3 != [{"members": ["c2"], "run": "y"}]:
+        bad.append(f"3D: not one loop of c2 up the duct: {s3}")
+    return bad
+
+
+@extra("rack.html: the route editor offers a vertical manager's duct and windows as pick targets; a cord routed through its duct is stored as {item, via: duct}, drawn down the lane through it, and its row says so (kit 0.35.0, Portrayal #1065)")
+def check_rack_route_vertical_duct(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableEdit")
+    page.click("#routeAdd")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-pick-item=\"z1\"][data-pick-via=\"duct\"]')", timeout=READY_MS)
+    picks = page.evaluate("() => [...document.querySelectorAll('#paneFront svg [data-pick-item=\"z1\"]')].map(r => r.dataset.pickVia)")
+    if picks[:1] != ["duct"] or sorted(picks[1:]) != [f"pass-through-{k}" for k in range(1, 7)]:
+        bad.append(f"pick: the vertical does not offer its duct and six windows: {picks}")
+    # A point of the duct's target a visitor can click: not under a lane's or a window's.
+    at = page.evaluate("""() => {
+      const r = document.querySelector('#paneFront svg [data-pick-item="z1"][data-pick-via="duct"]'), b = r.getBoundingClientRect();
+      for (let fy = 0.45; fy < 0.6; fy += 0.01) for (let fx = 0.95; fx > 0.05; fx -= 0.05) {
+        const x = b.left + b.width * fx, y = b.top + b.height * fy;
+        if (document.elementFromPoint(x, y) === r) return {x, y};
+      }
+      return null; }""")
+    if not at:
+        return bad + ["pick: the vertical's duct target is covered everywhere"]
+    page.mouse.click(at["x"], at["y"])
+    page.keyboard.press("Escape")
+    stored = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').route")
+    if {"item": "z1", "via": "duct"} not in stored:
+        return bad + [f"pick: the route does not name z1 duct: {stored}"]
+    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c1')?.[1].some(w => w.lane === 'right-front')", timeout=READY_MS)
+    rows = page.evaluate("() => [...document.querySelectorAll('[id^=\"routeRow-\"]')].map(r => r.textContent)")
+    if not any("VCM duct" in t for t in rows):
+        bad.append(f"rows: no row names VCM duct: {rows}")
+    drawn = page.evaluate("""() => { const s = document.querySelector('#paneFront svg'), g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      return g ? [...g.querySelectorAll('path')].reduce((a, p) => a + (p.dataset.leader ? 0 : p.getTotalLength()), 0) : 0; }""")
+    if not drawn > 20:
+        bad.append(f"Front: c1 through the vertical's duct is not drawn ({drawn})")
+    txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
+    if "VCM duct" not in txt:
+        bad.append(f"inspect c1: the route does not say it runs through VCM duct: {txt!r}")
     return bad
 
 

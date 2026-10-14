@@ -99,8 +99,23 @@ export function itemHead(o, {configs = 8} = {}) {
       `config ${c.name}${c.name === o.cfg ? ' (in use)' : ''}${c.airflow ? `, ${c.airflow}` : ''}: ${clip(c.description ?? '', 70)}`));
     if (cs.length > configs) out.push(`and ${cs.length - configs} more configs.`);
   }
+  const ways = pathwaysLine(o.pathways);
+  if (ways) out.push(ways);
   if (o.slots === 'not loaded') out.push(NOT_LOADED);
   return out;
+}
+
+// A PART'S PATHWAYS (kit 0.35.0, Portrayal #1065: inspect's `pathways` of an
+// item or a part beside the rack, [{via, kind, holds_spare}]), by kind, each
+// kind saying whether it holds spare; null for none.
+const KIND_ORDER = ['duct', 'tray', 'ring', 'pass', null];
+const KIND_NAME = {duct: 'duct', tray: 'tray', ring: 'ring', pass: 'pass-through', null: 'of no known kind'};
+export function pathwaysLine(ways) {
+  if (!Array.isArray(ways) || !ways.length) return null;
+  const groups = KIND_ORDER.map(k => ways.filter(w => (w.kind ?? null) === k))
+    .concat([ways.filter(w => !KIND_ORDER.includes(w.kind ?? null))]).filter(g => g.length);
+  return `Pathways: ${groups.map(g => `${KIND_NAME[g[0].kind ?? null] ?? g[0].kind} ${cutList(g.map(w => w.via), 6)}`
+    + ` (${g.every(w => w.holds_spare) ? 'holds spare' : g.some(w => w.holds_spare) ? 'some hold spare' : 'holds no spare'})`).join('; ')}.`;
 }
 
 // Each section as lines. Fields are sorted by key first (a stable sort keeps
@@ -177,12 +192,39 @@ const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${
 // store and has no place (`said` false: nobody chose; true: a list was given).
 // The length carries `need`. Before 0.22.0 the kit's slack was another figure
 // (an entered length less the routed one), and both were said, each by name.
+// A LOOP IN A DUCT (kit 0.35.0, Portrayal #1065): `kind: 'duct'` and the
+// kit's `load`, how full the duct is with the spare in it against the count
+// its maker states (slack.js spareLoad); never a capacity the data lacks.
+const loadWords = l => (!l ? '' : !l.stated ? ' (a duct whose maker states no cable capacity)'
+  : !l.compared ? ' (a duct whose stated capacity names no kind of cable)'
+  : ` (a duct holding ${l.count} ${l.media ? `${l.media} ` : ''}cables' worth of the ${l.capacity} its maker states${l.over ? ', past it' : ''})`);
 const storedWords = s => [
   `${len(s.at_ends_m)} at the two ends`,
   ...(s.stored ?? []).map(e => (e.end ? `${len(e.metres) ?? 'a length'} at end ${String(e.end).toUpperCase()}`
-    : `${len(e.metres) ?? 'a length'} as a ${e.form} in ${e.item} ${e.via}${e.ok === false ? ', where it cannot be stored' : ''}`)),
+    : `${len(e.metres) ?? 'a length'} as a ${e.form} in ${e.item} ${e.via}${e.ok === false ? ', where it cannot be stored' : e.kind === 'duct' ? loadWords(e.load) : ''}`)),
   ...(s.unplaced_m > 0 ? [`${len(s.unplaced_m)} ${s.said && !(s.stored ?? []).length ? 'left unplaced by choice' : 'not placed'}`] : []),
 ].join(', ');
+// The page draws a loop where the kit stores spare in a duct or on a tray
+// (spare-loops.js); spare at an end, or in a place it cannot be stored, is
+// listed only.
+const drawnLoop = s => (s.stored ?? []).some(e => e.item && e.ok !== false && e.metres > 0);
+// WHERE ITS SPARE CAN GO (kit 0.35.0: inspect's `spare_places`), as the kit's
+// refusals end: the ducts and trays on its route, or an end.
+const ENDS = 'at an end ({end: a} or {end: b})';
+const placesLine = ps => (ps.length ? `Spare can go in: ${cutList(ps.map(p => `${p.item} ${p.via}`), 8)}, or ${ENDS}.` : `Spare can go only ${ENDS}.`);
+// The kit's spare findings named by kind where the kind says more than the sentence.
+const FINDING_KIND = {'spare-capacity-unstated': 'capacity not stated', 'spare-over-capacity': 'over capacity'};
+// A bend is the kit's sentence and its advice, said whole (a pair of turns on one short leg is one sentence of up
+// to 182 characters with the kit's own names, and longer with a long label).
+const bendLines = c => (c.route?.bends ?? []).filter(x => x.text).map(x => `Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
+// A cable that enters and leaves a ring by one face (kit 0.35.0, #1067: inspect's route.ring_findings,
+// `{item, via, text}`), one whole sentence each.
+const ringLines = c => (c.route?.ring_findings ?? []).filter(x => x.text).map(x => `Ring: ${clip(x.text, 300)}`);
+// What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
+// (0.35.0: spare-capacity-unstated and spare-over-capacity, a duct's load, named by kind)
+const spareLines = c => (c.spare_findings ?? []).map(f => `Spare${FINDING_KIND[f.kind] ? `, ${FINDING_KIND[f.kind]}` : ''}: ${clip(f.text, 200)}`);
+/** What the kit finds of one cable's lay, as inspect says it: bends, ring findings and spare findings. */
+export const findingLines = c => [...bendLines(c), ...ringLines(c), ...spareLines(c)];
 export function cableText(c, {spare = null, needs = null} = {}) {
   const stock = len(c.routed?.stock);
   const lines = [
@@ -193,7 +235,8 @@ export function cableText(c, {spare = null, needs = null} = {}) {
       // One spare: the row's words when the page can say them (no loose end),
       // else the kit's figure; then where the kit says it is.
       (spare ? `; ${spare}${needs ? `; ${needs}` : ''}` : c.slack ? `; spare ${len(c.slack.metres)}` : '') +
-      (c.slack && c.slack.metres >= 0 ? ` (${storedWords(c.slack)}; spare is listed, not drawn)` : spare || c.slack ? ' (the drawing shows the path only)' : ''),
+      (c.slack && c.slack.metres >= 0 ? ` (${storedWords(c.slack)}; ${drawnLoop(c.slack) ? 'the stored loop is drawn' : 'spare is listed, not drawn'})`
+        : spare || c.slack ? ' (the drawing shows the path only)' : ''),
     ...(c.length?.need != null || c.routed ? [FIGURES_HELP] : []),
     `route: ${c.route?.edited ? 'drawn by hand' : 'its own'}${c.route?.text ? `: ${clip(c.route.text, 300)}` : ''}`,
   ];
@@ -226,10 +269,10 @@ export function cableText(c, {spare = null, needs = null} = {}) {
   // than the cable's bend radius, and the ports a span of it runs in front of.
   // (a pair of turns on one short leg is one sentence of up to 182 characters with the kit's own names, and
   // longer with a long label: the kit's sentence is said whole, and its advice, where it gives one, after it)
-  for (const x of c.route?.bends ?? []) if (x.text) lines.push(`Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
+  lines.push(...bendLines(c), ...ringLines(c));
   if (c.route?.covers?.text) lines.push(`In front of other ports: ${clip(c.route.covers.text, 300)}`);
-  // What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
-  for (const f of c.spare_findings ?? []) lines.push(`Spare: ${clip(f.text, 200)}`);
+  lines.push(...spareLines(c));
+  if (Array.isArray(c.spare_places)) lines.push(placesLine(c.spare_places));
   // How it was pinned by hand in a pathway, as the file has it (cable.lay).
   if (c.lay?.length) lines.push(`Laid by hand: ${cutList(c.lay.map(e => `${e.item} ${e.via}${e.face ? `, ${e.face} face` : ''}${e.position != null ? `, position ${e.position}` : ''}`), 6)}.`);
   if (c.unchecked || c.loose == null) lines.push('Its ends could not be checked, so whether they land is not known.');
@@ -247,6 +290,8 @@ export function zeroUText(z) {
     `${z.id}${z.label ? ` ${clip(z.label, 60)}` : ''}: ${what} (${z.ref}), cfg ${z.cfg || 'none'}`,
     `zero-U, ${z.where ?? `at ${z.at}, bottom U${z.ru}`}${z.u ? `, runs beside ${z.u}U` : ''}${z.between ? ', serving the next rack too' : ''}.`,
     z.lane ? `The ${z.lane} cable lane runs through it.` : 'No cable lane runs through it.',
+    // its duct and windows, which a route and cable.slack may name (kit 0.35.0)
+    ...(pathwaysLine(z.pathways) ? [pathwaysLine(z.pathways), `A route names them as {item: ${z.id}, via}.`] : []),
     'Move it with zerou.update, take it away with zerou.remove.',
   ].join('\n'));
 }

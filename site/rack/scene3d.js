@@ -21,6 +21,7 @@ import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
 import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
+import {LOOP_PAINT, LOOP_LONG, LOOP_SHORT, loopScale, loopTitle} from './spare-loops.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -532,7 +533,46 @@ function ringBends(scene, drawn, bends) {
 // `bends` are the kit's tight bends (route.js bendFindings, through
 // route-context.js): each is ringed where the kit puts it (ringBends), and
 // `bendRings` lists the rings drawn.
-async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null, bends = null, stage = null) {
+// A STORED LOOP OF SPARE (kit 0.35.0, Portrayal #1065; spare-loops.js): two
+// turns of a ring at the kit's point (slack.js spareMarks), long along the
+// duct it lies in and facing out of it: a duct across the rack or up it is
+// seen face on from the front, one in depth from the side. Named by its
+// place, with its cable, so it is lit and dimmed with it (hover.js).
+// {group, loops: [mesh]}, or null for none.
+function hangLoops(scene, rack, list) {
+  if (!list.length) return null;
+  const {THREE} = scene.three, toScene = inScene(THREE, scene.metrics().faceZ);
+  const group = new THREE.Group();
+  group.name = 'spare-loops';
+  const nameOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
+  const out = [];
+  for (const l of list) {
+    const mat = new THREE.MeshStandardMaterial({color: new THREE.Color(LOOP_PAINT.core), roughness: 0.6});
+    const g = new THREE.Group();
+    g.name = `spare-${l.cable}|${l.item}|${l.via}`;
+    g.userData.members = [l.cable];
+    const k = loopScale(l.metres);   // the longer the spare, the larger the loop (spare-loops.js)
+    for (const s of [-1, 1]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(LOOP_SHORT * k, 1.6, 8, 32), mat);
+      // long along its run: x for a duct across the rack, y up it, z in depth
+      // (a torus lies across its own z: turned a quarter about y, its own x runs in the rack's depth)
+      const along = l.run === 'y' ? 'y' : l.run === 'z' ? 'z' : 'x';
+      if (along === 'z') { ring.rotation.y = Math.PI / 2; ring.scale.x = LOOP_LONG / LOOP_SHORT; }
+      else ring.scale[along] = LOOP_LONG / LOOP_SHORT;
+      const p = toScene(l.at);
+      p[along] += s * 2.5;
+      ring.position.copy(p);
+      g.add(ring);
+    }
+    g.userData.spare = {cable: l.cable, item: l.item, via: l.via, metres: l.metres, run: l.run, text: loopTitle(l, nameOf)};
+    group.add(g);
+    out.push(g);
+  }
+  scene.three.scene.add(group);
+  return {group, loops: out};
+}
+
+async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = null, bundles = null, bendOf = null, ctx = null, bends = null, stage = null, spares = null) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   const {THREE} = scene.three, faceZ = scene.metrics().faceZ;
   try {
@@ -573,8 +613,12 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
+    // THE STORED LOOPS (kit 0.35.0; spare-loops.js), for a cable plugged in at both ends, as the panes draw them
+    let loops = null;
+    try { loops = hangLoops(scene, rack, (spares ?? []).filter(l => landedId(l.cable))); }
+    catch (err) { console.warn('[portrayal] the stored spare could not be drawn in 3D', err); }
     // (only for a cable plugged in at both ends, as on the panes: route-context.js landedBends)
-    return {...drawn, checked: !facts.unchecked, facts, bundles: hung,
+    return {...drawn, checked: !facts.unchecked, facts, bundles: hung, loops,
             bendRings: ringBends(scene, drawn, landedBends(bends, rack, e => loose.has(endKey(e))))};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
@@ -601,7 +645,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
-                                              ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214',
+                                              ctx = null, bundles = null, bendOf = null, bends = null, spares = null, stage = '#101214',
                                               covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
@@ -690,7 +734,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage) : null;
+    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
