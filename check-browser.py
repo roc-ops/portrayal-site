@@ -11538,6 +11538,48 @@ BEND_SAMPLE_JS = """async ([tol, step]) => {
 }"""
 
 
+# EACH CORNER AGAINST THE BODIES NEAR IT (S-0049, bend3d.js insideOf `near`):
+# every routed tube of the scene rounded again from its own polyline, once
+# against the whole list of solid bodies (a plain function, as clearCurve tested
+# it before) and once with `near`; the two must agree to the last digit. Also
+# how long each took, and how many corners met a body (so a scene where none
+# did is not taken for a comparison).
+BEND_NEAR_SAME_JS = """async () => {
+  const B = await import('/site/rack/bend3d.js');
+  const s = window.__rack.scene(), THREE = s.three.THREE, boxes = s.rackCables.boxes;
+  const all = B.insideOf(boxes), whole = q => all(q);
+  const read = c => JSON.stringify({len: c.getLength(), corners: c.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))});
+  const out = {tubes: 0, corners: 0, body: 0, differ: [], wholeMs: 0, nearMs: 0, boxes: boxes.length};
+  for (const t of s.rackCables.tubes) {
+    if (!t.bend?.radius_mm || !t.points?.length) continue;
+    out.tubes++;
+    let t0 = performance.now();
+    const a = B.clearCurve(THREE, t.points, t.bend.radius_mm, whole);
+    out.wholeMs += performance.now() - t0; t0 = performance.now();
+    const b = B.clearCurve(THREE, t.points, t.bend.radius_mm, B.insideOf(boxes));
+    out.nearMs += performance.now() - t0;
+    if (read(a) !== read(b)) out.differ.push(t.link.id);
+    // ...and both as the scene drew it
+    else if (read(b) !== JSON.stringify({len: t.bend.length_mm, corners: t.bend.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))})) out.differ.push(t.link.id + ' (as drawn)');
+    out.corners += a.corners.length;
+    out.body += a.corners.filter(k => k.why === 'body').length;
+  }
+  out.wholeMs = Math.round(out.wholeMs); out.nearMs = Math.round(out.nearMs);
+  return out;
+}"""
+
+
+def bend_near_same(page, label):
+    """BEND_NEAR_SAME_JS on the page's settled scene: problems, and the line it prints."""
+    got = page.evaluate(BEND_NEAR_SAME_JS)
+    bad = [f"{label}: a corner is drawn differently against the bodies near it than against all of them: {got['differ'][:8]}"] if got["differ"] else []
+    if not got["tubes"] or not got["corners"]:
+        bad.append(f"{label}: no rounded tube to compare ({got})")
+    print(f"[{label}] {got['tubes']} rounded tubes, {got['corners']} corners ({got['body']} kept out of a body) against {got['boxes']} bodies: "
+          f"the same against those near each corner, {got['nearMs']} ms against {got['wholeMs']} ms for all of them")
+    return bad
+
+
 @extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged in the scene where its legs cannot hold one")
 def check_rack_bend_radius_3d(page, base):
     bad = []
@@ -11587,6 +11629,8 @@ def check_rack_bend_radius_3d(page, base):
     for L in got["lengths"]:
         if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
+    # each corner kept out of the bodies near it answers as against all of them (S-0049)
+    bad += bend_near_same(page, "check_rack_bend_radius_3d")
     return bad
 
 @extra("rack.html: a routed cable in 2D keeps its bend radius - every corner of its line is an arc of the cable's own radius (OM4's 25 mm) or a smaller one the room allows, never a square corner (#185)")
@@ -13559,12 +13603,13 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None, polling=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
+    # (`polling` in ms, where the page's animation frames are not to be relied on)
     try:
-        page.wait_for_function(expr, arg=arg, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout, **({"polling": polling} if polling else {}))
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -17855,6 +17900,50 @@ def check_rack_cable_facts_fallback(page, base):
 CABLES_3D = "Cables are added in 2D. Switch to 2D to add one."
 
 
+# THE ENDS OF A LARGE RACK'S CABLES, READ WITHOUT A FREEZE (S-0049, cables.js
+# hangTubes): drawCables3d on a stub scene whose every end takes 4 ms to read
+# (a busy face's connectors), 150 cables, so 1.2 s of reading in all. A 1 ms
+# timer beats beside it; `worst` is the longest the page went without one.
+ANCHOR_YIELD_JS = """async ({slice, links}) => {
+  const THREE = await import('/vendor/three/three.module.js');
+  const {drawCables3d} = await import('/site/rack/cables.js');
+  const scene = {three: {THREE, scene: new THREE.Scene()}, metrics: () => ({rackWidth: 482.6}), deviceBoxes: () => []};
+  const plan = {links: Array.from({length: links}, (_, i) => ({id: `c${i}`, from: [`a${i}`, 'port-1', 'front'], to: [`b${i}`, 'port-1', 'front'],
+                                                              media: 'om4', purpose: 'data'}))};
+  let read = 0;
+  const anchor = async () => { read++; const t = performance.now(); while (performance.now() - t < 4) { /* a face's connectors, read */ } return []; };
+  await new Promise(r => setTimeout(r, 50));
+  let last = performance.now(), worst = 0;
+  const beat = setInterval(() => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; }, 1);
+  const t0 = performance.now();
+  const drawn = await drawCables3d(scene, plan, {anchor, boxes: [], slice});
+  const took = performance.now() - t0;
+  await new Promise(r => setTimeout(r, 20));
+  clearInterval(beat);
+  return {worst: Math.round(worst), took: Math.round(took), read, tubes: drawn.tubes.length};
+}"""
+
+
+@extra("rack.html: the 3D scene reads its cables' ends a slice at a time: with every end slow to read, the page gets a turn at least every slice (30 ms, the Rack Builder's) while 150 cables' ends are read, where without a slice it waits for all of them at once (S-0049)")
+def check_cables_3d_anchor_yield(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    sliced = page.evaluate(ANCHOR_YIELD_JS, {"slice": 30, "links": 150})
+    whole = page.evaluate(ANCHOR_YIELD_JS, {"slice": 0, "links": 150})
+    for got in (sliced, whole):
+        if got["read"] != 300 or got["tubes"] != 150:
+            bad.append(f"the stub: {got['read']} ends read and {got['tubes']} cables answered, expected 300 and 150 ({got})")
+    if sliced["worst"] > 200:
+        bad.append(f"with a 30 ms slice the page went {sliced['worst']} ms without a turn while the ends were read ({sliced['took']} ms in all)")
+    if whole["worst"] < 0.6 * whole["took"]:
+        bad.append(f"without a slice the page still had a turn every {whole['worst']} ms of {whole['took']}: the stub does not show what the slice is for")
+    print(f"[check_cables_3d_anchor_yield] 300 ends at 4 ms: the longest wait {sliced['worst']} ms with a 30 ms slice ({sliced['took']} ms in all), "
+          f"{whole['worst']} ms without ({whole['took']} ms)")
+    return bad
+
+
 @extra("rack.html: in 3D the cables are drawn and Cable mode is off with a sentence saying where cables are added; the list still selects, edits and deletes; an edit to a cable's ends or media rebuilds the scene, an edit to its label does not")
 def check_rack_cables_3d(page, base):
     bad = []
@@ -20569,6 +20658,297 @@ def check_rack_3d_filter_dims(page, base):
     return bad
 
 
+# EVERY FRAME THE SCENE DRAWS, AND WHAT IT SHOWED (S-0049, rack3d.js `onDemand`):
+# the renderer's render() wrapped to log, at each frame, a signature of what a
+# restyle changes (each cable's and bundle's meshes, shown or not and their
+# opacity, each cover's, the stage), so a check can say whether a frame was
+# drawn and whether the last one drawn shows the scene as it now is.
+FRAME_LOG_JS = """() => {
+  const s = window.__rack.scene(), r = s.three.renderer, w = s.three.scene;
+  const sig = () => { const out = [];
+    for (const n of ['patch-cables', 'cable-bundles', 'tie-straps']) for (const g of w.getObjectByName(n)?.children ?? [])
+      g.traverse(o => { if (o.isMesh) out.push(o.visible ? 1 : 0, ...[].concat(o.material).map(m => Math.round(m.opacity * 1000))); });
+    for (const m of s.coverMeshes ?? []) out.push(m.visible ? 1 : 0, ...[].concat(m.material).map(x => Math.round(x.opacity * 1000)));
+    out.push(w.background?.getHex?.() ?? 0);
+    return out.join(','); };
+  if (!r.__logged) { const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__drawn.push(sig()); }; r.__logged = true; }
+  window.__drawn = []; window.__sig = sig;
+  return sig();
+}"""
+FRAMES_NOW_JS = "() => ({n: window.__drawn.length, last: window.__drawn.at(-1) ?? null, now: window.__sig()})"
+# How many frames an untouched scene draws in a second, after the last frame
+# anything asked for: up to five tries, for a runner still drawing one.
+IDLE_FRAMES_JS = """async () => { const sleep = t => new Promise(r => setTimeout(r, t));
+  for (let k = 0; k < 5; k++) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return 0; }
+  return window.__drawn.length; }"""
+
+
+@extra("rack.html: the 3D scene draws a frame only when something asks for one: an untouched scene draws none, and a hover, a cable-purpose pick and a covers setting each draw one that shows the change, nothing late; dragging draws and stopping stops (S-0049)")
+def check_rack_3d_on_demand(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # (two purposes, so a pick dims some cables and not others)
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c1' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    page.wait_for_function("() => document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_on_demand] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the on-demand scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate(FRAME_LOG_JS)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"an untouched scene drew {idle} frames in a second; expected none")
+    def step(label, act, settle_ms=0):
+        before = page.evaluate(FRAMES_NOW_JS)
+        page.evaluate("() => { window.__drawn.length = 0; }")
+        act()
+        try:
+            wait_fn(page, f"{label}: a frame that shows it", "() => window.__drawn.length && window.__drawn.at(-1) === window.__sig()", timeout=READY_3D_MS)
+        except RuntimeError as e:
+            st = page.evaluate(FRAMES_NOW_JS)
+            bad.append(f"{label}: {st['n']} frames drawn, the last {'showing the scene as it is' if st['last'] == st['now'] else 'not showing the change'} ({e})")
+            return
+        if settle_ms:
+            page.wait_for_timeout(settle_ms)
+        st = page.evaluate(FRAMES_NOW_JS)
+        if st["last"] != st["now"]:
+            bad.append(f"{label}: the scene changed after its last frame, and no frame showed it")
+        if st["now"] == before["now"]:
+            bad.append(f"{label}: nothing in the scene changed, so this step showed nothing")
+    # a hover by the pointer, over the list (hover.js paintHover3d)
+    step("a hover on c1's row", lambda: page.hover('#cableList [data-cable-row="c1"]'), 400)
+    park_mouse(page)
+    # a pick and a setting by a script's click, which no pointer or key reaches: only the restyle can ask for the frame
+    step("a cable-purpose pick", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()"), 400)
+    step("the pick put down", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()"), 400)
+    if not page.evaluate("() => (window.__rack.scene().coverMeshes ?? []).length"):
+        bad.append("fixture: the scene has no cover to set")
+    else:
+        step("covers off", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"off\"]').click()"), 400)
+        step("covers see-through", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"see\"]').click()"), 400)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"after the steps, the untouched scene drew {idle} frames in a second; expected none")
+    # a drag draws frames, and once the camera is at rest the frames stop
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+    page.evaluate("() => { window.__drawn.length = 0; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(10):
+        page.mouse.move(box[0] + 12 * (k + 1), box[1])
+        page.wait_for_timeout(30)
+    page.mouse.up()
+    dragged = page.evaluate("() => window.__drawn.length")
+    if dragged < 2:
+        bad.append(f"a drag drew {dragged} frames; expected the camera's moves drawn")
+    park_mouse(page)
+    # (the camera eases to rest for a while after a drag, longer where frames are slow; then nothing more is drawn)
+    eased = page.evaluate("""async () => { const sleep = t => new Promise(r => setTimeout(r, t)), t0 = performance.now();
+      while (performance.now() - t0 < 20000) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return Math.round(performance.now() - t0); }
+      return null; }""")
+    if eased is None:
+        bad.append("after a drag the scene was still drawing frames 20 s later; expected them to stop once the camera is at rest")
+    print(f"[check_rack_3d_on_demand] untouched: none drawn; a drag drew {dragged}, and none a second after it eased to rest ({eased} ms)")
+    return bad
+
+
+# THE SCENE WHILE ITS CAMERA MOVES (S-0049, rack3d.js `lightWhileMoving`): the
+# draw calls of the last frame drawn, which layers the camera shows, how many
+# meshes are on the relief layer (1) and how many detailed faces are opaque, and
+# what hover.js hoverAt3d finds at the screen point of the middle of each cable.
+LIGHT_STATE_JS = """async () => {
+  const s = window.__rack.scene(), {camera, renderer, scene: w, THREE} = s.three;
+  const {hoverAt3d} = await import('/site/rack/hover.js');
+  let relief = 0, opaque = 0, faces = 0;
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    d.traverse(o => { if (o.isMesh && o.layers.mask === 2) relief++; });
+    // (a body's detailed faces: every slot but the underside's (3), which has no detail pass; a sheet body's are not drawn)
+    [].concat(d.children[0].material).forEach((m, i) => { if (i !== 3 && m.visible && m.map && m.isMeshLambertMaterial) { faces++; if (!m.transparent) opaque++; } });
+  }
+  const r = renderer.domElement.getBoundingClientRect(), picks = {};
+  for (const g of w.getObjectByName('patch-cables')?.children ?? []) {
+    const tube = g.children[0], pos = tube.geometry.attributes.position, mid = new THREE.Vector3().fromBufferAttribute(pos, Math.floor(pos.count / 2));
+    tube.localToWorld(mid); mid.project(camera);
+    const ev = {clientX: r.left + (mid.x + 1) / 2 * r.width, clientY: r.top + (1 - mid.y) / 2 * r.height};
+    picks[g.name] = hoverAt3d(s, ev)?.id ?? null;
+  }
+  return {mask: camera.layers.mask, calls: window.__calls?.at(-1) ?? null, relief, opaque, faces, picks};
+}"""
+
+
+@extra("rack.html: while the 3D camera is dragged the devices' relief is left out of the frames (fewer draw calls, the faces' holes drawn opaque), hovering a cable finds the same cable as at rest, and once the camera is still the detail is drawn again exactly as before; the motion detail is one constant (S-0049)")
+def check_rack_3d_light_moving(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving", 1)
+
+
+@extra("rack.html: on a slow machine (the CPU throttled 6x) the 3D camera still takes the devices' relief back by itself once it is still, the frame drawn by the restore and not by a later pointer event (S-0049-3)")
+def check_rack_3d_light_moving_slow(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving_slow", 6)
+
+
+def light_moving_run(page, base, name, throttle):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    if webgl_trouble(page):
+        print(f"[{name}] no WebGL here - not exercised")
+        return bad
+    if page.evaluate("async () => (await import('/site/rack/scene3d.js')).MOTION_LOD") is not True:
+        bad.append("scene3d.js MOTION_LOD is not on")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the light-moving scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
+      window.__masks = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); window.__masks.push(b.layers.mask); }; s.requestFrame(); }""")
+    wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
+    rest = page.evaluate(LIGHT_STATE_JS)
+    if not rest["relief"] or rest["mask"] != 3 or rest["opaque"]:
+        bad.append(f"at rest: {rest['relief']} meshes on the relief layer, the camera's layers {rest['mask']}, {rest['opaque']} of {rest['faces']} faces opaque; expected relief on layer 1 shown, and no face opaque")
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + 40, r.top + 40]; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(6):
+        page.mouse.move(box[0] + 3 * (k + 1), box[1])
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(400)              # held, still: a drag in hand stays light
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
+    moving = page.evaluate(LIGHT_STATE_JS)
+    cdp = None
+    if throttle > 1:
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": throttle})
+    page.mouse.up()
+    released = time.monotonic()
+    if throttle > 1:
+        # (a machine too slow to keep up: the frames it is given stop coming for a while, as for a page that is hidden or
+        # starved, and the scene has to take the detail back without them; they are held here and let go below)
+        page.evaluate("""() => { const own = window.requestAnimationFrame.bind(window), held = window.__heldFrames = [];
+          window.__ownFrame = own; window.requestAnimationFrame = cb => { held.push(cb); return held.length; }; }""")
+    if moving["mask"] != 1 or not moving["calls"] or moving["calls"] >= rest["calls"]:
+        bad.append(f"while dragged: the camera's layers {moving['mask']}, {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected the relief layer left out, and fewer")
+    if moving["faces"] and moving["opaque"] != moving["faces"]:
+        bad.append(f"while dragged: {moving['opaque']} of {moving['faces']} detailed faces opaque; expected all")
+    # (each cable at the middle of its own tube: found there at rest, it is found there while dragged)
+    own = lambda st: {k for k, v in st["picks"].items() if v and k == f"cable-{v}"}
+    if not own(rest) or own(moving) != own(rest):
+        bad.append(f"hovering the cables while dragged finds {moving['picks']}, at rest {rest['picks']}; expected each cable found at rest found while dragged")
+    park_mouse(page)
+    # (the easing, and MOTION_REST_MS after it, however slow the frames: waited for to a deadline, with no frame
+    # asked for and no pointer moved - the restore draws the frame itself, the last one drawn showing the relief)
+    try:
+        if throttle > 1:
+            # (no animation frame has come: the camera's layers are put back by the restore's own timer, which then asks for the frame)
+            wait_fn(page, "the layers put back", "() => window.__rack.scene().three.camera.layers.mask === 3", timeout=30000, polling=50)
+            page.evaluate("() => { window.requestAnimationFrame = window.__ownFrame; for (const cb of window.__heldFrames.splice(0)) window.__ownFrame(cb); }")
+        wait_fn(page, "the relief back", "() => window.__masks.at(-1) === 3", timeout=30000)
+    except RuntimeError as e:
+        bad.append(f"once the camera was still, the relief was not back within 30 s ({e}); expected the restore to put the layers back and ask for a frame")
+    restored_ms = round((time.monotonic() - released) * 1000)
+    if cdp:
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+    again = page.evaluate(LIGHT_STATE_JS)
+    if again["mask"] != 3 or again["opaque"] or again["calls"] != rest["calls"]:
+        bad.append(f"at rest again: the camera's layers {again['mask']}, {again['opaque']} faces opaque, {again['calls']} draw calls against {rest['calls']} before; expected as before")
+    print(f"[{name}] the relief back {restored_ms} ms after the release (CPU x{throttle}); {rest['relief']} relief meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+          f"{moving['opaque']} of {moving['faces']} faces opaque while dragged; cables found {sum(1 for v in rest['picks'].values() if v)}")
+    return bad
+
+
+# WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
+# startDetail): every scene the page starts building is watched as it appears
+# (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,
+# at that moment, the relief meshes in its devices (a device's group is its body
+# and, once the detail lands, its faces' relief) and the tubes hung.
+WATCH_DETAIL_START_JS = """() => { window.__detailWatch = setInterval(() => {
+  const s = window.__rack.loadingScene();
+  if (!s || s.__watched) return;
+  s.__watched = true;
+  const own = s.startDetail;
+  s.startDetail = () => {
+    if (!s.__atStart) {
+      let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      s.__atStart = {relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length,
+                     bundles: (s.three.scene.getObjectByName('cable-bundles')?.children ?? []).length};
+    }
+    own();
+  };
+}, 10); }"""
+
+
+@extra("rack.html: the 3D scene hangs its cables and bundles before any part's relief detail is built, and the detail that lands afterwards takes the dimming the page already painted: a cable purpose picked before the 3D view opens leaves the other cables' plugs dimmed once their detail is in, and clearing it restores them exactly (S-0049)")
+def check_rack_3d_cables_first(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_bundle_rack(page, base, "front")
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c3' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_cables_first] no WebGL here - not exercised")
+        return bad
+    # the pick made in 2D, before there is a scene: only c3 (and its bundle) stay lit
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    page.evaluate(WATCH_DETAIL_START_JS)
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the cables-first scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__detailWatch)")
+    park_mouse(page)
+    got = page.evaluate("""() => { const s = window.__rack.scene(); let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      return {at: s.__atStart ?? null, relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length}; }""")
+    at = got["at"]
+    if at is None:
+        bad.append("the scene's detail was never let go through startDetail (or the scene was not watched)")
+    else:
+        if at["relief"]:
+            bad.append(f"{at['relief']} relief meshes were in the devices before the cables were hung; expected none")
+        if at["tubes"] != got["tubes"] or not at["tubes"]:
+            bad.append(f"when the detail was let go {at['tubes']} cables were hung, of {got['tubes']}; expected all of them")
+        if not at["bundles"]:
+            bad.append("when the detail was let go no bundle was hung; expected the bundle first")
+    if not got["relief"]:
+        bad.append("the complete scene has no relief detail in any device")
+    picked = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    if not all(picked.get(f"plugs-{c}") for c in ("c1", "c2", "c3")):
+        bad.append(f"the fixture's plugs were not found in the detail: {[k for k, v in picked.items() if k.startswith('plugs-') and not v]}")
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    park_mouse(page)
+    clear = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    bad.extend(f"the purpose picked before 3D, once the detail was in: {m}" for m in hover_3d_dims(picked, clear, {"cable-c3", "bundle-b1"}))
+    print(f"[check_rack_3d_cables_first] detail let go with {at and at['tubes']} tubes and {at and at['bundles']} bundles hung and "
+          f"{at and at['relief']} relief meshes; {got['relief']} once complete")
+    return bad
+
+
 @extra("rack.html: a large rack is built in 3D once, with one renderer, no context lost and no page error; its plain parts share their materials and no face texture is over 4096 px; picking a bundle or a cable type keeps the scene and makes no context; and a lost context stops the scene, says so, and builds it again once when the context comes back, never deleting into the new one (S-0043)")
 def check_rack_3d_large_once(page, base):
     bad, said = [], []
@@ -20611,6 +20991,8 @@ def check_rack_3d_large_once(page, base):
             bad.append(f"large: the plain {ref} mounts draw with {share['sets'].get(ref)} sets of body materials, expected one shared set")
     print(f"[check_rack_3d_large_once] built in {took:.1f} s with {len(renderers)} renderer, {len(gl['made'])} contexts in all; "
           f"{share['textures']} textures in the scene ({share['gl']} on the GPU), the longest {share['longest']} px; material sets {share['sets']}")
+    # each corner kept out of the bodies near it answers as against all of them, on the large rack too (S-0049)
+    bad += bend_near_same(page, "check_rack_3d_large_once")
     # A BUNDLE, THEN A CABLE TYPE, picked and put down twice: the scene stays, no context is made.
     scene_was = page.evaluate("() => { window.__was = window.__rack.scene(); return window.__gl.made.length; }")
     idle = "() => window.__rack.idle()"

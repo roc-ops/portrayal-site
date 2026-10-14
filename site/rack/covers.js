@@ -199,6 +199,7 @@ export function takeCovers(scene, meshes, paths) {
   if (!mine.length) return;
   (scene.coverMeshes ??= []).push(...mine);
   if (!scene.coversHeld) apply({coverMeshes: mine}, scene.covers ?? COVERS_DEFAULT);
+  scene.requestFrame?.();   // (the scene draws only when asked: rack3d.js requestFrame)
 }
 
 /** 3D: every cover in `scene` as `state` has it. Remembered on the scene, so an export can lift it and put it back. */
@@ -206,6 +207,7 @@ export function paintCovers3d(scene, state) {
   if (!scene) return;
   scene.covers = state;
   if (!scene.coversHeld) apply(scene, state);
+  scene.requestFrame?.();
 }
 
 /** Run `fn` with every cover as it was built (shown, its own materials), then
@@ -214,8 +216,10 @@ export async function withCoversAsBuilt(scene, fn) {
   if (!scene?.coverMeshes?.length) return fn();   // no cover in it (or a stub scene): nothing to put back
   scene.coversHeld = (scene.coversHeld || 0) + 1;
   apply(scene, 'on');
+  scene.requestFrame?.();
   try { return await fn(); } finally {
     scene.coversHeld -= 1;
     if (!scene.coversHeld) apply(scene, scene.covers ?? COVERS_DEFAULT);
+    scene.requestFrame?.();
   }
 }
