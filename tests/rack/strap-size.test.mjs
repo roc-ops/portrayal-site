@@ -65,6 +65,17 @@ test('at Fit the least size holds, but no bar, its rim included, is over twice i
   }
 });
 
+import {PAGE_STRAP, PAGE_ALONG} from '../../site/rack/strap-size.js';
+
+test('on the page a strap is narrower along the run and not much wider than its bundle (S-0040)', () => {
+  assert.ok(PAGE_ALONG < 1);
+  for (const pack of [3, 6, 9, 15]) for (const scale of [0.2, 0.45, 1, 4]) {
+    const page = strapLengths(pack, scale, PAGE_STRAP), paper = strapLengths(pack, scale);
+    assert.ok(page.rimLeast <= paper.rimLeast + 1e-9 && page.rimTrue <= paper.rimTrue + 1e-9, `${pack} mm at ${scale}`);
+    assert.ok(page.rimLeast <= Math.max(pack + 2 * PAGE_STRAP.margin + PAGE_STRAP.rimPx / scale, PAGE_STRAP.most * pack) + 1e-9);
+  }
+});
+
 import {lineSpan} from '../../site/rack/strap-size.js';
 
 test("the pack is where its cables' lines cross the strap, wherever the trunk said it was", () => {

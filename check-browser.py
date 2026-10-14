@@ -7611,8 +7611,8 @@ def check_rack_bundle_pack(page, base):
             bad.append(f"2D: along the lacer the members' strokes are at heights {ys}: one line, not a pack")
     # (#190: across the members as they are drawn there, measured here off their own strokes where they
     # cross the bar, which side by side are never wider than the pack's diameter; and 2 mm each side)
-    if not g["straps"] or any(st["riders"] < 2 or abs(st["len"] - (st["drawn"] + 4)) > 1.2 or abs(st["off"]) > 1.2 or st["drawn"] > st["pack"] + 0.5 for st in g["straps"]):
-        bad.append(f"2D: a strap is not a bar across its pack (its members' strokes there, no wider than its diameter, and 2 mm each side, to 1.2 mm): {g['straps']}")
+    if not g["straps"] or any(st["riders"] < 2 or abs(st["len"] - (st["drawn"] + 2)) > 1.2 or abs(st["off"]) > 1.2 or st["drawn"] > st["pack"] + 0.5 for st in g["straps"]):
+        bad.append(f"2D: a strap is not a bar across its pack (its members' strokes there, no wider than its diameter, and 1 mm each side on the page since S-0040, to 1.2 mm): {g['straps']}")
     # hover and selection show it; a member hovered alone still dims the others
     page.hover('#cableList [data-bundle-row="b1"]')
     page.wait_for_timeout(350)
@@ -7746,7 +7746,8 @@ STRAP_2D_JS = """() => {
   const p = new DOMPoint((+core.getAttribute('x1') + +core.getAttribute('x2')) / 2, (+core.getAttribute('y1') + +core.getAttribute('y2')) / 2).matrixTransform(m);
   let opacity = 1;
   for (let n = g; n && n !== svg.parentNode; n = n.parentNode) opacity *= +getComputedStyle(n).opacity;
-  return {at: [p.x, p.y], core: getComputedStyle(core).stroke, rim: getComputedStyle(g.querySelector('[data-strap-part="rim"]')).stroke,
+  const rimTrue = g.querySelector('line[data-strap-part="rim"]:not([data-strap-least])');
+  return {at: [p.x, p.y], coreW: +core.getAttribute('stroke-width'), rimW: +rimTrue.getAttribute('stroke-width'), core: getComputedStyle(core).stroke, rim: getComputedStyle(g.querySelector('[data-strap-part="rim"]')).stroke,
           stage: getComputedStyle(document.getElementById('panes')).backgroundColor, opacity: Math.round(opacity * 100) / 100,
           parts: [...g.children].map(l => [l.dataset.strapPart, l.hasAttribute('data-strap-least'), l.getAttribute('vector-effect')]),
           scale: Math.hypot(m.a, m.b), n: svg.querySelectorAll('[data-strap="b1"]').length,
@@ -7772,7 +7773,7 @@ def strap_extent(px, w, h, at, core):
     return (1 + run(-1, 0) + run(1, 0), 1 + run(0, -1) + run(0, 1))
 
 
-@extra("rack.html: a bundle's straps can be seen - a light strap with a dark rim on a dark stage and a black one with a white rim on a light stage (7 to 1 or better against the stage), never under 6 px on screen at Fit on a 42U rack, lit with their bundle (a member selected or hovered) and dimmed with it (another cable), in the stage's strap colour in 3D, and black on a sheet whatever the stage")
+@extra("rack.html: a bundle's straps can be seen - in 2D a quiet band, a muted light grey on a dark stage and a muted dark grey on a light one, each with a hairline rim in a muted tone and no white outline (4.5 to under 8 to 1 against the stage), never under 4 px on screen at Fit on a 42U rack, lit with their bundle (a member selected or hovered) and dimmed with it (another cable), in the stage's strap colour in 3D, and black on a sheet whatever the stage")
 def check_rack_straps_seen(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -7786,7 +7787,7 @@ def check_rack_straps_seen(page, base):
     page.wait_for_timeout(400)
     park_mouse(page)
     ratios = {}
-    for stage, tone, want in (("#101214", "dark", ("#d5d9de", "#0b0c0d")), ("#ffffff", "light", ("#1b1d20", "#ffffff"))):
+    for stage, tone, want in (("#101214", "dark", ("#8a9199", "#2a2f35")), ("#ffffff", "light", ("#5b6169", "#c9cdd2"))):
         page.click(f'#stagebg .sw[data-c="{stage}"]')
         page.wait_for_timeout(300)
         page.evaluate("() => document.querySelector('#paneFront [data-strap=\"b1\"]').scrollIntoView({block: 'center', inline: 'center'})")
@@ -7798,8 +7799,13 @@ def check_rack_straps_seen(page, base):
         if (core, rim) != (rgb_of(want[0]), rgb_of(want[1])) or ground != rgb_of(stage):
             bad.append(f"{tone}: the strap is {core} with a {rim} rim on a {ground} stage, expected {want} on {stage}")
         ratios[tone] = contrast_ratio(core, ground)
-        if ratios[tone] < 7:
-            bad.append(f"{tone}: the strap's contrast with the stage is {ratios[tone]:.1f} to 1, under 7")
+        # S-0040: a quiet band, not a block: seen (4.5 to 1 or more) but not bright (under 8 to 1), and no white or high-contrast outline
+        if not 4.5 <= ratios[tone] < 8:
+            bad.append(f"{tone}: the strap's contrast with the stage is {ratios[tone]:.1f} to 1, expected from 4.5 to under 8")
+        if min(rim) > 235 or contrast_ratio(rim, core) > 5 or contrast_ratio(rim, ground) > 5:
+            bad.append(f"{tone}: the strap's rim {rim} is a white or high-contrast outline against its core {core} and the {ground} stage")
+        if s["rimW"] > s["coreW"] + 1.5 or s["coreW"] * s["scale"] > 7:
+            bad.append(f"{tone}: the strap is {s['coreW']:.1f} units wide with a rim {s['rimW']:.1f} wide, expected a hairline rim and a narrow band")
         if [p[:2] for p in s["parts"]] != [["rim", False], ["rim", True], ["core", False], ["core", True]] or any(p[1] and p[2] != "non-scaling-stroke" for p in s["parts"]):
             bad.append(f"{tone}: a strap is not a rim and a core at its true size and again at its least: {s['parts']}")
         # on the composited page, at Fit: the strap's own colour, at least 6 px along the run and across it
@@ -7807,11 +7813,11 @@ def check_rack_straps_seen(page, base):
         ext = strap_extent(px, w, h, s["at"], core)
         if s["scale"] * 10 >= 6:
             bad.append(f"{tone} fixture: at Fit a 10 mm strap is {s['scale'] * 10:.1f} px, so the least size was not what was measured")
-        if min(ext) < 6:
-            bad.append(f"{tone}: at Fit the strap is {ext[0]} x {ext[1]} px of its own colour on the page, under 6 (a 10 mm bar is {s['scale'] * 10:.1f} px here)")
+        if min(ext) < 4:
+            bad.append(f"{tone}: at Fit the strap is {ext[0]} x {ext[1]} px of its own colour on the page, under 4 (a 10 mm bar is {s['scale'] * 10:.1f} px here)")
         if s["opacity"] != 1:
             bad.append(f"{tone}: the strap is at opacity {s['opacity']} with nothing selected")
-    print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 6 px at Fit")
+    print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 4 px at Fit")
     page.click('#stagebg .sw[data-c="#101214"]')
     # A STRAP GOES WITH ITS BUNDLE. A cable that rides it selected, then hovered: the strap stays at
     # full strength. A cable that does not (c4): the strap dims with its bundle's cables.
@@ -19896,8 +19902,9 @@ def check_rack_strap_size(page, base):
     for s in measured:
         where = f"strap at {s['slant']} degrees, {s['riders']} members"
         # ACROSS THE PACK: the members there, measured on their own strokes, and 2 mm each side.
-        if not (s["pack"] + 4 - 1.2 <= s["len"] <= s["pack"] + 4 + 1.2):
-            bad.append(f"{where}: its bar is {s['len']:.1f} mm for a pack {s['pack']:.1f} mm wide there (the bundle's diameter is {s['diameter']}); expected the pack and 2 mm each side")
+        # (S-0040: 1 mm each side on the page, strap-size.js PAGE_STRAP, not the 2 mm of the paper)
+        if not (s["pack"] + 2 - 1.2 <= s["len"] <= s["pack"] + 2 + 1.2):
+            bad.append(f"{where}: its bar is {s['len']:.1f} mm for a pack {s['pack']:.1f} mm wide there (the bundle's diameter is {s['diameter']}); expected the pack and 1 mm each side")
         if abs(s["mid"]) > 1.2:
             bad.append(f"{where}: its bar is {s['mid']:.1f} mm off the middle of its pack")
         # SQUARE ACROSS THE RUN: the members' own strokes cross it at a right angle (within 15 degrees).
@@ -19909,18 +19916,19 @@ def check_rack_strap_size(page, base):
             bad.append(f"{where}: the page noted a pack of {pack} mm, measured {s['pack']:.1f}")
             continue
         # (the whole bar, its rim included: 2.0 packs at the most, unless the pack and its margins are more)
-        px1, most_mm = 1 / fit["scale"], max(s["len"], 2 * pack)
-        want = max(s["len"], min(7 * px1, 2 * pack - 2 * px1))
+        # (S-0040: on the page the least is 5 px, a bar is 1.5 packs at the most, and the rim adds a pixel)
+        px1, most_mm = 1 / fit["scale"], max(s["len"], 1.5 * pack)
+        want = max(s["len"], min(5 * px1, 1.5 * pack - px1))
         if abs(s["least"] - want) > 0.05 or s["cap"] != "butt":
             bad.append(f"{where}: at Fit its least bar is {s['least']:.1f} mm ({s['least'] * fit['scale']:.1f} px, cap {s['cap']}) for a {pack:.1f} mm pack; expected {want:.1f} mm")
         if max(s["rim"], s["rimTrue"], s["least"]) > most_mm + 0.05:
             bad.append(f"{where}: with its rim the bar is {max(s['rim'], s['rimTrue']):.1f} mm, {max(s['rim'], s['rimTrue']) / pack:.2f} times its {pack:.1f} mm pack; expected no more than {most_mm / pack:.2f}")
-        if abs(s["rim"] - min(s["least"] + 2 * px1, most_mm)) > 0.05 or abs(s["rimTrue"] - min(s["len"] + 2 * px1, most_mm)) > 0.05:
+        if abs(s["rim"] - min(s["least"] + px1, most_mm)) > 0.05 or abs(s["rimTrue"] - min(s["len"] + px1, most_mm)) > 0.05:
             bad.append(f"{where}: its rims are {s['rimTrue']:.1f} and {s['rim']:.1f} mm long round bars of {s['len']:.1f} and {s['least']:.1f}; expected a pixel past each end where twice the pack leaves room")
         worst = max(worst, max(s["rim"], s["rimTrue"]) / pack)
         # ALONG THE RUN: 10 mm at scale, and the least bar's own non-scaling 7 px.
-        if s["thick"] != [[10, None], [7, "non-scaling-stroke"]]:
-            bad.append(f"{where}: along the run its bars are {s['thick']}; expected 10 mm at scale and 7 px at the least")
+        if s["thick"] != [[6, None], [5, "non-scaling-stroke"]]:
+            bad.append(f"{where}: along the run its bars are {s['thick']}; expected 6 mm at scale (0.6 of 10) and 5 px at the least")
     # on the composited page at Fit, a strap on the straight run is its own colour for the least size along the run
     # and for no more than twice its pack (and the rim) across it
     up = max((s for s in measured if s["slant"] > 80 or s["slant"] < 10), key=lambda s: s["riders"])
@@ -19928,9 +19936,9 @@ def check_rack_strap_size(page, base):
     w, h, px = png_pixels(page.screenshot())
     ext = strap_extent(px, w, h, up["at"], core)
     along, across_px = (ext[1], ext[0]) if up["slant"] > 45 else (ext[0], ext[1])
-    most = max(up["len"], 2 * up["noted"]) * fit["scale"] + 1
-    if along < 6 or across_px > most:
-        bad.append(f"at Fit: a strap on the straight run is {along} px along the run and {across_px} px across it on the page; expected 6 or more along, and no more than {most:.1f} across")
+    most = max(up["len"], 1.5 * up["noted"]) * fit["scale"] + 1
+    if along < 4 or across_px > most:
+        bad.append(f"at Fit: a strap on the straight run is {along} px along the run and {across_px} px across it on the page; expected 4 or more along, and no more than {most:.1f} across")
     print(f"[check_rack_strap_size] at Fit ({fit['scale']:.2f} px a mm): {len(measured)} straps measured, {len(slanted)} on a slant; bars {sorted({round(s['len'], 1) for s in measured})} mm for packs "
           f"{sorted({round(s['pack'], 1) for s in measured})} mm (diameter {measured[0]['diameter']}); on the page {along} px along the run, {across_px} across; the longest bar, rim included, is {worst:.2f} packs")
     # AT 300% a strap is its true size: the least bar is no longer than the bar at scale.
@@ -21433,8 +21441,9 @@ def check_rack_strap_kinds(page, base):
     if sorted((x["kind"], x["width"]) for x in mine) != sorted((x["kind"], x["width_mm"]) for x in b["straps"]):
         bad.append(f"2D: the bars' kinds and widths {sorted((x['kind'], x['width']) for x in mine)} are not the kit's {sorted((x['kind'], x['width_mm']) for x in b['straps'])}")
     for x in s["front"]:
-        if abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
-            bad.append(f"2D: a {x['width']} mm {x['kind']} strap is drawn {x['core']} wide, expected {s['drawnOf'][str(int(x['width']))]}")
+        # S-0040: on the page a strap is drawn 0.6 of its width along the run (strap-size.js PAGE_ALONG); 3D keeps the full width
+        if abs(x["core"] - s["drawnOf"][str(int(x["width"]))] * 0.6) > 1e-9:
+            bad.append(f"2D: a {x['width']} mm {x['kind']} strap is drawn {x['core']} wide, expected {s['drawnOf'][str(int(x['width']))] * 0.6}")
     if abs(s["drawn19"] - 10) > 1e-9 or not (s["drawnOf"]["12"] < s["drawnOf"]["19"] < s["drawnOf"]["25"]):
         bad.append(f"2D: the drawn widths are {s['drawnOf']}: a 19 mm strap should be the 10 it was, 12 narrower and 25 wider")
     # THE WORDS: the bundle's line says its straps by kind, and never the total as a spacing count.
@@ -21481,7 +21490,7 @@ def check_rack_strap_kinds(page, base):
         x = next((x for x in ties2d if x["strap"] == f"tie:{m['item']}|{m['via']}|{m['tie']}"), None)
         face = tray["under"] if m["held"] else tray["top"]
         if not x or abs(x["at"][0] - (450.85 / 2 + (slot["x0"] + slot["x1"]) / 2)) > 1e-6 or abs((H - x["at"][1]) - face) > 5 + 1e-6 \
-                or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
+                or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))] * 0.6) > 1e-9:
             bad.append(f"2D: the tie strap at {m['item']} {m['via']} slot {m['tie']} is {x}; its slot is at x {(slot['x0'] + slot['x1']) / 2}, the plate's face at {face}")
     # WHICH FACE OF THE PLATE: a cord resting on the tray's top is tied above it, and one held under it is tied
     # under it. Every tie strap here rests, and is above its plate; a held one is pinned by tests/rack/tie-straps.test.mjs,

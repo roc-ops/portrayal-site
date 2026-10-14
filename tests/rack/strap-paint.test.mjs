@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {STRAP_PAINT, strapPaint, STRAP_MIN_PX, STAGE_SWATCHES, stageTone} from '../../site/rack/stage.js';
+import {STRAP_PAINT, STRAP_PAINT_2D, strapPaint, STRAP_MIN_PX, STAGE_SWATCHES, stageTone} from '../../site/rack/stage.js';
 import {COLORS, JACKETS} from '../../vendor/rack/cable-geometry.js';
 import {STRAP_DRAWN} from '../../site/rack/bundle-view.js';
 
@@ -29,12 +29,18 @@ test('a strap stands off every cable colour: its core or its rim is at least 3 t
       assert.ok(Math.max(contrast(p.core, c), contrast(p.rim, c)) >= 3, `${p.core}/${p.rim} on a ${c} cable`);
 });
 
-test('the page paints a strap in the same pairs, and never smaller than the least size', () => {
+test('the page paints a strap in the quiet 2D pairs: muted, seen, and no white or high-contrast outline', () => {
   const css = readFileSync(new URL('../../site/rack/rack.css', import.meta.url), 'utf8');
-  for (const [tone, p] of Object.entries(STRAP_PAINT)) {
+  for (const [tone, p] of Object.entries(STRAP_PAINT_2D)) {
     assert.ok(css.includes(`.rk-panes[data-stage="${tone}"] [data-strap] [data-strap-part="core"] { stroke: ${p.core}; }`), `${tone} core`);
     assert.ok(css.includes(`.rk-panes[data-stage="${tone}"] [data-strap] [data-strap-part="rim"] { stroke: ${p.rim}; }`), `${tone} rim`);
+    const stage = tone === 'dark' ? '#101214' : '#ffffff';
+    assert.ok(contrast(p.core, stage) >= 4.5 && contrast(p.core, stage) < 8, `${tone} core ${contrast(p.core, stage).toFixed(1)} to 1`);
+    assert.notEqual(p.rim.toLowerCase(), '#ffffff');
+    assert.ok(contrast(p.rim, p.core) <= 5 && contrast(p.rim, stage) <= 2, `${tone} rim is muted`);
   }
+  // a sheet and a file keep the paper's black and white
+  assert.deepEqual(STRAP_PAINT.light, {core: '#1b1d20', rim: '#ffffff'});
   assert.ok(STRAP_MIN_PX >= 6 && STRAP_DRAWN === 10);
   // nothing dims the straps' layer with a selected cable any more
   assert.ok(!/\.cable-focus[^{]*\[data-bundle-straps\]/.test(css));
