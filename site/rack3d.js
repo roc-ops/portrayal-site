@@ -96,6 +96,9 @@ function releaseCpuCanvases() {
   }
 }
 
+// A device face's texture is cut where its cavities and modules are, and the cut is not drawn.
+const FACE_ALPHA_TEST = 0.08;
+
 // BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
 const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
 
@@ -285,6 +288,49 @@ export function createRackScene(container, opts = {}) {
   const READER_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'wheel'];
   if (ON_DEMAND) for (const type of READER_EVENTS) document.addEventListener(type, requestFrame, {capture: true, passive: true});
   if (BUILD_FRAME_MS || ON_DEMAND) controls.addEventListener('change', onCameraMoved);
+  // LIGHTER WHILE MOVING (opt-in, `opts.lightWhileMoving`; the Rack Builder's).
+  // A device's relief detail - every cage, port, plug, pin and vent as a mesh
+  // of its own - is nearly all of a large rack's draw calls (139,000 a frame
+  // on one, 650 ms a frame on a fast GPU), and while the camera is dragged or
+  // zoomed nobody reads it. So with the option the relief of a device with a
+  // body is drawn on a layer of its own (RELIEF_LAYER), and while the camera
+  // is handled - from the controls' `start` (a press on the stage, the wheel)
+  // until MOTION_REST_MS after their `end` and the camera's last move (its
+  // easing included) - the camera does not show that layer: the device is its
+  // faces, flat, and a module seated in it its own faceplate (its textured
+  // plane stays on the common layer), and the holes its face is punched with
+  // for its cavities are drawn dark (the face's own materials, opaque while
+  // moving) rather than see-through. At rest the detail is drawn again. A
+  // sheet part (a lacer, a manager) is nothing but its detail, and keeps it.
+  // Hover picking rays the cables and bundles only (hover.js hoverAt3d, on
+  // the common layer), so it is the same moving or not.
+  const LIGHT_MOVING = !!opts.lightWhileMoving;
+  const RELIEF_LAYER = 1, MOTION_REST_MS = 200;
+  camera.layers.enable(RELIEF_LAYER);
+  const faceMats = new Set();      // the detailed faces' own materials, opaque while moving
+  // (a step of the camera under LIGHT_MOVE, about half a pixel, is the easing's tail, not a move: the detail comes back)
+  const LIGHT_MOVE = 3e-4;
+  let lightHeld = false, movedAt = -Infinity, light = false, lightPose = poseOf();
+  if (LIGHT_MOVING) {
+    // (from the controls' `start`, so a drag's first frame is already light, to MOTION_REST_MS after their `end` or the last move)
+    controls.addEventListener('start', () => { lightHeld = true; });
+    controls.addEventListener('end', () => { lightHeld = false; movedAt = performance.now(); });
+    controls.addEventListener('change', () => {
+      if (movedFrom(lightPose, LIGHT_MOVE)) movedAt = performance.now();
+      lightPose = poseOf();
+    });
+  }
+  // (a mesh kept on the common layer while moving: a module's faceplate, or a piece of art, drawn as a textured plane)
+  const flatPart = o => o.geometry?.type === 'PlaneGeometry' && !Array.isArray(o.material) && o.material?.isMeshBasicMaterial && !!o.material.map;
+  function setLight(on) {
+    light = on;
+    if (on) camera.layers.disable(RELIEF_LAYER); else camera.layers.enable(RELIEF_LAYER);
+    for (const m of faceMats) {
+      if (on) { m.transparent = false; m.alphaTest = 0; } else { m.transparent = true; m.alphaTest = FACE_ALPHA_TEST; }
+      m.needsUpdate = true;
+    }
+    requestFrame();
+  }
   if (BUILD_FRAME_MS) {
     controls.addEventListener('start', onHandleStart);
     controls.addEventListener('end', onHandleEnd);
@@ -799,7 +845,7 @@ export function createRackScene(container, opts = {}) {
     // than in whichever order the decodes happened to finish.
     const plain = () => new THREE.MeshLambertMaterial({color: 0x3a3f44});
     const mat = cv => cv ? new THREE.MeshLambertMaterial(
-      {map: canvasTex(cv), transparent: true, alphaTest: 0.08}) : plain();
+      {map: canvasTex(cv), transparent: true, alphaTest: FACE_ALPHA_TEST}) : plain();
 
     // FLAT FIRST. Nearly all of a device's build time is buildFaceRelief turning
     // every cage, dome and vent into its own extruded geometry - measured at
@@ -1014,6 +1060,8 @@ export function createRackScene(container, opts = {}) {
             facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
             D, bodyBoxMesh: null});
           if (mine !== epoch) return;
+          // (the relief of a device with a body on its own layer, left out while the camera moves: `opts.lightWhileMoving`)
+          if (LIGHT_MOVING && !sheet) for (const m of per) m.traverse(o => { if (!flatPart(o)) o.layers.set(RELIEF_LAYER); });
           per.forEach(m => { group.add(m); meshes.push(m); });
           // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
           // in the same task the meshes join the device, so nothing is drawn
@@ -1027,6 +1075,10 @@ export function createRackScene(container, opts = {}) {
           if (cv && body.material[i] && !sheet) {
             const prev = body.material[i];
             body.material[i] = mat(cv);
+            if (LIGHT_MOVING) {
+              faceMats.delete(prev); faceMats.add(body.material[i]);
+              if (light) { body.material[i].transparent = false; body.material[i].alphaTest = 0; }
+            }
             prev.map && prev.map.dispose();
             prev.dispose();
           }
@@ -1342,6 +1394,7 @@ export function createRackScene(container, opts = {}) {
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
     SHARED.clear();           // and the parts built once for those mounts
+    faceMats.clear();         // and their detailed faces' materials
     dropAnchorDocs();         // measured against overrides that are now gone
     // A BUILD OVERTAKEN STOPS (dispose, a lost context, another build: each
     // bumps `epoch`): the devices still to come are not built for a scene
@@ -1421,6 +1474,11 @@ export function createRackScene(container, opts = {}) {
     // (the camera is kept where the controls have it at every animation frame, held back or not, and a camera
     // that has moved since the last frame is drawn: `cameraMoved`, above)
     controls.update();
+    // (lighter while the camera moves, and in detail again once it has been still a moment: `opts.lightWhileMoving`)
+    if (LIGHT_MOVING) {
+      const moving = lightHeld || performance.now() - movedAt < MOTION_REST_MS;
+      if (moving !== light) setLight(moving);
+    }
     // (and with `opts.onDemand`, only a scene something has changed: `dirty`, above, or a camera moved enough to see)
     if (ON_DEMAND && cameraMoved && drawnPose && !movedFrom(drawnPose, DRAW_MOVE)) cameraMoved = false;
     if (cameraMoved || ((!ON_DEMAND || dirty) && !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost))))) {
@@ -1513,8 +1571,9 @@ export function createRackScene(container, opts = {}) {
     // The text one mounted device's face was cut from (`slot` is its place in the
     // stack): its seated parts and written fields are in it, as the texture has them.
     faceText: (slot, view) => RESOLVED[slot] ? svgSource(faceSrc(RESOLVED[slot], view), relief) : Promise.resolve(null),
-    toGLB: () => toGLB(scene),
-    toUSDZ: () => toUSDZ(scene),
+    // (written in full detail, the faces as built, even from a camera still moving: `opts.lightWhileMoving`)
+    toGLB: () => { if (light) setLight(false); return toGLB(scene); },
+    toUSDZ: () => { if (light) setLight(false); return toUSDZ(scene); },
     three: {THREE, scene, camera, renderer, controls},
     // Resolves when the deferred faces - sides, rear, underside - have all been
     // installed. build() does not wait for these on purpose; this is here for a
@@ -1530,6 +1589,7 @@ export function createRackScene(container, opts = {}) {
       if (!alive) return;
       alive = false;
       SHARED.clear();
+      faceMats.clear();
       if (CPU_CANVASES) releaseCpuCanvases();
       dropAnchorDocs();
       epoch++;      // stops any deferred relief pass from touching a dead scene

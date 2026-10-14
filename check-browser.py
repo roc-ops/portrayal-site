@@ -20423,6 +20423,85 @@ def check_rack_3d_on_demand(page, base):
     return bad
 
 
+# THE SCENE WHILE ITS CAMERA MOVES (S-0049, rack3d.js `lightWhileMoving`): the
+# draw calls of the last frame drawn, which layers the camera shows, how many
+# meshes are on the relief layer (1) and how many detailed faces are opaque, and
+# what hover.js hoverAt3d finds at the screen point of the middle of each cable.
+LIGHT_STATE_JS = """async () => {
+  const s = window.__rack.scene(), {camera, renderer, scene: w, THREE} = s.three;
+  const {hoverAt3d} = await import('/site/rack/hover.js');
+  let relief = 0, opaque = 0, faces = 0;
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    d.traverse(o => { if (o.isMesh && o.layers.mask === 2) relief++; });
+    // (a body's detailed faces: every slot but the underside's (3), which has no detail pass; a sheet body's are not drawn)
+    [].concat(d.children[0].material).forEach((m, i) => { if (i !== 3 && m.visible && m.map && m.isMeshLambertMaterial) { faces++; if (!m.transparent) opaque++; } });
+  }
+  const r = renderer.domElement.getBoundingClientRect(), picks = {};
+  for (const g of w.getObjectByName('patch-cables')?.children ?? []) {
+    const tube = g.children[0], pos = tube.geometry.attributes.position, mid = new THREE.Vector3().fromBufferAttribute(pos, Math.floor(pos.count / 2));
+    tube.localToWorld(mid); mid.project(camera);
+    const ev = {clientX: r.left + (mid.x + 1) / 2 * r.width, clientY: r.top + (1 - mid.y) / 2 * r.height};
+    picks[g.name] = hoverAt3d(s, ev)?.id ?? null;
+  }
+  return {mask: camera.layers.mask, calls: window.__calls?.at(-1) ?? null, relief, opaque, faces, picks};
+}"""
+
+
+@extra("rack.html: while the 3D camera is dragged the devices' relief is left out of the frames (fewer draw calls, the faces' holes drawn opaque), hovering a cable finds the same cable as at rest, and once the camera is still the detail is drawn again exactly as before; the motion detail is one constant (S-0049)")
+def check_rack_3d_light_moving(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    if webgl_trouble(page):
+        print("[check_rack_3d_light_moving] no WebGL here - not exercised")
+        return bad
+    if page.evaluate("async () => (await import('/site/rack/scene3d.js')).MOTION_LOD") is not True:
+        bad.append("scene3d.js MOTION_LOD is not on")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the light-moving scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); }; s.requestFrame(); }""")
+    wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
+    rest = page.evaluate(LIGHT_STATE_JS)
+    if not rest["relief"] or rest["mask"] != 3 or rest["opaque"]:
+        bad.append(f"at rest: {rest['relief']} meshes on the relief layer, the camera's layers {rest['mask']}, {rest['opaque']} of {rest['faces']} faces opaque; expected relief on layer 1 shown, and no face opaque")
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + 40, r.top + 40]; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(6):
+        page.mouse.move(box[0] + 3 * (k + 1), box[1])
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(400)              # held, still: a drag in hand stays light
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
+    moving = page.evaluate(LIGHT_STATE_JS)
+    page.mouse.up()
+    if moving["mask"] != 1 or not moving["calls"] or moving["calls"] >= rest["calls"]:
+        bad.append(f"while dragged: the camera's layers {moving['mask']}, {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected the relief layer left out, and fewer")
+    if moving["faces"] and moving["opaque"] != moving["faces"]:
+        bad.append(f"while dragged: {moving['opaque']} of {moving['faces']} detailed faces opaque; expected all")
+    # (each cable at the middle of its own tube: found there at rest, it is found there while dragged)
+    own = lambda st: {k for k, v in st["picks"].items() if v and k == f"cable-{v}"}
+    if not own(rest) or own(moving) != own(rest):
+        bad.append(f"hovering the cables while dragged finds {moving['picks']}, at rest {rest['picks']}; expected each cable found at rest found while dragged")
+    park_mouse(page)
+    page.wait_for_timeout(1500)             # the easing, and MOTION_REST_MS after it
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame at rest again", "() => window.__calls.length", timeout=READY_3D_MS)
+    again = page.evaluate(LIGHT_STATE_JS)
+    if again["mask"] != 3 or again["opaque"] or again["calls"] != rest["calls"]:
+        bad.append(f"at rest again: the camera's layers {again['mask']}, {again['opaque']} faces opaque, {again['calls']} draw calls against {rest['calls']} before; expected as before")
+    print(f"[check_rack_3d_light_moving] {rest['relief']} relief meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+          f"{moving['opaque']} of {moving['faces']} faces opaque while dragged; cables found {sum(1 for v in rest['picks'].values() if v)}")
+    return bad
+
+
 # WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
 # startDetail): every scene the page starts building is watched as it appears
 # (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,

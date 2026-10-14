@@ -26,6 +26,11 @@ import {paintLanded3d} from './hover.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
+// THE DEVICES GO FLAT WHILE THE CAMERA MOVES (rack3d.js `lightWhileMoving`):
+// their ports, plugs and other relief are left out while the view is dragged
+// or zoomed, and come back once it is still. false draws them throughout.
+export const MOTION_LOD = true;
+
 // THE RACK'S CABLES AS TUBES (Phase 2b ruling 5), drawn once the devices are
 // built. An end is found on the mount of its own item (rack3d.js findMounted
 // by id: two items can share a ref) and on the device's own panel:
@@ -758,6 +763,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // restyle here and in hover.js and covers.js asks for one (requestFrame).
       // A finished large rack redrew itself at every animation frame, untouched.
       onDemand: true,
+      // LIGHTER WHILE MOVING (rack3d.js `lightWhileMoving`): while the camera
+      // is dragged or zoomed the devices' relief is left out, and drawn again
+      // at rest. MOTION_LOD, above, switches it off.
+      lightWhileMoving: MOTION_LOD,
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);
