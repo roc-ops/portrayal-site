@@ -46,6 +46,29 @@ const M_PER = {m: 1, ft: 0.3048};
 // "0 m short", with the need at the same figure as the cord.
 const r2 = x => Math.round(x * 100) / 100;
 
+// THE KIT'S ANSWER, ASKED ONCE FOR A ROUTE CONTEXT, A RACK AND A CABLE OBJECT
+// (portrayal-site#192): the kit lays the cable each time it is asked, and the
+// list, the hover label and an assistant's inspect all ask. A context is made
+// once for a reading of a rack and never changed (route-context.js), and a
+// rack and a cable are never changed in place, so the kit's answer for the
+// same three objects is the same. null where the kit has none, or throws.
+// (kept for each of the three: the page asks of the rack the routes were read
+// from and an assistant's inspect of the rack as it is, and a cable neither
+// changed is one object in both)
+const kitSpares = new WeakMap();   // route context -> WeakMap(cable object -> WeakMap(rack object -> {k}))
+function kitSpare(rack, cable, routeCtx) {
+  let per = kitSpares.get(routeCtx);
+  if (!per) kitSpares.set(routeCtx, per = new WeakMap());
+  let byRack = per.get(cable);
+  if (!byRack) per.set(cable, byRack = new WeakMap());
+  const had = byRack.get(rack);
+  if (had) return had.k;
+  let k = null;
+  try { k = kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
+  byRack.set(rack, {k});
+  return k;
+}
+
 /** A cable's spare by a route context, or null when it cannot be said: no
  *  context, no length on the cable, a length in a unit other than m or ft, or
  *  no path (the kit's spareOf answers null).
@@ -58,19 +81,19 @@ export function spareFor(rack, cable, routeCtx, read = null) {
   if (!cable || !routeCtx) return null;
   const cord = lengthParts(cable.length);
   if (!cord || !Object.hasOwn(M_PER, cord.unit)) return null;
-  let k = null;
   // ASKED OF THE RACK THE ROUTES WERE READ FROM, where that is the same
   // question (`read`: {rack, cable}, from sparesOf). The kit keeps which lay
   // of a cable it chose per rack object and cable object, and lays a cable
   // from both ends the first time it is asked of a new one. The page's rack is
   // a new object once its routed lengths are written, with a new object for
   // each cable whose length was; nothing a route or a spare reads has moved.
-  try { k = read ? kitSpareOf(read.rack, read.cable, routeCtx) : kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
+  const k = read ? kitSpare(read.rack, read.cable, routeCtx) : kitSpare(rack, cable, routeCtx);
   if (!k) return null;
   const own = k.pinned ? {value: cord.value, unit: cord.unit} : {value: k.stock_m, unit: 'm'};
   return {...own, cord: k.stock_m, need: k.need_m, spare: k.spare_m, endPlay: k.end_play_m, toStore: k.to_store_m,
           pinned: k.pinned, needs: k.pinned && k.spare_m < -1e-9 ? k.need_m : null};
 }
+
 
 /** Every cable's spare, by id, by the route context the page read for the
  *  rack (route-context.js routeFacts' `ctx`). A cable with a loose end is left

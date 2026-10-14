@@ -96,6 +96,18 @@ const NONE = Object.freeze({seats: Object.freeze({}), ends: new Map()});
 // The last answer, kept: render() asks on every redraw, and most redraws (a
 // selection, a zoom) change neither the cables nor what is seated.
 let memo = {key: '', value: null};
+// ...and the one being read now (portrayal-site#192): a redraw and an
+// assistant's call that ask of the same rack while its panels are still
+// loading are handed one reading, not two that each fetch and parse them.
+let reading = {key: '', promise: null};
+// Every answer that was read whole: each panel and the component index loaded.
+const stood = new WeakSet();
+
+// WHETHER AN ANSWER IS ONE THIS MODULE KEEPS (portrayal-site#192): the answer for a rack with no
+// cabled end, or the last one read with every panel and the component index loaded. An answer
+// built on a fetch that failed is given and not kept (below), and what is worked out from one
+// is not kept either (reading.js): the next ask reads again.
+export const factsStand = facts => facts === NONE || (!!facts && typeof facts === 'object' && stood.has(facts));
 
 // EVERY CABLED END OF THE RACK, read once per redraw:
 //   seats  {itemId: {slotId: plugRef}}   the derived plugs, per item
@@ -106,12 +118,18 @@ export async function cableFacts(rack, extra = []) {
   const cabled = (rack.cables || []).flatMap(c => [c.a, c.b]);
   const ends = [...cabled, ...extra];
   if (!ends.length) return NONE;
-  const out = {seats: {}, ends: new Map()};
   const items = new Map(rack.items.map(i => [i.id, i]));
   const key = JSON.stringify([cabled.map(endKey), extra.map(endKey),
     [...new Set(ends.map(e => e.item))].map(id => items.get(id) || null)
       .map(i => i && [i.id, i.ref, i.cfg, i.swaps, i.fields])]);
   if (memo.key === key) return memo.value;
+  if (reading.key === key) return reading.promise;
+  const mine = {key, promise: readFacts(rack, cabled, ends, items, key)};
+  reading = mine;
+  try { return await mine.promise; } finally { if (reading === mine) reading = {key: '', promise: null}; }
+}
+async function readFacts(rack, cabled, ends, items, key) {
+  const out = {seats: {}, ends: new Map()};
   const list = await components();
   const panels = new Map();
   let failed = false;
@@ -163,6 +181,6 @@ export async function cableFacts(rack, extra = []) {
   Object.freeze(out);
   // An empty component index, or a panel that failed to load, is a fetch that
   // failed (face.js asks again next time), so an answer built on it is not kept.
-  if (list.length && !failed) memo = {key, value: out};
+  if (list.length && !failed) { memo = {key, value: out}; stood.add(out); }
   return out;
 }

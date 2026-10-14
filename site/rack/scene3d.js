@@ -546,7 +546,9 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
       if (got.length) return got;
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
-    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null, bundles?.bundles ?? null, rack, ctx), bendOf: radiusOf(rack, bendOf, bundles)});
+    }, waypoints: kitPointsFor(THREE, faceZ, paths, routes, bundles?.places ?? null, bundles?.bundles ?? null, rack, ctx), bendOf: radiusOf(rack, bendOf, bundles),
+      // the page is handed back every 30 ms while the tubes are made, and they stand as they are hung (cables.js `slice`)
+      slice: 30});
     // Each corner drawn tighter than its radius, in the kit's bend-check words.
     const byId = new Map((rack.cables || []).map(c => [c.id, c]));
     drawn.tight = (drawn.tubes || []).flatMap(t => (t.tight ?? []).map(c => {
@@ -671,6 +673,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // stood in its place as it is mounted, not once the whole stack is
       // built, so its box is never drawn at the middle of the rack first.
       standIn: true,
+      // A FRAME AT MOST EVERY 400 MS WHILE THE DETAIL IS BEING BUILT and nobody is handling the view (rack3d.js
+      // `buildFrameMs`, portrayal-site#192): a rack in detail is tens of thousands of draw calls a frame, and
+      // drawing one at every animation frame while the build was still adding to it took a quarter of the build's
+      // time on a fast GPU and nearly all of it without one.
+      buildFrameMs: 400,
       onDetailFailed: f => onDetailFailed?.(f),
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });

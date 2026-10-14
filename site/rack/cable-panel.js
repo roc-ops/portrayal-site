@@ -138,12 +138,87 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // open. Each row says where it is among its siblings that show (aria-setsize,
 // aria-posinset). A row's own button, its id and
 // its data-* are as they were.
+// THE WARNINGS, ONE SECTION THAT OPENS (portrayal-site#192). Every route
+// warning used to stand above the cable list, a sentence each: a rack being
+// built with dozens of tight bends had its bundles and cables pushed out of
+// sight. They are now one row above the tree, "Warnings (N)", CLOSED until the
+// reader opens it, so the tree is always in view; it takes the page's warning
+// colour while N is above zero, and is absent when there is nothing to warn
+// of. N counts FINDINGS, not sentences: a cable with three tight corners is
+// one (route-context.js routeWarnings), as the kit's describe counts cables.
+//
+// Opened, the findings are listed by kind, each kind with its count ("Tight
+// bends (12)"); a kind of more than WARNINGS_FOLD findings is itself a row
+// that opens. A finding names its cable (as its row in the tree does) or its
+// manager, and is a button: it pins that cable, or selects that manager, as
+// the tree's row does. Under it are the sentences, each the kit's or the
+// page's own, word for word as they were (a route warning keeps
+// `data-route-warning`).
+//
+// The kinds, in order: the route's (`fill`, `capacity`, `gone`, `rings`,
+// `bodies`, `bends`), then what each cable's own row already says and still
+// says: a loose end, a media mismatch, a cord shorter than its route needs.
+//
+// IT IS A DISCLOSURE, NOT PART OF THE TREE: each row that opens is a button
+// with aria-expanded and aria-controls, in the Tab order ahead of the tree's
+// one stop; Enter and Space open and close it. The tree's roving focus and
+// its arrow keys are the tree's alone. What is open is the reader's, kept per
+// rack document with the tree's rows (`open(key)`, `onToggle(key, on)`: keys
+// `warnings` and `warnings/<kind>`); nothing opens by itself when a warning
+// appears, and the count is the rack's as it is at every redraw of the panel.
+export const WARNINGS_FOLD = 5;
+export const WARNING_KINDS = {
+  fill: 'Pathways over their fill', capacity: 'More cables than a manager states', gone: 'Waypoints that are gone',
+  rings: 'Rings entered and left by one face', bodies: 'Cables through a body', bends: 'Tight bends',
+  loose: 'Loose ends', mismatch: 'Media mismatches', short: 'Cords shorter than their route'};
+const twist = () => el('span', {class: 'rk-twist', 'aria-hidden': 'true'});
+function discloser(id, text, bodyId, open, onToggle, attrs = {}) {
+  const b = el('button', {type: 'button', id, class: 'rk-warnings-row', 'aria-expanded': String(open), 'aria-controls': bodyId, ...attrs},
+               [twist(), el('span', {class: 'rk-tree-name', text})]);
+  b.addEventListener('click', () => {
+    const on = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(on));
+    document.getElementById(bodyId).hidden = !on;
+    onToggle(on);
+  });
+  return b;
+}
+/** `kinds`: [{kind, rows: [{cable | item: id, or neither, texts, route}]}], `route` true for the routes' sentences.
+ *  `nameOf({cable | item})` is the finding's name. null when there is nothing to warn of. */
+export function warningsSection({kinds, nameOf, open = () => false, onToggle = () => {}, onPick = () => {}}) {
+  const n = kinds.reduce((m, k) => m + k.rows.length, 0);
+  if (!n) return null;
+  const shown = open('warnings');
+  const body = el('div', {id: 'warningsBody', class: 'rk-warnings-body'}, kinds.map(({kind, rows}) => {
+    const title = `${WARNING_KINDS[kind] ?? kind} (${rows.length})`, listId = `warningList-${kind}`;
+    const folds = rows.length > WARNINGS_FOLD, kindOpen = !folds || open(`warnings/${kind}`);
+    // (a list by role, not `ul` and `li`: the rows of the tree are the panel's only list items, and are read as such)
+    const list = el('div', {id: listId, class: 'rk-warnings-list', role: 'list'}, rows.map((r, k) => {
+      const texts = r.texts.map(text => el('p', {class: 'rk-warn', ...(r.route ? {'data-route-warning': 'true'} : {'data-warning-text': 'true'}), text}));
+      const name = r.cable || r.item ? nameOf(r) : null;
+      if (!name) return el('div', {'data-warning-row': kind, role: 'listitem'}, texts);
+      const pick = el('button', {type: 'button', id: `warningRow-${kind}-${k}`, 'data-warning-pick': r.cable ? `cable ${r.cable}` : `item ${r.item}`,
+                                 text: r.texts.length > 1 ? `${name} (${r.texts.length})` : name});
+      pick.addEventListener('click', () => onPick(r));
+      return el('div', {'data-warning-row': kind, role: 'listitem'}, [pick, ...texts]);
+    }));
+    list.hidden = !kindOpen;
+    return el('div', {class: 'rk-warnings-kind', 'data-warning-kind': kind, 'data-count': String(rows.length)}, [
+      folds ? discloser(`warningKind-${kind}`, title, listId, kindOpen, on => onToggle(`warnings/${kind}`, on))
+            : el('p', {class: 'rk-warnings-title', id: `warningKind-${kind}`, text: title}),
+      list]);
+  }));
+  body.hidden = !shown;
+  return el('div', {class: 'rk-warnings', 'data-warnings': 'true', 'data-count': String(n)}, [
+    discloser('warningsToggle', `Warnings (${n})`, 'warningsBody', shown, on => onToggle('warnings', on)), body]);
+}
+
 // What a cable says under its ends: label, media, purpose, then its cord and spare, or its length.
 export const cableMeta = (c, spare = null) =>
   [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, spare ? spareText(spare) : lengthText(c.length)].filter(Boolean).join(' · ');
 export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete,
                            spares = new Map(), bundles = null, selectedBundle = null, onBundleSelect = () => {}, onBundleNew = null,
-                           tree = null}) {
+                           tree = null, warnings = null, onWarningPick = () => {}}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -229,6 +304,21 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
       ...(n ? [el('span', {class: 'rk-warn', 'data-member-warnings': String(n), text: some(n)})] : []),
       group]));
   }
+  // What each cable's own row says and the Warnings section lists too: the same sentences, by kind.
+  const cableTitle = id => { const c = cables.find(x => x.id === id); return c ? `${id}: ${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}` : id; };
+  const warningItemName = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z?.id === id)?.label ?? id;
+  const ownWarnings = () => {
+    const loose = [], wrong = [], short = [];
+    for (const c of cables) {
+      const ends = [['a', c.a], ['b', c.b]].filter(([, e]) => why(e)).map(([k, e]) => `Loose end ${k.toUpperCase()}: ${why(e)}.`);
+      if (ends.length) loose.push({cable: c.id, texts: ends});
+      const bad = mismatch(c.media, info(c.a), info(c.b));
+      if (bad.length) wrong.push({cable: c.id, texts: bad});
+      const spare = spares.get(c.id) ?? null, needs = spare ? needsText(spare) : null;
+      if (needs) short.push({cable: c.id, texts: [`${spareText(spare)}; ${needs}.`]});
+    }
+    return [{kind: 'loose', rows: loose}, {kind: 'mismatch', rows: wrong}, {kind: 'short', rows: short}].filter(k => k.rows.length);
+  };
   const list = el('ul', {role: 'tree', 'aria-label': 'Cables', class: 'rk-tree'}, place(rows));
   wireTree(list, {stop: tree?.stop ?? null, onToggle: tree?.onToggle, onStop: tree?.onStop});
 
@@ -239,7 +329,12 @@ export function cableList({rack, ends, notes = [], on, uOf, selectedId = null, m
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
              'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
     ...(spares.size ? [el('p', {class: 'rk-muted', 'data-spare-help': 'true', text: SPARE_HELP})] : []),
-    ...notes.map(n => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text: n})),
+    // (one section that opens, above the tree, when the page gives the routes' warnings by kind: warningsSection;
+    // else every sentence, as before)
+    ...(warnings ? [warningsSection({kinds: [...warnings.map(k => ({...k, rows: k.rows.map(r => ({...r, route: true}))})), ...ownWarnings()],
+                                     nameOf: r => (r.cable ? cableTitle(r.cable) : warningItemName(r.item)),
+                                     open: key => tree?.state?.(key) === true, onToggle: (key, on) => tree?.onToggle?.(key, on), onPick: onWarningPick})].filter(Boolean)
+                : notes.map(text => el('p', {class: 'rk-warn', 'data-route-warning': 'true', text}))),
     list,
   ]);
 }

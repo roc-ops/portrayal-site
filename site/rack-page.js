@@ -28,7 +28,7 @@ import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
-import {cableFacts, drawnAt, UNCHECKED} from './rack/cable-plugs.js';
+import {cableFacts, factsStand, drawnAt, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
@@ -38,8 +38,10 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
+import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
+import {routesOf, sameReading, askOf} from './rack/reading.js';
+import {describeOnce, inspectOnce} from './rack/agent-read.js';
 import {LANE_GAP, routeText} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
@@ -61,6 +63,9 @@ import {sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
 const PROBE = new URLSearchParams(location.search).get('probe') === '1';
+// PROBE ONLY: `?probe=1&checkKept=1` gives the kit's route context `checkKept: true` (route-context.js kept), so every
+// path the kit reads is laid again from nothing and compared with the one it kept; a difference throws. Not for a page in use.
+if (PROBE && new URLSearchParams(location.search).get('checkKept') === '1') kept.check = true;
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
@@ -568,7 +573,8 @@ function onChange(ev) {
   if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
   else scheduleRebuild3d();
   // What is not a step changes nothing a route reads: the routes stay this rack's.
-  if (!ev.step) keepRoutes(ev.before, ev.after);
+  // (and so does the one reading of the rack that every reader shares: reading.js)
+  if (!ev.step) { keepRoutes(ev.before, ev.after); sameReading(ev.before, ev.after); }
   // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
@@ -907,7 +913,8 @@ function treeHooks(r) {
       t.show = pin;
     }
   }
-  return {open, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
+  // (`state(key)`: what the reader set for a row, undefined if never: the Warnings section starts closed whatever the rack's size)
+  return {open, state: key => t.state[key], stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
 }
 function cableListPanel() {
   const r = rack();
@@ -919,9 +926,18 @@ function cableListPanel() {
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
-  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
-  return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
-    spares: sparesNow(),
+  const lap = lapsOf();
+  // (by kind and by what each is about: the list shows them as one section that opens, cable-panel.js warningsSection;
+  // what the reader has opened there is kept with the tree's rows, per rack document)
+  const warnings = now ? routeWarnings(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
+  lap('notes');
+  const spares = sparesNow();
+  lap('spares');
+  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: warnings.reduce((n, k) => n + k.rows.reduce((m, x) => m + x.texts.length, 0), 0)}; });
+  return cableList({rack: r, ends: S.cableFacts.ends, warnings, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    // a finding picked pins its cable, as its row in the tree does, or selects its manager
+    onWarningPick: w => select(w.cable ? {kind: 'cable', id: w.cable} : {kind: 'item', id: w.item}),
+    spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
     onFilter: next => {
@@ -1214,6 +1230,17 @@ function flushDcimDraft() {
 const probeHeld = at => { const h = S.probeHold; if (!h || h.at !== at || h.taken) return null; h.taken = true; h.reach(); return h.gate; };
 // How many redraws are running: a bundle command waits for one (bundleCommand).
 let rendering = 0;
+// PROBE ONLY: WHERE A REDRAW'S TIME GOES (portrayal-site#192, tools/rack-speed.py). `lapsOf()` gives a
+// redraw a stopwatch: lap(name) adds the time since the last lap to `name`. Without ?probe=1 it is
+// a function that does nothing, and S.probeTimes is never set, so a redraw runs exactly as it did.
+const NO_LAP = Object.assign(() => {}, {times: null});
+function lapsOf() {
+  if (!PROBE) return NO_LAP;
+  const times = {}, t0 = performance.now();
+  let last = t0;
+  return Object.assign(k => { const now = performance.now(); times[k] = (times[k] ?? 0) + now - last; last = now; },
+    {times, t0, since: () => performance.now() - t0});
+}
 // `keepRoutes` (a switch of pair, setView): the rack has not changed, so what
 // the last redraw read of it is still true and is drawn from again (redraw).
 async function render(opts) {
@@ -1223,6 +1250,7 @@ async function render(opts) {
 async function redraw(keepRoutes = false) {
   flushDcimDraft();
   const mine = ++S.draws;
+  const lap = lapsOf();
   pruneCable();
   pruneFilter();
   // The route row and the typed fields belong to one open cable form too.
@@ -1272,6 +1300,7 @@ async function redraw(keepRoutes = false) {
         return UNCHECKED;
       });
     if (!kept && facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
+    lap('facts');
     // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
     // length is the document's, so when one changes it is stored by the
     // lengths.routed command, which is not an undo step - it is the page's
@@ -1281,7 +1310,19 @@ async function redraw(keepRoutes = false) {
     else if (r.cables.length) {
       const at = theDoc();
       if (S.probeHold) { const held = probeHeld('routes'); if (held) await held; }
-      const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // READ ONCE FOR THIS RACK OBJECT (reading.js, portrayal-site#192): a redraw that changes nothing a route
+      // reads (a selection, a row opened, a notice) is handed the routes the last one read, and so is every
+      // export and every call an assistant makes. A step is a new rack object, and is read afresh.
+      const read = await routesOf(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // A REDRAW ASKED FOR LATER IN THE SAME TASK STILL OVERTAKES THIS ONE. Reading the routes always took long enough
+      // that a second redraw asked for by the same click (a pane's own handler, then the page's, which puts a pinned
+      // cable down) began before this one drew, and this one stood down for it (`mine`, below). Handed routes already
+      // read, this one would finish first and show the one-shot notice, and the second would then draw it away: a
+      // taken port's "already has a cable" flashed and was gone. So the task that asked is let finish first.
+      await new Promise(next => setTimeout(next));
+      // (the page's own copy: `rack` is the rack this redraw draws, which a reading shared with the rack before a
+      // change that is not a step does not name, and `bendsShown` is this redraw's, by the ends as it read them)
+      const rf = read && {...read, rack: r, bendsShown: landedBends(read.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null)};
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
       // THE RACK MOVED WHILE ITS FACES AND ROUTES WERE READ, and nothing has
@@ -1293,9 +1334,8 @@ async function redraw(keepRoutes = false) {
       // redraw was going to read. `r` is the rack this redraw began with.
       else if (rack() !== r || theDoc() !== at) { renderSoon(); return; }
       else {
-        // (before the scene's signature is compared: it counts the bends
-        // shown, and the scene's own was taken with them set)
-        rf.bendsShown = landedBends(rf.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null);
+        // (the bends shown are set before the scene's signature is compared:
+        // it counts them, and the scene's own was taken with them set)
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
         // THE BEND NOTICE (kit 0.17.0, Portrayal #973): each corner of a
@@ -1326,6 +1366,7 @@ async function redraw(keepRoutes = false) {
       S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
+    lap('routes');
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
@@ -1349,6 +1390,7 @@ async function redraw(keepRoutes = false) {
     return;
   }
   if (mine !== S.draws) return;
+  lap('panes');
   S.cableFacts = facts;
   S.factsRack = r;       // the rack these were read for (a switch of pair draws from them again: `kept`, above)
   if (!kept) S.factsPending = pending.length;
@@ -1369,6 +1411,7 @@ async function redraw(keepRoutes = false) {
   if (!$('panes').hidden) {
     applyZoom($('panes'), S.svgs, S.zoom);
     setZoomLabel();
+    lap('layout');
     // Cables are measured off the laid-out panes (getScreenCTM), so they are
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled && sides) {
@@ -1406,11 +1449,14 @@ async function redraw(keepRoutes = false) {
       if (it) markPort(S.svgs.find(s => s.dataset.pane === paneOf(it, e.view)), it.id, e.path);
     }
   }
+  lap('cables');
   renderSide();
+  lap('side');
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
   if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
   paintTip();   // a cable under the pointer may have just changed its cord
+  if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cableCount: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -2174,16 +2220,19 @@ async function bootInner() {
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
   ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields, ends: true}))?.ports ?? []);
+// WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (agent-read.js, portrayal-site#192): a window of describe with the
+// routes, and the inspect of a cable or a bundle. A device's inspect lays nothing and is asked each time.
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
-  describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
+  // (asked of the rack the routes were read from where that is the same question: reading.js askOf)
+  describe: (r, win, ctx = {}) => describeOnce(Q.describe, r, win, {...ctx, chassisOf}, askOf(r, ctx.route)),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
   freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
-  inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
+  inspect: (r, id, ctx) => inspectOnce(Q.inspect, r, id, ctx, factsStand),
 });
 
 // THE KIT'S PER-CALL CONTEXT for an agent's call (agent-context.js): the
@@ -2193,7 +2242,8 @@ const boundQueries = () => ({
 const agentContext = agentContextFor({
   // chassisOf is read through, not captured: the catalog replaces it once loaded.
   loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts, drawnAt,
-  routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
+  // (the one reading of the rack, which the redraw has usually made already: reading.js)
+  routeFacts: r => routesOf(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
 if (PROBE) {
@@ -2212,6 +2262,15 @@ if (PROBE) {
     // Probe only: the 3D scene being built, from before its first device (scene() answers only once it is hung).
     loadingScene: () => S.probeLoading ?? null,
     redraw: () => render(),
+    // Probe only (portrayal-site#192): how many times the routes were read and the kit laid a cable
+    // (route-context.js reads), where the last finished redraw's time went (lapsOf), how many redraws
+    // have finished, and whether one is running or queued.
+    reads: () => ({routeFacts: reads.routeFacts, lays: reads.reach / 2, last: reads.last ? {...reads.last} : null}),
+    times: () => (S.probeTimes ? {...S.probeTimes, sidePanel: S.probeSide ? {...S.probeSide} : null} : null),
+    drawn: () => S.probeDone ?? 0,
+    // Probe only: whether the route context the page last read had the kit's `checkKept` on (?probe=1&checkKept=1).
+    checkKept: () => S.routes?.ctx?.checkKept === true,
+    idle: () => rendering === 0 && !renderQueued,
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),
     // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.

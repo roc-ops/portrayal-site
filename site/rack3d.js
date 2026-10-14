@@ -193,6 +193,40 @@ export function createRackScene(container, opts = {}) {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  // FEWER FRAMES WHILE THE DETAIL IS BEING BUILT (`opts.buildFrameMs`,
+  // portrayal-site#192). A rack in full detail is tens of thousands of draw
+  // calls a frame (40,000 for 25 parts with 43 cables), and the loop below
+  // drew one at every animation frame while the relief pass was still adding
+  // to it: on a fast GPU a quarter of the build's time went on frames nobody
+  // was steering, and with software GL nearly all of it, so a large rack never
+  // finished. A host that passes `buildFrameMs` gets a frame at most that
+  // often WHILE A DETAIL PASS IS RUNNING AND NOBODY IS HANDLING THE VIEW: the
+  // scene still fills in as it is built, a few times a second. The moment the
+  // pointer moves over the stage, a button or the wheel is used, or the camera
+  // is still easing to rest, every frame is drawn as before; and once the
+  // detail is in, every frame is drawn as before. Nothing is drawn that was
+  // not, and no other caller passes the option.
+  // AND NEVER MORE THAN A FIFTH OF THE TIME: where a frame is slow (software
+  // GL takes over a second for one), `buildFrameMs` apart is back to back, so
+  // the wait is also four times what the last frame took, measured to the
+  // next animation frame the browser gave.
+  const BUILD_FRAME_MS = opts.buildFrameMs > 0 ? opts.buildFrameMs : 0;
+  const HANDLED_MS = 1000;      // how long after the last touch the view counts as handled (the easing runs on)
+  let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false, frameCost = 0, costDue = false;
+  const onHandle = () => { handledAt = performance.now(); };
+  const onHandleStart = () => { handling = true; }, onHandleEnd = () => { handling = false; handledAt = performance.now(); };
+  // A CAMERA THAT HAS MOVED IS ALWAYS DRAWN. The controls move the camera in their own pointer handlers as well as
+  // in the loop's update(), so "did update() move it" misses a drag's last step; their `change` event does not.
+  // Until that frame is drawn the camera's matrices are the last frame's, and a host asking what is under the
+  // pointer (the Rack Builder's hover) would be answered for a view that is no longer the one on screen.
+  let cameraMoved = false;
+  const onCameraMoved = () => { cameraMoved = true; };
+  if (BUILD_FRAME_MS) {
+    controls.addEventListener('change', onCameraMoved);
+    controls.addEventListener('start', onHandleStart);
+    controls.addEventListener('end', onHandleEnd);
+    for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.addEventListener(type, onHandle, {passive: true});
+  }
   controls.minDistance = 200;
   controls.maxDistance = 6000;
 
@@ -876,6 +910,8 @@ export function createRackScene(container, opts = {}) {
     })();
     // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
     if (opts.onDetailFailed) detail.catch(() => {});
+    // (counted while it runs, for the loop: fewer frames while a detail pass is in hand, `opts.buildFrameMs`)
+    if (BUILD_FRAME_MS) { detailing++; const done = () => { detailing--; }; detail.then(done, done); }
     pending.push(detail);
     return group;
   }
@@ -1169,8 +1205,18 @@ export function createRackScene(container, opts = {}) {
   let raf = 0, alive = true, running = true;
   function tick() {
     if (!alive || !running) { raf = 0; return; }
+    // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
+    const now = BUILD_FRAME_MS ? performance.now() : 0;
+    if (costDue) { frameCost = now - lastFrame; costDue = false; }
+    // (the camera is kept where the controls have it at every animation frame, held back or not, and a camera
+    // that has moved since the last frame is drawn: `cameraMoved`, above)
     controls.update();
-    renderer.render(scene, camera);
+    if (cameraMoved || !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
+      cameraMoved = false;
+      renderer.render(scene, camera);
+      lastFrame = now;
+      costDue = !!BUILD_FRAME_MS;
+    }
     raf = requestAnimationFrame(tick);
   }
   tick();
@@ -1261,6 +1307,7 @@ export function createRackScene(container, opts = {}) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
+      if (BUILD_FRAME_MS) for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.removeEventListener(type, onHandle);
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;

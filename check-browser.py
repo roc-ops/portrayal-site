@@ -6762,6 +6762,32 @@ SPARE_PT_3D_JS = """async id => {
 }"""
 
 
+# THE CAMERA AT REST. A settled scene is not a still camera: after an orbit the controls ease it for as many FRAMES
+# as it takes (damping), which is many seconds where a frame takes a tenth of a second or more, and a point found on a
+# cable while it eases is a few pixels from that cable by the time the pointer reaches it (the label shows the
+# cable beside it, or none). Where it comes to rest also depends on how many frames the easing ran, so a cable that
+# shows well in one run lies behind its neighbours in the next. The check turns the easing off before it orbits
+# (the label under test is the page's, not the controls'), so the view stops where the pointer lets go, and waits
+# until three frames in a row moved the camera under 0.05 mm each or `ms` pass. True when it is still.
+CAMERA_REST_JS = """async ms => {
+  const s = window.__rack.scene();
+  if (!s?.three) return true;
+  const {camera, renderer, controls} = s.three, sleep = t => new Promise(r => setTimeout(r, t));
+  controls.enableDamping = false;
+  const deadline = Date.now() + ms, last = camera.position.clone();
+  let frame = renderer.info.render.frame, calm = 0;
+  while (Date.now() < deadline) {
+    await sleep(100);
+    const f = renderer.info.render.frame;
+    if (f === frame) continue;
+    calm = camera.position.distanceTo(last) / (f - frame) < 0.05 ? calm + 1 : 0;
+    last.copy(camera.position); frame = f;
+    if (calm >= 3) return true;
+  }
+  return false;
+}"""
+
+
 def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     """Put the pointer on `cid` and read the label beside it against `want`. With
     `drag`, a button held and let go hides it until the pointer next moves."""
@@ -6771,6 +6797,8 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     # until the pointer put on it shows the label. A cable whose label never shows still fails below.
     pt = None
     for attempt in range(3):
+        if find_js is SPARE_PT_3D_JS:
+            page.evaluate(CAMERA_REST_JS, 30000)
         pt = page.evaluate(find_js, cid)
         if not pt:
             break
@@ -6819,6 +6847,7 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
             # ...and it comes back with the next free move over a cable.
             if drag > 1:
                 settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
+                page.evaluate(CAMERA_REST_JS, 30000)
             # (found again up to three times, as the first point is: where two cables lie close in 3D (c4 and c8 in ring 4
             # since the ring is chosen by room, kit 0.27.0) a point found while the camera still eases may be under the
             # other one by the time the pointer gets there)
@@ -9360,6 +9389,543 @@ def check_rack_side_fresh_after_edit(page, base):
         bad.append(f"the new-cable case: in Left / Right the form is {'open' if in_sides[1] else 'closed'} and the rack has {in_sides[2]} cables; expected the form gone and nothing added")
     if in_sides[0] != seats0 or back != seats0:
         bad.append("the new-cable case: after the switch the page still holds facts for the dropped cable's two ends")
+    return bad
+
+
+# A RACK OF A SIZE (portrayal-site#192): `devices` two-unit fabric switches stacked from the top of a 42U four-post
+# rack, a lacer panel on each, a vertical manager either side, and `per_pair` cables from each switch to the one below
+# it, port k to port 24 + k, each port holding the cable's own plug. 13 devices and 24 a pair is 288 cables and 576
+# seated ends: the shape and size of the rack the issue was measured on. Built here, so no rack file is committed.
+def speed_fixture(devices, per_pair=24, name=None):
+    if not (2 <= devices <= 20 and 1 <= per_pair <= 24):
+        raise ValueError("speed_fixture: 2 to 20 devices, 1 to 24 cables a pair")
+    items, cables = [], []
+    for k in range(devices):
+        used = ([*range(per_pair)] if k < devices - 1 else []) + ([*range(24, 24 + per_pair)] if k else [])
+        items.append({"id": f"i{k + 1}", "ref": "s9725-64e", "cfg": "ac", "label": f"FAB-{k + 1}", "ru": 41 - 2 * k, "face": "front", "turned": False,
+                      "swaps": {f"port-{n}": "generic/qsfp-dd-cable@1" for n in used}, "fields": {}})
+    for k in range(devices):
+        items.append({"id": f"i{devices + k + 1}", "ref": "fhd-cmp5dr", "cfg": "base", "label": f"CM-{k + 1}", "ru": 42 - 2 * k, "face": "front",
+                      "turned": False, "swaps": {}, "fields": {}, "on": f"i{k + 1}", "unit": 2})
+    for k in range(devices - 1):
+        for n in range(per_pair):
+            cables.append({"id": f"c{len(cables) + 1}", "a": {"item": f"i{k + 1}", "path": f"port-{n}", "view": "front"},
+                           "b": {"item": f"i{k + 2}", "path": f"port-{24 + n}", "view": "front"}, "media": "aoc", "purpose": "fabric",
+                           "label": f"FAB-{k + 1} {n} > FAB-{k + 2} {24 + n}", "route": []})
+    return {"format": "portrayal-rack", "version": 4, "id": f"doc-speed-{devices}-{per_pair}", "racks": [{
+        "id": "r1", "name": name or f"Speed {len(cables)}",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": items,
+        "zeroU": [{"id": "z1", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV left", "at": "left-front", "offsetMm": 0},
+                  {"id": "z2", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV right", "at": "right-front", "offsetMm": 0}],
+        "cables": cables}]}
+
+
+# ONE READING OF A RACK, AND NEVER A STALE ONE (portrayal-site#192, site/rack/reading.js). The routes are read once for
+# a rack object and handed to the panes, the list, the exports and every assistant tool, and what a tool reads of the
+# kit is answered once for the rack object. What that risks is staleness: something shown, said or downloaded that was
+# true of the rack before an edit. So each kind of edit is made on a page that has already answered everything for the
+# rack before it, and what the page then shows, says and downloads is compared with THE SAME DOCUMENT OPENED IN A
+# BROWSER THAT HAS NEVER SEEN IT (another context, a fresh page): nothing there can be left over from anything.
+#
+# The page's state, as plain data: both panes' drawings whole, the list's rows, every route warning (a folded kind is
+# opened first), what the page read of the routes, and the rack.
+READING_STATE_JS = """async () => {
+  const R = window.__rack, plain = v => JSON.parse(JSON.stringify(v ?? null));
+  for (const d of document.querySelectorAll('#side details[data-route-more]:not([open])')) d.querySelector('summary').click();
+  await new Promise(r => setTimeout(r, 30));
+  // (less the zoom, which is the window's, and the outline an assistant's edit wears for three seconds; and every
+  // number to a millionth: the cable layer is measured off the laid-out pane, and two pages lay the same pane out
+  // to within the last digits of a float, 310.60001226425175 against 310.6000122642518 on CI's runner)
+  const pane = id => { const svg = document.querySelector(`#${id} > svg`); if (!svg) return null;
+    const c = svg.cloneNode(true); c.removeAttribute('style');
+    for (const n of c.querySelectorAll('.rk-agent-touched')) { n.classList.remove('rk-agent-touched'); if (!n.getAttribute('class')) n.removeAttribute('class'); }
+    return c.outerHTML.replace(/-?\\d+\\.\\d{7,}/g, m => String(Math.round(Number(m) * 1e6) / 1e6)); };
+  return {"the front pane's drawing": pane('paneFront'), "the rear pane's drawing": pane('paneRear'),
+    "the cable list's rows": [...document.querySelectorAll('#side [data-cable-item]')].map(li => li.textContent),
+    'the route warnings': [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
+    'the routes': plain(R.routes()), 'the paths': plain(R.paths()), 'the fill': plain(R.fill()), 'the ring marks and findings': plain(R.rings()),
+    'the bodies crossed': plain(R.bodies()), 'the tight bends': plain(R.bends()), 'the bundles': plain(R.bundles()),
+    'the tie straps': plain(R.tieStraps()), "the cabled ends' facts": plain(R.cableFacts()), 'the rack': plain(R.doc().racks[0])};
+}"""
+# A redraw has finished since `n` were, none is running or queued, and the routes the page holds are this rack's.
+READING_SETTLED = """n => window.__rack.drawn() > n && window.__rack.idle()
+  && (!window.__rack.doc().racks[0].cables.length || window.__rack.routesCurrent().current)"""
+# describe_rack asked the moment an edit lands, before its redraw has read anything, against the kit asked afresh of
+# that very rack object with a context nobody else holds: [what the tool said, the kit's lines it should end with].
+# (A small window, so the tool's own cut to fit plays no part: its text is the kit's first line, its own lines of the
+# session, then the rest of the kit's.)
+READING_AT_ONCE_JS = """async () => {
+  const rack = window.__rack.doc().racks[0];
+  const said = window.__tools.describe_rack.execute({limit: 4});
+  const Q = await import('/vendor/rack/queries.js'), RC = await import('/site/rack/route-context.js'), C = await import('/vendor/rack/catalog.js');
+  const {chassisOf} = await C.loadCatalog('assets/dist/'), types = await RC.cableTypes();
+  const rf = rack.cables.length ? await RC.routeFacts(rack, chassisOf) : null;
+  const kit = Q.describe(rack, {chassisOf, ...(rf ? {route: rf.ctx} : {}), ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})}, {offset: 0, limit: 4});
+  return {said: (await said).content[0].text, kit};
+}"""
+READING_TOOL_JS = """async ([n, a]) => { const before = window.__rack.reads(), res = await window.__tools[n].execute(a), after = window.__rack.reads();
+  return {text: (res?.content ?? []).map(c => c.text).join('\\n'), isError: !!res?.isError,
+          reads: after.routeFacts - before.routeFacts, lays: after.lays - before.lays}; }"""
+
+
+def reading_tools(rack):
+    """The tool calls whose answers are compared: everything an assistant can read of this rack."""
+    cables = [c["id"] for c in rack.get("cables") or []]
+    # (windows small enough to fit whole: the default one is cut to the room the undo line leaves, and a rack opened afresh has none)
+    calls = [("describe_rack", {"limit": 4}), ("describe_rack", {"section": "items"}), ("describe_rack", {"section": "bundles"})]
+    calls += [("describe_rack", {"section": "cables", "offset": k, "limit": 8}) for k in range(0, len(cables), 8)]
+    calls += [("inspect", {"id": c}) for c in dict.fromkeys(cables[:2] + cables[-2:])]
+    calls += [("inspect", {"id": b["id"]}) for b in rack.get("bundles") or []]
+    calls += [("inspect", {"id": "i1"}), ("list_free_ports", {"id": "i1"}), ("check_fit", {"ref": "as7326-56x", "face": "front"})]
+    if len(cables) >= 2:
+        calls.append(("edit_rack", {"dry_run": True, "commands": [{"op": "bundle.create", "cables": cables[-2:]}]}))
+    return calls
+
+
+# The undo line is the one thing a tool says that is the session's, not the rack's: a rack opened afresh has nothing to undo.
+def reading_text(name, text):
+    lines = text.split("\n")
+    return "\n".join(l for k, l in enumerate(lines) if not (name == "describe_rack" and k == 1 and (l.startswith("Undo would take back") or l == "Nothing to undo.")))
+
+
+@extra("rack.html: one reading of a rack, never a stale one - after each kind of edit (a cable's end, media and label, a cable removed and added, a device moved, renamed and an optic taken out by an assistant, the frame, a route by hand and reset, a bundle, undo, redo, the DCIM settings, the rack's name, another document with the same ids) every tool's text, both drawings, the list, the warnings, the routes and a download are those of the same document opened in a browser that has never seen it; a tool call on a rack that has not changed reads no route again, and asked twice lays no cable (#192)")
+def check_rack_reading_fresh_after_edit(page, base):
+    return reading_fresh_after_edit(page, base, False)
+
+
+def reading_fresh_after_edit(page, base, check_kept):
+    """The staleness run. With `check_kept` the page is opened with ?checkKept=1 (the kit lays every path it reads again
+    from nothing and compares it with the one it kept, route-context.js kept): the cold lays go through the same plug
+    reaches, so the counts of cables laid cannot hold in that pass and are not asked; a throw of the kit's is a failure
+    wherever it is raised, so the console is read too (the kit swallows some into console.warn)."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    if check_kept:
+        page.on("console", lambda m: bad.append(f"console {m.type}: {m.text[:300]}") if "checkKept" in m.text else None)
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(CABLE_LAY_FIXTURE.read_text())
+    fixture.pop("_note", None)
+    page.goto(f"{base}/rack.html?probe=1" + ("&checkKept=1" if check_kept else ""), wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.click('#view2d [data-view="faces"]')
+    # the browser that has never seen the rack: its own context, so not even this one's library
+    other = page.context.browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
+    fresh = other.new_page()
+    fresh.on("pageerror", lambda e: bad.append(f"uncaught, in the fresh browser: {e}"))
+    if check_kept:
+        fresh.on("console", lambda m: bad.append(f"console {m.type}, in the fresh browser: {m.text[:300]}") if "checkKept" in m.text else None)
+    fresh.add_init_script(STAND_IN_MODEL_CONTEXT)
+
+    def settle(pg, drawn, where):
+        try:
+            pg.wait_for_function(READING_SETTLED, arg=drawn, timeout=READY_MS)
+        except Exception:
+            bad.append(f"{where}: the page did not settle on the routes of the rack as it is")
+        pg.wait_for_timeout(150)
+
+    def answers(pg, rack):
+        out = []
+        for name, a in reading_tools(rack):
+            r = pg.evaluate(READING_TOOL_JS, [name, a])
+            out.append((name, a, r))
+        return out
+
+    def schedule(pg):
+        dl = export_file(pg, "cables")
+        return pathlib.Path(dl.path()).read_text()
+
+    def compare(where, drawn_before):
+        settle(page, drawn_before, where)
+        rack = page.evaluate("() => window.__rack.doc().racks[0]")
+        got_state, got_tools, got_csv = page.evaluate(READING_STATE_JS), answers(page, rack), schedule(page)
+        # ...and a redraw that changes nothing reads nothing again and draws the same
+        n, reads = page.evaluate("() => [window.__rack.drawn(), window.__rack.reads()]")
+        page.evaluate("() => { window.__rack.redraw(); }")
+        settle(page, n, f"{where} (drawn again)")
+        again_state, reads_after = page.evaluate(READING_STATE_JS), page.evaluate("() => window.__rack.reads()")
+        if rack["cables"] and (reads_after["routeFacts"] != reads["routeFacts"] or (reads_after["lays"] != reads["lays"] and not check_kept)):
+            bad.append(f"{where}: a redraw of a rack that had not changed read the routes {reads_after['routeFacts'] - reads['routeFacts']} times and laid {reads_after['lays'] - reads['lays']:g} cables; expected neither")
+        for key in got_state:
+            if again_state[key] != got_state[key]:
+                bad.append(f"{where}: {key} changed when the page was drawn again with no edit")
+        # each tool again: no route is read, and no cable is laid for an answer already given
+        # (a dry run is not a reading: the kit runs the command, which lays what the command needs laid)
+        for name, a, first in got_tools:
+            r = page.evaluate(READING_TOOL_JS, [name, a])
+            if r["text"] != first["text"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} answered differently the second time")
+            if r["reads"] or (r["lays"] and name != "edit_rack" and not check_kept):
+                bad.append(f"{where}: {name} {json.dumps(a)}, asked a second time of a rack that had not changed, read the routes {r['reads']} times and laid {r['lays']:g} cables; expected neither")
+        for name, a, first in got_tools:
+            if first["reads"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} read the routes again ({first['reads']} times) on a rack the page had already read")
+        # THE SAME DOCUMENT, in the browser that has never seen it
+        doc = page.evaluate("() => window.__rack.doc()")
+        open_fixture(fresh, base, doc)
+        settle(fresh, 0, f"{where} (opened afresh)")
+        want_state, want_tools, want_csv = fresh.evaluate(READING_STATE_JS), answers(fresh, rack), schedule(fresh)
+        if len(want_state["the paths"] or {}) != len(rack["cables"]) and rack["cables"]:
+            bad.append(f"{where}: the fresh browser to compare with read {len(want_state['the paths'] or {})} paths for {len(rack['cables'])} cables")
+        for key in got_state:
+            if got_state[key] != want_state[key]:
+                a, b = json.dumps(got_state[key]), json.dumps(want_state[key])
+                k = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), min(len(a), len(b)))
+                bad.append(f"{where}: {key} is not that of the same document opened afresh: ...{a[max(0, k - 60):k + 90]} against ...{b[max(0, k - 60):k + 90]}")
+        for (name, a, g), (_, _, w) in zip(got_tools, want_tools):
+            if reading_text(name, g["text"]) != reading_text(name, w["text"]) or g["isError"] != w["isError"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} does not say what it says of the same document opened afresh: {g['text'][:160]!r} against {w['text'][:160]!r}")
+        if got_csv != want_csv:
+            bad.append(f"{where}: the cable schedule is not the one downloaded from the same document opened afresh")
+        return rack
+
+    drawn = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("r => window.__rack.replaceRack(r)", fixture)
+    rack = compare("the rack as loaded", drawn)
+    if page.evaluate("() => window.__rack.checkKept()") != check_kept:
+        bad.append(f"the route context the page read has the kit's checkKept {'off' if check_kept else 'on'}; expected it {'on' if check_kept else 'off'}")
+    if len(rack["cables"]) != 16:
+        return bad + [f"the fixture has {len(rack['cables'])} cables; expected the cable-lay rack's 16"]
+    apply = lambda cmd: f"() => window.__rack.apply({json.dumps(cmd)})"
+    agent = lambda cmds: f"() => window.__tools.edit_rack.execute({json.dumps({'commands': cmds})}).then(r => (r.isError ? {{error: r.content[0].text}} : {{}}))"
+    edits = [
+        ("a cable's end moved", apply({"op": "cable.update", "id": "c16", "b": {"item": "i2", "path": "bay-1/module/lc1", "view": "front"}})),
+        ("a cable's media changed", apply({"op": "cable.update", "id": "c2", "media": "cat6a"})),
+        ("a cable's label changed", apply({"op": "cable.update", "id": "c3", "label": "uplink three"})),
+        ("a cable removed", apply({"op": "cable.remove", "id": "c15"})),
+        ("a cable added", apply({"op": "cable.add", "a": {"item": "i3", "path": "port-55", "view": "front"}, "b": {"item": "i2", "path": "bay-1/module/lc2", "view": "front"}, "media": "om4"})),
+        ("a device moved", apply({"op": "move", "id": "i3", "ru": 37})),
+        ("a device renamed", apply({"op": "patch", "id": "i1", "label": "LEAF-A2"})),
+        ("an optic taken out by an assistant", agent([{"op": "fit", "id": "i1", "path": "port-56", "ref": None}])),
+        ("the frame grown", apply({"op": "frame", "heightRU": 44})),
+        ("a route edited by hand", """() => { const ways = new Map(window.__rack.routes()).get('c4') ?? [];
+            return window.__rack.apply({op: 'cable.route', id: 'c4', route: [...ways, {lane: 'left-front', ru: 30}], summary: 'Waypoint added.'}); }"""),
+        ("the route reset", apply({"op": "cable.route.reset", "id": "c4", "summary": "Route reset to automatic."})),
+        ("a bundle made", "() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c5', 'c6', 'c7'], label: 'trunk'})"),
+        ("undo", "() => { window.__rack.undo(); return {}; }"),
+        ("redo", "() => { window.__rack.redo(); return {}; }"),
+        # not a step: the rack is a new object that shares the reading of the one before (reading.js sameReading)
+        ("the DCIM settings", apply({"op": "dcim", "site": "DC-1", "role": "leaf"})),
+        ("the rack renamed", apply({"op": "rename", "name": "Cable lay, renamed"})),
+        # another document, its ids the same as the last one's: nothing of the last is its
+        ("another document with the same ids", """() => { const d = structuredClone(window.__rack.doc());
+            d.id = 'doc-reading-other'; d.racks[0].name = 'Another';
+            d.racks[0].cables = d.racks[0].cables.filter(c => !['c1', 'c9'].includes(c.id)).map(c => (c.id === 'c10' ? {...c, media: 'os2'} : c));
+            d.racks[0].bundles = [];
+            window.__rack.loadDoc(d); return {}; }"""),
+    ]
+    for what, js in edits:
+        # before the edit the page has answered everything for the rack as it was (compare did): each answer is there to go stale
+        drawn = page.evaluate("() => window.__rack.drawn()")
+        r = page.evaluate(js)
+        if r and r.get("error"):
+            bad.append(f"{what}: refused: {r['error']}")
+            continue
+        # ASKED AT ONCE, before the edit's redraw has read a route: the answer is this rack's, as the kit gives it afresh.
+        # (Not compared with the answer once the redraw is done: the redraw writes the routed lengths, and a new cable's spare with them.)
+        at_once = page.evaluate(READING_AT_ONCE_JS)
+        first, rest = at_once["kit"].split("\n", 1) if "\n" in at_once["kit"] else (at_once["kit"], "")
+        if not (at_once["said"].startswith(first + "\n") and at_once["said"].endswith("\n" + rest)):
+            bad.append(f"after {what}: describe_rack asked the moment the edit landed does not say what the kit says of the rack as it then was: {at_once['said'][:300]!r} against {at_once['kit'][:300]!r}")
+        rack = compare(f"after {what}", drawn if what != "the DCIM settings" else drawn - 1)
+    other.close()
+    return bad
+
+
+@extra("rack.html: what the kit keeps is what it would lay afresh - the staleness run again with the kit's own check on (?probe=1&checkKept=1, kit ctx.checkKept: every path the kit reads is laid again from copies of the rack, the cable and the context and compared with the one it kept, and a difference throws), through every kind of edit; no page error, no console message of the check, no settle timeout, and every tool, drawing and download still that of the same document opened afresh (#192)")
+def check_rack_kept_paths_hold(page, base):
+    return reading_fresh_after_edit(page, base, True)
+
+
+# A LARGE RACK'S BUDGETS (portrayal-site#192). The rack the issue was measured on took 39 s to draw, 27 s to draw again
+# with nothing changed, and half a minute for each call an assistant made, because everything read every route again.
+# What holds that off is counted here, on a rack of 288 cables built in the check (speed_fixture), in two ways:
+#
+#   - BY COUNT, which no machine's load moves: how many times the routes were read (route-context.js routeFacts) and
+#     how many cables the kit read the inputs of (its asks for a plug's reach, halved; kit 0.25.0 asks when it reads a
+#     cable's inputs, `layInputs`, and not for a path it has kept, so this is no longer "cables laid"), for the first
+#     draw, a redraw with nothing changed, an edit, and each thing an assistant reads, the first time and again;
+#   - BY TIME, as a ratio to another time taken in the same run on the same machine, never in seconds: against the same
+#     rack's own first draw, and against the first draw of a rack of 12 cables.
+#
+# Measured on kit 0.25.0 (this rack, an 80-core machine with other work running): a draw and the first describe_rack
+# 4.67 per cable, an edit's redraw 4.65, an inspect of a cable 0.01, everything else none; a first draw about 9 s, a
+# redraw with nothing changed about 2.5 s (the page's own drawing: the kit reads nothing), an edit's redraw about 5 s.
+# Each bound has about twice the room the page needs today (a count that was none is allowed a tenth, so a kit that
+# reads a few inputs again is not a failure; every cable again would be 4.67), so a slow or busy runner does not trip
+# one; a change that reads the routes again where it did not, or has the kit read every cable for a question already
+# answered, goes past it by far. The bounds are ceilings: when the kit keeps more, the counts fall, and nothing here minds.
+SPEED_BUDGETS = {
+    # (reads of the routes, kit cable-input reads per cable) at most
+    "first draw": (1, 10), "a redraw with nothing changed": (0, 0), "a redraw after one cable's end is moved": (1, 10),
+    # (the first question of a rack whose cables had no length until the page measured them is asked of the rack as it
+    # is, a new object; the kit reads each cable's inputs once for it. After that, and after an edit, it reads none)
+    "describe_rack, first asked": (0, 10), "describe_rack, asked again": (0, 0), "describe_rack after the edit": (0, 0.1),
+    "describe_rack's next page, first asked": (0, 0.1),
+    "inspect of a cable, first asked": (0, 0.05), "inspect of a cable, asked again": (0, 0),
+    "the cable schedule, first downloaded": (0, 0.1), "the cable schedule, downloaded again": (0, 0),
+}
+# a time, as a multiple of another time of the same run, at most (measured: 0.27, 0.02, 0.005, 0.004, 0.00, 0.00, 0.59, 11.6)
+SPEED_RATIOS = [
+    ("a redraw with nothing changed", "first draw", 0.55),
+    ("describe_rack, first asked", "first draw", 0.1),
+    ("describe_rack's next page, first asked", "first draw", 0.1),
+    ("describe_rack after the edit", "first draw", 0.1),
+    ("describe_rack, asked again", "the small rack's first draw", 1.0),
+    ("inspect of a cable, asked again", "the small rack's first draw", 1.0),
+    ("a redraw after one cable's end is moved", "first draw", 1.2),
+    ("first draw", "the small rack's first draw", 30),
+]
+SPEED_TIMED_JS = """async ([src, arg, needDraw]) => {
+  const R = window.__rack, sleep = t => new Promise(r => setTimeout(r, t));
+  const before = R.reads(), drawn = R.drawn(), t0 = performance.now();
+  const out = await (0, eval)(`(${src})`)(arg);
+  for (;;) {
+    await new Promise(r => queueMicrotask(r));
+    if ((!needDraw || R.drawn() > drawn) && R.idle()) { await sleep(0); if (R.idle()) break; }
+    await sleep(5);
+  }
+  const after = R.reads();
+  return {ms: performance.now() - t0, out: out ?? null, reads: after.routeFacts - before.routeFacts, lays: after.lays - before.lays};
+}"""
+# How long any one step of the large rack gets: it reads 288 routes, and a 2-CPU runner draws them in minutes.
+SPEED_MS = 600000
+
+
+def speed_open(page, base, doc):
+    """A fresh page and the document through Open .json: the first draw's {ms, reads, lays}, from the file being chosen."""
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.wait_for_function("() => window.__rack.idle()", timeout=SPEED_MS)
+    if page.evaluate("() => window.__rack.view()") != "faces":
+        page.click('#view2d [data-view="faces"]')
+    was = page.evaluate("() => ({id: window.__rack.doc().id, drawn: window.__rack.drawn(), reads: window.__rack.reads()})")
+    t0 = time.time()
+    page.set_input_files("#openFile", files=[{"name": "speed.rack.json", "mimeType": "application/json", "buffer": json.dumps(doc).encode()}])
+    page.wait_for_function("was => window.__rack.doc().id !== was.id && window.__rack.drawn() > was.drawn && window.__rack.idle() && window.__rack.routesCurrent().current",
+                           arg=was, timeout=SPEED_MS, polling=20)
+    ms = (time.time() - t0) * 1000
+    got = page.evaluate("was => { const r = window.__rack.reads(); return {reads: r.routeFacts - was.reads.routeFacts, lays: r.lays - was.reads.lays}; }", was)
+    return {"ms": ms, **got}
+
+
+@extra("rack.html: a large rack keeps its budgets - on a rack of 288 cables built in the check, the routes are read once for the first draw and once for an edit and by nothing else (a redraw with nothing changed, describe_rack and its next page, the inspect of a cable, the cable schedule, each asked twice), the kit reads the inputs of each cable at most 10 times for a draw and for the first describe_rack of a rack just measured, a tenth of a time for its next page, one after an edit and a first schedule, and none for anything asked again; and by the clock of the same run a redraw with nothing changed takes under 0.55 of the first draw, a describe_rack under a tenth of it, an answer asked again less than a 12-cable rack's first draw, an edit's redraw no more than 1.2 first draws, and the first draw no more than 30 times the 12-cable rack's (#192)")
+def check_rack_speed_budgets(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_default_timeout(SPEED_MS)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    small, big = speed_fixture(3, 6), speed_fixture(13, 24)
+    n = len(big["racks"][0]["cables"])
+    took_ms, cost = {}, {}
+    # the small rack, three times over: its middle time is the yardstick
+    took_ms["the small rack's first draw"] = sorted(speed_open(page, base, small)["ms"] for _ in range(3))[1]
+    first = speed_open(page, base, big)
+    took_ms["first draw"], cost["first draw"] = first["ms"], first
+    if page.evaluate("() => Object.keys(window.__rack.paths() ?? {}).length") != n:
+        return bad + [f"the large rack did not read a path for each of its {n} cables, so nothing was measured"]
+
+    def timed(what, src, arg=None, need_draw=False):
+        r = page.evaluate(SPEED_TIMED_JS, [src, arg, need_draw])
+        took_ms[what], cost[what] = r["ms"], r
+        return r
+
+    tool = "async ([n, a]) => { const r = await window.__tools[n].execute(a); return {error: !!r?.isError, text: r?.content?.[0]?.text ?? ''}; }"
+    timed("a redraw with nothing changed", "() => { window.__rack.redraw(); }", need_draw=True)
+    for turn in ("first asked", "asked again"):
+        r = timed(f"describe_rack, {turn}", tool, ["describe_rack", {}])
+        if r["out"]["error"] or f"{n} cables" not in r["out"]["text"]:
+            bad.append(f"describe_rack, {turn}, did not describe the rack: {r['out']['text'][:160]!r}")
+    timed("describe_rack's next page, first asked", tool, ["describe_rack", {"section": "cables", "offset": 40, "limit": 40}])
+    for turn in ("first asked", "asked again"):
+        r = timed(f"inspect of a cable, {turn}", tool, ["inspect", {"id": f"c{n // 2}"}])
+        if r["out"]["error"] or "routed" not in r["out"]["text"]:
+            bad.append(f"inspect of a cable, {turn}, did not give its routed length: {r['out']['text'][:160]!r}")
+    for turn in ("first downloaded", "downloaded again"):
+        r = timed(f"the cable schedule, {turn}", tool, ["export_rack", {"kind": "cable schedule"}])
+        if r["out"]["error"]:
+            bad.append(f"the cable schedule, {turn}: {r['out']['text'][:160]!r}")
+    r = timed("a redraw after one cable's end is moved",
+              "() => window.__rack.apply({op: 'cable.update', id: 'c1', a: {item: 'i1', path: 'port-30', view: 'front'}})", need_draw=True)
+    if (r["out"] or {}).get("error"):
+        bad.append(f"the edit was refused, so its redraw was not measured: {r['out']['error']}")
+    # ...and a call made after the edit reads nothing again either: the redraw's reading is the rack's
+    # ...and a call made after the edit: the redraw's reading is the rack's, and the kit is asked of the rack it decided
+    timed("describe_rack after the edit", tool, ["describe_rack", {}])
+    for what, (reads, per_cable) in SPEED_BUDGETS.items():
+        got = cost[what]
+        if got["reads"] > reads:
+            bad.append(f"{what}: the routes were read {got['reads']} times; at most {reads}")
+        if got["lays"] > per_cable * n:
+            bad.append(f"{what}: the kit read the inputs of {got['lays']:g} cables, {got['lays'] / n:.2f} for each of the rack's {n}; at most {per_cable:g} each")
+    for what, of, most in SPEED_RATIOS:
+        if took_ms[what] > most * took_ms[of]:
+            bad.append(f"{what} took {took_ms[what] / 1000:.2f} s, {took_ms[what] / took_ms[of]:.2f} times {of} ({took_ms[of] / 1000:.2f} s); at most {most:g} times")
+    print("          " + "; ".join(f"{k} {v / 1000:.2f} s" for k, v in took_ms.items()), flush=True)
+    print("          " + "; ".join(f"{k} {c['reads']} reads, {c['lays'] / n:.2f} per cable" for k, c in cost.items()), flush=True)
+    return bad
+
+
+# THE WARNINGS, ONE SECTION THAT OPENS (portrayal-site#192, cable-panel.js warningsSection). Every route warning stood
+# above the cable list, a sentence each, and a rack with dozens of tight bends had its bundles and cables pushed out of
+# sight. They are one row above the tree now, "Warnings (N)", closed until the reader opens it.
+WARNINGS_JS = """() => {
+  const sec = document.querySelector('#cableList [data-warnings]'), head = document.getElementById('warningsToggle');
+  const first = document.querySelector('#cableList [role="tree"] > li'), side = document.getElementById('side');
+  const box = el => { const r = el.getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; };
+  return {
+    there: !!sec, n: sec ? +sec.dataset.count : 0, line: head?.textContent ?? null, open: head?.getAttribute('aria-expanded') === 'true',
+    colour: head ? getComputedStyle(head).color : null, ink: getComputedStyle(document.querySelector('#cableList h3')).color,
+    head: head ? box(head) : null, section: sec ? box(sec) : null,
+    firstRow: first ? {...box(first), id: first.id, inView: box(first).top >= side.getBoundingClientRect().top && box(first).top < Math.min(innerHeight, side.getBoundingClientRect().bottom)} : null,
+    kinds: [...document.querySelectorAll('#cableList [data-warning-kind]')].map(k => ({kind: k.dataset.warningKind, count: +k.dataset.count,
+      title: k.querySelector('.rk-warnings-row, .rk-warnings-title').textContent, folds: !!k.querySelector('.rk-warnings-row'),
+      open: !k.querySelector('.rk-warnings-list').hidden, rows: k.querySelectorAll('[data-warning-row]').length,
+      picks: [...k.querySelectorAll('[data-warning-pick]')].map(b => b.dataset.warningPick),
+      texts: [...k.querySelectorAll('[data-route-warning], [data-warning-text]')].map(p => p.textContent)})),
+    laidOut: [...document.querySelectorAll('#cableList [data-warnings] p')].filter(p => p.getClientRects().length).length,
+    outside: [...document.querySelectorAll('#cableList [data-route-warning]')].filter(p => !p.closest('[data-warnings]')).length,
+    bends: (window.__rack.bends() ?? []).map(f => [f.cable, f.text]),
+    rowWarnings: [...document.querySelectorAll('#cableList [role="tree"] :is([data-loose], [data-warning], [data-spare-short])')].map(x => x.textContent),
+    pinned: [...document.querySelectorAll('#cableList [data-cable-row][aria-pressed="true"]')].map(b => b.dataset.cableRow),
+    stored: localStorage.getItem('portrayal.rack.tree'),
+  };
+}"""
+
+
+def warnings_fixture():
+    """The cable-lay rack with warnings of three kinds: an AOC between its leaves (tight bends), seven fibre cords
+    said to be copper (mismatches), and two cords into cages whose optics are taken out (loose ends)."""
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    rack = aoc_between_the_leaves(lay)
+    for c in rack["cables"]:
+        if c["id"] in ("c2", "c3", "c4", "c5", "c6", "c7", "c8"):
+            c["media"] = "cat6a"
+    leaf_b = next(i for i in rack["items"] if i["id"] == "i3")
+    leaf_b["swaps"] = {k: v for k, v in leaf_b["swaps"].items() if k not in ("port-55", "port-56")}
+    return {"format": "portrayal-rack", "version": 4, "id": "doc-warnings", "racks": [{**rack, "name": "Warnings"}]}
+
+
+@extra("rack.html: the warnings are one section that opens, above the cable tree - with warnings of three kinds it is one row, \"Warnings (N)\" in the warning colour, closed, N the findings (a cable with several tight corners is one), no warning is laid out and the tree's first bundle row is in view without scrolling; opened, each kind has its title and count and a kind of more than five opens on its own, every sentence is the kit's or the row's own, once; a finding pins its cable; what is open survives a redraw and a reload and does not open by itself; N follows an edit that clears a warning; a rack with none has no section (#192)")
+def check_rack_warnings_section(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+    def settled(n):
+        page.wait_for_function(READING_SETTLED, arg=n, timeout=READY_MS)
+        page.wait_for_timeout(150)
+
+    open_fixture(page, base, warnings_fixture())
+    settled(0)
+    # a bundle, so the tree has a bundle row to keep in view
+    n = page.evaluate("() => window.__rack.drawn()")
+    r = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c10', 'c11'], label: 'pair'})")
+    if r.get("error"):
+        bad.append(f"the bundle was refused: {r['error']}")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if not st["there"]:
+        return bad + ["a rack with tight bends, loose ends and mismatches has no Warnings section"]
+    bent = list(dict.fromkeys(c for c, _ in st["bends"]))
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not {"bends", "loose", "mismatch"} <= set(by):
+        return bad + [f"the fixture gives warnings of {sorted(by)}; the check needs tight bends, loose ends and mismatches"]
+    want_n = sum(k["rows"] for k in st["kinds"])
+    if st["n"] != want_n or st["line"] != f"Warnings ({want_n})":
+        bad.append(f"the row reads {st['line']!r} for {st['n']}; expected 'Warnings ({want_n})', the findings of every kind")
+    if by["bends"]["count"] != len(bent):
+        bad.append(f"tight bends count {by['bends']['count']} for {len(st['bends'])} corners on {len(bent)} cables; expected one finding a cable")
+    if by["mismatch"]["count"] <= 5:
+        bad.append(f"the fixture gives {by['mismatch']['count']} mismatches; the check needs a kind of more than five")
+    if st["open"] or st["laidOut"]:
+        bad.append(f"the section starts {'open' if st['open'] else 'closed'} with {st['laidOut']} sentences laid out; expected closed and none")
+    if st["outside"]:
+        bad.append(f"{st['outside']} route warnings still stand outside the section, above the tree")
+    if st["colour"] == st["ink"]:
+        bad.append(f"the row is not in the warning colour: {st['colour']}")
+    if st["section"]["h"] > 40:
+        bad.append(f"closed, the section is {st['section']['h']:.0f} px tall; expected one line")
+    if not st["firstRow"] or not st["firstRow"]["id"].startswith("bundleItem-") or not st["firstRow"]["inView"]:
+        bad.append(f"the tree's first bundle row is not in view without scrolling at 1280 by 720: {st['firstRow']}")
+    if not st["rowWarnings"]:
+        bad.append("the cables' own rows no longer say their loose ends and mismatches")
+    # opened with the keyboard: the kinds, their counts, and every sentence once
+    page.focus("#warningsToggle")
+    page.keyboard.press("Enter")
+    st = page.evaluate(WARNINGS_JS)
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not st["open"]:
+        bad.append("Enter on the row did not open the section")
+    for kind, title in (("bends", "Tight bends"), ("loose", "Loose ends"), ("mismatch", "Media mismatches")):
+        k = by[kind]
+        if k["title"] != f"{title} ({k['count']})" or k["rows"] != k["count"]:
+            bad.append(f"the kind {kind} reads {k['title']!r} over {k['rows']} findings; expected '{title} ({k['count']})'")
+        if k["folds"] != (k["count"] > 5) or k["open"] != (k["count"] <= 5):
+            bad.append(f"the kind {kind}, of {k['count']}, {'is' if k['folds'] else 'is not'} a row that opens and is {'open' if k['open'] else 'closed'}; a kind of more than five opens on its own, and starts closed")
+    if by["bends"]["texts"] != [t for _, t in st["bends"]]:
+        bad.append("the tight bends listed are not the kit's sentences, each once and in its order")
+    own = sorted(by["loose"]["texts"] + by["mismatch"]["texts"])
+    if own != sorted(st["rowWarnings"]):
+        bad.append(f"the loose ends and mismatches listed are not the sentences the cables' own rows say: {own} against {sorted(st['rowWarnings'])}")
+    page.click("#warningKind-mismatch")
+    if not next(k for k in page.evaluate(WARNINGS_JS)["kinds"] if k["kind"] == "mismatch")["open"]:
+        bad.append("a click on Media mismatches did not open it")
+    # a finding pins its cable, as its row in the tree does
+    pick = by["mismatch"]["picks"][0]
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.click(f'[data-warning-kind="mismatch"] [data-warning-pick="{pick}"]')
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["pinned"] != [pick.split(" ")[1]]:
+        bad.append(f"a click on the finding {pick} pinned {st['pinned']}")
+    if not st["open"]:
+        bad.append("the section closed when the panel was drawn again for the pin")
+    # ...and what is open is the reader's, kept with the tree's rows: it survives a reload
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    settled(0)
+    st = page.evaluate(WARNINGS_JS)
+    kinds = {k["kind"]: k for k in st["kinds"]}
+    if not st["there"] or not st["open"] or not kinds.get("mismatch", {}).get("open"):
+        bad.append(f"after a reload the section is {'open' if st.get('open') else 'closed or gone'} and Media mismatches {'open' if kinds.get('mismatch', {}).get('open') else 'closed'}; expected both as the reader left them")
+    # N FOLLOWS THE RACK: a mismatch put right is one finding fewer, and nothing opens or closes for it
+    before = st["n"]
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'om4'})")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    left = next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0)
+    if left != by["mismatch"]["count"] - 1 or st["line"] != f"Warnings ({st['n']})" or st["n"] != sum(k["rows"] for k in st["kinds"]):
+        bad.append(f"after a mismatch was put right the row reads {st['line']!r} with {left} mismatches (it read Warnings ({before}) with {by['mismatch']['count']})")
+    # closed by the reader, a new warning does not open it
+    page.click("#warningsToggle")
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'cat6a'})")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["open"] or st["laidOut"]:
+        bad.append("a warning that appeared opened the section the reader had closed")
+    if next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0) != by["mismatch"]["count"]:
+        bad.append("the count did not follow the warning that appeared")
+    # a rack with nothing to warn of has no section
+    n = page.evaluate("() => window.__rack.drawn()")
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    page.evaluate("r => window.__rack.replaceRack(r)", lay)
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["there"] or st["outside"]:
+        bad.append(f"the cable-lay rack, which has no warning, shows a Warnings section ({st['line']!r})")
     return bad
 
 
@@ -19478,6 +20044,12 @@ SECONDS = {
     "check_rack_dcim_settings": 4.4,
 }
 # SECONDS: end
+# THE FOUR CHECKS OF portrayal-site#201, outside the measured table so that regenerating it does not take them out and
+# `shard-weights.py` can measure them in time. Not yet measured on CI: each is the seconds it took here (this host
+# with other work running; one run of each, 31, 145, 171 and 14 s) divided by about 1.7, a guess at the 2-CPU runner's
+# seconds, to be replaced by shard-weights.py's measured ones.
+SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100,
+                "check_rack_warnings_section": 8})
 
 
 def units():
