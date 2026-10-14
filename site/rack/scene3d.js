@@ -644,9 +644,14 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
+// `onContextLost(scene)` is told when the browser takes the scene's GL context
+// away (a GPU reset, or memory pressure): the scene draws nothing more.
+// `onContextRestored(scene)` when the browser gives it back: the scene still
+// draws nothing (its uploads went with the loss), and a new one may be built.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
                                               ctx = null, bundles = null, bendOf = null, bends = null, spares = null, stage = '#101214',
-                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null}) {
+                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null, onContextLost = null,
+                                              onContextRestored = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -667,9 +672,16 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // Optic fields (item.fields: a latch colour, a label) are carried over, and
   // the scene paints them into the device's own faces (rack3d.js overrideFaces),
   // so a field edit shows in 3D as it does in 2D (portrayal-site#206).
+  // A PART NOTHING IS DONE TO IN THIS SCENE (no cable lands on it, nothing is
+  // swapped or seated in it, nothing is written on it) is built once for all
+  // its mounts (rack3d.js `share`): nothing of it is dimmed, lit or painted for
+  // itself, so its mounts can share one set of materials.
+  const cabledItems = new Set((rack.cables || []).flatMap(c => [c.a?.item, c.b?.item]));
+  const plain = (id, overrides, fields) => !cabledItems.has(id) && !Object.keys(overrides || {}).length && !Object.keys(fields || {}).length;
   const stack = rack.items.map(item => ({
     id: item.id,
     ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label, fields: item.fields || {},
+    share: plain(item.id, mergeSeats(item.swaps, facts.seats[item.id]), item.fields),
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
@@ -682,8 +694,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   const sideParts = chassisOf ? zeroUOf(rack).filter(z => isZeroUPart(chassisOf(z.ref))) : [];
   for (const z of sideParts) {
     stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), mm: zeroUBottomMm(z), label: z.label,
-                // (the plug at each cabled outlet, paired with the cord's other end: cable-plugs.js zeroUFacts)
+                // (the plug at each cabled outlet, paired with the cord's other end: cable-plugs.js zeroUFacts;
+                // a part with a cord on it is not shared, `plain` counts the cabled ends)
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: mergeSeats({}, facts.seats[z.id]),
+                share: plain(z.id, mergeSeats({}, facts.seats[z.id]), null),
                 chassis: chassisOf(z.ref), mount: 'rack-side'});
   }
 
@@ -724,6 +738,16 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // time on a fast GPU and nearly all of it without one.
       buildFrameMs: 400,
       onDetailFailed: f => onDetailFailed?.(f),
+      // THE GL CONTEXT WAS TAKEN AWAY (rack3d.js onContextLost): the scene has
+      // stopped drawing and holds nothing on the GPU; the page says so and offers a rebuild.
+      onContextLost: () => onContextLost?.(built),
+      onContextRestored: () => onContextRestored?.(built),
+      // NO FACE RASTER OVER 4096 PX A SIDE (rack3d.js `maxFacePx`): a part the
+      // height of the rack is drawn at the density that fits, not as a 9000 px texture.
+      maxFacePx: 4096,
+      // THE FACES' CANVASES IN MAIN MEMORY, NOT ON THE GPU (rack3d.js `cpuCanvases`):
+      // on a large rack they held more GPU memory than the textures drawn from them.
+      cpuCanvases: true,
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);
@@ -731,6 +755,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     built.covers = covers;
     built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
     await built.build();
+    // (a scene disposed while it was built - the host has moved on - or whose
+    // context was lost meanwhile hangs no cables: it will not be drawn again)
+    if (!built.alive() || built.contextLost()) return built;
     placeZeroU(built, sideParts, chassisOf);
     placeSided(built, rack.items, chassisOf);
     // What the scene holds of the cables, for the page and the exports: null
