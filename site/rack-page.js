@@ -39,7 +39,7 @@ import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {zeroUTargets} from './rack/spare-loops.js';
 import {routeEditSession} from './rack/route-edit.js';
-import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
+import {litFor, litForFilter, paintFilter3d, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {routesOf, sameReading, askOf} from './rack/reading.js';
@@ -230,6 +230,7 @@ async function rebuild3d() {
   // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
+  paintFilter3d(built, litForFilter(now, S.cableFilter));
   paintHover3d(built, litFor(now, S.hover));
   paintSelected3d(built, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(now));
   // A swatch picked while this was building found no scene to tell.
@@ -1003,6 +1004,8 @@ function cableListPanel() {
       S.cableFilter = next;
       renderSide();
       paintCables(S.svgs, rack(), {selectedId: selectedCable(), bundleId: pinnedBundle(), on: next});
+      // the scene is restyled the same way, never rebuilt
+      if (S.scene3d) paintFilter3d(S.scene3d, litForFilter(rack(), next));
     },
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
@@ -1514,7 +1517,10 @@ async function redraw(keepRoutes = false) {
   lap('side');
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
-  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
+  if (S.scene3d) {
+    paintFilter3d(S.scene3d, litForFilter(rack(), S.cableFilter));
+    paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
+  }
   paintTip();   // a cable under the pointer may have just changed its cord
   if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cableCount: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
 }

@@ -40,7 +40,9 @@
 // classes cannot reach them. A GLB or USDZ is written from the live scene, so
 // modelFile holds the scene undimmed while it writes (holdUndimmed).
 
-const DIM = 0.12;   // what a dimmed tube keeps of its own opacity
+import {matches} from '../../vendor/rack/cable-rules.js';
+
+const DIM = 0.12;  // what a dimmed tube keeps of its own opacity
 
 /** The cables and bundles that stay lit for a hover target, or null for none
  *  (no target, or one the rack no longer has). */
@@ -169,7 +171,26 @@ export function paintSelected3d(scene, sel, lit = null) {
   if (!scene?.three) return;
   scene.selected = sel && (sel.cable != null || sel.bundle != null) ? {cable: sel.cable ?? null, bundle: sel.bundle ?? null} : null;
   scene.pinLit = scene.selected ? lit : null;
-  if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
+  if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? scene.filterLit ?? null);
+  paintEnvelopes3d(scene);
+}
+
+/** The cables the list's filter ({purpose, media}) leaves in, and the bundles
+ *  and plugs that go with them, as a lit set; null while no filter is on. */
+export function litForFilter(rack, on) {
+  if (!on || (on.purpose == null && on.media == null)) return null;
+  const cables = new Set((rack.cables || []).filter(c => matches(c, on)).map(c => c.id));
+  const bundles = new Set((rack.bundles || []).filter(b => b.members.some(m => cables.has(m.cable))).map(b => b.id));
+  return {cables, bundles, plugs: plugsFor(rack, cables)};
+}
+
+/** 3D: the filter's lit set, kept on the scene. It dims the rest as a hover
+ *  does, below a hover and a selection (as on the panes, a selected cable
+ *  stays lit); the same restyle, never a rebuild. */
+export function paintFilter3d(scene, lit) {
+  if (!scene?.three) return;
+  scene.filterLit = lit;
+  if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? scene.filterLit ?? null);
   paintEnvelopes3d(scene);
 }
 
@@ -178,7 +199,7 @@ export function paintSelected3d(scene, sel, lit = null) {
 export function paintHover3d(scene, lit) {
   if (!scene?.three) return;
   scene.hoverLit = lit;
-  if (!scene.hoverHeld) apply3d(scene.three.scene, lit ?? scene.pinLit ?? null);
+  if (!scene.hoverHeld) apply3d(scene.three.scene, lit ?? scene.pinLit ?? scene.filterLit ?? null);
   paintEnvelopes3d(scene);
 }
 
@@ -190,7 +211,7 @@ export async function holdUndimmed(scene, fn) {
   paintEnvelopes3d(scene);
   try { return await fn(); } finally {
     scene.hoverHeld -= 1;
-    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? null);
+    if (!scene.hoverHeld) apply3d(scene.three.scene, scene.hoverLit ?? scene.pinLit ?? scene.filterLit ?? null);
     paintEnvelopes3d(scene);
   }
 }
