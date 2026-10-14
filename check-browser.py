@@ -9999,6 +9999,62 @@ def check_rack_fs_manager_guides(page, base):
     return bad
 
 
+@extra("rack.html: a cable through a horizontal manager's pass-throughs (duct > pass-through-1 > right-rear U34 > pass-through-2 > duct on a CMH-SFD1U) is drawn in the Rear view as well as the Front view (S-0037)")
+def check_rack_pass_through_rear(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Pass'});
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: {'port-1': 'generic/qsfp-lc@2'}}));
+      ({rack: r} = M.withItem(r, {ref: 'cmh-sfd1u', cfg: cat['cmh-sfd1u'].default, ru: 30, label: 'mgr-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 38, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      const route = [{item: 'i2', via: 'duct'}, {item: 'i2', via: 'pass-through-1'}, {lane: 'right-rear', ru: 34},
+                     {item: 'i2', via: 'pass-through-2'}, {item: 'i2', via: 'duct'}];
+      return {...r, cables: r.cables.map(c => ({...c, route, routeEdited: true}))};
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 1", timeout=READY_MS)
+    # The route is the one written: the kit did not drop a stop.
+    routes = dict(page.evaluate("() => window.__rack.routes()"))
+    if [w.get("via") or w.get("lane") for w in routes.get("c1", [])] != ["duct", "pass-through-1", "right-rear", "pass-through-2", "duct"]:
+        return [f"routes: c1 is not duct > pass-through-1 > right-rear > pass-through-2 > duct: {routes.get('c1')}"]
+    # A cable is drawn in a pane as a g of paths with length; both panes, both views of the rack.
+    probe = """pane => {
+      const s = document.querySelector(`#pane${pane} svg`);
+      const g = s && s.querySelector('[data-cables] [data-cable-id="c1"]');
+      if (!g) return {drawn: false};
+      const len = [...g.querySelectorAll('path')].reduce((a, p) => a + (p.dataset.leader ? 0 : p.getTotalLength()), 0);
+      const b = g.getBBox();
+      return {drawn: true, len, w: b.width, h: b.height};
+    }"""
+    for pane in ("Front", "Rear"):
+        got = page.evaluate(probe, pane)
+        if not got["drawn"] or not got["len"] > 20:
+            bad.append(f"{pane} view: the cable through the pass-throughs is not drawn ({got})")
+    # On the rear pane it runs from the manager's pass-throughs (U30) up to the
+    # lane at U34, whose hairpin the cable's bend radius eases a little short.
+    rear = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg'), inv = s.getScreenCTM().inverse();
+      const g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      if (!g) return null;
+      const m = inv.multiply(g.getScreenCTM());
+      const b = g.getBBox(), top = new DOMPoint(0, b.y).matrixTransform(m).y, bottom = new DOMPoint(0, b.y + b.height).matrixTransform(m).y;
+      const u = n => { const r = s.querySelector(`[data-u="${n}"]`); const q = r && r.getBBox(); return q && q.y + q.height / 2; };
+      return {top, bottom, u30: u(30), u34: u(34)};
+    }""")
+    if rear and rear["u30"] is not None and rear["u34"] is not None:
+        if rear["top"] > rear["u34"] + 60 or rear["bottom"] < rear["u30"] - 20:
+            bad.append(f"Rear view: the cable is not drawn from U30 up to the lane at U34 ({rear})")
+    return bad
+
+
 @extra("rack.html: a route that would enter and leave a ring by one face is drawn to the face and back, in 2D and 3D, and reported (Portrayal #930)")
 def check_rack_ring_doubles_back(page, base):
     bad = []

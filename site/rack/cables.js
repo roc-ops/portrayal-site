@@ -154,6 +154,20 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     const here = sides.filter(([, e]) => (e[2] || 'front') === view);
     const rec = {link, i, g: null, tag: null, loose: [], tagged: false, dangling: false};
     out.push(rec);
+    // A link with no end here still shows the run its route makes behind the
+    // rack (link.through2d, cable-view.js: a pass-through), on its own points.
+    if (!here.length && link.through2d?.[view] && link.via2d?.[view]?.length > 1) {
+      const g = svgEl('g', {'data-cable': 'true', 'data-link-index': String(i), 'data-through': 'true',
+        'data-media': link.media, 'data-purpose': link.purpose, tabindex: '0', 'data-pt-ui': 'tabindex'});
+      const via = link.via2d[view], rings = link.rings2d?.[view];
+      stroke(g, bent(rec, via, bendOf(link), rings ?? null), colorOf(link), widthOf(link));
+      const t = svgEl('title', {});
+      t.textContent = `${link.from[0]} ${link.from[1]} → ${link.to[0]} ${link.to[1]} · ${link.purpose}, ${link.media}`;
+      g.prepend(t);
+      rec.g = g;
+      drawn.push({g, top: Math.min(...via.map(q => q[1]))});
+      return;
+    }
     if (!here.length) return;
     const pts = here.map(([k, e]) => [k, ends(svg, e[0], e[1])]);
     for (const [k, p] of pts) if (!p) rec.loose.push(k);
