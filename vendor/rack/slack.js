@@ -16,7 +16,7 @@
 import {routePath, spareOf, toMetres, UNPLACED_WARN_M, BREAK_TOL_M, resolveRoute, pathwaysAt, zeroUPathways, cablesThrough,
   capacityBasis, pointOf} from './route.js';
 import {traysOf} from './solids.js';
-import {bendOf} from './resting.js';
+import {bendOf, FAMILY} from './resting.js';
 import {bundleOfCable, layoutOf} from './bundles.js';
 import {bundleName, zeroUOf, zeroUById} from './model.js';
 import {carriesLane, runsThrough} from './zero-u.js';
@@ -28,7 +28,7 @@ const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
 export const mText = m => `${Math.round(m * 100) / 100} m`;
 // A part beside the rack whose label another part shares (two verticals of
 // one model) is named with its id too: "CMV-SFD42U9W (z2)".
-const labelOf = (rack, id) => {
+export const labelOf = (rack, id) => {
   const it = rack.items.find(i => i.id === id);
   if (it) return it.label ?? id;
   const zs = Array.isArray(rack.zeroU) ? rack.zeroU : [], z = zs.find(x => x?.id === id);
@@ -88,6 +88,28 @@ export function whereText(rack, cable, ctx, path = undefined) {
   return places.length ? `The spare of ${cable.id} can go in ${places.join(', ')}, or ${ends}.`
     : `The route of ${cable.id} has no tray or duct that holds spare, so its spare can go only ${ends}.`;
 }
+
+// WHY A CABLE CANNOT STORE THIS MUCH SPARE, as the sentence, or null when it
+// can: a cable pinned under what its route needs has no spare to store
+// anywhere, and the amounts stated (the others kept, with this one) cannot
+// add up to more than the spare there is. A place that takes the rest asks
+// for no amount, and is never past it. Not where the cable has no usable
+// length or the routes are not known: then nothing is judged.
+export function amountRefusal(rack, cable, entry, ctx, path) {
+  if (!ctx) return null;
+  const spare = spareOf(rack, cable, ctx, path);
+  // a routed length grows by what is stored and may move up a stock size, so only a pinned length is a limit
+  if (!spare || !spare.pinned) return null;
+  if (spare.spare_m < -1e-9) return `${cable.id} is ${mText(-spare.spare_m)} short of what its route needs, so it has no spare to store.`;
+  const value = toMetres(entry.value, entry.unit);
+  if (entry.value == null || value == null) return null;
+  const others = (Array.isArray(cable.slack) ? cable.slack : []).filter(e => plain(e) && e !== entry && !sameEntry(e, entry))
+    .reduce((s, e) => s + (e.value == null ? 0 : toMetres(e.value, e.unit) ?? 0), 0);
+  if (others + value <= spare.spare_m + 0.005) return null;
+  return others > 0 ? `${cable.id} has only ${mText(spare.spare_m)} of spare and ${mText(others)} of it is stored already, so storing ${mText(value)} more is too much.`
+    : `${cable.id} has only ${mText(spare.spare_m)} of spare, so storing ${mText(value)} is more than it has.`;
+}
+const sameEntry = (a, b) => ('end' in a || 'end' in b ? a.end === b.end : a.item === b.item && a.via === b.via);
 
 // WHY A CABLE CANNOT STORE SPARE IN A PATHWAY, as the sentence, or null
 // when it can. Not where the routes are not known (no `ctx` or no `path`):
@@ -164,7 +186,7 @@ function ridesThrough(rack, b, cableId, entry, ctx) {
 export function slackOf(rack, cable, ctx) {
   const s = ownSlack(rack, cable, ctx);
   if (!s) return s;
-  for (const e of s.entries) if (e.kind === 'duct') e.load = spareLoad(rack, e.item, ctx);
+  for (const e of s.entries) if (e.kind === 'duct') e.load = spareLoad(rack, e.item, ctx, cable);
   return s;
 }
 // slackOf without the loads, which read every other cable's spare.
@@ -204,9 +226,15 @@ function ownSlack(rack, cable, ctx) {
 // {stated: true, compared: true, count, capacity, media, over}. Never a
 // capacity the data does not state. Kept per rack, context and part: every
 // cable storing in one duct asks the same question.
+// Given the `cable` that stores there, a cable the count does not take in (a
+// fibre cord against a count of Cat6) is not counted: {stated: true, compared:
+// false, notCounted: true, media, diameter, cableMedia}, and the duct's load
+// from the other cables is not put on it.
 const loadMemo = new WeakMap();
-export function spareLoad(rack, id, ctx) {
+export function spareLoad(rack, id, ctx, cable = null) {
   const isObj = v => v !== null && typeof v === 'object';
+  const b = cable ? basisOf(rack, id, ctx) : null;
+  if (b && !b.counts(cable)) return {stated: true, compared: false, notCounted: true, media: b.media, diameter: b.diameter, cableMedia: cable.media ?? null};
   if (!isObj(rack) || !isObj(ctx)) return loadOf(rack, id, ctx);
   let per = loadMemo.get(rack);
   if (!per) loadMemo.set(rack, per = new WeakMap());
@@ -215,9 +243,13 @@ export function spareLoad(rack, id, ctx) {
   if (!by.has(id)) by.set(id, loadOf(rack, id, ctx));
   return {...by.get(id)};
 }
-function loadOf(rack, id, ctx) {
+const chassisOfPart = (rack, id, ctx) => {
   const it = rack.items.find(i => i.id === id), z = it ? null : zeroUById(rack, id);
-  const c = typeof ctx?.chassisOf === 'function' ? ctx.chassisOf((it || z)?.ref) : null;
+  return typeof ctx?.chassisOf === 'function' ? ctx.chassisOf((it || z)?.ref) : null;
+};
+const basisOf = (rack, id, ctx) => capacityBasis(chassisOfPart(rack, id, ctx)?.capacity);
+function loadOf(rack, id, ctx) {
+  const c = chassisOfPart(rack, id, ctx);
   if (!(c?.capacity?.count > 0)) return {stated: false};
   const b = capacityBasis(c.capacity);
   if (!b) return {stated: true, compared: false};
@@ -233,9 +265,19 @@ function loadOf(rack, id, ctx) {
   return {stated: true, compared: true, count, capacity: b.count, media: b.media, over: count > b.count};
 }
 // The sentence of a load: what the part holds against what its maker states.
-export const loadText = (rack, id, load) => (load.compared
-  ? `${labelOf(rack, id)} holds ${load.count} ${load.media ?? ''}${load.media ? ' ' : ''}cables' worth with the spare stored in it, past the ${load.capacity} its maker states.`
-  : `${labelOf(rack, id)} states no cable capacity${load.stated ? ' for a named kind of cable' : ''}, so the spare stored in it is not counted.`);
+// A count of one is "1 cat6 cable's worth". A cable the count does not take in
+// says so, as capacityOver leaves it out: "fibre (om4) is not counted against
+// a cat6 figure". Where the maker states none the wording is its own.
+export const loadText = (rack, id, load) => {
+  const name = labelOf(rack, id);
+  if (load.compared) return `${name} holds ${load.count} ${load.media ?? ''}${load.media ? ' ' : ''}${load.count === 1 ? "cable's" : "cables'"} worth with the spare stored in it, past the ${load.capacity} its maker states.`;
+  if (load.notCounted) {
+    const kind = load.cableMedia ? (FAMILY[load.cableMedia] === 'fiber' ? `fibre (${load.cableMedia})` : load.cableMedia) : 'a thinner cable';
+    return load.media ? `${name} states its cable capacity for ${load.media} cables, and ${kind} is not counted against a ${load.media} figure, so the spare stored in it is not counted.`
+      : `${name} states its cable capacity for cables of ${load.diameter} mm or more, and ${kind} is thinner, so the spare stored in it is not counted.`;
+  }
+  return `${name} states no cable capacity${load.stated ? ' for a named kind of cable' : ''}, so the spare stored in it is not counted.`;
+};
 
 // ── where a stored loop is, for a drawing ────────────────────────────────
 // Each place a cable's spare is stored in a duct or on a tray, as a point in
@@ -311,7 +353,7 @@ export function slackFindings(rack, ctx, nameOf = id => id) {
       out.push({kind: 'spare-over', cable: c.id, text: `${c.id} stores ${mText(stated)}${where.length === 1 && s.entries.length === 1 ? ` in ${nameOf(where[0].item)} ${where[0].via}` : ''} and has ${mText(s.spare.to_store_m)} to store.`});
     }
     for (const e of s.entries) if (e.item && !e.ok) out.push({kind: 'spare-off-route', cable: c.id, text: e.why});
-    // a duct past what its maker states, or one that states nothing to count against
+    // a duct past what its maker states, or one that states nothing to count this cable against
     for (const e of s.entries) {
       if (!e.ok || !e.load) continue;
       if (e.load.over) out.push({kind: 'spare-over-capacity', cable: c.id, text: loadText(rack, e.item, e.load)});

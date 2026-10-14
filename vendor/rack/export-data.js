@@ -13,7 +13,18 @@ import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText,
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS, cableColorOf} from './cable-rules.js';
 import {storedText, mText} from './slack.js';
-import {settleEnds, jacketsFor} from './ports.js';
+import {settleEnds, jacketsFor, zeroUEnds} from './ports.js';
+import {zeroUById, zeroUBottomMm, endPaneIn} from './model.js';
+import {RU} from './rails.js';
+
+// THE UNIT AN OUTLET OF A PART BESIDE THE RACK STANDS AT, as the rack numbers
+// them, where the catalogue places it (`parts`: {slotsOf, compByRef} and the
+// catalogue's `chassisOf`); '' where it cannot say.
+function zeroUSlotU(rack, z, e, parts) {
+  const s = parts ? zeroUEnds(z, parts).find(x => x.path === e.path && x.view === (e.view === 'rear' ? 'rear' : 'front')) : null;
+  if (s?.y == null) return '';
+  return uLabel(rack.frame, Math.min(rack.frame.heightRU, Math.max(1, Math.floor((zeroUBottomMm(z) + s.y) / RU) + 1)));
+}
 
 export const uniq = list => [...new Set(list)];
 
@@ -198,9 +209,10 @@ export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf, parts 
 //     simply not on this sheet, and one line counts those. (A cross-face cable
 //     is on both: its tag names the far end.)
 export function sheetCableNotes(rack, given = new Map(), {faces = ['front', 'rear'], drawn = new Set(), failed = [], uOf, parts = null} = {}) {
-  const byId = new Map(rack.items.map(i => [i.id, i])), ends = settleEnds(rack, given, parts);
-  const lands = e => byId.has(e.item) && ends.get(endKey(e))?.reason == null;
-  const panes = c => [c.a, c.b].filter(lands).map(e => paneOf(byId.get(e.item), e.view));
+  const ends = settleEnds(rack, given, parts);
+  // an end on a part beside the rack is on the face that part looks out of (model.js endPaneIn)
+  const lands = e => endPaneIn(rack, e) != null && ends.get(endKey(e))?.reason == null;
+  const panes = c => [c.a, c.b].filter(lands).map(e => endPaneIn(rack, e));
   const undrawn = new Set(), elsewhere = new Map();
   for (const c of rack.cables || []) {
     if (drawn.has(c.id)) continue;
@@ -261,6 +273,11 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items, ro
   const named = new Set();
   const side = e => {
     const it = byId.get(e.item);
+    // AN END ON A PART BESIDE THE RACK (a zero-U PDU's outlet, P-0019): the
+    // part by its label, and the unit the outlet stands at where the
+    // catalogue places it (with `parts`)
+    const z = it ? null : zeroUById(rack, e.item);
+    if (z) return [flat(z.label || z.id), zeroUSlotU(rack, z, e, parts), e.path];
     if (!it) return ['', '', e.path];
     if (names.get(it.id).renamed) named.add(names.get(it.id).name);
     return [names.get(it.id).name, uOfItem(rack.frame, it), e.path];
@@ -682,9 +699,11 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = ()
     });
     const missing = sides.filter(s => !s.ok);
     if (missing.length) {
+      // a part beside the rack (a zero-U PDU) has no shape in the cabinets
       const why = missing.map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, ` +
         (s.it ? (hiddenBy(s.it.id, s.pane) ? `is hidden behind ${hiddenBy(s.it.id, s.pane)} in the ${s.pane} cabinet`
                                            : `has no port drawn in the ${s.pane} cabinet`)
+              : zeroUById(rack, s.end.item) ? 'is on a part beside the rack, which the cabinets do not draw'
               : 'names a device that is not in the rack'));
       notes.push(`Cable ${f.name} is not drawn: ${why.join('; ')}.`);
       continue;

@@ -493,7 +493,7 @@ function placeSided(scene, items, chassisOf) {
 // depth in the rack.
 function cornerWhere(rack, link, pts, c, faceZ) {
   const near = (q, k) => q && c.at.distanceTo(q) < 1e-3 && k;
-  const label = id => rack.items.find(i => i.id === id)?.label ?? id;
+  const label = id => rack.items.find(i => i.id === id)?.label ?? zeroUOf(rack).find(z => z.id === id)?.label ?? id;
   const end = near(pts[1], 'from') || near(pts[pts.length - 2], 'to');
   if (end) { const [item, path] = link[end]; return `where it leaves ${label(item)} ${path}`; }
   const ru = Math.max(1, Math.floor(c.at.y / RU) + 1), dz = Math.round(c.at.z - faceZ);
@@ -699,7 +699,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   const sideParts = chassisOf ? zeroUOf(rack).filter(z => isZeroUPart(chassisOf(z.ref))) : [];
   for (const z of sideParts) {
     stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), mm: zeroUBottomMm(z), label: z.label,
-                face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: {}, share: plain(z.id, {}, null),
+                // (the plug at each cabled outlet, paired with the cord's other end: cable-plugs.js zeroUFacts;
+                // a part with a cord on it is not shared, `plain` counts the cabled ends)
+                face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: mergeSeats({}, facts.seats[z.id]),
+                share: plain(z.id, mergeSeats({}, facts.seats[z.id]), null),
                 chassis: chassisOf(z.ref), mount: 'rack-side',
                 ...(isCableManager(chassisOf(z.ref)) ? {untagged: true} : {})});
   }

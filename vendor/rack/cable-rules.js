@@ -6,7 +6,7 @@
 // {item, path, view}: the item's id, the port's data-path, and the device's
 // OWN panel ('front' or 'rear') the port is on - not the pane that shows it.
 
-import {nextId, positionOf, cableIdsInUse, withoutMembers} from './model.js';
+import {nextId, positionOf, cableIdsInUse, withoutMembers, zeroUById, endPaneIn} from './model.js';
 import {hexColor, cableColor} from './cable-geometry.js';
 
 // ── ends ────────────────────────────────────────────────────────────────
@@ -33,9 +33,13 @@ const itemOf = (rack, end) => rack.items.find(i => i.id === end.item) || null;
 // answers it in U. Without one, an item that carries its height (`u`, as
 // fit.js itemsWithU's do) is read as it is, and any other counts as 1U.
 export const carriedU = item => item.u ?? 1;
+// An end on a part beside the rack (a zero-U PDU's outlet, P-0019) is named
+// by the part and where it stands: "PDU-A (left-rear) outlet-a2".
 export function endName(rack, end, uOf = carriedU) {
   const it = itemOf(rack, end);
-  return it ? `${it.label} (U${positionOf(rack.frame, it.ru, uOf(it) ?? 1)}) ${end.path}` : `a removed device's ${end.path}`;
+  if (it) return `${it.label} (U${positionOf(rack.frame, it.ru, uOf(it) ?? 1)}) ${end.path}`;
+  const z = zeroUById(rack, end.item);
+  return z ? `${z.label || z.id} (${z.at}) ${end.path}` : `a removed device's ${end.path}`;
 }
 export const cableName = c => c.label || c.id;
 const clip = (s, n) => { const cs = Array.from(s); return cs.length > n ? `${cs.slice(0, n - 1).join('')}…` : s; };
@@ -47,8 +51,8 @@ const clip = (s, n) => { const cs = Array.from(s); return cs.length > n ? `${cs.
 export const portLabel = path => portPathOf(path).split('/module/').join(' ').replace(/[-/]/g, ' ');
 // The text of a cross-face tag: the far end, short enough for the side column.
 export function tagText(rack, end) {
-  const it = itemOf(rack, end);
-  return clip(`→ ${it ? it.label : 'removed'} ${portLabel(end.path)}`, 32);
+  const it = itemOf(rack, end) ?? zeroUById(rack, end.item);
+  return clip(`→ ${it ? it.label || it.id : 'removed'} ${portLabel(end.path)}`, 32);
 }
 
 // ── one cable per port ──────────────────────────────────────────────────
@@ -178,7 +182,8 @@ export const colorsKey = (rack, readers = {}) =>
 // `{jacketOf, typeColorOf}`; without them a link carries the cable's own
 // colour and nothing else.
 export function cablePlan(rack, readers = {}) {
-  const end = e => { const it = itemOf(rack, e); return [e.item, e.path, it ? paneOf(it, e.view) : 'none']; };
+  // an end on a part beside the rack is on the pane that part looks out of (model.js endPaneIn)
+  const end = e => [e.item, e.path, endPaneIn(rack, e) ?? 'none'];
   return {links: (rack.cables || []).map(c =>
     ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', ...colorFacts(c, readers), from: end(c.a), to: end(c.b)}))};
 }
@@ -368,9 +373,18 @@ export const endKind = info => (info?.family === 'power' || info?.family === 'gr
 // A SLOT END AS A PERSON READS IT: "C13 outlet", "C20 inlet", "terminal-stud
 // ground", "p40 power connector". The interface is the slot's own word, with
 // the `iec-` of an IEC 60320 coupler left off.
+// THE COUPLER A SLOT IS, by its interface (P-0019): `iec-c13` and
+// `eaton-c39` are a C13 and a C39. null for an interface that names none.
+export const couplerType = iface => { const m = /(?:^|-)(c\d+)$/i.exec(String(iface ?? '')); return m ? m[1].toUpperCase() : null; };
+// WHICH WAY A COUPLER FACES, where nothing else says: IEC 60320 numbers its
+// female connectors odd (a C13 or C19 outlet, and the C39 that takes both a
+// C14 and a C20) and its male inlets even (a C14, a C20). A stated rule of
+// the standard, not a guess; asked only of a part beside the rack, whose
+// panel no page reads (ports.js zeroUEnds).
+export const couplerRole = iface => { const t = couplerType(iface); return t ? (Number(t.slice(1)) % 2 ? 'outlet' : 'inlet') : null; };
 export function connectorName(slot, info) {
   const iface = String(slot?.interface || '');
-  const word = /^iec-/.test(iface) ? iface.slice(4).toUpperCase() : iface;
+  const word = couplerType(iface) ?? (/^iec-/.test(iface) ? iface.slice(4).toUpperCase() : iface);
   const what = info?.role || (info?.family === 'ground' ? 'ground' : info?.family === 'power' ? 'power connector' : 'connector');
   return [word, what].filter(Boolean).join(' ');
 }
@@ -382,14 +396,29 @@ export function connectorName(slot, info) {
 // a file holds); with none stated the first, and a sentence that says what to
 // set. A stated plug the slot does not take is not drawn, and a sentence
 // names what the slot takes.
+// A CORD SET PAIRS ITS ENDS (P-0019): an IEC 60320 cord is a C13 to a C14,
+// or a C19 to a C20. So where a slot takes several plugs and the end states
+// none, the one that pairs with the plug at the cord's other end (`far`, a
+// ref) is drawn, and nothing needs setting: a C39 outlet on a cord whose
+// other end is a C19 takes its C20. A far plug that pairs with none of them,
+// or none known, leaves the rule above.
 // {plug, choices, note}: `plug` null when the slot takes no cable end.
-export function endPlug(slot, compByRef, stated = null) {
+const plugCoupler = (compByRef, ref) => couplerType(compOfRef(compByRef, ref)?.attrs?.connector);
+const pairedWith = (compByRef, choices, far) => {
+  const t = far ? plugCoupler(compByRef, plugWord(far)) : null;
+  if (!t) return null;
+  const n = Number(t.slice(1)), mate = `C${n % 2 ? n + 1 : n - 1}`;
+  return choices.find(ref => plugCoupler(compByRef, ref) === mate) ?? null;
+};
+export function endPlug(slot, compByRef, stated = null, far = null) {
   const choices = cableEndsOf(slot, compByRef);
   if (!choices.length) return {plug: null, choices, note: null};
   const want = typeof stated === 'string' && stated ? plugWord(stated) : null;
   if (want && choices.includes(want)) return {plug: want, choices, note: null};
   const set = `set "plug" on the end to ${choices.join(' or ')}`;
   if (want) return {plug: choices[0], choices, note: `it states the plug ${want}, which ${slot.id} does not take; ${set}`};
+  const paired = choices.length > 1 ? pairedWith(compByRef, choices, far) : null;
+  if (paired) return {plug: paired, choices, note: null};
   return {plug: choices[0], choices,
           note: choices.length > 1 ? `${slot.id} takes more than one plug and ${choices[0]} is drawn; ${set}` : null};
 }

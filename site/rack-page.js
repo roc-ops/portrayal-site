@@ -3,7 +3,7 @@
 // editor's change event autosaves and redraws. What the side panel shows
 // follows S.sel.
 
-import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf} from '../vendor/rack/model.js';
+import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf, endPaneIn} from '../vendor/rack/model.js';
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
@@ -728,29 +728,34 @@ function addNotice(text, kind = 'error') {
   if (old?.text.includes(text)) return;
   S.notice = old ? {text: `${old.text} ${text}`, kind: old.kind} : {text, kind};
 }
+// An end's device, or the part beside the rack it is on (a PDU's outlet: kit 0.36.0, Portrayal #1068).
+const endHost = id => itemById(id) ?? zeroUById(rack(), id);
 function pruneCable() {
   const r = rack(), a = S.cable.a;
-  if (a && (!itemById(a.item) || !portFree(r, a, {uOf}).ok)) S.cable.a = null;
+  if (a && (!endHost(a.item) || !portFree(r, a, {uOf}).ok)) S.cable.a = null;
   const s = S.sel;
-  if (s?.kind === 'cable-form' && !s.id && !(itemById(s.a.item) && itemById(s.b.item))) {
+  if (s?.kind === 'cable-form' && !s.id && !(endHost(s.a.item) && endHost(s.b.item))) {
     S.sel = null;
     addNotice(NOT_ADDED);
   }
 }
 function onCableClick(ev) {
   if (S.sel?.kind === 'cable-form') return;      // the form is open: finish or cancel it first
-  const group = ev.target.closest('[data-item-id][data-panel]');
-  const item = group ? itemById(group.dataset.itemId) : null;
-  const path = item && group.dataset.panel !== 'missing' ? portAt(ev.target, group) : null;
+  // (an outlet of a part beside the rack is picked as a device's slot is: its group lists its outlets, elevation.js)
+  const group = ev.target.closest('[data-item-id][data-panel], [data-zerou-id][data-cable-ends]');
+  const item = group?.dataset.itemId ? itemById(group.dataset.itemId) : null;
+  const part = group?.dataset.zerouId ? zeroUById(rack(), group.dataset.zerouId) : null;
+  const path = (item && group.dataset.panel !== 'missing') || part ? portAt(ev.target, group) : null;
   if (!path) return;
-  // The end's view is the device's own panel, not the pane it was clicked in.
-  const end = {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)};
+  // The end's view is the device's own panel, not the pane it was clicked in; a part's is the panel drawn.
+  const end = item ? {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)}
+    : {item: part.id, path, view: group.dataset.zerouPanel === 'rear' ? 'rear' : 'front'};
   if (S.cable.a && sameEnd(S.cable.a, end)) { S.cable.a = null; render(); return; }   // the same port again: unpick it
   const free = portFree(rack(), end, {uOf});
   if (!free.ok) { S.notice = {text: free.reason, kind: 'error'}; render(); return; }
   if (!S.cable.a) { S.cable.a = end; render(); return; }
   // The A end is checked again now: the rack may have changed since it was picked.
-  if (!itemById(S.cable.a.item) || !portFree(rack(), S.cable.a, {uOf}).ok) { S.cable.a = null; render(); return; }
+  if (!endHost(S.cable.a.item) || !portFree(rack(), S.cable.a, {uOf}).ok) { S.cable.a = null; render(); return; }
   S.sel = {kind: 'cable-form', id: null, a: S.cable.a, b: end};
   S.cable.a = null;
   render();
@@ -1433,7 +1438,8 @@ async function redraw(keepRoutes = false) {
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
-    const zeroU = zeroUDrawn(r, chassisOf);
+    // (a part beside the rack is drawn with the plugs at its cabled outlets, as a device is: cable-plugs.js zeroUFacts)
+    const zeroU = zeroUDrawn(r, chassisOf).map(z => (facts.seats[z.id] ? {...z, swaps: facts.seats[z.id]} : z));
     // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
     // from the same items, parts and routes. Nothing in it is a target for
     // placing, moving or cabling.
@@ -1510,6 +1516,8 @@ async function redraw(keepRoutes = false) {
     for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
       const it = itemById(e.item);
       if (it) markPort(S.svgs.find(s => s.dataset.pane === paneOf(it, e.view)), it.id, e.path);
+      // (an outlet of a part beside the rack, on the pane that part looks out of: model.js endPaneIn)
+      else if (zeroUById(r, e.item)) markPort(S.svgs.find(s => s.dataset.pane === endPaneIn(r, e)), e.item, e.path);
     }
   }
   lap('cables');
@@ -2295,7 +2303,8 @@ const boundQueries = () => ({
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
-  freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
+  // (ctx: the per-call context's parts lists, for a device's power ends and a PDU's outlets; opts: kinds, type, near)
+  freePorts: (r, id, ctx = {}, opts = {}) => Q.freePorts(r, id, {...ctx, portsOf: facePorts}, opts),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
   inspect: (r, id, ctx) => inspectOnce(Q.inspect, r, id, ctx, factsStand),

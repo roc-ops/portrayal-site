@@ -140,6 +140,11 @@ const bundleItems = bundles => bundleList(bundles).flatMap(b => [
   ...(Array.isArray(b.members) ? b.members : []).flatMap(m => (plainObj(m) ? [m.a, m.b] : []))])
   .filter(w => plainObj(w) && typeof w.item === 'string' && w.item).map(w => ({id: w.item}));
 export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables), ...bundleItems(rack.bundles)];
+// A ZERO-U ID THE SAME WAY (P-0019): a cord kept when its PDU was taken away
+// still names the PDU's id, so the next part placed beside the rack is not
+// handed it.
+export const zeroUIdsInUse = rack => [...(Array.isArray(rack.zeroU) ? rack.zeroU : []).filter(z => typeof z?.id === 'string'),
+  ...endItems(rack.cables)];
 // A CABLE ID IS NEVER REUSED WHILE A BUNDLE NAMES IT: ids come one past the
 // highest, so a removed c9 could be handed to the next cable, and a bundle
 // still naming c9 would pick it up.
@@ -184,6 +189,26 @@ const plainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
 export const zeroUOf = rack => (Array.isArray(rack?.zeroU) ? rack.zeroU : []).filter(z => plainObject(z)
   && typeof z.id === 'string' && z.id && typeof z.ref === 'string' && z.ref && typeof z.at === 'string' && z.at);
 export const zeroUById = (rack, id) => zeroUOf(rack).find(z => z.id === id) ?? null;
+// WHAT A CABLE END IS ON (P-0019): a rack item, or a part beside the rack
+// whose own slots take a cable end (the outlets of a zero-U PDU). An end is
+// `{item, path, view}` either way: `item` is the id of whichever it is, and
+// `view` the part's own panel, as on an item. null when neither is there.
+export const endHostOf = (rack, id) => (rack?.items || []).find(i => i.id === id) ?? zeroUById(rack, id);
+// The face of the rack a part beside it looks out of: a rear upright carries
+// its part facing rearward (solids.js zeroUPlacer); a front upright, and
+// either upright of a two-post, facing forward. Its own rear panel looks the
+// other way.
+export const zeroUPane = (z, view = 'front') => {
+  const out = /-rear$/.test(String(z?.at)) ? 'rear' : 'front';
+  return view === 'rear' ? (out === 'rear' ? 'front' : 'rear') : out;
+};
+// The pane an end's panel faces on whatever it is on, or null when it is on nothing.
+export const endPaneIn = (rack, end) => {
+  const it = (rack?.items || []).find(i => i.id === end?.item);
+  if (it) return ((end.view === 'rear') === !!it.turned) ? it.face : (it.face === 'front' ? 'rear' : 'front');
+  const z = zeroUById(rack, end?.item);
+  return z ? zeroUPane(z, end.view === 'rear' ? 'rear' : 'front') : null;
+};
 // WHAT A ZERO-U PART HANGS ON (version 4, `heldBy: {parts: [id, ...]}`): the
 // ids of the zero-U entries that hold it, such as the two brackets of a PDU;
 // none for a part that stands on its own.

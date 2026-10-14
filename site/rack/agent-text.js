@@ -57,6 +57,19 @@ export function runs(list, keyOf) {
   return out.map(r => ({...r.e, n: r.n, path: r.n > 1 ? `${r.m[1]}${r.m[2]}..${r.to}${r.m[3]}` : r.e.path}));
 }
 
+// ONE FREE PORT, OR A RUN OF THEM, AS list_free_ports SAYS IT (queries.js
+// freePorts). A data port: its speed, media and cage. An outlet of a part
+// beside the rack (kit 0.36.0, Portrayal #1068): its connector, its label on
+// the part, the unit it is at, and the plug a cord takes there. A device's
+// power or ground end: what it is, its connector and its plug.
+export function freeLine(p) {
+  const plug = p.plug ? `, plug ${p.plug}` : '';
+  if (p.type !== undefined || p.u !== undefined)
+    return `${p.path}, ${p.view}: ${[p.connector ?? p.type ?? p.kind, p.label].filter(Boolean).join(' ')}${p.u != null ? ` at U${p.u}` : ''}${plug}`;
+  if (p.kind && p.kind !== 'data') return `${p.path}, ${p.view}: ${[p.kind, p.connector].filter(Boolean).join(', ')}${plug}`;
+  return `${p.path}, ${p.view}: ${[p.speed, p.media, p.cage].filter(Boolean).join(' ') || 'port'}`;
+}
+
 // The lines from `offset` that fit in `room` characters. A line too long to
 // fit alone is cut, so a page always moves forward.
 export function windowLines(lines, offset, room) {
@@ -196,6 +209,8 @@ const endText = e => `${e.item}/${e.path}${e.view === 'rear' ? ' (rear)' : ''}${
 // kit's `load`, how full the duct is with the spare in it against the count
 // its maker states (slack.js spareLoad); never a capacity the data lacks.
 const loadWords = l => (!l ? '' : !l.stated ? ' (a duct whose maker states no cable capacity)'
+  // (kit 0.39.0: a cable the count does not take in, a fibre cord against a count of cat6, is not counted against it)
+  : l.notCounted ? ` (a duct whose stated capacity is for ${l.media ? `${l.media} cables` : `cables of ${l.diameter} mm or more`}, which ${l.cableMedia ?? 'this cable'} is not counted against)`
   : !l.compared ? ' (a duct whose stated capacity names no kind of cable)'
   : ` (a duct holding ${l.count} ${l.media ? `${l.media} ` : ''}cables' worth of the ${l.capacity} its maker states${l.over ? ', past it' : ''})`);
 const storedWords = s => [

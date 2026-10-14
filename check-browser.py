@@ -10341,7 +10341,8 @@ def check_rack_spare_duct_loop(page, base):
         bad.append("Rear: a loop in a front duct is drawn on the rear pane")
     # The agent's text.
     txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
-    for want in ("as a loop in i3 duct (a duct holding", "the stored loop is drawn", "Spare can go in: i3 duct"):
+    # c1 is fibre and hm-1 states its count for cat6, which kit 0.39.0 does not count a fibre cord against
+    for want in ("as a loop in i3 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "the stored loop is drawn", "Spare can go in: i3 duct"):
         if want not in txt:
             bad.append(f"inspect c1: no {want!r} in {txt!r}")
     if "listed, not drawn" in txt:
@@ -12066,6 +12067,153 @@ def check_rack_power_cords(page, base):
         wait_fn(page, f"power: {cid} is deleted", f"() => !window.__rack.doc().racks[0].cables.some(c => c.id === '{cid}')")
     wait_fn(page, "power: no plug stays after the cords are deleted",
             "() => !document.querySelector('[data-path$=\"-occupant\"][data-ref*=\"-plug\"]')")
+    return bad
+
+
+# A RACK WITH A VERTICAL PDU AT EACH REAR UPRIGHT (kit 0.36.0, Portrayal
+# #1068): a 2U switch with two C20 inlets at U35 and a 1U console with two C14
+# inlets at U42, both on the front rails, so their inlets are on the rear pane
+# beside the PDUs.
+PDU_CORD_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Cords', kind: 'four-post'}), {heightRU: 42});
+  ({rack: r} = M.withItem(r, {ref: 's9700-53dx', cfg: cat['s9700-53dx'].default, ru: 35, label: 'sw-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: cat['ds1000'].default, ru: 42, label: 'con-1'}));
+  return {...r, zeroU: [{id: 'z1', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-A', at: 'left-rear', offsetMm: 0},
+                        {id: 'z2', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-B', at: 'right-rear', offsetMm: 0}]};
+}"""
+
+# Where a cord's drawn line ends on a pane, against the outlet it ends at: the
+# nearest sampled point of its stroke to the outlet's middle, in pane mm.
+CORD_AT_OUTLET_JS = """([pane, id, zid, path]) => {
+  const s = document.querySelector(`#pane${pane} svg`);
+  const g = s?.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
+  const o = s?.querySelector(`[data-zerou-id="${zid}"] [data-path="${path}"]`);
+  if (!g || !o) return {drawn: !!g, outlet: !!o};
+  const inv = s.getScreenCTM().inverse(), b = o.getBoundingClientRect();
+  const c = new DOMPoint(b.left + b.width / 2, b.top + b.height / 2).matrixTransform(inv);
+  let best = Infinity;
+  for (const p of g.querySelectorAll('path')) {
+    if (p.dataset.leader) continue;
+    const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+    for (let t = 0; t <= L; t += 0.5) { const q = new DOMPoint(p.getPointAtLength(t).x, p.getPointAtLength(t).y).matrixTransform(m); best = Math.min(best, Math.hypot(q.x - c.x, q.y - c.y)); }
+  }
+  return {drawn: true, outlet: true, miss: best};
+}"""
+
+
+@extra("rack.html: power cords to a vertical PDU beside the rack (kit 0.36.0) - a PSU inlet and a PDU outlet are picked in Cable mode and the cord saved, a second cord is added by the assistant's edit_rack, and each is drawn to its outlet on the Rear pane with the paired plug, from the side and in 3D, with a length; the assistant lists the PDU's free outlets")
+def check_rack_pdu_cords(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(PDU_CORD_RACK_JS))
+    inlet0 = {"item": "i1", "path": "psu-0/module/inlet", "view": "rear"}
+    try:
+        # Every outlet of the PDU is listed for picking, on the pane it looks out of.
+        wait_fn(page, "pdu: PDU-A's outlets are listed for picking",
+                "() => (document.querySelector('#paneRear svg [data-zerou-id=\"z1\"]')?.getAttribute('data-cable-ends') || '').split(' ').includes('outlet-e34')")
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i1", inlet0["path"])
+        step = page.text_content("#cableStep") or ""
+        if "sw-1" not in step or "inlet" not in step:
+            bad.append(f"picking: the inlet was not picked: {step!r}")
+        box = page.evaluate("""() => { const e = document.querySelector('#paneRear svg [data-zerou-id="z1"] [data-path="outlet-e34"]');
+          if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""")
+        if not box:
+            return bad + ["picking: outlet-e34 of PDU-A is not drawn on the rear pane"]
+        page.mouse.click(box[0], box[1])
+        wait_sel(page, "pdu: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_a, end_b = page.text_content("#cEndA") or "", page.text_content("#cEndB") or ""
+    if "C20 inlet" not in end_a or "PDU-A" not in end_b or "C39 outlet" not in end_b:
+        bad.append(f"form: the ends do not say what they are: {end_a!r} / {end_b!r}")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"form: the media proposed for an inlet and a PDU outlet is {page.input_value('#cMedia')!r}")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "pdu: the cord is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["a"] != inlet0 or c1["b"] != {"item": "z1", "path": "outlet-e34", "view": "front"} or c1["media"] != "power":
+        bad.append(f"saved: the cord is {c1}")
+    # The second cord through the assistant's own tool, as an agent sends it.
+    page.click("#cableBtn")
+    res = page.evaluate("""() => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i2', path: 'psu-1/module/inlet', view: 'rear'},
+                                                                       b: {item: 'z2', path: 'outlet-f42', view: 'front'}, media: 'power'}]})
+                             .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if res["error"]:
+        return bad + [f"agent: cable.add to PDU-B was refused: {res['text']}"]
+    try:
+        wait_fn(page, "pdu: both cords measured",
+                "() => { const p = window.__rack.paths(); return !!(p && p.c1?.measured > 0 && p.c2?.measured > 0); }")
+        for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
+            wait_sel(page, f"pdu: {cid} on the rear pane", f'svg[data-pane="rear"] [data-cables] [data-cable-id="{cid}"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    paths = page.evaluate("() => window.__rack.paths()")
+    for cid in ("c1", "c2"):
+        m = paths[cid]["measured"]
+        if not 0.2 < m < 3:
+            bad.append(f"length: {cid} is measured {m} m")
+    for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
+        at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, zid, path])
+        if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:
+            bad.append(f"2D: {cid} is not drawn to {path} of {zid} on the rear pane: {at}")
+    # The plug at each outlet is the one that pairs with the cord's other end: a C20 at the C39, a C14 at the C13.
+    plugs = page.evaluate("""() => Object.fromEntries(['z1|outlet-e34', 'z2|outlet-f42'].map(k => { const [z, p] = k.split('|');
+      return [k, document.querySelector(`#paneRear svg [data-zerou-id="${z}"] [data-path="${p}-occupant"]`)?.getAttribute('data-ref') ?? null]; }))""")
+    if "c20-plug" not in (plugs["z1|outlet-e34"] or "") or "c14-plug" not in (plugs["z2|outlet-f42"] or ""):
+        bad.append(f"2D: the plugs at the outlets are {plugs}")
+    if page.evaluate("() => (window.__rack.doc().racks[0].zeroU || []).some(z => z.swaps && Object.keys(z.swaps).length)"):
+        bad.append("saved: a plug was written into a PDU (a derived plug is never stored)")
+    row = page.text_content('#cableItem-c1') or ""
+    if "PDU-A" not in row or "outlet-e34" not in row or page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: c1's row reads {row!r}")
+    # The assistant lists PDU-A's free outlets, the one taken left out, nearest U35 first. (A free
+    # C39 has no cord to pair with: the kit names its first plug.)
+    free = page.evaluate("""() => window.__tools.list_free_ports.execute({id: 'z1', kinds: ['power'], type: 'C39', near: 35})
+                              .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if free["error"] or not re.match(r"z1 \(PDU-A\): \d+ free ports", free["text"]) or "outlet-e34," in free["text"] \
+            or not re.search(r"^[^\n]*\noutlet-e3\d, front: C39 outlet E3\d at U3\d, plug generic/c\d+-plug@1\n", free["text"]):
+        bad.append(f"agent: PDU-A's free outlets read {free['text']!r}")
+    # From the side: both cords, each with a plug block at each end.
+    page.click('#view2d [data-view="sides"]')
+    try:
+        wait_fn(page, "pdu: the cords from the side",
+                "() => ['c1', 'c2'].every(id => document.querySelector(`#paneFront svg [data-cables] [data-cable-id=\"${id}\"]`))")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        blocks = page.evaluate("() => ['c1', 'c2'].map(id => document.querySelectorAll(`#paneFront svg [data-cables] [data-cable-id=\"${id}\"] [data-side-plug]`).length)")
+        if blocks != [2, 2]:
+            bad.append(f"side: the plug blocks of c1 and c2 are {blocks}, not two each")
+    page.click('#view2d [data-view="faces"]')
+    # 3D: a tube for each cord, and the plug seated at each outlet.
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "pdu: 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    # (the PDUs are the stack's last two mounts, after the rack's two items: scene3d.js sideParts)
+    got = page.evaluate("""() => { const s = window.__rack.scene(), rc = s.rackCables;
+      return {tubes: (s.three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name).sort(),
+              anchors: (rc?.anchors ?? []).map(a => `${a.i}:${a.side}:${a.anchor.path}`).sort(),
+              overrides: s.resolved().stack.slice(2).map(e => e.overrides)}; }""")
+    if got["tubes"] != ["cable-c1", "cable-c2"]:
+        bad.append(f"3D: the scene's cables are {got['tubes']}")
+    if got["overrides"] != [{"outlet-e34": "generic/c20-plug@1"}, {"outlet-f42": "generic/c14-plug@1"}]:
+        bad.append(f"3D: the plugs seated on the PDUs are {got['overrides']}")
+    for a in ("0:to:outlet-e34-occupant", "1:to:outlet-f42-occupant"):
+        if a not in got["anchors"]:
+            bad.append(f"3D: no anchor {a} (the cord at its plug) among {got['anchors']}")
     return bad
 
 
