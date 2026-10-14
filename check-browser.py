@@ -13575,12 +13575,13 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None, polling=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
+    # (`polling` in ms, where the page's animation frames are not to be relied on)
     try:
-        page.wait_for_function(expr, arg=arg, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout, **({"polling": polling} if polling else {}))
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -20760,12 +20761,21 @@ LIGHT_STATE_JS = """async () => {
 
 @extra("rack.html: while the 3D camera is dragged the devices' relief is left out of the frames (fewer draw calls, the faces' holes drawn opaque), hovering a cable finds the same cable as at rest, and once the camera is still the detail is drawn again exactly as before; the motion detail is one constant (S-0049)")
 def check_rack_3d_light_moving(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving", 1)
+
+
+@extra("rack.html: on a slow machine (the CPU throttled 6x) the 3D camera still takes the devices' relief back by itself once it is still, the frame drawn by the restore and not by a later pointer event (S-0049-3)")
+def check_rack_3d_light_moving_slow(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving_slow", 6)
+
+
+def light_moving_run(page, base, name, throttle):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.set_viewport_size({"width": 1600, "height": 1000})
     open_front_fixture(page, base, PACK_FIXTURE)
     if webgl_trouble(page):
-        print("[check_rack_3d_light_moving] no WebGL here - not exercised")
+        print(f"[{name}] no WebGL here - not exercised")
         return bad
     if page.evaluate("async () => (await import('/site/rack/scene3d.js')).MOTION_LOD") is not True:
         bad.append("scene3d.js MOTION_LOD is not on")
@@ -20776,7 +20786,8 @@ def check_rack_3d_light_moving(page, base):
         return bad + [str(e)]
     park_mouse(page)
     page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
-      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); }; s.requestFrame(); }""")
+      window.__masks = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); window.__masks.push(b.layers.mask); }; s.requestFrame(); }""")
     wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
     rest = page.evaluate(LIGHT_STATE_JS)
     if not rest["relief"] or rest["mask"] != 3 or rest["opaque"]:
@@ -20791,7 +20802,17 @@ def check_rack_3d_light_moving(page, base):
     page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
     wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
     moving = page.evaluate(LIGHT_STATE_JS)
+    cdp = None
+    if throttle > 1:
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": throttle})
     page.mouse.up()
+    released = time.monotonic()
+    if throttle > 1:
+        # (a machine too slow to keep up: the frames it is given stop coming for a while, as for a page that is hidden or
+        # starved, and the scene has to take the detail back without them; they are held here and let go below)
+        page.evaluate("""() => { const own = window.requestAnimationFrame.bind(window), held = window.__heldFrames = [];
+          window.__ownFrame = own; window.requestAnimationFrame = cb => { held.push(cb); return held.length; }; }""")
     if moving["mask"] != 1 or not moving["calls"] or moving["calls"] >= rest["calls"]:
         bad.append(f"while dragged: the camera's layers {moving['mask']}, {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected the relief layer left out, and fewer")
     if moving["faces"] and moving["opaque"] != moving["faces"]:
@@ -20801,13 +20822,23 @@ def check_rack_3d_light_moving(page, base):
     if not own(rest) or own(moving) != own(rest):
         bad.append(f"hovering the cables while dragged finds {moving['picks']}, at rest {rest['picks']}; expected each cable found at rest found while dragged")
     park_mouse(page)
-    page.wait_for_timeout(1500)             # the easing, and MOTION_REST_MS after it
-    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
-    wait_fn(page, "a frame at rest again", "() => window.__calls.length", timeout=READY_3D_MS)
+    # (the easing, and MOTION_REST_MS after it, however slow the frames: waited for to a deadline, with no frame
+    # asked for and no pointer moved - the restore draws the frame itself, the last one drawn showing the relief)
+    try:
+        if throttle > 1:
+            # (no animation frame has come: the camera's layers are put back by the restore's own timer, which then asks for the frame)
+            wait_fn(page, "the layers put back", "() => window.__rack.scene().three.camera.layers.mask === 3", timeout=30000, polling=50)
+            page.evaluate("() => { window.requestAnimationFrame = window.__ownFrame; for (const cb of window.__heldFrames.splice(0)) window.__ownFrame(cb); }")
+        wait_fn(page, "the relief back", "() => window.__masks.at(-1) === 3", timeout=30000)
+    except RuntimeError as e:
+        bad.append(f"once the camera was still, the relief was not back within 30 s ({e}); expected the restore to put the layers back and ask for a frame")
+    restored_ms = round((time.monotonic() - released) * 1000)
+    if cdp:
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
     again = page.evaluate(LIGHT_STATE_JS)
     if again["mask"] != 3 or again["opaque"] or again["calls"] != rest["calls"]:
         bad.append(f"at rest again: the camera's layers {again['mask']}, {again['opaque']} faces opaque, {again['calls']} draw calls against {rest['calls']} before; expected as before")
-    print(f"[check_rack_3d_light_moving] {rest['relief']} relief meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+    print(f"[{name}] the relief back {restored_ms} ms after the release (CPU x{throttle}); {rest['relief']} relief meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
           f"{moving['opaque']} of {moving['faces']} faces opaque while dragged; cables found {sum(1 for v in rest['picks'].values() if v)}")
     return bad
 

@@ -313,13 +313,25 @@ export function createRackScene(container, opts = {}) {
   const faceMats = new Set();      // the detailed faces' own materials, opaque while moving
   // (a step of the camera under LIGHT_MOVE, about half a pixel, is the easing's tail, not a move: the detail comes back)
   const LIGHT_MOVE = 3e-4;
-  let lightHeld = false, movedAt = -Infinity, light = false, lightPose = poseOf();
+  let lightHeld = false, movedAt = -Infinity, light = false, lightPose = poseOf(), lightTimer = 0, easedOut = false;
+  // (the detail comes back from a timer of its own, not from the frame loop: the easing after a drag lasts a number of
+  // FRAMES, so where frames are slow it outlasts the hand by seconds, and the restore waited for its last step. Once the
+  // timer has restored the detail, the easing's remaining steps do not take it away again: `easedOut`, until the next press)
+  function restoreLight() {
+    lightTimer = 0;
+    if (!alive || lightHeld) return;
+    const left = MOTION_REST_MS - (performance.now() - movedAt);
+    if (left > 0) { lightTimer = setTimeout(restoreLight, left); return; }
+    easedOut = true;
+    if (light) setLight(false);       // (which asks for the frame that draws it)
+  }
+  const armLight = () => { clearTimeout(lightTimer); lightTimer = setTimeout(restoreLight, MOTION_REST_MS); };
   if (LIGHT_MOVING) {
     // (from the controls' `start`, so a drag's first frame is already light, to MOTION_REST_MS after their `end` or the last move)
-    controls.addEventListener('start', () => { lightHeld = true; });
-    controls.addEventListener('end', () => { lightHeld = false; movedAt = performance.now(); });
+    controls.addEventListener('start', () => { lightHeld = true; easedOut = false; clearTimeout(lightTimer); lightTimer = 0; });
+    controls.addEventListener('end', () => { lightHeld = false; movedAt = performance.now(); armLight(); });
     controls.addEventListener('change', () => {
-      if (movedFrom(lightPose, LIGHT_MOVE)) movedAt = performance.now();
+      if (!easedOut && movedFrom(lightPose, LIGHT_MOVE)) { movedAt = performance.now(); if (!lightHeld) armLight(); }
       lightPose = poseOf();
     });
   }
@@ -1552,7 +1564,8 @@ export function createRackScene(container, opts = {}) {
     controls.update();
     // (lighter while the camera moves, and in detail again once it has been still a moment: `opts.lightWhileMoving`)
     if (LIGHT_MOVING) {
-      const moving = lightHeld || performance.now() - movedAt < MOTION_REST_MS;
+      // (the timer, above, has the say once the hand is off; this takes the detail away at the first frame of a move)
+      const moving = lightHeld || (!easedOut && performance.now() - movedAt < MOTION_REST_MS);
       if (moving !== light) setLight(moving);
     }
     // (and with `opts.onDemand`, only a scene something has changed: `dirty`, above, or a camera moved enough to see)
@@ -1681,6 +1694,7 @@ export function createRackScene(container, opts = {}) {
       epoch++;      // stops any deferred relief pass from touching a dead scene
       pending = [];  // and drops the closures it was holding
       cancelAnimationFrame(raf);
+      clearTimeout(lightTimer);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
