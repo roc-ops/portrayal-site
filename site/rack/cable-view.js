@@ -86,9 +86,11 @@ export function inPane(svg, el) {
 }
 
 // A pathway's element in a pane: a ring (#via or #via-end), a duct
-// (#guide--via) or a pass (#pass--via) inside the item's group.
+// (#guide--via) or a pass (#pass--via) inside the item's group. A front-mounted
+// horizontal manager's rear pane is a "through" panel (its rear-brush and
+// pass-through-N), so that one is looked in too.
 export function wayEl(svg, w) {
-  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"]`);
+  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"], [data-item-id="${CSS.escape(w.item)}"][data-panel="through"]`);
   return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
     || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
 }
@@ -319,6 +321,13 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
       if (pts.length) {
         link.via2d = {[pane]: pts};
         if (turned) link.rings2d = {[pane]: rings};
+        // A CABLE THAT PASSES THROUGH A MANAGER'S PASS-THROUGH shows its run
+        // behind the manager on the rear pane, though both its ends are on the
+        // front one: cables.js draws such a link on the points it was given
+        // (a pass this pane places, in a "through" panel) and no ends.
+        if (pts.length > 1 && link.from[2] !== pane && link.to[2] !== pane
+            && ws.some((w, k) => at[k] && !w.lane && panelGroup(svg, w.item)?.dataset.panel === 'through'))
+          link.through2d = {...link.through2d, [pane]: true};
       }
     }
   }
