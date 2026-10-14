@@ -31,6 +31,20 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 // or zoomed, and come back once it is still. false draws them throughout.
 export const MOTION_LOD = true;
 
+// THE BUILD'S PHASES, NAMED IN A TRACE: each is a User Timing measure,
+// `rack3d:<phase>` (performance.measure, with what it did as `detail`), so a
+// Chrome performance trace of the 3D view says where its time went:
+// 'faces' (the cables' and the covers' faces read), 'devices' (every device
+// standing), 'anchors', 'kitRoute' and 'tubes' (cables.js hangTubes),
+// 'bundles', 'labels' (the stored loops and the bend rings, with their
+// sentences), 'cables' (all of the cables' work, end to end) and 'detail'
+// (the relief pass, from its start to the scene complete). Never a failure:
+// a browser without User Timing levels 3 is simply not told.
+export const PHASE = 'rack3d';
+function phase(name, start, end = performance.now(), detail = null) {
+  try { performance.measure(`${PHASE}:${name}`, {start, end, ...(detail ? {detail} : {})}); } catch { /* not measured */ }
+}
+
 // THE RACK'S CABLES AS TUBES (Phase 2b ruling 5), drawn once the devices are
 // built. An end is found on the mount of its own item (rack3d.js findMounted
 // by id: two items can share a ref) and on the device's own panel:
@@ -587,7 +601,8 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // part's plates are solid as well, and a ring's parts (kit 0.15.0), and a
     // hang or a rounded corner is kept out of them.
     const boxes = solidBoxes(THREE, rack, chassisOf, faceZ);
-    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, widthOf: widthLookup(ctx?.diameterOf, rack.cables), anchor: async (item, path, view) => {
+    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, widthOf: widthLookup(ctx?.diameterOf, rack.cables),
+      onPhase: (name, start, end, detail) => phase(name, start, end, detail), anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
       const got = await scene.cableAnchor({id: item}, path, {view});
       if (got.length) return got;
@@ -615,18 +630,22 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // (and the tie straps of single cables, for a cable plugged in at both ends, as the panes draw them)
     const landedId = id => { const c = (rack.cables || []).find(x => x.id === id); return !!c && !loose.has(endKey(c.a)) && !loose.has(endKey(c.b)); };
     const tieStraps = (bundles?.tieStraps ?? []).filter(m => m.cables.some(landedId));
+    let at = performance.now();
     if (bundles?.bundles?.size || tieStraps.length) {
       try { hung = await hangBundles(scene, rack, {...bundles, tieStraps, routes, paths, ctx, stage: scene.stageColor ?? stage}, drawn.boxes);
         drawn.tight.push(...hung.tight); }
       catch (err) { console.warn('[portrayal] the bundles could not be drawn in 3D', err); }
     }
+    phase('bundles', at, performance.now(), {bundles: hung?.bundles.length ?? 0, ties: hung?.ties.length ?? 0});
+    at = performance.now();
     // THE STORED LOOPS (kit 0.35.0; spare-loops.js), for a cable plugged in at both ends, as the panes draw them
     let loops = null;
     try { loops = hangLoops(scene, rack, (spares ?? []).filter(l => landedId(l.cable))); }
     catch (err) { console.warn('[portrayal] the stored spare could not be drawn in 3D', err); }
     // (only for a cable plugged in at both ends, as on the panes: route-context.js landedBends)
-    return {...drawn, checked: !facts.unchecked, facts, bundles: hung, loops,
-            bendRings: ringBends(scene, drawn, landedBends(bends, rack, e => loose.has(endKey(e))))};
+    const bendRings = ringBends(scene, drawn, landedBends(bends, rack, e => loose.has(endKey(e))));
+    phase('labels', at, performance.now(), {loops: loops?.loops.length ?? 0, bendRings: bendRings.length});
+    return {...drawn, checked: !facts.unchecked, facts, bundles: hung, loops, bendRings};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
     return {failed: true};
@@ -660,6 +679,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
                                               covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null, onContextLost = null,
                                               onContextRestored = null}) {
   const frame = rack.frame;
+  const began = performance.now();
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
   // If the cables' faces cannot be read the rack is built without plugs, and
@@ -715,6 +735,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // setting in the task its meshes arrive in (onFace, below).
   // (every part the library marks one on: a part beside the rack, and a rack-mounted duct with a cover as well)
   const coverPaths = new Map(await Promise.all([...rack.items, ...sideParts].map(async z => [z.id, await coverPathsOf(z.ref, z.cfg)])));
+  phase('faces', began, performance.now(), {items: stack.length, cabled});
   const {guard3d} = await import('../webgl.js');
   const scene = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
@@ -776,20 +797,27 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     // (the detail is let go once the cables are hung, or the build has ended
     // without them: a disposed scene's passes stop at their own epoch check)
     try {
+      let at = performance.now();
       await built.build();
       // (a scene disposed while it was built - the host has moved on - or whose
       // context was lost meanwhile hangs no cables: it will not be drawn again)
       if (!built.alive() || built.contextLost()) return built;
+      phase('devices', at, performance.now(), {devices: built.devices().length});
       placeZeroU(built, sideParts, chassisOf);
       placeSided(built, rack.items, chassisOf);
       built.requestFrame();
       // What the scene holds of the cables, for the page and the exports: null
       // for a rack with none (nothing is added to the scene at all).
+      at = performance.now();
       built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
+      if (cabled) phase('cables', at, performance.now(), {cables: (rack.cables || []).length, failed: !!built.rackCables?.failed});
     } finally {
       built.startDetail();
       built.requestFrame();   // (the bundles, loops and bend rings hung with the cables)
     }
+    // (when the detail is in: the scene complete, or its pass failed)
+    const detailFrom = performance.now(), done = () => { if (built.alive()) phase('detail', detailFrom, performance.now()); };
+    built.complete().then(done, done);
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);

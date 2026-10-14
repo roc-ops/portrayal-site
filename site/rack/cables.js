@@ -352,8 +352,13 @@ export async function drawCables3d(scene, plan, opts = {}) {
     throw err;
   }
 }
+// `onPhase(name, start, end, detail)`, when given, is told when each part of
+// the work ends: 'anchors' (the ends read), 'kitRoute' (spanning the tubes,
+// with `detail.ms` the time spent in bend3d.js kitRoute and `detail.calls`)
+// and 'tubes' (the tubes made), `start` and `end` on performance.now()'s clock.
 async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoints = null, boxes = null,
-                                       bendOf = null, widthOf = () => WIDTH, slice = 0}, early) {
+                                       bendOf = null, widthOf = () => WIDTH, slice = 0, onPhase = null}, early) {
+  const began = performance.now();
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
   boxes ??= scene.deviceBoxes();
@@ -387,6 +392,9 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
     found.push({link, i, ends, loose});
   }
   reaches(THREE, found.flatMap(f => f.ends.filter(Boolean)));
+  const tubesFrom = performance.now();
+  onPhase?.('anchors', began, tubesFrom, {ends: anchors.length});
+  let routeMs = 0, routeCalls = 0;
   if (sliced) { world.add(group); early.group = group; }
   for (const {link, i, ends, loose} of found) {
     if (sliced && performance.now() - sliceAt > slice) {
@@ -425,8 +433,11 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
       // how far the tube's start is from the kit's reach point, each end (mm)
       reachGap = (got.reach ?? []).map((q, k) => (q ? q.distanceTo(ends[k].points.reduce((s, p) => s.add(p), new THREE.Vector3())
         .multiplyScalar(1 / ends[k].points.length)) : null));
-      if (R != null) ({pts, bent, extended_mm: extended} = kitRoute(THREE, ends[0], ends[1], wps, R, insideOf(boxes)));
-      else {
+      if (R != null) {
+        const t0 = performance.now();
+        ({pts, bent, extended_mm: extended} = kitRoute(THREE, ends[0], ends[1], wps, R, insideOf(boxes)));
+        routeMs += performance.now() - t0; routeCalls++;
+      } else {
         const e0 = ends[0].points, e1 = ends[1].points;
         const mean = ps => ps.reduce((q, p) => q.add(p), new THREE.Vector3()).multiplyScalar(1 / ps.length);
         pts = [mean(e0), ...wps, mean(e1)];
@@ -471,5 +482,8 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
   }
   if (!sliced) world.add(group);
   scene.requestFrame?.();
+  const done = performance.now();
+  onPhase?.('kitRoute', tubesFrom, done, {ms: Math.round(routeMs), calls: routeCalls});
+  onPhase?.('tubes', tubesFrom, done, {tubes: tubes.filter(t => t.mesh).length});
   return {tubes, anchors, boxes, group};
 }
