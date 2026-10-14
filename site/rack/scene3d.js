@@ -18,7 +18,7 @@ import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
-import {clearCurve, tightText, insideOf} from './bend3d.js';
+import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
 import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 
@@ -484,26 +484,6 @@ function placeSided(scene, items, chassisOf) {
   }
 }
 
-// THE BEND RADIUS EACH TUBE IS ROUNDED TO (portrayal-site#164): a cable's
-// installed radius from the cable types (`bendOf`, the kit's cable-types.js
-// bendLookup), and, while it rides a bundle, the bundle's radius when that is
-// larger (the kit's bundleCheck `bend.radius_mm`: the largest of its members'),
-// so a member turns with its trunk. Null when neither is known: the tube is
-// then eased as before and its corners are not checked.
-function radiusOf(rack, bendOf, bundles) {
-  const byId = new Map((rack.cables || []).map(c => [c.id, c]));
-  const ofBundle = new Map();
-  for (const f of bundles?.bundles?.values() ?? []) {
-    const r = f.check?.bend?.radius_mm;
-    if (r > 0) for (const id of f.members ?? []) ofBundle.set(id, r);
-  }
-  return link => {
-    let own = null;
-    try { own = typeof bendOf === 'function' ? bendOf(byId.get(link.id)) : null; } catch { own = null; }
-    const rs = [own, ofBundle.get(link.id)].filter(r => typeof r === 'number' && r > 0);
-    return rs.length ? Math.max(...rs) : null;
-  };
-}
 // A drawn corner's place in words: the lead out of an end, or its height and
 // depth in the rack.
 function cornerWhere(rack, link, pts, c, faceZ) {

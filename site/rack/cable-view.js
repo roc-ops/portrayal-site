@@ -18,6 +18,8 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter} from './bundle-view.js';
 import {svgEl} from './dom.js';
+import {radiusOf} from './bend3d.js';
+import {trunkPaths, trunkPoint} from './bend2d.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
@@ -339,8 +341,10 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
     return t;
   };
+  const bendOf = radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles});
   const recs = drawCables2d(svg, plan, pane, {
     edgeX, outboard: rear ? -1 : 1, widthOf: widthLookup(routes?.types?.diameterOf, cables),
+    bendOf,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
@@ -376,7 +380,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const via = link.via2d[pane], rings = link.rings2d?.[pane];
     return [link.id, rings ? throughRings(via, rings, {lead: 4}).points : via];
   }));
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, (e, f, i) => {
+  const cornerMap = new Map(recs.map(rec => [rec.link.id, rec.corners ?? []]));
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, id => cornerMap.get(id) ?? [], (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
@@ -516,7 +521,82 @@ export function drawInFront(svg) {
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
+
+// WHERE THE RIDERS CHANGE, A MEMBER'S ARC IS NOT THE TRUNK'S (#185). A member that joins
+// the trunk at a node turns onto it there on an arc of its radius, which lies along the stretch
+// it joins; one that leaves turns off along the stretch it rides. So the band, which holds
+// exactly the riders, changes where those arcs end: the node of a stretch boundary (and the
+// open ends of the trunk, where every rider joins or leaves) moves along the trunk by the
+// longest cut of the joiners less that of the leavers. `run` is stretches that meet, each
+// {st, e} (its two ends); `cornersOf(id)` a cable's arcPath corners (cut_mm); `lines` each
+// cable's points. The answer is `{ends, turns}`: each stretch's ends as moved, each along its
+// own line and then across to the middle of its own riders (the kit's pack middle slants a
+// little from stretch to stretch where the members run square, which a longer stretch would
+// carry further from the outer riders), and per inner node whether the trunk itself turns
+// there (more than 15 degrees; a node it turns at keeps its place, the arc being the trunk's own).
+function joinShifts(run, cornersOf, lines) {
+  const unit = (a, b) => { const l = Math.hypot(b[0] - a[0], b[1] - a[1]); return l > 0.01 ? [(b[0] - a[0]) / l, (b[1] - a[1]) / l, l] : null; };
+  // the longest-cut corner of these cables within `tol` of a node
+  const pick = (ids, node, tol) => ids.flatMap(id => cornersOf(id).filter(c => Math.hypot(c.at[0] - node[0], c.at[1] - node[1]) <= tol))
+    .reduce((a, c) => (!a || c.cut_mm > a.cut_mm ? c : a), null);
+  const cut = (ids, node, tol) => pick(ids, node, tol)?.cut_mm ?? 0;
+  const dirs = run.map(r => unit(r.e[0], r.e[1]));
+  const turns = run.slice(1).map((r, k) => !!(dirs[k] && dirs[k + 1] && Math.abs(dirs[k][0] * dirs[k + 1][1] - dirs[k][1] * dirs[k + 1][0]) > 0.26));
+  // the shift at node j (0 is the open start, run.length the open end), along the trunk
+  const shift = Array.from({length: run.length + 1}, (_, j) => {
+    if (j > 0 && j < run.length && turns[j - 1]) return 0;
+    const prev = j > 0 ? run[j - 1] : null, next = j < run.length ? run[j] : null;
+    const node = (next ?? prev).e[next ? 0 : 1];
+    const pm = new Set(prev?.st.members ?? []), nm = new Set(next?.st.members ?? []);
+    const tol = Math.max(prev?.st.diameter ?? 0, next?.st.diameter ?? 0) / 2 + 6;
+    const s = cut([...nm].filter(id => !pm.has(id)), node, tol) - cut([...pm].filter(id => !nm.has(id)), node, tol);
+    // (never more than the stretch has to give: a little over half, for its far end may move too)
+    const room = (s > 0 ? dirs[j]?.[2] : dirs[j - 1]?.[2]) ?? 0;
+    return Math.sign(s) * Math.min(Math.abs(s), 0.55 * room);
+  });
+  const middle = (p, d, ids) => {
+    const n = [-d[1], d[0]], side = [];
+    for (const id of ids) {
+      let best = null;
+      const L = lines.get(id) ?? [];
+      for (let k = 1; k < L.length; k++) {
+        const a = L[k - 1], b = L[k], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] * ab[0] + ab[1] * ab[1];
+        const t = l2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / l2)) : 0;
+        const q = [a[0] + ab[0] * t - p[0], a[1] + ab[1] * t - p[1]], dist = Math.hypot(q[0], q[1]);
+        if (!best || dist < best.dist) best = {dist, across: q[0] * n[0] + q[1] * n[1]};
+      }
+      if (best && best.dist < 25) side.push(best.across);
+    }
+    const across = side.length ? side.reduce((s, v) => s + v, 0) / side.length : 0;
+    return [p[0] + n[0] * across, p[1] + n[1] * across];
+  };
+  const ends = run.map((r, k) => {
+    const d = dirs[k];
+    // (every end the trunk does not turn at, so a stretch is as straight as its riders are)
+    const at = (p, m, j) => (d && !(j > 0 && j < run.length && turns[j - 1]) ? middle([p[0] + d[0] * m, p[1] + d[1] * m], d, r.st.members) : p);
+    return [at(r.e[0], shift[k], k), at(r.e[1], shift[k + 1], k + 1)];
+  });
+  // At each open end the band goes on round the arc its riders turn on there (a cap: the path of
+  // an arc, from the band's end to where the riders' leg begins), so it is not left stopping short.
+  const cap = (j, atStart) => {
+    if (!shift[j]) return null;
+    const r = atStart ? run[0] : run[run.length - 1], me = new Set(r.st.members);
+    const node = r.e[atStart ? 0 : 1], tol = r.st.diameter / 2 + 6;
+    const c = pick([...me], node, tol);
+    if (!c || !(c.drawn_mm > 0)) return null;
+    const o = ends[atStart ? 0 : run.length - 1][atStart ? 0 : 1], t = c.cut_mm;
+    const sweep = c.d1[0] * c.d2[1] - c.d1[1] * c.d2[0] > 0 ? 1 : 0, n3 = v => Math.round(v * 1e3) / 1e3;
+    // the cable runs the corner one way or the other: onto the trunk (its leg after the corner lies
+    // along the band, the arc is walked backwards) or off it (its leg before does, walked as it runs)
+    const d = dirs[atStart ? 0 : run.length - 1], u = atStart ? d : [-d[0], -d[1]];
+    const onto = c.d2[0] * u[0] + c.d2[1] * u[1] >= -(c.d1[0] * u[0] + c.d1[1] * u[1]);
+    const far = onto ? [o[0] - (c.d1[0] + c.d2[0]) * t, o[1] - (c.d1[1] + c.d2[1]) * t] : [o[0] + (c.d1[0] + c.d2[0]) * t, o[1] + (c.d1[1] + c.d2[1]) * t];
+    return {d: `M${n3(o[0])} ${n3(o[1])} A${n3(c.drawn_mm)} ${n3(c.drawn_mm)} 0 0 ${onto ? 1 - sweep : sweep} ${n3(far[0])} ${n3(far[1])}`, width: r.st.diameter};
+  };
+  return {ends, turns, caps: [cap(0, true), cap(run.length, false)].filter(Boolean)};
+}
+
+function drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, cornersOf, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -543,15 +623,54 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     const env = svgEl('g', {'data-envelope': f.id, visibility: 'hidden', 'data-pt-ui': '*'});
     const rims = svgEl('g', {'data-envelope-rim': f.id, opacity: 0.4}), fills = svgEl('g', {opacity: 0.7});
     env.append(rims, fills);
-    let here = 0;
+    // THE TRUNK TURNS AS ITS MEMBERS DO (#185): the members are arcs of the bundle's radius (the
+    // largest of theirs), so the band is drawn round the same corners, a run of stretches that meet
+    // being one polyline (bend2d.js trunkPaths); each stretch's path is the one the arc at its far
+    // end is part of. The radius is the members' largest, which is the kit's bundle radius when it gives one.
+    const R = Math.max(0, f.check?.bend?.radius_mm ?? 0, ...f.members.map(id => bendOf({id}) ?? 0)) || null;
+    const lines2 = new Map();                 // stretch -> {d, pts, at, e}: its path, its chain's nodes, its place there
+    const chain = [];
+    const flush = () => {
+      if (chain.length) {
+        const {ends: moved, turns, caps} = joinShifts(chain, cornersOf, lines);
+        // the run is cut into polylines where the trunk goes straight on, each stretch keeping its
+        // own ends there; only a node the trunk turns at joins two stretches into one polyline
+        let from = 0;
+        for (let k = 0; k < chain.length; k++) {
+          if (k + 1 < chain.length && turns[k]) continue;
+          const part = chain.slice(from, k + 1), mv = moved.slice(from, k + 1);
+          const pts = [mv[0][0], ...mv.slice(1).map((m, j) => [(mv[j][1][0] + m[0][0]) / 2, (mv[j][1][1] + m[0][1]) / 2]), mv[mv.length - 1][1]];
+          const paths = trunkPaths(pts, R);
+          part.forEach((c, j) => lines2.set(c.st, {d: paths[j]?.d ?? `M${mv[j][0][0]} ${mv[j][0][1]} L${mv[j][1][0]} ${mv[j][1][1]}`, pts, at: j, e: [pts[j], pts[j + 1]], was: c.e}));
+          from = k + 1;
+        }
+        lines2.get(chain[0].st).caps = caps;
+      }
+      chain.length = 0;
+    };
     for (const st of lay.stretches) {
       const e = ends(st);
-      if (!e) continue;
+      if (!e) { flush(); continue; }
+      // (a stretch of no length, or one that does not meet the last, starts its own run)
+      if (chain.length && (chain[chain.length - 1].st.to !== st.from || Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01)) flush();
+      chain.push({st, e});
+      if (Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01) flush();
+    }
+    flush();
+    let here = 0;
+    for (const st of lay.stretches) {
+      const L2 = lines2.get(st);
+      if (!L2) continue;
       here++;
-      const d = `M${e[0][0]} ${e[0][1]} L${e[1][0]} ${e[1][1]}`;
+      const d = L2.d;
       rims.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-width': st.diameter + 1.2, 'stroke-linecap': 'round'}));
       fills.append(svgEl('path', {d, fill: 'none', stroke: BAND, 'stroke-width': st.diameter, 'stroke-linecap': 'round',
                                   'data-bundle-trunk': f.id, 'data-stretch': `${st.from}-${st.to}`, 'data-riders': String(st.members.length)}));
+      // (the band going on round its riders' arc at an open end, in this stretch's width)
+      for (const cap of L2.caps ?? []) {
+        rims.append(svgEl('path', {d: cap.d, fill: 'none', stroke: '#000', 'stroke-width': cap.width + 1.2, 'stroke-linecap': 'round'}));
+        fills.append(svgEl('path', {d: cap.d, fill: 'none', stroke: BAND, 'stroke-width': cap.width, 'stroke-linecap': 'round', 'data-bundle-cap': f.id}));
+      }
     }
     if (!here) continue;
     g.append(env);
@@ -569,12 +688,15 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     }
     bands.append(g);
     for (const s of f.straps?.straps ?? []) {
-      const hit = lay.stretchAt(s), e = hit && ends(hit.stretch);
+      const hit = lay.stretchAt(s), L2 = hit && lines2.get(hit.stretch), e = L2?.e;
       if (!e) continue;
       const len = Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]);
       if (!(len > 0)) continue;
-      const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
-      const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
+      // where the strap was along the stretch as the kit has it, kept when its ends have moved (joinShifts)
+      const w = L2.was, wl = Math.hypot(w[1][0] - w[0][0], w[1][1] - w[0][1]);
+      const f0 = wl > 0 ? ((w[0][0] + (w[1][0] - w[0][0]) * hit.f - e[0][0]) * (e[1][0] - e[0][0]) + (w[0][1] + (w[1][1] - w[0][1]) * hit.f - e[0][1]) * (e[1][1] - e[0][1])) / (len * len) : hit.f;
+      // on the rounded trunk: across it, square to the run there, on a corner's arc where it falls on one
+      const {c, dir} = trunkPoint(L2.pts, R, L2.at, Math.min(1, Math.max(0, f0))), n = [-dir[1], dir[0]];
       const half = hit.stretch.diameter / 2 + 2;
       const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
       const bar = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, at, s);
