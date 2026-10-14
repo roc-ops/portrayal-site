@@ -185,8 +185,8 @@ export function litForFilter(rack, on) {
 }
 
 /** 3D: the filter's lit set, kept on the scene. It dims the rest as a hover
- *  does, below a hover and a selection (as on the panes, a selected cable
- *  stays lit); the same restyle, never a rebuild. */
+ *  does, below a hover and a selection (a selection replaces the filter's
+ *  lit set while there is one); the same restyle, never a rebuild. */
 export function paintFilter3d(scene, lit) {
   if (!scene?.three) return;
   scene.filterLit = lit;
