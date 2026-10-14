@@ -456,6 +456,7 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
       }
     }
     group.add(g);
+    scene.requestFrame?.();   // (a scene that draws only when asked, rack3d.js `onDemand`, is asked)
     // Where each connector's run begins, measured off the drawn geometry: a
     // strand's first ring, or the main tube's first or last.
     const starts = [...tubeEnds(THREE, main), ...strands.map(s => tubeEnds(THREE, s)[0])];
@@ -469,5 +470,6 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
                                    polyline_mm: bent.polyline, extended_mm: extended}, tight} : {})});
   }
   if (!sliced) world.add(group);
+  scene.requestFrame?.();
   return {tubes, anchors, boxes, group};
 }

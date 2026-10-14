@@ -449,6 +449,7 @@ function paintStraps3d(scene, stage) {
   // (a bundle's straps, and the tie straps of single cables in their own group)
   for (const name of ['cable-bundles', 'tie-straps'])
     scene?.three?.scene?.getObjectByName?.(name)?.traverse(o => { if (o.isMesh && o.userData.strap) o.material.color.set(color); });
+  scene?.requestFrame?.();
 }
 
 // A ZERO-U PART, STOOD BESIDE ITS UPRIGHT: across, its centre line (the kit's
@@ -753,6 +754,10 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // THE FACES' CANVASES IN MAIN MEMORY, NOT ON THE GPU (rack3d.js `cpuCanvases`):
       // on a large rack they held more GPU memory than the textures drawn from them.
       cpuCanvases: true,
+      // A FRAME ONLY WHEN SOMETHING CHANGED (rack3d.js `onDemand`): every
+      // restyle here and in hover.js and covers.js asks for one (requestFrame).
+      // A finished large rack redrew itself at every animation frame, untouched.
+      onDemand: true,
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);
@@ -768,16 +773,19 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       if (!built.alive() || built.contextLost()) return built;
       placeZeroU(built, sideParts, chassisOf);
       placeSided(built, rack.items, chassisOf);
+      built.requestFrame();
       // What the scene holds of the cables, for the page and the exports: null
       // for a rack with none (nothing is added to the scene at all).
       built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
     } finally {
       built.startDetail();
+      built.requestFrame();   // (the bundles, loops and bend rings hung with the cables)
     }
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
       built.three.controls.update();
+      built.requestFrame();
     }
     return built;
   }, () => {

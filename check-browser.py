@@ -20319,6 +20319,110 @@ def check_rack_3d_filter_dims(page, base):
     return bad
 
 
+# EVERY FRAME THE SCENE DRAWS, AND WHAT IT SHOWED (S-0049, rack3d.js `onDemand`):
+# the renderer's render() wrapped to log, at each frame, a signature of what a
+# restyle changes (each cable's and bundle's meshes, shown or not and their
+# opacity, each cover's, the stage), so a check can say whether a frame was
+# drawn and whether the last one drawn shows the scene as it now is.
+FRAME_LOG_JS = """() => {
+  const s = window.__rack.scene(), r = s.three.renderer, w = s.three.scene;
+  const sig = () => { const out = [];
+    for (const n of ['patch-cables', 'cable-bundles', 'tie-straps']) for (const g of w.getObjectByName(n)?.children ?? [])
+      g.traverse(o => { if (o.isMesh) out.push(o.visible ? 1 : 0, ...[].concat(o.material).map(m => Math.round(m.opacity * 1000))); });
+    for (const m of s.coverMeshes ?? []) out.push(m.visible ? 1 : 0, ...[].concat(m.material).map(x => Math.round(x.opacity * 1000)));
+    out.push(w.background?.getHex?.() ?? 0);
+    return out.join(','); };
+  if (!r.__logged) { const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__drawn.push(sig()); }; r.__logged = true; }
+  window.__drawn = []; window.__sig = sig;
+  return sig();
+}"""
+FRAMES_NOW_JS = "() => ({n: window.__drawn.length, last: window.__drawn.at(-1) ?? null, now: window.__sig()})"
+# How many frames an untouched scene draws in a second, after the last frame
+# anything asked for: up to five tries, for a runner still drawing one.
+IDLE_FRAMES_JS = """async () => { const sleep = t => new Promise(r => setTimeout(r, t));
+  for (let k = 0; k < 5; k++) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return 0; }
+  return window.__drawn.length; }"""
+
+
+@extra("rack.html: the 3D scene draws a frame only when something asks for one: an untouched scene draws none, and a hover, a cable-purpose pick and a covers setting each draw one that shows the change, nothing late; dragging draws and stopping stops (S-0049)")
+def check_rack_3d_on_demand(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # (two purposes, so a pick dims some cables and not others)
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c1' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    page.wait_for_function("() => document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_on_demand] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the on-demand scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate(FRAME_LOG_JS)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"an untouched scene drew {idle} frames in a second; expected none")
+    def step(label, act, settle_ms=0):
+        before = page.evaluate(FRAMES_NOW_JS)
+        page.evaluate("() => { window.__drawn.length = 0; }")
+        act()
+        try:
+            wait_fn(page, f"{label}: a frame that shows it", "() => window.__drawn.length && window.__drawn.at(-1) === window.__sig()", timeout=READY_3D_MS)
+        except RuntimeError as e:
+            st = page.evaluate(FRAMES_NOW_JS)
+            bad.append(f"{label}: {st['n']} frames drawn, the last {'showing the scene as it is' if st['last'] == st['now'] else 'not showing the change'} ({e})")
+            return
+        if settle_ms:
+            page.wait_for_timeout(settle_ms)
+        st = page.evaluate(FRAMES_NOW_JS)
+        if st["last"] != st["now"]:
+            bad.append(f"{label}: the scene changed after its last frame, and no frame showed it")
+        if st["now"] == before["now"]:
+            bad.append(f"{label}: nothing in the scene changed, so this step showed nothing")
+    # a hover by the pointer, over the list (hover.js paintHover3d)
+    step("a hover on c1's row", lambda: page.hover('#cableList [data-cable-row="c1"]'), 400)
+    park_mouse(page)
+    # a pick and a setting by a script's click, which no pointer or key reaches: only the restyle can ask for the frame
+    step("a cable-purpose pick", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()"), 400)
+    step("the pick put down", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()"), 400)
+    if not page.evaluate("() => (window.__rack.scene().coverMeshes ?? []).length"):
+        bad.append("fixture: the scene has no cover to set")
+    else:
+        step("covers off", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"off\"]').click()"), 400)
+        step("covers see-through", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"see\"]').click()"), 400)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"after the steps, the untouched scene drew {idle} frames in a second; expected none")
+    # a drag draws frames, and once the camera is at rest the frames stop
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+    page.evaluate("() => { window.__drawn.length = 0; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(10):
+        page.mouse.move(box[0] + 12 * (k + 1), box[1])
+        page.wait_for_timeout(30)
+    page.mouse.up()
+    dragged = page.evaluate("() => window.__drawn.length")
+    if dragged < 2:
+        bad.append(f"a drag drew {dragged} frames; expected the camera's moves drawn")
+    park_mouse(page)
+    # (the camera eases to rest for a while after a drag, longer where frames are slow; then nothing more is drawn)
+    eased = page.evaluate("""async () => { const sleep = t => new Promise(r => setTimeout(r, t)), t0 = performance.now();
+      while (performance.now() - t0 < 20000) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return Math.round(performance.now() - t0); }
+      return null; }""")
+    if eased is None:
+        bad.append("after a drag the scene was still drawing frames 20 s later; expected them to stop once the camera is at rest")
+    print(f"[check_rack_3d_on_demand] untouched: none drawn; a drag drew {dragged}, and none a second after it eased to rest ({eased} ms)")
+    return bad
+
+
 # WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
 # startDetail): every scene the page starts building is watched as it appears
 # (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,

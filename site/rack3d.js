@@ -253,8 +253,39 @@ export function createRackScene(container, opts = {}) {
   // pointer (the Rack Builder's hover) would be answered for a view that is no longer the one on screen.
   let cameraMoved = false;
   const onCameraMoved = () => { cameraMoved = true; };
+  // HOW FAR THE CAMERA HAS MOVED from a pose taken earlier (`poseOf`: where it
+  // is and what it looks at, which is all the controls change), as a share of
+  // its distance to its target: the controls ease to rest by ever smaller
+  // steps, for seconds after a drag, long after a step is too small to see.
+  const poseOf = () => ({p: camera.position.clone(), t: controls.target.clone()});
+  const movedFrom = (pose, share) => {
+    const d = Math.max(1, camera.position.distanceTo(controls.target));
+    return camera.position.distanceTo(pose.p) / d > share || controls.target.distanceTo(pose.t) / d > share;
+  };
+  // A FRAME ONLY WHEN SOMETHING ASKS FOR ONE (opt-in, `opts.onDemand`; the Rack
+  // Builder's). A rack in detail is tens of thousands of draw calls a frame, and
+  // the loop drew one at every animation frame whether anything had changed or
+  // not: 39% of a finished large scene's main thread was redrawing a picture
+  // nobody had touched. With the option a frame is drawn only once the scene is
+  // `dirty`: the camera moved (the controls' `change`, a resize, a reframe),
+  // something was added to the scene or restyled in it (this file's own builds
+  // and its setters, and a host's restyle through `requestFrame()`), or the
+  // reader did anything at all (a pointer, a key or the wheel anywhere in the
+  // document, which is where every hover and pick starts). The loop still runs
+  // at every animation frame, so the controls ease as before; it only stops
+  // drawing the same picture again. Without the option every frame is drawn.
+  // A camera easing to rest is drawn only once it has moved DRAW_MOVE (about an
+  // eighth of a pixel on a stage 1000 px tall) from the frame on screen, so its
+  // last unseen steps draw nothing and the picture is never further than that
+  // from the camera.
+  const ON_DEMAND = !!opts.onDemand;
+  const DRAW_MOVE = 1e-4;
+  let dirty = true, drawnPose = null;
+  const requestFrame = () => { dirty = true; };
+  const READER_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'wheel'];
+  if (ON_DEMAND) for (const type of READER_EVENTS) document.addEventListener(type, requestFrame, {capture: true, passive: true});
+  if (BUILD_FRAME_MS || ON_DEMAND) controls.addEventListener('change', onCameraMoved);
   if (BUILD_FRAME_MS) {
-    controls.addEventListener('change', onCameraMoved);
     controls.addEventListener('start', onHandleStart);
     controls.addEventListener('end', onHandleEnd);
     for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.addEventListener(type, onHandle, {passive: true});
@@ -438,6 +469,7 @@ export function createRackScene(container, opts = {}) {
 
     controls.update();                       // now a no-op delta
     controls.enableDamping = damped;
+    requestFrame();
   }
   frameCamera();
 
@@ -539,6 +571,7 @@ export function createRackScene(container, opts = {}) {
     disposeTree(rack);                       // dispose BEFORE detaching, or
     for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
     rackPosts = [];
+    requestFrame();
     if (!RAILS) return;
     buildPostPair(RACK_FACE_Z, 1);
     if (FRAME) buildPostPair(REAR_FACE_Z, -1);
@@ -935,6 +968,7 @@ export function createRackScene(container, opts = {}) {
     // here, before the mount is ever drawn, not after the whole stack is
     // built: the Rack Builder's parts beside the rack (rack/scene3d.js).
     opts.onMount?.({id: entry.id ?? null, ref: entry.ref, group});
+    requestFrame();
 
     // The faces nobody is looking at yet, plus the underside. Deliberately not
     // awaited: build() resolves once every device is standing, so the scrim
@@ -956,6 +990,7 @@ export function createRackScene(container, opts = {}) {
         const copies = per.map(m => m.clone());
         copies.forEach(m => group.add(m));
         if (copies.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view, group, meshes: copies});
+        requestFrame();
       };
       tpl.sharers.push({entry, body, take});
       for (const {view, per} of tpl.faces) take(view, per);
@@ -995,8 +1030,10 @@ export function createRackScene(container, opts = {}) {
             prev.map && prev.map.dispose();
             prev.dispose();
           }
+          requestFrame();
         }
         dropStandIn();   // a part whose drawing builds nothing is not left as a box
+        requestFrame();
       } catch (err) {
         // ITS DETAIL COULD NOT BE BUILT (a file that did not load): the box
         // stays, so nothing hangs in the air, but it is marked as one that
@@ -1009,6 +1046,7 @@ export function createRackScene(container, opts = {}) {
             b.userData.standIn = 'failed';
             opts.onDetailFailed?.({id: e.id ?? null, ref: e.ref, label: e.label ?? e.ref, error: err});
           }
+          requestFrame();
         }
         throw err;
       } finally {
@@ -1299,6 +1337,7 @@ export function createRackScene(container, opts = {}) {
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
+    requestFrame();
     tagRow.clear();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
@@ -1337,6 +1376,7 @@ export function createRackScene(container, opts = {}) {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    requestFrame();
   }
   const ro = new ResizeObserver(resize);
   ro.observe(container);
@@ -1381,8 +1421,12 @@ export function createRackScene(container, opts = {}) {
     // (the camera is kept where the controls have it at every animation frame, held back or not, and a camera
     // that has moved since the last frame is drawn: `cameraMoved`, above)
     controls.update();
-    if (cameraMoved || !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost)))) {
+    // (and with `opts.onDemand`, only a scene something has changed: `dirty`, above, or a camera moved enough to see)
+    if (ON_DEMAND && cameraMoved && drawnPose && !movedFrom(drawnPose, DRAW_MOVE)) cameraMoved = false;
+    if (cameraMoved || ((!ON_DEMAND || dirty) && !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost))))) {
       cameraMoved = false;
+      dirty = false;
+      if (ON_DEMAND) drawnPose = poseOf();
       renderer.render(scene, camera);
       lastFrame = now;
       costDue = !!BUILD_FRAME_MS;
@@ -1442,16 +1486,21 @@ export function createRackScene(container, opts = {}) {
     // THE STAGE, after the fact: the colour behind the rack, and the labels'
     // colours to read against it - {labelColor, labelUnitColor,
     // labelEmphasisColor}, as at construction; one left out is its default.
-    setBackground(c) { scene.background = new THREE.Color(c); },
+    setBackground(c) { scene.background = new THREE.Color(c); requestFrame(); },
     setLabelColors(o = {}) {
       LABEL = labelTones(o);
       scene.traverse(x => { if (x.isSprite && x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
+      requestFrame();
     },
     resize,
     reframe: frameCamera,
+    // Ask for a frame: a host that has changed what the scene shows (a
+    // restyle, something added) says so, for a scene that draws only then
+    // (`opts.onDemand`). Harmless without the option: every frame is drawn.
+    requestFrame,
     // Stop and restart the render loop, for a host that knows it is not seen.
     pause() { running = false; cancelAnimationFrame(raf); raf = 0; },
-    resume() { if (alive && !running) { running = true; tick(); } },
+    resume() { if (alive && !running) { running = true; requestFrame(); tick(); } },
     running: () => alive && running && !contextLost,
     // Whether the GL context was taken away (and the scene with it): see onContextLost.
     contextLost: () => contextLost,
@@ -1491,6 +1540,7 @@ export function createRackScene(container, opts = {}) {
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
       renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored);
       if (BUILD_FRAME_MS) for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.removeEventListener(type, onHandle);
+      if (ON_DEMAND) for (const type of READER_EVENTS) document.removeEventListener(type, requestFrame, {capture: true});
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;
