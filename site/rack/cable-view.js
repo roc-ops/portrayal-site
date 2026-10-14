@@ -26,6 +26,7 @@ import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
 import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
+import {loopEl, loopPane} from './spare-loops.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {cablePlan, endKey, endName, tagText, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
@@ -100,6 +101,9 @@ export function wayEl(svg, w) {
 // A lane through a zero-U duct (the kit's zero-u.js) runs up the duct's channel: `ductX(lane,
 // ru)` is the duct's centre in rack x, or null where no duct stands.
 // `shift` (mm, across the run) combs a bundle's members side by side on its lane (bundle-view.js combOffset).
+// A PART BESIDE THE RACK named in a route (its duct or a window, kit 0.35.0) has no element here
+// to place it by: the routes drawn are the kit's resolved ones (route.js resolveRoute), in which it
+// is already the lane run through the part, so it reaches this as lane points.
 function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
   if (w.lane) {
     const [side, face] = w.lane.split('-');
@@ -398,6 +402,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     return p && rest ? [p[0], rest[1]] : p;
   });
   drawTieStraps2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
+  drawSpareLoops2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
   drawInFront(svg);
   for (const rec of recs) {
     const c = cables[rec.i];
@@ -770,6 +775,21 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
     bars.append(strapBarEl(tieAttrs(m), {x1: cx - d[0], y1: cy - d[1], x2: cx + d[0], y2: cy + d[1]}, {kind: 'anchor', width_mm: m.width_mm}));
   }
   if (fresh && bars.childElementCount) layer.append(bars);
+}
+
+// THE STORED LOOPS on a front or rear pane (kit 0.35.0; spare-loops.js): a
+// loop at the kit's point for each duct or tray a cable stores spare in, on
+// the pane of the face it is nearer, where the cable is drawn.
+function drawSpareLoops2d(svg, rack, routes, pane, at2d, drawn) {
+  const layer = svg.querySelector(':scope > [data-cables]');
+  if (!layer || !routes?.spareLoops?.length) return;
+  const nameOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
+  const g = svgEl('g', {'data-spare-loops': pane, 'pointer-events': 'none'});
+  for (const l of routes.spareLoops) {
+    if (loopPane(l, rack.frame) !== pane || !drawn.has(l.cable)) continue;
+    g.append(loopEl(l, at2d(l.at), ['x', 'y'], nameOf));
+  }
+  if (g.childElementCount) layer.append(g);
 }
 
 // WHICH PORT A CLICK IS ON, as its data-path, or null. `group` is the item's
