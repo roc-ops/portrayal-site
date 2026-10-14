@@ -770,7 +770,7 @@ function cableFormPanel(sel) {
     // step, and adds no Undo step of its own (route-edit.js).
     onCancel: () => {
       S.cableDraft = null; S.routePick = null;
-      const undone = S.routeEdit?.cableId === cable?.id ? S.routeEdit.cancel() : 0;
+      const undone = cable && S.routeEdit?.cableId === cable.id ? S.routeEdit.cancel() : 0;
       S.routeEdit = null;
       if (undone) S.notice = {kind: 'note', text: `Route edits cancelled: the route is as it was (${undone === 1 ? 'one step' : `${undone} steps`} undone; Redo brings ${undone === 1 ? 'it' : 'them'} back).`};
       select(cable ? {kind: 'cable', id: cable.id} : null);
