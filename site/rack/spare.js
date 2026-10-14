@@ -1,9 +1,9 @@
 // site/rack/spare.js
 // A CORD'S SPARE, IN THE PAGE'S WORDS. The page draws the path a cable takes
 // between its ports and nothing else, so a 0.5 m cord and a 1 m cord on the
-// same path look alike. Spare is recorded and listed, not drawn (rack file
-// version 4, Portrayal #949 step 4; drawing it is #1011), so the page says
-// the figure.
+// same path look alike. Spare is recorded and listed (rack file version 4,
+// Portrayal #949 step 4), so the page says the figure; where it is stored in a
+// duct or on a tray a loop is drawn there too (kit 0.35.0, spare-loops.js).
 //
 // EVERY FIGURE IS THE KIT'S (kit 0.22.0: rack/route.js spareOf). It names a
 // cable's lengths:
@@ -137,4 +137,4 @@ export const needsText = s => (s.needs == null ? null : `the route needs ${r2(s.
 /** What each figure in a cable's lengths means, in one sentence (agent-text.js has it). */
 export {FIGURES_HELP};
 /** The cable list's one line of explanation. */
-export const SPARE_HELP ='The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';
+export const SPARE_HELP = 'The drawing shows each cable\'s path, and a loop where its spare is stored in a duct or on a tray. Spare at an end, or not placed, is listed here and is not drawn.';

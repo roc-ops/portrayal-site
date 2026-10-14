@@ -38,7 +38,7 @@ export function spareLoops(rack, ctx) {
 export const loopPane = (loop, frame) => (loop.at.z < -(frame?.railDepth ?? 740) / 2 ? 'rear' : 'front');
 
 // A loop's size, mm: long along the duct it lies in, and round seen end on.
-export const LOOP_LONG = 16, LOOP_SHORT = 7;
+export const LOOP_LONG = 22, LOOP_SHORT = 9;
 /** [rx, ry] of a loop on a pane whose two axes are `axes` (rack axes, ['x',
  *  'y'] for a front or rear pane, ['z', 'y'] for a side pane). */
 export function loopRadii(run, axes) {
