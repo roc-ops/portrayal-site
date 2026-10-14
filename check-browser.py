@@ -5748,6 +5748,28 @@ def check_rack_cable_routes(page, base):
     page.click("#routeReset")
     if page.evaluate("() => window.__rack.doc().racks[0].cables.some(c => 'routeEdited' in c)"):
         bad.append("reset: a cable still has a routeEdited key")
+    # CANCEL TAKES BACK THE EDIT (S-0042): the reset above and one more pick were made since
+    # this form opened; Cancel puts the route back as the form found it, and adds no Undo step.
+    page.click("#routeAdd")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-pick-lane]')", timeout=READY_MS)
+    page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="30"]')
+    page.keyboard.press("Escape")
+    mid = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').routeEdited === true")
+    steps = page.evaluate("() => window.__rack.history().undoSummary")
+    if not mid:
+        bad.append("cancel: the pick did not edit the route")
+    page.click("#cCancel")
+    back = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
+    if back["route"] != stored or not back["edited"]:
+        bad.append(f"cancel: the route is {back}, not the one the form opened with ({stored})")
+    if page.evaluate("() => window.__rack.history().undoSummary") == steps:
+        bad.append(f"cancel: the last Undo step is still {steps!r}: the pick was not taken back")
+    if not page.evaluate("() => window.__rack.history().canRedo"):
+        bad.append("cancel: Redo is empty: the edits were not undone as steps")
+    # (the 3D part below reads the automatic route)
+    page.click("#cableEdit")
+    page.click("#routeReset")
+    page.click("#cSave")
     # 3D: a lone cable's tube passes through its ring's opening and up its lane, outside the switch.
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
@@ -10139,6 +10161,10 @@ def check_rack_spare_duct_loop(page, base):
         bad.append(f"Front: the loop at ({f['x']:.1f}, {f['y']:.1f}) is not in hm-1's drawing {mgr}")
     if not (f["w"] > f["h"]):
         bad.append(f"Front: the loop does not lie along the duct across the rack ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # THE LOOP GROWS WITH ITS SPARE (S-0042): long radius 22 mm x clamp(0.5 + 0.5 m, 0.6, 1.5); the box is two turns 5 mm apart.
+    scale = min(1.5, max(0.6, 0.5 + 0.5 * loop["metres"]))
+    if abs(f["w"] - (2 * 22 * scale + 5)) > 1.5:
+        bad.append(f"Front: a loop of {loop['metres']:.2f} m is {f['w']:.1f} wide, not {2 * 22 * scale + 5:.1f}")
     if "c1:" not in f["title"] or "hm-1 duct" not in f["title"]:
         bad.append(f"Front: the loop's title does not name the cable and the duct: {f['title']!r}")
     if page.evaluate(SPARE_LOOPS_JS, "#paneRear svg"):

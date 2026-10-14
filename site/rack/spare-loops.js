@@ -39,11 +39,21 @@ export const loopPane = (loop, frame) => (loop.at.z < -(frame?.railDepth ?? 740)
 
 // A loop's size, mm: long along the duct it lies in, and round seen end on.
 export const LOOP_LONG = 22, LOOP_SHORT = 9;
+// The size above is for a loop of about a metre; one grows with the length it
+// stores, between LOOP_MIN and LOOP_MAX times that, so 0.2 m reads smaller
+// than 1.57 m and a very long spare does not swallow the manager it is in.
+export const LOOP_MIN = 0.6, LOOP_MAX = 1.5;
+/** How many times the plain size a loop of `metres` is drawn: 1 when the
+ *  length is not known. */
+export const loopScale = metres =>
+  (Number.isFinite(metres) ? Math.min(LOOP_MAX, Math.max(LOOP_MIN, 0.5 + 0.5 * metres)) : 1);
 /** [rx, ry] of a loop on a pane whose two axes are `axes` (rack axes, ['x',
- *  'y'] for a front or rear pane, ['z', 'y'] for a side pane). */
-export function loopRadii(run, axes) {
-  if (!axes.includes(run)) return [LOOP_SHORT + 2, LOOP_SHORT + 2];
-  return axes[0] === run ? [LOOP_LONG, LOOP_SHORT] : [LOOP_SHORT, LOOP_LONG];
+ *  'y'] for a front or rear pane, ['z', 'y'] for a side pane), of the size
+ *  `metres` of spare stores (the plain size without it). */
+export function loopRadii(run, axes, metres) {
+  const k = loopScale(metres), long = LOOP_LONG * k, short = LOOP_SHORT * k;
+  if (!axes.includes(run)) return [short + 2, short + 2];
+  return axes[0] === run ? [long, short] : [short, long];
 }
 
 /** "c15: 1.54 m spare, a loop in CMH-BS-SFDS1U duct". */
@@ -62,7 +72,7 @@ export const loopAttrs = l => ({'data-spare-loop': `${l.cable}|${l.item}|${l.via
 /** One loop on a pane, at `[cx, cy]` in its user space: two rings, one inside
  *  the other, as a coiled service loop reads, with its title. */
 export function loopEl(l, [cx, cy], axes, nameOf) {
-  const [rx, ry] = loopRadii(l.run, axes);
+  const [rx, ry] = loopRadii(l.run, axes, l.metres);
   const g = svgEl('g', {...loopAttrs(l), 'pointer-events': 'none'});
   const ring = (a, b, dx, dy) => [
     svgEl('ellipse', {cx: cx + dx, cy: cy + dy, rx: a, ry: b, fill: 'none', stroke: LOOP_PAINT.rim, 'stroke-width': 3.6}),

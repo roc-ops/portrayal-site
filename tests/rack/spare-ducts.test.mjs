@@ -8,7 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {cableText, inspectText, zeroUText, pathwaysLine} from '../../site/rack/agent-text.js';
-import {spareLoops, loopPane, loopRadii, loopTitle, zeroUTargets} from '../../site/rack/spare-loops.js';
+import {spareLoops, loopPane, loopRadii, loopScale, LOOP_LONG, LOOP_SHORT, loopTitle, zeroUTargets} from '../../site/rack/spare-loops.js';
 import {spareMarks} from '../../vendor/rack/slack.js';
 import * as R from '../../vendor/rack/route.js';
 import {RU} from '../../vendor/rack/rails.js';
@@ -69,6 +69,39 @@ test('a loop is drawn on the pane of the face it is stored at, and lies along it
   const [e, f] = loopRadii('x', ['z', 'y']);
   assert.equal(e, f);
   assert.equal(loopTitle({...front, metres: 1.537}, id => (id === 'hm' ? 'CMH-BS-SFDS1U' : id)), 'c1: 1.54 m spare, a loop in CMH-BS-SFDS1U duct');
+});
+
+test('a loop grows with the length stored, within bounds: 0.2 m reads smaller than 1.57 m', () => {
+  const small = loopScale(0.2), big = loopScale(1.57);
+  assert.ok(small < big, `${small} < ${big}`);
+  assert.ok(big / small >= 1.5, 'the difference can be seen');
+  // never vanishing, never huge
+  assert.ok(loopScale(0) >= 0.5 && loopScale(0.001) >= 0.5);
+  assert.ok(loopScale(50) <= 2 && loopScale(1e9) <= 2);
+  assert.equal(loopScale(50), loopScale(1e9));
+  // monotonic between the bounds
+  let prev = 0;
+  for (const m of [0, 0.1, 0.2, 0.5, 1, 1.57, 2, 3, 10]) { const s = loopScale(m); assert.ok(s >= prev); prev = s; }
+  // a length that is not a number is the plain size
+  assert.equal(loopScale(undefined), 1);
+  assert.equal(loopScale(NaN), 1);
+});
+
+test('the radii follow the stored length on a front, rear or side pane', () => {
+  for (const axes of [['x', 'y'], ['z', 'y']]) for (const run of ['x', 'y', 'z']) {
+    const [sx, sy] = loopRadii(run, axes, 0.2), [bx, by] = loopRadii(run, axes, 1.57);
+    assert.ok(sx < bx && sy < by, `${run} on ${axes}: ${sx},${sy} < ${bx},${by}`);
+  }
+  // still long along the run
+  const [a, b] = loopRadii('x', ['x', 'y'], 0.2);
+  assert.ok(a > b);
+  // and the plain size without a length
+  assert.deepEqual(loopRadii('x', ['x', 'y']), [LOOP_LONG, LOOP_SHORT]);
+});
+
+test('a loop drawn from a cable\'s stored spare is sized by its metres', () => {
+  const r = rackOf([cable('c1', [DUCT], {slack: [DUCT]}), cable('c2', [DUCT], {slack: [DUCT], length: {...LEN, value: 9}})]);
+  for (const l of spareLoops(r, ctx)) assert.ok(l.metres > 0 && loopRadii(l.run, ['x', 'y'], l.metres)[0] > 0);
 });
 
 // ── a part beside the rack, picked in the route editor ───────────────────

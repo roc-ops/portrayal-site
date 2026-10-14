@@ -21,7 +21,7 @@ import {labelsFor, strapPaint} from './stage.js';
 import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
 import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
-import {LOOP_PAINT, LOOP_LONG, LOOP_SHORT, loopTitle} from './spare-loops.js';
+import {LOOP_PAINT, LOOP_LONG, LOOP_SHORT, loopScale, loopTitle} from './spare-loops.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -551,8 +551,9 @@ function hangLoops(scene, rack, list) {
     const g = new THREE.Group();
     g.name = `spare-${l.cable}|${l.item}|${l.via}`;
     g.userData.members = [l.cable];
+    const k = loopScale(l.metres);   // the longer the spare, the larger the loop (spare-loops.js)
     for (const s of [-1, 1]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(LOOP_SHORT, 1.6, 8, 32), mat);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(LOOP_SHORT * k, 1.6, 8, 32), mat);
       // long along its run: x for a duct across the rack, y up it, z in depth
       // (a torus lies across its own z: turned a quarter about y, its own x runs in the rack's depth)
       const along = l.run === 'y' ? 'y' : l.run === 'z' ? 'z' : 'x';

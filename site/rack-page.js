@@ -38,6 +38,7 @@ import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
 import {zeroUTargets} from './rack/spare-loops.js';
+import {routeEditSession} from './rack/route-edit.js';
 import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
@@ -104,6 +105,7 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   routes: null,
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
+  routeEdit: null,   // the open cable form's route edit (route-edit.js): Cancel takes back its picks
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
   saidStep: null,    // the summary of the step the notice says, which Undo may take as its description
   // Cable mode: on or off, and the A end picked and waiting for its B.
@@ -753,7 +755,7 @@ function cableFormPanel(sel) {
         // The cable may be gone: then there is nothing to save, and nothing is sent.
         const cur = now.cables.find(c => c.id === cable.id);
         if (!cur) { S.sel = null; render(); return; }
-        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null;
+        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null; S.routeEdit = null;   // the route edits stand
         // A media from a file this page does not know stays as itself: left
         // alone, it is not sent, so the command's list of media never refuses it.
         const {media, ...rest} = fields;
@@ -764,8 +766,17 @@ function cableFormPanel(sel) {
       const res = edit({op: 'cable.add', a, b, ...fields});
       S.sel = res.error ? null : {kind: 'cable', id: res.created.ids[0]};
     },
-    onCancel: () => { S.cableDraft = null; select(cable ? {kind: 'cable', id: cable.id} : null); }});
+    // Cancel takes back the route edits made since the form opened, as one
+    // step, and adds no Undo step of its own (route-edit.js).
+    onCancel: () => {
+      S.cableDraft = null; S.routePick = null;
+      const undone = S.routeEdit?.cableId === cable?.id ? S.routeEdit.cancel() : 0;
+      S.routeEdit = null;
+      if (undone) S.notice = {kind: 'note', text: `Route edits cancelled: the route is as it was (${undone === 1 ? 'one step' : `${undone} steps`} undone; Redo brings ${undone === 1 ? 'it' : 'them'} back).`};
+      select(cable ? {kind: 'cable', id: cable.id} : null);
+    }});
   if (!cable) return form;
+  if (S.routeEdit?.cableId !== cable.id) S.routeEdit = routeEditSession(ed, cable.id);   // the route as the edit begins
   const d = S.cableDraft?.id === cable.id ? S.cableDraft.values : null;
   if (d) {
     for (const [k, v] of Object.entries(d)) form.querySelector(`#${k}`).value = v;
@@ -794,8 +805,9 @@ function editRoute(cableId, list, text) {
     S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
   }
   S.focusNext = 'routeAdd';
-  edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
-            : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  const res = edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
+                        : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  if (S.routeEdit?.cableId === cableId) S.routeEdit.noteEdit(res);   // Cancel takes these back (route-edit.js)
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
@@ -1068,8 +1080,8 @@ const homePanel = () => el('div', {}, [
 
 // Undo and Redo walk the editor's history (spec §3.3); onChange says what was
 // undone or redone, saves and redraws.
-function undoStep() { ed.undo(); }
-function redoStep() { ed.redo(); }
+function undoStep() { if (ed.undo()) S.routeEdit?.noteUndo(); }
+function redoStep() { if (ed.redo()) S.routeEdit?.noteRedo(); }
 
 // ── Export (spec §8) ────────────────────────────────────────────────────
 // Every export is built from the rack by exports.js, never from the panes. A
@@ -1272,6 +1284,7 @@ async function redraw(keepRoutes = false) {
   const formOf = S.sel?.kind === 'cable-form' ? S.sel.id : null;
   if (S.routeSel && S.routeSel.cableId !== formOf) S.routeSel = null;
   if (S.cableDraft && S.cableDraft.id !== formOf) S.cableDraft = null;
+  if (S.routeEdit && S.routeEdit.cableId !== formOf) S.routeEdit = null;
   // Picking belongs to one open cable form, outside Cable mode.
   // (nor from the side: there is no ring, duct or gutter to click there, and the page says so)
   if (S.routePick && sidesShown()) { S.routePick = null; addNotice(PICK_SIDES, 'note'); }
