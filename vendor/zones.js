@@ -96,8 +96,17 @@ function layoutZones(text, zones) {
 }
 
 /** `layout: false` keeps the rect-and-circle walk alone - the old answer, kept
- *  so the two can be compared, and used wherever there is no document. */
-export function readSvg(text, {layout = true} = {}) {
+ *  so the two can be compared, and used wherever there is no document.
+ *
+ *  `ends` are the paths, on this face, of the connector slots a cable can land
+ *  on that are not parts of class `port`: a power inlet, an outlet, a DC
+ *  terminal, a ground stud (rack/cable-rules.js cableLandsOn; a caller makes
+ *  the list from the face's slots with takesCableEnd). The part drawn at such
+ *  a path is read as a zone too, with `end: true`, its own class and the
+ *  component it is (`ref`). Without `ends` the answer is what it always was:
+ *  ports and bays. */
+export function readSvg(text, {layout = true, ends = null} = {}) {
+  const landed = new Set(ends || []);
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   const root = doc.documentElement;
   if (root.querySelector('parsererror')) throw new Error('unparseable SVG');
@@ -154,6 +163,12 @@ export function readSvg(text, {layout = true} = {}) {
         port = {id: el.id, cls, ...meta,
                 x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
         zones.push(port);
+      } else if (own && landed.has(own) && cls !== 'port' && !port) {
+        // A SLOT A CABLE LANDS ON, read as a port is: the outermost wins, so
+        // the studs inside a terminal that is itself such a slot are part of it.
+        port = {id: el.id, cls: cls || null, end: true, ref: (el.getAttribute('data-ref') || '').split(':')[0] || null, ...meta,
+                x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
+        zones.push(port);
       } else if (cls === 'bay' && !bay) {
         bay = {id: el.id, cls, ...meta,
                x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
@@ -179,7 +194,7 @@ export function readSvg(text, {layout = true} = {}) {
   if (layout) layoutZones(text, zones);
   const sized = zones
     .filter(z => Number.isFinite(z.x))
-    .map(z => ({id: z.id, cls: z.cls, path: z.path, ...(z.projected ? {projected: true} : {}), group: z.group,
+    .map(z => ({id: z.id, cls: z.cls, path: z.path, ...(z.projected ? {projected: true} : {}), ...(z.end ? {end: true, ref: z.ref} : {}), group: z.group,
                 media: z.media, speed: z.speed, model: z.model,
                 x: z.x, y: z.y, w: z.x1 - z.x, h: z.y1 - z.y}));
   return {vb, zones: sized};
@@ -191,17 +206,19 @@ export function readSvg(text, {layout = true} = {}) {
  *  its address is `path`, and a cable end is matched by either. */
 export const exportName = z => (z.projected ? z.id : z.path || z.id);
 
-/** The things a cable can be drawn to: ports, and optionally the bays that hold
- *  the cards whose ports they are. Sorted so port-2 precedes port-10. */
+/** The things a cable can be drawn to: ports, the slots a cable lands on where
+ *  readSvg was asked for them (`end`), and optionally the bays that hold the
+ *  cards whose ports they are. Sorted so port-2 precedes port-10. */
 export function portsOf(zones, {bays = false} = {}) {
+  const rank = z => (z.cls === 'bay' ? 0 : 1);
   return zones
-    .filter(z => z.cls === 'port' || (bays && z.cls === 'bay'))
+    .filter(z => z.cls === 'port' || z.end === true || (bays && z.cls === 'bay'))
     // Bays FIRST, then ports. A later sibling draws on top in draw.io, and a
     // bay is a big cell containing the ports of whatever is seated in it - so
     // sorting the two together by id lets a slot land above its own card's
     // ports and swallow every click meant for them.
     .sort((a, b) =>
-      (a.cls === b.cls ? 0 : a.cls === 'bay' ? -1 : 1) ||
+      (rank(a) - rank(b)) ||
       a.id.length - b.id.length || a.id.localeCompare(b.id));
 }
 
@@ -259,11 +276,11 @@ export async function loadFace(url) {
  * @param doc      a marks document, or nothing for the drawing as it stands
  * @returns {{text, vb, zones, ports}}  ports and bays, clipped to the viewBox
  */
-export function readDrawing(svgRoot, doc = {}) {
+export function readDrawing(svgRoot, doc = {}, {ends = null} = {}) {
   const c = svgRoot.cloneNode(true);
   c.removeAttribute('style');
   for (const h of c.querySelectorAll('.halo')) h.remove();
   const text = toSvg(c, doc);
-  const {vb, zones} = readSvg(text);
+  const {vb, zones} = readSvg(text, {ends});
   return {text, vb, zones, ports: portsOf(within(zones, vb), {bays: true})};
 }

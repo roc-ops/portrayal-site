@@ -1190,6 +1190,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "zones": "the ports and bays of a face in mm, for the diagram exports; no recipe yet",
     "drawio": "draw.io export; the draw.io page (drawio.html) is where the site shows it, with no kit recipe yet",
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
+    "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
 }
 _kpkg_f = VENDOR / "kit-package.json"
@@ -2222,6 +2223,18 @@ _ksr = _sp.run([sys.executable, str(_kst)], capture_output=True, text=True) if _
 check(_ksr is not None and _ksr.returncode == 0,
       "tools/dcim-verify/kits.py passes its self-test against a mock NetBox and Nautobot",
       (_ksr.stderr[-600:] if _ksr else "no tools/dcim-verify/selftest.py"))
+
+# THE MERGE TRAIN (tools/merge-train.py, docs/merging.md) is what a set of ready
+# pull requests is tested with before the owner merges them. It is run for real
+# against throwaway git repositories and a fake `gh`, so a change that breaks it
+# is found here and not on the day a set is waiting.
+_mtt = HERE / "tests" / "tools" / "merge_train_test.py"
+_mtr = _sp.run([sys.executable, str(_mtt)], capture_output=True, text=True) if _mtt.is_file() else None
+check(_mtr is not None and _mtr.returncode == 0,
+      "tools/merge-train.py passes its tests against throwaway git repositories and a fake gh",
+      (_mtr.stderr[-600:] if _mtr else "no tests/tools/merge_train_test.py"))
+check((HERE / "docs" / "merging.md").is_file() and "tools/merge-train.py" in (HERE / "docs" / "merging.md").read_text(),
+      "docs/merging.md says how a merge happens and names the script")
 
 # ── zeroU in every shipped rack fixture has the kit's shape ─────────────
 # zeroU was reserved until kit 0.6.0 (Portrayal #926) gave it its parts: an

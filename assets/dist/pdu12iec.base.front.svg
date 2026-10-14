@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="434.2mm" height="44.45mm" viewBox="0 0 434.2 44.45" data-device="pdu12iec" data-view="front" data-weight-kg="1.45" data-construction="metal" data-input-ac="100/120 to 240 V single-phase, 16 A maximum (agency de-rated to 16 A continuous in North America), 50/60 Hz" data-input-plug="iec-60320-c20" data-input-cord="detachable" data-input-phase="single" data-input-voltage-v="240" data-input-current-a="16" data-capacity-kw="3.84" data-capacity-scope="the load the PDU can hand on, 3.84 kW at 240 V down to 1.92 kW at 120 V, 16 A in all (spec sheet). It is not what the PDU draws itself, which no document held states" data-output-voltage="120-240 V" data-output-rating="16 A total; 16 A max per C19; 12 A (10 A CE) max per C13" data-breakers="two 16 A, push to reset" data-frequency="50/60 Hz" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-30 to 50 C (-22 to 122 F)" data-humidity="5 to 95 % non-condensing" data-altitude="0 to 3000 m (0 to 10000 ft)" data-metering-scope="none" data-outlet-switching="false" data-certifications="RETIE (Colombia); CAN/CSA-C22.2 No. 60950-1 (Canada); NOM (Mexico); UL 60950-1" data-product-compliance="RoHS; CE (Europe)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton PDU12IEC","device-version":"0.2.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"std/c13-outlet@1":"1.1.0"},"source-sha256":"723eb845c7692aa6fbba6fca024f18c3731db9d0571837be065282bf2c1b781e","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PDU12IEC" data-sku="PDU12IEC" data-part-number="" x="0" y="0" width="434.2" height="44.45" rx="1.2" fill="#2b3136" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="c13-moulding-1" data-kind="outline" x="159.8" y="3.3" width="28.4" height="35.2" rx="1" fill="none" stroke="#17191c" stroke-width="0.3" />
+    <rect id="c13-moulding-2" data-kind="outline" x="188.55" y="3.3" width="28.4" height="35.2" rx="1" fill="none" stroke="#17191c" stroke-width="0.3" />
+    <rect id="c13-moulding-3" data-kind="outline" x="217.3" y="3.3" width="28.4" height="35.2" rx="1" fill="none" stroke="#17191c" stroke-width="0.3" />
+    <rect id="c13-moulding-4" data-kind="outline" x="246.05" y="3.3" width="28.4" height="35.2" rx="1" fill="none" stroke="#17191c" stroke-width="0.3" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="11.7" y="11.8" width="28.7" height="8.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="39.8" y="29" font-family="sans-serif" font-size="5.2" text-anchor="end" fill="#fefefe" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">TRIPP LITE</text>
+    <text x="39.8" y="32.8" font-family="sans-serif" font-size="3.6" text-anchor="end" fill="#fefefe" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SERIES</text>
+  </g>
+  <g id="outlet-front-1" data-path="outlet-front-1" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="1" transform="translate(158.8,11.1) rotate(270 15.2 11.0)" data-group="outlets-front" data-group-role="traffic" data-description="the four IEC C13 outlets on the front, Front 1 to 4 from the left as seen from the front; the unit prints no numbers">
+    <title>outlet-front-1</title>
+    <rect id="outlet-front-1--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-front-1--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-front-1/recess" data-class="inlet" />
+    <g id="outlet-front-1--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-front-2" data-path="outlet-front-2" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="2" transform="translate(187.55,11.1) rotate(270 15.2 11.0)" data-group="outlets-front" data-group-role="traffic" data-description="the four IEC C13 outlets on the front, Front 1 to 4 from the left as seen from the front; the unit prints no numbers">
+    <title>outlet-front-2</title>
+    <rect id="outlet-front-2--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-front-2--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-front-2/recess" data-class="inlet" />
+    <g id="outlet-front-2--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-front-3" data-path="outlet-front-3" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="3" transform="translate(216.3,11.1) rotate(270 15.2 11.0)" data-group="outlets-front" data-group-role="traffic" data-description="the four IEC C13 outlets on the front, Front 1 to 4 from the left as seen from the front; the unit prints no numbers">
+    <title>outlet-front-3</title>
+    <rect id="outlet-front-3--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-front-3--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-front-3/recess" data-class="inlet" />
+    <g id="outlet-front-3--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-front-4" data-path="outlet-front-4" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="4" transform="translate(245.05,11.1) rotate(270 15.2 11.0)" data-group="outlets-front" data-group-role="traffic" data-description="the four IEC C13 outlets on the front, Front 1 to 4 from the left as seen from the front; the unit prints no numbers">
+    <title>outlet-front-4</title>
+    <rect id="outlet-front-4--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-front-4--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-front-4/recess" data-class="inlet" />
+    <g id="outlet-front-4--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+</svg>

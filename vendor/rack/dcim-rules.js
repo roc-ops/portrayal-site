@@ -6,6 +6,7 @@
 // ask here.
 
 import {endName, lengthParts, portPathOf} from './cable-rules.js';
+import {hexColor} from './cable-geometry.js';
 import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate, flat} from './export-data.js';
 import {bundleOfCable, bundleName, bundlesOf} from './bundles.js';
 import {andList} from './bundle-route.js';
@@ -238,7 +239,10 @@ export function moduleImportRows({target = 'netbox', parts, names, kept, deviceO
 // ── the cables file ─────────────────────────────────────────────────────
 // The Rack Builder's media as a DCIM's cable type. Both targets accepted each
 // of these and refused "os2". A media this page does not know, or none, is a
-// blank type: the column is optional.
+// blank type: the column is optional. `power` has no row yet: a power cable
+// whose two ends the type files name is written with a blank type, and one
+// whose ends they do not name is left out with that reason, as any cable is
+// (docs/cable-ends-design.md section 7).
 export const CABLE_TYPE = {os2: 'smf-os2', om3: 'mmf-om3', om4: 'mmf-om4', om5: 'mmf-om5', cat6: 'cat6', cat6a: 'cat6a',
                            dac: 'dac-passive', aoc: 'aoc'};
 export const cableType = media => (Object.hasOwn(CABLE_TYPE, media ?? '') ? CABLE_TYPE[media] : '');
@@ -335,6 +339,9 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     if (unchecked || !f.checked) why = ['its ends could not be checked'];
     else if (f.loose.length)
       why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
+    // A GROUND WIRE IS NEVER A ROW: neither target has a termination for a
+    // ground stud. It is left out by name, not by failing to find a port.
+    else if (c.media === 'ground') why = ['it is a ground wire, and a DCIM has no termination for a ground stud'];
     else {
       sides = [['A', c.a], ['B', c.b]].map(([side, end]) => {
         const device = names.get(end.item)?.name ?? '';
@@ -367,6 +374,16 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     dac ||= c.media === 'dac';
     const len = importLength(c, target);
     if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
+    // THE `color` COLUMN is the cable's OWN colour and nothing else (#1028):
+    // six lower case hex digits with no `#`, which is what both take (NetBox
+    // v4.7.2 251458b8, dcim/models/cables.py `Cable.color`, a ColorField whose
+    // utilities/validators.py ColorValidator is ^[0-9a-f]{6}$, and `color` in
+    // dcim/forms/bulk_import.py CableImportForm; Nautobot v3.2.6 3dc554b4,
+    // dcim/models/cables.py `Cable.color`, the same ColorField and validator in
+    // core/models/fields.py). A colour worked out from the ends, the type or
+    // the media is how the cable is drawn, not a fact someone recorded of it,
+    // so it is left blank, as every cable's was before.
+    const color = hexColor(c.color)?.slice(1) ?? '';
     // A label or a description over the field's length is cut to it, not the cable dropped.
     const along = c.length?.source === 'routed' && len.value !== '';
     let label = flat(c.label || c.id);
@@ -390,7 +407,7 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     if (!nautobot) {
       if (a.ports.length > 1 || b.ports.length > 1) several.push(f.name);
       rows.push({side_a_device: a.device, side_a_type: a.type, side_a_name: a.ports.join(','), side_b_device: b.device,
-                 side_b_type: b.type, side_b_name: b.ports.join(','), type, status: 'planned', label, color: '',
+                 side_b_type: b.type, side_b_name: b.ports.join(','), type, status: 'planned', label, color,
                  length: len.value, length_unit: len.unit, description});
       continue;
     }
@@ -415,7 +432,7 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     for (let k = 0; k < count; k++) {
       const tail = count > 1 ? ` (${k + 1}/${count})` : '';
       rows.push({a_device: a.device, a_type: a.type, a_name: a.ports[k], b_device: b.device, b_type: b.type, b_name: b.ports[k], type,
-                 status: 'Planned', label: stem + tail, color: '', length: len.value, length_unit: len.unit});
+                 status: 'Planned', label: stem + tail, color, length: len.value, length_unit: len.unit});
     }
   }
   if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');

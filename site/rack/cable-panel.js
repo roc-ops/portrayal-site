@@ -35,6 +35,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
                            onSave, onCancel}) {
   const media = el('select', {id: 'cMedia', 'aria-describedby': 'cWarn'}, [
     option('', 'Not set', cable.media),
+    // (kit 0.30.0: `power` is an AC cord or a DC feed, `ground` a bonding wire)
     ...MEDIA.map(m => option(m, MEDIA_LABELS[m], cable.media)),
     // A media from a file this page does not know stays selectable as itself.
     ...(cable.media && !MEDIA.includes(cable.media) ? [option(cable.media, cable.media, cable.media)] : [])]);

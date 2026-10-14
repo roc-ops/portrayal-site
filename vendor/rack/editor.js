@@ -6,6 +6,7 @@ import {apply as applyCommands, COMMANDS} from './commands.js';
 import {settleManagers} from './managers.js';
 import {overlapNotices, frameNotices} from './fit.js';
 import {createHistory} from './history.js';
+import {auditRack, loadedText, unknownTexts} from '../redirects.js';
 
 // What a command that is not a step owns is kept across an undo or redo: Undo
 // never takes the DCIM settings back. Routed lengths are measured
@@ -67,8 +68,11 @@ export function createRackEditor({doc, chassisOf, cap = 100}) {
     rack,
     // `notes` are the sentences parseDoc gave for the bundles it repaired
     // (parseDoc(input, {notes})): the document arrives parsed, so they are
-    // handed on here, ahead of what settling the managers says.
-    loadDoc(next, {notes = []} = {}) {
+    // handed on here, ahead of what settling the managers says. `ctx` is what
+    // loadSlots returned: with it the load also says which refs the library has
+    // replaced (read as the new ones, the file left as it is) and which it no
+    // longer has (kept as written).
+    loadDoc(next, {notes = [], ctx: extra = null} = {}) {
       const findings = (Array.isArray(notes) ? notes : []).map(text => ({kind: 'note', text: String(text)}));
       const racks = next.racks.map(r => {
         const s = settleManagers(r, chassisOf);
@@ -78,6 +82,12 @@ export function createRackEditor({doc, chassisOf, cap = 100}) {
         findings.push(...[...overlapNotices(s.rack, chassisOf), ...frameNotices(s.rack, chassisOf)].map(text => ({kind: 'note', text})));
         return s.rack;
       });
+      if (extra?.redirects) {
+        for (const r of racks) {
+          const a = auditRack(r, withCtx(extra));
+          findings.push(...[loadedText(a.redirected), ...unknownTexts(a.unknown)].filter(Boolean).map(text => ({kind: 'note', text})));
+        }
+      }
       current = {...next, racks};
       history.clear();
       emit({cause: 'load', origin: 'ui', step: false, commands: [], summary: '', findings, before: null, after: rack()});

@@ -7,9 +7,9 @@ import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf} fr
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
-import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
+import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevation.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
-import {zeroUEntries, hangNotices} from '../vendor/rack/zero-u.js';
+import {hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
@@ -28,7 +28,7 @@ import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
-import {cableFacts, factsStand, UNCHECKED} from './rack/cable-plugs.js';
+import {cableFacts, factsStand, drawnAt, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
@@ -455,7 +455,7 @@ function place(entry, cfg, face, ru, extra = {}) {
 // caller shows its own way (the inspector beside its control, a drag in the
 // notice). The cleared-Explorer-changes note arrives as a finding.
 const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
-function patchItem(id, patch) {
+function patchItem(id, patch, ctx = null) {
   // A control of a panel built for an earlier rack (the redraw that replaces
   // it is still on its way): the device may be gone. Nothing is sent.
   if (!itemById(id)) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
@@ -463,7 +463,7 @@ function patchItem(id, patch) {
     const res = edit({op: 'move', id, ...defined({ru: patch.ru, face: patch.face})}, {report: false});
     return res.error ? {ok: false, reason: res.error} : {ok: true};
   }
-  const res = edit({op: 'patch', id, ...defined(patch)});
+  const res = edit({op: 'patch', id, ...defined(patch)}, ctx ? {ctx} : {});
   return res.error ? {ok: false, reason: res.error} : {ok: true};
 }
 
@@ -475,9 +475,16 @@ async function explore(id) {
   const it = itemById(id);
   if (!it) { render(); return; }               // a stale panel's button: the device is gone
   const docId = theDoc().id, ref = it.ref;
-  const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
+  // A part the library replaced (kit 0.32.0): a saved rack may name a holder by a
+  // ref whose major was removed. The kit's redirects go to the lens, so Explorer
+  // holds the replacement, and to the patch that takes its answer, so the holder
+  // is kept as the replacement instead of being left out. A parts list that
+  // does not load changes nothing: the lens opens as it did.
+  const slots = await loadSlots(DIST, [ref]).catch(() => null);
+  const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label,
+                              redirects: slots?.redirects ?? null});
   if (res && theDoc().id === docId && itemById(id)?.ref === ref)
-    patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
+    patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields}, slots?.redirects ? slots : null);
 }
 
 // THE ONE WAY AN EDIT REACHES THE RACK: a command, through the editor (spec
@@ -489,10 +496,11 @@ async function explore(id) {
 // still redraws, as the caller may have changed the selection, unless `quiet`:
 // the frame form's echoed change event (see onFrame) must not redraw, or it
 // would wipe the notice the first pass just showed.
-function edit(cmds, {say = false, report = true, quiet = false} = {}) {
+function edit(cmds, {say = false, report = true, quiet = false, ctx = null} = {}) {
   // (an end given a drawing id is refused here, with the path to use: part-path.js)
   const idNo = projectionIdRefusal(cmds);
-  const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(bundling(cmds) ? {ctx: bundleCtx()} : {})});
+  const own = {...(bundling(cmds) ? bundleCtx() : {}), ...(ctx ?? {})};
+  const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(Object.keys(own).length ? {ctx: own} : {})});
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
@@ -726,8 +734,10 @@ function cableFormPanel(sel) {
   if (sel.id && !cable) { S.sel = null; return homePanel(); }
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
+  // An end on a power or ground slot says what it is: "C13 outlet", "C20 inlet".
+  const named = e => `${endName(r, e, uOf)}${info(e)?.connector ? ` (${info(e).connector})` : ''}`;
   const form = cableForm({
-    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
+    title: cable ? 'Edit cable' : 'New cable', endA: named(a), endB: named(b),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
     routed: cable?.length?.source === 'routed' ? cable.length : null,
@@ -1360,7 +1370,7 @@ async function redraw(keepRoutes = false) {
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
-    const zeroU = zeroUEntries(r, chassisOf);
+    const zeroU = zeroUDrawn(r, chassisOf);
     // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
     // from the same items, parts and routes. Nothing in it is a target for
     // placing, moving or cabling.
@@ -2209,7 +2219,7 @@ async function bootInner() {
 // The queries, bound to this page's readers: the probe hook and the agent tools
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
-  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields, ends: true}))?.ports ?? []);
 // WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (agent-read.js, portrayal-site#192): a window of describe with the
 // routes, and the inspect of a cable or a bundle. A device's inspect lays nothing and is asked each time.
 const boundQueries = () => ({
@@ -2231,7 +2241,7 @@ const boundQueries = () => ({
 // loadSlots memoizes through the dist fetch, so a warm call fetches nothing.
 const agentContext = agentContextFor({
   // chassisOf is read through, not captured: the catalog replaces it once loaded.
-  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts,
+  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts, drawnAt,
   // (the one reading of the rack, which the redraw has usually made already: reading.js)
   routeFacts: r => routesOf(r, chassisOf), cableTypes: () => cableTypesReady});
 
@@ -2322,7 +2332,7 @@ if (PROBE) {
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, kinds: f.straps?.kinds ?? null, widths: f.straps?.widths ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
-      warnings: [...f.check.warnings], checked: f.check.checked})) : null),
+      warnings: [...f.check.warnings], checked: f.check.checked, bend_mm: f.check.bend?.radius_mm ?? null})) : null),
     // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
     anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
     tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),

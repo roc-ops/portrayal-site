@@ -41,7 +41,7 @@ export async function run(host) {
   const bundle = rack.bundles[0];
   const ctx = {chassisOf, route, diameterOf, bendOf};
   const check = bundleCheck(rack, bundle, ctx);   // {checked, size, bend, warnings, notes, ...}
-  const placed = straps(rack, bundle, ctx);        // {every, count, straps: [{segment, t, along_mm}]}
+  const placed = straps(rack, bundle, ctx);        // {every, count, straps: [{segment, t, along_mm, point, dir, on}]}
 
   // The same bundles as the exports read them: a note per bundle for the
   // cable schedule, and the bill of materials' strap line.

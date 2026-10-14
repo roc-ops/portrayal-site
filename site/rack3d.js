@@ -21,12 +21,17 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
+import { applyFields } from './rack/face.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
 import { earHoles } from './rack/ear-holes.js';
 import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 
-export { RU };                      // EIA-310 rack unit; rails.js is the one source
+// what fields.js paintFields stashes a node's drawn value under
+const STASHED = ['data-portrayal-fill', 'data-portrayal-stroke', 'data-portrayal-r',
+                 'data-portrayal-transform', 'data-portrayal-display'];
+
+export { RU };                    // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
 const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
@@ -598,8 +603,10 @@ export function createRackScene(container, opts = {}) {
   // costs no extra fetching: buildDevice asks for the same faces and svgSource
   // memoises both hits and misses.
   async function overrideFaces(entry) {
-    const ov = entry.overrides;
-    if (!ov || !Object.keys(ov).length) return;
+    const ov = entry.overrides || {};
+    const fields = entry.fields || {};
+    const hasFields = Object.keys(fields).length > 0;
+    if (!Object.keys(ov).length && !hasFields) return;
     const byRef = ref => (entry.componentIndex || []).find(
       c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
     const loadSkin = async ref => {
@@ -621,8 +628,27 @@ export function createRackScene(container, opts = {}) {
       docs[view] = doc;
       faces[view] = doc.documentElement;
     }
-    const seated = await seatViews(
-      faces, {bays: entry.bays, cages: entry.cages}, ov, loadSkin, byRef);
+    const seated = Object.keys(ov).length
+      ? await seatViews(faces, {bays: entry.bays, cages: entry.cages}, ov, loadSkin, byRef) : {};
+    // WHAT WAS WRITTEN ON A PART (item.fields: an optic's latch colour, its
+    // label), painted into the same text with the rule 2D uses (face.js
+    // applyFields -> fields.js paintFields), after the seating so a seated
+    // optic is there to paint. Painted into THIS mount's text rather than into
+    // relief's scope-wide field registry: that one is keyed by data-path alone
+    // and a scene holds many devices whose optics share a path.
+    // The stash paintFields leaves (the colour as drawn) is taken off again:
+    // relief repaints the registry over every document it reads and puts back
+    // whatever a stash names, which would undo this.
+    if (hasFields) {
+      for (const [view, root] of Object.entries(faces)) {
+        applyFields(root, fields);
+        for (const attr of STASHED) {
+          root.removeAttribute(attr);
+          for (const n of root.querySelectorAll(`[${attr}]`)) n.removeAttribute(attr);
+        }
+        seated[view] = {...(seated[view] || {}), applied: true};
+      }
+    }
     for (const [view, r] of Object.entries(seated)) {
       // The divergences the pass exists to prevent, said out loud rather than
       // swallowed - the same three the kit's viewer reports.
@@ -749,10 +775,12 @@ export function createRackScene(container, opts = {}) {
     // side panes and the kit's solids have it. It stood on the bottom of its
     // lowest unit here, up to 6.35 mm below where the kit's routes took it to
     // be. Without a catalogue entry the span is the drawing's height in units.
-    // A part beside the rack is no rack item: it stands on its bottom unit.
+    // A part beside the rack is no rack item: it stands on its bottom, in
+    // millimetres (`mm`, the kit's zeroUBottomMm, as its solid does since kit
+    // 0.30.0, #1030), else on its bottom unit.
     const box = entry.chassis?.ru != null && entry.mount !== 'rack-side'
       ? itemBox(null, {ru: entry.ru, ref: entry.ref, roll: entry.roll}, () => entry.chassis)
-      : (u => ({lo: (entry.ru - 1) * RU, hi: (entry.ru - 1 + u) * RU}))(Math.max(1, Math.round(H / RU)));
+      : (u => { const lo = Number.isFinite(entry.mm) ? entry.mm : (entry.ru - 1) * RU; return {lo, hi: lo + u * RU}; })(Math.max(1, Math.round(H / RU)));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
     // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
     // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).
@@ -1261,6 +1289,9 @@ export function createRackScene(container, opts = {}) {
     // chassis.ru should not have to re-fetch what this just read.
     resolved: () => ({heightRU: UNITS, stack: RESOLVED.map(e => ({...e}))}),
     // Export what is on screen, including whatever is currently seated in a bay.
+    // The text one mounted device's face was cut from (`slot` is its place in the
+    // stack): its seated parts and written fields are in it, as the texture has them.
+    faceText: (slot, view) => RESOLVED[slot] ? svgSource(faceSrc(RESOLVED[slot], view), relief) : Promise.resolve(null),
     toGLB: () => toGLB(scene),
     toUSDZ: () => toUSDZ(scene),
     three: {THREE, scene, camera, renderer, controls},

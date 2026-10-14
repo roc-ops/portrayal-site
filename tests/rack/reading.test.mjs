@@ -116,7 +116,8 @@ test('the kinds the list folds its warnings by are routeNotes, in order, a kind 
   const groups = routeNoteGroups(rack, facts, name, {bends, asRead: true});
   assert.deepEqual(groups.map(g => [g.kind, g.notes.length]), [['pathways', 1], ['rings', 2], ['bodies', 1], ['bends', 2]]);
   assert.deepEqual(groups.flatMap(g => g.notes), routeNotes(rack, facts, name, {bends, asRead: true}));
-  assert.match(groups[0].notes[0], /^guide-1 on Leaf: 9 cables, 140% of a 40% fill\.$/);
+  // (the sentence is the kit's, and it has changed with the kit: the test holds what it says of this finding, not its words)
+  assert.match(groups[0].notes[0], /Leaf.*9 cables.*140%/);
   // the cable schedule leaves the bodies out; a kind with nothing to say is not a kind
   assert.deepEqual(routeNoteGroups(rack, {...facts, fill: []}, name, {bodies: false}).map(g => g.kind), ['rings']);
   assert.deepEqual(routeNoteGroups(rack, null), []);

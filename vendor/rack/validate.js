@@ -42,6 +42,7 @@ export function validate(schema, value, root = schema, path = []) {
     }
   }
   if (typeof value === 'string' && schema.minLength != null && value.length < schema.minLength) out.push(err('minLength'));
+  if (typeof value === 'string' && typeof schema.pattern === 'string' && !new RegExp(schema.pattern, 'u').test(value)) out.push(err('pattern'));
   if (Array.isArray(value)) {
     if (schema.minItems != null && value.length < schema.minItems) out.push(err('minItems'));
     if (schema.items) value.forEach((v, i) => out.push(...validate(schema.items, v, root, [...path, String(i)])));

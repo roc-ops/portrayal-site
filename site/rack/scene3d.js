@@ -13,13 +13,13 @@ import {drawCables3d, WIDTH} from './cables.js';
 import {strapAt, drawableRuns, bendViolations, trunkIndexOf, drawnDiameter, strapDrawn, STRAP_DRAWN, TIE_HALF, tieCentre} from './bundle-view.js';
 import {pointOf} from '../../vendor/rack/route.js';
 import {RU, SIDES} from '../../vendor/rack/rails.js';
-import {zeroUOf, zeroUBottom, uLabel} from '../../vendor/rack/model.js';
+import {zeroUOf, zeroUBottom, zeroUBottomMm, uLabel} from '../../vendor/rack/model.js';
 import {isZeroUPart, isNarrow, setbackOf} from '../../vendor/rack/fit.js';
 import {faceOfAt, zeroUX} from '../../vendor/rack/zero-u.js';
 import {solidsOf, traysOf} from '../../vendor/rack/solids.js';
 import {labelsFor, strapPaint} from './stage.js';
-import {clearCurve, tightText, insideOf} from './bend3d.js';
-import {landedBends} from './route-context.js';
+import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
+import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
@@ -45,8 +45,9 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 const inScene = (THREE, faceZ) => q => new THREE.Vector3(q.x, q.y, faceZ + q.z);
 // link -> {points, kit: true}: the kit's points between the two ports (the
 // reach points included, the ports left out: the tube starts at the plugs).
-// A cable with no waypoints and nothing to go round is not routed, and
-// hangs as it always has.
+// A cable with no waypoints and nothing to go round gets its points too, with
+// `free: true`: it is not a routed cable (no ring, lane or tray), but it is
+// drawn on the kit's free span, not on a hang of the site's own.
 // `bundles` is routeFacts' Map of bundle facts, each with its lay
 // (bundle-view.js trunkLay), and `places` each member's stretch; `rack` and
 // `ctx` place a ring's opening (stopCentre).
@@ -60,7 +61,11 @@ function kitPointsFor(THREE, faceZ, paths, routes, places = null, bundles = null
   };
   return async link => {
     const p = paths?.get(link.id), ws = routes?.get(link.id)?.waypoints;
-    if (!p?.points?.length || (!ws?.length && !p.detours?.length)) return {points: []};
+    if (!p?.points?.length) return {points: []};
+    // A cable with no waypoints and no detour is drawn through the kit's points
+    // too (portrayal-site#178): its path is the free span as it hangs (`rest`
+    // points), the same one its length is measured on.
+    const free = !ws?.length && !p.detours?.length;
     // the reach points are where the plugs end: the scene's own plug points
     // stand there (the plug's cable-point z is the kit's reach), so the tube
     // starts at those, and the two reach points come along to say how far apart
@@ -123,7 +128,7 @@ function kitPointsFor(THREE, faceZ, paths, routes, places = null, bundles = null
         }
       }
     }
-    return {points: pts, reach, kit: true};
+    return {points: pts, reach, kit: true, ...(free ? {free: true} : {})};
   };
 }
 
@@ -479,26 +484,6 @@ function placeSided(scene, items, chassisOf) {
   }
 }
 
-// THE BEND RADIUS EACH TUBE IS ROUNDED TO (portrayal-site#164): a cable's
-// installed radius from the cable types (`bendOf`, the kit's cable-types.js
-// bendLookup), and, while it rides a bundle, the bundle's radius when that is
-// larger (the kit's bundleCheck `bend.radius_mm`: the largest of its members'),
-// so a member turns with its trunk. Null when neither is known: the tube is
-// then eased as before and its corners are not checked.
-function radiusOf(rack, bendOf, bundles) {
-  const byId = new Map((rack.cables || []).map(c => [c.id, c]));
-  const ofBundle = new Map();
-  for (const f of bundles?.bundles?.values() ?? []) {
-    const r = f.check?.bend?.radius_mm;
-    if (r > 0) for (const id of f.members ?? []) ofBundle.set(id, r);
-  }
-  return link => {
-    let own = null;
-    try { own = typeof bendOf === 'function' ? bendOf(byId.get(link.id)) : null; } catch { own = null; }
-    const rs = [own, ofBundle.get(link.id)].filter(r => typeof r === 'number' && r > 0);
-    return rs.length ? Math.max(...rs) : null;
-  };
-}
 // A drawn corner's place in words: the lead out of an end, or its height and
 // depth in the rack.
 function cornerWhere(rack, link, pts, c, faceZ) {
@@ -524,14 +509,17 @@ function ringBends(scene, drawn, bends) {
   const count = new Map();
   for (const f of bends ?? []) {
     const tube = (drawn.tubes || []).find(t => t.link.id === f.cable && t.mesh);
-    if (!tube || !Array.isArray(f.at)) continue;
-    const k = count.get(f.cable) ?? 0; count.set(f.cable, k + 1);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: BEND_RING}));
-    ring.position.copy(at({x: f.at[0], y: f.at[1], z: f.at[2]}));
-    ring.name = `cable-${f.cable}-bend-${k}`;
-    ring.userData.bendFinding = {cable: f.cable, text: f.text, at: [...f.at]};
-    tube.mesh.add(ring);
-    out.push({cable: f.cable, at: ring.position.clone(), text: f.text});
+    if (!tube) continue;
+    // a pair of turns is one finding with a ring at each corner (bendPoints)
+    for (const here of bendPoints(f)) {
+      const k = count.get(f.cable) ?? 0; count.set(f.cable, k + 1);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(WIDTH / 2 + 6, 1, 8, 24), new THREE.MeshBasicMaterial({color: BEND_RING}));
+      ring.position.copy(at({x: here[0], y: here[1], z: here[2]}));
+      ring.name = `cable-${f.cable}-bend-${k}`;
+      ring.userData.bendFinding = {cable: f.cable, text: f.text, at: [...here]};
+      tube.mesh.add(ring);
+      out.push({cable: f.cable, at: ring.position.clone(), text: f.text});
+    }
   }
   return out;
 }
@@ -552,7 +540,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
     // part's plates are solid as well, and a ring's parts (kit 0.15.0), and a
     // hang or a rounded corner is kept out of them.
     const boxes = solidBoxes(THREE, rack, chassisOf, faceZ);
-    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, anchor: async (item, path, view) => {
+    const drawn = await drawCables3d(scene, cablePlan3d(rack), {boxes, widthOf: widthLookup(ctx?.diameterOf, rack.cables), anchor: async (item, path, view) => {
       if (loose.has(endKey({item, path, view}))) return [];
       const got = await scene.cableAnchor({id: item}, path, {view});
       if (got.length) return got;
@@ -632,12 +620,12 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // fetch, and reading the two views' sizes from one place is the whole
   // argument this rack makes for itself (see rack3d.js's own banner).
   //
-  // Optic fields (item.fields) are NOT carried over: createRackScene has no
-  // fields input yet, so a swap into a bay shows in 3D but a field edit on an
-  // optic does not, until that lands.
+  // Optic fields (item.fields: a latch colour, a label) are carried over, and
+  // the scene paints them into the device's own faces (rack3d.js overrideFaces),
+  // so a field edit shows in 3D as it does in 2D (portrayal-site#206).
   const stack = rack.items.map(item => ({
     id: item.id,
-    ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label,
+    ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label, fields: item.fields || {},
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
     mount: chassisOf?.(item.ref)?.mount,
@@ -649,7 +637,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // carries its part facing rearward, as a rear device faces.
   const sideParts = chassisOf ? zeroUOf(rack).filter(z => isZeroUPart(chassisOf(z.ref))) : [];
   for (const z of sideParts) {
-    stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), label: z.label,
+    stack.push({id: z.id, ref: z.ref, cfg: z.cfg, ru: zeroUBottom(z), mm: zeroUBottomMm(z), label: z.label,
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: {},
                 chassis: chassisOf(z.ref), mount: 'rack-side'});
   }

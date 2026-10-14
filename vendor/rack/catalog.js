@@ -5,6 +5,7 @@
 // same build every other kit module reads.
 
 import {jdist} from '../dist.js';
+import {redirectsOf} from '../redirects.js';
 
 const urlOf = (dist, path) => (typeof dist === 'function' ? dist(path) : `${String(dist).replace(/\/$/, '')}/${path}`);
 
@@ -59,9 +60,11 @@ export function configFacts(slots, cfg) {
 
 export async function loadSlots(dist, refs = []) {
   const comps = new Map();
+  let list = [];
   try {
-    for (const c of (await jdist(urlOf(dist, 'components.json')))?.components || []) comps.set(compKey(c), c);
-  } catch { /* every part is unknown: compByRef answers null */ }
+    list = (await jdist(urlOf(dist, 'components.json')))?.components || [];
+    for (const c of list) comps.set(compKey(c), c);
+  } catch { /* every part is unknown: compByRef answers null */ list = []; }
   const slots = new Map();
   await Promise.all([...new Set(refs)].filter(r => typeof r === 'string' && DEVICE_NAME.test(r)).map(async ref => {
     try {
@@ -73,5 +76,8 @@ export async function loadSlots(dist, refs = []) {
   return {
     slotsOf: ref => slots.get(ref) ?? null,
     compByRef: ref => (ref == null ? null : comps.get(String(ref).split(':')[0]) ?? null),
+    // the removed refs a published part stands in for (kit/redirects.js); a
+    // components.json from before the key reads as none
+    redirects: redirectsOf(list),
   };
 }

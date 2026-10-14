@@ -278,6 +278,7 @@ import * as marks from './vendor/marks.js';
 import { toDrawio } from './vendor/drawio.js';
 import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { american } from './site/colors.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 import { firstDevice } from './site/featured.js';
@@ -384,7 +385,7 @@ function drawLegend3d() {
   legend3d.hidden = m3d.mode() !== '3d' || !rows.length;
   legend3d.innerHTML = rows.map(r =>
     `<div class="row"><span class="sw" style="border-color:${r.color};background:${
-      r.hollow ? 'transparent' : r.color}"></span>${esc(r.label)}</div>`).join('');
+      r.hollow ? 'transparent' : r.color}"></span>${esc(american(r.label))}</div>`).join('');
 }
 m3d.on('mode', () => {
   // THE DRAWING'S GESTURES STAY WITH THE DRAWING. `dragged` is set by a pan on
@@ -943,7 +944,7 @@ function notesHtml(m, r) {
   else if (!r.count) notes.push(`<div class="note warn">matches nothing in this
     ${esc(state.view)} view of ${esc(state.device)}${m.label
       ? ' — its legend row is left out rather than claiming a highlight the reader cannot see' : ''}.</div>`);
-  if (r.warning) notes.push(`<div class="note warn">${esc(r.warning)}</div>`);
+  if (r.warning) notes.push(`<div class="note warn">${esc(american(r.warning))}</div>`);
   if (m.state && !r.error && r.count && !paints(firstMatch(state.svg, m.select), m.state))
     notes.push(`<div class="note warn">nothing in this drawing paints
       <code>state-${esc(m.state)}</code>: the class is set, the picture does not change.</div>`);
@@ -954,15 +955,15 @@ function notesHtml(m, r) {
     // assuming the control that offered it is still the control that applies.
     const c = lampCensus(state.svg, m.select);
     notes.push(c.doc
-      ? `<div class="note warn">this colour overrides ${c.doc} lamp${c.doc === 1 ? '' : 's'}
+      ? `<div class="note warn">this color overrides ${c.doc} lamp${c.doc === 1 ? '' : 's'}
          whose states the model transcribes from the vendor — an export will show
-         ${c.doc === 1 ? 'it' : 'them'} in a colour the hardware does not use.</div>`
-      : `<div class="note dim">this lamp colour is your choice: the model records no
+         ${c.doc === 1 ? 'it' : 'them'} in a color the hardware does not use.</div>`
+      : `<div class="note dim">this lamp color is your choice: the model records no
          vocabulary for ${c.undoc === 1 ? 'this lamp' : `these ${c.undoc} lamps`}, so
          nothing is being contradicted — and nothing is being asserted either.</div>`);
   }
   if (!m.color && !m.state && !m.label && !m.lamp && r.count)
-    notes.push(`<div class="note dim">no colour, no state and no label: this mark
+    notes.push(`<div class="note dim">no color, no state and no label: this mark
       does nothing.</div>`);
   return notes.join('');
 }
@@ -996,7 +997,7 @@ function drawRows() {
         <button class="x" title="delete">✕</button>
       </div>
       <div class="l2">
-        <input type="checkbox" class="paint"${m.color ? ' checked' : ''} title="ring every match in this colour">
+        <input type="checkbox" class="paint"${m.color ? ' checked' : ''} title="ring every match in this color">
         <input type="color" class="col" value="${esc(m.color || nextColor())}">
         <select class="st" title="add state-&lt;name&gt; to every match">${stateOptions({...r, select: m.select}, m.state)}</select>
         <span class="lampbox">${lampHtml(m)}</span>

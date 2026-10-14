@@ -86,7 +86,7 @@ ${devs.map(d => `    ${(d.model || d.name).padEnd(22)} ${d.version || '?'}`).joi
 
 Flat SVG in real millimetres. Every port, PSU, fan, LED, bay and region carries
 a stable DOM id and a \`data-path\`, so you can find a named thing in the file
-and colour it, label it, or link it to something else:
+and color it, label it, or link it to something else:
 
     document.querySelector('#port-12')
     document.querySelectorAll('[data-class="port"]')

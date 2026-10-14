@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="484.6mm" height="43.96mm" viewBox="0 0 484.6 43.96" data-device="xpu" data-view="rear" data-shell="sheet" data-material="powder paint coated steel frame, plastic guides" data-color="Black RAL 9005" data-operating-temp="-40 to 70 C" data-ingress-protection="IP 20 (EN 60529)" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Fibrain XPU00","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"7df0261fe01fb26b6e30e284c5fbaf6c05f15864fecd06f8b6bc555d02a623e3","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="XPU00" data-sku="XPS00" data-part-number="XPS00" x="0" y="0" width="484.6" height="43.96" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="interior" data-kind="opening" x="24.7" y="0.05" width="435.2" height="43.9" rx="0.6" fill="#0b0c0d" />
+    <rect id="ear-left" data-kind="rack-ear" x="0" y="0.05" width="27.7" height="43.9" rx="3" fill="#1b1e21" />
+    <rect id="ear-right" data-kind="rack-ear" x="456.9" y="0.05" width="27.7" height="43.9" rx="3" fill="#1b1e21" />
+    <rect id="ear-left-hole" data-kind="mounting-hole" x="6" y="18.4" width="7.2" height="7.2" rx="3.6" fill="#050506" />
+    <path id="ear-left-slot-1" data-kind="mounting-hole" d="M7.600 2.850 H11.600 A3.250 3.250 0 0 1 11.600 9.350 H7.600 A3.250 3.250 0 0 1 7.600 2.850 Z" fill="#050506" />
+    <path id="ear-left-slot-2" data-kind="mounting-hole" d="M7.600 34.650 H11.600 A3.250 3.250 0 0 1 11.600 41.150 H7.600 A3.250 3.250 0 0 1 7.600 34.650 Z" fill="#050506" />
+    <rect id="ear-right-hole" data-kind="mounting-hole" x="471.4" y="18.4" width="7.2" height="7.2" rx="3.6" fill="#050506" />
+    <path id="ear-right-slot-1" data-kind="mounting-hole" d="M473.000 2.850 H477.000 A3.250 3.250 0 0 1 477.000 9.350 H473.000 A3.250 3.250 0 0 1 473.000 2.850 Z" fill="#050506" />
+    <path id="ear-right-slot-2" data-kind="mounting-hole" d="M473.000 34.650 H477.000 A3.250 3.250 0 0 1 477.000 41.150 H473.000 A3.250 3.250 0 0 1 473.000 34.650 Z" fill="#050506" />
+    <rect id="top-sheet-edge" data-kind="frame" x="24.9" y="0.05" width="434.8" height="0.8" rx="0.6" fill="#1b1e21" />
+    <rect id="floor-edge" data-kind="frame" x="24.9" y="43.15" width="434.8" height="0.8" rx="0.6" fill="#1b1e21" />
+    <rect id="post-1-back" data-kind="guide-post" x="452.79" y="1" width="7.01" height="42" rx="0.6" fill="#101214" />
+    <rect id="post-2-back" data-kind="guide-post" x="345.79" y="1" width="7.01" height="42" rx="0.6" fill="#101214" />
+    <rect id="post-3-back" data-kind="guide-post" x="238.79" y="1" width="7.01" height="42" rx="0.6" fill="#101214" />
+    <rect id="post-4-back" data-kind="guide-post" x="131.79" y="1" width="7.01" height="42" rx="0.6" fill="#101214" />
+    <rect id="post-5-back" data-kind="guide-post" x="24.79" y="1" width="7.01" height="42" rx="0.6" fill="#101214" />
+    <rect id="arm-left" data-kind="frame" x="24.8" y="10.5" width="0.8" height="23" rx="0.6" fill="#1b1e21" />
+    <rect id="arm-right" data-kind="frame" x="459" y="10.5" width="0.8" height="23" rx="0.6" fill="#1b1e21" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-1" data-rear-bay="352.795,1,100,21" data-group="slots" data-group-role="service" data-rel-pos="1" data-wall="#2a2d31" id="cutout--back-1" data-path="cutout:back-1" data-class="cutout">
+      <rect x="352.795" y="1" width="100" height="21" fill="#101214" id="cutout--back-1--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-2" data-rear-bay="245.795,1,100,21" data-group="slots" data-group-role="service" data-rel-pos="2" data-wall="#2a2d31" id="cutout--back-2" data-path="cutout:back-2" data-class="cutout">
+      <rect x="245.795" y="1" width="100" height="21" fill="#101214" id="cutout--back-2--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-3" data-rear-bay="138.795,1,100,21" data-group="slots" data-group-role="service" data-rel-pos="3" data-wall="#2a2d31" id="cutout--back-3" data-path="cutout:back-3" data-class="cutout">
+      <rect x="138.795" y="1" width="100" height="21" fill="#101214" id="cutout--back-3--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-4" data-rear-bay="31.795,1,100,21" data-group="slots" data-group-role="service" data-rel-pos="4" data-wall="#2a2d31" id="cutout--back-4" data-path="cutout:back-4" data-class="cutout">
+      <rect x="31.795" y="1" width="100" height="21" fill="#101214" id="cutout--back-4--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-5" data-rear-bay="352.795,22,100,21" data-group="slots" data-group-role="service" data-rel-pos="5" data-wall="#2a2d31" id="cutout--back-5" data-path="cutout:back-5" data-class="cutout">
+      <rect x="352.795" y="22" width="100" height="21" fill="#101214" id="cutout--back-5--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-6" data-rear-bay="245.795,22,100,21" data-group="slots" data-group-role="service" data-rel-pos="6" data-wall="#2a2d31" id="cutout--back-6" data-path="cutout:back-6" data-class="cutout">
+      <rect x="245.795" y="22" width="100" height="21" fill="#101214" id="cutout--back-6--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-7" data-rear-bay="138.795,22,100,21" data-group="slots" data-group-role="service" data-rel-pos="7" data-wall="#2a2d31" id="cutout--back-7" data-path="cutout:back-7" data-class="cutout">
+      <rect x="138.795" y="22" width="100" height="21" fill="#101214" id="cutout--back-7--hole" />
+    </g>
+    <g data-depth="249" data-cavity="hole" data-rear-of="slot-8" data-rear-bay="31.795,22,100,21" data-group="slots" data-group-role="service" data-rel-pos="8" data-wall="#2a2d31" id="cutout--back-8" data-path="cutout:back-8" data-class="cutout">
+      <rect x="31.795" y="22" width="100" height="21" fill="#101214" id="cutout--back-8--hole" />
+    </g>
+  </g>
+</svg>
