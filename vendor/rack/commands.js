@@ -22,7 +22,7 @@ import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, 
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
 import {portIdsOf} from './ports.js';
 import {validate, same} from './validate.js';
-import {withRoutedLengths, pathwaysOf, lanesOf, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
+import {withRoutedLengths, pathwaysOf, lanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
 import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
@@ -1157,18 +1157,30 @@ function cableLay(rack, args, ctx) {
   // the pathway must be one the routes know on the device: a ring or a duct
   // the page draws, or a tray; with no routes known it is recorded as given
   const pinning = args.position != null || args.face != null;
-  let trays = [];
+  let trays = [], guides = [];
   if (ctx.route) { try { trays = traysOf(rack, ctx.route).filter(x => x.item === where.item); } catch { trays = []; } }
   if (pinning && ctx.route) {
-    let guides = [];
     try { guides = typeof ctx.route.guidesOf === 'function' ? ctx.route.guidesOf(where.item) || [] : []; } catch { guides = []; }
     const ids = [...new Set([...guides.map(g => g.via), ...trays.map(t => t.via)])].sort();
     if (!ids.includes(where.via))
       return {error: ids.length ? `${it.label || it.id} has no ring, duct or tray called ${where.via}. It has: ${ids.join(', ')}.`
                                 : `${it.label || it.id} has no rings, ducts or trays.`};
   }
+  // A POSITION IS ONE OF THE CABLES THAT SHARE THE PATHWAY (P-0018): from 1 to
+  // how many routes pass through it, this cable's among them. Judged when the
+  // routes are known; with none, it is recorded as given.
+  if (args.position != null && ctx.route) {
+    let sharing = null;
+    try {
+      sharing = rack.cables.filter(x => resolveRoute(rack, x, ctx.route).waypoints.some(w => w.item === where.item && w.via === where.via)).map(x => x.id);
+    } catch { sharing = null; }   // a route that cannot be read leaves the position unjudged, as a face is when no path is found
+    if (sharing && !sharing.includes(c.id)) return {error: `${c.id} does not pass through ${name}, so it has no position there.`};
+    if (sharing && args.position > sharing.length)
+      return {error: `${name} carries ${sharing.length} cable${sharing.length === 1 ? '' : 's'}, so a position there runs from 1 to ${sharing.length}; ${args.position} is past it.`};
+  }
   if (args.face != null && ctx.route) {
     const t = trays.find(x => x.via === where.via) || null;
+    if (!t && guides.some(g => g.via === where.via)) return {error: `${name} is a ring or a duct, not a tray: a cable has no face to lie on there.`};
     if (!t) return {error: `${name} is no tray, so a cable has no face to lie on there.`};
     const held = t.flipped ? 'top' : 'underside';
     if (args.face === held && !t.ties.length)

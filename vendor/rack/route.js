@@ -16,7 +16,7 @@ import {followTrunk} from './bundle-route.js';
 import {RU, OPENING, RAIL_W} from './rails.js';
 import {throughRings, cornersOf, STRAIGHT_DEG} from './route-path.js';
 import {zeroUOnLane, zeroUX, carriesLane, runsThrough, STANDOFF} from './zero-u.js';
-import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, isQuarter, unitsOf} from './fit.js';
+import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, railOf, isQuarter, unitsOf} from './fit.js';
 import {solidsOf, traysOf, detour, legCrossings, CLEAR} from './solids.js';
 import {surfacesOf, hang, heldStretch, drapeOf, bendOf, newCrossing} from './resting.js';
 
@@ -865,7 +865,11 @@ export function pointOf(rack, w, ctx) {
   const z = c.mount !== 'rack-face' ? panelZ(rack, it, g.face, ctx) + inward
     : g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
   // the guide where it is as mounted: turned with the item by its roll
-  return {...rollPoint(rack, it, {x: g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
+  // A narrow rack-face part on a rail stands over its hole line, as solids.js
+  // itemPlacer places its body: its guide's x is from the part's centre, and a
+  // part on the right rail is turned end over end there, so its x is mirrored.
+  const turned = railOf(it, ctx.chassisOf) === 'right' ? -1 : 1;
+  return {...rollPoint(rack, it, {x: centreX(it, ctx.chassisOf) + turned * g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
 }
 
 export function portPoint(rack, end, ctx) {
@@ -1206,6 +1210,9 @@ export const stockLength = (need, {values = 0} = {}) => chooseStock(() => need, 
 //   `turns: [{point, at, angle_deg}, {point, at, angle_deg}]`; its `at` is
 //   the middle of that leg, `point` the first turn's, `angle_deg` the wider
 //   of the two, and `legs_mm` the leg into the first and out of the second.
+//   A corner of one turn that is at a stop of the route (a ring, a lane
+//   point) also has `stop`, that waypoint (P-0018), which the sentence names
+//   before the two stops either side; a corner in a lead or a detour has none.
 //   The path is laid to leave none (the approach points, lead points and
 //   detours below, and no hang that would make one), so what is here is a
 //   bend the kit's rules found no room for: often the parts leave none, but
@@ -1597,6 +1604,7 @@ function turnPath(path) {
     crossings: rev(path.crossings).map(c => ({...c, between: between(c.between)})),
     detours: rev(path.detours).map(d => ({between: between(d.between), points: rev(d.points)})),
     bends: rev(path.bends).map(f => ({...f, between: between(f.between), legs_mm: rev(f.legs_mm),
+      ...(f.stop ? {stop: between([f.stop, f.stop])[0]} : {}),
       ...(f.turns ? {turns: rev(f.turns), point: f.turns.at(-1).point} : {})})),
     covers: path.covers.map(c => ({...c, between: between(c.between)})),
     rests: path.rests};
@@ -2159,6 +2167,8 @@ function layFrom(inp, world) {
     at: d ? [0, 1, 2].map(i => r1((spot(c.k)[i] + spot(d.k)[i]) / 2)) : spot(c.k),
     angle_deg: d ? Math.max(c.angle_deg, d.angle_deg) : c.angle_deg, legs_mm: d ? [c.legs_mm[0], d.legs_mm[1]] : c.legs_mm,
     room_mm: c.room_mm, need_mm: need, short_mm: r1(need - c.room_mm),
+    // the stop the corner is at (P-0018): the leg into the corner ends at the stop the leg out of it starts from
+    ...(!d && legs[c.k] && JSON.stringify(legs[c.k - 1][1]) === JSON.stringify(legs[c.k][0]) ? {stop: legs[c.k - 1][1]} : {}),
     ...(d ? {apart_mm: c.legs_mm[1], turns: [c, d].map(x => ({point: final[x.k].at, at: spot(x.k), angle_deg: x.angle_deg}))} : {})}));
   return {path: {points: final, rings, findings, marks, crossings, detours, rests, bends, covers: [], allowance: endAllowance({media: inp.media}), media: inp.media},
     legs, need, r, novel: usedNovel};
@@ -2455,8 +2465,13 @@ export function spareOf(rack, cable, ctx, path = undefined) {
 // with a sentence for each: what the page and an agent report. A cable whose
 // port is not found is not judged.
 export function ringFindings(rack, ctx, nameOf = id => id) {
-  return (rack.cables || []).flatMap(c => (pathOf(rack, c, ctx)?.findings || []).map(f => ({...f,
-    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`})));
+  return (rack.cables || []).flatMap(c => ringFindingsOf(rack, c, ctx, nameOf));
+}
+// The same for one cable (P-0018): what `inspect` carries. `path` is the
+// cable's routePath, for a caller that already has it.
+export function ringFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(rack, c, ctx)) {
+  return (path?.findings || []).map(f => ({...f,
+    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`}));
 }
 
 // EVERY CORNER OF A CABLE'S PATH WITH LESS ROOM THAN ITS BEND RADIUS (#973,
@@ -2477,7 +2492,12 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
   // each finding a copy, so that none handed out is part of the path kept
   return copyOf(path?.bends || []).map(f => {
     const [a, b] = f.between.map(w => lab(w, c));
-    const where = a === b ? `at ${a}` : `between ${a} and ${b}`;
+    // THE STOP WHERE THE CABLE TURNS (P-0018), when the corner is at one: "at
+    // ring 5, between ring 4 and its port". A corner in a lead or a detour is
+    // no stop's, and is named by the two stops either side, as before.
+    const turn = f.stop && !f.stop.end ? lab(f.stop, c) : null;
+    const named = turn != null && turn !== a && turn !== b;
+    const where = named ? `at ${turn}, between ${a} and ${b}` : a === b ? `at ${a}` : `between ${a} and ${b}`;
     const kind = c.type || c.media;
     const needs = `${kind ? `the cable (${kind})` : 'the cable'} needs ${f.need_mm} mm`;
     // A LEAD LEFT IN A RING IT HAS NO ROOM TO TURN INTO (#1026): no ring on
@@ -2496,7 +2516,7 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
     return {...f, ...(close ? {tooClose: {manager: close.manager, device: close.device}, advice: help} : {}),
       text: `${f.room_mm === 0 ? `${c.id} doubles back ${where}, with no room for a bend; ${needs}.`
         : f.turns ? `${c.id} turns twice within ${f.apart_mm} mm ${where} (${f.turns.map(t => t.angle_deg).join(' and ')} degrees), with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`
-        : `${c.id} turns ${f.angle_deg} degrees ${where} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
+        : `${c.id} turns ${f.angle_deg} degrees ${where}${named ? ',' : ''} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
   });
 }
 // THE MANAGER A TIGHT LEAD IS TOO CLOSE TO (#1026). A finding between a port

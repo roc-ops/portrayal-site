@@ -11,10 +11,10 @@ import {whereText, carriesLane} from './zero-u.js';
 import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText, isElementId, addressFor, portLabel,
         takesCableEnd, receptacleOf, endKind, connectorName, endPlug} from './cable-rules.js';
 import {seatedPort, settleEnds, shownEnv} from './ports.js';
-import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ductsThrough, zeroUPathways,
-  pathwaysAt} from './route.js';
+import {lanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ringFindingsOf, ductsThrough,
+  zeroUPathways, pathwaysAt} from './route.js';
 import {catalogEntries} from './catalog.js';
-import {slackOf, slackFindings, sparePlaces, holdsSpare, spareExports, trayText} from './slack.js';
+import {slackOf, slackFindings, sparePlaces, holdsSpare, spareExports, trayText, mText} from './slack.js';
 import {GONE, CABLE_GONE, ZERO_GONE, BUNDLE_GONE} from './commands.js';
 import {bundlesOf, bundleName} from './model.js';
 import {bundleCheck, bundleOfCable, membersText, spacingText, strapSpacing, straps as strapsOf, trunkLength, straightText, fewText,
@@ -87,16 +87,28 @@ function bundleLine(rack, b, ctx) {
 // (#949), those with a corner short of their bend radius and the cable
 // shortest of it (#973, #1007), and those with a span in front of other
 // ports and the cable that covers most (#1013), with what was judged when
-// the page listed no ports (`ctx.route.portBoxesOf`). Each cable's path is
-// read once.
+// the page listed no ports (`ctx.route.portBoxesOf`). P-0018 adds the cables
+// that would enter and leave a ring by one face ("3 cables enter and leave a
+// ring by one face (c1, c2, c3)", up to three named) and the cords shorter
+// than their route needs (a pinned length under the need, the worst named
+// with its shortfall): a cable counts once, as one row of the page's Warnings
+// panel does. Each cable's path is read once (slackOf reads the same kept path).
 function findingsText(rack, ctx) {
   if (!ctx?.route) return null;
   let bodies = 0, bends = 0, covers = 0, worst = null, most = null, cabled = false;
+  const rings = [], cords = [];
   try {
     for (const c of rack.cables || []) {
       const path = routePath(rack, c, ctx.route);
       if (!path) continue;
       if (path.crossings?.length) bodies++;
+      // a ring a route would enter and leave by one face: the cable counts once, as a row of the Warnings panel does
+      if (path.findings?.length) rings.push(c.id);
+      // a cord shorter than its route needs (the pinned length under the need), the shortfall in metres
+      if (c.length) {
+        const s = slackOf(rack, c, ctx.route);
+        if (s?.short) cords.push({id: c.id, short: s.spare.need_m - s.spare.stock_m});
+      }
       if (path.bends?.length) {
         bends++;
         const short = Math.max(...path.bends.map(f => f.short_mm));
@@ -109,10 +121,14 @@ function findingsText(rack, ctx) {
       }
     }
   } catch { return null; }
+  const worstCord = cords.reduce((m, x) => (!m || x.short > m.short ? x : m), null);
   const parts = [
     ...(bodies ? [`${count(bodies, 'cable')} cross${bodies === 1 ? 'es' : ''} a body`] : []),
-    ...(bends ? [`${count(bends, 'cable')} ${bends === 1 ? 'has' : 'have'} a tight bend (${bends === 1 ? '' : 'the worst '}${worst.id}, ${worst.short} mm short)`] : []),
-    ...(covers ? [`${count(covers, 'cable')} cross${covers === 1 ? 'es' : ''} in front of other ports (${covers === 1 ? '' : 'the most '}${most.id}, ${count(most.n, 'port')}${cabled ? '; only ports that hold a cable were judged' : ''})`] : [])];
+    ...(rings.length ? [`${count(rings.length, 'cable')} ${rings.length === 1 ? 'enters' : 'enter'} and ${rings.length === 1 ? 'leaves' : 'leave'} a ring by one face (${
+      rings.length > 3 ? `${rings.slice(0, 3).join(', ')} and ${rings.length - 3} more` : rings.join(', ')})`] : []),
+    ...(bends ?[`${count(bends, 'cable')} ${bends === 1 ? 'has' : 'have'} a tight bend (${bends === 1 ? '' : 'the worst '}${worst.id}, ${worst.short} mm short)`] : []),
+    ...(covers ? [`${count(covers, 'cable')} cross${covers === 1 ? 'es' : ''} in front of other ports (${covers === 1 ? '' : 'the most '}${most.id}, ${count(most.n, 'port')}${cabled ? '; only ports that hold a cable were judged' : ''})`] : []),
+    ...(cords.length ? [`${count(cords.length, 'cord')} ${cords.length === 1 ? 'is' : 'are'} shorter than ${cords.length === 1 ? 'its' : 'their'} route needs (${cords.length === 1 ? '' : 'the worst '}${worstCord.id}, ${mText(worstCord.short)} short)`] : [])];
   return parts.length ? `Findings: ${parts.join('; ')}.` : null;
 }
 
@@ -440,7 +456,7 @@ async function cableInfo(rack, cable, ctx) {
   const edited = cable.routeEdited === true;
   // A route context's readers come from the page's drawings and may throw; a
   // measure that fails is "not measured", never an error.
-  let routed = null, waypoints = edited ? cable.route || [] : [], rings = null, crosses = null, rests = null, bends = null, covers = null;
+  let routed = null, waypoints = edited ? cable.route || [] : [], rings = null, crosses = null, rests = null, bends = null, covers = null, ringNote = null;
   if (ctx.route) {
     try {
       waypoints = resolveRoute(rack, cable, ctx.route).waypoints;
@@ -471,11 +487,14 @@ async function cableInfo(rack, cable, ctx) {
       const tight = bendFindingsOf(rack, cable, ctx.route, label, path);
       if (tight.length) bends = tight.map(f => ({point: f.point, between: f.between, at: f.at, angle_deg: f.angle_deg, legs_mm: f.legs_mm,
         room_mm: f.room_mm, need_mm: f.need_mm, short_mm: f.short_mm,
-        ...(f.turns ? {apart_mm: f.apart_mm, turns: f.turns} : {}), ...(f.tooClose ? {tooClose: f.tooClose, advice: f.advice} : {}), text: f.text}));
+        ...(f.turns ? {apart_mm: f.apart_mm, turns: f.turns} : {}), ...(f.stop ? {stop: f.stop} : {}), ...(f.tooClose ? {tooClose: f.tooClose, advice: f.advice} : {}), text: f.text}));
+      // each ring it would enter and leave by one face (P-0018), in the sentence the Warnings panel gives
+      const doubled = ringFindingsOf(rack, cable, ctx.route, label, path);
+      if (doubled.length) ringNote = doubled.map(f => ({item: f.item, via: f.via, text: f.text}));
       const over = coverFindingsOf(rack, cable, ctx.route, label, path)[0];
       if (over) covers = {count: over.count, ports: over.ports, between: over.between, judged: over.judged,
         ...(over.estimated ? {estimated: true} : {}), text: over.text};
-    } catch { routed = null; rings = null; crosses = null; rests = null; bends = null; covers = null; }
+    } catch { routed = null; rings = null; crosses = null; rests = null; bends = null; covers = null; ringNote = null; }
   }
   // slack: the cable's own length less the routed one, in metres
   // (only metres and feet convert; any other unit leaves slack unknown)
@@ -532,7 +551,7 @@ async function cableInfo(rack, cable, ctx) {
     // how it was laid by hand in a pathway, as the file has it (`cable.lay`)
     ...(Array.isArray(cable.lay) && cable.lay.length ? {lay: cable.lay} : {}),
     route: {edited, waypoints, text: routeText(waypoints, label, rack.frame, ductsThrough(rack, ctx.chassisOf, label)), ...(rings ? {rings} : {}), ...(crosses ? {crosses} : {}), ...(rests ? {rests} : {}),
-            ...(bends ? {bends} : {}), ...(covers ? {covers} : {})}, lanes: lanesOf(rack.frame), passes,
+            ...(bends ? {bends} : {}), ...(covers ? {covers} : {}), ...(ringNote ? {ring_findings: ringNote} : {})}, lanes: lanesOf(rack.frame), passes,
     loose, mismatch: warn, ...(unchecked ? {unchecked: true} : {})};
 }
 
