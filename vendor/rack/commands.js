@@ -6,8 +6,7 @@
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
 import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint, holderOf, firstU, rollOf,
-        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings,
-        endHostOf, zeroUIdsInUse} from './model.js';
+        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings} from './model.js';
 import {withoutCables, bundleOfCable, bundleCheck, layoutOf, onTrunk, trunkText, waypointText, strapEveryMm,
         spacingText, strapSpacing, strapKinds} from './bundles.js';
 import {deriveTrunk, andList} from './bundle-route.js';
@@ -21,9 +20,9 @@ import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
-import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
+import {portIdsOf} from './ports.js';
 import {validate, same} from './validate.js';
-import {withRoutedLengths, pathwaysOf, lanesOf, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
+import {withRoutedLengths, pathwaysOf, lanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
 import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
@@ -392,16 +391,14 @@ function sideSet(rack, {id, side}, {chassisOf}) {
 // ── beside the rack (#926) ──────────────────────────────────────────────
 // A zero-U part (fit.js isZeroUPart) stands at an attachment point of the
 // frame, its bottom level with a U, and takes no rack unit: an entry of
-// rack.zeroU (model.js), never an item. A cable ends on one of its own
-// connector slots (the outlets of a zero-U PDU) as on a port of an item.
-// Its id is never one a cable end still names (model.js zeroUIdsInUse).
+// rack.zeroU (model.js), never an item, and no cable ends on it.
 function zeroUPlace(rack, {ref, cfg, at: where, ru, between = false, label}, ctx) {
   const {chassisOf} = ctx;
   const f = fitsZeroU(rack, {ref, at: where, ru}, chassisOf);
   if (!f.ok) return {error: f.reason};
   const c = chassisOf(ref);
   if (cfg != null) { const bad = cfgRefused(ctx, ref, cfg, c?.model ?? ref); if (bad) return bad; }
-  const id = nextId(zeroUIdsInUse(rack), 'z');
+  const id = nextId((rack.zeroU || []).filter(z => typeof z?.id === 'string'), 'z');
   const z = {id, ref, cfg: cfg ?? c?.default ?? '', label: label ?? c?.model ?? ref, at: where, offsetMm: zeroUOffset(ru),
              ...(between ? {between: true} : {})};
   const next = {...rack, zeroU: [...(rack.zeroU || []), z]};
@@ -448,22 +445,14 @@ function zeroUUpdate(rack, {id, at: where, ru, between, label, swaps, fields}, c
     : `Changed ${zeroUName(next, chassisOf)}, ${whereText(out, next, chassisOf)}.`) + with_);
 }
 
-// ITS CORDS are kept as loose ends, or removed with it, as a device's are
-// (`remove`).
-function zeroURemove(rack, {id, cables = 'keep'}, {chassisOf}) {
+function zeroURemove(rack, {id}, {chassisOf}) {
   const z = zeroUById(rack, id);
   if (!z) return {error: ZERO_GONE};
   // what hung on it stays where it was, on a bracket that is gone, and fit
   // refuses it until it is hung again or taken off
   const hung = hangingOn(rack, id);
   const stay = hung.length ? ` ${hung.map(h => zeroUName(h, chassisOf)).join(', ')} hung on it and stay${hung.length === 1 ? 's' : ''} where ${hung.length === 1 ? 'it was' : 'they were'}.` : '';
-  const name = zeroUName(z, chassisOf), k = cablesOf(rack, id).length, n = count(k, 'cable');
-  const out = {...rack, zeroU: rack.zeroU.filter(o => o !== z)};
-  if (cables === 'remove' && k) {
-    const {rack: next, said} = withoutCables(out, cablesOf(rack, id).map(c => c.id));
-    return done(next, `Removed ${name} and its ${n} from beside the rack.${stay}${said ? ` ${said}` : ''}`);
-  }
-  return done(out, `Removed ${name} from beside the rack.${k ? ` Its ${n} ${k === 1 ? 'is a loose end' : 'are loose ends'}.` : ''}${stay}`);
+  return done({...rack, zeroU: rack.zeroU.filter(o => o !== z)}, `Removed ${zeroUName(z, chassisOf)} from beside the rack.${stay}`);
 }
 
 // HANG A PART ON BRACKETS (`on`: their ids), or take it off them (`on: null`).
@@ -639,30 +628,9 @@ const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); retu
 // A CABLE'S OWN COLOUR (`color`, #1028) is `#rgb` or `#rrggbb`, stored as
 // lower case `#rrggbb`; null or "" is none of its own. Anything else is
 // refused with cable-rules.js COLOR_REFUSED, here and in cable.update.
-// AN END ON A PART BESIDE THE RACK (P-0019): the part's own connector slots
-// are the only ends it has, and the catalogue lists them all (ports.js
-// zeroUEnds), so with the parts lists loaded an end on one it does not have is
-// refused, naming those it has. Without them it is kept as given, as a port
-// of an item is.
-const hasEnd = (rack, id) => !!endHostOf(rack, id);
-function zeroUEndRefused(rack, ends, ctx) {
-  if (typeof ctx?.slotsOf !== 'function' || typeof ctx?.compByRef !== 'function') return null;
-  for (const e of ends) {
-    const z = zeroUById(rack, e.item);
-    if (!z) continue;
-    const name = zeroUName(z, ctx.chassisOf), all = zeroUEnds(z, ctx), view = e.view === 'rear' ? 'rear' : 'front';
-    if (!all.length) return {error: `${name} has nothing a cable can end on.`};
-    if (all.some(s => s.path === e.path && s.view === view)) continue;
-    const other = all.find(s => s.path === e.path);
-    return {error: other ? `${e.path} is on the ${other.view} panel of ${name}: give view "${other.view}".`
-      : `${name} has no ${e.path}. It has ${zeroUEndsText(all)}.`};
-  }
-  return null;
-}
-function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, ctx) {
-  const {chassisOf} = ctx;
-  if (!hasEnd(rack, a.item) || !hasEnd(rack, b.item)) return {error: NOT_ADDED};
-  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx);
+function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, {chassisOf}) {
+  if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
+  const refused = endRefused([a, b]);
   if (refused) return refused;
   const tint = parseColor(color);
   if (!tint.ok) return {error: tint.reason};
@@ -678,14 +646,13 @@ function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = nu
 // possibly stale.
 const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
   ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
-function cableUpdate(rack, {id, a, b, ...p}, ctx) {
-  const {chassisOf} = ctx;
+function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
-  if (moved.some(k => !hasEnd(rack, ends[k].item))) return {error: GONE};
-  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx);
+  if (moved.some(k => !itemOf(rack, ends[k].item))) return {error: GONE};
+  const refused = endRefused(moved.map(k => ends[k]));
   if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
@@ -1190,18 +1157,30 @@ function cableLay(rack, args, ctx) {
   // the pathway must be one the routes know on the device: a ring or a duct
   // the page draws, or a tray; with no routes known it is recorded as given
   const pinning = args.position != null || args.face != null;
-  let trays = [];
+  let trays = [], guides = [];
   if (ctx.route) { try { trays = traysOf(rack, ctx.route).filter(x => x.item === where.item); } catch { trays = []; } }
   if (pinning && ctx.route) {
-    let guides = [];
     try { guides = typeof ctx.route.guidesOf === 'function' ? ctx.route.guidesOf(where.item) || [] : []; } catch { guides = []; }
     const ids = [...new Set([...guides.map(g => g.via), ...trays.map(t => t.via)])].sort();
     if (!ids.includes(where.via))
       return {error: ids.length ? `${it.label || it.id} has no ring, duct or tray called ${where.via}. It has: ${ids.join(', ')}.`
                                 : `${it.label || it.id} has no rings, ducts or trays.`};
   }
+  // A POSITION IS ONE OF THE CABLES THAT SHARE THE PATHWAY (P-0018): from 1 to
+  // how many routes pass through it, this cable's among them. Judged when the
+  // routes are known; with none, it is recorded as given.
+  if (args.position != null && ctx.route) {
+    let sharing = null;
+    try {
+      sharing = rack.cables.filter(x => resolveRoute(rack, x, ctx.route).waypoints.some(w => w.item === where.item && w.via === where.via)).map(x => x.id);
+    } catch { sharing = null; }   // a route that cannot be read leaves the position unjudged, as a face is when no path is found
+    if (sharing && !sharing.includes(c.id)) return {error: `${c.id} does not pass through ${name}, so it has no position there.`};
+    if (sharing && args.position > sharing.length)
+      return {error: `${name} carries ${sharing.length} cable${sharing.length === 1 ? '' : 's'}, so a position there runs from 1 to ${sharing.length}; ${args.position} is past it.`};
+  }
   if (args.face != null && ctx.route) {
     const t = trays.find(x => x.via === where.via) || null;
+    if (!t && guides.some(g => g.via === where.via)) return {error: `${name} is a ring or a duct, not a tray: a cable has no face to lie on there.`};
     if (!t) return {error: `${name} is no tray, so a cable has no face to lie on there.`};
     const held = t.flipped ? 'top' : 'underside';
     if (args.face === held && !t.ties.length)
@@ -1246,8 +1225,8 @@ const RU = {type: 'number', minimum: 1, multipleOf: 0.5,
 // A part that bolts to the rail face stands at a whole unit.
 const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
-  description: 'One end of a cable: a port on a device, or an outlet of a part beside the rack (a zero-U PDU).',
-  properties: {item: ID('device or part beside the rack'), path: {type: 'string', minLength: 1, description: "The port or outlet, as the free ports name it (e.g. port-1, outlet-a2)."},
+  description: 'One end of a cable: a port on a device.',
+  properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
                view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
                plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
@@ -1360,8 +1339,8 @@ export const COMMANDS = {
   'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
     args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
       readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
-  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack. Its cables (the cords on a PDU\'s outlets) are kept as loose ends, or removed with it.',
-    args: args(['id'], {id: ID('part beside the rack'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
+  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack.',
+    args: args(['id'], {id: ID('part beside the rack')})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
   'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",

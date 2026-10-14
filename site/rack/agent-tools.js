@@ -12,7 +12,7 @@ import {LIMIT, fit, ranges, clip, cutList, runs, freeLine, windowLines, inspectT
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {spareFor, spareText, needsText} from './spare.js';
 import {projectionIdRefusal} from './part-path.js';
-import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
+import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult, touchedCables, findingNotes} from './agent-edit.js';
 import {american} from '../colors.js';
 
 export {LIMIT, fit, ranges};
@@ -143,6 +143,17 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
     inputSchema: {type: 'object', properties, ...(required.length ? {required} : {}), additionalProperties: false},
     execute: safe(run),
   });
+  // What the kit finds of the cables an edit touched (bends, rings, spare), read from the routes after it: apply
+  // returns none of them. A cable that cannot be read leaves its notes out; the edit has been made either way.
+  const laidFindings = async (commands, res) => {
+    const rack = ed.rack();
+    const ids = touchedCables(rack, commands, res).slice(0, 8);
+    if (!ids.length) return [];
+    try {
+      const ctx = await context(rack, [], {route: true});
+      return findingNotes(await Promise.all(ids.map(async id => ({id, o: await queries.inspect(rack, id, ctx)}))));
+    } catch { return []; }
+  };
   const tools = [
     tool('describe_rack', 'Describe the rack',
       'Read the open rack: its name, id and totals first, then what Undo would take back, the DCIM import settings, the cable ends that do not land, and its devices, the parts beside the rack, its cables and its bundles with their ids. section, offset and limit page a long listing. Call this first; edit_rack and inspect address things by these ids.',
@@ -353,6 +364,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const verb = {'cable.remove': dry_run ? 'Would remove' : 'Removed', 'cable.update': dry_run ? 'Would update' : 'Updated'};
         const echoed = reached(x).map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
         const notes = x.unchecked ? ['Note: some ports could not be checked, so a loose cable may have been missed.'] : [];
+        if (!dry_run) notes.push(...await laidFindings(x.commands, res));
         return say(editResult(res, {dryRun: !!dry_run, echoed, notes}));
       }),
     tool('new_rack', 'Start a new rack',

@@ -95,6 +95,29 @@ const GEOM = new WeakMap();
 export function noteStrap(g, geom) { GEOM.set(g, geom); }
 export const strapNote = g => GEOM.get(g) ?? null;
 
+// A QUIET STRAP ON THE PAGE (S-0040). In 2D a strap is a thin band on the
+// bundle, not a block beside it. The drawing's own strokes are the paper's
+// (a sheet and the files keep them); on the page the strap is sized here and
+// painted by rack.css (stage.js STRAP_PAINT_2D): narrower along the run
+// (PAGE_ALONG of the true width), a least size of PAGE_MIN_PX, a margin of 1 mm
+// past the pack, at most 1.5 packs long, and a hairline rim.
+export const PAGE_ALONG = 0.6;
+export const PAGE_MIN_PX = 5;
+export const PAGE_RIM_PX = 1;
+export const PAGE_STRAP = {margin: 1, minPx: PAGE_MIN_PX, most: 1.5, rimPx: PAGE_RIM_PX};
+
+// The strokes' widths for the page, from the paper's (kept once in data-w0).
+function quietWidths(g) {
+  for (const line of g.querySelectorAll('line')) {
+    const least = line.hasAttribute('data-strap-least'), rim = line.dataset.strapPart === 'rim';
+    if (line.dataset.w0 == null) line.dataset.w0 = line.getAttribute('stroke-width');
+    const core = least ? PAGE_MIN_PX : Number(line.dataset.w0) * PAGE_ALONG;
+    // the rim of the true bar is read off its core's true width, the paper's own rim being 1.6 wider
+    const trueCore = rim && !least ? (Number(line.dataset.w0) - 1.6) * PAGE_ALONG : core;
+    line.setAttribute('stroke-width', String(n3(rim ? (least ? PAGE_MIN_PX : trueCore) + PAGE_RIM_PX : core)));
+  }
+}
+
 const n3 = v => Math.round(v * 1000) / 1000;
 /** Size every strap on `svgs` for the scale each pane is shown at. */
 export function sizeStraps(svgs) {
@@ -103,9 +126,10 @@ export function sizeStraps(svgs) {
     const vb = svg.viewBox?.baseVal, w = svg.getBoundingClientRect().width;
     const scale = vb?.width > 0 && w > 0 ? w / vb.width : 0;
     for (const g of svg.querySelectorAll('[data-strap]')) {
+      quietWidths(g);
       const geom = GEOM.get(g);
       if (!geom) continue;
-      const {c, n, lo, hi} = geom, mid = (lo + hi) / 2, len = strapLengths(hi - lo, scale);
+      const {c, n, lo, hi} = geom, mid = (lo + hi) / 2, len = strapLengths(hi - lo, scale, PAGE_STRAP);
       g.dataset.strapPack = String(n3(hi - lo));
       for (const line of g.querySelectorAll('line')) {
         const least = line.hasAttribute('data-strap-least'), rim = line.dataset.strapPart === 'rim';

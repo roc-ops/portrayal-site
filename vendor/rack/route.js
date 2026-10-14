@@ -11,15 +11,13 @@
 // to the right as seen from the FRONT. This file imports no DOM and nothing of
 // the site's pages, so the rack kit can take it as it is.
 
-import {uLabel, zeroUOf, zeroUById, bundlesOf, rollOf, zeroUPane, zeroUBottom} from './model.js';
-import {zeroUEnds} from './ports.js';
-import {portPathOf} from './cable-rules.js';
+import {uLabel, zeroUOf, zeroUById, bundlesOf, rollOf} from './model.js';
 import {followTrunk} from './bundle-route.js';
 import {RU, OPENING, RAIL_W} from './rails.js';
 import {throughRings, cornersOf, STRAIGHT_DEG} from './route-path.js';
-import {zeroUOnLane, zeroUX, carriesLane, runsThrough, STANDOFF, sideOfAt} from './zero-u.js';
-import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, isQuarter, unitsOf} from './fit.js';
-import {solidsOf, traysOf, detour, legCrossings, CLEAR, zeroUPanelPoint} from './solids.js';
+import {zeroUOnLane, zeroUX, carriesLane, runsThrough, STANDOFF} from './zero-u.js';
+import {isZeroUPart, zeroUTouched, neighbours, anchorY, laneY, setbackOf, rollPoint, centreX, railOf, isQuarter, unitsOf} from './fit.js';
+import {solidsOf, traysOf, detour, legCrossings, CLEAR} from './solids.js';
 import {surfacesOf, hang, heldStretch, drapeOf, bendOf, newCrossing} from './resting.js';
 
 export const LANE_GAP = 40;          // mm: a lane runs in the middle of a 40 mm gutter outside each rail
@@ -58,11 +56,9 @@ function guidesFor(it, ctx, id = it?.id) {
 // Which face an end's port is seen from: its item's face, or the other one
 // for the panel that faces away (a turned item swaps the two).
 // Mirrors cable-rules.js paneOf, duplicated so this file stays kit-ready.
-// An end on a part beside the rack is on the pane that part looks out of
-// (model.js zeroUPane).
 export function endPane(rack, end) {
   const it = itemOf(rack, end.item);
-  if (!it) { const z = zeroUById(rack, end.item); return z ? zeroUPane(z, end.view === 'rear' ? 'rear' : 'front') : null; }
+  if (!it) return null;
   const outward = (end.view === 'rear') === !!it.turned;
   return outward ? it.face : (it.face === 'front' ? 'rear' : 'front');
 }
@@ -219,9 +215,9 @@ function byGutter(rack, A, B, mA, mB, side, ctx, roomOf = null) {
   const f = rack.frame;
   const laneA = laneFor(f, side, A.pane), laneB = laneFor(f, side, B.pane);
   const lanes = laneA === laneB
-    ? [{lane: laneA, ru: A.ru}, {lane: laneA, ru: B.ru}]
-    : (() => { const top = Math.max(A.ru, B.ru);
-        return [{lane: laneA, ru: A.ru}, {lane: laneA, ru: top}, {lane: laneB, ru: top}, {lane: laneB, ru: B.ru}]; })();
+    ? [{lane: laneA, ru: A.it.ru}, {lane: laneA, ru: B.it.ru}]
+    : (() => { const top = Math.max(A.it.ru, B.it.ru);
+        return [{lane: laneA, ru: A.it.ru}, {lane: laneA, ru: top}, {lane: laneB, ru: top}, {lane: laneB, ru: B.it.ru}]; })();
   const outA = through(mA, A.pane, A.x, side, crossing, ctx, roomOf?.(A, mA, side));
   const outB = through(mB, B.pane, B.x, side, crossing, ctx, roomOf?.(B, mB, side)).reverse();
   return dedupe([...outA, ...lanes, ...outB]);
@@ -251,28 +247,12 @@ function byGutter(rack, A, B, mA, mB, side, ctx, roomOf = null) {
 export function autoRoute(rack, cable, ctx, {gutter = false} = {}) {
   const ends = [cable.a, cable.b].map(e => {
     const it = itemOf(rack, e.item), pane = it && endPane(rack, e);
-    // AN END ON A PART BESIDE THE RACK (a zero-U PDU's outlet, P-0019) has no
-    // manager, stands on the side of its upright and at the unit of its slot
-    // (the part's bottom where the slot is not placed), and takes the gutter
-    // beside that upright
-    if (!it) {
-      const z = zeroUById(rack, e.item);
-      if (!z) return null;
-      const p = zeroUEndPoint(rack, e, ctx);
-      return {e, it: null, z, pane: endPane(rack, e), x: p?.x ?? zeroUX(z, ctx.chassisOf), ru: p ? unitAt(rack, p.y) : zeroUBottom(z), side: sideOfAt(z.at)};
-    }
     // A port not found only defaults the SIDE (to the left, as a port at the centre does);
     // no length is ever measured from it (portPoint).
-    return pane ? {e, it, pane, x: ctx.portX(e) ?? 0, ru: it.ru} : null;
+    return it && pane ? {e, it, pane, x: ctx.portX(e) ?? 0} : null;
   });
   if (ends.some(x => !x)) return [];
   const [A, B] = ends;
-  if (A.z || B.z) {
-    const side = (A.z ? A : B).side, mOf = E => (E.it ? managerOf(rack, E.it, E.pane, ctx) : null);
-    if (!gutter && !A.z !== !B.z && !mOf(A.z ? B : A) && A.pane === B.pane && Math.abs(A.ru - B.ru) <= SHORT) return [];
-    const roomOf = (E, m, s) => g => leadRoom(rack, cable, E.e, m, g, s === 'left' ? -1 : 1, ctx);
-    return byGutter(rack, A, B, mOf(A), mOf(B), side, ctx, roomOf);
-  }
   const mA = managerOf(rack, A.it, A.pane, ctx), mB = managerOf(rack, B.it, B.pane, ctx);
   if (!gutter && !mA && !mB && A.pane === B.pane && Math.abs(A.it.ru - B.it.ru) <= SHORT) return [];
   if (mA && mA === mB && A.pane === B.pane) {
@@ -687,7 +667,7 @@ export const trayOf = (rack, w, ctx) => (w?.item && !w.lane
 export function ownRoute(rack, cable, ctx, {gutter = false} = {}) {
   const auto = cable.routeEdited !== true;
   const list = auto ? autoRoute(rack, cable, ctx, {gutter}) : (cable.route || []);
-  const ends = [cable.a, cable.b].map(e => endUnit(rack, e, ctx));
+  const ends = [cable.a, cable.b].map(e => itemOf(rack, e?.item)?.ru ?? null);
   const {waypoints, gone} = resolvedList(rack, list, ctx, ends);
   return {waypoints, gone, auto};
 }
@@ -885,48 +865,15 @@ export function pointOf(rack, w, ctx) {
   const z = c.mount !== 'rack-face' ? panelZ(rack, it, g.face, ctx) + inward
     : g.face === 'rear' ? planeZ(f, 'rear') - out : planeZ(f, 'front') + out;
   // the guide where it is as mounted: turned with the item by its roll
-  return {...rollPoint(rack, it, {x: g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
-}
-
-// THE SLOT OF A PART BESIDE THE RACK (P-0019): where the catalogue puts it
-// on the part (ports.js zeroUEnds, which needs `ctx.slotsOf` and
-// `ctx.compByRef`), placed as the part's body is (solids.js
-// zeroUPanelPoint). null when the catalogue is not given or has no such
-// slot: then no length is measured, as for a port not found. Read once per
-// rack and context.
-const zeroUPointMemo = new WeakMap();
-export function zeroUEndPoint(rack, end, ctx) {
-  const z = zeroUById(rack, end?.item);
-  if (!z || typeof ctx?.chassisOf !== 'function') return null;
-  // no catalogue yet: no point, and nothing kept, so one given later is read
-  if (typeof ctx.slotsOf !== 'function' || typeof ctx.compByRef !== 'function') return null;
-  const keyed = ctx !== null && typeof ctx === 'object';
-  let per = zeroUPointMemo.get(rack);
-  if (!per) zeroUPointMemo.set(rack, per = new WeakMap());
-  let known = keyed ? per.get(ctx) : null;
-  if (keyed && !known) per.set(ctx, known = new Map());
-  const view = end.view === 'rear' ? 'rear' : 'front', key = `${z.id}|${view}|${end.path}`;
-  if (known?.has(key)) return known.get(key);
-  const s = zeroUEnds(z, ctx).find(e => e.path === portPathOf(end.path) && e.view === view);
-  const p = s && s.x != null ? zeroUPanelPoint(rack, z, ctx.chassisOf(z.ref), {x: s.x, y: s.y}, view) : null;
-  known?.set(key, p);
-  return p;
-}
-// The unit a point `y` mm up from the floor of U1 is in, within the rack.
-const unitAt = (rack, y) => Math.min(rack.frame.heightRU, Math.max(1, Math.floor(y / RU) + 1));
-// The unit an end stands at: its item's, or its slot's on a part beside the rack.
-function endUnit(rack, e, ctx) {
-  const it = itemOf(rack, e?.item);
-  if (it) return it.ru;
-  const z = zeroUById(rack, e?.item);
-  if (!z) return null;
-  const p = zeroUEndPoint(rack, e, ctx);
-  return p ? unitAt(rack, p.y) : zeroUBottom(z);
+  // A narrow rack-face part on a rail stands over its hole line, as solids.js
+  // itemPlacer places its body: its guide's x is from the part's centre, and a
+  // part on the right rail is turned end over end there, so its x is mirrored.
+  const turned = railOf(it, ctx.chassisOf) === 'right' ? -1 : 1;
+  return {...rollPoint(rack, it, {x: centreX(it, ctx.chassisOf) + turned * g.x, y: anchorY(rack, it, ctx.chassisOf)}, ctx.chassisOf), z};
 }
 
 export function portPoint(rack, end, ctx) {
   const it = itemOf(rack, end.item), pane = it && endPane(rack, end);
-  if (!it) return zeroUEndPoint(rack, end, ctx);
   if (!pane) return null;
   // No port found on the drawing: no point, and so no length - never an invented x of 0.
   const x = ctx.portX(end);
@@ -1263,6 +1210,9 @@ export const stockLength = (need, {values = 0} = {}) => chooseStock(() => need, 
 //   `turns: [{point, at, angle_deg}, {point, at, angle_deg}]`; its `at` is
 //   the middle of that leg, `point` the first turn's, `angle_deg` the wider
 //   of the two, and `legs_mm` the leg into the first and out of the second.
+//   A corner of one turn that is at a stop of the route (a ring, a lane
+//   point) also has `stop`, that waypoint (P-0018), which the sentence names
+//   before the two stops either side; a corner in a lead or a detour has none.
 //   The path is laid to leave none (the approach points, lead points and
 //   detours below, and no hang that would make one), so what is here is a
 //   bend the kit's rules found no room for: often the parts leave none, but
@@ -1654,6 +1604,7 @@ function turnPath(path) {
     crossings: rev(path.crossings).map(c => ({...c, between: between(c.between)})),
     detours: rev(path.detours).map(d => ({between: between(d.between), points: rev(d.points)})),
     bends: rev(path.bends).map(f => ({...f, between: between(f.between), legs_mm: rev(f.legs_mm),
+      ...(f.stop ? {stop: between([f.stop, f.stop])[0]} : {}),
       ...(f.turns ? {turns: rev(f.turns), point: f.turns.at(-1).point} : {})})),
     covers: path.covers.map(c => ({...c, between: between(c.between)})),
     rests: path.rests};
@@ -2216,6 +2167,8 @@ function layFrom(inp, world) {
     at: d ? [0, 1, 2].map(i => r1((spot(c.k)[i] + spot(d.k)[i]) / 2)) : spot(c.k),
     angle_deg: d ? Math.max(c.angle_deg, d.angle_deg) : c.angle_deg, legs_mm: d ? [c.legs_mm[0], d.legs_mm[1]] : c.legs_mm,
     room_mm: c.room_mm, need_mm: need, short_mm: r1(need - c.room_mm),
+    // the stop the corner is at (P-0018): the leg into the corner ends at the stop the leg out of it starts from
+    ...(!d && legs[c.k] && JSON.stringify(legs[c.k - 1][1]) === JSON.stringify(legs[c.k][0]) ? {stop: legs[c.k - 1][1]} : {}),
     ...(d ? {apart_mm: c.legs_mm[1], turns: [c, d].map(x => ({point: final[x.k].at, at: spot(x.k), angle_deg: x.angle_deg}))} : {})}));
   return {path: {points: final, rings, findings, marks, crossings, detours, rests, bends, covers: [], allowance: endAllowance({media: inp.media}), media: inp.media},
     legs, need, r, novel: usedNovel};
@@ -2512,8 +2465,13 @@ export function spareOf(rack, cable, ctx, path = undefined) {
 // with a sentence for each: what the page and an agent report. A cable whose
 // port is not found is not judged.
 export function ringFindings(rack, ctx, nameOf = id => id) {
-  return (rack.cables || []).flatMap(c => (pathOf(rack, c, ctx)?.findings || []).map(f => ({...f,
-    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`})));
+  return (rack.cables || []).flatMap(c => ringFindingsOf(rack, c, ctx, nameOf));
+}
+// The same for one cable (P-0018): what `inspect` carries. `path` is the
+// cable's routePath, for a caller that already has it.
+export function ringFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(rack, c, ctx)) {
+  return (path?.findings || []).map(f => ({...f,
+    text: `${c.id} would enter and leave ${nameOf(f.item)} ${/^guide-(\d+)$/.test(f.via) ? `ring ${f.via.slice(6)}` : f.via} by the same face: route it through the ring, or past it.`}));
 }
 
 // EVERY CORNER OF A CABLE'S PATH WITH LESS ROOM THAN ITS BEND RADIUS (#973,
@@ -2534,7 +2492,12 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
   // each finding a copy, so that none handed out is part of the path kept
   return copyOf(path?.bends || []).map(f => {
     const [a, b] = f.between.map(w => lab(w, c));
-    const where = a === b ? `at ${a}` : `between ${a} and ${b}`;
+    // THE STOP WHERE THE CABLE TURNS (P-0018), when the corner is at one: "at
+    // ring 5, between ring 4 and its port". A corner in a lead or a detour is
+    // no stop's, and is named by the two stops either side, as before.
+    const turn = f.stop && !f.stop.end ? lab(f.stop, c) : null;
+    const named = turn != null && turn !== a && turn !== b;
+    const where = named ? `at ${turn}, between ${a} and ${b}` : a === b ? `at ${a}` : `between ${a} and ${b}`;
     const kind = c.type || c.media;
     const needs = `${kind ? `the cable (${kind})` : 'the cable'} needs ${f.need_mm} mm`;
     // A LEAD LEFT IN A RING IT HAS NO ROOM TO TURN INTO (#1026): no ring on
@@ -2553,7 +2516,7 @@ export function bendFindingsOf(rack, c, ctx, nameOf = id => id, path = pathOf(ra
     return {...f, ...(close ? {tooClose: {manager: close.manager, device: close.device}, advice: help} : {}),
       text: `${f.room_mm === 0 ? `${c.id} doubles back ${where}, with no room for a bend; ${needs}.`
         : f.turns ? `${c.id} turns twice within ${f.apart_mm} mm ${where} (${f.turns.map(t => t.angle_deg).join(' and ')} degrees), with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`
-        : `${c.id} turns ${f.angle_deg} degrees ${where} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
+        : `${c.id} turns ${f.angle_deg} degrees ${where}${named ? ',' : ''} with room for ${an(String(f.room_mm))} ${f.room_mm} mm bend; ${needs}, ${f.short_mm} mm short.`}`};
   });
 }
 // THE MANAGER A TIGHT LEAD IS TOO CLOSE TO (#1026). A finding between a port

@@ -18,6 +18,7 @@ import {portPathOf, mergeSeats, endKey} from '../../vendor/rack/cable-rules.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUOf} from '../../vendor/rack/model.js';
 import {carriesLane} from '../../vendor/rack/zero-u.js';
+import {spareLoops} from './spare-loops.js';
 
 const toRack = (x, face, w) => (face === 'rear' ? -(x - w / 2) : x - w / 2);
 
@@ -548,6 +549,10 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // of the second (a bundle's own are among its straps, along its trunk).
   const ties = tieStraps(rack, bctx, ctx, paths);
   const places = memberPlaces(rack, routes, bundles);
+  // WHERE EACH CABLE'S SPARE IS STORED IN A DUCT OR ON A TRAY (kit 0.35.0,
+  // Portrayal #1065: slack.js spareMarks), for the panes, the side panes and
+  // the 3D scene to draw a loop at (spare-loops.js).
+  const loops = spareLoops(rack, ctx);
   lap('bundles');
   // Ducts beside the rack are the kit's to count (#926): fill and capacityOver
   // read ctx.zeroUAperture, so each is listed once, by the kit.
@@ -564,7 +569,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // faces, so they are the rack's and a later reader may be handed them: reading.js. `complete` is the faces alone.)
   return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, whole: failed.n === 0 && lost.n === 0, routes, paths, marks, detours, leads, fill: filled,
           over, ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
-          endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks};
+          endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks, spareLoops: loops};
 }
 
 // THE TIE STRAPS OF SINGLE CABLES (kit 0.22.0, bundles.js anchorsOf): one

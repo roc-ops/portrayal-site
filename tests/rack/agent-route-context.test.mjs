@@ -42,9 +42,20 @@ test('cable.lay with a face on a ring is refused', async () => {
   const before = ed.rack();
   const res = await run({commands: [{op: 'cable.lay', id: 'c1', at: {item: 'cm', via: 'guide-3'}, face: 'top'}]});
   assert.equal(res.isError, true, text(res));
-  assert.match(text(res), /is no tray/);
+  assert.match(text(res), /is a ring or a duct, not a tray/);   // kit 0.35.0 (#1067) says what it is
   assert.deepEqual(seen.at(-1), {route: true});
   assert.equal(ed.rack(), before);
+});
+
+test('cable.lay with a position past the cables on a ring is refused through the tool (kit 0.35.0, #1067)', async () => {
+  const {run, ed} = await setup();
+  const before = ed.rack();
+  const res = await run({commands: [{op: 'cable.lay', id: 'c1', at: {item: 'cm', via: 'guide-3'}, position: 4}]});
+  assert.equal(res.isError, true, text(res));
+  assert.match(text(res), /carries 1 cable, so a position there runs from 1 to 1; 4 is past it/);
+  assert.equal(ed.rack(), before);
+  const ok = await run({commands: [{op: 'cable.lay', id: 'c1', at: {item: 'cm', via: 'guide-3'}, position: 1}]});
+  assert.equal(ok.isError, undefined, text(ok));
 });
 
 test('cable.slack on a pathway that does not exist, and on a ring, is refused', async () => {

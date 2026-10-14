@@ -45,6 +45,11 @@ export const labelsFor = c => LABELS[String(c).toLowerCase()] ?? (stageTone(c) =
 // light pair, for a file) and `core` the 3D band's colour.
 export const STRAP_PAINT = {light: {core: '#1b1d20', rim: '#ffffff'}, dark: {core: '#d5d9de', rim: '#0b0c0d'}};
 export const strapPaint = c => STRAP_PAINT[stageTone(c)];
+// A STRAP IN 2D IS QUIETER (S-0040): a muted core, 6 to 1 against its stage,
+// with a hairline rim a step from the core in the stage's own line tone (no
+// white or black outline). rack.css paints the page with these; the bar's
+// own attributes, a sheet's and a file's, stay STRAP_PAINT.light.
+export const STRAP_PAINT_2D = {light: {core: '#5b6169', rim: '#c9cdd2'}, dark: {core: '#8a9199', rim: '#2a2f35'}};
 // The least a strap measures on screen in 2D, in CSS px, along the run and
 // across it: at Fit on a 42U rack a 10 mm bar is 4 or 5 px, and less on a
 // small window. Drawn as a second, non-scaling stroke under the true one: 7,
