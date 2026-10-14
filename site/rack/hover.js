@@ -137,14 +137,26 @@ function apply3d(world, lit) {
   // dim when their end's cable is not lit, and are put back with the rest.
   for (const g of world.children ?? []) {
     if (!g.name?.startsWith('device-')) continue;
-    const item = g.name.slice('device-'.length);
-    g.traverse(o => {
-      const path = o.userData?.portrayalPath;
-      if (!o.isMesh || !path) return;
-      const dim = !!lit?.plugs?.dim.has(portKey(item, path));
-      for (const m of [].concat(o.material)) dimMaterial(m, dim);
-    });
+    dimPlugs(g, g.name.slice('device-'.length), lit);
   }
+}
+function dimPlugs(root, item, lit) {
+  root.traverse(o => {
+    const path = o.userData?.portrayalPath;
+    if (!o.isMesh || !path) return;
+    const dim = !!lit?.plugs?.dim.has(portKey(item, path));
+    for (const m of [].concat(o.material)) dimMaterial(m, dim);
+  });
+}
+
+/** 3D: a face's detail just added to item `id`'s group (rack3d.js `onFace`),
+ *  dimmed as the scene is now (its hover, selection or filter): the detail is
+ *  built after the cables are hung, so it lands after the page has painted. */
+export function paintLanded3d(scene, id, meshes) {
+  const lit = scene?.hoverHeld ? null : (scene?.hoverLit ?? scene?.pinLit ?? scene?.filterLit ?? null);
+  if (!lit || id == null) return;
+  for (const top of meshes ?? []) if (typeof top?.traverse === 'function') dimPlugs(top, id, lit);
+  scene.requestFrame?.();
 }
 
 // A BUNDLE'S ENVELOPE IN 3D (scene3d.js hangBundles: the see-through tube at
@@ -154,6 +166,9 @@ function apply3d(world, lit) {
 // export holds the scene (holdUndimmed) every envelope is hidden, so no file
 // carries one.
 export function paintEnvelopes3d(scene) {
+  // EVERY RESTYLE ASKS FOR A FRAME (rack3d.js `requestFrame`: the scene draws
+  // only when asked). Every 3D paint here ends with this, so it asks for them all.
+  scene?.requestFrame?.();
   const group = scene?.three?.scene?.getObjectByName?.('cable-bundles');
   if (!group) return;
   const lit = scene.hoverLit ?? null, sel = scene.selected ?? null;
@@ -227,7 +242,8 @@ export async function withFileStraps(scene, color, fn) {
   if (typeof scene?.three?.scene?.traverse === 'function')
     scene.three.scene.traverse(o => { if (o.isMesh && o.userData?.strap && !mats.has(o.material)) mats.set(o.material, o.material.color.getHex()); });
   for (const m of mats.keys()) m.color.set(color);
-  try { return await fn(); } finally { for (const [m, c] of mats) m.color.setHex(c); }
+  scene?.requestFrame?.();
+  try { return await fn(); } finally { for (const [m, c] of mats) m.color.setHex(c); scene?.requestFrame?.(); }
 }
 
 /** Run `fn` with the cables' bend rings (scene3d.js ringBends) out of sight,
@@ -238,7 +254,8 @@ export async function withoutBendRings(scene, fn) {
   if (typeof scene?.three?.scene?.traverse === 'function')
     scene.three.scene.traverse(o => { if (o.userData?.bendFinding && o.visible) rings.push(o); });
   for (const r of rings) r.visible = false;
-  try { return await fn(); } finally { for (const r of rings) r.visible = true; }
+  scene?.requestFrame?.();
+  try { return await fn(); } finally { for (const r of rings) r.visible = true; scene?.requestFrame?.(); }
 }
 
 /** The hover target under a pointer on a 2D pane: a tag (it takes the
