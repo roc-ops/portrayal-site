@@ -33,6 +33,7 @@ import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, propos
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
+import {laneTargets} from './rack/lane-targets.js';
 import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.js';
 import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
@@ -901,13 +902,7 @@ function drawRoutePicking() {
       if (!e) continue;
       for (const t of zeroUTargets(r, ctx, z, inPane(svg, e))) (t.kind === 'pass' ? windows : targets).push(t);
     }
-    const sides = r.frame.kind === 'two-post' ? ['left', 'right'] : ['left', 'right'].map(sd => `${sd}-${view}`);
-    for (const lane of sides) {
-      const left = (view === 'front') === lane.startsWith('left');
-      const x = left ? -RAIL_W - LANE_GAP : OPENING + RAIL_W;
-      for (let ru = 1; ru <= r.frame.heightRU; ru++)
-        targets.push({lane, ru, x, y: (r.frame.heightRU - ru) * RU, w: LANE_GAP, h: RU});
-    }
+    targets.push(...laneTargets(r.frame, view));
     drawPickTargets(svg, [...targets, ...windows]);
   }
 }

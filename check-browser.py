@@ -5885,6 +5885,14 @@ def check_rack_cable_routes(page, base):
     }""")
     if rear["right"] is None or rear["left"] is None or not (rear["right"] < rear["left"]):
         bad.append(f"rear pick: the left gutter's target is not named right-rear: {rear}")
+    # (kit 0.42.0) the inner lane is offered too, on the rail itself: a rail wide, the pane's mirrored side
+    inner = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg');
+      const b = n => { const r = s.querySelector(`[data-pick-lane="${n}"][data-pick-ru="20"]`)?.getBBox(); return r ? [r.x, r.width] : null; };
+      return {right: b('right-rear-inner'), left: b('left-rear-inner'), count: s.querySelectorAll('[data-pick-lane$="-inner"]').length};
+    }""")
+    if inner["right"] != [-26, 26] or inner["left"] != [450.85, 26] or inner["count"] != 2 * page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU"):
+        bad.append(f"rear pick: the inner lanes are not offered on the rails: {inner}")
     page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="25"]')
     page.keyboard.press("Escape")
     got = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
@@ -12235,6 +12243,15 @@ def check_rack_pdu_cords(page, base):
         m = paths[cid]["measured"]
         if not 0.2 < m < 3:
             bad.append(f"length: {cid} is measured {m} m")
+    # (kit 0.42.0) a cord arrives from beside its PDU, so it does not count its own PDU as a body it crosses,
+    # and the assistant is told the inner lanes it may route through
+    for cid in ("c1", "c2"):
+        said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+          return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        if "Crosses a body" in said:
+            bad.append(f"route: {cid} is found crossing a body: {said!r}")
+        if "left-rear-inner" not in said or "right-front-inner" not in said:
+            bad.append(f"agent: inspect {cid} does not list the inner lanes it can take: {said!r}")
     for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
         at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, zid, path])
         if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:

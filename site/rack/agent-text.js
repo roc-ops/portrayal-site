@@ -263,7 +263,7 @@ export function cableText(c, {spare = null, needs = null} = {}) {
   if (c.bundle) lines.push(`In bundle ${c.bundle.id}${c.bundle.join ? `, joining at ${wayText(c.bundle.join) ?? c.bundle.join}` : ''}` +
     `${c.bundle.leave ? ` and leaving at ${wayText(c.bundle.leave) ?? c.bundle.leave}` : ''}; inspect ${c.bundle.id} for the bundle.`);
   const ways = Object.entries(c.passes ?? {}).filter(([, ids]) => ids.length).map(([it, ids]) => `{item: ${it}, via: ${cutList(ids, 6)}}`);
-  if (c.lanes?.length) ways.push(`{lane, ru} with lane ${cutList(c.lanes.map(l => l.id ?? l), 6)}`);
+  if (c.lanes?.length) ways.push(`{lane, ru} with lane ${cutList(c.lanes.map(l => l.id ?? l), 8)}`);
   if (ways.length) lines.push(`Waypoints it can take: ${ways.join('; ')}`);
   // WHAT IT LIES ON (kit 0.14.0, #949 step 3: inspect's route.rests): each
   // ring whose sill holds it, each tray it runs along or lands on (the face,
