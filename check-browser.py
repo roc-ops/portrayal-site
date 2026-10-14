@@ -10195,6 +10195,17 @@ def check_rack_spare_vertical_loop(page, base):
         bad.append(f"Front: the loop at y {f['y']:.1f} is not at U28, the middle of c2's run from U30 to U26 ({u28:.1f})")
     if not (f["h"] > f["w"]):
         bad.append(f"Front: the loop does not lie up the duct ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # The loop goes with its cable: another cable selected, it dims; its own, it stays lit.
+    loop_opacity = "() => Number(getComputedStyle(document.querySelector('#paneFront svg [data-spare-loop]')).opacity)"
+    page.click('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(400)
+    other = page.evaluate(loop_opacity)
+    page.click('#cableList [data-cable-row="c2"]')
+    page.wait_for_timeout(400)
+    own = page.evaluate(loop_opacity)
+    if not (other < 0.5 and own == 1):
+        bad.append(f"Front: the loop does not go with its cable when one is selected (another selected {other}, its own {own})")
+    page.keyboard.press("Escape")
     txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
     for want in ("as a loop in z1 duct (a duct whose maker states no cable capacity)", "Spare, capacity not stated:"):
         if want not in txt:

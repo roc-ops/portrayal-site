@@ -853,6 +853,11 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
       n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && ids.includes(selectedId)));
       n.classList.toggle('ghost', ids.length > 0 && ids.every(id => out.has(id) && !lit(id)));
     }
+    // A STORED LOOP GOES WITH ITS CABLE (spare-loops.js), lit, dimmed and ghosted with it.
+    for (const n of svg.querySelectorAll('[data-spare-loop]')) {
+      n.classList.toggle('on', lit(n.dataset.members));
+      n.classList.toggle('ghost', !lit(n.dataset.members) && out.has(n.dataset.members));
+    }
   }
 }
 
