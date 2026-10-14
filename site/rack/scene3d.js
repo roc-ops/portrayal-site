@@ -600,9 +600,11 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 // cable-types.js bendLookup), or null: the tubes' corners are rounded to it.
 // `bends` are the kit's tight bends for this rack (routeFacts' bendFindings),
 // or null: each is ringed where the kit puts it.
+// `onContextLost(scene)` is told when the browser takes the scene's GL context
+// away (a GPU reset, or memory pressure): the scene draws nothing more.
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
                                               ctx = null, bundles = null, bendOf = null, bends = null, stage = '#101214',
-                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null}) {
+                                              covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null, onContextLost = null}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
@@ -679,6 +681,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // time on a fast GPU and nearly all of it without one.
       buildFrameMs: 400,
       onDetailFailed: f => onDetailFailed?.(f),
+      // THE GL CONTEXT WAS TAKEN AWAY (rack3d.js onContextLost): the scene has
+      // stopped drawing and holds nothing on the GPU; the page says so and offers a rebuild.
+      onContextLost: () => onContextLost?.(built),
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);

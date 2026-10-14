@@ -1203,8 +1203,35 @@ export function createRackScene(container, opts = {}) {
   // business drawing sixty frames a second (the front page hero pauses it).
   // Every other caller never touches it, and the loop runs as it always did.
   let raf = 0, alive = true, running = true;
+  // A LOST CONTEXT IS NEVER DRAWN INTO (as vendor/viewer3d.js). A GPU reset or
+  // memory pressure takes the context away; a frame drawn on it then compiles a
+  // program the context cannot answer for and three.js throws from inside the
+  // loop (reading 'trim' of a null info log). So on a loss the loop stops, the
+  // uploads are released now, while GL calls are silent no-ops (left for later,
+  // those deletes reach the restored context with the old one's handles: "object
+  // does not belong to this context"), and the host is told (`opts.onContextLost`).
+  // The scene is not drawn again: its uploads are gone. On restore the host is
+  // told (`opts.onContextRestored`) and builds a new scene if it wants one.
+  let contextLost = false;
+  function onContextLost(ev) {
+    if (!alive) return;                 // dispose() forces this loss on purpose
+    ev.preventDefault();
+    contextLost = true;
+    cancelAnimationFrame(raf);
+    raf = 0;
+    epoch++;                            // a deferred relief pass adds nothing more to it
+    for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
+    disposeTree(scene);
+    opts.onContextLost?.();
+  }
+  function onContextRestored() {
+    if (!alive) return;
+    opts.onContextRestored?.();
+  }
+  renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+  renderer.domElement.addEventListener('webglcontextrestored', onContextRestored);
   function tick() {
-    if (!alive || !running) { raf = 0; return; }
+    if (!alive || !running || contextLost) { raf = 0; return; }
     // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
     const now = BUILD_FRAME_MS ? performance.now() : 0;
     if (costDue) { frameCost = now - lastFrame; costDue = false; }
@@ -1282,7 +1309,9 @@ export function createRackScene(container, opts = {}) {
     // Stop and restart the render loop, for a host that knows it is not seen.
     pause() { running = false; cancelAnimationFrame(raf); raf = 0; },
     resume() { if (alive && !running) { running = true; tick(); } },
-    running: () => alive && running,
+    running: () => alive && running && !contextLost,
+    // Whether the GL context was taken away (and the scene with it): see onContextLost.
+    contextLost: () => contextLost,
     // What the scene resolved: the stack with chassis, bays and the component
     // index filled in, and the height it settled on. Asked for in
     // roc-ops/portrayal-site#10 - a consumer that used to compute heightRU from
@@ -1307,6 +1336,8 @@ export function createRackScene(container, opts = {}) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
+      renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored);
       if (BUILD_FRAME_MS) for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.removeEventListener(type, onHandle);
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }

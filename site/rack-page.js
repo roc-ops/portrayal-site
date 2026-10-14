@@ -179,6 +179,7 @@ async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
   S.detailFailed = null;      // what the scene before could not draw is not this one's to say
+  $('lost3d')?.remove();      // nor its lost context
   const camera = S.camera3d;
   // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
   // edit the routes are read again by render(), which can finish after this
@@ -205,6 +206,7 @@ async function rebuild3d() {
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
     bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
     onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
+    onContextLost: s => { if (mine === stage3dEpoch) contextLost3d(s); },
     ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
@@ -231,6 +233,19 @@ async function rebuild3d() {
   if (built.rackCables && built.rackCables.checked === false) {
     if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
   } else if (built.rackCables) S.unchecked3dSaid = false;
+}
+// THE BROWSER TOOK THE 3D VIEW'S GL CONTEXT AWAY (a GPU reset, or the GPU out
+// of memory): the scene has stopped drawing (rack3d.js onContextLost) and holds
+// nothing on the GPU any more. The stage says so, over the dead canvas, with a
+// button to build it again; nothing rebuilds by itself, so a rack too big for
+// this GPU is not built, lost and built again in a loop. 2D is unaffected.
+const LOST_3D = 'The 3D view stopped: the browser took away its graphics context (the GPU was reset or ran out of memory). 2D is unaffected.';
+function contextLost3d(scene) {
+  $('lost3d')?.remove();
+  if (scene?.three?.renderer) scene.three.renderer.domElement.style.visibility = 'hidden';
+  const again = el('button', {type: 'button', id: 'lost3dRebuild', text: 'Build the 3D view again'});
+  again.addEventListener('click', () => { clearTimeout(rebuild3dTimer); rebuild3d(); });
+  $('stage3d').append(el('div', {id: 'lost3d', class: 'rk-notice', role: 'alert'}, [el('p', {text: LOST_3D}), again]));
 }
 // A PART WHOSE DETAIL COULD NOT BE BUILT IN 3D (a file of its drawing did not
 // load) stays the plain box it stood as while loading (rack3d.js standIn),
