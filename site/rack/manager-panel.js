@@ -5,6 +5,7 @@
 import {el} from './dom.js';
 import {positionOf} from '../../vendor/rack/model.js';
 import {spanOf} from '../../vendor/rack/fit.js';
+import {capacityText} from './capacity-text.js';
 
 const button = (id, text, fn) => { const b = el('button', {type: 'button', id, text}); b.addEventListener('click', fn); return b; };
 
@@ -44,7 +45,7 @@ export function managerInspector({item, rack, chassis, host, hostHere, onPatch, 
     el('p', {class: 'rk-muted', text: `${chassis?.manufacturer ?? ''} ${chassis?.model ?? item.ref} · 0U cable manager, ` +
                                       `U${positionOf(rack.frame, item.ru, 1)} ${item.face}, ${where}`.trim()}),
     el('label', {}, ['Label', label]),
-    ...(cap ? [el('p', {id: 'mCapacity', class: 'rk-muted', text: `${cap.count} cables (${cap.basis})`})] : []),
+    ...(cap ? [el('p', {id: 'mCapacity', class: 'rk-muted', text: capacityText(cap)})] : []),
     el('div', {class: 'rk-actions'}, [
       ...(host ? [button('mSelectHost', 'Select host', onSelectHost), button('mDetach', 'Detach', onDetach)]
                : hostHere ? [button('mAttach', `Attach to ${hostHere.label}`, onAttach)] : []),

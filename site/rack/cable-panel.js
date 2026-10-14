@@ -171,6 +171,13 @@ export const WARNING_KINDS = {
   fill: 'Pathways over their fill', capacity: 'More cables than a manager states', gone: 'Waypoints that are gone',
   rings: 'Rings entered and left by one face', bodies: 'Cables through a body', bends: 'Tight bends',
   loose: 'Loose ends', mismatch: 'Media mismatches', short: 'Cords shorter than their route'};
+// The over-capacity list's title (kit 0.40.0): a row whose manager states no count is measured against the library's
+// estimate, and the sentence says so; the title does not call that a stated count.
+export function capacityKindTitle(rows) {
+  const est = rows.filter(r => r.estimated === true).length;
+  if (!est) return WARNING_KINDS.capacity;
+  return est === rows.length ? "More cables than a manager's estimated capacity" : 'More cables than a manager states or is estimated to hold';
+}
 const twist = () => el('span', {class: 'rk-twist', 'aria-hidden': 'true'});
 function discloser(id, text, bodyId, open, onToggle, attrs = {}) {
   const b = el('button', {type: 'button', id, class: 'rk-warnings-row', 'aria-expanded': String(open), 'aria-controls': bodyId, ...attrs},
@@ -190,7 +197,7 @@ export function warningsSection({kinds, nameOf, open = () => false, onToggle = (
   if (!n) return null;
   const shown = open('warnings');
   const body = el('div', {id: 'warningsBody', class: 'rk-warnings-body'}, kinds.map(({kind, rows}) => {
-    const title = `${WARNING_KINDS[kind] ?? kind} (${rows.length})`, listId = `warningList-${kind}`;
+    const title = `${kind === 'capacity' ? capacityKindTitle(rows) : WARNING_KINDS[kind] ?? kind} (${rows.length})`, listId = `warningList-${kind}`;
     const folds = rows.length > WARNINGS_FOLD, kindOpen = !folds || open(`warnings/${kind}`);
     // (a list by role, not `ul` and `li`: the rows of the tree are the panel's only list items, and are read as such)
     const list = el('div', {id: listId, class: 'rk-warnings-list', role: 'list'}, rows.map((r, k) => {

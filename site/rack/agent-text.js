@@ -3,6 +3,8 @@
 // bound every answer keeps, and the pieces that keep it. Pure, no DOM: tested
 // in Node.
 
+import {estimatedWords} from './capacity-text.js';
+
 // Chrome's WebMCP guidance: tool output of about 1.5K characters at most.
 export const LIMIT = 1500;
 
@@ -212,6 +214,8 @@ const loadWords = l => (!l ? '' : !l.stated ? ' (a duct whose maker states no ca
   // (kit 0.39.0: a cable the count does not take in, a fibre cord against a count of cat6, is not counted against it)
   : l.notCounted ? ` (a duct whose stated capacity is for ${l.media ? `${l.media} cables` : `cables of ${l.diameter} mm or more`}, which ${l.cableMedia ?? 'this cable'} is not counted against)`
   : !l.compared ? ' (a duct whose stated capacity names no kind of cable)'
+  // (kit 0.40.0: a count the library estimates for a maker that states none is said to be an estimate)
+  : l.estimated ? ` (a duct holding ${l.count} ${l.media ? `${l.media} ` : ''}cables' worth ${l.over ? 'past' : 'against'} ${estimatedWords(l.capacity, l.media)} (its maker states none))`
   : ` (a duct holding ${l.count} ${l.media ? `${l.media} ` : ''}cables' worth of the ${l.capacity} its maker states${l.over ? ', past it' : ''})`);
 const storedWords = s => [
   `${len(s.at_ends_m)} at the two ends`,
@@ -228,7 +232,7 @@ const drawnLoop = s => (s.stored ?? []).some(e => e.item && e.ok !== false && e.
 const ENDS = 'at an end ({end: a} or {end: b})';
 const placesLine = ps => (ps.length ? `Spare can go in: ${cutList(ps.map(p => `${p.item} ${p.via}`), 8)}, or ${ENDS}.` : `Spare can go only ${ENDS}.`);
 // The kit's spare findings named by kind where the kind says more than the sentence.
-const FINDING_KIND = {'spare-capacity-unstated': 'capacity not stated', 'spare-over-capacity': 'over capacity'};
+const FINDING_KIND = {'spare-capacity-unstated': 'capacity not stated', 'spare-capacity-estimated': 'capacity estimated', 'spare-over-capacity': 'over capacity'};
 // A bend is the kit's sentence and its advice, said whole (a pair of turns on one short leg is one sentence of up
 // to 182 characters with the kit's own names, and longer with a long label).
 const bendLines = c => (c.route?.bends ?? []).filter(x => x.text).map(x => `Tight bend: ${x.text}${x.advice ? ` ${x.advice}` : ''}`);
