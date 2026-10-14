@@ -231,7 +231,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
   let zStyled = false;
   for (const z of zeroU.filter(x => zeroUShown(x, view))) {
     const panel = zeroUPanel(z, view);
-    const face = await configuredFace({ref: z.ref, cfg: z.cfg, view: panel, swaps: {}, fields: {}});
+    // (`swaps`: the plugs derived at its outlets, never stored: cable-plugs.js zeroUFacts. `ends`: its outlets, for picking)
+    const face = await configuredFace({ref: z.ref, cfg: z.cfg, view: panel, swaps: z.swaps || {}, fields: {}, ends: true});
     const bottom = totalH - zeroURise(z, baseRU);
     const attrs = {'data-zerou-id': z.id, 'data-device-name': z.label, 'data-device-ref': z.ref,
                    'data-panel': 'zerou', 'data-zerou-at': z.at, style: 'cursor: pointer',
@@ -249,6 +250,10 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       }
       // The whole part takes a click: its backing rect, under its drawing.
       gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
+      // THE OUTLETS A CORD LANDS ON (kit 0.36.0, Portrayal #1068: ports.js cableEndPaths of the part), for
+      // Cable mode's portAt, as a device's slots are; the end is {item: the part's id, path, view: this panel}.
+      const slotEnds = (face.ports || []).filter(p => p.end).map(p => p.path ?? p.id);
+      if (slotEnds.length) { gz.setAttribute('data-cable-ends', slotEnds.join(' ')); gz.setAttribute('data-zerou-panel', panel); }
     } else {
       gz = svgEl('g', attrs);
       if (placeholders) {

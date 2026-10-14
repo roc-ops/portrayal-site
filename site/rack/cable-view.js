@@ -117,7 +117,8 @@ function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
   return [b.x + b.w / 2, b.y + b.h / 2];
 }
 
-const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel]`);
+// (an end on a part beside the rack is on that part's drawing: a PDU's outlet, kit 0.36.0)
+const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel], [data-zerou-id="${CSS.escape(itemId)}"]`);
 
 // A port's box in the pane's own user space, or null when the pane does not
 // draw it. `svg` must be in the document and laid out (getScreenCTM).
@@ -360,7 +361,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     // Its title carries the full text, which the pill may have had to cut.
     tag: (at, far, link) => {
       const t = svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'});
-      const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item);
+      const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item) ?? (rack.zeroU || []).find(z => z?.id === end.item);
       const full = svgEl('title', {});
       full.textContent = `→ ${it ? it.label : 'removed'} ${end.path}`;
       t.append(full);
