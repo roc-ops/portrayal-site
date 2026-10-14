@@ -811,6 +811,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       at = performance.now();
       built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
       if (cabled) phase('cables', at, performance.now(), {cables: (rack.cables || []).length, failed: !!built.rackCables?.failed});
+      // (the hidden faces every end was read off: nothing here asks for an anchor again, rack3d.js releaseAnchors)
+      built.releaseAnchors();
     } finally {
       built.startDetail();
       built.requestFrame();   // (the bundles, loops and bend rings hung with the cables)

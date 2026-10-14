@@ -1524,6 +1524,13 @@ export function createRackScene(container, opts = {}) {
     // Where each cable leaves a seated connector under a path prefix:
     // [{position, normal, view, path}], one per relief.js cable point, or [].
     cableAnchor,
+    // LET GO OF THE FACES THE ANCHORS WERE MEASURED ON: each mount's faces,
+    // parked in the document as hidden SVG (faceDoc), with their cable
+    // points. A host that has asked for every anchor it needs (the Rack
+    // Builder, once its cables are hung) frees them: on a large rack they were
+    // hundreds of documents and over 400,000 live nodes. They are a cache: an
+    // anchor asked for later reads its face again, from the same text.
+    releaseAnchors: dropAnchorDocs,
     // The mounted chassis bodies as world-space boxes: [{ref, box}].
     deviceBoxes,
     // How many post meshes are standing - two for a front (or two-post)
