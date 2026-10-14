@@ -6,7 +6,8 @@
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
 import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint, holderOf, firstU, rollOf,
-        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings} from './model.js';
+        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings,
+        endHostOf, zeroUIdsInUse} from './model.js';
 import {withoutCables, bundleOfCable, bundleCheck, layoutOf, onTrunk, trunkText, waypointText, strapEveryMm,
         spacingText, strapSpacing, strapKinds} from './bundles.js';
 import {deriveTrunk, andList} from './bundle-route.js';
@@ -14,13 +15,13 @@ import {ownRoute, autoRoute, routedLength, pointOf, portPoint, routePath} from '
 import {fits, fitsDepth, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU, setbackOf, isZeroUPart} from './fit.js';
 import {whereText, zeroUName, fitsHang, hangingOn} from './zero-u.js';
 import {stateRefusal} from './states.js';
-import {spareRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
+import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
-import {portIdsOf} from './ports.js';
+import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
 import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, lanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
@@ -391,14 +392,16 @@ function sideSet(rack, {id, side}, {chassisOf}) {
 // ── beside the rack (#926) ──────────────────────────────────────────────
 // A zero-U part (fit.js isZeroUPart) stands at an attachment point of the
 // frame, its bottom level with a U, and takes no rack unit: an entry of
-// rack.zeroU (model.js), never an item, and no cable ends on it.
+// rack.zeroU (model.js), never an item. A cable ends on one of its own
+// connector slots (the outlets of a zero-U PDU) as on a port of an item.
+// Its id is never one a cable end still names (model.js zeroUIdsInUse).
 function zeroUPlace(rack, {ref, cfg, at: where, ru, between = false, label}, ctx) {
   const {chassisOf} = ctx;
   const f = fitsZeroU(rack, {ref, at: where, ru}, chassisOf);
   if (!f.ok) return {error: f.reason};
   const c = chassisOf(ref);
   if (cfg != null) { const bad = cfgRefused(ctx, ref, cfg, c?.model ?? ref); if (bad) return bad; }
-  const id = nextId((rack.zeroU || []).filter(z => typeof z?.id === 'string'), 'z');
+  const id = nextId(zeroUIdsInUse(rack), 'z');
   const z = {id, ref, cfg: cfg ?? c?.default ?? '', label: label ?? c?.model ?? ref, at: where, offsetMm: zeroUOffset(ru),
              ...(between ? {between: true} : {})};
   const next = {...rack, zeroU: [...(rack.zeroU || []), z]};
@@ -445,14 +448,22 @@ function zeroUUpdate(rack, {id, at: where, ru, between, label, swaps, fields}, c
     : `Changed ${zeroUName(next, chassisOf)}, ${whereText(out, next, chassisOf)}.`) + with_);
 }
 
-function zeroURemove(rack, {id}, {chassisOf}) {
+// ITS CORDS are kept as loose ends, or removed with it, as a device's are
+// (`remove`).
+function zeroURemove(rack, {id, cables = 'keep'}, {chassisOf}) {
   const z = zeroUById(rack, id);
   if (!z) return {error: ZERO_GONE};
   // what hung on it stays where it was, on a bracket that is gone, and fit
   // refuses it until it is hung again or taken off
   const hung = hangingOn(rack, id);
   const stay = hung.length ? ` ${hung.map(h => zeroUName(h, chassisOf)).join(', ')} hung on it and stay${hung.length === 1 ? 's' : ''} where ${hung.length === 1 ? 'it was' : 'they were'}.` : '';
-  return done({...rack, zeroU: rack.zeroU.filter(o => o !== z)}, `Removed ${zeroUName(z, chassisOf)} from beside the rack.${stay}`);
+  const name = zeroUName(z, chassisOf), k = cablesOf(rack, id).length, n = count(k, 'cable');
+  const out = {...rack, zeroU: rack.zeroU.filter(o => o !== z)};
+  if (cables === 'remove' && k) {
+    const {rack: next, said} = withoutCables(out, cablesOf(rack, id).map(c => c.id));
+    return done(next, `Removed ${name} and its ${n} from beside the rack.${stay}${said ? ` ${said}` : ''}`);
+  }
+  return done(out, `Removed ${name} from beside the rack.${k ? ` Its ${n} ${k === 1 ? 'is a loose end' : 'are loose ends'}.` : ''}${stay}`);
 }
 
 // HANG A PART ON BRACKETS (`on`: their ids), or take it off them (`on: null`).
@@ -628,9 +639,30 @@ const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); retu
 // A CABLE'S OWN COLOUR (`color`, #1028) is `#rgb` or `#rrggbb`, stored as
 // lower case `#rrggbb`; null or "" is none of its own. Anything else is
 // refused with cable-rules.js COLOR_REFUSED, here and in cable.update.
-function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, {chassisOf}) {
-  if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
-  const refused = endRefused([a, b]);
+// AN END ON A PART BESIDE THE RACK (P-0019): the part's own connector slots
+// are the only ends it has, and the catalogue lists them all (ports.js
+// zeroUEnds), so with the parts lists loaded an end on one it does not have is
+// refused, naming those it has. Without them it is kept as given, as a port
+// of an item is.
+const hasEnd = (rack, id) => !!endHostOf(rack, id);
+function zeroUEndRefused(rack, ends, ctx) {
+  if (typeof ctx?.slotsOf !== 'function' || typeof ctx?.compByRef !== 'function') return null;
+  for (const e of ends) {
+    const z = zeroUById(rack, e.item);
+    if (!z) continue;
+    const name = zeroUName(z, ctx.chassisOf), all = zeroUEnds(z, ctx), view = e.view === 'rear' ? 'rear' : 'front';
+    if (!all.length) return {error: `${name} has nothing a cable can end on.`};
+    if (all.some(s => s.path === e.path && s.view === view)) continue;
+    const other = all.find(s => s.path === e.path);
+    return {error: other ? `${e.path} is on the ${other.view} panel of ${name}: give view "${other.view}".`
+      : `${name} has no ${e.path}. It has ${zeroUEndsText(all)}.`};
+  }
+  return null;
+}
+function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, ctx) {
+  const {chassisOf} = ctx;
+  if (!hasEnd(rack, a.item) || !hasEnd(rack, b.item)) return {error: NOT_ADDED};
+  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx);
   if (refused) return refused;
   const tint = parseColor(color);
   if (!tint.ok) return {error: tint.reason};
@@ -646,13 +678,14 @@ function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = nu
 // possibly stale.
 const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
   ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
-function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
+function cableUpdate(rack, {id, a, b, ...p}, ctx) {
+  const {chassisOf} = ctx;
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
-  if (moved.some(k => !itemOf(rack, ends[k].item))) return {error: GONE};
-  const refused = endRefused(moved.map(k => ends[k]));
+  if (moved.some(k => !hasEnd(rack, ends[k].item))) return {error: GONE};
+  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx);
   if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
@@ -1066,7 +1099,7 @@ function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
   if (isEnd && form != null) return {error: 'Spare left at an end has no form.'};
   // judged against the route when the routes are known; else recorded as given
   let path = null;
-  if (isTray && ctx.route) { try { path = routePath(rack, c, ctx.route); } catch { path = null; } }
+  if (ctx.route) { try { path = routePath(rack, c, ctx.route); } catch { path = null; } }
   const andWhere = () => (ctx.route ? ` ${spareWhere(rack, c, ctx.route, path ?? undefined)}` : '');
   let via = where.via;
   if (isTray) {
@@ -1084,6 +1117,9 @@ function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
   if (no) return {error: /is not on the route|holds no spare|has no pathway/.test(no) ? `${no}${andWhere()}` : no};
   const had = Array.isArray(c.slack) ? c.slack : [];
   const others = had.filter(e => !sameAt(e, entry));
+  // no more than the cable has to store, and nothing on a cable that is short
+  const tooMuch = path ? amountRefusal(rack, {...c, slack: others}, entry, ctx.route, path) : null;
+  if (tooMuch) return {error: tooMuch};
   if (value == null && others.some(e => e.value == null))
     return {error: `${c.id} already has an entry that takes the rest of its spare: give this one a value.`};
   const findings = [];
@@ -1092,7 +1128,7 @@ function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
     // a duct is counted against what its maker states, with this entry in it
     if (ctx.route && pathwaysAt(rack, entry.item, ctx.route).find(p => p.via === entry.via)?.kind === 'duct') {
       let load = null;
-      try { load = spareLoad(updateCable(rack, id, {slack: next}), entry.item, ctx.route); } catch { load = null; }
+      try { load = spareLoad(updateCable(rack, id, {slack: next}), entry.item, ctx.route, c); } catch { load = null; }
       if (load?.over) return {error: `${loadText(rack, entry.item, load)} Store less there, or in another duct or tray. ${spareWhere(rack, c, ctx.route, path ?? undefined)}`};
       if (load && !load.compared) findings.push(note(loadText(rack, entry.item, load)));
     }
@@ -1225,8 +1261,8 @@ const RU = {type: 'number', minimum: 1, multipleOf: 0.5,
 // A part that bolts to the rail face stands at a whole unit.
 const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
-  description: 'One end of a cable: a port on a device.',
-  properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
+  description: 'One end of a cable: a port on a device, or an outlet of a part beside the rack (a zero-U PDU).',
+  properties: {item: ID('device or part beside the rack'), path: {type: 'string', minLength: 1, description: "The port or outlet, as the free ports name it (e.g. port-1, outlet-a2)."},
                view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
                plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
@@ -1339,8 +1375,8 @@ export const COMMANDS = {
   'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
     args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
       readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
-  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack.',
-    args: args(['id'], {id: ID('part beside the rack')})},
+  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack. Its cables (the cords on a PDU\'s outlets) are kept as loose ends, or removed with it.',
+    args: args(['id'], {id: ID('part beside the rack'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
   'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
@@ -1352,7 +1388,7 @@ export const COMMANDS = {
       route: {type: 'array', description: 'In order: {item, via} for a pathway on a device or a part beside the rack (its duct, a window), {lane, ru} for a gutter at a U.',
         items: WAYPOINT},
       summary: SUMMARY})},
-  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a lacer bar, a pass-through and a pathway off its route hold none. With no value the place takes what is left to store. A duct is counted against the cable capacity its maker states. Refused, with where the spare can go, for a place that cannot hold it.',
+  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against the capacity its maker states. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
     args: args(['id', 'at'], {id: ID('cable'),
       at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a duct or a tray on a device or on a part beside the rack, or {end} for an end of the cable.',
         properties: {item: {type: 'string', minLength: 1, description: 'The device or the part beside the rack the duct or tray is on, with via.'},
