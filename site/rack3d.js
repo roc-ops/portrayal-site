@@ -77,20 +77,22 @@ const PXMM_HIDDEN = 2;
 // for with no options is asked for with `willReadFrequently`, which keeps it
 // in main memory; the textures uploaded from it are the same. One rule for the
 // page while any such scene is alive (counted), and gone with the last.
-let cpuCanvasScenes = 0, ownGetContext = null;
+// (put back only if it is still this rule: one laid over it since is left standing)
+let cpuCanvasScenes = 0, ownGetContext = null, cpuGetContext = null;
 function holdCpuCanvases() {
   if (cpuCanvasScenes++ === 0) {
     ownGetContext = HTMLCanvasElement.prototype.getContext;
     const own = ownGetContext;
-    HTMLCanvasElement.prototype.getContext = function (kind, options, ...rest) {
+    cpuGetContext = function (kind, options, ...rest) {
       return own.call(this, kind, kind === '2d' && options === undefined ? {willReadFrequently: true} : options, ...rest);
     };
+    HTMLCanvasElement.prototype.getContext = cpuGetContext;
   }
 }
 function releaseCpuCanvases() {
   if (cpuCanvasScenes > 0 && --cpuCanvasScenes === 0) {
-    HTMLCanvasElement.prototype.getContext = ownGetContext;
-    ownGetContext = null;
+    if (HTMLCanvasElement.prototype.getContext === cpuGetContext) HTMLCanvasElement.prototype.getContext = ownGetContext;
+    ownGetContext = cpuGetContext = null;
   }
 }
 
@@ -210,13 +212,14 @@ export function createRackScene(container, opts = {}) {
   // drawing shortcut to fix.
   const REAR_MOUNT_Z = FRAME ? REAR_FACE_Z : RACK_FACE_Z - 34;
 
-  // (faces rasterised in main memory while this scene is alive: holdCpuCanvases, above)
-  const CPU_CANVASES = !!opts.cpuCanvases;
-  if (CPU_CANVASES) holdCpuCanvases();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
   const renderer = new THREE.WebGLRenderer({antialias: true});
+  // (faces rasterised in main memory while this scene is alive: holdCpuCanvases,
+  // above; taken once the renderer stands, so a scene that never starts holds nothing)
+  const CPU_CANVASES = !!opts.cpuCanvases;
+  if (CPU_CANVASES) holdCpuCanvases();
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.append(renderer.domElement);
 
@@ -1471,7 +1474,8 @@ export function createRackScene(container, opts = {}) {
       // and the next one fails to start. renderer.dispose() frees the objects,
       // not the context; only this frees the context. viewer3d.js has always
       // done it and this module never has.
-      renderer.forceContextLoss();
+      // (not one the browser has already taken: losing it again only says so in the console)
+      if (!renderer.getContext().isContextLost()) renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };

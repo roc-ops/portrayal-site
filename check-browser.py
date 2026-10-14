@@ -19962,9 +19962,10 @@ def check_rack_3d_large_once(page, base):
     share = page.evaluate(SCENE_SHARING_JS)
     if share["longest"] > 4096:
         bad.append(f"large: a face texture {share['longest']} px long, over 4096")
+    # (each of these is mounted more than once in the fixture, with nothing done to it)
     for ref in ("fhd-cmp5dr", "cmv-sfd42u9w", "pdumv20hvnetlx"):
-        if ref in share["sets"] and share["sets"][ref] != 1:
-            bad.append(f"large: the plain {ref} mounts draw with {share['sets'][ref]} sets of body materials, expected one shared set")
+        if share["sets"].get(ref) != 1:
+            bad.append(f"large: the plain {ref} mounts draw with {share['sets'].get(ref)} sets of body materials, expected one shared set")
     print(f"[check_rack_3d_large_once] built in {took:.1f} s with {len(renderers)} renderer, {len(gl['made'])} contexts in all; "
           f"{share['textures']} textures in the scene ({share['gl']} on the GPU), the longest {share['longest']} px; material sets {share['sets']}")
     # A BUNDLE, THEN A CABLE TYPE, picked and put down twice: the scene stays, no context is made.
@@ -20012,6 +20013,16 @@ def check_rack_3d_large_once(page, base):
     page.wait_for_timeout(1500)
     if page.evaluate("() => window.__rack.scene() !== window.__was || !document.querySelector('#lost3d')"):
         bad.append("lost again: the scene was built again by itself a second time; expected the notice and its button to stay")
+    # ...and the button builds it, also from a context the browser has not given back: the lost one is let go quietly.
+    page.evaluate("() => { const x = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__was = window.__rack.scene(); x.loseContext(); }")
+    wait_fn(page, "lost, no restore: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    press("#lost3dRebuild")
+    try:
+        settle_scene(page, "lost, no restore: the scene built from the button", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if page.evaluate("() => window.__rack.scene() === window.__was || !!document.querySelector('#lost3d')"):
+        bad.append("lost, no restore: the button did not build a new scene, or the notice stayed")
     noisy = [t for t in said if "does not belong to this context" in t or "loseContext: context lost" in t or "reading 'trim'" in t]
     if noisy:
         bad.append(f"lost: the console said {len(noisy)} GL errors, the first: {noisy[0]}")
