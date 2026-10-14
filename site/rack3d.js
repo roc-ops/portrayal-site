@@ -969,7 +969,10 @@ export function createRackScene(container, opts = {}) {
     const order = [...FACES].sort((a, b) =>
       (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
     const detail = (async () => {
+      // (held until the host lets the detail start, then a few at a time: `opts.holdDetail`, below)
+      if (detailHeld) { await detailHeld; await detailTurn(); }
       try {
+        if (mine !== epoch) return;
         for (const F of order) {
           const per = [];
           await buildFaceRelief(F, {scope: scopeFor(F.view, entry.chassis), src: f(F.view), faceCv, faceSvg,
@@ -1008,6 +1011,8 @@ export function createRackScene(container, opts = {}) {
           }
         }
         throw err;
+      } finally {
+        if (detailHeld) detailDone();   // (the next device's pass may start)
       }
     })();
     if (rec) rec.detail = detail;
@@ -1213,6 +1218,29 @@ export function createRackScene(container, opts = {}) {
   // from a previous build knows its group no longer exists.
   let epoch = 0;
   let pending = [];
+  // THE DETAIL WAITS FOR THE HOST (opt-in, `opts.holdDetail`; the Rack
+  // Builder's, which hangs its cables first). On a large rack the relief pass
+  // is thousands of rasterisations, and run beside the cables it took most of
+  // their main thread: cables hung at 95-103 s on one rack where they need
+  // about 11 s of work. With the option every device's relief pass waits,
+  // after the device stands, until the host calls `startDetail()`: a sheet
+  // part stands as its plain box meanwhile (`opts.standIn`). Once started it
+  // stays started. No other caller passes it.
+  let startDetail = null;
+  const detailHeld = opts.holdDetail ? new Promise(go => { startDetail = go; }) : null;
+  // ...AND THEN A FEW AT A TIME, each started in a task of its own: let go all
+  // together, seventy devices' first faces were read in one task of 7 s, and
+  // the page got its scene only after it. DETAIL_AT_ONCE passes run at once
+  // (a pass waits on its images' decoding, so a few overlap that), in the order
+  // the devices were built.
+  const DETAIL_AT_ONCE = 4;
+  let detailRunning = 0;
+  const detailWaiting = [];
+  const nextDetail = () => {
+    while (detailRunning < DETAIL_AT_ONCE && detailWaiting.length) { detailRunning++; setTimeout(detailWaiting.shift()); }
+  };
+  const detailTurn = () => new Promise(go => { detailWaiting.push(go); nextDetail(); });
+  const detailDone = () => { detailRunning--; nextDetail(); };
   let RESOLVED = [], COMPONENTS = null;
   async function hydrate() {
     const configs = new Map();
@@ -1443,6 +1471,8 @@ export function createRackScene(container, opts = {}) {
     // installed. build() does not wait for these on purpose; this is here for a
     // host that wants a complete scene before exporting or grabbing a still.
     complete: async () => { await Promise.all(pending); },
+    // Let the held relief pass start (`opts.holdDetail`); a no-op without the option, or once started.
+    startDetail() { startDetail?.(); },
     // Whether the scene is still the host's: false once disposed.
     alive: () => alive,
     dispose() {

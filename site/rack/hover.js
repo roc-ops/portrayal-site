@@ -137,14 +137,25 @@ function apply3d(world, lit) {
   // dim when their end's cable is not lit, and are put back with the rest.
   for (const g of world.children ?? []) {
     if (!g.name?.startsWith('device-')) continue;
-    const item = g.name.slice('device-'.length);
-    g.traverse(o => {
-      const path = o.userData?.portrayalPath;
-      if (!o.isMesh || !path) return;
-      const dim = !!lit?.plugs?.dim.has(portKey(item, path));
-      for (const m of [].concat(o.material)) dimMaterial(m, dim);
-    });
+    dimPlugs(g, g.name.slice('device-'.length), lit);
   }
+}
+function dimPlugs(root, item, lit) {
+  root.traverse(o => {
+    const path = o.userData?.portrayalPath;
+    if (!o.isMesh || !path) return;
+    const dim = !!lit?.plugs?.dim.has(portKey(item, path));
+    for (const m of [].concat(o.material)) dimMaterial(m, dim);
+  });
+}
+
+/** 3D: a face's detail just added to item `id`'s group (rack3d.js `onFace`),
+ *  dimmed as the scene is now (its hover, selection or filter): the detail is
+ *  built after the cables are hung, so it lands after the page has painted. */
+export function paintLanded3d(scene, id, meshes) {
+  const lit = scene?.hoverHeld ? null : (scene?.hoverLit ?? scene?.pinLit ?? scene?.filterLit ?? null);
+  if (!lit || id == null) return;
+  for (const top of meshes ?? []) if (typeof top?.traverse === 'function') dimPlugs(top, id, lit);
 }
 
 // A BUNDLE'S ENVELOPE IN 3D (scene3d.js hangBundles: the see-through tube at

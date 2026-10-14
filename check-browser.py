@@ -20231,6 +20231,84 @@ def check_rack_3d_filter_dims(page, base):
     return bad
 
 
+# WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
+# startDetail): every scene the page starts building is watched as it appears
+# (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,
+# at that moment, the relief meshes in its devices (a device's group is its body
+# and, once the detail lands, its faces' relief) and the tubes hung.
+WATCH_DETAIL_START_JS = """() => { window.__detailWatch = setInterval(() => {
+  const s = window.__rack.loadingScene();
+  if (!s || s.__watched) return;
+  s.__watched = true;
+  const own = s.startDetail;
+  s.startDetail = () => {
+    if (!s.__atStart) {
+      let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      s.__atStart = {relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length,
+                     bundles: (s.three.scene.getObjectByName('cable-bundles')?.children ?? []).length};
+    }
+    own();
+  };
+}, 10); }"""
+
+
+@extra("rack.html: the 3D scene hangs its cables and bundles before any part's relief detail is built, and the detail that lands afterwards takes the dimming the page already painted: a cable purpose picked before the 3D view opens leaves the other cables' plugs dimmed once their detail is in, and clearing it restores them exactly (S-0049)")
+def check_rack_3d_cables_first(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_bundle_rack(page, base, "front")
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c3' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_cables_first] no WebGL here - not exercised")
+        return bad
+    # the pick made in 2D, before there is a scene: only c3 (and its bundle) stay lit
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    page.evaluate(WATCH_DETAIL_START_JS)
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the cables-first scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__detailWatch)")
+    park_mouse(page)
+    got = page.evaluate("""() => { const s = window.__rack.scene(); let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      return {at: s.__atStart ?? null, relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length}; }""")
+    at = got["at"]
+    if at is None:
+        bad.append("the scene's detail was never let go through startDetail (or the scene was not watched)")
+    else:
+        if at["relief"]:
+            bad.append(f"{at['relief']} relief meshes were in the devices before the cables were hung; expected none")
+        if at["tubes"] != got["tubes"] or not at["tubes"]:
+            bad.append(f"when the detail was let go {at['tubes']} cables were hung, of {got['tubes']}; expected all of them")
+        if not at["bundles"]:
+            bad.append("when the detail was let go no bundle was hung; expected the bundle first")
+    if not got["relief"]:
+        bad.append("the complete scene has no relief detail in any device")
+    picked = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    if not all(picked.get(f"plugs-{c}") for c in ("c1", "c2", "c3")):
+        bad.append(f"the fixture's plugs were not found in the detail: {[k for k, v in picked.items() if k.startswith('plugs-') and not v]}")
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    park_mouse(page)
+    clear = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    bad.extend(f"the purpose picked before 3D, once the detail was in: {m}" for m in hover_3d_dims(picked, clear, {"cable-c3", "bundle-b1"}))
+    print(f"[check_rack_3d_cables_first] detail let go with {at and at['tubes']} tubes and {at and at['bundles']} bundles hung and "
+          f"{at and at['relief']} relief meshes; {got['relief']} once complete")
+    return bad
+
+
 @extra("rack.html: a large rack is built in 3D once, with one renderer, no context lost and no page error; its plain parts share their materials and no face texture is over 4096 px; picking a bundle or a cable type keeps the scene and makes no context; and a lost context stops the scene, says so, and builds it again once when the context comes back, never deleting into the new one (S-0043)")
 def check_rack_3d_large_once(page, base):
     bad, said = [], []

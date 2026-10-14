@@ -22,6 +22,7 @@ import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
 import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 import {LOOP_PAINT, LOOP_LONG, LOOP_SHORT, loopScale, loopTitle} from './spare-loops.js';
+import {paintLanded3d} from './hover.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -721,7 +722,9 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       stack, heightRU: frame.heightRU, recess: 0, unitLabel: u => uLabel(frame, u),
       frame: frame.kind === 'four-post' ? {kind: 'four-post', railDepth: frame.railDepth} : null,
       background: stage, ...labelsFor(stage),
-      onFace: ({id, meshes}) => takeCovers(built, meshes, coverPaths.get(id)),
+      // (and dimmed as the scene is when it lands: the detail comes after the
+      // page has painted its hover, selection and filter, hover.js paintLanded3d)
+      onFace: ({id, meshes}) => { takeCovers(built, meshes, coverPaths.get(id)); paintLanded3d(built, id, meshes); },
       // NOTHING FLOATS WHILE THE SCENE LOADS (#190). A sheet part (a vertical
       // manager, a lacer) is all detail, and its detail is built after the
       // cables are hung: it stands as a plain box of its size until then
@@ -729,6 +732,11 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // stood in its place as it is mounted, not once the whole stack is
       // built, so its box is never drawn at the middle of the rack first.
       standIn: true,
+      // THE CABLES BEFORE THE DETAIL (rack3d.js `holdDetail`): every part's
+      // relief pass waits until the cables and bundles are hung (startDetail,
+      // below). Run beside them it took most of their main thread, and on a
+      // large rack the cables were hung after 95-103 s instead of about 40.
+      holdDetail: true,
       // A FRAME AT MOST EVERY 400 MS WHILE THE DETAIL IS BEING BUILT and nobody is handling the view (rack3d.js
       // `buildFrameMs`, portrayal-site#192): a rack in detail is tens of thousands of draw calls a frame, and
       // drawing one at every animation frame while the build was still adding to it took a quarter of the build's
@@ -751,15 +759,21 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     built.stageColor = stage;
     built.covers = covers;
     built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
-    await built.build();
-    // (a scene disposed while it was built - the host has moved on - or whose
-    // context was lost meanwhile hangs no cables: it will not be drawn again)
-    if (!built.alive() || built.contextLost()) return built;
-    placeZeroU(built, sideParts, chassisOf);
-    placeSided(built, rack.items, chassisOf);
-    // What the scene holds of the cables, for the page and the exports: null
-    // for a rack with none (nothing is added to the scene at all).
-    built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
+    // (the detail is let go once the cables are hung, or the build has ended
+    // without them: a disposed scene's passes stop at their own epoch check)
+    try {
+      await built.build();
+      // (a scene disposed while it was built - the host has moved on - or whose
+      // context was lost meanwhile hangs no cables: it will not be drawn again)
+      if (!built.alive() || built.contextLost()) return built;
+      placeZeroU(built, sideParts, chassisOf);
+      placeSided(built, rack.items, chassisOf);
+      // What the scene holds of the cables, for the page and the exports: null
+      // for a rack with none (nothing is added to the scene at all).
+      built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
+    } finally {
+      built.startDetail();
+    }
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
