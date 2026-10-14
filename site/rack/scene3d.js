@@ -766,6 +766,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     // What the scene holds of the cables, for the page and the exports: null
     // for a rack with none (nothing is added to the scene at all).
     built.rackCables = cabled ? await hangCables(built, rack, facts, routes, chassisOf, paths, bundles, bendOf, ctx, bends, stage, spares) : null;
+    // The device tags stand outside the parts and the cable runs beside the rack, which are all in place now.
+    built.layoutTags();
     if (camera) {
       built.three.camera.position.copy(camera.position);
       built.three.controls.target.copy(camera.target);
