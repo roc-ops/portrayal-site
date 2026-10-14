@@ -124,11 +124,11 @@ export async function cableFacts(rack, extra = []) {
       .map(i => i && [i.id, i.ref, i.cfg, i.swaps, i.fields])]);
   if (memo.key === key) return memo.value;
   if (reading.key === key) return reading.promise;
-  const mine = {key, promise: readFacts(cabled, ends, items, key)};
+  const mine = {key, promise: readFacts(rack, cabled, ends, items, key)};
   reading = mine;
   try { return await mine.promise; } finally { if (reading === mine) reading = {key: '', promise: null}; }
 }
-async function readFacts(cabled, ends, items, key) {
+async function readFacts(rack, cabled, ends, items, key) {
   const out = {seats: {}, ends: new Map()};
   const list = await components();
   const panels = new Map();

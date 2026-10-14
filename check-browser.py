@@ -20044,11 +20044,12 @@ SECONDS = {
     "check_rack_dcim_settings": 4.4,
 }
 # SECONDS: end
-# THE THREE CHECKS OF portrayal-site#201, outside the measured table so that regenerating it does not take them out and
+# THE FOUR CHECKS OF portrayal-site#201, outside the measured table so that regenerating it does not take them out and
 # `shard-weights.py` can measure them in time. Not yet measured on CI: each is the seconds it took here (this host
-# with other work running; one run of each, 31, 145 and 171 s) divided by about 1.7, a guess at the 2-CPU runner's
+# with other work running; one run of each, 31, 145, 171 and 14 s) divided by about 1.7, a guess at the 2-CPU runner's
 # seconds, to be replaced by shard-weights.py's measured ones.
-SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100})
+SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100,
+                "check_rack_warnings_section": 8})
 
 
 def units():
