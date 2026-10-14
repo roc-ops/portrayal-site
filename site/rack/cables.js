@@ -335,7 +335,8 @@ function tubeEnds(THREE, mesh) {
 // page back every `slice` milliseconds while the tubes are made, and the
 // cables stand in the scene as they are hung instead of all at once at the
 // end. 275 tubes were one task of a second and a half in which the page
-// answered nothing. The tubes are made in the same order either way, so the
+// answered nothing. So are the ends read before them (S-0049: 5.4 s in one
+// task on a large rack). The tubes are made in the same order either way, so the
 // scene is the same; if making them fails part-way, what was hung is taken
 // out again, and the failure is the caller's as before. No other caller
 // passes it.
@@ -362,8 +363,17 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
   const tubes = [], anchors = [];
   // Every end's connectors first: how far a lead reaches out depends on the
   // other cabled connectors on its face.
+  // (handed back every `slice` ms here too: reading 900 ends' connectors off
+  // their faces was one task of 5.4 s on a large rack, with no yield between them)
+  const sliced = slice > 0;
+  let sliceAt = sliced ? performance.now() : 0;
   const found = [];
   for (const [i, link] of plan.links.entries()) {
+    if (sliced && performance.now() - sliceAt > slice) {
+      await new Promise(next => setTimeout(next));
+      if (!live()) return null;
+      sliceAt = performance.now();
+    }
     const ends = [], loose = [];
     for (const [side, [dev, path, view]] of [['from', link.from], ['to', link.to]]) {
       const got = await find(dev, path, view || 'front');
@@ -377,9 +387,7 @@ async function hangTubes(scene, plan, {live = () => true, anchor = null, waypoin
     found.push({link, i, ends, loose});
   }
   reaches(THREE, found.flatMap(f => f.ends.filter(Boolean)));
-  const sliced = slice > 0;
   if (sliced) { world.add(group); early.group = group; }
-  let sliceAt = sliced ? performance.now() : 0;
   for (const {link, i, ends, loose} of found) {
     if (sliced && performance.now() - sliceAt > slice) {
       await new Promise(next => setTimeout(next));

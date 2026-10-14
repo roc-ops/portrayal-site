@@ -17561,6 +17561,50 @@ def check_rack_cable_facts_fallback(page, base):
 CABLES_3D = "Cables are added in 2D. Switch to 2D to add one."
 
 
+# THE ENDS OF A LARGE RACK'S CABLES, READ WITHOUT A FREEZE (S-0049, cables.js
+# hangTubes): drawCables3d on a stub scene whose every end takes 4 ms to read
+# (a busy face's connectors), 150 cables, so 1.2 s of reading in all. A 1 ms
+# timer beats beside it; `worst` is the longest the page went without one.
+ANCHOR_YIELD_JS = """async ({slice, links}) => {
+  const THREE = await import('/vendor/three/three.module.js');
+  const {drawCables3d} = await import('/site/rack/cables.js');
+  const scene = {three: {THREE, scene: new THREE.Scene()}, metrics: () => ({rackWidth: 482.6}), deviceBoxes: () => []};
+  const plan = {links: Array.from({length: links}, (_, i) => ({id: `c${i}`, from: [`a${i}`, 'port-1', 'front'], to: [`b${i}`, 'port-1', 'front'],
+                                                              media: 'om4', purpose: 'data'}))};
+  let read = 0;
+  const anchor = async () => { read++; const t = performance.now(); while (performance.now() - t < 4) { /* a face's connectors, read */ } return []; };
+  await new Promise(r => setTimeout(r, 50));
+  let last = performance.now(), worst = 0;
+  const beat = setInterval(() => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; }, 1);
+  const t0 = performance.now();
+  const drawn = await drawCables3d(scene, plan, {anchor, boxes: [], slice});
+  const took = performance.now() - t0;
+  await new Promise(r => setTimeout(r, 20));
+  clearInterval(beat);
+  return {worst: Math.round(worst), took: Math.round(took), read, tubes: drawn.tubes.length};
+}"""
+
+
+@extra("rack.html: the 3D scene reads its cables' ends a slice at a time: with every end slow to read, the page gets a turn at least every slice (30 ms, the Rack Builder's) while 150 cables' ends are read, where without a slice it waits for all of them at once (S-0049)")
+def check_cables_3d_anchor_yield(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    sliced = page.evaluate(ANCHOR_YIELD_JS, {"slice": 30, "links": 150})
+    whole = page.evaluate(ANCHOR_YIELD_JS, {"slice": 0, "links": 150})
+    for got in (sliced, whole):
+        if got["read"] != 300 or got["tubes"] != 150:
+            bad.append(f"the stub: {got['read']} ends read and {got['tubes']} cables answered, expected 300 and 150 ({got})")
+    if sliced["worst"] > 200:
+        bad.append(f"with a 30 ms slice the page went {sliced['worst']} ms without a turn while the ends were read ({sliced['took']} ms in all)")
+    if whole["worst"] < 0.6 * whole["took"]:
+        bad.append(f"without a slice the page still had a turn every {whole['worst']} ms of {whole['took']}: the stub does not show what the slice is for")
+    print(f"[check_cables_3d_anchor_yield] 300 ends at 4 ms: the longest wait {sliced['worst']} ms with a 30 ms slice ({sliced['took']} ms in all), "
+          f"{whole['worst']} ms without ({whole['took']} ms)")
+    return bad
+
+
 @extra("rack.html: in 3D the cables are drawn and Cable mode is off with a sentence saying where cables are added; the list still selects, edits and deletes; an edit to a cable's ends or media rebuilds the scene, an edit to its label does not")
 def check_rack_cables_3d(page, base):
     bad = []
