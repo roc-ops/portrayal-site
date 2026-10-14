@@ -5891,7 +5891,8 @@ def check_rack_cable_routes(page, base):
       const b = n => { const r = s.querySelector(`[data-pick-lane="${n}"][data-pick-ru="20"]`)?.getBBox(); return r ? [r.x, r.width] : null; };
       return {right: b('right-rear-inner'), left: b('left-rear-inner'), count: s.querySelectorAll('[data-pick-lane$="-inner"]').length};
     }""")
-    if inner["right"] != [-26, 26] or inner["left"] != [450.85, 26] or inner["count"] != 2 * page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU"):
+    near = lambda got, want: got is not None and all(abs(g - w) < 0.01 for g, w in zip(got, want))
+    if not near(inner["right"], [-26, 26]) or not near(inner["left"], [450.85, 26]) or inner["count"] != 2 * page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU"):
         bad.append(f"rear pick: the inner lanes are not offered on the rails: {inner}")
     page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="25"]')
     page.keyboard.press("Escape")
