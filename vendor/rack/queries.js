@@ -424,7 +424,8 @@ const offers = (ctx, refs) => refs.map(ref => ({ref, name: partName(ctx.compByRe
 // with the cables at least that thick), or null where the catalogue names
 // none.
 const capacityFact = c => (c?.capacity?.count != null
-  ? {capacity: {count: c.capacity.count, basis: c.capacity.basis ?? '', media: c.capacity.media ?? null}} : {});
+  ? {capacity: {count: c.capacity.count, basis: c.capacity.basis ?? '', media: c.capacity.media ?? null,
+                ...(c.capacity.estimated === true ? {estimated: true} : {})}} : {});
 
 function itemFacts(rack, item, ctx) {
   const c = ctx.chassisOf?.(item.ref) || null;

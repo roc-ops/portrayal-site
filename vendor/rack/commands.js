@@ -1130,7 +1130,7 @@ function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
       let load = null;
       try { load = spareLoad(updateCable(rack, id, {slack: next}), entry.item, ctx.route, c); } catch { load = null; }
       if (load?.over) return {error: `${loadText(rack, entry.item, load)} Store less there, or in another duct or tray. ${spareWhere(rack, c, ctx.route, path ?? undefined)}`};
-      if (load && !load.compared) findings.push(note(loadText(rack, entry.item, load)));
+      if (load && (!load.compared || load.estimated)) findings.push(note(loadText(rack, entry.item, load)));
     }
   }
   if (same(next, had) && Array.isArray(c.slack)) return unchanged(rack);
@@ -1388,7 +1388,7 @@ export const COMMANDS = {
       route: {type: 'array', description: 'In order: {item, via} for a pathway on a device or a part beside the rack (its duct, a window), {lane, ru} for a gutter at a U.',
         items: WAYPOINT},
       summary: SUMMARY})},
-  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against the capacity its maker states. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
+  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against its capacity, stated or estimated. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
     args: args(['id', 'at'], {id: ID('cable'),
       at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a duct or a tray on a device or on a part beside the rack, or {end} for an end of the cable.',
         properties: {item: {type: 'string', minLength: 1, description: 'The device or the part beside the rack the duct or tray is on, with via.'},

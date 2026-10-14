@@ -1298,7 +1298,36 @@ function seatChain(owner, byPath) {
   return chain;
 }
 
+// ONE id -> element map over a subtree, FIRST MATCH IN DOCUMENT ORDER, which is
+// what `querySelector('[id=...]')` answers when an id repeats. A selector walks
+// the whole subtree for every call; at a few hundred lookups on a big face that
+// was seconds, and a map is one walk. `[id]` is the attribute, as the selector
+// read it, not the `.id` property. Descendants only, like querySelector.
+function idMap(root) {
+  const byId = new Map();
+  for (const n of root.querySelectorAll('[id]')) {
+    const id = n.getAttribute('id');
+    if (!byId.has(id)) byId.set(id, n);
+  }
+  return byId;
+}
+
 export function cablePoints(svg) {
+  // one map per marker host, for this call. A host asked once keeps the
+  // selector (a map is a whole walk, and most hosts hold one cable point's
+  // feature); the second ask in the same host builds the map and every later
+  // one reads it.
+  const hostIds = new Map();
+  const featureOn = (host, on) => {
+    const sel = () => host.querySelector(`[id="${on.replace(/"/g, '\\"')}"]`);
+    // an id with a backslash or a line break is read by the selector as an
+    // escape or refused by it; neither is an id, so those keep the selector
+    if (/[\\\n\r\f]/.test(on)) return sel();
+    let byId = hostIds.get(host);
+    if (byId === undefined) { hostIds.set(host, null); return sel(); }
+    if (byId === null) hostIds.set(host, byId = idMap(host));
+    return byId.get(on) || null;
+  };
   const entries = [...svg.querySelectorAll('[data-cp="cable"]')].map(mk => {
     // The whole attribute, not its first two tokens: "1 2 3" is as malformed
     // as "banana", and silently keeping the 1 and the 2 is the same class of
@@ -1318,8 +1347,7 @@ export function cablePoints(svg) {
     const on = mk.dataset.cpOn;
     if (on) {
       const host = mk.parentElement;
-      const feat = host && host.querySelector
-        ? host.querySelector(`[id="${on.replace(/"/g, '\\"')}"]`) : null;
+      const feat = host && host.querySelector ? featureOn(host, on) : null;
       if (feat && feat.dataset.zOut !== undefined) marker.rear = feat.dataset.zOut;
       else if (feat && feat.dataset.zCyl !== undefined) {
         // a cyl's rear is its far end: its own lift, summed from the feature
@@ -2319,11 +2347,14 @@ export async function extractRelief(url, scope, {back = false} = {}) {
       return t ? tilted(e, t) : e;
     });
 
+  // the cavity nodes are found by id, once per cavity: one map for the drawing,
+  // built at the first cavity that names one
+  let svgIds = null;
   const cavities = [...q('[data-depth]')]
     .filter(el => !el.querySelector('[data-depth]'))
     .map(el => {
       const cavNode = el.dataset.cavity &&
-        svg.querySelector(`[id="${CSS.escape(el.id + '--' + el.dataset.cavity)}"]`);
+        ((svgIds ||= idMap(svg)).get(el.id + '--' + el.dataset.cavity) || null);
       const rect = mmRect(cavNode || el);
       const grpRect = mmRect(el);
       const features = [...el.querySelectorAll('[data-z-top],[data-z-sink]')].map(f => ({

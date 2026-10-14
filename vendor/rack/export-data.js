@@ -1246,7 +1246,7 @@ export function fillNotes(rack, facts, nameOf = id => id) {
     // does not know), the note gives the diameter
     const kind = o.media ? mediaLabel(o.media) : '', thick = kind ? `at least as thick as ${kind}` : `of ${o.diameter} mm or more`;
     out.push(`${named(o.item)}: ${o.through > o.count ? `${o.count} of the ${o.through} cables through it are ${thick}` : `${o.count} cables ${thick} through it`}, ` +
-             `more than the ${o.capacity}${kind ? ` ${kind} ${o.capacity === 1 ? 'cable' : 'cables'}` : ''} its maker states.`);
+             `more than the ${o.estimated ? 'estimated ' : ''}${o.capacity}${kind ? ` ${kind} ${o.capacity === 1 ? 'cable' : 'cables'}` : ''} ${o.estimated ? '(its maker states none)' : 'its maker states'}.`);
   }
   for (const c of rack.cables || [])
     for (const w of facts.routes?.get(c.id)?.gone || [])

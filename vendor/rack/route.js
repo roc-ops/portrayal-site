@@ -2809,7 +2809,7 @@ function zeroUThrough(rack, ctx) {
 export function capacityBasis(cap) {
   if (!(cap?.count > 0) || cap.media === null) return null;
   const known = ownMedia(DIAMETERS, cap.media) > 0, diameter = known ? DIAMETERS[cap.media] : UNSET_D;
-  return {count: cap.count, media: known ? cap.media : null, diameter,
+  return {count: cap.count, media: known ? cap.media : null, diameter, ...(cap.estimated === true ? {estimated: true} : {}),
           counts: c => (ownMedia(DIAMETERS, c?.media) ?? UNSET_D) >= diameter};
 }
 // THE CABLES A PART CARRIES, as capacityOver counts them: for a rack item,
@@ -2834,7 +2834,7 @@ export function capacityOver(rack, ctx) {
     const b = capacityBasis(cap);
     if (!b) return null;
     const count = cables.filter(b.counts).length;
-    return count > b.count ? {count, through: cables.length, capacity: b.count, media: b.media, diameter: b.diameter} : null;
+    return count > b.count ? {count, through: cables.length, capacity: b.count, media: b.media, diameter: b.diameter, ...(b.estimated ? {estimated: true} : {})} : null;
   };
   const out = [];
   for (const [item, cables] of by) {
