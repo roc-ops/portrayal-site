@@ -46,4 +46,9 @@ test('findComp finds the first match by ref key', async () => {
   assert.equal(findComp(list, 'a/sfp@1:port').skins[0], 'default');
   assert.equal(findComp(list, 'b/card@2').ns, 'b');
   assert.equal(findComp(list, 'z/z@9'), undefined);
+  // a list spliced in place is looked in as it now is
+  const [gone] = list.splice(list.findIndex(c => c.ns === 'b'), 1);
+  assert.equal(findComp(list, 'b/card@2'), undefined);
+  list.push(gone);
+  assert.equal(findComp(list, 'b/card@2'), gone);
 });

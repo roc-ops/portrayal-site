@@ -55,14 +55,15 @@ const refKey = c => `${c.ns}/${c.name}@${c.major.slice(1)}`;
 // string per component per call cost 0.5 s on a large rack. The first
 // component with a key wins, as the find did.
 const COMP_INDEX = new WeakMap();
+// (rebuilt when the list's length has changed: a caller may splice it in place)
 export function compIndex(list) {
-  let idx = COMP_INDEX.get(list);
-  if (!idx) {
-    idx = new Map();
+  let hit = COMP_INDEX.get(list);
+  if (!hit || hit.n !== list.length) {
+    const idx = new Map();
     for (const c of list) { const k = refKey(c); if (!idx.has(k)) idx.set(k, c); }
-    COMP_INDEX.set(list, idx);
+    COMP_INDEX.set(list, hit = {n: list.length, idx});
   }
-  return idx;
+  return hit.idx;
 }
 export const findComp = (list, ref) => compIndex(list).get(String(ref).split(':')[0]);
 
