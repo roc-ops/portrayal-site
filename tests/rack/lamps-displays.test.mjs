@@ -135,5 +135,5 @@ test('a cable to a keystone jack\'s rear and another to its front are both accep
     b: {item: 'i2', path: 'bay-2/module/b1', view: 'rear'}, media: 'cat6'}]});
   assert.equal(none.isError, true);
   assert.equal(ed.rack().cables.length, 2, 'nothing was added');
-  console.log(text(none));
+  assert.match(text(none), /bay-2 holds FHD-FAPM6-BLANK, which has no port b1/);
 });
