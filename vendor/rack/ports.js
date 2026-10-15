@@ -386,14 +386,55 @@ export function zeroUEnds(z, ctx, end = null) {
   const slots = ctx.slotsOf(z.ref);
   if (!slots || slots.error) return [];
   const h = Number(ctx.chassisOf?.(z.ref)?.h) || null;
-  return shownEnv(z, slots, ctx.compByRef, ctx.redirects).cages
+  const env = shownEnv(z, slots, ctx.compByRef, ctx.redirects);
+  const place = (p, base = [0, 0]) => (p && h && p.every(Number.isFinite) && base.every(Number.isFinite)
+    ? {x: base[0] + p[0], y: h - (base[1] + p[1])} : {});
+  const own = env.cages
     .filter(g => FACES.includes(g.view) && takesCableEnd(g, ctx.compByRef))
     .map(g => {
       const info = zeroUInfo(g, end?.path === g.id ? end : null, ctx.compByRef);
       const p = Array.isArray(g.mate) ? g.mate : Array.isArray(g.at) ? g.at : null;
       return {path: g.id, view: g.view, slot: g, type: couplerType(g.interface), connector: info.connector, kind: endKind(info),
-              plug: info.plug, info, ...(p && h && p.every(Number.isFinite) ? {x: p[0], y: h - p[1]} : {})};
-    }).sort((a, b) => natural.compare(a.path, b.path) || natural.compare(a.view, b.view));
+              plug: info.plug, info, ...place(p)};
+    });
+  return [...own, ...moduleEnds(z, env, ctx, end, place)]
+    .sort((a, b) => natural.compare(a.path, b.path) || natural.compare(a.view, b.view));
+}
+
+// THE PORTS OF THE MODULES IN A PART'S BAYS (P-0038): a vertical PDU's network
+// card has ports a cable ends on, as a switch's supply has its inlet. Each
+// bay of the part holds what the part's swaps put there, else what its
+// configuration builds, else what the bay ships with (the way a rack device's
+// bay is read, slots.js holdsAt), and each connector slot the held part
+// presents that takes a cable end is an end at `<bay>/module/<port>`, on the
+// bay's panel. Its place on the part is the bay's `at` plus the slot's `mate`
+// in the module's frame (else its `at`); a bay turned in its slot is not
+// placed, since its parts are then drawn turned, and the cable ends at the
+// part without a point. A port is data unless the slot is a power coupler.
+// `media` and `speed` are the placement's on the module (the sensor jack of an
+// eNMC is `rj45-telemetry`, not Ethernet).
+function moduleEnds(z, env, ctx, end, place) {
+  const swaps = z.swaps && typeof z.swaps === 'object' && !Array.isArray(z.swaps) ? z.swaps : {}, out = [];
+  for (const bay of env.bays) {
+    if (!FACES.includes(bay.view)) continue;
+    const ref = holdsAt(env, swaps, bay.id, bay), comp = partOf(ctx.compByRef, ref);
+    if (!comp) continue;
+    const turned = Number(bay.rotate) % 360 !== 0 && bay.rotate != null;
+    for (const g of list(comp.cages)) {
+      if (!takesCableEnd(g, ctx.compByRef)) continue;
+      const path = `${bay.id}${MODULE}${g.id}`, attrs = list(comp.parts).find(q => q.id === g.id)?.attrs || {};
+      let info = zeroUInfo(g, end?.path === path ? end : null, ctx.compByRef);
+      const power = info.family === 'power' || info.family === 'ground';
+      const connector = couplerType(g.interface) ? info.connector : `${String(g.interface || 'cable').toUpperCase()} port`;
+      if (!power) info = {...info, ...connectorOf({portMedia: attrs.media || '', iface: g.interface || ''}), connector};
+      const p = Array.isArray(g.mate) ? g.mate : Array.isArray(g.at) ? g.at : null;
+      out.push({path, view: bay.view, slot: g, module: true, type: couplerType(g.interface), connector: info.connector,
+                kind: power ? endKind(info) : 'data', plug: info.plug, info,
+                ...(attrs.media ? {media: attrs.media} : {}), ...(attrs.speed ? {speed: attrs.speed} : {}),
+                ...(turned || !Array.isArray(bay.at) ? {} : place(p, bay.at))});
+    }
+  }
+  return out;
 }
 // The words for the ends a part beside the rack has, by type: "C13
 // outlet-a1, outlet-a3; C39 outlet-a2", for a refusal that offers them.
@@ -411,7 +452,7 @@ function zeroUEndFacts(z, end, ctx) {
   const name = z.label || z.id;
   if (isElementId(p)) return {facts: {item: true}, reason: looseReason(end, {item: true})};
   const ends = zeroUEnds(z, ctx, end), here = ends.find(e => e.path === p && e.view === view);
-  if (here) return {facts: {item: true, drawing: true, port: true, slot: true, cage: false, occupied: false, onView: view, holder: null},
+  if (here) return {facts: {item: true, drawing: true, port: true, slot: !here.module, cage: false, occupied: false, onView: view, holder: null},
                     info: here.info, reason: null};
   const other = ends.find(e => e.path === p);
   const facts = {item: true, drawing: true, port: false, holder: null, ...(other ? {onView: other.view} : {})};
