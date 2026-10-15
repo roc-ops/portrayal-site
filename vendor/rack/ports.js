@@ -156,6 +156,47 @@ export function seatedPort(item, end, ctx, {seen = false} = {}) {
           info: connectorOf({portMedia: drawn.attrs?.media || '', iface: slot?.interface || drawn.attrs?.connector || ''})};
 }
 
+// AN END THE CATALOGUE KNOWS TO BE LOOSE, said when the cable is made and not
+// later: a cable end under a bay whose seated part is known and has no port at
+// that path on that panel (seatedPort says `port: false` with a part held).
+// The sentence is the loose-end finding's own (looseReason), so a dry run, the
+// real add and the finding agree. An empty bay, a bay the catalogue cannot
+// answer for and an item whose parts lists are not loaded are not refused: the
+// end is kept as given and the page's drawing decides. Returns the first
+// reason, or null.
+//
+// A PORT A PASSIVE PANEL DOES NOT COMPOSE (a made-up `p9`, the rear of a panel
+// with no rear) is refused too, though seatedPort leaves it to the drawing: a
+// panel (class adapter-panel) has no port its contract does not compose, which
+// a card may (a test point only its skin draws).
+export function seatedEndReason(rack, ends, ctx) {
+  for (const end of ends) {
+    const item = (rack.items || []).find(i => i.id === end.item);
+    if (!item || isElementId(end.path)) continue;
+    const own = seatedPort(item, end, ctx) ?? absentOnPanel(item, end, ctx);
+    // (a part at the path that takes no cable is the page's to call loose: a
+    // rack file may hold such an end on purpose)
+    if (!own || own.port || !own.holder?.part || own.part) continue;
+    const reason = looseReason(end, own);
+    if (reason) return reason;
+  }
+  return null;
+}
+function absentOnPanel(item, end, ctx) {
+  if (!loaded(ctx)) return null;
+  const p = portPathOf(end?.path ?? ''), first = p.indexOf(MODULE);
+  if (first < 0 || first !== p.lastIndexOf(MODULE)) return null;
+  const steps = p.slice(first + MODULE.length).split('/');
+  const slots = ctx.slotsOf(item.ref);
+  if (steps.length !== 1 || !slots || slots.error) return null;
+  const env = slotEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
+  const bay = env.bays.find(b => b.id === p.slice(0, first));
+  if (!bay || !OTHER[bay.view] || (!Object.hasOwn(swaps, bay.id) && env.built(bay.id) === undefined)) return null;
+  const ref = resolverFor(env, swaps).refAt(`${bay.id}/module`), comp = partOf(ctx.compByRef, ref);
+  if (!comp || comp.class !== 'adapter-panel' || portIdsOf(comp, ctx.compByRef).has(steps[0])) return null;
+  return {item: true, drawing: true, port: false, holder: {path: bay.id, part: modelOf(comp, ref), ref: String(ref).split(':')[0]}};
+}
+
 // ── what a DCIM calls the port ─────────────────────────────────────────────
 // THE DCIM PORTS A CABLE END ON A SEATED PART LANDS ON, as the part's module
 // type lists them, or null when the catalogue has none for it. A module type

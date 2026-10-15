@@ -105,7 +105,7 @@
           Portrayal compiles each device into ordinary files: an SVG per face,
           and JSON indexes beside them. Everything below runs here, live, and the
           code beside each result is the file that just ran it. This page documents
-          <code>@portrayal/kit</code> <span data-kit-version="0.44.0">0.44.0</span>.
+          <code>@portrayal/kit</code> <span data-kit-version="0.47.0">0.47.0</span>.
         </p>
       </div>
       <div class="kit-layout">
@@ -237,7 +237,7 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
-          <section class="kit-sec" id="outlets" data-modules="states">
+          <section class="kit-sec" id="outlets" data-modules="states displays">
             <h2>An outlet and its lamp</h2>
             <p>A switched PDU's outlet declares the states <code>on</code> and
               <code>off</code>, and the lamp that shows them is a part beside it, bound to
@@ -254,6 +254,15 @@
               is dimmed) or clears the element, as it does on a plain lamp. The module
               also reads a lamp's vocabulary (<code>statesOfEl</code>) and whether a state
               paints anything (<code>paints</code>).</p>
+            <p>A display is a window the drawing shows, and what it shows is a rack file's to say.
+              <code>@portrayal/kit/displays</code> has the rules: a display of a part says its
+              <code>kind</code> (<code>pixel</code>, <code>character</code> or <code>segment</code>), and
+              <code>contentRefusal(display, content)</code> says why <code>{text: [lines]}</code>,
+              <code>{digits: "04"}</code> or <code>{image: dataUrl}</code> does not fit it. One painter,
+              <code>paintDisplays(root, displays)</code>, draws the text, picture or digits for the 2D
+              drawing and for the 3D texture alike (<code>shell.setDisplays</code>,
+              <code>viewer.setDisplays</code>); <code>loadDisplayImages</code> reads a library picture
+              first. A segment display's digits are the <code>state-</code> class of each cell.</p>
             <figure class="kit-ex" data-example="11-outlets" data-run="view">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>
@@ -333,7 +342,7 @@ shell.setFields('rail-panel', {'rail-setback': 'rear'});   // a stop, or a numbe
 shell.setFields('rail-panel', {'rail-setback': '300'});
 // {refused: [{path, key, value, reason: 'rail-setback on DINRAIL2U takes 51.2 to 271.2 mm. 300 is outside it.'}]}</code></pre>
           </section>
-          <section class="kit-sec" id="rack" data-modules="rack/catalog rack/model rack/rails rack/fit rack/zero-u rack/managers rack/cable-rules rack/route rack/route-path rack/solids rack/cable-geometry rack/export-data rack/dcim-rules rack/validate rack/commands rack/history rack/editor rack/queries rack/slack rack/states">
+          <section class="kit-sec" id="rack" data-modules="rack/catalog rack/model rack/rails rack/fit rack/zero-u rack/managers rack/cable-rules rack/route rack/route-path rack/solids rack/cable-geometry rack/export-data rack/dcim-rules rack/validate rack/commands rack/history rack/editor rack/queries rack/slack rack/states rack/displays">
             <h2>A rack, by commands</h2>
             <p>The <code>rack/</code> modules are the <a href="rack.html">Rack Builder</a>'s
               rules without its page. They read no DOM and fetch nothing but the
@@ -686,6 +695,7 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
                 <tr><td><code>rack/export-data</code></td><td>The rack as rows: <code>bomRows</code>, <code>cableScheduleRows</code> (with a <code>bundle</code> column, and each body a route crosses in its cable's notes), the bundles as the exports read them (<code>bundleExports</code>, <code>bundleNotes</code>, <code>strapBomRows</code>, <code>strapBomNotes</code>), the device-import data, and the drawing sheet's title block (<code>titleLines</code>, which names the host it was drawn with as <code>source</code>).</td></tr>
                 <tr><td><code>rack/dcim-rules</code></td><td>What a NetBox or Nautobot import needs of a rack: cable types, cable and module import rows (a NetBox cable in a bundle names it first in its description), and the import kit's README (<code>kitReadme</code>; a host passes its own <code>source</code>, where its DCIM settings are as <code>settingsAt</code>, and the script's <code>scriptUrl</code>).</td></tr>
                 <tr><td><code>rack/slack</code></td><td>Where a cable's spare is stored: <code>slackOf</code>, <code>storedText</code>, <code>slackFindings</code>, <code>spareLine</code>, <code>spareBomLine</code>, and <code>spareExports</code>, which the exports take.</td></tr>
+                <tr><td><code>rack/displays</code></td><td>What a display in the rack shows: <code>displaysOf</code> (the displays of a placed device or part), <code>displaysFor</code> (the <code>{path: content}</code> map to hand a drawing), <code>displayRefusal</code>, <code>displayNotices</code> and <code>displayList</code>; <code>display.set</code> sets or clears one.</td></tr>
                 <tr><td><code>rack/states</code></td><td>What an entry is set to: <code>statesFor</code> (the map to hand a drawing), <code>readingsFor</code> and <code>stateNotices</code>.</td></tr>
                 <tr><td><code>rack/validate</code></td><td><code>validate(schema, value)</code>, the small JSON Schema validator the commands use, and <code>same</code>.</td></tr>
               </tbody>
@@ -756,11 +766,11 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
               <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
               three.js is a peer dependency, needed only for 3D:</p>
             <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
-            <p class="kit-note" data-kit-unpublished>This page documents kit 0.44.0, which is
+            <p class="kit-note" data-kit-unpublished>This page documents kit 0.47.0, which is
               not on npm yet: npm's latest is <span data-kit-npm="0.2.0">0.2.0</span>.
               The rack and bundle modules, and everything else added since 0.2.0, are
               in the unpublished version only, so <code>npm install</code> gets a kit
-              without them, and the CDN map below returns 404s. Until 0.44.0 is
+              without them, and the CDN map below returns 404s. Until 0.47.0 is
               published, use the files from a
               <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> checkout's
               <code>kit/</code> folder, or this site's own vendored copy
@@ -773,27 +783,27 @@ const spare = spareExports(rack, route);           // {byCable, line, bom}: hand
               version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/dist.js",
-    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/swap.js",
-    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/viewer3d.js",
-    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/marks.js",
-    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/shell.js",
-    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/ears2d.js",
-    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/states.js",
-    "@portrayal/kit/positions": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/positions.js",
-    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/catalog.js",
-    "@portrayal/kit/rack/fit": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/fit.js",
-    "@portrayal/kit/rack/rails": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/rails.js",
-    "@portrayal/kit/rack/slack": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/slack.js",
-    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/model.js",
-    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/editor.js",
-    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/queries.js",
-    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/route.js",
-    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/route-path.js",
-    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/solids.js",
-    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/bundles.js",
-    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/export-data.js",
-    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.44.0/rack/cable-types.js",
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/shell.js",
+    "@portrayal/kit/ears2d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/ears2d.js",
+    "@portrayal/kit/states": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/states.js",
+    "@portrayal/kit/positions": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/positions.js",
+    "@portrayal/kit/rack/catalog": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/catalog.js",
+    "@portrayal/kit/rack/fit": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/fit.js",
+    "@portrayal/kit/rack/rails": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/rails.js",
+    "@portrayal/kit/rack/slack": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/slack.js",
+    "@portrayal/kit/rack/model": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/model.js",
+    "@portrayal/kit/rack/editor": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/editor.js",
+    "@portrayal/kit/rack/queries": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/queries.js",
+    "@portrayal/kit/rack/route": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/route.js",
+    "@portrayal/kit/rack/route-path": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/route-path.js",
+    "@portrayal/kit/rack/solids": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/solids.js",
+    "@portrayal/kit/rack/bundles": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/bundles.js",
+    "@portrayal/kit/rack/export-data": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/export-data.js",
+    "@portrayal/kit/rack/cable-types": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.47.0/rack/cable-types.js",
     "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }

@@ -11,6 +11,7 @@
 // same code that has been running in the device viewer.
 
 import { paintFields, unpaintFields, paintAdjustments } from './fields.js';
+import { paintDisplays } from './displays.js';
 import { boundLamps, expandStates } from './states.js';
 
 let THREE, renderer, PXMM, FRU_PATHS;
@@ -1581,6 +1582,28 @@ export function setNodeFields(map, scope) {
     if (vals && Object.keys(vals).length) st.set(path, {...vals});
 }
 export function nodeFields(scope) { return new Map(_sc(scope).fields || []); }
+
+// WHAT A DISPLAY SHOWS (docs/display-content-design.md). A rack file's
+// `displays` is a map of the path of a display to its content, and it lands in
+// the TEXT a texture is painted from, the route a state and a field take:
+// repaint, never re-shape. The picture or the lines go into the face as a group
+// next to the window's own node (displays.js paintDisplays, shared with the 2D
+// drawing); they are flat, so they add no relief and leave the batching of
+// the relief meshes as it was. The digits of a segment display are a state on
+// each cell and ride the same rule.
+export function setNodeDisplays(map, scope) {
+  const st = _sc(scope).displays || (_sc(scope).displays = new Map());
+  st.clear();
+  for (const [path, content] of map instanceof Map ? map : Object.entries(map || {}))
+    if (path && content && typeof content === 'object') st.set(path, structuredClone(content));
+}
+export function nodeDisplays(scope) { return new Map(_sc(scope).displays || []); }
+/** Paint the registered displays onto a parsed document, taking what was painted before out first. */
+export function applyNodeDisplays(root, scope) {
+  if (!root) return root;
+  paintDisplays(root, Object.fromEntries(_sc(scope).displays || []));
+  return root;
+}
 // COLOURS ARE PUT BACK FIRST, over the whole document, for the reason
 // applyNodeStates clears first: the registry is the whole truth, and a part
 // taken OUT of it arrives as a path that is no longer there. A repaint that
@@ -1782,6 +1805,8 @@ export function restyleText(text, scope) {
   div.innerHTML = text;
   applyNodeStates(div, scope);
   applyNodeFields(div, scope);
+  // what a display shows goes in after the states, whose glyph classes it sets
+  applyNodeDisplays(div, scope);
   // a face keeps its members where the registry puts them through a repaint
   applyNodeAdjustments(div, scope);
   applyNodeLampColors(div, scope);
@@ -2344,6 +2369,8 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // while the registry still said the value was set, and a repeated setFields
   // would see nothing changed and never put it back
   applyNodeFields(svg, scope);
+  // and what each display shows, flat on its window: no relief, the same texture
+  applyNodeDisplays(svg, scope);
   // and the position of each part that slides, before anything is measured:
   // the depth of a well and the lift of what stands in it are read below
   applyNodeAdjustments(svg, scope);

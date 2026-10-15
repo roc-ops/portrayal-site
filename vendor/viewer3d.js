@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toGLB, toUSDZ } from './share.js';
 import { configureRelief, createReliefScope, svgCanvas, canvasTex, rasterize, svgSource, setSvgOverride, clearSvgOverrides,
-         setNodeStates, nodeStates, clearLampBindings, lampBindings, setNodeFields, restyleText,
+         setNodeStates, nodeStates, clearLampBindings, lampBindings, setNodeFields, setNodeDisplays, restyleText,
          applyNodeAdjustments,
          setNodeLampColors, nodeLampColors, markHex,
          setPulled as setReliefPulled, pulledPaths,
@@ -121,6 +121,9 @@ export function createViewer(container, opts = {}) {
   // the build. Emptied on every rebuild: the materials it points at are disposed.
   let RESTYLE = [];
   let FIELDS = {};   // path -> {key: value}, what the host has written on parts
+  // WHAT THE HOST HAS PUT ON DISPLAYS, path -> {text|digits|image}: held for the
+  // reason FIELDS is, and painted flat on the window (relief.js applyNodeDisplays)
+  let DISPLAYS = {};
   let COMP = null, COMP_ENTRY = null;     // lone-component mode, as ?component= gave
   let W = 438.4, H = 43.5, D = 515;
   // animated FRUs: paths discovered per build, groups tweened along their face normal
@@ -551,6 +554,7 @@ export function createViewer(container, opts = {}) {
     // that hands its fields over as it creates the viewer - a link's latch
     // colour - had them drawn grey, and the same map again changed nothing
     setNodeFields(FIELDS, SCOPE);
+    setNodeDisplays(DISPLAYS, SCOPE);
     RESTYLE = [];
     gen++;
     const f = v => distAt(faceFile(devIndex, cfg, v));
@@ -1548,6 +1552,40 @@ export function createViewer(container, opts = {}) {
   const setStates = map => coalesce('states', map, applyStatesNow);
   const setFields = map => coalesce('fields', map, applyFieldsNow);   // same queue: latest wins
   const setLampColors = map => coalesce('lamps', map, applyLampColorsNow);
+  const setDisplays = map => coalesce('displays', map, applyDisplaysNow);
+
+  // WHAT A DISPLAY SHOWS: `{ 'network-module/module/lcd': {text: [...]} }`, the
+  // whole map each time and {} clears (docs/display-content-design.md). The
+  // content goes into the text every texture is painted from, flat on the
+  // window, so it repaints and never re-shapes: the relief and its batches are
+  // untouched. A path the scene does not draw is kept for a rebuild.
+  async function applyDisplaysNow(map) {
+    const next = {};
+    for (const [k, v] of map instanceof Map ? map : Object.entries(map || {}))
+      if (k && v && typeof v === 'object') next[k] = JSON.parse(JSON.stringify(v));
+    const changed = new Set();
+    for (const k of new Set([...Object.keys(DISPLAYS), ...Object.keys(next)]))
+      if (JSON.stringify(DISPLAYS[k]) !== JSON.stringify(next[k])) changed.add(k);
+    DISPLAYS = next;
+    if (!changed.size || !box) return 0;
+    setNodeDisplays(DISPLAYS, SCOPE);
+    const touches = text => [...changed].some(p => text.includes(`data-path="${p}"`));
+    let n = 0;
+    for (const e of RESTYLE) {
+      if (!touches(e.svgText)) continue;
+      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      catch (err) { console.warn('[portrayal] display repaint failed', err); }
+    }
+    for (const rec of LOD) {
+      if (!touches(rec.svgText)) continue;
+      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.rev++;
+      await refineFace(rec, rec.level);
+      n++;
+    }
+    await syncLamps(changed);
+    return n;
+  }
 
   // A LAMP IN THE HOST'S COLOUR (#664): `{path: '#ff00ff'}`, the whole map each
   // time, {} clears. The colour goes into the text every texture is painted
@@ -1701,6 +1739,7 @@ export function createViewer(container, opts = {}) {
 
   return {
     load, select, on, resize, dispose, setStates, setFields, fields: () => JSON.parse(JSON.stringify(FIELDS)),
+    setDisplays, displays: () => JSON.parse(JSON.stringify(DISPLAYS)),
     // #664: persistent coloured marks, and a host's lamp colours
     setMarks, marks: () => MARKS.map(m => ({...m})), get markReport() { return {...markReport}; },
     setLampColors, lampColors: () => Object.fromEntries(nodeLampColors(SCOPE)),
