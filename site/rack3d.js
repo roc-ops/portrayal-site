@@ -16,7 +16,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools, cablePoints,
-         setNodeStates, nodeStates } from '../vendor/relief.js';
+         setNodeStates, nodeStates, tiltOf, tiltTools, tiltFrame, unproject, faceDeclared, resolveCablePoint } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -1268,12 +1268,25 @@ export function createRackScene(container, opts = {}) {
       div.innerHTML = text;
       document.body.append(div);
       const svg = div.querySelector('svg');
-      if (svg) rec = {div, svg, tools: nodeTools(svg)};
+      if (svg) rec = {div, svg, tools: nodeTools(svg), size: faceSizeOf(text)};
       else div.remove();
     } catch (e) { rec = null; }
     anchorDocs.set(key, rec);
     return rec;
   }
+  // THE FACE'S OWN SIZE, as relief.js buildFaceRelief takes it (and the kit's tilt groups with it): the
+  // size the drawing declares on its root, else its viewBox, else the plane's. A flange-wide face over a
+  // narrower body (the Lightspan shelf's 481 over 448) is laid on its own width, so a point read off the
+  // drawing is centred on that, not on the chassis'.
+  function faceSizeOf(text) {
+    const declared = faceDeclared(text);
+    if (declared) return declared;
+    const vb = /<svg\b[^>]*\sviewBox\s*=\s*"\s*[-\d.eE+]+[\s,]+[-\d.eE+]+[\s,]+([\d.eE+-]+)[\s,]+([\d.eE+-]+)/.exec(text);
+    const w = vb ? parseFloat(vb[1]) : NaN, h = vb ? parseFloat(vb[2]) : NaN;
+    return w > 0 && h > 0 ? [w, h] : null;
+  }
+  // the frame of a view with the size its drawing states
+  const sizedFrame = (fr, doc) => (doc.size ? {...fr, fw: doc.size[0], fh: doc.size[1]} : fr);
   function findMounted(which) {
     if (which == null) return null;
     if (typeof which === 'object') {
@@ -1300,9 +1313,10 @@ export function createRackScene(container, opts = {}) {
       : ['front', 'rear', 'right', 'left', 'top', 'bottom'];
     group.updateMatrixWorld(true);
     for (const view of views) {
-      const fr = frames.find(x => x.view === view);
-      const doc = fr && await faceDoc(entry, view);
+      const plane = frames.find(x => x.view === view);
+      const doc = plane && await faceDoc(entry, view);
       if (!doc) continue;
+      const fr = sizedFrame(plane, doc);
       let el = null;
       try { el = find(doc); }
       catch (e) { return null; }        // a name that cannot be a selector
@@ -1356,9 +1370,10 @@ export function createRackScene(container, opts = {}) {
     group.updateMatrixWorld(true);
     const q = group.getWorldQuaternion(new THREE.Quaternion());
     for (const view of o.view ? [o.view] : ['front', 'rear']) {
-      const fr = frames.find(x => x.view === view);
-      const doc = fr && await faceDoc(entry, view);
+      const plane = frames.find(x => x.view === view);
+      const doc = plane && await faceDoc(entry, view);
       if (!doc) continue;
+      const fr = sizedFrame(plane, doc);
       // An RJ45 plug's point is the occupant itself, `<prefix>-occupant`; an
       // optic's LC plugs, or a duplex plug's two, are below it. Never
       // `port-10-occupant` for `port-1`.
@@ -1366,14 +1381,56 @@ export function createRackScene(container, opts = {}) {
       // end asked after: 900 ends of one large rack read a 600-port face's
       // points 900 times, ten seconds of its build. The face text, and so
       // its points, are fixed for as long as the doc is cached: faceDoc.)
-      const pts = (doc.cablePoints ??= cablePoints(doc.svg)).filter(p => p.at && (p.path === prefix + '-occupant'
-        || p.path.startsWith(prefix + '-occupant/')));
-      if (!pts.length) continue;
+      const own = p => p.path === prefix + '-occupant' || p.path.startsWith(prefix + '-occupant/');
+      const pts = (doc.cablePoints ??= cablePoints(doc.svg)).filter(p => p.at && own(p));
+      // A CAGE ON A TILTED FACET (docs/tilted-facets-design.md) holds its optic along the facet's own
+      // normal, not the face's: the kit builds the optic flat at its true size and carries it onto the
+      // facet by tiltFrame (relief.js tiltGroupIn). A cable point goes the same way - its face
+      // millimetres unprojected, its lift measured from the facet's base, then through tiltFrame - and
+      // the end leaves along that frame's n. A point on no facet takes none of this.
+      const tilts = doc.tilts ??= tiltTools(doc.svg, {mmRect: doc.tools.mmRect, liftOf: doc.tools.liftOf, ctmOf: doc.tools.ctmOf});
+      const facetOf = el => {
+        let tl = tiltOf(el);
+        // (an optic the drawing does not tilt itself takes its mate-to host's, as relief.js extractRelief reads it)
+        for (let host = el.closest('[data-path]'), hop = 0; !tl && host?.dataset.for && hop < 8; hop++) {
+          host = doc.svg.querySelector(`[data-path="${CSS.escape(host.dataset.for.split(/\s+/)[0])}"]`);
+          tl = host && tiltOf(host);
+        }
+        return tl && tilts.tiltRec(tl);
+      };
+      // AN OPTIC WITH NO CABLE POINT (an SC receptacle takes the cable's plug, which the library does not
+      // draw) ends its cable at its mating point, the `mate` its drawing states; that is read only for a
+      // cage on a facet, where the port's centre on the cage's mouth is nowhere on the optic.
+      let from = pts;
+      if (!pts.length) {
+        const mates = (doc.matePoints ??= [...doc.svg.querySelectorAll('[data-cp="mate"]')].map(el => {
+          const coords = (el.dataset.cpAt || '').trim().split(/\s+/);
+          const ups = [];
+          for (let n = el.parentElement; n && n !== doc.svg; n = n.parentElement) ups.push({lift: n.dataset.zLift});
+          const r = resolveCablePoint({name: 'mate', at: coords.length === 2 ? coords : null}, ups);
+          return {...r, el, path: el.closest('[data-path]')?.dataset.path ?? ''};
+        }));
+        const found = mates.find(p => p.at && own(p) && facetOf(p.el));
+        if (!found) continue;
+        from = [found];
+      }
       const inv = doc.svg.getScreenCTM().inverse();
       const rot = new THREE.Euler(...fr.rot);
       const normal = new THREE.Vector3(0, 0, 1).applyEuler(rot).applyQuaternion(q).normalize();
-      return pts.map(p => {
+      const sx = fr.flipLX ? -1 : 1, sy = fr.flipLY ? -1 : 1;
+      return from.map(p => {
         const mm = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
+        const rec = facetOf(p.el);
+        if (rec) {
+          const u = unproject({x: mm.x, y: mm.y, w: 0, h: 0}, rec.tilt), M = tiltFrame(rec.tilt), z = (+p.z || 0) - rec.base;
+          const fx = M[0] * u.x + M[4] * u.y + M[8] * z + M[12];
+          const fy = M[1] * u.x + M[5] * u.y + M[9] * z + M[13];
+          const fz = M[2] * u.x + M[6] * u.y + M[10] * z + M[14];
+          const local = new THREE.Vector3(sx * (fx - fr.fw / 2), sy * (fr.fh / 2 - fy), fz).applyEuler(rot).add(new THREE.Vector3(...fr.pos));
+          // (the face's y runs down and the device's up, so the axis's y turns over with it)
+          const axis = new THREE.Vector3(sx * M[8], -sy * M[9], M[10]).applyEuler(rot).applyQuaternion(q).normalize();
+          return {position: group.localToWorld(local), normal: axis, view, path: p.path, tilt: {deg: rec.tilt.deg, facing: rec.tilt.facing, on: rec.tilt.on}};
+        }
         const lx = (fr.flipLX ? -1 : 1) * (mm.x - fr.fw / 2);
         const ly = (fr.flipLY ? -1 : 1) * (fr.fh / 2 - mm.y);
         const local = new THREE.Vector3(lx, ly, +p.z || 0).applyEuler(rot).add(new THREE.Vector3(...fr.pos));
