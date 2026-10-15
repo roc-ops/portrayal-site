@@ -6258,9 +6258,11 @@ BAND_MIDDLE_JS = """([pane, id]) => {
   const strokes = [...svg.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id] path')];
   for (const p of svg.querySelectorAll(`:scope > [data-cables] [data-bundle-id="${id}"] path[data-bundle-trunk]`)) {
     const L = p.getTotalLength(), m = p.getScreenCTM();
-    for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+    for (const f of [0.5, 0.35, 0.65, 0.2, 0.8, 0.45, 0.55, 0.3, 0.7, 0.1, 0.9]) {
       const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(m), e = document.elementFromPoint(s.x, s.y);
-      if (e && e.closest(`svg[data-pane="${pane}"]`) && !e.closest('[data-item-id], [data-u], [data-cable-tags]') && strokes.some(o => on(o, s))) return [s.x, s.y];
+      // (a touch is taken by the nearest thing it can act on within a finger's width: no empty U, device or tag within 14 px)
+      const clear = [[0, 0], [14, 0], [-14, 0], [0, 14], [0, -14]].every(([dx, dy]) => !document.elementFromPoint(s.x + dx, s.y + dy)?.closest('[data-item-id], [data-u], [data-cable-tags]'));
+      if (e && e.closest(`svg[data-pane="${pane}"]`) && clear && strokes.some(o => on(o, s))) return [s.x, s.y];
     }
   }
   return null;
@@ -6762,13 +6764,13 @@ def check_rack_straps_on_run(page, base):
     load_rack_3d_ready(page, base, faces_rack_96())
     wait_fn(page, "straps: the bundles' routes", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 8")
     page.wait_for_timeout(600)
-    # THE COUNTS ARE THE KIT'S, as they were: 48 on the eight bundles, and the BOM's line with the tie slots' 20.
+    # THE COUNTS ARE THE KIT'S, as main draws them (kit 0.44): 52 on the eight bundles, and the BOM's line with the tie slots' 20.
     kit = sum(b["count"] or 0 for b in page.evaluate("() => window.__rack.bundles()"))
     cols, rows, text = read_csv(export_file(page, "bom"))
     line = [r for r in rows if "strap" in " ".join(str(v) for v in r.values()).lower()]
-    if kit != 48 or len(line) != 1 or "68" not in [str(v) for v in line[0].values()]:
-        bad.append(f"counts: the kit gives the bundles {kit} straps (48 expected) and the BOM's strap line is {line} (one line of 68 expected)")
-    measure("the rack", 46)
+    if kit != 52 or len(line) != 1 or "76" not in [str(v) for v in line[0].values()]:
+        bad.append(f"counts: the kit gives the bundles {kit} straps (52 expected) and the BOM's strap line is {line} (one line of 76 expected)")
+    measure("the rack", 50)
 
     # THE SAME WITH EACH REAR-TO-FRONT RUN CROSSING AT ONE U: the rear lane and the
     # front lane it crosses to are then two stops at one height, which a member's
@@ -6778,7 +6780,7 @@ def check_rack_straps_on_run(page, base):
     wait_fn(page, "one U: the cables", "() => document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96")
     page.wait_for_timeout(900)
     kit = sum(b["count"] or 0 for b in page.evaluate("() => window.__rack.bundles()"))
-    measure("crossing at one U", 46)
+    measure("crossing at one U", 52)
     return bad
 
 
@@ -9046,20 +9048,23 @@ def check_rack_pinned_highlight(page, base):
       }
       return null; }"""
     tip = "() => { const t = document.getElementById('cableTip'); return t && !t.hidden ? t.dataset.cableTip : null; }"
-    at1, at4 = page.evaluate(on_stroke, "c1"), page.evaluate(on_stroke, "c4")
+    # (a bundle's member is itself under the pointer only on its own tail outside the band, #194, and one member's
+    # tail can lie under another's: the first of the three with a tail of its own is the one hovered)
+    one, at1 = next(((c, a) for c in ("c1", "c2", "c3") if (a := page.evaluate(on_stroke, c))), ("c1", None))
+    at4 = page.evaluate(on_stroke, "c4")
     if not at1 or not at4:
-        bad.append(f"label: found no point on c1's stroke ({at1}) or on c4's ({at4}) to hover")
+        bad.append(f"label: found no point on a stroke of b1's members ({at1}) or on c4's ({at4}) to hover")
     else:
         page.mouse.move(at1[0], at1[1])
         page.wait_for_timeout(400)
-        if page.evaluate(tip) != "c1":
-            bad.append(f"label: over c1's stroke with c4 pinned the hover label names {page.evaluate(tip)!r}, expected c1")
+        if page.evaluate(tip) != one:
+            bad.append(f"label: over {one}'s stroke with c4 pinned the hover label names {page.evaluate(tip)!r}, expected {one}")
         page.mouse.move(at4[0], at4[1])
         page.wait_for_timeout(400)
         if page.evaluate(tip) is not None:
             bad.append(f"label: over the pinned cable's own stroke the hover label shows ({page.evaluate(tip)!r})")
         park_mouse(page)
-        see({"c4"}, False, "2D, after the pointer was over c1's stroke and c4's")
+        see({"c4"}, False, f"2D, after the pointer was over {one}'s stroke and c4's")
     # a click on a control does not put it down: the zoom, then the stage's swatch
     page.click("#zoomIn")
     page.click("#zoomFit")
@@ -17172,7 +17177,7 @@ def check_rack_cables_clicks(page, base):
     got = page.evaluate(PANES_JS)
     t2 = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
     # (shortened in the middle of the device's name, never at the end, where the U and the port are: #194)
-    if not t2 or "…" not in t2["text"] or not t2["text"].endswith(" U14 port-2-1") or not t2["text"].startswith("→ a-rather") or len(t2["text"]) > 33:
+    if not t2 or "…" not in t2["text"] or not t2["text"].endswith(" U14 port 2 1") or not t2["text"].startswith("→ a-rather") or len(t2["text"]) > 33:
         bad.append(f"cable clicks: the long tag reads {t2['text'] if t2 else None!r}, expected a short text with an ellipsis in the name and its U and port whole")
     titles = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => [p, [...document.querySelectorAll(
       `svg[data-pane="${p}"] [data-cable-tag]`)].map(t => [t.dataset.cableId, t.querySelector('title')?.textContent || ''])]))""")
