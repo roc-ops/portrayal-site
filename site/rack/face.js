@@ -72,8 +72,9 @@ const SKINS = new Map();
 function skinText(url) {
   let hit = SKINS.get(url);
   if (!hit) {
-    hit = fetch(url).then(r => (r.ok ? r.text() : null))
-      .catch(err => { if (SKINS.get(url) === hit) SKINS.delete(url); throw err; });
+    const drop = () => { if (SKINS.get(url) === hit) SKINS.delete(url); };
+    hit = fetch(url).then(r => { if (r.ok) return r.text(); drop(); return null; })
+      .catch(err => { drop(); throw err; });
     SKINS.set(url, hit);
   }
   return hit;
