@@ -379,7 +379,7 @@ function zeroUFree(rack, z, ctx, {want, ofType, near}) {
   const out = zeroUEnds(z, ctx)
     .filter(e => want(e.kind) && ofType(e) && portFree(rack, {item: z.id, path: e.path, view: e.view}).ok)
     .map(e => { const ru = ruOf(e);
-      return {path: e.path, view: e.view, label: names[e.path] ?? portLabel(e.path), media: null, speed: null, kind: e.kind,
+      return {path: e.path, view: e.view, label: names[e.path] ?? portLabel(e.path), media: e.media ?? null, speed: e.speed ?? null, kind: e.kind,
               connector: e.connector, plug: e.plug, type: e.type, u: ru == null ? null : uLabel(f, ru),
               mm: e.y == null ? null : zeroUBottomMm(z) + e.y}; });
   // nearest the middle of that unit first, by the mm between; one not placed last

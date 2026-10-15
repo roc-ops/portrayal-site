@@ -29,7 +29,7 @@ import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
 import {readSvg, portsOf} from '../../vendor/zones.js';
 import {loadSlots} from '../../vendor/rack/catalog.js';
-import {cableEndPaths} from '../../vendor/rack/ports.js';
+import {cableEndPaths, zeroUEnds} from '../../vendor/rack/ports.js';
 
 export const DIST = 'assets/dist/';
 const OPPOSITE = {front: 'rear', rear: 'front'};
@@ -158,6 +158,17 @@ function faceText(url) {
   TEXTS.set(url, hit);
   while (TEXTS.size > TEXT_LIMIT) TEXTS.delete(TEXTS.keys().next().value);
   return hit;
+}
+
+// THE PORTS OF THE MODULES IN A PART BESIDE THE RACK (kit 0.44.0, Portrayal
+// #1080): a vertical PDU's network card holds its ports in a bay of the part,
+// which the part's own drawing does not list as ends. The kit names them
+// (ports.js zeroUEnds), each at `<bay>/module/<port>` on the panel its bay is
+// on, for the panel `view` of the part `z` ({ref, cfg, swaps}).
+export async function zeroUModuleEnds(z, view) {
+  const {slotsOf, compByRef} = await loadSlots(DIST, [z.ref]);
+  return zeroUEnds({ref: z.ref, cfg: z.cfg, swaps: z.swaps || {}}, {slotsOf, compByRef})
+    .filter(e => e.module && e.view === view).map(e => e.path);
 }
 
 async function build({ref, cfg, view, swaps, fields, turned, ends}) {

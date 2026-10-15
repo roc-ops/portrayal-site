@@ -13,7 +13,7 @@
 
 import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
 import {earHoles} from './ear-holes.js';
-import {configuredFace, earPlanFor} from './face.js';
+import {configuredFace, earPlanFor, zeroUModuleEnds} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
 import {uLabel, zeroUOf, zeroUBottomMm} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
@@ -252,7 +252,9 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
       // THE OUTLETS A CORD LANDS ON (kit 0.36.0, Portrayal #1068: ports.js cableEndPaths of the part), for
       // Cable mode's portAt, as a device's slots are; the end is {item: the part's id, path, view: this panel}.
-      const slotEnds = (face.ports || []).filter(p => p.end).map(p => p.path ?? p.id);
+      // (and, kit 0.44.0, the ports of the modules in its bays, which the kit names: face.js zeroUModuleEnds)
+      const slotEnds = [...new Set([...(face.ports || []).filter(p => p.end).map(p => p.path ?? p.id),
+                                    ...await zeroUModuleEnds(z, panel)])];
       if (slotEnds.length) { gz.setAttribute('data-cable-ends', slotEnds.join(' ')); gz.setAttribute('data-zerou-panel', panel); }
     } else {
       gz = svgEl('g', attrs);
