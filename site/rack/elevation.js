@@ -13,12 +13,12 @@
 
 import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
 import {earHoles} from './ear-holes.js';
-import {configuredFace, earPlanFor} from './face.js';
+import {configuredFace, earPlanFor, zeroUModuleEnds} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
-import {uLabel} from '../../vendor/rack/model.js';
+import {uLabel, zeroUOf, zeroUBottomMm} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
 import {itemBox} from '../../vendor/rack/fit.js';
-import {faceOfAt, sideOfAt, STANDOFF} from '../../vendor/rack/zero-u.js';
+import {faceOfAt, sideOfAt, STANDOFF, zeroUEntries} from '../../vendor/rack/zero-u.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.
@@ -179,10 +179,19 @@ const zeroUPaneX = (z, view) => {
   const s = sideOfAt(z.at) === 'left' ? -1 : 1, xr = s * (OPENING / 2 + RAIL_W + STANDOFF + (z.w || 0) / 2);
   return view === 'rear' ? OPENING / 2 - xr : OPENING / 2 + xr;
 };
+// A ZERO-U PART STANDS WHERE ITS MILLIMETRES SAY (kit 0.30.0, #1030): the
+// kit's solid, and so the routes round it, read `offsetMm`, and `ru` is only
+// the nearest unit. zeroUDrawn adds that bottom (`mm`) to the kit's entries;
+// an entry without one stands on its unit.
+export function zeroUDrawn(rack, chassisOf) {
+  const mm = new Map(zeroUOf(rack).map(z => [z.id, zeroUBottomMm(z)]));
+  return zeroUEntries(rack, chassisOf).map(e => ({...e, mm: mm.get(e.id)}));
+}
+const zeroURise = (z, baseRU) => (Number.isFinite(z.mm) ? z.mm - (baseRU - 1) * RU : (z.ru - baseRU) * RU);
 function zeroUBox(zeroU, frame, baseRU, g) {
   const totalH = frame.heightRU * RU;
   const wide = Math.max(0, ...zeroU.map(z => STANDOFF + (z.w || 0) + 4));
-  const top = Math.min(-18, ...zeroU.map(z => totalH - (z.ru - baseRU) * RU - (z.h || 0) - 6));
+  const top = Math.min(-18, ...zeroU.map(z => totalH - zeroURise(z, baseRU) - (z.h || 0) - 6));
   const side = Math.max(g, wide);
   return {x: -RAIL_W - side, y: top, w: OPENING + RAIL_W * 2 + side * 2, h: totalH + 12 - top};
 }
@@ -222,8 +231,9 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
   let zStyled = false;
   for (const z of zeroU.filter(x => zeroUShown(x, view))) {
     const panel = zeroUPanel(z, view);
-    const face = await configuredFace({ref: z.ref, cfg: z.cfg, view: panel, swaps: {}, fields: {}});
-    const bottom = totalH - (z.ru - baseRU) * RU;
+    // (`swaps`: the plugs derived at its outlets, never stored: cable-plugs.js zeroUFacts. `ends`: its outlets, for picking)
+    const face = await configuredFace({ref: z.ref, cfg: z.cfg, view: panel, swaps: z.swaps || {}, fields: {}, ends: true});
+    const bottom = totalH - zeroURise(z, baseRU);
     const attrs = {'data-zerou-id': z.id, 'data-device-name': z.label, 'data-device-ref': z.ref,
                    'data-panel': 'zerou', 'data-zerou-at': z.at, style: 'cursor: pointer',
                    ...(z.id === selectedZeroU ? {class: 'rk-selected'} : {})};
@@ -240,6 +250,12 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       }
       // The whole part takes a click: its backing rect, under its drawing.
       gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
+      // THE OUTLETS A CORD LANDS ON (kit 0.36.0, Portrayal #1068: ports.js cableEndPaths of the part), for
+      // Cable mode's portAt, as a device's slots are; the end is {item: the part's id, path, view: this panel}.
+      // (and, kit 0.44.0, the ports of the modules in its bays, which the kit names: face.js zeroUModuleEnds)
+      const slotEnds = [...new Set([...(face.ports || []).filter(p => p.end).map(p => p.path ?? p.id),
+                                    ...await zeroUModuleEnds(z, panel)])];
+      if (slotEnds.length) { gz.setAttribute('data-cable-ends', slotEnds.join(' ')); gz.setAttribute('data-zerou-panel', panel); }
     } else {
       gz = svgEl('g', attrs);
       if (placeholders) {
@@ -305,7 +321,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const topOf = ruH => totalH - (it.ru - baseRU + ruH) * RU;
     const panel = panelFor(it, view);
     const face = await configuredFace({ref: it.ref, cfg: it.cfg, view: panel,
-                                       swaps: it.swaps || {}, fields: it.fields || {}});
+                                       swaps: it.swaps || {}, fields: it.fields || {}, ends: true});
     // One height for this item, computed before the `!face` branch: `it.u`
     // when it is known (every real caller sets it via fit.js's itemsWithU, in
     // halves since rack file version 4), falling back to the compiled
@@ -359,6 +375,10 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const g = svgEl('g', {transform: isFace(it) && SIDED.has(it.side) ? sidedTransform(it, view, w, h, y) : `translate(${fx - ox} ${fy - oy})`, ...common,
                           ...(isFace(it) && SIDED.has(it.side) ? {'data-side': it.side} : {}),
                           'data-panel': through ? 'through' : 'mounted'});
+    // THE SLOTS A CABLE LANDS ON besides the ports (a power inlet or outlet, a
+    // ground stud: kit ports.js cableEndPaths), for portAt to take a click on.
+    const slotEnds = (face.ports || []).filter(p => p.end).map(p => p.path ?? p.id);
+    if (slotEnds.length) g.setAttribute('data-cable-ends', slotEnds.join(' '));
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
     // no url(#...) and no href="#...", so there is nothing to collide - and
     // renaming them would break swap.js, which finds a seated module by the

@@ -6,7 +6,8 @@
 // changes nothing hands back the very rack it was given, so a caller can tell.
 
 import {withItem, updateItem, withoutItem, withFrame, renamed, withDcim, detached, positionOf, isWaypoint, holderOf, firstU, rollOf,
-        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings} from './model.js';
+        nextId, zeroUById, zeroUOffset, zeroUBottom, bundlesOf, bundleName, bundleIdFor, holdersOf, usableReadings,
+        endHostOf, zeroUIdsInUse} from './model.js';
 import {withoutCables, bundleOfCable, bundleCheck, layoutOf, onTrunk, trunkText, waypointText, strapEveryMm,
         spacingText, strapSpacing, strapKinds} from './bundles.js';
 import {deriveTrunk, andList} from './bundle-route.js';
@@ -14,17 +15,18 @@ import {ownRoute, autoRoute, routedLength, pointOf, portPoint, routePath} from '
 import {fits, fitsDepth, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU, setbackOf, isZeroUPart} from './fit.js';
 import {whereText, zeroUName, fitsHang, hangingOn} from './zero-u.js';
 import {stateRefusal} from './states.js';
-import {trayRefusal, trayText, FORMS, mText} from './slack.js';
+import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
-import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey,
+import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
-import {portIdsOf} from './ports.js';
+import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
 import {validate, same} from './validate.js';
-import {withRoutedLengths, pathwaysOf, lanesOf} from './route.js';
+import {withRoutedLengths, pathwaysOf, waypointLanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
 import {acceptSwaps, underCarrier} from '../swap.js';
+import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
 import {fieldAccepts} from '../fields.js';
 
 export const GONE = 'That device is no longer in the rack.';
@@ -124,9 +126,21 @@ function patch(rack, {id, ...given}, ctx) {
     const s = slotsFor(ctx, it.ref);
     if (s?.error) return s;
     if (s) {
-      const {accepted, ignored} = acceptSwaps(p.swaps, slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef));
-      p.swaps = accepted;
-      if (ignored.length) findings.push(note(`Left out ${ignored.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      // A REF THE LIBRARY HAS REPLACED IS WRITTEN AS ITS REPLACEMENT before the
+      // slot is asked, and a ref it no longer has is kept, with what sits
+      // under it, and named (kit/redirects.js): neither is dropped.
+      p.swaps = followSwaps(p.swaps, ctx.redirects).swaps;
+      const env = slotEnv({...it, cfg: p.cfg ?? it.cfg}, s, ctx.compByRef, ctx.redirects);
+      const {kept, rest, gone} = keptSwaps(p.swaps, ctx, path => resolverFor(env, p.swaps).entryAt(path));
+      const {accepted, ignored} = acceptSwaps(rest, env);
+      // what sits under a carrier the slot refuses goes with it
+      const orphan = path => ignored.some(c => underCarrier(path, c));
+      const stays = Object.fromEntries(Object.entries(kept).filter(([path]) => !orphan(path)));
+      const dropped = Object.keys(kept).filter(path => orphan(path));
+      p.swaps = {...accepted, ...stays};
+      const left = [...ignored, ...dropped];
+      if (left.length) findings.push(note(`Left out ${left.join(', ')}: not a slot on ${it.label}, or a part that slot does not take.`));
+      findings.push(...unknownTexts(gone.filter(u => !orphan(u.path)).map(u => ({...u, label: it.label}))).map(note));
     }
   }
   const changes = Object.fromEntries(['cfg', 'swaps', 'fields', 'label', 'turned']
@@ -235,10 +249,14 @@ const firstEight = refs => (refs.length > 8 ? `${refs.slice(0, 8).join(', ')} an
 // panel at the same `<bay>/module/<part>` (ports.js portIdsOf).
 const portIds = (comp, compByRef) => portIdsOf(comp, compByRef);
 
-function fit(rack, {id, path, ref}, ctx) {
+function fit(rack, {id, path, ref: given}, ctx) {
   const it = itemOf(rack, id);
   if (!it) return {error: GONE};
-  const was = it.swaps || {};
+  // A REF THE LIBRARY HAS REPLACED IS READ AS ITS REPLACEMENT, and so are the
+  // ones already on the device, so the slot is judged on the parts that will
+  // be written.
+  const ref = given === 'default' ? given : ctx.redirects?.follow(given) ?? given;
+  const was = followSwaps(it.swaps || {}, ctx.redirects).swaps;
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   // the swaps with only this slot changed: the map the slot is judged on
@@ -249,7 +267,7 @@ function fit(rack, {id, path, ref}, ctx) {
   if (!s && (ref === 'default' ? !own(was, path) : own(was, path) && was[path] === ref)) return unchanged(rack);
   let holds = ref === 'default' ? undefined : ref, isCage = false, view = null, next = flat;
   if (s) {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const target = resolverFor(env, flat).entryAt(path);
     // a part the slot does not take is refused even when it is the one held
     if (target && ref && ref !== 'default' && !(target.accepts || []).includes(ref))
@@ -272,6 +290,7 @@ function fit(rack, {id, path, ref}, ctx) {
     .filter(([k]) => k !== `${path}/module` && !underCarrier(k, path)));
   const name = holds === undefined ? null : partName(ctx.compByRef, holds);
   const findings = [];
+  if (ref !== given) findings.push(note(`${pairText(given, ref)}: ${ref} was fitted in ${path}.`));
   // A BAY'S PORTS GO WITH ITS PART: a cable on a port the new part does not
   // have is kept, as a loose end (remove's cables: 'keep').
   if (!isCage && holds !== undefined) {
@@ -310,7 +329,7 @@ function field(rack, {id, path, key, value}, ctx) {
   const s = slotsFor(ctx, it.ref);
   if (s?.error) return s;
   if (s && typeof ctx.compByRef === 'function') {
-    const env = slotEnv(it, s, ctx.compByRef);
+    const env = slotEnv(it, s, ctx.compByRef, ctx.redirects);
     const R = resolverFor(env, it.swaps || {});
     const slot = R.entryAt(path);
     if (slot) return {error: `${path} is a ${slot.isCage ? 'cage' : 'bay'}; the part in it is ${path}${slot.isCage ? '-occupant' : '/module'}.`};
@@ -373,14 +392,16 @@ function sideSet(rack, {id, side}, {chassisOf}) {
 // ── beside the rack (#926) ──────────────────────────────────────────────
 // A zero-U part (fit.js isZeroUPart) stands at an attachment point of the
 // frame, its bottom level with a U, and takes no rack unit: an entry of
-// rack.zeroU (model.js), never an item, and no cable ends on it.
+// rack.zeroU (model.js), never an item. A cable ends on one of its own
+// connector slots (the outlets of a zero-U PDU) as on a port of an item.
+// Its id is never one a cable end still names (model.js zeroUIdsInUse).
 function zeroUPlace(rack, {ref, cfg, at: where, ru, between = false, label}, ctx) {
   const {chassisOf} = ctx;
   const f = fitsZeroU(rack, {ref, at: where, ru}, chassisOf);
   if (!f.ok) return {error: f.reason};
   const c = chassisOf(ref);
   if (cfg != null) { const bad = cfgRefused(ctx, ref, cfg, c?.model ?? ref); if (bad) return bad; }
-  const id = nextId((rack.zeroU || []).filter(z => typeof z?.id === 'string'), 'z');
+  const id = nextId(zeroUIdsInUse(rack), 'z');
   const z = {id, ref, cfg: cfg ?? c?.default ?? '', label: label ?? c?.model ?? ref, at: where, offsetMm: zeroUOffset(ru),
              ...(between ? {between: true} : {})};
   const next = {...rack, zeroU: [...(rack.zeroU || []), z]};
@@ -427,14 +448,22 @@ function zeroUUpdate(rack, {id, at: where, ru, between, label, swaps, fields}, c
     : `Changed ${zeroUName(next, chassisOf)}, ${whereText(out, next, chassisOf)}.`) + with_);
 }
 
-function zeroURemove(rack, {id}, {chassisOf}) {
+// ITS CORDS are kept as loose ends, or removed with it, as a device's are
+// (`remove`).
+function zeroURemove(rack, {id, cables = 'keep'}, {chassisOf}) {
   const z = zeroUById(rack, id);
   if (!z) return {error: ZERO_GONE};
   // what hung on it stays where it was, on a bracket that is gone, and fit
   // refuses it until it is hung again or taken off
   const hung = hangingOn(rack, id);
   const stay = hung.length ? ` ${hung.map(h => zeroUName(h, chassisOf)).join(', ')} hung on it and stay${hung.length === 1 ? 's' : ''} where ${hung.length === 1 ? 'it was' : 'they were'}.` : '';
-  return done({...rack, zeroU: rack.zeroU.filter(o => o !== z)}, `Removed ${zeroUName(z, chassisOf)} from beside the rack.${stay}`);
+  const name = zeroUName(z, chassisOf), k = cablesOf(rack, id).length, n = count(k, 'cable');
+  const out = {...rack, zeroU: rack.zeroU.filter(o => o !== z)};
+  if (cables === 'remove' && k) {
+    const {rack: next, said} = withoutCables(out, cablesOf(rack, id).map(c => c.id));
+    return done(next, `Removed ${name} and its ${n} from beside the rack.${stay}${said ? ` ${said}` : ''}`);
+  }
+  return done(out, `Removed ${name} from beside the rack.${k ? ` Its ${n} ${k === 1 ? 'is a loose end' : 'are loose ends'}.` : ''}${stay}`);
 }
 
 // HANG A PART ON BRACKETS (`on`: their ids), or take it off them (`on: null`).
@@ -607,13 +636,39 @@ const lengthOf = l => (l ? {value: l.value, unit: l.unit ?? 'm', source: l.sourc
 // the address it stands for (cable-rules.js elementIdReason).
 const endRefused = ends => { const e = ends.find(x => isElementId(x.path)); return e ? {error: `${elementIdReason(e.path)}.`} : null; };
 
-function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null}, {chassisOf}) {
-  if (!itemOf(rack, a.item) || !itemOf(rack, b.item)) return {error: NOT_ADDED};
-  const refused = endRefused([a, b]);
+// A CABLE'S OWN COLOUR (`color`, #1028) is `#rgb` or `#rrggbb`, stored as
+// lower case `#rrggbb`; null or "" is none of its own. Anything else is
+// refused with cable-rules.js COLOR_REFUSED, here and in cable.update.
+// AN END ON A PART BESIDE THE RACK (P-0019): the part's own connector slots
+// are the only ends it has, and the catalogue lists them all (ports.js
+// zeroUEnds), so with the parts lists loaded an end on one it does not have is
+// refused, naming those it has. Without them it is kept as given, as a port
+// of an item is.
+const hasEnd = (rack, id) => !!endHostOf(rack, id);
+function zeroUEndRefused(rack, ends, ctx) {
+  if (typeof ctx?.slotsOf !== 'function' || typeof ctx?.compByRef !== 'function') return null;
+  for (const e of ends) {
+    const z = zeroUById(rack, e.item);
+    if (!z) continue;
+    const name = zeroUName(z, ctx.chassisOf), all = zeroUEnds(z, ctx), view = e.view === 'rear' ? 'rear' : 'front';
+    if (!all.length) return {error: `${name} has nothing a cable can end on.`};
+    if (all.some(s => s.path === e.path && s.view === view)) continue;
+    const other = all.find(s => s.path === e.path);
+    return {error: other ? `${e.path} is on the ${other.view} panel of ${name}: give view "${other.view}".`
+      : `${name} has no ${e.path}. It has ${zeroUEndsText(all)}.`};
+  }
+  return null;
+}
+function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, ctx) {
+  const {chassisOf} = ctx;
+  if (!hasEnd(rack, a.item) || !hasEnd(rack, b.item)) return {error: NOT_ADDED};
+  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx);
   if (refused) return refused;
+  const tint = parseColor(color);
+  if (!tint.ok) return {error: tint.reason};
   const can = canCable(rack, a, b, {uOf: heightOf(chassisOf)});
   if (!can.ok) return {error: can.reason};
-  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length)});
+  const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length), color: tint.color});
   return done(next, `Added cable ${cableName(cable)}.`, {created: {id: cable.id}});
 }
 
@@ -621,14 +676,16 @@ function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = nu
 // label and length - and checks the new port as cable.add would, with the
 // cable itself out of the way. A route drawn by hand is kept, and said to be
 // possibly stale.
-const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front'});
-function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
+const endOf = e => ({item: e.item, path: e.path, view: e.view === 'rear' ? 'rear' : 'front',
+  ...(typeof e.plug === 'string' && e.plug ? {plug: e.plug} : {})});
+function cableUpdate(rack, {id, a, b, ...p}, ctx) {
+  const {chassisOf} = ctx;
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
-  if (moved.some(k => !itemOf(rack, ends[k].item))) return {error: GONE};
-  const refused = endRefused(moved.map(k => ends[k]));
+  if (moved.some(k => !hasEnd(rack, ends[k].item))) return {error: GONE};
+  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx);
   if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
@@ -637,13 +694,25 @@ function cableUpdate(rack, {id, a, b, ...p}, {chassisOf}) {
   }
   const {straps: tie, ...fields} = p;
   const want = 'length' in fields ? {...fields, length: lengthOf(fields.length)} : {...fields};
+  // its own colour: a colour sets it, null or "" takes it off (updateCable)
+  if ('color' in want) {
+    const tint = parseColor(want.color);
+    if (!tint.ok) return {error: tint.reason};
+    want.color = tint.color;
+  }
   // the straps of this cable alone: null takes the key off, which is the default
   const untie = tie === null && 'straps' in c;
   if (tie != null) want.straps = {...(c.straps && typeof c.straps === 'object' ? c.straps : {}), ...tie};
   // A length named at all replaces one the loader kept as written.
-  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c));
-  if (!changed.length && !moved.length && !untie) return unchanged(rack);
-  let next = updateCable(rack, id, {...want, ...Object.fromEntries(moved.map(k => [k, ends[k]]))});
+  // (and a colour named at all, one kept as written)
+  const changed = Object.keys(want).filter(k => !same(want[k], c[k] ?? null) || (k === 'length' && 'lengthAsWritten' in c)
+    || (k === 'color' && 'colorAsWritten' in c));
+  // AN END NAMED AT THE PORT IT IS ON may still state another plug (`plug`,
+  // cable-rules.js endPlug), or none where it stated one: that is an edit of
+  // the cable and not a move.
+  const plugged = ['a', 'b'].filter(k => !moved.includes(k) && (ends[k].plug ?? null) !== (c[k].plug ?? null));
+  if (!changed.length && !moved.length && !plugged.length && !untie) return unchanged(rack);
+  let next = updateCable(rack, id, {...want, ...Object.fromEntries([...moved, ...plugged].map(k => [k, ends[k]]))});
   if (untie) next = {...next, cables: next.cables.map(x => { if (x.id !== id) return x; const {straps: _s, ...rest} = x; return rest; })};
   const name = cableName(cableOf(next, id));
   const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.`);
@@ -667,39 +736,56 @@ function cableRemove(rack, {id}) {
 // is given; without it, a route is stored as written. A waypoint already in the
 // cable's stored route is not judged again: the page resends the whole route on
 // every edit, stale entries included.
-function waypointError(rack, route, stored, {chassisOf, guidesOf} = {}) {
-  if (typeof chassisOf !== 'function') return null;
-  const lanes = lanesOf(rack.frame);
+// A PART BESIDE THE RACK (a zero-U duct) is named as a device is: its duct,
+// and each window through its back, by the catalogue (route.js
+// zeroUPathways; issue 13). A pathway may be named as the route summary says
+// it ("ring 3", "left end ring": route.js pathwayId), and the route returned
+// holds its id. {error} or {route}.
+function waypointsChecked(rack, route, stored, {chassisOf, guidesOf} = {}) {
+  if (typeof chassisOf !== 'function') return {route};
+  const lanes = waypointLanesOf(rack.frame);
+  const out = [];
   for (const [k, w] of route.entries()) {
     const n = k + 1;
+    out.push(w);
     if (stored.some(o => same(o, w))) continue;
     if ('lane' in w) {
-      if (!lanes.includes(w.lane)) return `Waypoint ${n}: there is no gutter called ${w.lane}. This rack has: ${lanes.join(', ')}.`;
+      if (!lanes.includes(w.lane)) return {error: `Waypoint ${n}: there is no gutter called ${w.lane}. This rack has: ${lanes.join(', ')}.`};
       if (!Number.isInteger(w.ru) || w.ru < 1 || w.ru > rack.frame.heightRU)
         // the stored ru, not a U label: past the frame there is no label to give
-        return `Waypoint ${n}: ru ${w.ru} is not on this ${rack.frame.heightRU}U rack, whose ru runs 1-${rack.frame.heightRU} from the bottom.`;
+        return {error: `Waypoint ${n}: ru ${w.ru} is not on this ${rack.frame.heightRU}U rack, whose ru runs 1-${rack.frame.heightRU} from the bottom.`};
       continue;
     }
     const it = rack.items.find(i => i.id === w.item);
-    if (!it) return `Waypoint ${n} names ${w.item}, which is not in the rack.`;
-    let ids;
-    const ch = typeof chassisOf === 'function' ? chassisOf(it.ref) : null;
-    // rack.json lists the default configuration only: a configured item's pathways are unknown there
-    const asListed = !!ch && (it.cfg || ch.default) === ch.default && !Object.keys(it.swaps || {}).length;
-    if (typeof guidesOf === 'function') {
-      // the configured face, as the page draws it, and the trays the
-      // catalogue lists (docs/cable-lay-design.md section 8: a tray is named
-      // as a ring is)
-      const trays = asListed && Array.isArray(ch.trays) ? ch.trays.map(t => t?.id).filter(v => typeof v === 'string') : [];
-      ids = [...new Set([...(guidesOf(it.id) || []).map(g => g.via), ...trays])].sort();
+    const z = it ? null : zeroUById(rack, w.item);
+    if (!it && !z) return {error: `Waypoint ${n} names ${w.item}, which is not in the rack.`};
+    let ids, name;
+    if (z) {
+      name = zeroUName(z, chassisOf);
+      ids = zeroUPathways(rack, z, {chassisOf}).map(p => p.via).sort();
+      if (!ids.length) return {error: `Waypoint ${n}: ${name} has no duct or pass-through; it is no pathway.`};
     } else {
-      if (!asListed) continue;
-      ids = pathwaysOf(ch);
+      name = it.label;
+      const ch = typeof chassisOf === 'function' ? chassisOf(it.ref) : null;
+      // rack.json lists the default configuration only: a configured item's pathways are unknown there
+      const asListed = !!ch && (it.cfg || ch.default) === ch.default && !Object.keys(it.swaps || {}).length;
+      if (typeof guidesOf === 'function') {
+        // the configured face, as the page draws it, and the trays the
+        // catalogue lists (docs/cable-lay-design.md section 8: a tray is named
+        // as a ring is)
+        const trays = asListed && Array.isArray(ch.trays) ? ch.trays.map(t => t?.id).filter(v => typeof v === 'string') : [];
+        ids = [...new Set([...(guidesOf(it.id) || []).map(g => g.via), ...trays])].sort();
+      } else {
+        if (!asListed) continue;
+        ids = pathwaysOf(ch);
+      }
+      if (!ids.length) return {error: `Waypoint ${n}: ${it.label} has no rings, ducts, pass-throughs or trays.`};
     }
-    if (!ids.length) return `Waypoint ${n}: ${it.label} has no rings, ducts, pass-throughs or trays.`;
-    if (!ids.includes(w.via)) return `Waypoint ${n}: ${it.label} has no ring, duct, pass-through or tray called ${w.via}. It has: ${ids.join(', ')}.`;
+    const via = pathwayId(ids, w.via);
+    if (!via) return {error: `Waypoint ${n}: ${name} has no ring, duct, pass-through or tray called ${w.via}. It has: ${ids.join(', ')}.`};
+    if (via !== w.via) out[out.length - 1] = {...w, via};
   }
-  return null;
+  return {route: out};
 }
 // A route by hand is the whole list of waypoints, in order, as route.js stores
 // them. The page names each edit its own way ("Waypoint added."), so it may
@@ -713,8 +799,9 @@ function cableRoute(rack, {id, route, summary}, ctx) {
   if (!c) return {error: CABLE_GONE};
   const bad = route.findIndex(w => !isWaypoint(w));
   if (bad >= 0) return {error: `Waypoint ${bad + 1} is neither a pathway nor a gutter.`};
-  const wrong = waypointError(rack, route, c.route ?? [], wpCtx(ctx));
-  if (wrong) return {error: wrong};
+  const checked = waypointsChecked(rack, route, c.route ?? [], wpCtx(ctx));
+  if (checked.error) return {error: checked.error};
+  route = checked.route;
   if (c.routeEdited === true && same(c.route ?? [], route) && !('routeAsWritten' in c)) return unchanged(rack);
   const next = updateCable(rack, id, {route: structuredClone(route), routeEdited: true});
   // A member's own route decides only its lead-in and lead-out.
@@ -787,12 +874,13 @@ function checksOf(rack, b, ctx) {
   return [...r.warnings.map(text => ({kind: 'warning', text})), ...r.notes.map(note)];
 }
 // A trunk by hand: the shapes, then each waypoint as cable.route checks it.
-function trunkError(rack, route, stored, ctx) {
-  if (!route.length) return "A bundle's route needs at least one waypoint.";
+// {error} or {route}, the route with each pathway by its id.
+function trunkChecked(rack, route, stored, ctx) {
+  if (!route.length) return {error: "A bundle's route needs at least one waypoint."};
   const bad = route.findIndex(w => !isWaypoint(w));
-  if (bad >= 0) return `Waypoint ${bad + 1} is neither a pathway nor a gutter.`;
+  if (bad >= 0) return {error: `Waypoint ${bad + 1} is neither a pathway nor a gutter.`};
   // a reader that throws counts as missing: checked against the catalogue
-  try { return waypointError(rack, route, stored, wpCtx(ctx)); } catch { return waypointError(rack, route, stored, {chassisOf: ctx?.chassisOf}); }
+  try { return waypointsChecked(rack, route, stored, wpCtx(ctx)); } catch { return waypointsChecked(rack, route, stored, {chassisOf: ctx?.chassisOf}); }
 }
 // The trunk worked out from the cables' own routes (bundle-route.js).
 function workedOut(rack, ids, ctx) {
@@ -826,9 +914,9 @@ function bundleCreate(rack, {cables, label = '', number, route, straps}, ctx) {
   if (taken) return {error: `Bundle ${number} is already ${taken.id}'s number.`};
   let trunk;
   if (route != null) {
-    const wrong = trunkError(rack, route, [], ctx);
-    if (wrong) return {error: wrong};
-    trunk = structuredClone(route);
+    const checked = trunkChecked(rack, route, [], ctx);
+    if (checked.error) return {error: checked.error};
+    trunk = structuredClone(checked.route);
   } else {
     const t = workedOut(rack, cables, ctx);
     if (t.error) return {error: t.error};
@@ -957,9 +1045,9 @@ function bundleUpdate(rack, {id, label, number, straps, summary, ...rest}, ctx) 
       if (t.error) return {error: t.error};
       trunk = t.route;
     } else {
-      const wrong = trunkError(rack, rest.route, b.route || [], ctx);
-      if (wrong) return {error: wrong};
-      trunk = structuredClone(rest.route);
+      const checked = trunkChecked(rack, rest.route, b.route || [], ctx);
+      if (checked.error) return {error: checked.error};
+      trunk = structuredClone(checked.route);
     }
     if (!same(trunk, b.route) || 'routeAsWritten' in b) {
       patch.route = trunk;
@@ -998,35 +1086,76 @@ function bundleRemove(rack, {id}) {
 }
 
 // ── spare cable (docs/rack-file-v4-design.md sections 3.3 and 3.5) ───────
-// Where a cable's spare is stored: a tray it rests on, or one of its ends.
-// It is recorded and listed, never drawn, and the kit places none itself.
+// Where a cable's spare is stored: a duct or a tray on its route (slack.js
+// SPARE_HOLDS says which), or one of its ends. It is recorded and listed, and
+// the kit places none itself. A pathway may be named as the route summary
+// says it (route.js pathwayId), and is stored by its id.
 const sameAt = (e, at) => ('end' in at ? e.end === at.end : e.item === at.item && e.via === at.via);
 function cableSlack(rack, {id, at: where, value, unit, form}, ctx) {
   const c = cableOf(rack, id);
   if (!c) return {error: CABLE_GONE};
   const isEnd = where.end != null, isTray = where.item != null && where.via != null;
-  if (isEnd === isTray) return {error: 'cable.slack needs at as {item, via}, a tray on a device, or {end}, a or b.'};
+  if (isEnd === isTray) return {error: 'cable.slack needs at as {item, via}, a duct or a tray, or {end}, a or b.'};
   if (isEnd && form != null) return {error: 'Spare left at an end has no form.'};
-  const entry = {...(isEnd ? {end: where.end} : {item: where.item, via: where.via, ...(form != null ? {form} : {})}),
+  // judged against the route when the routes are known; else recorded as given
+  let path = null;
+  if (ctx.route) { try { path = routePath(rack, c, ctx.route); } catch { path = null; } }
+  const andWhere = () => (ctx.route ? ` ${spareWhere(rack, c, ctx.route, path ?? undefined)}` : '');
+  let via = where.via;
+  if (isTray) {
+    if (!itemOf(rack, where.item) && !zeroUById(rack, where.item)) return {error: `${where.item} is not in the rack.${andWhere()}`};
+    const ids = slackIds(rack, where.item, ctx);
+    if (ids) {
+      via = pathwayId(ids, where.via);
+      if (!via) return {error: `${labelOfAny(rack, where.item)} has no pathway called ${where.via}.${andWhere()}`};
+    }
+  }
+  const entry = {...(isEnd ? {end: where.end} : {item: where.item, via, ...(form != null ? {form} : {})}),
                  ...(value != null ? {value, unit: unit ?? 'm'} : {})};
+  // a place that can never hold it says where the spare can go; a tray's own reasons stand alone
+  const no = isTray ? spareRefusal(rack, c, entry, ctx.route, path) : null;
+  if (no) return {error: /is not on the route|holds no spare|has no pathway/.test(no) ? `${no}${andWhere()}` : no};
   const had = Array.isArray(c.slack) ? c.slack : [];
   const others = had.filter(e => !sameAt(e, entry));
+  // no more than the cable has to store, and nothing on a cable that is short
+  const tooMuch = path ? amountRefusal(rack, {...c, slack: others}, entry, ctx.route, path) : null;
+  if (tooMuch) return {error: tooMuch};
   if (value == null && others.some(e => e.value == null))
     return {error: `${c.id} already has an entry that takes the rest of its spare: give this one a value.`};
-  if (isTray) {
-    if (!itemOf(rack, where.item) && !zeroUById(rack, where.item)) return {error: `${where.item} is not in the rack.`};
-    // judged against the route when the routes are known; else recorded as given
-    let path = null;
-    if (ctx.route) { try { path = routePath(rack, c, ctx.route); } catch { path = null; } }
-    const no = trayRefusal(rack, c, entry, ctx.route, path);
-    if (no) return {error: no};
-  }
+  const findings = [];
   const next = [...others, entry];
+  if (isTray) {
+    // a duct is counted against what its maker states, with this entry in it
+    if (ctx.route && pathwaysAt(rack, entry.item, ctx.route).find(p => p.via === entry.via)?.kind === 'duct') {
+      let load = null;
+      try { load = spareLoad(updateCable(rack, id, {slack: next}), entry.item, ctx.route, c); } catch { load = null; }
+      if (load?.over) return {error: `${loadText(rack, entry.item, load)} Store less there, or in another duct or tray. ${spareWhere(rack, c, ctx.route, path ?? undefined)}`};
+      if (load && (!load.compared || load.estimated)) findings.push(note(loadText(rack, entry.item, load)));
+    }
+  }
   if (same(next, had) && Array.isArray(c.slack)) return unchanged(rack);
   const what = value != null ? `${mText(unit === 'ft' ? value * 0.3048 : value)} of the spare` : 'the spare';
-  return done(updateCable(rack, id, {slack: next}),
-    `Stored ${what} of ${cableName(c)} ${isEnd ? `at its ${where.end.toUpperCase()} end` : `in ${trayText(rack, entry)}`}.`);
+  return {...done(updateCable(rack, id, {slack: next}),
+    `Stored ${what} of ${cableName(c)} ${isEnd ? `at its ${where.end.toUpperCase()} end` : `in ${trayText(rack, entry)}`}.`), findings};
 }
+// The pathway ids a place for spare may name on a part, for its spoken name:
+// what the routes know there, else the catalogue's for a part as listed;
+// null where neither is known, and then the name is kept as given.
+function slackIds(rack, id, ctx) {
+  if (ctx.route) {
+    let ps = [];
+    try { ps = pathwaysAt(rack, id, ctx.route); } catch { ps = []; }
+    if (ps.length) return ps.map(p => p.via);
+  }
+  if (typeof ctx.chassisOf !== 'function') return null;
+  const z = zeroUById(rack, id);
+  if (z) { const ps = zeroUPathways(rack, z, ctx); return ps.length ? ps.map(p => p.via) : null; }
+  const it = itemOf(rack, id), ch = ctx.chassisOf(it.ref);
+  const asListed = !!ch && (it.cfg || ch.default) === ch.default && !Object.keys(it.swaps || {}).length;
+  const ids = asListed ? pathwaysOf(ch) : [];
+  return ids.length ? ids : null;
+}
+const labelOfAny = (rack, id) => itemOf(rack, id)?.label || zeroUById(rack, id)?.label || id;
 
 // Without `at`, nothing is said of the cable's spare any more (no `slack`
 // key); with it, that one entry goes, and the key with the last of them.
@@ -1064,18 +1193,30 @@ function cableLay(rack, args, ctx) {
   // the pathway must be one the routes know on the device: a ring or a duct
   // the page draws, or a tray; with no routes known it is recorded as given
   const pinning = args.position != null || args.face != null;
-  let trays = [];
+  let trays = [], guides = [];
   if (ctx.route) { try { trays = traysOf(rack, ctx.route).filter(x => x.item === where.item); } catch { trays = []; } }
   if (pinning && ctx.route) {
-    let guides = [];
     try { guides = typeof ctx.route.guidesOf === 'function' ? ctx.route.guidesOf(where.item) || [] : []; } catch { guides = []; }
     const ids = [...new Set([...guides.map(g => g.via), ...trays.map(t => t.via)])].sort();
     if (!ids.includes(where.via))
       return {error: ids.length ? `${it.label || it.id} has no ring, duct or tray called ${where.via}. It has: ${ids.join(', ')}.`
                                 : `${it.label || it.id} has no rings, ducts or trays.`};
   }
+  // A POSITION IS ONE OF THE CABLES THAT SHARE THE PATHWAY (P-0018): from 1 to
+  // how many routes pass through it, this cable's among them. Judged when the
+  // routes are known; with none, it is recorded as given.
+  if (args.position != null && ctx.route) {
+    let sharing = null;
+    try {
+      sharing = rack.cables.filter(x => resolveRoute(rack, x, ctx.route).waypoints.some(w => w.item === where.item && w.via === where.via)).map(x => x.id);
+    } catch { sharing = null; }   // a route that cannot be read leaves the position unjudged, as a face is when no path is found
+    if (sharing && !sharing.includes(c.id)) return {error: `${c.id} does not pass through ${name}, so it has no position there.`};
+    if (sharing && args.position > sharing.length)
+      return {error: `${name} carries ${sharing.length} cable${sharing.length === 1 ? '' : 's'}, so a position there runs from 1 to ${sharing.length}; ${args.position} is past it.`};
+  }
   if (args.face != null && ctx.route) {
     const t = trays.find(x => x.via === where.via) || null;
+    if (!t && guides.some(g => g.via === where.via)) return {error: `${name} is a ring or a duct, not a tray: a cable has no face to lie on there.`};
     if (!t) return {error: `${name} is no tray, so a cable has no face to lie on there.`};
     const held = t.flipped ? 'top' : 'underside';
     if (args.face === held && !t.ties.length)
@@ -1120,9 +1261,10 @@ const RU = {type: 'number', minimum: 1, multipleOf: 0.5,
 // A part that bolts to the rail face stands at a whole unit.
 const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
-  description: 'One end of a cable: a port on a device.',
-  properties: {item: ID('device'), path: {type: 'string', minLength: 1, description: "The port, as the device's free ports name it (e.g. port-1)."},
-               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."}}};
+  description: 'One end of a cable: a port on a device, or an outlet of a part beside the rack (a zero-U PDU).',
+  properties: {item: ID('device or part beside the rack'), path: {type: 'string', minLength: 1, description: "The port or outlet, as the free ports name it (e.g. port-1, outlet-a2)."},
+               view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
+               plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
   description: 'How long the cable is, or null for not known.',
   properties: {value: {type: 'number', exclusiveMinimum: 0, description: 'The length, above 0.'},
@@ -1132,12 +1274,13 @@ const CABLE_FIELDS = {
   media: {enum: ['', ...MEDIA], description: `The cable type: ${MEDIA.join(', ')}, or "" for not known.`},
   purpose: {type: 'string', description: 'What the cable is for, in a word or two (e.g. uplink, management).'},
   label: {type: 'string', description: 'The text on its tags. Its id is used when there is none.'},
-  length: LENGTH};
+  length: LENGTH,
+  color: {type: ['string', 'null'], description: 'Its own color, as # and three or six hex digits (e.g. #2bb3c8); null for none of its own, so that its ends, its type or its media decide.'}};
 const WAYPOINT = {type: 'object', additionalProperties: false,
   description: 'One waypoint: {item, via} for a pathway on a device, or {lane, ru} for a gutter at a U.',
   properties: {item: {type: 'string', minLength: 1, description: 'The device the pathway is on, with via.'},
                via: {type: 'string', minLength: 1, description: "The pathway on that device's drawing, such as a ring or a duct, with item."},
-               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru.'},
+               lane: {type: 'string', minLength: 1, description: 'The gutter beside the rails, with ru. A four-post also has the lane between a rail and a part beside it, such as left-rear-inner.'},
                ru: {type: 'integer', description: 'The U the gutter is crossed at, with lane.'}},
   dependentRequired: {item: ['via'], via: ['item'], lane: ['ru'], ru: ['lane']}};
 const SUMMARY = {type: 'string', description: 'How the step is described in Undo and the notice; set by the caller.'};
@@ -1232,28 +1375,28 @@ export const COMMANDS = {
   'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
     args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
       readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
-  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack.',
-    args: args(['id'], {id: ID('part beside the rack')})},
+  'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack. Its cables (the cords on a PDU\'s outlets) are kept as loose ends, or removed with it.',
+    args: args(['id'], {id: ID('part beside the rack'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
-  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label or length, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
+  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
     args: args(['id'], {id: ID('cable'), a: {...END, description: 'Move end A to this port; left where it is when left out.'},
       b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS, straps: CABLE_STRAPS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},
-  'cable.route': {run: cableRoute, description: 'Route a cable by hand through the waypoints given, in order. Its routed length follows. Refused for a pathway or gutter the rack lacks; the refusal lists what exists.',
+  'cable.route': {run: cableRoute, description: 'Route a cable by hand through the waypoints given, in order. Its routed length follows. A waypoint may name a part beside the rack: its duct (the lane run through it) or a window such as pass-through-2. A pathway may be named as the route summary says it: "ring 3", "left end ring", "front-duct" for duct. Refused for a pathway or gutter the rack lacks; the refusal lists what exists.',
     args: args(['id', 'route'], {id: ID('cable'),
-      route: {type: 'array', description: 'The waypoints, in order: {item, via} for a pathway on a device, {lane, ru} for a gutter at a U.',
+      route: {type: 'array', description: 'In order: {item, via} for a pathway on a device or a part beside the rack (its duct, a window), {lane, ru} for a gutter at a U.',
         items: WAYPOINT},
       summary: SUMMARY})},
-  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a tray it rests on, or at one of its ends. It is listed, not drawn. With no value the place takes whatever is left to store. Refused, with the reason, for a tray the cable cannot store in.',
+  'cable.slack': {run: cableSlack, description: 'Say where the spare length of a cable is stored: in a finger duct its route uses (a horizontal manager, a vertical manager beside the rack, a rack-face bracket), on a tray it rests on, or at one of its ends. A ring, a pass-through and a pathway off its route hold none. With no value the place takes what is left. A duct is counted against its capacity, stated or estimated. Refused, with where spare can go, for a place that cannot hold it, for more spare than it has, and on a short cable.',
     args: args(['id', 'at'], {id: ID('cable'),
-      at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a tray on a device, or {end} for an end of the cable.',
-        properties: {item: {type: 'string', minLength: 1, description: 'The device the tray is on, with via.'},
-                     via: {type: 'string', minLength: 1, description: 'The tray on that device, with item.'},
+      at: {type: 'object', additionalProperties: false, description: 'The place: {item, via} for a duct or a tray on a device or on a part beside the rack, or {end} for an end of the cable.',
+        properties: {item: {type: 'string', minLength: 1, description: 'The device or the part beside the rack the duct or tray is on, with via.'},
+                     via: {type: 'string', minLength: 1, description: 'The duct or tray on it, with item: duct, front-duct, rear-duct, duct-rear or a tray id.'},
                      end: {enum: ['a', 'b'], description: 'The end of the cable the spare is left at: a or b.'}}},
       value: {type: 'number', exclusiveMinimum: 0, description: 'How much is stored there, above 0; the rest when left out.'},
       unit: {enum: ['m', 'ft'], description: 'Metres (m) or feet (ft); m when left out.'},
-      form: {enum: FORMS, description: 'How it is stored in a tray: coil, serpentine or spool; coil when left out.'}})},
+      form: {enum: FORMS, description: 'How it is stored: coil, serpentine or spool (a tray only); a coil on a tray and a loop in a duct when left out.'}})},
   'cable.slack.clear': {run: cableSlackClear, description: 'Take back where the spare of a cable is stored: one place, or with no place all of them, so that nothing is said of it.',
     args: args(['id'], {id: ID('cable'),
       at: {type: 'object', additionalProperties: false, description: 'The place to clear: {item, via} or {end}; all of them when left out.',
@@ -1356,6 +1499,8 @@ export function apply(rack, cmds, ctx) {
   }
   const bound = new Map(), created = {}, ids = [], summaries = [], findings = [];
   let cur = rack, step = false;
+  // WHAT THIS RACK SAYS THAT THE LIBRARY HAS REPLACED, as the file has it
+  const said = ctx?.redirects?.size ? rewriteRack(rack, ctx.redirects).changed : [];
   for (const [index, raw] of list.entries()) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw) || typeof raw.op !== 'string')
       return {error: 'A command is an object with an op.', index};
@@ -1382,6 +1527,23 @@ export function apply(rack, cmds, ctx) {
       if (as != null) { bound.set(as, res.created.id); created[as] = res.created.id; }
     }
     cur = res.rack;
+  }
+  // THE FIRST EDIT THAT LANDS WRITES THE NEW REFS (kit/redirects.js), in the
+  // same step, so one undo takes both back; a plain load, a no-op, a refused
+  // edit and a command that is no step leave the rack as the file has it.
+  if (step && ctx?.redirects?.size) {
+    const out = rewriteRack(cur, ctx.redirects);
+    if (out.changed.length) {
+      cur = out.rack;
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const all = said.filter(a => there.has(a.item));
+      for (const c of out.changed) if (!all.some(a => a.item === c.item && a.path === c.path && a.from === c.from)) all.push(c);
+      findings.unshift(note(rewroteText(all)));
+    } else if (said.length) {
+      const there = new Set([...cur.items, ...(cur.zeroU || [])].map(i => i.id));
+      const still = said.filter(a => there.has(a.item));
+      if (still.length) findings.unshift(note(rewroteText(still)));
+    }
   }
   return {rack: cur, summary: summaries.join(' '), findings, created: {...created, ids}, noop: cur === rack, step};
 }

@@ -18,16 +18,19 @@ import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt, WIDTH, TAG_H} from './cables.js';
 import {bundleSummary, strapDrawn, TIE_HALF, tieCentre, bendViolations, drawnDiameter, fitText} from './bundle-view.js';
 import {svgEl} from './dom.js';
+import {radiusOf} from './bend3d.js';
+import {trunkPaths, trunkPoint} from './bend2d.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
 import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
-import {paneMarks, landedBends} from './route-context.js';
+import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
+import {loopEl, loopPane} from './spare-loops.js';
 import {noteStrap, packSpan, lineSpan} from './strap-size.js';
 import {RU, RAIL_W, OPENING} from '../../vendor/rack/rails.js';
 import {positionOf} from '../../vendor/rack/model.js';
-import {cablePlan, endKey, endName, portPathOf, matches} from '../../vendor/rack/cable-rules.js';
+import {cablePlan, endKey, endName, portPathOf, portLabel, matches} from '../../vendor/rack/cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
 // own figure), and below it for a lead hanging from the lowest device.
@@ -85,11 +88,51 @@ export function inPane(svg, el) {
 }
 
 // A pathway's element in a pane: a ring (#via or #via-end), a duct
-// (#guide--via) or a pass (#pass--via) inside the item's group.
+// (#guide--via) or a pass (#pass--via) inside the item's group. A front-mounted
+// horizontal manager's rear pane is a "through" panel (its rear-brush and
+// pass-through-N), so that one is looked in too.
 export function wayEl(svg, w) {
-  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"]`);
-  return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
-    || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
+  const ix = indexFor(svg);
+  if (ix) return ix.way(w);
+  const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"], [data-item-id="${CSS.escape(w.item)}"][data-panel="through"]`);
+  return wayIn(g, w);
+}
+const wayIn = (g, w) => g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
+  || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
+
+// ONE DRAW'S INDEX OF A PANE. A whole-pane querySelector per waypoint or cable
+// end cost 2.8 s on a pane of several hundred thousand nodes, so drawRackCables
+// walks the pane once and answers from Maps: an item's panel group (the first in
+// document order, as querySelector found it), a waypoint's element (memoised),
+// and a group's cablePoints (read once). Only while that draw runs; the panes'
+// device groups do not change during it.
+let ACTIVE = null;
+const indexFor = svg => (ACTIVE && ACTIVE.svg === svg ? ACTIVE : null);
+function paneIndex(svg) {
+  const panels = new Map(), mounted = new Map(), ways = new Map(), points = new Map();
+  for (const el of svg.querySelectorAll('[data-item-id][data-panel], [data-zerou-id]')) {
+    const id = el.getAttribute('data-item-id');
+    if (id != null && el.hasAttribute('data-panel')) {
+      if (!panels.has(id)) panels.set(id, el);
+      const p = el.getAttribute('data-panel');
+      if ((p === 'mounted' || p === 'through') && !mounted.has(id)) mounted.set(id, el);
+    }
+    const z = el.getAttribute('data-zerou-id');
+    if (z != null && !panels.has(z)) panels.set(z, el);
+  }
+  return {
+    svg,
+    group: id => panels.get(id) ?? null,
+    way(w) {
+      const k = `${w.item}\u0000${w.via}`;
+      if (!ways.has(k)) ways.set(k, wayIn(mounted.get(w.item) ?? null, w) ?? null);
+      return ways.get(k);
+    },
+    points(g) {
+      if (!points.has(g)) points.set(g, cablePoints(g));
+      return points.get(g);
+    },
+  };
 }
 
 // A waypoint's point in a pane, or null when it is not on this pane.
@@ -97,6 +140,9 @@ export function wayEl(svg, w) {
 // A lane through a zero-U duct (the kit's zero-u.js) runs up the duct's channel: `ductX(lane,
 // ru)` is the duct's centre in rack x, or null where no duct stands.
 // `shift` (mm, across the run) combs a bundle's members side by side on its lane (bundle-view.js combOffset).
+// A PART BESIDE THE RACK named in a route (its duct or a window, kit 0.35.0) has no element here
+// to place it by: the routes drawn are the kit's resolved ones (route.js resolveRoute), in which it
+// is already the lane run through the part, so it reaches this as lane points.
 function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
   if (w.lane) {
     const [side, face] = w.lane.split('-');
@@ -114,7 +160,9 @@ function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
   return [b.x + b.w / 2, b.y + b.h / 2];
 }
 
-const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel]`);
+// (an end on a part beside the rack is on that part's drawing: a PDU's outlet, kit 0.36.0)
+const panelGroup = (svg, itemId) => indexFor(svg)?.group(itemId) ?? (indexFor(svg) ? null : slowGroup(svg, itemId));
+const slowGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel], [data-zerou-id="${CSS.escape(itemId)}"]`);
 
 // A port's box in the pane's own user space, or null when the pane does not
 // draw it. `svg` must be in the document and laid out (getScreenCTM).
@@ -136,7 +184,7 @@ function endPoints(svg, itemId, path) {
   const g = panelGroup(svg, itemId);
   if (!g || g.dataset.panel === 'missing') return null;
   const inv = svg.getScreenCTM().inverse();
-  const pts = cablePoints(g).filter(p => p.at && plugAt(p.path, path));
+  const pts = (indexFor(svg)?.points(g) ?? cablePoints(g)).filter(p => p.at && plugAt(p.path, path));
   if (pts.length) return pts.map(p => {
     const q = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
     return [q.x, q.y];
@@ -163,6 +211,20 @@ export function pillText(text) {
 // A tag's text is fitted to the pill by shortening the middle of a part, never its end (bundle-view.js fitText).
 const fitTag = (parts, cut) => fitText(parts, cut, MAX_CHARS);
 
+// A FREE SPAN'S POINTS on a front or rear pane: the kit's points between the
+// plugs (not the ports, nor the reach points, which stand off the face and so
+// fall on the ports from the front), through `place` (rack mm to pane space),
+// with any point on the last one dropped.
+function freeSpan2d(points, place) {
+  const out = [];
+  for (const q of points ?? []) {
+    if (q.at === 'a' || q.at === 'b' || q.at === 'reach') continue;
+    const p = place(q), last = out.at(-1);
+    if (!last || Math.abs(p[0] - last[0]) > 1e-6 || Math.abs(p[1] - last[1]) > 1e-6) out.push(p);
+  }
+  return out;
+}
+
 // `uOf` is endName's (how tall a device is), for the U in a cable's title.
 // `routes` is S.routes: its routes (cable id -> waypoints), the ring marks
 // for them (cable id -> one per waypoint, route.js ringMarks) and fill.
@@ -181,6 +243,13 @@ const fitTag = (parts, cut) => fitText(parts, cut, MAX_CHARS);
 //   'none'    no cross-face tag.
 // A not-connected tag is not a cross-face tag: it is always drawn and shown.
 export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = null, {tags = 'hover'} = {}) {
+  const outer = ACTIVE;
+  ACTIVE = paneIndex(svg);
+  try { return drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags); }
+  finally { ACTIVE = outer; }
+}
+
+function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
@@ -232,7 +301,16 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     for (const link of plan.links) {
       const ws = routes.routes.get(link.id)?.waypoints;
       // A cable with no waypoints is still drawn round a body it would cross.
-      if (!ws || (!ws.length && !routes.detours?.get(link.id)?.length)) continue;
+      if (!ws) continue;
+      if (!ws.length && !routes.detours?.get(link.id)?.length) {
+        // A FREE SPAN (nothing to go round, portrayal-site#178) is drawn on the
+        // kit's own points, the span as it hangs and what its length is measured
+        // on, as the side panes and the 3D scene draw it; not on a sag of the
+        // site's own. Both ends on this pane, as for a routed cable's ends.
+        const kit = routes.paths?.get(link.id)?.points;
+        if (kit?.length && link.from[2] === pane && link.to[2] === pane) link.via2d = {[pane]: freeSpan2d(kit, detourAt)};
+        continue;
+      }
       const marks = routes.marks?.get(link.id);
       const turned = marks?.length === ws.length ? paneMarks(marks, pane) : null;
       // One offset per cable and lane, so its own run up the lane is vertical.
@@ -321,6 +399,13 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
       if (pts.length) {
         link.via2d = {[pane]: pts};
         if (turned) link.rings2d = {[pane]: rings};
+        // A CABLE THAT PASSES THROUGH A MANAGER'S PASS-THROUGH shows its run
+        // behind the manager on the rear pane, though both its ends are on the
+        // front one: cables.js draws such a link on the points it was given
+        // (a pass this pane places, in a "through" panel) and no ends.
+        if (pts.length > 1 && link.from[2] !== pane && link.to[2] !== pane
+            && ws.some((w, k) => at[k] && !w.lane && panelGroup(svg, w.item)?.dataset.panel === 'through'))
+          link.through2d = {...link.through2d, [pane]: true};
       }
       // BOTH ENDS HERE, AND A WAYPOINT BETWEEN THEM THAT IS NOT (#194): the
       // cable leaves this face and comes back. It is drawn as it runs, a stub
@@ -371,20 +456,22 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
   const otherFace = rear ? 'front' : 'rear';
   // every cross-face tag drawn: {id, el, at, kind: 'far' | 'away', far: the far end's item, gutter}
   const marks = [];
+  const bendOf = radiusOf(rack, routes?.types?.bendOf, {bundles: routes?.bundles});
   const recs = drawCables2d(svg, plan, pane, {
-    edgeX, outboard: rear ? -1 : 1, stackGutter: false,
+    edgeX, outboard: rear ? -1 : 1, stackGutter: false, widthOf: widthLookup(routes?.types?.diameterOf, cables),
+    bendOf,
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
     // Its title carries the full text, which the pill may have had to shorten.
     tag: (at, far, link) => {
       const t = svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'});
-      const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item);
+      const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item) ?? (rack.zeroU || []).find(z => z?.id === end.item);
       const full = svgEl('title', {});
       full.textContent = `→ ${deviceOf(it)} ${end.path}`;
       t.append(full);
       marks.push({id: link.id, el: t, at, kind: 'far', far: it ?? null});
-      return pill(t, at, fitTag(['→ ', it ? it.label : 'removed', uOfShared(it), ' ', end.path], [1, 4]), leadOf(at));
+      return pill(t, at, fitTag(['→ ', it ? it.label : 'removed', uOfShared(it), ' ', portLabel(end.path)], [1, 4]), leadOf(at));
     },
     // Both ends are on this pane and the cable goes by the other face between them: each stub's tag says so.
     awayTag: (at, link) => {
@@ -418,7 +505,8 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     const via = link.via2d[pane], rings = link.rings2d?.[pane];
     return [link.id, rings ? throughRings(via, rings, {lead: 4}).points : via];
   }));
-  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, (e, f, i) => {
+  const cornerMap = new Map(recs.map(rec => [rec.link.id, rec.corners ?? []]));
+  if (routes?.bundles) drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, id => cornerMap.get(id) ?? [], (e, f, i) => {
     if (e.kind === 'n') return wayPoint(svg, {lane: e.lane, ru: e.u}, pane, rack.frame, bundleSlot(f.id, e.lane), ductX);
     const w = {item: e.item, via: e.via}, p = wayPoint(svg, w, pane, rack.frame, 0, ductX);
     let rest = null;
@@ -426,6 +514,7 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     return p && rest ? [p[0], rest[1]] : p;
   });
   drawTieStraps2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
+  drawSpareLoops2d(svg, rack, routes, pane, detourAt, new Set(recs.filter(rec => rec.g).map(rec => cables[rec.i].id)));
   drawInFront(svg);
   // ONE TAG FOR A BUNDLE WHERE ITS CABLES LEAVE THIS FACE (#194): at the middle
   // of its members' own tag points in a gutter. A bundle that leaves the face
@@ -525,13 +614,15 @@ export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = 
     if (!link || !f.stops) continue;
     const here = link.here2d?.[pane] ?? (k => (k < 0 ? link.from[2] === pane : k >= ws.length ? link.to[2] === pane : false));
     if (!f.stops.every(here)) continue;
-    const [cx, cy] = detourAt({x: f.at[0], y: f.at[1]});
-    const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
-      'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
-    const t = svgEl('title', {});
-    t.textContent = f.text;
-    ring.append(t);
-    svg.append(ring);
+    for (const at of bendPoints(f)) {
+      const [cx, cy] = detourAt({x: at[0], y: at[1]});
+      const ring = svgEl('circle', {cx, cy, r: WIDTH / 2 + 6, fill: 'none', stroke: BEND_WARN, 'stroke-width': 1.6,
+        'pointer-events': 'none', 'data-bend-finding': f.cable, 'data-pt-ui': '*'});
+      const t = svgEl('title', {});
+      t.textContent = f.text;
+      ring.append(t);
+      svg.append(ring);
+    }
   }
   // A pathway filled past its limit, and a manager with more cables through it
   // than it states, are outlined where this pane draws them.
@@ -625,7 +716,82 @@ export function drawInFront(svg) {
 // node i's own point on this pane (element e of bundle f), or null.
 const BAND = '#8b939c';
 const BEND_WARN = '#d9822b';
-function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
+
+// WHERE THE RIDERS CHANGE, A MEMBER'S ARC IS NOT THE TRUNK'S (#185). A member that joins
+// the trunk at a node turns onto it there on an arc of its radius, which lies along the stretch
+// it joins; one that leaves turns off along the stretch it rides. So the band, which holds
+// exactly the riders, changes where those arcs end: the node of a stretch boundary (and the
+// open ends of the trunk, where every rider joins or leaves) moves along the trunk by the
+// longest cut of the joiners less that of the leavers. `run` is stretches that meet, each
+// {st, e} (its two ends); `cornersOf(id)` a cable's arcPath corners (cut_mm); `lines` each
+// cable's points. The answer is `{ends, turns}`: each stretch's ends as moved, each along its
+// own line and then across to the middle of its own riders (the kit's pack middle slants a
+// little from stretch to stretch where the members run square, which a longer stretch would
+// carry further from the outer riders), and per inner node whether the trunk itself turns
+// there (more than 15 degrees; a node it turns at keeps its place, the arc being the trunk's own).
+function joinShifts(run, cornersOf, lines) {
+  const unit = (a, b) => { const l = Math.hypot(b[0] - a[0], b[1] - a[1]); return l > 0.01 ? [(b[0] - a[0]) / l, (b[1] - a[1]) / l, l] : null; };
+  // the longest-cut corner of these cables within `tol` of a node
+  const pick = (ids, node, tol) => ids.flatMap(id => cornersOf(id).filter(c => Math.hypot(c.at[0] - node[0], c.at[1] - node[1]) <= tol))
+    .reduce((a, c) => (!a || c.cut_mm > a.cut_mm ? c : a), null);
+  const cut = (ids, node, tol) => pick(ids, node, tol)?.cut_mm ?? 0;
+  const dirs = run.map(r => unit(r.e[0], r.e[1]));
+  const turns = run.slice(1).map((r, k) => !!(dirs[k] && dirs[k + 1] && Math.abs(dirs[k][0] * dirs[k + 1][1] - dirs[k][1] * dirs[k + 1][0]) > 0.26));
+  // the shift at node j (0 is the open start, run.length the open end), along the trunk
+  const shift = Array.from({length: run.length + 1}, (_, j) => {
+    if (j > 0 && j < run.length && turns[j - 1]) return 0;
+    const prev = j > 0 ? run[j - 1] : null, next = j < run.length ? run[j] : null;
+    const node = (next ?? prev).e[next ? 0 : 1];
+    const pm = new Set(prev?.st.members ?? []), nm = new Set(next?.st.members ?? []);
+    const tol = Math.max(prev?.st.diameter ?? 0, next?.st.diameter ?? 0) / 2 + 6;
+    const s = cut([...nm].filter(id => !pm.has(id)), node, tol) - cut([...pm].filter(id => !nm.has(id)), node, tol);
+    // (never more than the stretch has to give: a little over half, for its far end may move too)
+    const room = (s > 0 ? dirs[j]?.[2] : dirs[j - 1]?.[2]) ?? 0;
+    return Math.sign(s) * Math.min(Math.abs(s), 0.55 * room);
+  });
+  const middle = (p, d, ids) => {
+    const n = [-d[1], d[0]], side = [];
+    for (const id of ids) {
+      let best = null;
+      const L = lines.get(id) ?? [];
+      for (let k = 1; k < L.length; k++) {
+        const a = L[k - 1], b = L[k], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] * ab[0] + ab[1] * ab[1];
+        const t = l2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / l2)) : 0;
+        const q = [a[0] + ab[0] * t - p[0], a[1] + ab[1] * t - p[1]], dist = Math.hypot(q[0], q[1]);
+        if (!best || dist < best.dist) best = {dist, across: q[0] * n[0] + q[1] * n[1]};
+      }
+      if (best && best.dist < 25) side.push(best.across);
+    }
+    const across = side.length ? side.reduce((s, v) => s + v, 0) / side.length : 0;
+    return [p[0] + n[0] * across, p[1] + n[1] * across];
+  };
+  const ends = run.map((r, k) => {
+    const d = dirs[k];
+    // (every end the trunk does not turn at, so a stretch is as straight as its riders are)
+    const at = (p, m, j) => (d && !(j > 0 && j < run.length && turns[j - 1]) ? middle([p[0] + d[0] * m, p[1] + d[1] * m], d, r.st.members) : p);
+    return [at(r.e[0], shift[k], k), at(r.e[1], shift[k + 1], k + 1)];
+  });
+  // At each open end the band goes on round the arc its riders turn on there (a cap: the path of
+  // an arc, from the band's end to where the riders' leg begins), so it is not left stopping short.
+  const cap = (j, atStart) => {
+    if (!shift[j]) return null;
+    const r = atStart ? run[0] : run[run.length - 1], me = new Set(r.st.members);
+    const node = r.e[atStart ? 0 : 1], tol = r.st.diameter / 2 + 6;
+    const c = pick([...me], node, tol);
+    if (!c || !(c.drawn_mm > 0)) return null;
+    const o = ends[atStart ? 0 : run.length - 1][atStart ? 0 : 1], t = c.cut_mm;
+    const sweep = c.d1[0] * c.d2[1] - c.d1[1] * c.d2[0] > 0 ? 1 : 0, n3 = v => Math.round(v * 1e3) / 1e3;
+    // the cable runs the corner one way or the other: onto the trunk (its leg after the corner lies
+    // along the band, the arc is walked backwards) or off it (its leg before does, walked as it runs)
+    const d = dirs[atStart ? 0 : run.length - 1], u = atStart ? d : [-d[0], -d[1]];
+    const onto = c.d2[0] * u[0] + c.d2[1] * u[1] >= -(c.d1[0] * u[0] + c.d1[1] * u[1]);
+    const far = onto ? [o[0] - (c.d1[0] + c.d2[0]) * t, o[1] - (c.d1[1] + c.d2[1]) * t] : [o[0] + (c.d1[0] + c.d2[0]) * t, o[1] + (c.d1[1] + c.d2[1]) * t];
+    return {d: `M${n3(o[0])} ${n3(o[1])} A${n3(c.drawn_mm)} ${n3(c.drawn_mm)} 0 0 ${onto ? 1 - sweep : sweep} ${n3(far[0])} ${n3(far[1])}`, width: r.st.diameter};
+  };
+  return {ends, turns, caps: [cap(0, true), cap(run.length, false)].filter(Boolean)};
+}
+
+function drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, cornersOf, base) {
   const layer = svg.querySelector(':scope > [data-cables]');
   if (!layer) return;
   const bands = svgEl('g', {'data-bundles': pane, 'pointer-events': 'none'});
@@ -652,15 +818,54 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     const env = svgEl('g', {'data-envelope': f.id, visibility: 'hidden', 'data-pt-ui': '*'});
     const rims = svgEl('g', {'data-envelope-rim': f.id, opacity: 0.4}), fills = svgEl('g', {opacity: 0.7});
     env.append(rims, fills);
-    let here = 0;
+    // THE TRUNK TURNS AS ITS MEMBERS DO (#185): the members are arcs of the bundle's radius (the
+    // largest of theirs), so the band is drawn round the same corners, a run of stretches that meet
+    // being one polyline (bend2d.js trunkPaths); each stretch's path is the one the arc at its far
+    // end is part of. The radius is the members' largest, which is the kit's bundle radius when it gives one.
+    const R = Math.max(0, f.check?.bend?.radius_mm ?? 0, ...f.members.map(id => bendOf({id}) ?? 0)) || null;
+    const lines2 = new Map();                 // stretch -> {d, pts, at, e}: its path, its chain's nodes, its place there
+    const chain = [];
+    const flush = () => {
+      if (chain.length) {
+        const {ends: moved, turns, caps} = joinShifts(chain, cornersOf, lines);
+        // the run is cut into polylines where the trunk goes straight on, each stretch keeping its
+        // own ends there; only a node the trunk turns at joins two stretches into one polyline
+        let from = 0;
+        for (let k = 0; k < chain.length; k++) {
+          if (k + 1 < chain.length && turns[k]) continue;
+          const part = chain.slice(from, k + 1), mv = moved.slice(from, k + 1);
+          const pts = [mv[0][0], ...mv.slice(1).map((m, j) => [(mv[j][1][0] + m[0][0]) / 2, (mv[j][1][1] + m[0][1]) / 2]), mv[mv.length - 1][1]];
+          const paths = trunkPaths(pts, R);
+          part.forEach((c, j) => lines2.set(c.st, {d: paths[j]?.d ?? `M${mv[j][0][0]} ${mv[j][0][1]} L${mv[j][1][0]} ${mv[j][1][1]}`, pts, at: j, e: [pts[j], pts[j + 1]], was: c.e}));
+          from = k + 1;
+        }
+        lines2.get(chain[0].st).caps = caps;
+      }
+      chain.length = 0;
+    };
     for (const st of lay.stretches) {
       const e = ends(st);
-      if (!e) continue;
+      if (!e) { flush(); continue; }
+      // (a stretch of no length, or one that does not meet the last, starts its own run)
+      if (chain.length && (chain[chain.length - 1].st.to !== st.from || Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01)) flush();
+      chain.push({st, e});
+      if (Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) < 0.01) flush();
+    }
+    flush();
+    let here = 0;
+    for (const st of lay.stretches) {
+      const L2 = lines2.get(st);
+      if (!L2) continue;
       here++;
-      const d = `M${e[0][0]} ${e[0][1]} L${e[1][0]} ${e[1][1]}`;
+      const d = L2.d;
       rims.append(svgEl('path', {d, fill: 'none', stroke: '#000', 'stroke-width': st.diameter + 1.2, 'stroke-linecap': 'round'}));
       fills.append(svgEl('path', {d, fill: 'none', stroke: BAND, 'stroke-width': st.diameter, 'stroke-linecap': 'round',
                                   'data-bundle-trunk': f.id, 'data-stretch': `${st.from}-${st.to}`, 'data-riders': String(st.members.length)}));
+      // (the band going on round its riders' arc at an open end, in this stretch's width)
+      for (const cap of L2.caps ?? []) {
+        rims.append(svgEl('path', {d: cap.d, fill: 'none', stroke: '#000', 'stroke-width': cap.width + 1.2, 'stroke-linecap': 'round'}));
+        fills.append(svgEl('path', {d: cap.d, fill: 'none', stroke: BAND, 'stroke-width': cap.width, 'stroke-linecap': 'round', 'data-bundle-cap': f.id}));
+      }
     }
     if (!here) continue;
     g.append(env);
@@ -678,12 +883,15 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, base) {
     }
     bands.append(g);
     for (const s of f.straps?.straps ?? []) {
-      const hit = lay.stretchAt(s), e = hit && ends(hit.stretch);
+      const hit = lay.stretchAt(s), L2 = hit && lines2.get(hit.stretch), e = L2?.e;
       if (!e) continue;
       const len = Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]);
       if (!(len > 0)) continue;
-      const dir = [(e[1][0] - e[0][0]) / len, (e[1][1] - e[0][1]) / len], n = [-dir[1], dir[0]];
-      const c = [e[0][0] + (e[1][0] - e[0][0]) * hit.f, e[0][1] + (e[1][1] - e[0][1]) * hit.f];
+      // where the strap was along the stretch as the kit has it, kept when its ends have moved (joinShifts)
+      const w = L2.was, wl = Math.hypot(w[1][0] - w[0][0], w[1][1] - w[0][1]);
+      const f0 = wl > 0 ? ((w[0][0] + (w[1][0] - w[0][0]) * hit.f - e[0][0]) * (e[1][0] - e[0][0]) + (w[0][1] + (w[1][1] - w[0][1]) * hit.f - e[0][1]) * (e[1][1] - e[0][1])) / (len * len) : hit.f;
+      // on the rounded trunk: across it, square to the run there, on a corner's arc where it falls on one
+      const {c, dir} = trunkPoint(L2.pts, R, L2.at, Math.min(1, Math.max(0, f0))), n = [-dir[1], dir[0]];
       const half = hit.stretch.diameter / 2 + 2;
       const at = {x1: c[0] - n[0] * half, y1: c[1] - n[1] * half, x2: c[0] + n[0] * half, y2: c[1] + n[1] * half};
       const bar = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': String(s.along_mm), 'data-pack': String(Math.round(hit.stretch.diameter * 100) / 100)}, at, s);
@@ -750,6 +958,21 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
   if (fresh && bars.childElementCount) layer.append(bars);
 }
 
+// THE STORED LOOPS on a front or rear pane (kit 0.35.0; spare-loops.js): a
+// loop at the kit's point for each duct or tray a cable stores spare in, on
+// the pane of the face it is nearer, where the cable is drawn.
+function drawSpareLoops2d(svg, rack, routes, pane, at2d, drawn) {
+  const layer = svg.querySelector(':scope > [data-cables]');
+  if (!layer || !routes?.spareLoops?.length) return;
+  const nameOf = id => rack.items.find(i => i.id === id)?.label ?? (rack.zeroU || []).find(z => z.id === id)?.label ?? id;
+  const g = svgEl('g', {'data-spare-loops': pane, 'pointer-events': 'none'});
+  for (const l of routes.spareLoops) {
+    if (loopPane(l, rack.frame) !== pane || !drawn.has(l.cable)) continue;
+    g.append(loopEl(l, at2d(l.at), ['x', 'y'], nameOf));
+  }
+  if (g.childElementCount) layer.append(g);
+}
+
 // WHICH PORT A CLICK IS ON, as its data-path, or null. `group` is the item's
 // panel group and `target` the element clicked inside it. The outermost
 // data-class="port" above the click wins (the rule zones.js's readSvg uses):
@@ -757,15 +980,20 @@ function drawTieStraps2d(svg, rack, routes, pane, at2d, drawn) {
 // inside its cage - swap.js seats it beside the cage, at `<port>-occupant` -
 // so a click on either is mapped back to the port by its path
 // (cable-rules.js portPathOf), and counts only if that port is drawn.
+// A SLOT THAT TAKES A CABLE END (a power inlet or outlet, a ground stud) is
+// not class port: elevation.js lists the paths of the ones on the panel in
+// the group's data-cable-ends, and a click on one picks it by its path.
 export function portAt(target, group) {
+  const ends = (group.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean);
   let hit = null;
   for (let n = target; n && n !== group; n = n.parentNode) {
     // (its path, as its own drawing or as the projection of a seated module's back: part-path.js)
     const p = pathOfEl(n);
-    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
+    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant') || ends.includes(p))) hit = p;
   }
   if (hit == null) return null;
   const path = portPathOf(hit);
+  if (ends.includes(path)) return path;
   return group.querySelector(partSel(path, '[data-class="port"]')) ? path : null;
 }
 
@@ -809,6 +1037,11 @@ export function paintCables(svgs, rack, {selectedId = null, bundleId = null, on 
       const ids = (n.dataset.members || '').split(' ').filter(Boolean);
       n.classList.toggle('on', n.dataset.strap === bundleId || (selectedId != null && ids.includes(selectedId)));
       n.classList.toggle('ghost', ids.length > 0 && ids.every(id => out.has(id) && !lit(id)));
+    }
+    // A STORED LOOP GOES WITH ITS CABLE (spare-loops.js), lit, dimmed and ghosted with it.
+    for (const n of svg.querySelectorAll('[data-spare-loop]')) {
+      n.classList.toggle('on', lit(n.dataset.members));
+      n.classList.toggle('ghost', !lit(n.dataset.members) && out.has(n.dataset.members));
     }
   }
 }

@@ -221,8 +221,9 @@ function paintVariants() {
   if (own) sel.value = own;
 }
 
-async function show() {
-  paintVariants();
+// repaint = false when the visitor only picked a type: the menu keeps the pick.
+async function show(repaint = true) {
+  if (repaint) paintVariants();
   const files = filesFor();
   const d = DEVICES.find(x => x.name === DEV);
   if (!files.length) {
@@ -487,8 +488,8 @@ that does that by default is one that will eventually do it by accident.
   if (!namesDevice()) FIRST = await firstType(DEV);
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; FIRST = null; show(); }});
-  $('target').onchange = show;
-  $('variant').onchange = show;
+  $('target').onchange = () => show();
+  $('variant').onchange = () => show(false);
   $('bdl').onclick = ev => buildBundle(ev.target);
   [FILES, ENRICH] = await Promise.all([
     jdist('assets/exports/files.json'),

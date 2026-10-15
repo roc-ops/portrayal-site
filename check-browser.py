@@ -4066,6 +4066,329 @@ def check_explorer_latch_colour_live(page, base):
     return bad
 
 
+# What a colour picker sends depends on the browser: most send `input` as the
+# reader drags and `change` when the panel closes; some (Safari's panel, a
+# dialog confirmed with Enter) send `change` alone, on close. The control is the
+# one on the full page's PORT inspector.
+PICKER_SEQUENCES = {
+    "drag then close": ["input #112233", "input #c22f2f", "change #c22f2f"],
+    "close only": ["change #c22f2f"],
+}
+PICKER_JS = """(i, steps) => {
+  for (const s of steps) {
+    const [type, colour] = s.split(' ');
+    i.value = colour;
+    i.dispatchEvent(new Event(type, {bubbles: true}));
+  }
+}"""
+LATCH_3D_JS = """(want) => { const v = window.__viewer; if (!v) return false;
+  const recs = [...(v.three.LOD || [])].filter(r => (r.svgText || '').includes('data-path="port-1-occupant"'));
+  return recs.length > 0 && recs.every(r => r.svgText.includes(`data-latch-color="${want}"`)); }"""
+
+
+def explorer_open_optic_picker(page, base):
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front&debug=1"
+              f"&swap=port-1~generic%2Fqsfp-lc%402", wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('.nm:text-matches("^port-1 —")')
+    return page.wait_for_selector('.optic-fields input[type=color]', timeout=READY_MS)
+
+
+@extra("Explorer's PORT latch colour picker paints 2D and 3D however the picker reports, and survives a reload and the link")
+def check_explorer_latch_picker_full(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    latch2d = "() => [...document.querySelectorAll('#shell svg [data-path=\"port-1-occupant\"] [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    painted = f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#c22f2f'); }}"
+    for name, steps in PICKER_SEQUENCES.items():
+        pick = explorer_open_optic_picker(page, base)
+        pick.evaluate(PICKER_JS, steps)
+        try:
+            wait_fn(page, f"explorer picker ({name}): 2D latch", painted)
+        except RuntimeError as e:
+            bad.append(str(e))
+        if "latch-color~%23c22f2f" not in page.url:
+            bad.append(f"explorer picker ({name}): the link does not carry the colour: {page.url}")
+        if not webgl_trouble(page):
+            page.click('#mode [data-mode="3d"]')
+            try:
+                wait_fn(page, f"explorer picker ({name}): 3D face", f"() => ({LATCH_3D_JS})('#c22f2f')")
+            except RuntimeError as e:
+                bad.append(str(e))
+        shared = page.url
+        page.goto(shared, wait_until="load")
+        page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+        try:
+            wait_fn(page, f"explorer picker ({name}): 2D latch after a reload on the link", painted)
+        except RuntimeError as e:
+            bad.append(str(e))
+    return bad
+
+
+@extra("Explorer: every colour control the page offers - each optic's colour fields and the highlight picker - takes a picker that reports only on close")
+def check_explorer_every_colour_swatch(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front", wait_until="load")
+    page.wait_for_selector('#shell svg [data-class="port"]', timeout=READY_MS)
+    # the highlight picker: the page's --hl is what it sets
+    page.eval_on_selector('#hl input[type=color]', PICKER_JS, ["change #12ab34"])
+    hl = page.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim()")
+    if hl.lower() != "#12ab34":
+        bad.append(f"explorer: the highlight picker, closed without an input, left --hl at {hl!r}")
+    page.click('.nm:text-matches("^port-1 —")')
+    page.wait_for_selector('#optic', timeout=READY_MS)
+    refs = page.eval_on_selector('#optic', "s => [...s.options].map(o => o.value).filter(Boolean)")
+    seen = set()
+    for ref in refs:
+        page.select_option('#optic', ref)
+        page.wait_for_function(
+            "r => document.querySelector('#optic')?.value === r", arg=ref, timeout=READY_MS)
+        page.wait_for_timeout(300)
+        n = page.eval_on_selector_all('.optic-fields input[type=color]', "ns => ns.length")
+        for i in range(n):
+            want = f"#{0x10 + len(seen):02x}{0xa0 + i:02x}c0"
+            seen.add((ref, i))
+            # the control is looked up again each time: a swap redraws the inspector
+            page.locator('.optic-fields input[type=color]').nth(i).evaluate(PICKER_JS, [f"change {want}"])
+            page.wait_for_timeout(100)
+            from urllib.parse import unquote
+            if f"~{want}" not in unquote(page.url):
+                bad.append(f"explorer: {ref} colour control {i} left {want} out of the link after a close-only picker")
+    if not seen:
+        bad.append("explorer: no optic offered a colour control, so nothing was checked")
+    return bad
+
+
+# ONE CONTROL PER COLOR FIELD, AND ONE FIELD PER COLOR. The seated optic and
+# the pull tab drawn inside it both declare `latch-color`, and the inspector
+# offered a text box for one and a picker for the other: two stored values
+# (`port-29-occupant` and `port-29-occupant/tab`), two answers on screen.
+COLOR_FIELDS_JS = """() => [...document.querySelectorAll('#inspect .colorfield')].map(f => ({
+  swatch: f.querySelector('input[type=color]').value, hex: f.querySelector('input.hex').value,
+  reset: !f.querySelector('button.reset').hidden, label: (f.closest('.row')?.innerText || '').trim().split('\\n')[0]}))"""
+OPEN_ROW_JS = """(re) => { const r = [...document.querySelectorAll('.nm')].filter(n => new RegExp(re).test(n.innerText));
+  if (r.length) r[0].click(); return r.length; }"""
+LATCH_URL = "port-29-occupant:latch-color~"
+PORT29 = "port-29~generic%2Fqsfp-lc%402"
+
+
+def explorer_port29(page, base, extra=""):
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front&debug=1&swap={PORT29}{extra}",
+              wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+
+
+def agree(page, what, bad, want=1):
+    """Every color control on the panel shows one value, in swatch and box."""
+    got = page.evaluate(COLOR_FIELDS_JS)
+    if len(got) != want:
+        bad.append(f"{what}: {len(got)} color controls on the panel, expected {want}: {got}")
+    for g in got:
+        if g["swatch"] != g["hex"]:
+            bad.append(f"{what}: the swatch reads {g['swatch']} and the box {g['hex']}")
+    if len({g["swatch"] for g in got}) > 1:
+        bad.append(f"{what}: the controls disagree: {got}")
+    return got
+
+
+@extra("Explorer: a seated optic's latch color is one field with one control on the port, the transceiver and the latch panel, driven by the picker's own events or typed hex, with reset, a reload and a link")
+def check_explorer_latch_color_one_control(page, base):
+    from urllib.parse import unquote
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fills = ("() => [...new Set([...document.querySelectorAll('#shell svg [data-path^=\"port-29-occupant\"] "
+             "[data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill')))]")
+    def all_fill(want):
+        return f"() => {{ const f = ({fills})(); return f.length === 1 && f[0] === '{want}'; }}"
+    panels = {"port": r"^port-29 —", "transceiver": r"^port-29-occupant —",
+              "latch": r"^tab — qsfp-pull-tab"}
+    for panel, row in panels.items():
+        explorer_port29(page, base)
+        if not page.evaluate(OPEN_ROW_JS, row):
+            bad.append(f"explorer {panel} panel: no tree row for it")
+            continue
+        page.wait_for_timeout(400)
+        got = agree(page, f"explorer {panel} panel", bad)
+        if page.evaluate("() => document.querySelectorAll('#inspect [data-field=\"latch-color\"]:not(.colorfield)').length"):
+            bad.append(f"explorer {panel} panel: the kit's text box for the latch color is still here")
+        for name, steps in PICKER_SEQUENCES.items():
+            explorer_port29(page, base)
+            page.evaluate(OPEN_ROW_JS, row)
+            page.wait_for_timeout(400)
+            page.locator('#inspect .colorfield input[type=color]').first.evaluate(PICKER_JS, steps)
+            try:
+                wait_fn(page, f"explorer {panel} panel ({name}): the drawing", all_fill("#c22f2f"))
+            except RuntimeError as e:
+                bad.append(str(e))
+            got = agree(page, f"explorer {panel} panel ({name})", bad)
+            if got and got[0]["hex"] != "#c22f2f":
+                bad.append(f"explorer {panel} panel ({name}): the box reads {got[0]['hex']} after the picker")
+            url = unquote(page.url)
+            if LATCH_URL + "#c22f2f" not in url or url.count("latch-color") != 1:
+                bad.append(f"explorer {panel} panel ({name}): the link does not hold exactly one latch color: {url}")
+            shared = page.url
+            page.goto(shared, wait_until="load")
+            page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+            try:
+                wait_fn(page, f"explorer {panel} panel ({name}): the drawing after a reload", all_fill("#c22f2f"))
+            except RuntimeError as e:
+                bad.append(str(e))
+            page.evaluate(OPEN_ROW_JS, row)
+            page.wait_for_timeout(400)
+            got = agree(page, f"explorer {panel} panel ({name}) after a reload", bad)
+            if got and got[0]["swatch"] != "#c22f2f":
+                bad.append(f"explorer {panel} panel ({name}): after a reload the control reads {got[0]['swatch']}")
+
+    # typed hex, an invalid box, and the reset, on the latch panel
+    explorer_port29(page, base)
+    page.evaluate(OPEN_ROW_JS, panels["latch"])
+    page.wait_for_timeout(400)
+    box = page.locator('#inspect .colorfield input.hex').first
+    box.fill("#707070")
+    try:
+        wait_fn(page, "explorer latch panel: a typed hex", all_fill("#707070"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    got = agree(page, "explorer latch panel (typed)", bad)
+    if got and got[0]["swatch"] != "#707070":
+        bad.append(f"explorer latch panel: the swatch reads {got[0]['swatch']} after typing #707070")
+    box.fill("#12")
+    box.dispatch_event("change")
+    agree(page, "explorer latch panel (a hex left half typed)", bad)
+    if page.evaluate(fills) != ["#707070"]:
+        bad.append(f"explorer latch panel: half a hex changed the drawing: {page.evaluate(fills)}")
+    # the other panels read the same value
+    page.evaluate(OPEN_ROW_JS, panels["transceiver"])
+    page.wait_for_timeout(400)
+    got = agree(page, "explorer transceiver panel after typing on the latch panel", bad)
+    if got and got[0]["swatch"] != "#707070":
+        bad.append(f"explorer transceiver panel reads {got[0]['swatch']}, the latch panel wrote #707070")
+    page.evaluate(OPEN_ROW_JS, panels["latch"])
+    page.wait_for_timeout(400)
+    page.locator('#inspect .colorfield button.reset').first.click()
+    try:
+        wait_fn(page, "explorer latch panel: reset", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    got = agree(page, "explorer latch panel (reset)", bad)
+    if got and (got[0]["hex"] != "#6f6f6f" or got[0]["reset"]):
+        bad.append(f"explorer latch panel: after reset the control reads {got}")
+    if "latch-color" in unquote(page.url):
+        bad.append(f"explorer: the link still carries a latch color after a reset: {unquote(page.url)}")
+
+    # a link written while the tab had a field of its own is the optic's value
+    explorer_port29(page, base, "&fields=port-29-occupant%2Ftab:latch-color~%23707070")
+    try:
+        wait_fn(page, "explorer: an old link's tab color", all_fill("#707070"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    url = unquote(page.url)
+    if LATCH_URL + "#707070" not in url or "/tab:latch-color" in url:
+        bad.append(f"explorer: the link keeps the color on the tab instead of the optic: {url}")
+    return bad
+
+
+LATCH_3D_PORT29_JS = LATCH_3D_JS.replace("port-1-occupant", "port-29-occupant")
+PRESETS = {"blue": "#2f6fd6", "beige": "#d8c8a4", "red": "#c22f2f", "green": "#2fa84f",
+           "yellow": "#f2d02e", "black": "#1a1a1a", "default grey": "#6f6f6f"}
+
+
+@extra("Explorer: one click on a latch color preset sets 2D, 3D, the hex box, the swatch and the link like typing its hex; reset follows; presets are named by color alone")
+def check_explorer_latch_color_presets(page, base):
+    from urllib.parse import unquote
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fills = ("() => [...new Set([...document.querySelectorAll('#shell svg [data-path^=\"port-29-occupant\"] "
+             "[data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill')))]")
+    def all_fill(want):
+        return f"() => {{ const f = ({fills})(); return f.length === 1 && f[0] === '{want}'; }}"
+    explorer_port29(page, base)
+    page.evaluate(OPEN_ROW_JS, r"^port-29-occupant —")
+    page.wait_for_timeout(400)
+    names = page.evaluate("() => [...document.querySelectorAll('#inspect .colorfield button.preset')]"
+                          ".map(b => [b.getAttribute('aria-label'), b.title])")
+    want_names = [[f"Latch color: {n}", n] for n in PRESETS]
+    if names != want_names:
+        bad.append(f"presets: names/titles are {names}, expected {want_names}")
+    if page.evaluate("() => document.querySelectorAll('#inspect .row:not(:has(.colorfield[data-field=\"latch-color\"])) button.preset').length"):
+        bad.append("presets: a preset row appears outside the latch color field")
+    total = page.evaluate("() => document.querySelectorAll('#inspect .colorfield[data-field]:not([data-field=\"latch-color\"]) button.preset').length")
+    if total:
+        bad.append(f"presets: {total} presets on a color field that is not the latch color")
+    for name, hexv in PRESETS.items():
+        if name == "default grey":
+            continue
+        page.locator(f'#inspect button.preset[aria-label="Latch color: {name}"]').click()
+        try:
+            wait_fn(page, f"presets ({name}): the drawing", all_fill(hexv))
+        except RuntimeError as e:
+            bad.append(str(e))
+        got = agree(page, f"presets ({name})", bad)
+        if got and (got[0]["hex"] != hexv or not got[0]["reset"]):
+            bad.append(f"presets ({name}): the control reads {got}")
+        if LATCH_URL + hexv not in unquote(page.url):
+            bad.append(f"presets ({name}): the link does not carry the color: {unquote(page.url)}")
+    # 3D, with the last preset set (yellow is not last; set blue)
+    page.locator('#inspect button.preset[aria-label="Latch color: blue"]').click()
+    if not webgl_trouble(page):
+        page.click('#mode [data-mode="3d"]')
+        try:
+            wait_fn(page, "presets (blue): 3D face", f"() => ({LATCH_3D_PORT29_JS})('{PRESETS['blue']}')")
+        except RuntimeError as e:
+            bad.append(str(e))
+        page.click('#mode [data-mode="2d"]')
+    # the default grey preset writes that hex; reset then goes back to the default
+    page.locator('#inspect button.preset[aria-label="Latch color: default grey"]').click()
+    try:
+        wait_fn(page, "presets (default grey): the drawing", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    page.locator('#inspect .colorfield button.reset').first.click()
+    try:
+        wait_fn(page, "presets: reset after a preset", all_fill("#6f6f6f"))
+    except RuntimeError as e:
+        bad.append(str(e))
+    if "latch-color" in unquote(page.url):
+        bad.append(f"presets: the link keeps a latch color after reset: {unquote(page.url)}")
+    # a preset survives a reload on the link
+    page.locator('#inspect button.preset[aria-label="Latch color: green"]').click()
+    shared = page.url
+    page.goto(shared, wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    try:
+        wait_fn(page, "presets (green): after a reload", all_fill(PRESETS["green"]))
+    except RuntimeError as e:
+        bad.append(str(e))
+    return bad
+
+
+@extra("Explorer: no label, tooltip or message on the inspector says colour, and the highlight has a hex box that follows the picker")
+def check_explorer_us_spelling_and_highlight(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    explorer_port29(page, base)
+    for panel in (r"^port-29 —", r"^port-29-occupant —", r"^tab — qsfp-pull-tab"):
+        page.evaluate(OPEN_ROW_JS, panel)
+        page.wait_for_timeout(400)
+        said = page.evaluate("""() => [...document.querySelectorAll('#inspect, #inspect *')].flatMap(e =>
+          [e.title, e.getAttribute('aria-label'), e.placeholder, e.children.length ? '' : e.textContent]).filter(Boolean).join('\\n')""")
+        if re.search(r"colour", said, re.I):
+            bad.append(f"explorer {panel}: the inspector says colour: {re.findall(r'.{0,30}colour.{0,20}', said, re.I)[:3]}")
+    if re.search(r"colour", page.evaluate("() => document.querySelector('#hl').title"), re.I):
+        bad.append("explorer: the highlight's tooltip says colour")
+    page.fill('#hl input.hex', '#12ab34')
+    hl = page.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim()")
+    if hl.lower() != "#12ab34":
+        bad.append(f"explorer: typing a hex in the highlight box left --hl at {hl!r}")
+    if page.eval_on_selector('#hl input[type=color]', "i => i.value") != "#12ab34":
+        bad.append("explorer: the highlight picker did not follow the box")
+    page.eval_on_selector('#hl input[type=color]', PICKER_JS, ["change #ab12cd"])
+    if page.input_value('#hl input.hex') != "#ab12cd":
+        bad.append(f"explorer: the highlight box reads {page.input_value('#hl input.hex')!r} after the picker closed on #ab12cd")
+    return bad
+
+
 # A FIRST VISIT OPENS ON A POPULATED DEVICE (roc-ops/portrayal-site#19), not on
 # the C100G's empty base: the Explorer, Annotate and the showcase each open on
 # site/featured.js's FEATURED_DEVICE, in a configuration that is not a base,
@@ -4281,6 +4604,31 @@ def check_exporter_first_device(page, base):
     if named["file"] == first["file"]:
         bad.append("exporter: the first visit and the named link show the same file, so this check cannot "
                    "tell the two rules apart - pick another assertion, not a pass")
+    return bad
+
+
+@extra("exporter.html: a pick in the Type menu stays picked and its file is the one shown and downloaded")
+def check_exporter_type_pick(page, base):
+    bad = []
+    page.goto(f"{base}/exporter.html?device={featured_device()}", wait_until="load")
+    wait_fn(page, "exporter type pick: the type's text",
+            "() => /^manufacturer: /m.test(document.querySelector('#out').textContent)")
+    n = page.evaluate("() => document.querySelector('#variant').options.length")
+    if n < 2:
+        return [f"exporter: {featured_device()} lists {n} types, so a second pick cannot be tested"]
+    for index in (1, n - 1):
+        want = page.evaluate("i => document.querySelectorAll('#variant option')[i].value", index)
+        page.select_option("#variant", index=index)
+        wait_fn(page, f"exporter type pick: file {index} shown",
+                "w => document.querySelector('#src').textContent === 'library/exports/' + w", arg=want)
+        got = page.evaluate("() => ({index: document.querySelector('#variant').selectedIndex, "
+                            "value: document.querySelector('#variant').value})")
+        if got["index"] != index or got["value"] != want:
+            bad.append(f"exporter: picked type {index} ({want}), the menu reads {got['index']} ({got['value']})")
+        with page.expect_download() as dl:
+            page.click("#dl")
+        if dl.value.suggested_filename != want.rsplit("/", 1)[-1]:
+            bad.append(f"exporter: picked type {index} ({want}) downloads {dl.value.suggested_filename!r}")
     return bad
 
 
@@ -5251,20 +5599,218 @@ def check_rack_face_managers(page, base):
         bad.append("3D: the manager's sheet body is drawn as a solid box")
     if not got["anchor"]:
         bad.append("3D: guideAnchor finds no guide-1 on the manager")
-    # The rail labels of the host and its manager are at one height: they sit side by side.
+    # Only the host has a rail label at its height: its manager has none.
     tags = page.evaluate("""() => {
-      const sc = window.__rack.scene().three.scene, y = sc.getObjectByName('device-i1').position.y;
-      return sc.children.filter(c => c.isSprite && c.position.z === 46 && Math.abs(c.position.y - y) < 1)
-        .map(c => [c.position.x - c.scale.x / 2, c.position.x + c.scale.x / 2]);
+      const sc = window.__rack.scene().three.scene;
+      return sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(c => c.userData.tagOf);
     }""")
-    if len(tags) < 2:
-        bad.append(f"3D: the host and its manager do not both have a rail label at their height: {tags}")
-    elif any(a[0] < b[1] and b[0] < a[1] for i, a in enumerate(tags) for b in tags[i + 1:]):
-        bad.append(f"3D: the host's and the manager's rail labels overlap: {tags}")
+    if tags != ["i1"]:
+        bad.append(f"3D: expected one device tag (the host's), none for either manager: {tags}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF" or b'"device-i2"' not in glb:
         bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB with the manager's node")
+    return bad
+
+
+@extra("rack.html: the 3D scene tags each piece of equipment and no cable manager - a lacer, a horizontal and a vertical manager have none, a PDU keeps its tag")
+def check_rack_3d_no_manager_tags(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags'});
+      const put = (ref, ru, label, extra = {}) => ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, label, ...extra}));
+      put('as7726-32x', 20, 'leaf-1');
+      put('fhd-cmp5dr', 20, 'hmgr', {on: 'i1', unit: 1});
+      put('cmh-5dr1u', 24, 'lacer-1');
+      put('as7726-32x', 28, 'leaf-2');
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags scene")
+    got = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete?.();
+      const sc = s.three.scene, at = id => sc.getObjectByName('device-' + id);
+      const sprites = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined);
+      const tagged = id => at(id) ? sprites.filter(c => c.userData.tagOf === id).length : null;
+      return {built: ['i1', 'i2', 'i3', 'i4', 'z1', 'z2'].map(id => [id, !!at(id)]), tags: sprites.length,
+              equipment: [tagged('i1'), tagged('i4')], mgrs: [tagged('i2'), tagged('i3')], pdu: tagged('z2'), vmgr: tagged('z1')};
+    }""")
+    if not all(ok for _, ok in got["built"]):
+        bad.append(f"3D: a part is not in the scene: {got['built']}")
+    # Three rail labels in all: the two switches and the PDU, and nothing for the three managers.
+    # (the PDU and the vertical manager stand at one height, so the PDU's own tag is the one there.)
+    if got["pdu"] != 1:
+        bad.append(f"3D: the PDU should keep one rail label: {got}")
+    if got["equipment"] != [1, 1]:
+        bad.append(f"3D: each switch should have exactly one rail label at its height: {got}")
+    if got["mgrs"][1] != 0:
+        bad.append(f"3D: the lacer panel has a rail label: {got}")
+    if got["tags"] != 3:
+        bad.append(f"3D: expected 3 rail labels (two switches and the PDU), none for the horizontal, lacer or vertical manager: {got}")
+    return bad
+
+
+@extra("rack.html: the 3D device tags stand clear of the rack, the parts and cable runs beside it and each other, at the front, three-quarter and side views, each with a leader to its device, in no export")
+def check_rack_3d_tags_out(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    # Two devices at one height (a front and a rear one), a PDU and a vertical manager beside the
+    # rack at that height too, and cables run up the lanes beside the rails.
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Tags out'});
+      const optic = {'port-1': 'generic/qsfp-lc@2', 'port-32': 'generic/qsfp-lc@2'};
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: optic}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-cmp5dr', cfg: cat['fhd-cmp5dr'].default, ru: 20, label: 'mgr-1', on: 'i1', unit: 1}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 30, label: 'pp-1',
+        swaps: {'bay-1': 'fs/fhd-splice-12-lc@3', 'bay-4': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, face: 'rear', label: 'leaf-rear'}));
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 21, label: 'leaf-2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-4/module/lc2', view: 'front'}, media: 'os2'}));
+      r = {...r, zeroU: [
+        {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0},
+        {id: 'z3', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-rear', at: 'right-rear', offsetMm: 0}]};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the tags-out scene", tubes=True)
+    page.evaluate("async () => { await window.__rack.scene().complete?.(); }")
+    # Screen boxes (client px) of the tags, of everything a tag must clear and of the devices, from the live camera.
+    measure = """async (view) => {
+      const s = window.__rack.scene(), {THREE, scene: sc, camera, controls, renderer} = s.three;
+      const m = s.metrics();
+      if (view === 'front' || view === 'iso') s.reframe(view);
+      else if (view !== 'default') {
+        const t = controls.target.clone(), d = camera.position.distanceTo(t) * 1.4;
+        const dir = {'side-left': [-1, 0.05, 0], 'side-right': [1, 0.05, 0], 'three-quarter-right': [0.5, 0.15, 0.85]}[view];
+        camera.position.copy(t).addScaledVector(new THREE.Vector3(...dir).normalize(), d);
+        controls.update();
+      }
+      camera.updateMatrixWorld(); camera.updateProjectionMatrix();
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const cv = renderer.domElement.getBoundingClientRect();
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+      const px = v => { const p = v.clone().project(camera); return [cv.left + (p.x + 1) / 2 * cv.width, cv.top + (1 - p.y) / 2 * cv.height]; };
+      const hull = pts => { const q = pts.map(px); return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
+      const boxOf = o => { const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return null;
+        const c = [];
+        for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) c.push(new THREE.Vector3(x, y, z));
+        return hull(c); };
+      const tags = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(c => {
+        const w = c.scale.x / 2, h = c.scale.y / 2, p = c.position;
+        return {of: c.userData.tagOf, ...hull([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => p.clone().addScaledVector(right, a * w).addScaledVector(up, b * h))),
+                y: p.y, x: p.x, w: c.scale.x}; });
+      // the things a tag must clear: the rack's own parts (one box each), the parts beside it, each cable run
+      const parts = [];
+      for (const o of sc.children) {
+        if (o.isLight || o.isSprite || o.name === 'tag-leaders') continue;
+        if (o.name === 'patch-cables') { for (const c of o.children) { const b = boxOf(c); if (b) parts.push({name: c.name || 'cable', ...b}); } continue; }
+        const b = boxOf(o); if (b) parts.push({name: o.name || 'rack', ...b});
+      }
+      const devices = {};
+      for (const t of tags) { const g = sc.getObjectByName('device-' + t.of); devices[t.of] = g && boxOf(g); }
+      const leaders = (sc.getObjectByName('tag-leaders')?.children || []).map(l => {
+        const a = l.geometry.attributes.position;
+        return {from: px(new THREE.Vector3(a.getX(0), a.getY(0), a.getZ(0))), to: px(new THREE.Vector3(a.getX(1), a.getY(1), a.getZ(1))), tone: l.userData.labelTone};
+      });
+      return {tags, parts, devices, leaders, view: {w: innerWidth, h: innerHeight, cv: [cv.left, cv.top, cv.right, cv.bottom]}};
+    }"""
+    hit = lambda a, b: a["l"] + 0.5 < b["r"] and b["l"] + 0.5 < a["r"] and a["t"] + 0.5 < b["b"] and b["t"] + 0.5 < a["b"]
+    for view in ("default", "front", "iso", "three-quarter-right", "side-right", "side-left"):
+        got = page.evaluate(measure, view)
+        tags, tag_of = got["tags"], {t["of"] for t in got["tags"]}
+        if tag_of != {"i1", "i3", "i4", "i5", "z2", "z3"}:   # leaf-1, pp-1, leaf-rear, leaf-2 and the two PDUs
+            bad.append(f"{view}: tags for {sorted(map(str, tag_of))}, expected leaf-1, pp-1, leaf-rear, leaf-2 and the two PDUs only")
+            continue
+        for t in tags:
+            for p in got["parts"]:
+                if hit(t, p):
+                    bad.append(f"{view}: tag of {t['of']} overlaps {p['name']} on screen: tag {round(t['l'])}-{round(t['r'])}, part {round(p['l'])}-{round(p['r'])}")
+                    break
+        for i, t in enumerate(tags):
+            for o in tags[i + 1:]:
+                if hit(t, o):
+                    bad.append(f"{view}: tag of {t['of']} overlaps the tag of {o['of']} on screen")
+        cv = got["view"]["cv"]
+        if view in ("default", "front", "iso") and not all(cv[0] <= t["l"] and t["r"] <= cv[2] and cv[1] <= t["t"] and t["b"] <= cv[3] for t in tags):
+            bad.append(f"{view}: a tag is off the stage: {[(t['of'], round(t['l']), round(t['r'])) for t in tags]} in {cv}")
+        if view in ("default", "front", "iso"):
+            if len(got["leaders"]) != len(tags):
+                bad.append(f"{view}: {len(got['leaders'])} leaders for {len(tags)} tags")
+            for t in tags:
+                d = got["devices"].get(t["of"])
+                edge = t["l"] if t["of"] in ("i4", "z3") else t["r"]   # (a rear tag's leader leaves its left edge, a front tag's its right)
+                near = [l for l in got["leaders"] if abs(l["from"][0] - edge) < 6 and t["t"] - 4 <= l["from"][1] <= t["b"] + 4]
+                if not near or not d:
+                    bad.append(f"{view}: no leader from the tag of {t['of']} (device {d})")
+                elif not any(d["l"] - 2 <= l["to"][0] <= d["r"] + 2 and d["t"] - 2 <= l["to"][1] <= d["b"] + 2 for l in near):
+                    bad.append(f"{view}: the leader of {t['of']} ends at {[l['to'] for l in near]}, off its device {d}")
+    # Two columns, in the scene's own units (S-0056): front tags left of everything and in front of it,
+    # rear tags right of everything and behind it, each leader to the near face of its own part.
+    cols2 = page.evaluate("""() => {
+      const s = window.__rack.scene(), {THREE, scene: sc} = s.three;
+      const tags = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined);
+      const rest = new THREE.Box3(), b = new THREE.Box3();
+      for (const o of sc.children) { if (o.isLight || o.isSprite || o.name === 'tag-leaders') continue; b.makeEmpty().expandByObject(o); if (!b.isEmpty()) rest.union(b); }
+      const dev = id => new THREE.Box3().setFromObject(sc.getObjectByName('device-' + id));
+      const lines = sc.getObjectByName('tag-leaders').children.map(l => { const a = l.geometry.attributes.position;
+        return {of: l.userData.leaderOf, from: [a.getX(0), a.getY(0), a.getZ(0)], to: [a.getX(1), a.getY(1), a.getZ(1)]}; });
+      return {rest: {minX: rest.min.x, maxX: rest.max.x, minZ: rest.min.z, maxZ: rest.max.z},
+              tags: tags.map(t => ({of: t.userData.tagOf, x0: t.position.x - t.scale.x / 2, x1: t.position.x + t.scale.x / 2, z: t.position.z, y: t.position.y})),
+              dev: Object.fromEntries(tags.map(t => { const d = dev(t.userData.tagOf); return [t.userData.tagOf, {minZ: d.min.z, maxZ: d.max.z}]; })),
+              lines};
+    }""")
+    rest = cols2["rest"]
+    for t in cols2["tags"]:
+        if t["of"] in ("i4", "z3"):
+            if not (t["x0"] > rest["maxX"] and t["z"] < rest["minZ"]):
+                bad.append(f"rear tag of {t['of']} is not right of and behind everything: {t} against {rest}")
+        elif not (t["x1"] < rest["minX"] and t["z"] > rest["maxZ"]):
+            bad.append(f"front tag of {t['of']} is not left of and in front of everything: {t} against {rest}")
+    rear_ys = sorted((t["y"] for t in cols2["tags"] if t["of"] in ("i4", "z3")), reverse=True)
+    if len(rear_ys) != 2 or rear_ys[0] == rear_ys[1]:
+        bad.append(f"the rear column's tags share a place: {rear_ys}")
+    for l in cols2["lines"]:
+        d = cols2["dev"].get(l["of"])
+        # (the part's detail is built after the tags are laid out, so its box has grown by the time it is measured here)
+        rear_part = l["of"] in ("i4", "z3")
+        if d is None or abs(l["to"][2] - (d["minZ"] if rear_part else d["maxZ"])) > 100 \
+                or (l["to"][2] > d["minZ"] + 100 if rear_part else l["to"][2] < d["maxZ"] - 100):
+            bad.append(f"the leader of {l['of']} ends at z {l['to'][2]}, not on its part's near face ({d})")
+        if l["of"] in ("i4", "z3") and l["from"][0] <= rest["maxX"]:
+            bad.append(f"the leader of rear part {l['of']} leaves from x {l['from'][0]}, not the right column")
+    # Tags and leaders turn with the stage's label colours, and the leaders are in no file.
+    cols = page.evaluate("""() => { const s = window.__rack.scene(); s.setLabelColors({labelColor: '#123456', labelUnitColor: '#654321'});
+      const sc = s.three.scene, hex = o => o.material.color.getHexString();
+      return {tags: sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined).map(hex),
+              leaders: sc.getObjectByName('tag-leaders').children.map(hex)}; }""")
+    if set(cols["tags"]) != {"123456"} or set(cols["leaders"]) != {"654321"}:
+        bad.append(f"stage colours: the tags are {set(cols['tags'])} and the leaders {set(cols['leaders'])}, expected 123456 and 654321")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if b'"mode":1' in glb or b'tag-leaders' in glb:
+        bad.append("GLB: carries the tags' leaders")
+    if not page.evaluate("() => !!window.__rack.scene().three.scene.getObjectByName('tag-leaders')"):
+        bad.append("GLB: the leaders were not put back after the export")
     return bad
 
 
@@ -5375,6 +5921,15 @@ def check_rack_cable_routes(page, base):
     }""")
     if rear["right"] is None or rear["left"] is None or not (rear["right"] < rear["left"]):
         bad.append(f"rear pick: the left gutter's target is not named right-rear: {rear}")
+    # (kit 0.42.0) the inner lane is offered too, on the rail itself: a rail wide, the pane's mirrored side
+    inner = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg');
+      const b = n => { const r = s.querySelector(`[data-pick-lane="${n}"][data-pick-ru="20"]`)?.getBBox(); return r ? [r.x, r.width] : null; };
+      return {right: b('right-rear-inner'), left: b('left-rear-inner'), count: s.querySelectorAll('[data-pick-lane$="-inner"]').length};
+    }""")
+    near = lambda got, want: got is not None and all(abs(g - w) < 0.01 for g, w in zip(got, want))
+    if not near(inner["right"], [-26, 26]) or not near(inner["left"], [450.85, 26]) or inner["count"] != 2 * page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU"):
+        bad.append(f"rear pick: the inner lanes are not offered on the rails: {inner}")
     page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="25"]')
     page.keyboard.press("Escape")
     got = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
@@ -5400,6 +5955,28 @@ def check_rack_cable_routes(page, base):
     page.click("#routeReset")
     if page.evaluate("() => window.__rack.doc().racks[0].cables.some(c => 'routeEdited' in c)"):
         bad.append("reset: a cable still has a routeEdited key")
+    # CANCEL TAKES BACK THE EDIT (S-0042): the reset above and one more pick were made since
+    # this form opened; Cancel puts the route back as the form found it, and adds no Undo step.
+    page.click("#routeAdd")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-pick-lane]')", timeout=READY_MS)
+    page.click('#paneFront svg [data-pick-lane="right-front"][data-pick-ru="30"]')
+    page.keyboard.press("Escape")
+    mid = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').routeEdited === true")
+    steps = page.evaluate("() => window.__rack.history().undoSummary")
+    if not mid:
+        bad.append("cancel: the pick did not edit the route")
+    page.click("#cCancel")
+    back = page.evaluate("() => { const c = window.__rack.doc().racks[0].cables.find(c => c.id === 'c1'); return {route: c.route, edited: c.routeEdited === true}; }")
+    if back["route"] != stored or not back["edited"]:
+        bad.append(f"cancel: the route is {back}, not the one the form opened with ({stored})")
+    if page.evaluate("() => window.__rack.history().undoSummary") == steps:
+        bad.append(f"cancel: the last Undo step is still {steps!r}: the pick was not taken back")
+    if not page.evaluate("() => window.__rack.history().canRedo"):
+        bad.append("cancel: Redo is empty: the edits were not undone as steps")
+    # (the 3D part below reads the automatic route)
+    page.click("#cableEdit")
+    page.click("#routeReset")
+    page.click("#cSave")
     # 3D: a lone cable's tube passes through its ring's opening and up its lane, outside the switch.
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id === 'c1')}); }""")
@@ -5799,7 +6376,7 @@ def check_rack_faces_and_tags(page, base):
     if both(got, "cables") != {"front": ["c61"], "rear": ["c61"]} or got["front"]["bundles"] or got["rear"]["bundles"]:
         bad.append(f"hover c61's row: the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}; expected c61's alone on each pane")
     # (two switches carry one label: the tag says which by its U)
-    if got["rear"]["text"] != ["→ AS7816-64X U40 port-32"] or got["front"]["text"] != ["→ FHD-1UFCE bay-2/module/b01"]:
+    if got["rear"]["text"] != ["→ AS7816-64X U40 port 32"] or got["front"]["text"] != ["→ FHD-1UFCE bay 2 b01"]:
         bad.append(f"hover c61's row: its tags read {got['front']['text']} and {got['rear']['text']}")
     park_mouse(page)
     if page.evaluate(FACE_TAGS_JS) != rest:
@@ -6298,11 +6875,28 @@ BAND_GEO = """([pane, id]) => {
     }
     memberX[c] = best;
   }
-  return {width: +band.getAttribute('stroke-width'), laneX, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
+  // the radius of the first arc in the trunk's own paths
+  const arc = /A([\\d.]+)[ ,]/.exec([...g.querySelectorAll('[data-bundle-trunk]')].map(p => p.getAttribute('d') || '').join(' '));
+  return {width: +band.getAttribute('stroke-width'), laneX, arcR: arc ? +arc[1] : null, span: run.length ? Math.max(...run) - Math.min(...run) : 0,
           ringGap, back, straps: s.querySelectorAll(`[data-strap="${id}"]`).length, memberX,
           shown: getComputedStyle(g.querySelector('[data-envelope]')).visibility === 'visible',
           strapXs: [...s.querySelectorAll(`[data-strap="${id}"] > line:not([data-strap-least])[data-strap-part="core"]`)].map(l => (+l.getAttribute('x1') + +l.getAttribute('x2')) / 2)};
 }"""
+
+
+def bundle_run_problems(geo, bend_mm, what):
+    """The band's straight run, from the lane and the bend radius: the 10U trunk
+    is 10 x 44.45 mm, and a turn of up to 90 degrees at each end takes at most
+    one radius R off it (R tan(theta/2) <= R), less 1 mm for rounding. The
+    trunk's arcs are the bundle's bend radius."""
+    bad = []
+    if not bend_mm or not geo["arcR"] or abs(geo["arcR"] - bend_mm) > 0.05:
+        bad.append(f"2D: {what} turns on arcs of radius {geo['arcR']}, not the bundle's bend radius {bend_mm} mm")
+        return bad
+    least = 10 * 44.45 - 2 * bend_mm - 1
+    if not (geo["laneX"] < -26) or geo["span"] < least:
+        bad.append(f"2D: {what} does not run up the gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']}, at least {least:.1f} for a lane less two {bend_mm} mm arcs)")
+    return bad
 
 
 @extra("rack.html: a bundle made from the cable list is drawn on the front pane as one band its size wide, with its straps, and a peeled cable leaves it (portrayal-site#142)")
@@ -6334,8 +6928,7 @@ def check_rack_bundle_2d_front(page, base):
     # The band is the bundle's diameter wide.
     if abs(geo["width"] - f["diameter"]) > 0.05:
         bad.append(f"2D: the band is {geo['width']} wide, not the bundle's {f['diameter']} mm")
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
-        bad.append(f"2D: the band does not run up the left gutter for the 10U trunk (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the band")
     # At the ring the envelope is about the pack: every member's centre line within its half width less half a stroke.
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
@@ -6374,7 +6967,9 @@ def check_rack_bundle_2d_front(page, base):
         bad.append(f"peel: c3 still rides the band at U29 after leaving at U27 ({geo2 and geo2['memberX']})")
     # THE LIST: the bundle's header, its summary with size and straps, members marked, c3's peel point.
     head = page.inner_text('#cableList [data-bundle-item="b1"]')
-    if "uplinks" not in head or "about" not in head or "straps every 6 in" not in head:
+    # (the strap summary is "N straps every 6 in" when every strap is a spacing strap, and "N straps (a every 6 in, b where a
+    # cable leaves)" when some are not: the kit counts a strap at the peel (0.28.0, straps on the routed path))
+    if "uplinks" not in head or "about" not in head or not re.search(r"\d+ straps? (every 6 in|\(\d+ every 6 in)", head):
         bad.append(f"list: the bundle's header does not give its name, size and straps: {head!r}")
     order = page.eval_on_selector_all("#cableList ul > li", "ls => ls.map(l => l.dataset.bundleItem ? 'B' : l.dataset.cableItem)")
     if order[:4] != ["B", "c1", "c2", "c3"]:
@@ -6462,8 +7057,7 @@ def check_rack_bundle_2d_rear(page, base):
     f = page.evaluate("() => window.__rack.bundles()[0]")
     geo = page.evaluate(BAND_GEO, ["paneRear", "b1"])
     # The kit routes it up right-rear, which the mirrored rear pane draws on its left.
-    if not (geo["laneX"] < -26) or geo["span"] < 400:
-        bad.append(f"2D: the rear band does not run up the mirrored gutter (x {geo['laneX']}, span {geo['span']})")
+    bad += bundle_run_problems(geo, f.get("bend_mm"), "the rear band")
     if geo["ringGap"] is None or geo["ringGap"] > geo["width"] / 2 - 1.5 + 0.5:
         bad.append(f"2D: at guide-1 on the rear pane a member's stroke is {geo['ringGap']} from the envelope's line, outside its half width {geo['width'] / 2}")
     # Nothing is hovered or selected: the envelope is drawn, and hidden.
@@ -6606,6 +7200,17 @@ HOVER_3D_STATE = """() => {
       if (prefix === 'bundle-') { out['envelope-' + id] = env; out['straps-' + id] = read(straps); }
     }
   }
+  // each cable's plugs (#179): a device's meshes tagged with the port a cable ends at
+  const port = e => e.item + '|' + String(e.path).split('-occupant')[0];
+  for (const c of window.__rack.doc().racks[0].cables ?? []) {
+    const keys = new Set([port(c.a), port(c.b)]), mats = new Set();
+    for (const d of w.children) {
+      if (!d.name.startsWith('device-')) continue;
+      d.traverse(o => { if (o.isMesh && o.userData.portrayalPath && keys.has(d.name.slice(7) + '|' + String(o.userData.portrayalPath).split('-occupant')[0]))
+        for (const m of [].concat(o.material)) mats.add(m); });
+    }
+    out['plugs-' + c.id] = [...mats].map(m => [m.transparent, Math.round(m.opacity * 1000) / 1000, m.depthWrite]);
+  }
   return out;
 }"""
 
@@ -6693,8 +7298,9 @@ def hover_3d_dims(st, base3, lit, members=HOVER_MEMBERS):
                 if dimmed and (not tr or dw or op > op0 * 0.2 + 1e-6):
                     bad.append(f"3D {k} should be dimmed (another cable or bundle is lit), its material is {(tr, op, dw)}")
             continue
+        lit_now = k in lit or (k.startswith("plugs-") and "cable-" + k[len("plugs-"):] in lit)
         for (tr, op, dw), (tr0, op0, dw0) in zip(mats, base3.get(k, [])):
-            if k in lit:
+            if lit_now:
                 if (tr, op, dw) != (tr0, op0, dw0):
                     bad.append(f"3D {k} should stay lit, its material is {(tr, op, dw)}, was {(tr0, op0, dw0)}")
             elif not tr or dw or op > op0 * 0.2 + 1e-6:
@@ -6857,6 +7463,8 @@ def check_rack_hover_dims(page, base):
     base3 = page.evaluate(HOVER_3D_STATE)
     if not base3.get("straps-b1") or not base3.get("cable-c4") or not base3.get("envelope-b1"):
         return bad + [f"3D: no tubes for c4, or no straps or no envelope for b1: {sorted(base3)}"]
+    if not all(base3.get(f"plugs-{c}") for c in ("c1", "c4")):
+        bad.append(f"3D: found no plug meshes for c1 or c4 (a plug is a device mesh tagged with its port): {sorted(k for k in base3 if k.startswith('plugs-'))}")
     if any(base3["envelope-b1"]):
         bad.append("3D: b1's envelope shows with nothing hovered or selected")
 
@@ -7054,6 +7662,32 @@ SPARE_PT_3D_JS = """async id => {
 }"""
 
 
+# THE CAMERA AT REST. A settled scene is not a still camera: after an orbit the controls ease it for as many FRAMES
+# as it takes (damping), which is many seconds where a frame takes a tenth of a second or more, and a point found on a
+# cable while it eases is a few pixels from that cable by the time the pointer reaches it (the label shows the
+# cable beside it, or none). Where it comes to rest also depends on how many frames the easing ran, so a cable that
+# shows well in one run lies behind its neighbours in the next. The check turns the easing off before it orbits
+# (the label under test is the page's, not the controls'), so the view stops where the pointer lets go, and waits
+# until three frames in a row moved the camera under 0.05 mm each or `ms` pass. True when it is still.
+CAMERA_REST_JS = """async ms => {
+  const s = window.__rack.scene();
+  if (!s?.three) return true;
+  const {camera, renderer, controls} = s.three, sleep = t => new Promise(r => setTimeout(r, t));
+  controls.enableDamping = false;
+  const deadline = Date.now() + ms, last = camera.position.clone();
+  let frame = renderer.info.render.frame, calm = 0;
+  while (Date.now() < deadline) {
+    await sleep(100);
+    const f = renderer.info.render.frame;
+    if (f === frame) continue;
+    calm = camera.position.distanceTo(last) / (f - frame) < 0.05 ? calm + 1 : 0;
+    last.copy(camera.position); frame = f;
+    if (calm >= 3) return true;
+  }
+  return false;
+}"""
+
+
 def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     """Put the pointer on `cid` and read the label beside it against `want`. With
     `drag`, a button held and let go hides it until the pointer next moves."""
@@ -7063,6 +7697,8 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
     # until the pointer put on it shows the label. A cable whose label never shows still fails below.
     pt = None
     for attempt in range(3):
+        if find_js is SPARE_PT_3D_JS:
+            page.evaluate(CAMERA_REST_JS, 30000)
         pt = page.evaluate(find_js, cid)
         if not pt:
             break
@@ -7079,7 +7715,14 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
         return
     tip = page.evaluate(SPARE_TIP_JS)
     if not tip or tip["id"] != cid:
-        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}")
+        # (what the page's own hover finds at that point, and what is under it, so a red says why the label did not come)
+        seen = page.evaluate("""async ([x, y]) => {
+          const H = await import('/site/rack/hover.js'), s = window.__rack.scene?.();
+          const el = document.elementFromPoint(x, y);
+          return {hover: s ? H.hoverAt3d(s, {clientX: x, clientY: y}) : 'no scene', under: el ? el.tagName + '#' + el.id : null,
+                  tip: document.getElementById('cableTip')?.dataset.cableTip ?? null};
+        }""", pt) if find_js is SPARE_PT_3D_JS else None
+        bad.append(f"{where}: the pointer on {cid} shows no label for it: {tip}" + (f" (at {pt}: {seen})" if seen else ""))
     else:
         if want["text"] not in tip["meta"]:
             bad.append(f"{where}: {cid}'s hover label says {tip['meta']!r}, expected it to carry {want['text']!r}")
@@ -7104,17 +7747,29 @@ def spare_hover(page, bad, where, find_js, cid, want, drag=None):
             # ...and it comes back with the next free move over a cable.
             if drag > 1:
                 settle_scene(page, f"{where}: the scene after the orbit", tubes=True)
-            back = page.evaluate(find_js, cid)
-            if not back:
-                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
-            else:
+                page.evaluate(CAMERA_REST_JS, 30000)
+            # (found again up to three times, as the first point is: where two cables lie close in 3D (c4 and c8 in ring 4
+            # since the ring is chosen by room, kit 0.27.0) a point found while the camera still eases may be under the
+            # other one by the time the pointer gets there)
+            back = None
+            for attempt in range(3):
+                back = page.evaluate(find_js, cid)
+                if not back:
+                    break
                 page.mouse.move(back[0] - 3, back[1] - 3)
                 page.mouse.move(back[0], back[1])
                 try:
                     wait_fn(page, f"{where}: {cid}'s label back", "id => { const t = document.getElementById('cableTip'); return t && !t.hidden && t.dataset.cableTip === id; }",
-                            arg=cid, timeout=10000)
+                            arg=cid, timeout=10000 if attempt == 2 else 2500)
+                    break
                 except RuntimeError:
-                    bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    if attempt == 2:
+                        bad.append(f"{where}: the hover label does not come back on {cid} with the next move after a drag: {page.evaluate(SPARE_TIP_JS)}")
+                    else:
+                        park_mouse(page)
+                        page.wait_for_timeout(600)
+            if not back:
+                bad.append(f"{where}: found no point on {cid} after the drag, so the label's return was not read")
     park_mouse(page)
     if page.evaluate(SPARE_TIP_JS):
         bad.append(f"{where}: the hover label stays after the pointer has left {cid}")
@@ -7856,8 +8511,8 @@ def check_rack_bundle_pack(page, base):
             bad.append(f"2D: along the lacer the members' strokes are at heights {ys}: one line, not a pack")
     # (#190: across the members as they are drawn there, measured here off their own strokes where they
     # cross the bar, which side by side are never wider than the pack's diameter; and 2 mm each side)
-    if not g["straps"] or any(st["riders"] < 2 or abs(st["len"] - (st["drawn"] + 4)) > 1.2 or abs(st["off"]) > 1.2 or st["drawn"] > st["pack"] + 0.5 for st in g["straps"]):
-        bad.append(f"2D: a strap is not a bar across its pack (its members' strokes there, no wider than its diameter, and 2 mm each side, to 1.2 mm): {g['straps']}")
+    if not g["straps"] or any(st["riders"] < 2 or abs(st["len"] - (st["drawn"] + 2)) > 1.2 or abs(st["off"]) > 1.2 or st["drawn"] > st["pack"] + 0.5 for st in g["straps"]):
+        bad.append(f"2D: a strap is not a bar across its pack (its members' strokes there, no wider than its diameter, and 1 mm each side on the page since S-0040, to 1.2 mm): {g['straps']}")
     # hover and selection show it; a member hovered alone still dims the others
     page.hover('#cableList [data-bundle-row="b1"]')
     page.wait_for_timeout(350)
@@ -7991,7 +8646,8 @@ STRAP_2D_JS = """() => {
   const p = new DOMPoint((+core.getAttribute('x1') + +core.getAttribute('x2')) / 2, (+core.getAttribute('y1') + +core.getAttribute('y2')) / 2).matrixTransform(m);
   let opacity = 1;
   for (let n = g; n && n !== svg.parentNode; n = n.parentNode) opacity *= +getComputedStyle(n).opacity;
-  return {at: [p.x, p.y], core: getComputedStyle(core).stroke, rim: getComputedStyle(g.querySelector('[data-strap-part="rim"]')).stroke,
+  const rimTrue = g.querySelector('line[data-strap-part="rim"]:not([data-strap-least])');
+  return {at: [p.x, p.y], coreW: +core.getAttribute('stroke-width'), rimW: +rimTrue.getAttribute('stroke-width'), core: getComputedStyle(core).stroke, rim: getComputedStyle(g.querySelector('[data-strap-part="rim"]')).stroke,
           stage: getComputedStyle(document.getElementById('panes')).backgroundColor, opacity: Math.round(opacity * 100) / 100,
           parts: [...g.children].map(l => [l.dataset.strapPart, l.hasAttribute('data-strap-least'), l.getAttribute('vector-effect')]),
           scale: Math.hypot(m.a, m.b), n: svg.querySelectorAll('[data-strap="b1"]').length,
@@ -8017,7 +8673,7 @@ def strap_extent(px, w, h, at, core):
     return (1 + run(-1, 0) + run(1, 0), 1 + run(0, -1) + run(0, 1))
 
 
-@extra("rack.html: a bundle's straps can be seen - a light strap with a dark rim on a dark stage and a black one with a white rim on a light stage (7 to 1 or better against the stage), never under 6 px on screen at Fit on a 42U rack, lit with their bundle (a member selected or hovered) and dimmed with it (another cable), in the stage's strap colour in 3D, and black on a sheet whatever the stage")
+@extra("rack.html: a bundle's straps can be seen - in 2D a quiet band, a muted light grey on a dark stage and a muted dark grey on a light one, each with a hairline rim in a muted tone and no white outline (4.5 to under 8 to 1 against the stage), never under 4 px on screen at Fit on a 42U rack, lit with their bundle (a member selected or hovered) and dimmed with it (another cable), in the stage's strap colour in 3D, and black on a sheet whatever the stage")
 def check_rack_straps_seen(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -8031,7 +8687,7 @@ def check_rack_straps_seen(page, base):
     page.wait_for_timeout(400)
     park_mouse(page)
     ratios = {}
-    for stage, tone, want in (("#101214", "dark", ("#d5d9de", "#0b0c0d")), ("#ffffff", "light", ("#1b1d20", "#ffffff"))):
+    for stage, tone, want in (("#101214", "dark", ("#8a9199", "#2a2f35")), ("#ffffff", "light", ("#5b6169", "#c9cdd2"))):
         page.click(f'#stagebg .sw[data-c="{stage}"]')
         page.wait_for_timeout(300)
         page.evaluate("() => document.querySelector('#paneFront [data-strap=\"b1\"]').scrollIntoView({block: 'center', inline: 'center'})")
@@ -8043,8 +8699,13 @@ def check_rack_straps_seen(page, base):
         if (core, rim) != (rgb_of(want[0]), rgb_of(want[1])) or ground != rgb_of(stage):
             bad.append(f"{tone}: the strap is {core} with a {rim} rim on a {ground} stage, expected {want} on {stage}")
         ratios[tone] = contrast_ratio(core, ground)
-        if ratios[tone] < 7:
-            bad.append(f"{tone}: the strap's contrast with the stage is {ratios[tone]:.1f} to 1, under 7")
+        # S-0040: a quiet band, not a block: seen (4.5 to 1 or more) but not bright (under 8 to 1), and no white or high-contrast outline
+        if not 4.5 <= ratios[tone] < 8:
+            bad.append(f"{tone}: the strap's contrast with the stage is {ratios[tone]:.1f} to 1, expected from 4.5 to under 8")
+        if min(rim) > 235 or contrast_ratio(rim, core) > 5 or contrast_ratio(rim, ground) > 5:
+            bad.append(f"{tone}: the strap's rim {rim} is a white or high-contrast outline against its core {core} and the {ground} stage")
+        if s["rimW"] > s["coreW"] + 1.5 or s["coreW"] * s["scale"] > 7:
+            bad.append(f"{tone}: the strap is {s['coreW']:.1f} units wide with a rim {s['rimW']:.1f} wide, expected a hairline rim and a narrow band")
         if [p[:2] for p in s["parts"]] != [["rim", False], ["rim", True], ["core", False], ["core", True]] or any(p[1] and p[2] != "non-scaling-stroke" for p in s["parts"]):
             bad.append(f"{tone}: a strap is not a rim and a core at its true size and again at its least: {s['parts']}")
         # on the composited page, at Fit: the strap's own colour, at least 6 px along the run and across it
@@ -8052,11 +8713,11 @@ def check_rack_straps_seen(page, base):
         ext = strap_extent(px, w, h, s["at"], core)
         if s["scale"] * 10 >= 6:
             bad.append(f"{tone} fixture: at Fit a 10 mm strap is {s['scale'] * 10:.1f} px, so the least size was not what was measured")
-        if min(ext) < 6:
-            bad.append(f"{tone}: at Fit the strap is {ext[0]} x {ext[1]} px of its own colour on the page, under 6 (a 10 mm bar is {s['scale'] * 10:.1f} px here)")
+        if min(ext) < 4:
+            bad.append(f"{tone}: at Fit the strap is {ext[0]} x {ext[1]} px of its own colour on the page, under 4 (a 10 mm bar is {s['scale'] * 10:.1f} px here)")
         if s["opacity"] != 1:
             bad.append(f"{tone}: the strap is at opacity {s['opacity']} with nothing selected")
-    print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 6 px at Fit")
+    print(f"[check_rack_straps_seen] strap against the stage: dark {ratios.get('dark', 0):.1f} to 1, light {ratios.get('light', 0):.1f} to 1; at least 4 px at Fit")
     page.click('#stagebg .sw[data-c="#101214"]')
     # A STRAP GOES WITH ITS BUNDLE. A cable that rides it selected, then hovered: the strap stays at
     # full strength. A cable that does not (c4): the strap dims with its bundle's cables.
@@ -9638,6 +10299,543 @@ def check_rack_side_fresh_after_edit(page, base):
     return bad
 
 
+# A RACK OF A SIZE (portrayal-site#192): `devices` two-unit fabric switches stacked from the top of a 42U four-post
+# rack, a lacer panel on each, a vertical manager either side, and `per_pair` cables from each switch to the one below
+# it, port k to port 24 + k, each port holding the cable's own plug. 13 devices and 24 a pair is 288 cables and 576
+# seated ends: the shape and size of the rack the issue was measured on. Built here, so no rack file is committed.
+def speed_fixture(devices, per_pair=24, name=None):
+    if not (2 <= devices <= 20 and 1 <= per_pair <= 24):
+        raise ValueError("speed_fixture: 2 to 20 devices, 1 to 24 cables a pair")
+    items, cables = [], []
+    for k in range(devices):
+        used = ([*range(per_pair)] if k < devices - 1 else []) + ([*range(24, 24 + per_pair)] if k else [])
+        items.append({"id": f"i{k + 1}", "ref": "s9725-64e", "cfg": "ac", "label": f"FAB-{k + 1}", "ru": 41 - 2 * k, "face": "front", "turned": False,
+                      "swaps": {f"port-{n}": "generic/qsfp-dd-cable@1" for n in used}, "fields": {}})
+    for k in range(devices):
+        items.append({"id": f"i{devices + k + 1}", "ref": "fhd-cmp5dr", "cfg": "base", "label": f"CM-{k + 1}", "ru": 42 - 2 * k, "face": "front",
+                      "turned": False, "swaps": {}, "fields": {}, "on": f"i{k + 1}", "unit": 2})
+    for k in range(devices - 1):
+        for n in range(per_pair):
+            cables.append({"id": f"c{len(cables) + 1}", "a": {"item": f"i{k + 1}", "path": f"port-{n}", "view": "front"},
+                           "b": {"item": f"i{k + 2}", "path": f"port-{24 + n}", "view": "front"}, "media": "aoc", "purpose": "fabric",
+                           "label": f"FAB-{k + 1} {n} > FAB-{k + 2} {24 + n}", "route": []})
+    return {"format": "portrayal-rack", "version": 4, "id": f"doc-speed-{devices}-{per_pair}", "racks": [{
+        "id": "r1", "name": name or f"Speed {len(cables)}",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": items,
+        "zeroU": [{"id": "z1", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV left", "at": "left-front", "offsetMm": 0},
+                  {"id": "z2", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV right", "at": "right-front", "offsetMm": 0}],
+        "cables": cables}]}
+
+
+# ONE READING OF A RACK, AND NEVER A STALE ONE (portrayal-site#192, site/rack/reading.js). The routes are read once for
+# a rack object and handed to the panes, the list, the exports and every assistant tool, and what a tool reads of the
+# kit is answered once for the rack object. What that risks is staleness: something shown, said or downloaded that was
+# true of the rack before an edit. So each kind of edit is made on a page that has already answered everything for the
+# rack before it, and what the page then shows, says and downloads is compared with THE SAME DOCUMENT OPENED IN A
+# BROWSER THAT HAS NEVER SEEN IT (another context, a fresh page): nothing there can be left over from anything.
+#
+# The page's state, as plain data: both panes' drawings whole, the list's rows, every route warning (a folded kind is
+# opened first), what the page read of the routes, and the rack.
+READING_STATE_JS = """async () => {
+  const R = window.__rack, plain = v => JSON.parse(JSON.stringify(v ?? null));
+  for (const d of document.querySelectorAll('#side details[data-route-more]:not([open])')) d.querySelector('summary').click();
+  await new Promise(r => setTimeout(r, 30));
+  // (less the zoom, which is the window's, and the outline an assistant's edit wears for three seconds; and every
+  // number to a millionth: the cable layer is measured off the laid-out pane, and two pages lay the same pane out
+  // to within the last digits of a float, 310.60001226425175 against 310.6000122642518 on CI's runner)
+  const pane = id => { const svg = document.querySelector(`#${id} > svg`); if (!svg) return null;
+    const c = svg.cloneNode(true); c.removeAttribute('style');
+    for (const n of c.querySelectorAll('.rk-agent-touched')) { n.classList.remove('rk-agent-touched'); if (!n.getAttribute('class')) n.removeAttribute('class'); }
+    return c.outerHTML.replace(/-?\\d+\\.\\d{7,}/g, m => String(Math.round(Number(m) * 1e6) / 1e6)); };
+  return {"the front pane's drawing": pane('paneFront'), "the rear pane's drawing": pane('paneRear'),
+    "the cable list's rows": [...document.querySelectorAll('#side [data-cable-item]')].map(li => li.textContent),
+    'the route warnings': [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent),
+    'the routes': plain(R.routes()), 'the paths': plain(R.paths()), 'the fill': plain(R.fill()), 'the ring marks and findings': plain(R.rings()),
+    'the bodies crossed': plain(R.bodies()), 'the tight bends': plain(R.bends()), 'the bundles': plain(R.bundles()),
+    'the tie straps': plain(R.tieStraps()), "the cabled ends' facts": plain(R.cableFacts()), 'the rack': plain(R.doc().racks[0])};
+}"""
+# A redraw has finished since `n` were, none is running or queued, and the routes the page holds are this rack's.
+READING_SETTLED = """n => window.__rack.drawn() > n && window.__rack.idle()
+  && (!window.__rack.doc().racks[0].cables.length || window.__rack.routesCurrent().current)"""
+# describe_rack asked the moment an edit lands, before its redraw has read anything, against the kit asked afresh of
+# that very rack object with a context nobody else holds: [what the tool said, the kit's lines it should end with].
+# (A small window, so the tool's own cut to fit plays no part: its text is the kit's first line, its own lines of the
+# session, then the rest of the kit's.)
+READING_AT_ONCE_JS = """async () => {
+  const rack = window.__rack.doc().racks[0];
+  const said = window.__tools.describe_rack.execute({limit: 4});
+  const Q = await import('/vendor/rack/queries.js'), RC = await import('/site/rack/route-context.js'), C = await import('/vendor/rack/catalog.js');
+  const {chassisOf} = await C.loadCatalog('assets/dist/'), types = await RC.cableTypes();
+  const rf = rack.cables.length ? await RC.routeFacts(rack, chassisOf) : null;
+  const kit = Q.describe(rack, {chassisOf, ...(rf ? {route: rf.ctx} : {}), ...(types ? {diameterOf: types.diameterOf, bendOf: types.bendOf} : {})}, {offset: 0, limit: 4});
+  return {said: (await said).content[0].text, kit};
+}"""
+READING_TOOL_JS = """async ([n, a]) => { const before = window.__rack.reads(), res = await window.__tools[n].execute(a), after = window.__rack.reads();
+  return {text: (res?.content ?? []).map(c => c.text).join('\\n'), isError: !!res?.isError,
+          reads: after.routeFacts - before.routeFacts, lays: after.lays - before.lays}; }"""
+
+
+def reading_tools(rack):
+    """The tool calls whose answers are compared: everything an assistant can read of this rack."""
+    cables = [c["id"] for c in rack.get("cables") or []]
+    # (windows small enough to fit whole: the default one is cut to the room the undo line leaves, and a rack opened afresh has none)
+    calls = [("describe_rack", {"limit": 4}), ("describe_rack", {"section": "items"}), ("describe_rack", {"section": "bundles"})]
+    calls += [("describe_rack", {"section": "cables", "offset": k, "limit": 8}) for k in range(0, len(cables), 8)]
+    calls += [("inspect", {"id": c}) for c in dict.fromkeys(cables[:2] + cables[-2:])]
+    calls += [("inspect", {"id": b["id"]}) for b in rack.get("bundles") or []]
+    calls += [("inspect", {"id": "i1"}), ("list_free_ports", {"id": "i1"}), ("check_fit", {"ref": "as7326-56x", "face": "front"})]
+    if len(cables) >= 2:
+        calls.append(("edit_rack", {"dry_run": True, "commands": [{"op": "bundle.create", "cables": cables[-2:]}]}))
+    return calls
+
+
+# The undo line is the one thing a tool says that is the session's, not the rack's: a rack opened afresh has nothing to undo.
+def reading_text(name, text):
+    lines = text.split("\n")
+    return "\n".join(l for k, l in enumerate(lines) if not (name == "describe_rack" and k == 1 and (l.startswith("Undo would take back") or l == "Nothing to undo.")))
+
+
+@extra("rack.html: one reading of a rack, never a stale one - after each kind of edit (a cable's end, media and label, a cable removed and added, a device moved, renamed and an optic taken out by an assistant, the frame, a route by hand and reset, a bundle, undo, redo, the DCIM settings, the rack's name, another document with the same ids) every tool's text, both drawings, the list, the warnings, the routes and a download are those of the same document opened in a browser that has never seen it; a tool call on a rack that has not changed reads no route again, and asked twice lays no cable (#192)")
+def check_rack_reading_fresh_after_edit(page, base):
+    return reading_fresh_after_edit(page, base, False)
+
+
+def reading_fresh_after_edit(page, base, check_kept):
+    """The staleness run. With `check_kept` the page is opened with ?checkKept=1 (the kit lays every path it reads again
+    from nothing and compares it with the one it kept, route-context.js kept): the cold lays go through the same plug
+    reaches, so the counts of cables laid cannot hold in that pass and are not asked; a throw of the kit's is a failure
+    wherever it is raised, so the console is read too (the kit swallows some into console.warn)."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    if check_kept:
+        page.on("console", lambda m: bad.append(f"console {m.type}: {m.text[:300]}") if "checkKept" in m.text else None)
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(CABLE_LAY_FIXTURE.read_text())
+    fixture.pop("_note", None)
+    page.goto(f"{base}/rack.html?probe=1" + ("&checkKept=1" if check_kept else ""), wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.click('#view2d [data-view="faces"]')
+    # the browser that has never seen the rack: its own context, so not even this one's library
+    other = page.context.browser.new_context(viewport={"width": 1600, "height": 1000}, accept_downloads=True)
+    fresh = other.new_page()
+    fresh.on("pageerror", lambda e: bad.append(f"uncaught, in the fresh browser: {e}"))
+    if check_kept:
+        fresh.on("console", lambda m: bad.append(f"console {m.type}, in the fresh browser: {m.text[:300]}") if "checkKept" in m.text else None)
+    fresh.add_init_script(STAND_IN_MODEL_CONTEXT)
+
+    def settle(pg, drawn, where):
+        try:
+            pg.wait_for_function(READING_SETTLED, arg=drawn, timeout=READY_MS)
+        except Exception:
+            bad.append(f"{where}: the page did not settle on the routes of the rack as it is")
+        pg.wait_for_timeout(150)
+
+    def answers(pg, rack):
+        out = []
+        for name, a in reading_tools(rack):
+            r = pg.evaluate(READING_TOOL_JS, [name, a])
+            out.append((name, a, r))
+        return out
+
+    def schedule(pg):
+        dl = export_file(pg, "cables")
+        return pathlib.Path(dl.path()).read_text()
+
+    def compare(where, drawn_before):
+        settle(page, drawn_before, where)
+        rack = page.evaluate("() => window.__rack.doc().racks[0]")
+        got_state, got_tools, got_csv = page.evaluate(READING_STATE_JS), answers(page, rack), schedule(page)
+        # ...and a redraw that changes nothing reads nothing again and draws the same
+        n, reads = page.evaluate("() => [window.__rack.drawn(), window.__rack.reads()]")
+        page.evaluate("() => { window.__rack.redraw(); }")
+        settle(page, n, f"{where} (drawn again)")
+        again_state, reads_after = page.evaluate(READING_STATE_JS), page.evaluate("() => window.__rack.reads()")
+        if rack["cables"] and (reads_after["routeFacts"] != reads["routeFacts"] or (reads_after["lays"] != reads["lays"] and not check_kept)):
+            bad.append(f"{where}: a redraw of a rack that had not changed read the routes {reads_after['routeFacts'] - reads['routeFacts']} times and laid {reads_after['lays'] - reads['lays']:g} cables; expected neither")
+        for key in got_state:
+            if again_state[key] != got_state[key]:
+                bad.append(f"{where}: {key} changed when the page was drawn again with no edit")
+        # each tool again: no route is read, and no cable is laid for an answer already given
+        # (a dry run is not a reading: the kit runs the command, which lays what the command needs laid)
+        for name, a, first in got_tools:
+            r = page.evaluate(READING_TOOL_JS, [name, a])
+            if r["text"] != first["text"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} answered differently the second time")
+            if r["reads"] or (r["lays"] and name != "edit_rack" and not check_kept):
+                bad.append(f"{where}: {name} {json.dumps(a)}, asked a second time of a rack that had not changed, read the routes {r['reads']} times and laid {r['lays']:g} cables; expected neither")
+        for name, a, first in got_tools:
+            if first["reads"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} read the routes again ({first['reads']} times) on a rack the page had already read")
+        # THE SAME DOCUMENT, in the browser that has never seen it
+        doc = page.evaluate("() => window.__rack.doc()")
+        open_fixture(fresh, base, doc)
+        settle(fresh, 0, f"{where} (opened afresh)")
+        want_state, want_tools, want_csv = fresh.evaluate(READING_STATE_JS), answers(fresh, rack), schedule(fresh)
+        if len(want_state["the paths"] or {}) != len(rack["cables"]) and rack["cables"]:
+            bad.append(f"{where}: the fresh browser to compare with read {len(want_state['the paths'] or {})} paths for {len(rack['cables'])} cables")
+        for key in got_state:
+            if got_state[key] != want_state[key]:
+                a, b = json.dumps(got_state[key]), json.dumps(want_state[key])
+                k = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), min(len(a), len(b)))
+                bad.append(f"{where}: {key} is not that of the same document opened afresh: ...{a[max(0, k - 60):k + 90]} against ...{b[max(0, k - 60):k + 90]}")
+        for (name, a, g), (_, _, w) in zip(got_tools, want_tools):
+            if reading_text(name, g["text"]) != reading_text(name, w["text"]) or g["isError"] != w["isError"]:
+                bad.append(f"{where}: {name} {json.dumps(a)} does not say what it says of the same document opened afresh: {g['text'][:160]!r} against {w['text'][:160]!r}")
+        if got_csv != want_csv:
+            bad.append(f"{where}: the cable schedule is not the one downloaded from the same document opened afresh")
+        return rack
+
+    drawn = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("r => window.__rack.replaceRack(r)", fixture)
+    rack = compare("the rack as loaded", drawn)
+    if page.evaluate("() => window.__rack.checkKept()") != check_kept:
+        bad.append(f"the route context the page read has the kit's checkKept {'off' if check_kept else 'on'}; expected it {'on' if check_kept else 'off'}")
+    if len(rack["cables"]) != 16:
+        return bad + [f"the fixture has {len(rack['cables'])} cables; expected the cable-lay rack's 16"]
+    apply = lambda cmd: f"() => window.__rack.apply({json.dumps(cmd)})"
+    agent = lambda cmds: f"() => window.__tools.edit_rack.execute({json.dumps({'commands': cmds})}).then(r => (r.isError ? {{error: r.content[0].text}} : {{}}))"
+    edits = [
+        ("a cable's end moved", apply({"op": "cable.update", "id": "c16", "b": {"item": "i2", "path": "bay-1/module/lc1", "view": "front"}})),
+        ("a cable's media changed", apply({"op": "cable.update", "id": "c2", "media": "cat6a"})),
+        ("a cable's label changed", apply({"op": "cable.update", "id": "c3", "label": "uplink three"})),
+        ("a cable removed", apply({"op": "cable.remove", "id": "c15"})),
+        ("a cable added", apply({"op": "cable.add", "a": {"item": "i3", "path": "port-55", "view": "front"}, "b": {"item": "i2", "path": "bay-1/module/lc2", "view": "front"}, "media": "om4"})),
+        ("a device moved", apply({"op": "move", "id": "i3", "ru": 37})),
+        ("a device renamed", apply({"op": "patch", "id": "i1", "label": "LEAF-A2"})),
+        ("an optic taken out by an assistant", agent([{"op": "fit", "id": "i1", "path": "port-56", "ref": None}])),
+        ("the frame grown", apply({"op": "frame", "heightRU": 44})),
+        ("a route edited by hand", """() => { const ways = new Map(window.__rack.routes()).get('c4') ?? [];
+            return window.__rack.apply({op: 'cable.route', id: 'c4', route: [...ways, {lane: 'left-front', ru: 30}], summary: 'Waypoint added.'}); }"""),
+        ("the route reset", apply({"op": "cable.route.reset", "id": "c4", "summary": "Route reset to automatic."})),
+        ("a bundle made", "() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c5', 'c6', 'c7'], label: 'trunk'})"),
+        ("undo", "() => { window.__rack.undo(); return {}; }"),
+        ("redo", "() => { window.__rack.redo(); return {}; }"),
+        # not a step: the rack is a new object that shares the reading of the one before (reading.js sameReading)
+        ("the DCIM settings", apply({"op": "dcim", "site": "DC-1", "role": "leaf"})),
+        ("the rack renamed", apply({"op": "rename", "name": "Cable lay, renamed"})),
+        # another document, its ids the same as the last one's: nothing of the last is its
+        ("another document with the same ids", """() => { const d = structuredClone(window.__rack.doc());
+            d.id = 'doc-reading-other'; d.racks[0].name = 'Another';
+            d.racks[0].cables = d.racks[0].cables.filter(c => !['c1', 'c9'].includes(c.id)).map(c => (c.id === 'c10' ? {...c, media: 'os2'} : c));
+            d.racks[0].bundles = [];
+            window.__rack.loadDoc(d); return {}; }"""),
+    ]
+    for what, js in edits:
+        # before the edit the page has answered everything for the rack as it was (compare did): each answer is there to go stale
+        drawn = page.evaluate("() => window.__rack.drawn()")
+        r = page.evaluate(js)
+        if r and r.get("error"):
+            bad.append(f"{what}: refused: {r['error']}")
+            continue
+        # ASKED AT ONCE, before the edit's redraw has read a route: the answer is this rack's, as the kit gives it afresh.
+        # (Not compared with the answer once the redraw is done: the redraw writes the routed lengths, and a new cable's spare with them.)
+        at_once = page.evaluate(READING_AT_ONCE_JS)
+        first, rest = at_once["kit"].split("\n", 1) if "\n" in at_once["kit"] else (at_once["kit"], "")
+        if not (at_once["said"].startswith(first + "\n") and at_once["said"].endswith("\n" + rest)):
+            bad.append(f"after {what}: describe_rack asked the moment the edit landed does not say what the kit says of the rack as it then was: {at_once['said'][:300]!r} against {at_once['kit'][:300]!r}")
+        rack = compare(f"after {what}", drawn if what != "the DCIM settings" else drawn - 1)
+    other.close()
+    return bad
+
+
+@extra("rack.html: what the kit keeps is what it would lay afresh - the staleness run again with the kit's own check on (?probe=1&checkKept=1, kit ctx.checkKept: every path the kit reads is laid again from copies of the rack, the cable and the context and compared with the one it kept, and a difference throws), through every kind of edit; no page error, no console message of the check, no settle timeout, and every tool, drawing and download still that of the same document opened afresh (#192)")
+def check_rack_kept_paths_hold(page, base):
+    return reading_fresh_after_edit(page, base, True)
+
+
+# A LARGE RACK'S BUDGETS (portrayal-site#192). The rack the issue was measured on took 39 s to draw, 27 s to draw again
+# with nothing changed, and half a minute for each call an assistant made, because everything read every route again.
+# What holds that off is counted here, on a rack of 288 cables built in the check (speed_fixture), in two ways:
+#
+#   - BY COUNT, which no machine's load moves: how many times the routes were read (route-context.js routeFacts) and
+#     how many cables the kit read the inputs of (its asks for a plug's reach, halved; kit 0.25.0 asks when it reads a
+#     cable's inputs, `layInputs`, and not for a path it has kept, so this is no longer "cables laid"), for the first
+#     draw, a redraw with nothing changed, an edit, and each thing an assistant reads, the first time and again;
+#   - BY TIME, as a ratio to another time taken in the same run on the same machine, never in seconds: against the same
+#     rack's own first draw, and against the first draw of a rack of 12 cables.
+#
+# Measured on kit 0.25.0 (this rack, an 80-core machine with other work running): a draw and the first describe_rack
+# 4.67 per cable, an edit's redraw 4.65, an inspect of a cable 0.01, everything else none; a first draw about 9 s, a
+# redraw with nothing changed about 2.5 s (the page's own drawing: the kit reads nothing), an edit's redraw about 5 s.
+# Each bound has about twice the room the page needs today (a count that was none is allowed a tenth, so a kit that
+# reads a few inputs again is not a failure; every cable again would be 4.67), so a slow or busy runner does not trip
+# one; a change that reads the routes again where it did not, or has the kit read every cable for a question already
+# answered, goes past it by far. The bounds are ceilings: when the kit keeps more, the counts fall, and nothing here minds.
+SPEED_BUDGETS = {
+    # (reads of the routes, kit cable-input reads per cable) at most
+    "first draw": (1, 10), "a redraw with nothing changed": (0, 0), "a redraw after one cable's end is moved": (1, 10),
+    # (the first question of a rack whose cables had no length until the page measured them is asked of the rack as it
+    # is, a new object; the kit reads each cable's inputs once for it. After that, and after an edit, it reads none)
+    "describe_rack, first asked": (0, 10), "describe_rack, asked again": (0, 0), "describe_rack after the edit": (0, 0.1),
+    "describe_rack's next page, first asked": (0, 0.1),
+    "inspect of a cable, first asked": (0, 0.05), "inspect of a cable, asked again": (0, 0),
+    "the cable schedule, first downloaded": (0, 0.1), "the cable schedule, downloaded again": (0, 0),
+}
+# a time, as a multiple of another time of the same run, at most (measured: 0.27, 0.02, 0.005, 0.004, 0.00, 0.00, 0.59, 11.6)
+SPEED_RATIOS = [
+    ("a redraw with nothing changed", "first draw", 0.55),
+    ("describe_rack, first asked", "first draw", 0.1),
+    ("describe_rack's next page, first asked", "first draw", 0.1),
+    ("describe_rack after the edit", "first draw", 0.1),
+    ("describe_rack, asked again", "the small rack's first draw", 1.0),
+    ("inspect of a cable, asked again", "the small rack's first draw", 1.0),
+    ("a redraw after one cable's end is moved", "first draw", 1.2),
+    ("first draw", "the small rack's first draw", 30),
+]
+SPEED_TIMED_JS = """async ([src, arg, needDraw]) => {
+  const R = window.__rack, sleep = t => new Promise(r => setTimeout(r, t));
+  const before = R.reads(), drawn = R.drawn(), t0 = performance.now();
+  const out = await (0, eval)(`(${src})`)(arg);
+  for (;;) {
+    await new Promise(r => queueMicrotask(r));
+    if ((!needDraw || R.drawn() > drawn) && R.idle()) { await sleep(0); if (R.idle()) break; }
+    await sleep(5);
+  }
+  const after = R.reads();
+  return {ms: performance.now() - t0, out: out ?? null, reads: after.routeFacts - before.routeFacts, lays: after.lays - before.lays};
+}"""
+# How long any one step of the large rack gets: it reads 288 routes, and a 2-CPU runner draws them in minutes.
+SPEED_MS = 600000
+
+
+def speed_open(page, base, doc):
+    """A fresh page and the document through Open .json: the first draw's {ms, reads, lays}, from the file being chosen."""
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.wait_for_function("() => window.__rack.idle()", timeout=SPEED_MS)
+    if page.evaluate("() => window.__rack.view()") != "faces":
+        page.click('#view2d [data-view="faces"]')
+    was = page.evaluate("() => ({id: window.__rack.doc().id, drawn: window.__rack.drawn(), reads: window.__rack.reads()})")
+    t0 = time.time()
+    page.set_input_files("#openFile", files=[{"name": "speed.rack.json", "mimeType": "application/json", "buffer": json.dumps(doc).encode()}])
+    page.wait_for_function("was => window.__rack.doc().id !== was.id && window.__rack.drawn() > was.drawn && window.__rack.idle() && window.__rack.routesCurrent().current",
+                           arg=was, timeout=SPEED_MS, polling=20)
+    ms = (time.time() - t0) * 1000
+    got = page.evaluate("was => { const r = window.__rack.reads(); return {reads: r.routeFacts - was.reads.routeFacts, lays: r.lays - was.reads.lays}; }", was)
+    return {"ms": ms, **got}
+
+
+@extra("rack.html: a large rack keeps its budgets - on a rack of 288 cables built in the check, the routes are read once for the first draw and once for an edit and by nothing else (a redraw with nothing changed, describe_rack and its next page, the inspect of a cable, the cable schedule, each asked twice), the kit reads the inputs of each cable at most 10 times for a draw and for the first describe_rack of a rack just measured, a tenth of a time for its next page, one after an edit and a first schedule, and none for anything asked again; and by the clock of the same run a redraw with nothing changed takes under 0.55 of the first draw, a describe_rack under a tenth of it, an answer asked again less than a 12-cable rack's first draw, an edit's redraw no more than 1.2 first draws, and the first draw no more than 30 times the 12-cable rack's (#192)")
+def check_rack_speed_budgets(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_default_timeout(SPEED_MS)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    small, big = speed_fixture(3, 6), speed_fixture(13, 24)
+    n = len(big["racks"][0]["cables"])
+    took_ms, cost = {}, {}
+    # the small rack, three times over: its middle time is the yardstick
+    took_ms["the small rack's first draw"] = sorted(speed_open(page, base, small)["ms"] for _ in range(3))[1]
+    first = speed_open(page, base, big)
+    took_ms["first draw"], cost["first draw"] = first["ms"], first
+    if page.evaluate("() => Object.keys(window.__rack.paths() ?? {}).length") != n:
+        return bad + [f"the large rack did not read a path for each of its {n} cables, so nothing was measured"]
+
+    def timed(what, src, arg=None, need_draw=False):
+        r = page.evaluate(SPEED_TIMED_JS, [src, arg, need_draw])
+        took_ms[what], cost[what] = r["ms"], r
+        return r
+
+    tool = "async ([n, a]) => { const r = await window.__tools[n].execute(a); return {error: !!r?.isError, text: r?.content?.[0]?.text ?? ''}; }"
+    timed("a redraw with nothing changed", "() => { window.__rack.redraw(); }", need_draw=True)
+    for turn in ("first asked", "asked again"):
+        r = timed(f"describe_rack, {turn}", tool, ["describe_rack", {}])
+        if r["out"]["error"] or f"{n} cables" not in r["out"]["text"]:
+            bad.append(f"describe_rack, {turn}, did not describe the rack: {r['out']['text'][:160]!r}")
+    timed("describe_rack's next page, first asked", tool, ["describe_rack", {"section": "cables", "offset": 40, "limit": 40}])
+    for turn in ("first asked", "asked again"):
+        r = timed(f"inspect of a cable, {turn}", tool, ["inspect", {"id": f"c{n // 2}"}])
+        if r["out"]["error"] or "routed" not in r["out"]["text"]:
+            bad.append(f"inspect of a cable, {turn}, did not give its routed length: {r['out']['text'][:160]!r}")
+    for turn in ("first downloaded", "downloaded again"):
+        r = timed(f"the cable schedule, {turn}", tool, ["export_rack", {"kind": "cable schedule"}])
+        if r["out"]["error"]:
+            bad.append(f"the cable schedule, {turn}: {r['out']['text'][:160]!r}")
+    r = timed("a redraw after one cable's end is moved",
+              "() => window.__rack.apply({op: 'cable.update', id: 'c1', a: {item: 'i1', path: 'port-30', view: 'front'}})", need_draw=True)
+    if (r["out"] or {}).get("error"):
+        bad.append(f"the edit was refused, so its redraw was not measured: {r['out']['error']}")
+    # ...and a call made after the edit reads nothing again either: the redraw's reading is the rack's
+    # ...and a call made after the edit: the redraw's reading is the rack's, and the kit is asked of the rack it decided
+    timed("describe_rack after the edit", tool, ["describe_rack", {}])
+    for what, (reads, per_cable) in SPEED_BUDGETS.items():
+        got = cost[what]
+        if got["reads"] > reads:
+            bad.append(f"{what}: the routes were read {got['reads']} times; at most {reads}")
+        if got["lays"] > per_cable * n:
+            bad.append(f"{what}: the kit read the inputs of {got['lays']:g} cables, {got['lays'] / n:.2f} for each of the rack's {n}; at most {per_cable:g} each")
+    for what, of, most in SPEED_RATIOS:
+        if took_ms[what] > most * took_ms[of]:
+            bad.append(f"{what} took {took_ms[what] / 1000:.2f} s, {took_ms[what] / took_ms[of]:.2f} times {of} ({took_ms[of] / 1000:.2f} s); at most {most:g} times")
+    print("          " + "; ".join(f"{k} {v / 1000:.2f} s" for k, v in took_ms.items()), flush=True)
+    print("          " + "; ".join(f"{k} {c['reads']} reads, {c['lays'] / n:.2f} per cable" for k, c in cost.items()), flush=True)
+    return bad
+
+
+# THE WARNINGS, ONE SECTION THAT OPENS (portrayal-site#192, cable-panel.js warningsSection). Every route warning stood
+# above the cable list, a sentence each, and a rack with dozens of tight bends had its bundles and cables pushed out of
+# sight. They are one row above the tree now, "Warnings (N)", closed until the reader opens it.
+WARNINGS_JS = """() => {
+  const sec = document.querySelector('#cableList [data-warnings]'), head = document.getElementById('warningsToggle');
+  const first = document.querySelector('#cableList [role="tree"] > li'), side = document.getElementById('side');
+  const box = el => { const r = el.getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; };
+  return {
+    there: !!sec, n: sec ? +sec.dataset.count : 0, line: head?.textContent ?? null, open: head?.getAttribute('aria-expanded') === 'true',
+    colour: head ? getComputedStyle(head).color : null, ink: getComputedStyle(document.querySelector('#cableList h3')).color,
+    head: head ? box(head) : null, section: sec ? box(sec) : null,
+    firstRow: first ? {...box(first), id: first.id, inView: box(first).top >= side.getBoundingClientRect().top && box(first).top < Math.min(innerHeight, side.getBoundingClientRect().bottom)} : null,
+    kinds: [...document.querySelectorAll('#cableList [data-warning-kind]')].map(k => ({kind: k.dataset.warningKind, count: +k.dataset.count,
+      title: k.querySelector('.rk-warnings-row, .rk-warnings-title').textContent, folds: !!k.querySelector('.rk-warnings-row'),
+      open: !k.querySelector('.rk-warnings-list').hidden, rows: k.querySelectorAll('[data-warning-row]').length,
+      picks: [...k.querySelectorAll('[data-warning-pick]')].map(b => b.dataset.warningPick),
+      texts: [...k.querySelectorAll('[data-route-warning], [data-warning-text]')].map(p => p.textContent)})),
+    laidOut: [...document.querySelectorAll('#cableList [data-warnings] p')].filter(p => p.getClientRects().length).length,
+    outside: [...document.querySelectorAll('#cableList [data-route-warning]')].filter(p => !p.closest('[data-warnings]')).length,
+    bends: (window.__rack.bends() ?? []).map(f => [f.cable, f.text]),
+    rowWarnings: [...document.querySelectorAll('#cableList [role="tree"] :is([data-loose], [data-warning], [data-spare-short])')].map(x => x.textContent),
+    pinned: [...document.querySelectorAll('#cableList [data-cable-row][aria-pressed="true"]')].map(b => b.dataset.cableRow),
+    stored: localStorage.getItem('portrayal.rack.tree'),
+  };
+}"""
+
+
+def warnings_fixture():
+    """The cable-lay rack with warnings of three kinds: an AOC between its leaves (tight bends), seven fibre cords
+    said to be copper (mismatches), and two cords into cages whose optics are taken out (loose ends)."""
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    rack = aoc_between_the_leaves(lay)
+    for c in rack["cables"]:
+        if c["id"] in ("c2", "c3", "c4", "c5", "c6", "c7", "c8"):
+            c["media"] = "cat6a"
+    leaf_b = next(i for i in rack["items"] if i["id"] == "i3")
+    leaf_b["swaps"] = {k: v for k, v in leaf_b["swaps"].items() if k not in ("port-55", "port-56")}
+    return {"format": "portrayal-rack", "version": 4, "id": "doc-warnings", "racks": [{**rack, "name": "Warnings"}]}
+
+
+@extra("rack.html: the warnings are one section that opens, above the cable tree - with warnings of three kinds it is one row, \"Warnings (N)\" in the warning colour, closed, N the findings (a cable with several tight corners is one), no warning is laid out and the tree's first bundle row is in view without scrolling; opened, each kind has its title and count and a kind of more than five opens on its own, every sentence is the kit's or the row's own, once; a finding pins its cable; what is open survives a redraw and a reload and does not open by itself; N follows an edit that clears a warning; a rack with none has no section (#192)")
+def check_rack_warnings_section(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+    def settled(n):
+        page.wait_for_function(READING_SETTLED, arg=n, timeout=READY_MS)
+        page.wait_for_timeout(150)
+
+    open_fixture(page, base, warnings_fixture())
+    settled(0)
+    # a bundle, so the tree has a bundle row to keep in view
+    n = page.evaluate("() => window.__rack.drawn()")
+    r = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c10', 'c11'], label: 'pair'})")
+    if r.get("error"):
+        bad.append(f"the bundle was refused: {r['error']}")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if not st["there"]:
+        return bad + ["a rack with tight bends, loose ends and mismatches has no Warnings section"]
+    bent = list(dict.fromkeys(c for c, _ in st["bends"]))
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not {"bends", "loose", "mismatch"} <= set(by):
+        return bad + [f"the fixture gives warnings of {sorted(by)}; the check needs tight bends, loose ends and mismatches"]
+    want_n = sum(k["rows"] for k in st["kinds"])
+    if st["n"] != want_n or st["line"] != f"Warnings ({want_n})":
+        bad.append(f"the row reads {st['line']!r} for {st['n']}; expected 'Warnings ({want_n})', the findings of every kind")
+    if by["bends"]["count"] != len(bent):
+        bad.append(f"tight bends count {by['bends']['count']} for {len(st['bends'])} corners on {len(bent)} cables; expected one finding a cable")
+    if by["mismatch"]["count"] <= 5:
+        bad.append(f"the fixture gives {by['mismatch']['count']} mismatches; the check needs a kind of more than five")
+    if st["open"] or st["laidOut"]:
+        bad.append(f"the section starts {'open' if st['open'] else 'closed'} with {st['laidOut']} sentences laid out; expected closed and none")
+    if st["outside"]:
+        bad.append(f"{st['outside']} route warnings still stand outside the section, above the tree")
+    if st["colour"] == st["ink"]:
+        bad.append(f"the row is not in the warning colour: {st['colour']}")
+    if st["section"]["h"] > 40:
+        bad.append(f"closed, the section is {st['section']['h']:.0f} px tall; expected one line")
+    if not st["firstRow"] or not st["firstRow"]["id"].startswith("bundleItem-") or not st["firstRow"]["inView"]:
+        bad.append(f"the tree's first bundle row is not in view without scrolling at 1280 by 720: {st['firstRow']}")
+    if not st["rowWarnings"]:
+        bad.append("the cables' own rows no longer say their loose ends and mismatches")
+    # opened with the keyboard: the kinds, their counts, and every sentence once
+    page.focus("#warningsToggle")
+    page.keyboard.press("Enter")
+    st = page.evaluate(WARNINGS_JS)
+    by = {k["kind"]: k for k in st["kinds"]}
+    if not st["open"]:
+        bad.append("Enter on the row did not open the section")
+    for kind, title in (("bends", "Tight bends"), ("loose", "Loose ends"), ("mismatch", "Media mismatches")):
+        k = by[kind]
+        if k["title"] != f"{title} ({k['count']})" or k["rows"] != k["count"]:
+            bad.append(f"the kind {kind} reads {k['title']!r} over {k['rows']} findings; expected '{title} ({k['count']})'")
+        if k["folds"] != (k["count"] > 5) or k["open"] != (k["count"] <= 5):
+            bad.append(f"the kind {kind}, of {k['count']}, {'is' if k['folds'] else 'is not'} a row that opens and is {'open' if k['open'] else 'closed'}; a kind of more than five opens on its own, and starts closed")
+    if by["bends"]["texts"] != [t for _, t in st["bends"]]:
+        bad.append("the tight bends listed are not the kit's sentences, each once and in its order")
+    own = sorted(by["loose"]["texts"] + by["mismatch"]["texts"])
+    if own != sorted(st["rowWarnings"]):
+        bad.append(f"the loose ends and mismatches listed are not the sentences the cables' own rows say: {own} against {sorted(st['rowWarnings'])}")
+    page.click("#warningKind-mismatch")
+    if not next(k for k in page.evaluate(WARNINGS_JS)["kinds"] if k["kind"] == "mismatch")["open"]:
+        bad.append("a click on Media mismatches did not open it")
+    # a finding pins its cable, as its row in the tree does
+    pick = by["mismatch"]["picks"][0]
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.click(f'[data-warning-kind="mismatch"] [data-warning-pick="{pick}"]')
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["pinned"] != [pick.split(" ")[1]]:
+        bad.append(f"a click on the finding {pick} pinned {st['pinned']}")
+    if not st["open"]:
+        bad.append("the section closed when the panel was drawn again for the pin")
+    # ...and what is open is the reader's, kept with the tree's rows: it survives a reload
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    settled(0)
+    st = page.evaluate(WARNINGS_JS)
+    kinds = {k["kind"]: k for k in st["kinds"]}
+    if not st["there"] or not st["open"] or not kinds.get("mismatch", {}).get("open"):
+        bad.append(f"after a reload the section is {'open' if st.get('open') else 'closed or gone'} and Media mismatches {'open' if kinds.get('mismatch', {}).get('open') else 'closed'}; expected both as the reader left them")
+    # N FOLLOWS THE RACK: a mismatch put right is one finding fewer, and nothing opens or closes for it
+    before = st["n"]
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'om4'})")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    left = next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0)
+    if left != by["mismatch"]["count"] - 1 or st["line"] != f"Warnings ({st['n']})" or st["n"] != sum(k["rows"] for k in st["kinds"]):
+        bad.append(f"after a mismatch was put right the row reads {st['line']!r} with {left} mismatches (it read Warnings ({before}) with {by['mismatch']['count']})")
+    # closed by the reader, a new warning does not open it
+    page.click("#warningsToggle")
+    n = page.evaluate("() => window.__rack.drawn()")
+    page.evaluate("() => window.__rack.apply({op: 'cable.update', id: 'c2', media: 'cat6a'})")
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["open"] or st["laidOut"]:
+        bad.append("a warning that appeared opened the section the reader had closed")
+    if next((k["count"] for k in st["kinds"] if k["kind"] == "mismatch"), 0) != by["mismatch"]["count"]:
+        bad.append("the count did not follow the warning that appeared")
+    # a rack with nothing to warn of has no section
+    n = page.evaluate("() => window.__rack.drawn()")
+    lay = json.loads(CABLE_LAY_FIXTURE.read_text())
+    lay.pop("_note", None)
+    page.evaluate("r => window.__rack.replaceRack(r)", lay)
+    settled(n)
+    st = page.evaluate(WARNINGS_JS)
+    if st["there"] or st["outside"]:
+        bad.append(f"the cable-lay rack, which has no warning, shows a Warnings section ({st['line']!r})")
+    return bad
+
+
 # THE FS MANAGERS' PATHWAYS, AS A ROUTE READS THEM (portrayal-site#130,
 # Portrayal #868). Each CMH / USCMH placed alone: every guide and pass the
 # catalogue indexes on its front and rear is a guide routeFacts finds on that
@@ -9664,7 +10862,9 @@ def check_rack_fs_manager_guides(page, base):
         const want = [];
         for (const key of ['guides', 'passes'])
           for (const [view, ids] of Object.entries(cat[ref][key] || {}))
-            if (view !== 'top') for (const id of ids) want.push(`${view}|${id}`);
+            // the route context reads the front and rear faces, as the kit reads guides; the side views' passes
+            // (the CMH-4DRB1U's end holes, exported since Portrayal #1066) are pathways the kit lists, not guides it draws
+            if (!['top', 'left', 'right'].includes(view)) for (const id of ids) want.push(`${view}|${id}`);
         out.managers[ref] = {complete: rf.complete, want: want.sort(),
           got: rf.ctx.guidesOf('i1').map(g => ({key: `${g.face}|${g.via}`, kind: g.kind, aperture: g.aperture}))};
       }
@@ -9705,6 +10905,312 @@ def check_rack_fs_manager_guides(page, base):
     if len(f) != 1 or f[0]["cables"] != ["c1"] or f[0]["percent"] != want_pct:
         bad.append(f"fill: the cable through the CMH-4DRB1U's guide-1 is not fill-checked against its 37.2 x 74.8 mm"
                    f" opening ({want_pct}%): {got['fill']}")
+    return bad
+
+
+@extra("rack.html: a cable through a horizontal manager's pass-throughs (duct > pass-through-1 > right-rear U34 > pass-through-2 > duct on a CMH-SFD1U) is drawn in the Rear view as well as the Front view (S-0037)")
+def check_rack_pass_through_rear(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    built = page.evaluate("""async () => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Pass'});
+      ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 20, label: 'leaf-1', swaps: {'port-1': 'generic/qsfp-lc@2'}}));
+      ({rack: r} = M.withItem(r, {ref: 'cmh-sfd1u', cfg: cat['cmh-sfd1u'].default, ru: 30, label: 'mgr-1'}));
+      ({rack: r} = M.withItem(r, {ref: 'fhd-1ufce', cfg: cat['fhd-1ufce'].default, ru: 38, label: 'pp-1', swaps: {'bay-1': 'fs/fhd-splice-12-lc@3'}}));
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i3', path: 'bay-1/module/lc1', view: 'front'}, media: 'os2'}));
+      const route = [{item: 'i2', via: 'duct'}, {item: 'i2', via: 'pass-through-1'}, {lane: 'right-rear', ru: 34},
+                     {item: 'i2', via: 'pass-through-2'}, {item: 'i2', via: 'duct'}];
+      return {...r, cables: r.cables.map(c => ({...c, route, routeEdited: true}))};
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", built)
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 1", timeout=READY_MS)
+    # The route is the one written: the kit did not drop a stop.
+    routes = dict(page.evaluate("() => window.__rack.routes()"))
+    if [w.get("via") or w.get("lane") for w in routes.get("c1", [])] != ["duct", "pass-through-1", "right-rear", "pass-through-2", "duct"]:
+        return [f"routes: c1 is not duct > pass-through-1 > right-rear > pass-through-2 > duct: {routes.get('c1')}"]
+    # A cable is drawn in a pane as a g of paths with length; both panes, both views of the rack.
+    probe = """pane => {
+      const s = document.querySelector(`#pane${pane} svg`);
+      const g = s && s.querySelector('[data-cables] [data-cable-id="c1"]');
+      if (!g) return {drawn: false};
+      const len = [...g.querySelectorAll('path')].reduce((a, p) => a + (p.dataset.leader ? 0 : p.getTotalLength()), 0);
+      const b = g.getBBox();
+      return {drawn: true, len, w: b.width, h: b.height};
+    }"""
+    for pane in ("Front", "Rear"):
+        got = page.evaluate(probe, pane)
+        if not got["drawn"] or not got["len"] > 20:
+            bad.append(f"{pane} view: the cable through the pass-throughs is not drawn ({got})")
+    # On the rear pane it runs from the manager's pass-throughs (U30) up to the
+    # lane at U34, whose hairpin the cable's bend radius eases a little short.
+    rear = page.evaluate("""() => {
+      const s = document.querySelector('#paneRear svg'), inv = s.getScreenCTM().inverse();
+      const g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      if (!g) return null;
+      const m = inv.multiply(g.getScreenCTM());
+      const b = g.getBBox(), top = new DOMPoint(0, b.y).matrixTransform(m).y, bottom = new DOMPoint(0, b.y + b.height).matrixTransform(m).y;
+      const u = n => { const r = s.querySelector(`[data-u="${n}"]`); const q = r && r.getBBox(); return q && q.y + q.height / 2; };
+      return {top, bottom, u30: u(30), u34: u(34)};
+    }""")
+    if rear and rear["u30"] is not None and rear["u34"] is not None:
+        if rear["top"] > rear["u34"] + 60 or rear["bottom"] < rear["u30"] - 20:
+            bad.append(f"Rear view: the cable is not drawn from U30 up to the lane at U34 ({rear})")
+    return bad
+
+
+# SPARE IN A FINGER DUCT AND A VERTICAL MANAGER IN A ROUTE (kit 0.35.0,
+# Portrayal #1065; site/rack/spare-loops.js). Two switches at U30 and U26, a
+# CMH-BS-SFDS1U at U28, a CMH-6DR1U ring manager at U24, a CMV-SFD42U9W
+# beside the right front upright from U1, and two cords between the switches:
+# c1 through the horizontal duct, c2 down the right front lane, which runs
+# through the vertical's duct. The agent's edit_rack stores and is refused.
+SPARE_DUCTS_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js'), K = await import('/vendor/rack/cable-rules.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Spare in ducts'}), {heightRU: 45});
+  const optic = {'port-1': 'generic/qsfp-lc@2', 'port-2': 'generic/qsfp-lc@2'};
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 30, label: 'leaf-1', swaps: optic}));
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: cat['as7726-32x'].default, ru: 26, label: 'leaf-2', swaps: optic}));
+  ({rack: r} = M.withItem(r, {ref: 'cmh-bs-sfds1u', cfg: cat['cmh-bs-sfds1u'].default, ru: 28, label: 'hm-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'cmh-6dr1u', cfg: cat['cmh-6dr1u'].default, ru: 24, label: 'rings-1'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-1', view: 'front'}, b: {item: 'i2', path: 'port-1', view: 'front'}, media: 'os2'}));
+  ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-2', view: 'front'}, b: {item: 'i2', path: 'port-2', view: 'front'}, media: 'os2'}));
+  return r;
+}"""
+
+
+def open_spare_ducts(page, base):
+    """The spare-ducts rack, open in Front / Rear, with the agent's tools and the vertical placed; [] or what failed."""
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(SPARE_DUCTS_RACK_JS))
+    wait_fn(page, "spare ducts: agent tools registered", "() => window.__tools && window.__tools.edit_rack && window.__tools.inspect")
+    res = agent_call(page, "edit_rack", {"commands": [
+        {"op": "zerou.place", "ref": "cmv-sfd42u9w", "at": "right-front", "ru": 1, "label": "VCM"},
+        {"op": "cable.route", "id": "c1", "route": [{"item": "i3", "via": "duct"}]},
+        {"op": "cable.route", "id": "c2", "route": [{"lane": "right-front", "ru": 30}, {"lane": "right-front", "ru": 26}]}]})
+    if res.get("isError"):
+        return [f"setup: {res['content'][0]['text']}"]
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length === 2", timeout=READY_MS)
+    return []
+
+
+# A loop on a pane, as plain data: its cable, its centre in the pane's user space and its box.
+SPARE_LOOPS_JS = """sel => [...document.querySelectorAll(`${sel} [data-spare-loops] [data-spare-loop]`)].map(g => {
+  const s = g.ownerSVGElement, m = s.getScreenCTM().inverse().multiply(g.getScreenCTM()), b = g.getBBox();
+  const c = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2).matrixTransform(m);
+  return {loop: g.dataset.spareLoop, members: g.dataset.members, run: g.dataset.spareRun, x: c.x, y: c.y, w: b.width, h: b.height,
+          title: g.querySelector('title')?.textContent ?? ''};
+})"""
+# A part's box on a pane, in its user space.
+PART_BOX_JS = """([pane, sel]) => { const s = document.querySelector(`#pane${pane} svg`), e = s && s.querySelector(sel);
+  if (!e) return null;
+  const m = s.getScreenCTM().inverse().multiply(e.getScreenCTM()), b = e.getBBox();
+  const p = new DOMPoint(b.x, b.y).matrixTransform(m), q = new DOMPoint(b.x + b.width, b.y + b.height).matrixTransform(m);
+  return {x0: Math.min(p.x, q.x), x1: Math.max(p.x, q.x), y0: Math.min(p.y, q.y), y1: Math.max(p.y, q.y)}; }"""
+
+
+@extra("rack.html: an agent stores a cord's spare in a horizontal manager's finger duct its route uses; the loop is drawn in the duct in Front, in Left / Right and in 3D, the agent's text says it, and spare in a ring is refused with where it can go (kit 0.35.0, Portrayal #1065)")
+def check_rack_spare_duct_loop(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    # A ring holds no spare: refused, with where the spare can go.
+    ring = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c1", "at": {"item": "i4", "via": "guide-1"}}]})
+    said = ring["content"][0]["text"]
+    if not ring.get("isError") or "holds no spare" not in said or "can go in" not in said or "hm-1 duct" not in said:
+        bad.append(f"a ring: spare in rings-1 guide-1 is not refused with where the spare can go: {said!r}")
+    ok = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c1", "at": {"item": "i3", "via": "duct"}}]})
+    if ok.get("isError"):
+        return bad + [f"the duct: storing c1's spare in hm-1 duct was refused: {ok['content'][0]['text']}"]
+    page.wait_for_function("() => (window.__rack.spareLoops() || []).length === 1", timeout=READY_MS)
+    loop = page.evaluate("() => window.__rack.spareLoops()[0]")
+    if (loop["cable"], loop["item"], loop["via"], loop["kind"], loop["run"]) != ("c1", "i3", "duct", "duct", "x"):
+        bad.append(f"the loop: not c1's in i3 duct, a duct running across the rack: {loop}")
+    # Front: one loop, inside the manager's drawing.
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-spare-loops] [data-spare-loop]').length === 1", timeout=READY_MS)
+    front = page.evaluate(SPARE_LOOPS_JS, "#paneFront svg")
+    mgr = page.evaluate(PART_BOX_JS, ["Front", '[data-item-id="i3"][data-panel]'])
+    f = front[0]
+    if not mgr or not (mgr["x0"] <= f["x"] <= mgr["x1"] and mgr["y0"] - 2 <= f["y"] <= mgr["y1"] + 2):
+        bad.append(f"Front: the loop at ({f['x']:.1f}, {f['y']:.1f}) is not in hm-1's drawing {mgr}")
+    if not (f["w"] > f["h"]):
+        bad.append(f"Front: the loop does not lie along the duct across the rack ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # THE LOOP GROWS WITH ITS SPARE (S-0042): long radius 22 mm x clamp(0.5 + 0.5 m, 0.6, 1.5); the box is two turns 5 mm apart.
+    scale = min(1.5, max(0.6, 0.5 + 0.5 * loop["metres"]))
+    if abs(f["w"] - (2 * 22 * scale + 5)) > 1.5:
+        bad.append(f"Front: a loop of {loop['metres']:.2f} m is {f['w']:.1f} wide, not {2 * 22 * scale + 5:.1f}")
+    if "c1:" not in f["title"] or "hm-1 duct" not in f["title"]:
+        bad.append(f"Front: the loop's title does not name the cable and the duct: {f['title']!r}")
+    if page.evaluate(SPARE_LOOPS_JS, "#paneRear svg"):
+        bad.append("Rear: a loop in a front duct is drawn on the rear pane")
+    # The agent's text.
+    txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
+    # c1 is fibre and hm-1 states its count for cat6, which kit 0.39.0 does not count a fibre cord against
+    for want in ("as a loop in i3 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "the stored loop is drawn", "Spare can go in: i3 duct"):
+        if want not in txt:
+            bad.append(f"inspect c1: no {want!r} in {txt!r}")
+    if "listed, not drawn" in txt:
+        bad.append(f"inspect c1: still says the spare is listed, not drawn: {txt!r}")
+    item = agent_call(page, "inspect", {"id": "i3"})["content"][0]["text"]
+    if "Pathways: duct duct (holds spare)" not in item:
+        bad.append(f"inspect i3: its pathways are not said with which hold spare: {item!r}")
+    # Left / Right: a loop on each side pane, at the duct's height.
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-spare-loops] [data-spare-loop]').length === 1)", timeout=READY_MS)
+    for side in ("left", "right"):
+        got = page.evaluate(SPARE_LOOPS_JS, f'#panes svg[data-side][data-pane="{side}"]')
+        if len(got) != 1 or got[0]["members"] != "c1":
+            bad.append(f"{side.title()}: not one loop of c1: {got}")
+    # 3D: one loop, named for its place, with its cable.
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "spare duct 3D", tubes=True)
+    s3 = page.evaluate("""() => { const s = window.__rack.scene(), L = s?.rackCables?.loops;
+      return L ? L.loops.map(g => ({name: g.name, members: g.userData.members, spare: g.userData.spare, meshes: g.children.length})) : null; }""")
+    if not s3 or len(s3) != 1 or s3[0]["members"] != ["c1"] or s3[0]["meshes"] != 2:
+        bad.append(f"3D: not one loop of c1, of two turns: {s3}")
+    return bad
+
+
+@extra("rack.html: an agent stores a cord's spare in the duct of a vertical manager beside the rack that its lane runs through; the loop is drawn up the duct beside the rack in Front, in Left / Right and in 3D, with the finding that the part states no capacity (kit 0.35.0, Portrayal #1065)")
+def check_rack_spare_vertical_loop(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    ok = agent_call(page, "edit_rack", {"commands": [{"op": "cable.slack", "id": "c2", "at": {"item": "z1", "via": "duct"}}]})
+    if ok.get("isError"):
+        return bad + [f"the vertical: storing c2's spare in VCM duct was refused: {ok['content'][0]['text']}"]
+    page.wait_for_function("() => (window.__rack.spareLoops() || []).length === 1", timeout=READY_MS)
+    loop = page.evaluate("() => window.__rack.spareLoops()[0]")
+    if (loop["cable"], loop["item"], loop["run"]) != ("c2", "z1", "y"):
+        bad.append(f"the loop: not c2's in z1, running up the rack: {loop}")
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-spare-loops] [data-spare-loop]').length === 1", timeout=READY_MS)
+    f = page.evaluate(SPARE_LOOPS_JS, "#paneFront svg")[0]
+    part = page.evaluate(PART_BOX_JS, ["Front", '[data-zerou-id="z1"]'])
+    u28 = page.evaluate("""() => { const r = document.querySelector('#paneFront svg [data-u="28"]'); const q = r && r.getBBox(); return q && q.y + q.height / 2; }""")
+    if not part or not (part["x0"] <= f["x"] <= part["x1"]):
+        bad.append(f"Front: the loop at x {f['x']:.1f} is not beside the rack in the vertical's drawing {part}")
+    if u28 is not None and abs(f["y"] - u28) > 23:
+        bad.append(f"Front: the loop at y {f['y']:.1f} is not at U28, the middle of c2's run from U30 to U26 ({u28:.1f})")
+    if not (f["h"] > f["w"]):
+        bad.append(f"Front: the loop does not lie up the duct ({f['w']:.1f} wide, {f['h']:.1f} high)")
+    # The loop goes with its cable: another cable selected, it dims; its own, it stays lit.
+    loop_opacity = "() => Number(getComputedStyle(document.querySelector('#paneFront svg [data-spare-loop]')).opacity)"
+    page.click('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(400)
+    other = page.evaluate(loop_opacity)
+    page.click('#cableList [data-cable-row="c2"]')
+    page.wait_for_timeout(400)
+    own = page.evaluate(loop_opacity)
+    if not (other < 0.5 and own == 1):
+        bad.append(f"Front: the loop does not go with its cable when one is selected (another selected {other}, its own {own})")
+    page.keyboard.press("Escape")
+    txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
+    # VCM's maker states none, and since kit 0.40.0 the library estimates one for cat6; c2 is fibre, which that count does not take in
+    for want in ("as a loop in z1 duct (a duct whose stated capacity is for cat6 cables, which os2 is not counted against)", "Spare, capacity not stated:"):
+        if want not in txt:
+            bad.append(f"inspect c2: no {want!r} in {txt!r}")
+    z = agent_call(page, "inspect", {"id": "z1"})["content"][0]["text"]
+    if "Pathways: duct duct (holds spare); pass-through pass-through-1" not in z:
+        bad.append(f"inspect z1: its duct and windows are not said with which hold spare: {z!r}")
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(SIDE_DRAWN, timeout=READY_MS)
+    page.wait_for_function("() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelectorAll('[data-spare-loops] [data-spare-loop]').length === 1)", timeout=READY_MS)
+    for side in ("left", "right"):
+        got = page.evaluate(SPARE_LOOPS_JS, f'#panes svg[data-side][data-pane="{side}"]')
+        if len(got) != 1 or not (got[0]["h"] > got[0]["w"]):
+            bad.append(f"{side.title()}: not one loop of c2 standing up the duct: {got}")
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "spare vertical 3D", tubes=True)
+    s3 = page.evaluate("""() => { const L = window.__rack.scene()?.rackCables?.loops;
+      return L ? L.loops.map(g => ({members: g.userData.members, run: g.userData.spare.run})) : null; }""")
+    if s3 != [{"members": ["c2"], "run": "y"}]:
+        bad.append(f"3D: not one loop of c2 up the duct: {s3}")
+    return bad
+
+
+@extra("rack.html: a manager whose maker states no cable capacity shows the library's estimate as an estimate in its panel, and a cat6 cord's spare stored in its duct reads against the estimate in the agent's text (kit 0.40.0, Portrayal #1074)")
+def check_rack_estimated_capacity(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    # CMV-SFD42U9W states none: 2002 cat6 cables' worth is the library's estimate (rack.json capacity.estimated)
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "cable.update", "id": "c2", "media": "cat6"},
+                                                      {"op": "cable.slack", "id": "c2", "at": {"item": "z1", "via": "duct"}}]})
+    if res.get("isError"):
+        return bad + [f"setup: a cat6 cord's spare in VCM's duct was refused: {res['content'][0]['text']}"]
+    txt = agent_call(page, "inspect", {"id": "c2"})["content"][0]["text"]
+    for want in ("as a loop in z1 duct (a duct holding 1 cat6 cables' worth against an estimated 2002 cat6 cables' worth (its maker states none))",
+                 "Spare, capacity estimated:"):
+        if want not in txt:
+            bad.append(f"inspect c2: no {want!r} in {txt!r}")
+    if "its maker states)" in txt:
+        bad.append(f"inspect c2: still calls the estimate a count its maker states: {txt!r}")
+    page.click('#paneFront svg [data-zerou-id="z1"] [data-zerou-hit]', force=True)
+    page.wait_for_selector("#zeroUPanel", timeout=READY_MS)
+    cap = page.text_content("#zCapacity") or ""
+    if not cap.startswith("an estimated 2002 cat6 cables' worth (its maker states none): ESTIMATE, not stated by FS"):
+        bad.append(f"the panel: VCM's capacity is not said to be an estimate: {cap!r}")
+    return bad
+
+
+@extra("rack.html: the route editor offers a vertical manager's duct and windows as pick targets; a cord routed through its duct is stored as {item, via: duct}, drawn down the lane through it, and its row says so (kit 0.35.0, Portrayal #1065)")
+def check_rack_route_vertical_duct(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = open_spare_ducts(page, base)
+    if failed:
+        return bad + failed
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableEdit")
+    page.click("#routeAdd")
+    page.wait_for_function("() => document.querySelector('#paneFront svg [data-pick-item=\"z1\"][data-pick-via=\"duct\"]')", timeout=READY_MS)
+    picks = page.evaluate("() => [...document.querySelectorAll('#paneFront svg [data-pick-item=\"z1\"]')].map(r => r.dataset.pickVia)")
+    if picks[:1] != ["duct"] or sorted(picks[1:]) != [f"pass-through-{k}" for k in range(1, 7)]:
+        bad.append(f"pick: the vertical does not offer its duct and six windows: {picks}")
+    # A point of the duct's target a visitor can click: not under a lane's or a window's.
+    at = page.evaluate("""() => {
+      const r = document.querySelector('#paneFront svg [data-pick-item="z1"][data-pick-via="duct"]'), b = r.getBoundingClientRect();
+      for (let fy = 0.45; fy < 0.6; fy += 0.01) for (let fx = 0.95; fx > 0.05; fx -= 0.05) {
+        const x = b.left + b.width * fx, y = b.top + b.height * fy;
+        if (document.elementFromPoint(x, y) === r) return {x, y};
+      }
+      return null; }""")
+    if not at:
+        return bad + ["pick: the vertical's duct target is covered everywhere"]
+    page.mouse.click(at["x"], at["y"])
+    page.keyboard.press("Escape")
+    stored = page.evaluate("() => window.__rack.doc().racks[0].cables.find(c => c.id === 'c1').route")
+    if {"item": "z1", "via": "duct"} not in stored:
+        return bad + [f"pick: the route does not name z1 duct: {stored}"]
+    page.wait_for_function("() => (window.__rack.routes() || []).find(([id]) => id === 'c1')?.[1].some(w => w.lane === 'right-front')", timeout=READY_MS)
+    rows = page.evaluate("() => [...document.querySelectorAll('[id^=\"routeRow-\"]')].map(r => r.textContent)")
+    if not any("VCM duct" in t for t in rows):
+        bad.append(f"rows: no row names VCM duct: {rows}")
+    drawn = page.evaluate("""() => { const s = document.querySelector('#paneFront svg'), g = s.querySelector('[data-cables] [data-cable-id="c1"]');
+      return g ? [...g.querySelectorAll('path')].reduce((a, p) => a + (p.dataset.leader ? 0 : p.getTotalLength()), 0) : 0; }""")
+    if not drawn > 20:
+        bad.append(f"Front: c1 through the vertical's duct is not drawn ({drawn})")
+    txt = agent_call(page, "inspect", {"id": "c1"})["content"][0]["text"]
+    if "VCM duct" not in txt:
+        bad.append(f"inspect c1: the route does not say it runs through VCM duct: {txt!r}")
     return bad
 
 
@@ -9857,7 +11363,8 @@ def load_rack_3d_ready(page, base, rack):
 CABLE_LAY_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "cable-lay-rack.json"
 
 # How near a cable's drawn line passes each of its lead points (rack mm in,
-# pane mm out): {cable: the furthest of its lead points from its stroke}.
+# pane mm out): {cable: {off: each lead point's distance from its stroke, gap:
+# how far each of its arcs stands inside its vertex}}.
 LEAD_2D_JS = """async leads => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const svg = document.querySelector('#paneFront svg'), H = window.__rack.doc().racks[0].frame.heightRU * RU;
@@ -9870,7 +11377,18 @@ LEAD_2D_JS = """async leads => {
       const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
       for (let t = 0; t <= L; t += 0.2) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
     }
-    out[id] = pts.length ? Math.max(...qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))) : null;
+    // how far each corner's own arc stands inside its vertex: R (sec(theta/2) - 1)
+    // for an arc of radius R whose chord is c, theta = 2 asin(c / 2R)
+    const gap = [];
+    for (const p of g.querySelectorAll('path')) {
+      const d = p.getAttribute('d') || '', re = /(?:^|[ML])([\\d.-]+) ([\\d.-]+) A([\\d.]+) [\\d.]+ 0 0 [01] ([\\d.-]+) ([\\d.-]+)/g;
+      let m;
+      while ((m = re.exec(d))) {
+        const r = +m[3], c = Math.hypot(m[4] - m[1], m[5] - m[2]), th = 2 * Math.asin(Math.min(1, c / (2 * r)));
+        gap.push(r * (1 / Math.cos(th / 2) - 1));
+      }
+    }
+    out[id] = pts.length ? {gap, off: qs.map(q => Math.min(...pts.map(w => Math.hypot(w[0] - (OPENING / 2 + q.x), w[1] - (H - q.y)))))} : null;
   }
   return out;
 }"""
@@ -9885,7 +11403,7 @@ LEAD_3D_JS = """leads => {
 }"""
 
 
-@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.53 m, lower 0.57-0.65 m; c2, c3, c4, c7 and c8 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
+@extra("rack.html: cable lay - on the two-leaf rack with an FHD-CMP5DR lacer, every automatic cord goes through rings 3 to 5 on their sills at the kit's lengths (upper leaf 0.48-0.55 m, lower 0.57-0.65 m; c2, c3, c4 and c7 are 0.5 m cords, the rest 1 m) with no lane, no ring, no body and no bend findings, and no 3D tube passes through the tray or a ring's part")
 def check_rack_cable_lay(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -9914,7 +11432,9 @@ def check_rack_cable_lay(page, base):
         # per media since 0.16.0 (an LC cord adds 113.1 mm an end, not 150, so
         # each is 73.8 mm shorter), and since 0.17.0 a path leaves room for its
         # bends (each is about 10 to 104 mm longer here, by where its turns stand).
-        lo, hi = (0.48, 0.53) if int(cid[1:]) <= 8 else (0.57, 0.65)
+        # THE RING IS CHOSEN BY ROOM (kit 0.27.0, Portrayal #1026): c8's lead has no room to turn into ring 5, which it took
+        # before, and takes ring 4: 0.5418 m where it was 0.4881, and a 1 m cord where it was 0.5 m. No other cord moved.
+        lo, hi = (0.48, 0.55) if int(cid[1:]) <= 8 else (0.57, 0.65)
         if not (lo - 1e-9 <= (p["measured"] or 0) <= hi + 1e-9):
             bad.append(f"{cid}: measured {p['measured']} m, not {lo}-{hi} m")
         # ...and the stock size each rounds up to: c4 (0.4936 m) and c8 (0.4883,
@@ -9923,7 +11443,7 @@ def check_rack_cable_lay(page, base):
         # THE STOCK BREAK (kit 0.22.0, Portrayal #983): a cord up to 10 mm short of full end play is still chosen,
         # so c2 (0.5015 m), c3 (0.5050) and c7 (0.5017), each within 10 mm over the break, drop from 1 m to 0.5 m.
         # No measured length moved. Held as the rule too: a 0.5 m cord exactly where the measure is at most 0.51 m.
-        want = 0.5 if cid in ("c2", "c3", "c4", "c7", "c8") else 1
+        want = 0.5 if cid in ("c2", "c3", "c4", "c7") else 1
         if p["value"] != want or (p["value"] == 0.5) != ((p["measured"] or 9) <= 0.51 + 1e-9):
             bad.append(f"{cid}: a {p['value']} m cord for {p['measured']} m measured, not {want} m")
         if not any(r.get("kind") == "ring" and r.get("item") == "i4" for r in p.get("rests") or []):
@@ -9946,16 +11466,24 @@ def check_rack_cable_lay(page, base):
     # approach point, and the kit leads each square to it: level with its plug
     # to a lead point beside the approach point, then onto the run. In 2D the
     # pane's line turns at that point: joined straight from the plug to the
-    # ring it would pass some 30 mm from it; routed2d rounds a corner by 4, so
-    # the stroke comes within 4 of the vertex.
+    # ring it would pass some 30 mm from it; the line is drawn through the
+    # point with an arc of the cable's bend radius at it.
     leads = {cid: [q for q in p["points"] if q["at"] == "lead" and q.get("item")] for cid, p in paths.items()}
     leads = {cid: qs for cid, qs in leads.items() if qs}
     if not leads:
         bad.append("lead points: the kit leads no cord of this rack square to its ring, so none was checked")
     off2d = page.evaluate(LEAD_2D_JS, leads)
     for cid, d in sorted(off2d.items()):
-        if d is None or d > 4.0 + 1e-6:
-            bad.append(f"2D: {cid}'s line passes {d} mm from its lead point; a point of the path is drawn within the corner's 4 mm")
+        # (#185) the lead point is a vertex of the 2D line and its corner is an
+        # arc, which stands R (sec(theta/2) - 1) inside the vertex for a turn of
+        # theta (28 mm at most on this rack). So each lead point is either on the
+        # line (a corner too slight to round) or exactly an arc's own gap from it.
+        if d is None:
+            bad.append(f"2D: {cid} is not drawn")
+            continue
+        for off in d["off"]:
+            if off > 0.3 and not any(abs(off - g) < 0.3 for g in d["gap"]):
+                bad.append(f"2D: {cid}'s line passes {off:.2f} mm from a lead point; no arc of it stands that far inside its vertex (arcs: {[round(g, 2) for g in d['gap']]})")
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the cable-lay rack's scene", tubes=True)
     bad += tubes_inside(page, 16, want_parts=("i4|tray/floor", "i4|ring/guide-3/seat", "i4|ring/guide-4/rear-leg"))
@@ -9987,17 +11515,25 @@ def check_rack_cable_lay(page, base):
 # sentences once per set of them and rings each corner where the kit puts it,
 # in both views; it measures no bend itself. On the reference cable-lay rack
 # the kit finds none, so nothing is said and nothing is ringed. The finding
-# here is a real one, made by an edit: the cord from LEAF-B port 49 becomes
-# an AOC to LEAF-A port 49 (an AOC head seated in each cage, c1 removed to
-# free the port). Its head stands 64.8 mm out of the cage, so on its way round
-# the tray's front edge to the lacer's ring it turns three times with less
-# room than the 30 mm an AOC needs.
+# here is a real one, made by an edit: the cord from LEAF-B port 52 becomes
+# an AOC to LEAF-A port 52 (an AOC head seated in each cage, the two cords that
+# used those ports removed to free them). Its head stands 64.8 mm out of the
+# cage, so on its way to the lacer's ring it turns with less room than the 30
+# mm an AOC needs. Kit 0.27.0 (#1026) chooses the ring by room, so the cord
+# from port 49 to port 49 that this check once used finds one with room and
+# has no finding; port 52 to port 52 still has none to turn into, and its
+# findings are one single bend and two pairs of turns on a short leg (a pair
+# is ONE finding with `turns`, ringed at each corner: route-context.js
+# bendPoints).
 # What is expected is the kit's own output, read two ways: the findings the
 # page holds, and the findings of a context built afresh in the page for the
 # same rack (BEND_FRESH_JS). NOT VACUOUS: it fails unless the edit produces
 # findings, each in the kit's words, for c9, an AOC, at 30 mm.
 AOC_HEAD = "fs/qsfp28-aoc@1"
 BEND_SENTENCE_RE = re.compile(r"^c\d+ (turns [\d.]+ degrees (at|between) .+ with room for an? [\d.]+ mm bend; "
+                              r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
+                              # two turns on one short leg, said as one (kit 0.27.0)
+                              r"|turns twice within [\d.]+ mm between .+ \([\d.]+ and [\d.]+ degrees\), with room for an? [\d.]+ mm bend; "
                               r"the cable \([\w-]+\) needs [\d.]+ mm, [\d.]+ mm short"
                               r"|doubles back .+, with no room for a bend; the cable \([\w-]+\) needs [\d.]+ mm)\.$")
 # The page's routes are the ones read for the rack as it is now.
@@ -10007,12 +11543,14 @@ BEND_FRESH_JS = """async () => {
   const {RU, OPENING} = await import('/vendor/rack/rails.js');
   const rack = window.__rack.doc().racks[0];
   const fresh = await RC.routeFacts(rack, (await C.loadCatalog('/assets/dist/')).chassisOf);
-  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point});
+  // `points` is where the finding is ringed: its `at`, or each of its two corners for a pair of turns (bendPoints)
+  const plain = f => ({cable: f.cable, text: f.text, at: f.at, need_mm: f.need_mm, room_mm: f.room_mm, point: f.point, points: RC.bendPoints(f),
+    pair: Array.isArray(f.turns) && f.turns.length === 2});
   const page = (window.__rack.bends() || []).map(plain);
   return {page, fresh: fresh.bendFindings.map(plain), notice: RC.bendNotice(fresh.bendFindings),
     said: document.querySelector('.rk-side .rk-notice')?.textContent ?? '',
     // where a pane draws a rack point: x from the opening's middle (mirrored on the rear), y down from the top
-    want2d: page.map(f => [OPENING / 2 + f.at[0], rack.frame.heightRU * RU - f.at[1]]),
+    want2d: page.flatMap(f => f.points.map(p => [OPENING / 2 + p[0], rack.frame.heightRU * RU - p[1]])),
     rings2d: [...document.querySelectorAll('#paneFront svg [data-bend-finding], #paneRear svg [data-bend-finding]')].map(c => ({
       pane: c.closest('svg').dataset.pane, cable: c.dataset.bendFinding, at: [+c.getAttribute('cx'), +c.getAttribute('cy')],
       title: c.querySelector('title')?.textContent ?? '', ui: c.getAttribute('data-pt-ui')})),
@@ -10034,16 +11572,18 @@ BEND_RINGS_3D_JS = """async () => {
 
 
 def aoc_between_the_leaves(rack):
-    """The cable-lay rack with c9 as an AOC from LEAF-B port 49 to LEAF-A port 49: an AOC head in each cage, c1 gone."""
+    """The cable-lay rack with c9 as an AOC from LEAF-B port 52 to LEAF-A port 52: an AOC head in each cage, c4 and c12 gone
+    (they were the cords on those two ports)."""
     out = json.loads(json.dumps(rack))
     for it in out["items"]:
         if it["id"] in ("i1", "i3"):
-            it["swaps"] = {**it["swaps"], "port-49": AOC_HEAD}
-    out["cables"] = [c for c in out["cables"] if c["id"] != "c1"]
+            it["swaps"] = {**it["swaps"], "port-52": AOC_HEAD}
+    out["cables"] = [c for c in out["cables"] if c["id"] not in ("c4", "c12")]
     for c in out["cables"]:
         if c["id"] == "c9":
             c["media"] = "aoc"
-            c["b"] = {"item": "i1", "path": "port-49", "view": "front"}
+            c["a"] = {"item": "i3", "path": "port-52", "view": "front"}
+            c["b"] = {"item": "i1", "path": "port-52", "view": "front"}
     return out
 
 
@@ -10084,10 +11624,14 @@ def check_rack_bend_notice(page, base):
     wait_sel(page, "bend notice: the notice", ".rk-side .rk-notice")
     got = page.evaluate(BEND_FRESH_JS)
     finds = got["page"]
-    if got["media"].get("c9") != "aoc" or "c1" in got["media"]:
+    if got["media"].get("c9") != "aoc" or "c4" in got["media"] or "c12" in got["media"]:
         return bad + [f"the edit did not land: {got['media']}"]
     if len(finds) < 2:
         return bad + [f"the AOC gives {len(finds)} findings; expected at least two tight bends: {finds}"]
+    # NOT VACUOUS: a pair of turns on one short leg is one finding with two corners (kit 0.27.0), and is ringed at each
+    if not any(f["pair"] for f in finds) or not any(not f["pair"] for f in finds):
+        return bad + [f"the AOC gives no mix of a single bend and a pair of turns: {[(f['pair'], f['text']) for f in finds]}"]
+    points = sum(len(f["points"]) for f in finds)
     for f in finds:
         if f["cable"] != "c9" or f["need_mm"] != 30 or not BEND_SENTENCE_RE.match(f["text"]) or "(aoc) needs 30 mm" not in f["text"]:
             bad.append(f"a finding is not the kit's sentence for c9, an AOC, at 30 mm: {f}")
@@ -10103,11 +11647,12 @@ def check_rack_bend_notice(page, base):
     # and body findings are: the notice goes with the next redraw.
     if [n for n in got["listed"] if "needs 30 mm" in n] != [f["text"] for f in finds]:
         bad.append(f"the cable list's notes are {got['listed']}; expected the kit's sentences {[f['text'] for f in finds]}")
-    # 2D: one ring per finding on the front pane (both stops are there), at the finding's point, titled with its sentence
+    # 2D: a ring on the front pane (both stops are there) at each finding's point, and at each of a pair's two corners,
+    # each titled with its finding's sentence
     rings = got["rings2d"]
-    if [r["pane"] for r in rings] != ["front"] * len(finds):
-        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {len(finds)} on the front pane")
-    for r, f, want in zip(rings, finds, got["want2d"]):
+    if [r["pane"] for r in rings] != ["front"] * points:
+        bad.append(f"2D: {len(rings)} rings on panes {[r['pane'] for r in rings]}; expected {points} on the front pane")
+    for r, f, want in zip(rings, [f for f in finds for _ in f["points"]], got["want2d"]):
         if r["cable"] != "c9" or r["title"] != f["text"] or not near(r["at"], want):
             bad.append(f"2D: a ring at {r['at']} titled {r['title']!r}; expected {want} for {f['text']!r}")
         if r["ui"] != "*":
@@ -10121,24 +11666,24 @@ def check_rack_bend_notice(page, base):
             " && !(document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('needs 30 mm')")
     again = page.evaluate("""() => ({n: document.querySelectorAll('#paneFront svg [data-bend-finding]').length, bends: window.__rack.bends().length,
       listed: [...document.querySelectorAll('#side [data-route-warning]')].map(p => p.textContent).filter(t => t.includes('needs 30 mm'))})""")
-    if again["n"] != len(finds) or again["bends"] != len(finds):
-        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {len(finds)} still")
+    if again["n"] != points or again["bends"] != len(finds):
+        bad.append(f"after a redraw the rings are {again['n']} for {again['bends']} findings; expected {points} for {len(finds)} still")
     if again["listed"] != [f["text"] for f in finds]:
         bad.append(f"after a redraw, with the notice gone, the cable list's notes are {again['listed']}; expected the sentences still")
 
     if webgl_trouble(page):
         return bad
-    # 3D: a ring in the cable's own group at each finding's point, and none in the file
+    # 3D: a ring in the cable's own group at each finding's point (each corner of a pair), and none in the file
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "bend notice: the AOC rack's scene", tubes=True)
     got3d = page.evaluate(BEND_RINGS_3D_JS)
-    if len(got3d["rings"]) != len(finds) or len(got3d["listed"]) != len(finds):
-        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {len(finds)}")
-    for k, (r, f) in enumerate(zip(got3d["rings"], finds)):
+    if len(got3d["rings"]) != points or len(got3d["listed"]) != points:
+        bad.append(f"3D: {len(got3d['rings'])} rings in the scene, {len(got3d['listed'])} listed; expected {points}")
+    for k, (r, (f, want)) in enumerate(zip(got3d["rings"], [(f, p) for f in finds for p in f["points"]])):
         if r["name"] != f"cable-c9-bend-{k}" or r["parent"] != "cable-c9" or not r["visible"] or not r["mesh"]:
             bad.append(f"3D: ring {k} is {r['name']!r} in {r['parent']!r}, visible {r['visible']}; expected cable-c9-bend-{k} in cable-c9")
-        if not near(r["at"], f["at"], 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
-            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {f['at']} for {f['text']!r}")
+        if not near(r["at"], want, 1e-3) or (r["finding"] or {}).get("text") != f["text"]:
+            bad.append(f"3D: ring {k} is at {r['at']} for {(r['finding'] or {}).get('text')!r}; expected {want} for {f['text']!r}")
     dl = export_file(page, "glb", timeout=READY_3D_MS)
     glb = pathlib.Path(dl.path()).read_bytes()
     if glb[:4] != b"glTF":
@@ -10150,7 +11695,7 @@ def check_rack_bend_notice(page, base):
         if any("-bend-" in n for n in names):
             bad.append(f"GLB: the file carries warning rings: {[n for n in names if '-bend-' in n]}")
     back = page.evaluate(BEND_RINGS_3D_JS)
-    if [r["visible"] for r in back["rings"]] != [True] * len(finds):
+    if [r["visible"] for r in back["rings"]] != [True] * points:
         bad.append(f"3D: after the export the rings are {[(r['name'], r['visible']) for r in back['rings']]}")
     # A REDRAW THAT CHANGES NOTHING KEEPS THE SCENE. The scene is rebuilt when
     # the routes' signature changes, and the signature counts the bends shown:
@@ -10173,9 +11718,9 @@ def check_rack_bend_notice(page, base):
     old = page.evaluate_handle("() => window.__rack.scene()")
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
       window.__rack.replaceRack({...r, items: r.items.map(i => (i.id === 'i1'
-        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-49'))} : i))}); }""")
+        ? {...i, swaps: Object.fromEntries(Object.entries(i.swaps).filter(([k]) => k !== 'port-52'))} : i))}); }""")
     wait_fn(page, "bend notice: the head taken out",
-            "() => window.__rack.routesCurrent().current && !('port-49' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
+            "() => window.__rack.routesCurrent().current && !('port-52' in window.__rack.doc().racks[0].items.find(i => i.id === 'i1').swaps)"
             " && Object.values(window.__rack.cableFacts().reasons).some(Boolean)")
     page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
     settle_scene(page, "bend notice: the loose AOC's scene", tubes=True)
@@ -10710,6 +12255,48 @@ BEND_SAMPLE_JS = """async ([tol, step]) => {
 }"""
 
 
+# EACH CORNER AGAINST THE BODIES NEAR IT (S-0049, bend3d.js insideOf `near`):
+# every routed tube of the scene rounded again from its own polyline, once
+# against the whole list of solid bodies (a plain function, as clearCurve tested
+# it before) and once with `near`; the two must agree to the last digit. Also
+# how long each took, and how many corners met a body (so a scene where none
+# did is not taken for a comparison).
+BEND_NEAR_SAME_JS = """async () => {
+  const B = await import('/site/rack/bend3d.js');
+  const s = window.__rack.scene(), THREE = s.three.THREE, boxes = s.rackCables.boxes;
+  const all = B.insideOf(boxes), whole = q => all(q);
+  const read = c => JSON.stringify({len: c.getLength(), corners: c.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))});
+  const out = {tubes: 0, corners: 0, body: 0, differ: [], wholeMs: 0, nearMs: 0, boxes: boxes.length};
+  for (const t of s.rackCables.tubes) {
+    if (!t.bend?.radius_mm || !t.points?.length) continue;
+    out.tubes++;
+    let t0 = performance.now();
+    const a = B.clearCurve(THREE, t.points, t.bend.radius_mm, whole);
+    out.wholeMs += performance.now() - t0; t0 = performance.now();
+    const b = B.clearCurve(THREE, t.points, t.bend.radius_mm, B.insideOf(boxes));
+    out.nearMs += performance.now() - t0;
+    if (read(a) !== read(b)) out.differ.push(t.link.id);
+    // ...and both as the scene drew it
+    else if (read(b) !== JSON.stringify({len: t.bend.length_mm, corners: t.bend.corners.map(k => ({...k, at: k.at.toArray(), hit: k.hit ? k.hit.toArray() : k.hit}))})) out.differ.push(t.link.id + ' (as drawn)');
+    out.corners += a.corners.length;
+    out.body += a.corners.filter(k => k.why === 'body').length;
+  }
+  out.wholeMs = Math.round(out.wholeMs); out.nearMs = Math.round(out.nearMs);
+  return out;
+}"""
+
+
+def bend_near_same(page, label):
+    """BEND_NEAR_SAME_JS on the page's settled scene: problems, and the line it prints."""
+    got = page.evaluate(BEND_NEAR_SAME_JS)
+    bad = [f"{label}: a corner is drawn differently against the bodies near it than against all of them: {got['differ'][:8]}"] if got["differ"] else []
+    if not got["tubes"] or not got["corners"]:
+        bad.append(f"{label}: no rounded tube to compare ({got})")
+    print(f"[{label}] {got['tubes']} rounded tubes, {got['corners']} corners ({got['body']} kept out of a body) against {got['boxes']} bodies: "
+          f"the same against those near each corner, {got['nearMs']} ms against {got['wholeMs']} ms for all of them")
+    return bad
+
+
 @extra("rack.html: bend radius - agent-made bundles of OM4 cords on the two-leaf rack report their bend radius from the cable types, and every 3D corner is at least the installed bend radius, or flagged in the scene where its legs cannot hold one")
 def check_rack_bend_radius_3d(page, base):
     bad = []
@@ -10759,7 +12346,274 @@ def check_rack_bend_radius_3d(page, base):
     for L in got["lengths"]:
         if abs(L["polyline"] - L["cut"] - L["drawn"]) > 0.5:
             bad.append(f"3D: {L['cable']}'s tube is {L['drawn']:.1f} mm; its polyline {L['polyline']:.1f} less {L['cut']:.1f} rounded off")
+    # each corner kept out of the bodies near it answers as against all of them (S-0049)
+    bad += bend_near_same(page, "check_rack_bend_radius_3d")
     return bad
+
+@extra("rack.html: a routed cable in 2D keeps its bend radius - every corner of its line is an arc of the cable's own radius (OM4's 25 mm) or a smaller one the room allows, never a square corner (#185)")
+def check_rack_bend_radius_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    load_rack_3d_ready(page, base, rack)
+    got = page.evaluate("""() => {
+      const out = [];
+      for (const g of document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id], #paneRear svg [data-cables] [data-cable-id]')) {
+        const d = g.querySelector('path:last-of-type')?.getAttribute('d') || '';
+        out.push({cable: g.dataset.cableId, quad: /Q/.test(d), arcs: [...d.matchAll(/A([\\d.]+) ([\\d.]+) 0 0 [01] /g)].map(m => +m[1])});
+      }
+      return out;
+    }""")
+    routed = [c for c in got if c["arcs"] or c["quad"]]
+    if len(got) != 16 or not routed:
+        return bad + [f"2D: {len(got)} cables drawn, {len(routed)} routed: nothing to measure"]
+    for c in routed:
+        if c["quad"]:
+            bad.append(f"2D: {c['cable']}'s line still has a square-cut quadratic corner")
+        if any(r > 25 + 0.01 for r in c["arcs"]):
+            bad.append(f"2D: {c['cable']} has an arc of radius {max(c['arcs'])}, over OM4's 25 mm")
+    if not any(25 in c["arcs"] for c in routed):
+        bad.append(f"2D: no corner is drawn at the full 25 mm radius: {[c['arcs'] for c in routed]}")
+    return bad
+
+
+BUNDLE_CORNERS_2D_JS = """() => {
+  const out = [];
+  for (const svg of document.querySelectorAll('#paneFront svg, #paneRear svg')) {
+    const inv = svg.getScreenCTM().inverse();
+    const sample = p => { const m = inv.multiply(p.getScreenCTM()), pts = [];
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); pts.push([w.x, w.y]); }
+      return pts; };
+    for (const g of svg.querySelectorAll('[data-cables] [data-bundle-id]')) {
+      const ids = (g.dataset.members || '').split(' ').filter(Boolean), line = {};
+      for (const id of ids) {
+        const p = [...svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)].sort((a, b) => b.getTotalLength() - a.getTotalLength())[0];
+        line[id] = p ? sample(p) : [];
+      }
+      const stretches = [...g.querySelectorAll('[data-bundle-trunk]')].map(p => {
+        const n = +p.dataset.riders, w = +p.getAttribute('stroke-width'), d = p.getAttribute('d');
+        // every point of the trunk, arcs included: the n nearest members are all inside the band
+        const reach = sample(p).map(c => ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b)[n - 1]);
+        return {bundle: g.dataset.bundleId, pane: svg.dataset.pane, d, width: w, riders: n, reach: Math.max(...reach), arcs: [...d.matchAll(/A([\\d.]+) /g)].map(m => +m[1])};
+      });
+      const straps = [...svg.querySelectorAll(`[data-strap="${g.dataset.bundleId}"]`)].map(s => {
+        const l = s.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+        const c = [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2];
+        const near = ids.map(id => line[id].length ? Math.min(...line[id].map(q => Math.hypot(q[0] - c[0], q[1] - c[1]))) : Infinity).sort((a, b) => a - b);
+        return {pack: +s.dataset.pack, nearest: near[0]};
+      });
+      out.push({bundle: g.dataset.bundleId, pane: svg.dataset.pane, stretches, straps});
+    }
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a bundle is drawn round the corners its members turn - in 2D its trunk, envelope and straps are arcs of the bundle's bend radius, so every cable it carries stays inside the band at every turn (#185)")
+def check_rack_bundle_corners_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    for name, fixture, cables in (("pack", PACK_FIXTURE, 4), ("peel", PEEL_FIXTURE, 5)):
+        open_front_fixture(page, base, fixture, cables=cables)
+        if name == "pack":
+            res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3', 'c4'], label: 'pack'})")
+            if res.get("error"):
+                return bad + [f"create: refused: {res['error']}"]
+        page.wait_for_function("() => document.querySelector('#paneFront [data-bundle-id=\"b1\"] [data-bundle-trunk]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        page.wait_for_timeout(400)
+        got = page.evaluate(BUNDLE_CORNERS_2D_JS)
+        stretches = [s for b in got for s in b["stretches"]]
+        if not stretches:
+            bad.append(f"{name}: no bundle trunk is drawn on the panes: nothing was measured")
+            continue
+        # (the pack's trunk turns from the lacer up the lane; the peel's runs straight up it, and ends where its members' arcs begin)
+        if name == "pack" and not any(s["arcs"] for s in stretches):
+            bad.append(f"{name}: no stretch of the trunk turns a corner on an arc, so the rounding was not measured: {[s['d'] for s in stretches][:4]}")
+        for s in stretches:
+            # (every rider's stroke inside the band: its centre line within the half width less half a 3 mm stroke)
+            if s["reach"] > s["width"] / 2 - 1.5 + 0.3:
+                bad.append(f"{name}: {s['riders']} riding on the {s['pane']} pane: a member is {s['reach']:.2f} mm from the trunk's line, outside the half width {s['width'] / 2:.2f} ({s['d']})")
+        for b in got:
+            for st in b["straps"]:
+                if st["nearest"] > st["pack"] / 2 + 2:
+                    bad.append(f"{name}: a strap on the {b['pane']} pane is {st['nearest']:.1f} mm from the nearest member, off the pack ({st['pack']} mm)")
+    return bad
+
+
+UNROUTED_HANG_JS = """async () => {
+  const s = window.__rack.scene(); await s.complete?.();
+  const paths = window.__rack.paths() || {};
+  const out = [];
+  for (const t of s.rackCables?.tubes ?? []) {
+    if (!t.mesh) continue;
+    const p = paths[t.link.id];
+    const main = t.mesh.children.find(m => m.geometry?.parameters?.path);
+    if (!p || !main) continue;
+    const reach = e => p.points.find(q => q.at === 'reach' && q.end === e);
+    const a = reach('a'), b = reach('b');
+    // the whole path, port to port: the length the kit gives counts each plug's leg
+    const inner = p.points;
+    let kit = 0;
+    for (let k = 1; k < inner.length; k++) kit += Math.hypot(inner[k].x - inner[k - 1].x, inner[k].y - inner[k - 1].y, inner[k].z - inner[k - 1].z);
+    out.push({id: t.link.id, routed: !!t.routed, kit, drawn: main.geometry.parameters.path.getLength(), reach: !!(a && b)});
+  }
+  return out;
+}"""
+# The tube starts at the plug's far end and the kit's path at the port, so the tube is
+# short of the path by the plug's body at each end (about 5 mm) and the arcs of its
+# corners; the old hang was 48 and 52 mm LONG on this rack.
+UNROUTED_HANG_TOL_MM = 16
+
+
+UNROUTED_2D_JS = """panes => {
+  const paths = window.__rack.paths() || {};
+  const top = window.__rack.doc().racks[0].frame.heightRU * 44.45;
+  const out = [];
+  for (const id of Object.keys(paths)) {
+    const pts = paths[id].points;
+    const along = f => { let s = 0; for (let k = 1; k < pts.length; k++) { const a = f(pts[k - 1]), b = f(pts[k]); s += Math.hypot(...a.map((v, i) => b[i] - v)); } return s; };
+    const row = {id, kit: along(q => [q.x, q.y, q.z]), kitFront: along(q => [q.x, q.y]), kitSide: along(q => [q.z, q.y]),
+      kitLow: Math.max(...pts.map(q => top - q.y)), drawn: {}};
+    for (const pane of panes) {
+      const g = document.querySelector(`svg[data-pane="${pane}"] [data-cables] [data-cable-id="${id}"]`);
+      // the cable's main stroke is the last path its group draws (a duplex pair's strands come first)
+      const p = g ? [...g.querySelectorAll('path')].filter(n => !n.dataset.leader).at(-1) : null;
+      if (!p) continue;
+      let low = -Infinity;     // the lowest point it reaches: pane y runs down from the top of the rack
+      for (let t = 0, L = p.getTotalLength(); t <= L; t += 1) low = Math.max(low, p.getPointAtLength(t).y);
+      row.drawn[pane] = {len: p.getTotalLength(), low};
+    }
+    out.push(row);
+  }
+  return out;
+}"""
+# A pane drops the depth (front) or the width (side) of the kit's path, so it is as long as
+# the path seen from that side; what is left over is a duplex pair's join (MERGE, 10 mm) and
+# the easing of its corners. The old arc was far over that on this rack.
+UNROUTED_2D_TOL_MM = 16
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in the Front and Left/Right elevations on the kit's own points, as in 3D, so its drawn 2D length agrees with the kit's")
+def check_rack_unrouted_hang_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    drawn = "n => document.querySelectorAll('svg[data-pane=\"%s\"] [data-cables] [data-cable-id]').length === n"
+    page.wait_for_function(drawn % "front", arg=len(ends), timeout=READY_MS)
+    seen = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["front"])}
+    page.click('#view2d [data-view="sides"]')
+    page.wait_for_function(drawn % "left", arg=len(ends), timeout=READY_MS)
+    page.wait_for_function(drawn % "right", arg=len(ends), timeout=READY_MS)
+    sides = {t["id"]: t for t in page.evaluate(UNROUTED_2D_JS, ["left", "right"])}
+    for n in range(1, len(ends) + 1):
+        f, s = seen.get(f"u{n}"), sides.get(f"u{n}")
+        if not f or not s:
+            bad.append(f"2D: u{n} has no kit path")
+            continue
+        for pane, t, want in (("front", f, f["kitFront"]), ("left", s, s["kitSide"]), ("right", s, s["kitSide"])):
+            d = t["drawn"].get(pane)
+            if not d:
+                bad.append(f"2D: u{n} is not drawn on the {pane} pane")
+            elif abs(d["len"] - want) > UNROUTED_2D_TOL_MM:
+                bad.append(f"2D {pane}: u{n} is drawn {d['len']:.1f} mm long; the kit's path seen from there is {want:.1f} mm (the whole path {t['kit']:.1f} mm)")
+        # no lower than the kit's own lowest point (the old arc went about four U under the lower switch)
+        d = f["drawn"].get("front")
+        if d and d["low"] > f["kitLow"] + UNROUTED_2D_TOL_MM:
+            bad.append(f"2D front: u{n} reaches {d['low']:.1f} mm down the pane; the kit's lowest point is {f['kitLow']:.1f}")
+    return bad
+
+
+CORD_WIDTH_JS = """(panes) => {
+  const out = {};
+  for (const pane of panes) for (const g of document.querySelectorAll(`svg[data-pane="${pane}"] [data-cables] [data-cable-id], svg[data-pane="${pane}"] [data-cables] [data-link-index]`)) {
+    const id = g.dataset.cableId ?? `link${g.dataset.linkIndex}`;
+    // the cable's main stroke is the last path its group draws, the outline the one before it
+    const ps = [...g.querySelectorAll('path')].filter(n => !n.dataset.leader && n.getAttribute('stroke-width'));
+    const p = ps.at(-1);
+    if (p) out[`${pane}:${id}`] = {media: g.dataset.media, w: +p.getAttribute('stroke-width'), outline: +ps.at(-2)?.getAttribute('stroke-width')};
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: a power cord is drawn at its cable type's diameter - 7.1 mm for the C13 cord, 7.9 mm for a C19 - in Front / Rear and Left / Right, and every other cable keeps 3 mm (kit 0.34.0 widthOf)")
+def check_rack_cord_width(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    for typ, want in ((None, 7.1), ("power-c19", 7.9), ("power-c13", 7.1)):
+        rack = json.loads(json.dumps(CABLE_FIXTURE["racks"][0]))
+        cord = next(c for c in rack["cables"] if c["id"] == "c2")      # an RJ45 cable between two devices
+        cord["media"] = "power"
+        if typ:
+            cord["type"] = typ
+        page.evaluate("r => window.__rack.replaceRack(r)", rack)
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables] [data-link-index]') && window.__rack.routesCurrent().current", timeout=READY_MS)
+        got = {"front": page.evaluate(CORD_WIDTH_JS, ["front", "rear"])}
+        page.click('#view2d [data-view="sides"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"left\"] [data-cables] [data-cable-id]')", timeout=READY_MS)
+        got["sides"] = page.evaluate(CORD_WIDTH_JS, ["left", "right"])
+        page.click('#view2d [data-view="faces"]')
+        page.wait_for_function("() => document.querySelector('svg[data-pane=\"front\"] [data-cables]')", timeout=READY_MS)
+        for view, rows in got.items():
+            cords = [(k, r) for k, r in rows.items() if r["media"] == "power"]
+            if not cords:
+                bad.append(f"{view}, type {typ}: no power cord is drawn: {sorted(rows)}")
+            for k, r in cords:
+                if abs(r["w"] - want) > 0.01 or abs(r["outline"] - (want + 1.2)) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} is drawn {r['w']} wide with an outline {r['outline']}; expected {want} and {want + 1.2:.1f}")
+            for k, r in rows.items():
+                if r["media"] != "power" and abs(r["w"] - 3) > 0.01:
+                    bad.append(f"{view}, type {typ}: {k} ({r['media']}) is drawn {r['w']} wide; every other cable keeps 3")
+    return bad
+
+
+@extra("rack.html: an unrouted cable (no waypoints, nothing to go round) is drawn in 3D through the kit's own points, so the drawn tube is as long as the length the kit gives, as a routed one is")
+def check_rack_unrouted_hang_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    rack = json.loads(CABLE_LAY_FIXTURE.read_text())
+    rack.pop("_note", None)
+    # two cords between the two switches with no manager in the rack: the kit
+    # gives them no waypoint and no detour
+    ends = [("i1", "port-49", "i3", "port-49"), ("i1", "port-50", "i3", "port-53")]
+    rack["items"] = [i for i in rack["items"] if i["id"] != "i4"]    # no lacer to route through
+    rack["cables"] = [{"id": f"u{n}", "a": {"item": a, "path": x, "view": "front"},
+                       "b": {"item": b, "path": y, "view": "front"}, "media": "om4",
+                       "purpose": "uplink", "label": "", "route": []} for n, (a, x, b, y) in enumerate(ends, 1)]
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n", arg=len(ends), timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the unrouted rack's scene", tubes=True)
+    got = {t["id"]: t for t in page.evaluate(UNROUTED_HANG_JS)}
+    for n in range(1, len(ends) + 1):
+        t = got.get(f"u{n}")
+        if not t or not t["reach"]:
+            bad.append(f"3D: u{n} has no tube or no kit reach points: {t}")
+            continue
+        if t["routed"]:
+            bad.append(f"3D: u{n} is drawn as a routed cable; the check wants an unrouted one")
+        if abs(t["drawn"] - t["kit"]) > UNROUTED_HANG_TOL_MM:
+            bad.append(f"3D: u{n}'s tube is {t['drawn']:.1f} mm long; the kit's path from port to port is {t['kit']:.1f} mm")
+    return bad
+
 
 @extra("rack.html: cable lay - beside a rear zero-U Eaton PDU the lane runs outboard of it, and the cable is drawn round the PDU's back in 2D and 3D, never through it")
 def check_rack_cable_lay_pdu(page, base):
@@ -10821,6 +12675,461 @@ def check_rack_cable_lay_pdu(page, base):
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the PDU rack's scene", tubes=True)
     bad += tubes_inside(page, 1, want_parts=("z1|envelope",))
+    return bad
+
+
+# A RACK WITH A PDU AND TWO DEVICES THAT TAKE A C14 (portrayal-site#202): the
+# PDU on the front face so its C13 outlets are on the front pane, the two
+# MX150s with an inlet on the rear.
+POWER_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Power', kind: 'four-post'}), {heightRU: 24});
+  ({rack: r} = M.withItem(r, {ref: 'pdu12iec', cfg: cat['pdu12iec'].default, ru: 2, label: 'pdu-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 10, label: 'srv-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 14, label: 'srv-2'}));
+  return r;
+}"""
+
+
+def power_click(page, pane, item, path):
+    """Click the middle of the slot at `path` on `item`'s group in `pane`."""
+    sel = f'#pane{pane} svg [data-item-id="{item}"][data-panel] [data-path="{path}"]'
+    box = page.evaluate("""sel => { const e = document.querySelector(sel); if (!e) return null;
+      const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", sel)
+    if not box:
+        raise RuntimeError(f"power: {path} of {item} is not drawn on the {pane.lower()} pane")
+    page.mouse.click(box[0], box[1])
+
+
+@extra("rack.html: power cords - an inlet and a PDU outlet are picked in Cable mode, the form names each end and offers power, the cord is drawn in 2D and 3D with a plug at each end, listed, edited, warned and deleted, and the exports carry it")
+def check_rack_power_cords(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    click = page.click
+
+    def labelled(sel, **kw):
+        # a click that times out says which one, not just "Timeout 30000ms"
+        try:
+            return click(sel, **kw)
+        except Exception as e:
+            raise RuntimeError(f"power: click {sel}: {str(e).splitlines()[0]}") from e
+    page.click = labelled
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(POWER_RACK_JS))
+    try:
+        # Every slot a cord lands on is listed on the panel that draws it, and nothing else is.
+        wait_fn(page, "power: the PDU's outlets are listed for picking",
+                "() => (document.querySelector('#paneFront svg [data-item-id=\"i1\"][data-panel=\"mounted\"]')?.getAttribute('data-cable-ends') || '').includes('outlet-front-1')")
+        ends = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('[data-item-id][data-panel]')].map(g =>
+          [`${g.dataset.itemId}|${g.closest('svg').dataset.pane}`, (g.getAttribute('data-cable-ends') || '').split(' ').filter(Boolean)]))""")
+        if ends.get("i1|front") != ["outlet-front-1", "outlet-front-2", "outlet-front-3", "outlet-front-4"]:
+            bad.append(f"picking: the PDU's front outlets are {ends.get('i1|front')}")
+        if sorted(ends.get("i2|rear", [])) != ["ground-studs", "inlet"]:
+            bad.append(f"picking: srv-1's rear slots are {ends.get('i2|rear')}")
+        if ends.get("i2|front"):
+            bad.append(f"picking: srv-1's front lists slots a cord lands on: {ends.get('i2|front')}")
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i2", "inlet")
+        step = page.text_content("#cableStep") or ""
+        if "srv-1" not in step or "inlet" not in step:
+            bad.append(f"picking: the inlet was not picked: {step!r}")
+        power_click(page, "Front", "i1", "outlet-front-1")
+        wait_sel(page, "power: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_a, end_b = page.text_content("#cEndA") or "", page.text_content("#cEndB") or ""
+    if "C14 inlet" not in end_a or "C13 outlet" not in end_b:
+        bad.append(f"form: the ends do not say what they are: {end_a!r} / {end_b!r}")
+    offered = page.eval_on_selector_all("#cMedia option", "o => o.map(x => x.value)")
+    if "power" not in offered or "ground" not in offered:
+        bad.append(f"form: the media offered are {offered}")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"form: the media proposed for an inlet and an outlet is {page.input_value('#cMedia')!r}")
+    if (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: a cord from an outlet to an inlet is warned: {page.text_content('#cWarn')!r}")
+    # A ground wire does not suit a power end, and the form says so before it is saved.
+    page.select_option("#cMedia", "ground")
+    if "does not suit" not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: a ground wire on a power end is not warned: {page.text_content('#cWarn')!r}")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the cord is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+        wait_sel(page, "power: the cord on the front pane", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
+        wait_sel(page, "power: the cord on the rear pane", 'svg[data-pane="rear"] [data-cables] [data-cable-id="c1"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["media"] != "power" or c1["a"] != {"item": "i2", "path": "inlet", "view": "rear"} \
+            or c1["b"] != {"item": "i1", "path": "outlet-front-1", "view": "front"}:
+        bad.append(f"saved: the cord is {c1}")
+    if page.evaluate("() => !!window.__rack.doc().racks[0].items.some(i => i.swaps && Object.keys(i.swaps).length)"):
+        bad.append("saved: a plug was written into an item's swaps (a derived plug is never stored)")
+    # A plug is drawn at each end, and the cord ends on its cable point, not on the port's middle.
+    seated = page.evaluate("""() => ({
+      inlet: !!document.querySelector('#paneRear svg [data-item-id="i2"][data-panel] [data-path="inlet-occupant"]'),
+      outlet: !!document.querySelector('#paneFront svg [data-item-id="i1"][data-panel] [data-path="outlet-front-1-occupant"]'),
+      refs: [...document.querySelectorAll('[data-path$="-occupant"][data-ref]')].map(e => e.getAttribute('data-ref')).sort()})""")
+    if not seated["inlet"] or not seated["outlet"]:
+        bad.append(f"2D: the plugs are not drawn at both ends: {seated}")
+    if not any("c13-plug" in r for r in seated["refs"]) or not any("c14-plug" in r for r in seated["refs"]):
+        bad.append(f"2D: the plugs are not a C13 in the inlet and a C14 in the outlet: {seated['refs']}")
+    if page.evaluate("() => document.querySelectorAll('[data-open-plug]').length"):
+        bad.append("2D: the cord hangs as an unplugged lead")
+    # The list, and the row's own words.
+    wait_sel(page, "power: the list row", '#cableList [data-cable-row="c1"]')
+    row = page.text_content('#cableItem-c1') or ""
+    if "inlet" not in row or "outlet-front-1" not in row or "Power cable" not in row:
+        bad.append(f"list: the row reads {row!r}")
+    if page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: a landed cord has a loose end: {row!r}")
+    # 3D: a tube for the cord, hung between the two devices. (Cable mode is left first.)
+    if page.get_attribute("#cableBtn", "aria-pressed") == "true":
+        page.click("#cableBtn")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "power: 3D", tubes=True)
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        got = page.evaluate("() => (window.__rack.scene().three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name)")
+        if got != ["cable-c1"]:
+            bad.append(f"3D: the scene's cables are {got}")
+    # EDIT: the media changes to ground and the row follows; delete takes the cord and its plugs.
+    page.click('#mode [data-mode="2d"]')
+    wait_sel(page, "power: the row after 2D", '#cableList [data-cable-row="c1"]')
+    if page.get_attribute('#cableList [data-cable-row="c1"]', "aria-pressed") != "true":   # a saved cord is left selected
+        page.click('#cableList [data-cable-row="c1"]')
+    wait_sel(page, "power: the row's Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the edit form", "#cableForm")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"edit: the form opens on {page.input_value('#cMedia')!r}")
+    page.select_option("#cMedia", "ground")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "power: the media is saved", "() => window.__rack.doc().racks[0].cables[0].media === 'ground'")
+        wait_fn(page, "power: the list says the ground wire does not suit",
+                "() => /does not suit end A, which is power/.test(document.querySelector('#cableItem-c1')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    wait_sel(page, "power: Edit after a save", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "power: the second edit form", "#cableForm")
+    page.select_option("#cMedia", "power")
+    page.click("#cSave")
+    wait_fn(page, "power: back to power", "() => window.__rack.doc().racks[0].cables[0].media === 'power'")
+    # A second cord, outlet to outlet: a warning that is plain, in the list.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i1', path: 'outlet-front-2', view: 'front'},
+                                                 b: {item: 'i1', path: 'outlet-front-3', view: 'front'}, media: 'power'})""")
+    try:
+        wait_fn(page, "power: the outlet-to-outlet cord warns",
+                "() => /Both ends are outlets/.test(document.querySelector('#cableItem-c2')?.textContent || '')")
+    except RuntimeError as e:
+        bad.append(str(e))
+    # A GROUND WIRE falls out of the same work: stud to stud, landed, and not called power.
+    page.evaluate("""() => window.__rack.apply({op: 'cable.add', a: {item: 'i2', path: 'ground-studs', view: 'rear'},
+                                                 b: {item: 'i3', path: 'ground-studs', view: 'rear'}, media: 'ground'})""")
+    try:
+        wait_sel(page, "power: the ground wire is listed", "#cableItem-c3")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        g = page.text_content("#cableItem-c3") or ""
+        if "Ground wire" not in g or "Loose end" in g or "does not suit" in g:
+            bad.append(f"ground: the wire's row reads {g!r}")
+    # The exports carry the cord: the BOM counts it, the schedule lists it connected.
+    bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
+    if "Power cable" not in bom or "power at both ends" not in bom:
+        bad.append(f"BOM: the cords are not counted as landed power cables: {bom!r}")
+    sched = pathlib.Path(export_file(page, "cables").path()).read_text(encoding="utf-8")
+    if "srv-1,10,inlet,pdu-1,2,outlet-front-1,Power cable" not in sched or "loose end" in sched:
+        bad.append(f"schedule: the cords are not listed as connected: {sched!r}")
+    # Delete the second, then the first: no cable, no plug left drawn.
+    for cid in ("c2", "c1"):
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        page.click("#cableDelete")
+        wait_fn(page, f"power: {cid} is deleted", f"() => !window.__rack.doc().racks[0].cables.some(c => c.id === '{cid}')")
+    wait_fn(page, "power: no plug stays after the cords are deleted",
+            "() => !document.querySelector('[data-path$=\"-occupant\"][data-ref*=\"-plug\"]')")
+    return bad
+
+
+# A RACK WITH A VERTICAL PDU AT EACH REAR UPRIGHT (kit 0.36.0, Portrayal
+# #1068): a 2U switch with two C20 inlets at U35 and a 1U console with two C14
+# inlets at U42, both on the front rails, so their inlets are on the rear pane
+# beside the PDUs.
+PDU_CORD_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Cords', kind: 'four-post'}), {heightRU: 42});
+  ({rack: r} = M.withItem(r, {ref: 's9700-53dx', cfg: cat['s9700-53dx'].default, ru: 35, label: 'sw-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: cat['ds1000'].default, ru: 42, label: 'con-1'}));
+  return {...r, zeroU: [{id: 'z1', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-A', at: 'left-rear', offsetMm: 0},
+                        {id: 'z2', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-B', at: 'right-rear', offsetMm: 0}]};
+}"""
+
+# Where a cord's drawn line ends on a pane, against the outlet it ends at: the
+# nearest sampled point of its stroke to the outlet's middle, in pane mm.
+CORD_AT_OUTLET_JS = """([pane, id, zid, path]) => {
+  const s = document.querySelector(`#pane${pane} svg`);
+  const g = s?.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
+  const o = s?.querySelector(`[data-zerou-id="${zid}"] [data-path="${path}"]`);
+  if (!g || !o) return {drawn: !!g, outlet: !!o};
+  const inv = s.getScreenCTM().inverse(), b = o.getBoundingClientRect();
+  const c = new DOMPoint(b.left + b.width / 2, b.top + b.height / 2).matrixTransform(inv);
+  let best = Infinity;
+  for (const p of g.querySelectorAll('path')) {
+    if (p.dataset.leader) continue;
+    const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+    for (let t = 0; t <= L; t += 0.5) { const q = new DOMPoint(p.getPointAtLength(t).x, p.getPointAtLength(t).y).matrixTransform(m); best = Math.min(best, Math.hypot(q.x - c.x, q.y - c.y)); }
+  }
+  return {drawn: true, outlet: true, miss: best};
+}"""
+
+
+@extra("rack.html: power cords to a vertical PDU beside the rack (kit 0.36.0) - a PSU inlet and a PDU outlet are picked in Cable mode and the cord saved, a second cord is added by the assistant's edit_rack, and each is drawn to its outlet on the Rear pane with the paired plug, from the side and in 3D, with a length; the assistant lists the PDU's free outlets")
+def check_rack_pdu_cords(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(PDU_CORD_RACK_JS))
+    inlet0 = {"item": "i1", "path": "psu-0/module/inlet", "view": "rear"}
+    try:
+        # Every outlet of the PDU is listed for picking, on the pane it looks out of.
+        wait_fn(page, "pdu: PDU-A's outlets are listed for picking",
+                "() => (document.querySelector('#paneRear svg [data-zerou-id=\"z1\"]')?.getAttribute('data-cable-ends') || '').split(' ').includes('outlet-e34')")
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i1", inlet0["path"])
+        step = page.text_content("#cableStep") or ""
+        if "sw-1" not in step or "inlet" not in step:
+            bad.append(f"picking: the inlet was not picked: {step!r}")
+        box = page.evaluate("""() => { const e = document.querySelector('#paneRear svg [data-zerou-id="z1"] [data-path="outlet-e34"]');
+          if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""")
+        if not box:
+            return bad + ["picking: outlet-e34 of PDU-A is not drawn on the rear pane"]
+        page.mouse.click(box[0], box[1])
+        wait_sel(page, "pdu: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_a, end_b = page.text_content("#cEndA") or "", page.text_content("#cEndB") or ""
+    if "C20 inlet" not in end_a or "PDU-A" not in end_b or "C39 outlet" not in end_b:
+        bad.append(f"form: the ends do not say what they are: {end_a!r} / {end_b!r}")
+    if page.input_value("#cMedia") != "power":
+        bad.append(f"form: the media proposed for an inlet and a PDU outlet is {page.input_value('#cMedia')!r}")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "pdu: the cord is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["a"] != inlet0 or c1["b"] != {"item": "z1", "path": "outlet-e34", "view": "front"} or c1["media"] != "power":
+        bad.append(f"saved: the cord is {c1}")
+    # The second cord through the assistant's own tool, as an agent sends it.
+    page.click("#cableBtn")
+    res = page.evaluate("""() => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i2', path: 'psu-1/module/inlet', view: 'rear'},
+                                                                       b: {item: 'z2', path: 'outlet-f42', view: 'front'}, media: 'power'}]})
+                             .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if res["error"]:
+        return bad + [f"agent: cable.add to PDU-B was refused: {res['text']}"]
+    try:
+        wait_fn(page, "pdu: both cords measured",
+                "() => { const p = window.__rack.paths(); return !!(p && p.c1?.measured > 0 && p.c2?.measured > 0); }")
+        for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
+            wait_sel(page, f"pdu: {cid} on the rear pane", f'svg[data-pane="rear"] [data-cables] [data-cable-id="{cid}"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    paths = page.evaluate("() => window.__rack.paths()")
+    for cid in ("c1", "c2"):
+        m = paths[cid]["measured"]
+        if not 0.2 < m < 3:
+            bad.append(f"length: {cid} is measured {m} m")
+    # (kit 0.42.0) a cord arrives from beside its PDU, so it does not count its own PDU as a body it crosses,
+    # and the assistant is told the inner lanes it may route through
+    for cid in ("c1", "c2"):
+        said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+          return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", cid)
+        if "Crosses a body" in said:
+            bad.append(f"route: {cid} is found crossing a body: {said!r}")
+        if "left-rear-inner" not in said or "right-front-inner" not in said:
+            bad.append(f"agent: inspect {cid} does not list the inner lanes it can take: {said!r}")
+    for cid, zid, path in (("c1", "z1", "outlet-e34"), ("c2", "z2", "outlet-f42")):
+        at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, zid, path])
+        if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:
+            bad.append(f"2D: {cid} is not drawn to {path} of {zid} on the rear pane: {at}")
+    # The plug at each outlet is the one that pairs with the cord's other end: a C20 at the C39, a C14 at the C13.
+    plugs = page.evaluate("""() => Object.fromEntries(['z1|outlet-e34', 'z2|outlet-f42'].map(k => { const [z, p] = k.split('|');
+      return [k, document.querySelector(`#paneRear svg [data-zerou-id="${z}"] [data-path="${p}-occupant"]`)?.getAttribute('data-ref') ?? null]; }))""")
+    if "c20-plug" not in (plugs["z1|outlet-e34"] or "") or "c14-plug" not in (plugs["z2|outlet-f42"] or ""):
+        bad.append(f"2D: the plugs at the outlets are {plugs}")
+    if page.evaluate("() => (window.__rack.doc().racks[0].zeroU || []).some(z => z.swaps && Object.keys(z.swaps).length)"):
+        bad.append("saved: a plug was written into a PDU (a derived plug is never stored)")
+    row = page.text_content('#cableItem-c1') or ""
+    if "PDU-A" not in row or "outlet-e34" not in row or page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: c1's row reads {row!r}")
+    # The assistant lists PDU-A's free outlets, the one taken left out, nearest U35 first. (A free
+    # C39 has no cord to pair with: the kit names its first plug.)
+    free = page.evaluate("""() => window.__tools.list_free_ports.execute({id: 'z1', kinds: ['power'], type: 'C39', near: 35})
+                              .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if free["error"] or not re.match(r"z1 \(PDU-A\): \d+ free ports", free["text"]) or "outlet-e34," in free["text"] \
+            or not re.search(r"^[^\n]*\noutlet-e3\d, front: C39 outlet E3\d at U3\d, plug generic/c\d+-plug@1\n", free["text"]):
+        bad.append(f"agent: PDU-A's free outlets read {free['text']!r}")
+    # From the side: both cords, each with a plug block at each end.
+    page.click('#view2d [data-view="sides"]')
+    try:
+        wait_fn(page, "pdu: the cords from the side",
+                "() => ['c1', 'c2'].every(id => document.querySelector(`#paneFront svg [data-cables] [data-cable-id=\"${id}\"]`))")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        blocks = page.evaluate("() => ['c1', 'c2'].map(id => document.querySelectorAll(`#paneFront svg [data-cables] [data-cable-id=\"${id}\"] [data-side-plug]`).length)")
+        if blocks != [2, 2]:
+            bad.append(f"side: the plug blocks of c1 and c2 are {blocks}, not two each")
+    page.click('#view2d [data-view="faces"]')
+    # 3D: a tube for each cord, and the plug seated at each outlet.
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "pdu: 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    # (the PDUs are the stack's last two mounts, after the rack's two items: scene3d.js sideParts)
+    got = page.evaluate("""() => { const s = window.__rack.scene(), rc = s.rackCables;
+      return {tubes: (s.three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name).sort(),
+              anchors: (rc?.anchors ?? []).map(a => `${a.i}:${a.side}:${a.anchor.path}`).sort(),
+              overrides: s.resolved().stack.slice(2).map(e => e.overrides)}; }""")
+    if got["tubes"] != ["cable-c1", "cable-c2"]:
+        bad.append(f"3D: the scene's cables are {got['tubes']}")
+    if got["overrides"] != [{"outlet-e34": "generic/c20-plug@1"}, {"outlet-f42": "generic/c14-plug@1"}]:
+        bad.append(f"3D: the plugs seated on the PDUs are {got['overrides']}")
+    for a in ("0:to:outlet-e34-occupant", "1:to:outlet-f42-occupant"):
+        if a not in got["anchors"]:
+            bad.append(f"3D: no anchor {a} (the cord at its plug) among {got['anchors']}")
+    return bad
+
+
+# A 1U-class switch with a management port at U41 and a vertical PDU at each
+# rear upright (kit 0.44.0, Portrayal #1080): the PDU's network card is in a
+# bay of the part, and its ports are ends a cable can take.
+PDU_CARD_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Card', kind: 'four-post'}), {heightRU: 42});
+  ({rack: r} = M.withItem(r, {ref: 's9601-102xc', cfg: 'ac', ru: 41, label: 'sw-1'}));
+  return {...r, zeroU: [{id: 'z1', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-A', at: 'left-rear', offsetMm: 0},
+                        {id: 'z2', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-B', at: 'right-rear', offsetMm: 0}]};
+}"""
+CARD = "network-module/module/"
+
+
+@extra("rack.html: a vertical PDU's network card (kit 0.44.0) - its eth0, eth1 and usb-0 are picked as a cable end in Cable mode and by the assistant, the cable is drawn to the jack on the PDU's face on the Rear pane and routed in 3D, a made-up port is refused with the list, and the assistant lists the card's free ports")
+def check_rack_pdu_network_card(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(PDU_CARD_RACK_JS))
+    mgmt = {"item": "i1", "path": "mgmt", "view": "front"}
+    try:
+        # The card's ports are listed for picking, on the pane the PDU looks out of.
+        wait_fn(page, "card: PDU-A's card ports are listed for picking",
+                "p => { const e = (document.querySelector('#paneRear svg [data-zerou-id=\"z1\"]')?.getAttribute('data-cable-ends') || '').split(' ');"
+                " return p.every(x => e.includes(x)); }",
+                arg=[CARD + p for p in ("eth0", "eth1", "usb-0", "usb-1", "sensor", "pdu-plus-1")])
+        page.click("#cableBtn")
+        sel = '#paneFront svg [data-item-id="i1"][data-panel] [data-path="mgmt"]'
+        box = page.evaluate("""sel => { const e = document.querySelector(sel); if (!e) return null;
+          const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", sel)
+        if not box:
+            return bad + ["picking: the management port is not drawn on the front pane"]
+        page.mouse.click(box[0], box[1])
+        box = page.evaluate("""p => { const e = document.querySelector(`#paneRear svg [data-zerou-id="z1"] [data-path="${p}"]`); if (!e) return null;
+          const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", CARD + "eth0")
+        if not box:
+            return bad + ["picking: eth0 of PDU-A's card is not drawn on the rear pane"]
+        page.mouse.click(box[0], box[1])
+        wait_sel(page, "card: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_b = page.text_content("#cEndB") or ""
+    if "PDU-A" not in end_b or "eth0" not in end_b:
+        bad.append(f"form: the card's end does not say what it is: {end_b!r}")
+    media = page.eval_on_selector_all("#cMedia option", "o => o.map(x => x.value)")
+    if "cat6" not in media:
+        bad.append(f"form: no Cat6 among the media offered for a card's RJ45: {media}")
+    else:
+        page.select_option("#cMedia", "cat6")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "card: the cable is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["a"] != mgmt or c1["b"] != {"item": "z1", "path": CARD + "eth0", "view": "front"} or c1["media"] != "cat6":
+        bad.append(f"saved: the cable is {c1}")
+    # The assistant: eth1 and usb-0 as ends, a made-up port refused with the list.
+    page.click("#cableBtn")
+    for cid, a_path, b_path, media_ in (("c2", "console", "eth1", "cat6"), ("c3", "usb", "usb-0", "cat6")):
+        res = page.evaluate("""([a, b, m]) => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i1', path: a, view: 'front'},
+                                                                       b: {item: 'z1', path: b, view: 'front'}, media: m}]})
+                                 .then(r => ({error: !!r.isError, text: r.content[0].text}))""", [a_path, CARD + b_path, media_])
+        if res["error"]:
+            bad.append(f"agent: cable.add to {b_path} was refused: {res['text']}")
+    res = page.evaluate("""() => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i1', path: 'port-0', view: 'front'},
+                                                                   b: {item: 'z2', path: 'network-module/module/eth9', view: 'front'}, media: 'cat6'}]})
+                             .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if not res["error"] or "eth9" not in res["text"] or CARD + "eth0" not in res["text"]:
+        bad.append(f"agent: a made-up port on the card was not refused with the list: {res}")
+    try:
+        wait_fn(page, "card: the cables are measured",
+                "() => { const p = window.__rack.paths(); return !!(p && p.c1?.measured > 0 && p.c2?.measured > 0 && p.c3?.measured > 0); }")
+        for cid in ("c1", "c2", "c3"):
+            wait_sel(page, f"card: {cid} on the rear pane", f'svg[data-pane="rear"] [data-cables] [data-cable-id="{cid}"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 3:
+        bad.append("agent: the refused cable was saved")
+    # Drawn to the jack on the PDU's face (the USB-C opening for usb-0)
+    for cid, port in (("c1", "eth0/jack"), ("c2", "eth1/jack"), ("c3", "usb-0/opening")):
+        at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, "z1", CARD + port])
+        if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:
+            bad.append(f"2D: {cid} is not drawn to {port} of the card on the rear pane: {at}")
+    row = page.text_content('#cableItem-c1') or ""
+    if "PDU-A" not in row or "eth0" not in row or page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: c1's row reads {row!r}")
+    # The assistant's read-backs: the card's free ports, and the cable's own
+    free = page.evaluate("""() => window.__tools.list_free_ports.execute({id: 'z1', kinds: ['data']})
+                              .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if free["error"] or CARD + "sensor," not in free["text"] or CARD + "eth0," in free["text"] or CARD + "usb-1," not in free["text"]:
+        bad.append(f"agent: PDU-A's free data ports read {free['text']!r}")
+    said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+      return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", "c1")
+    if "eth0" not in said or "PDU-A" not in said or "Crosses a body" in said:
+        bad.append(f"agent: inspect c1 reads {said!r}")
+    # 3D: a tube for each cable, each ending at the card's jack
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "card: 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    got = page.evaluate("""() => { const s = window.__rack.scene(), rc = s.rackCables;
+      return {tubes: (s.three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name).sort(),
+              anchors: (rc?.anchors ?? []).map(a => `${a.i}:${a.side}:${a.anchor.path}`).sort()}; }""")
+    if got["tubes"] != ["cable-c1", "cable-c2", "cable-c3"]:
+        bad.append(f"3D: the scene's cables are {got['tubes']}")
+    for p in ("eth0", "eth1", "usb-0"):
+        if not any(a.endswith(f":to:{CARD}{p}-occupant") for a in got["anchors"]):
+            bad.append(f"3D: no anchor at the card's {p} among {got['anchors']}")
     return bad
 
 
@@ -12138,12 +14447,13 @@ def check_rack_no_idb(page, base):
     return bad
 
 
-def wait_fn(page, label, expr, timeout=READY_MS, arg=None):
+def wait_fn(page, label, expr, timeout=READY_MS, arg=None, polling=None):
     # page.wait_for_function, but a timeout says which step it was - CI-only
     # failures otherwise all look identical ("Timeout 60000ms exceeded.")
     # with no clue which of a dozen waits in the check actually stalled.
+    # (`polling` in ms, where the page's animation frames are not to be relied on)
     try:
-        page.wait_for_function(expr, arg=arg, timeout=timeout)
+        page.wait_for_function(expr, arg=arg, timeout=timeout, **({"polling": polling} if polling else {}))
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -14578,7 +16888,8 @@ def check_rack_cables_drawn(page, base):
     if by(front, "tags", "c1"):
         bad.append("cables drawn: c1 has a tag, and both its ends are in one pane")
     # c2: front pane to rear pane - each pane hangs it off to the side column, with a tag naming the far end.
-    for pane, name, text in ((front, "front", "→ demarc U14 port-2-1"), (rear, "rear", "→ leaf-1 mgmt-eth")):
+    # (a port is named in words, kit 0.26.0 portLabel: "port-2-1" is "port 2 1"; two devices of one label carry their U, #194)
+    for pane, name, text in ((front, "front", "→ demarc U14 port 2 1"), (rear, "rear", "→ leaf-1 mgmt eth")):
         tag = by(pane, "tags", "c2")
         if not tag or tag["text"] != text or tag["loose"]:
             bad.append(f"cables drawn: c2's tag on the {name} is {tag}, expected {text!r}")
@@ -14832,7 +17143,7 @@ def check_rack_cables_clicks(page, base):
     got = page.evaluate(PANES_JS)
     tag = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
     # (two devices carry the label here, so the tag says which by its U, #194)
-    if not tag or tag["text"] != f"→ {LIT} U14 port-2-1":
+    if not tag or tag["text"] != f"→ {LIT} U14 port 2 1":
         bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally, and its U")
     if page.evaluate("() => document.querySelectorAll('svg[data-pane] b').length"):
         bad.append("cable clicks: a label injected markup into the pane")
@@ -14899,7 +17210,7 @@ FORM_JS = """async (opts) => {
 }"""
 
 
-@extra("rack.html: the cable form offers the eight media, warns on a mismatch without blocking, and checks the length")
+@extra("rack.html: the cable form offers the ten media (power and ground too), warns on a mismatch without blocking, and checks the length")
 def check_rack_cable_form(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14922,7 +17233,7 @@ def check_rack_cable_form(page, base):
     if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
         bad.append("cable form: the two ends are not named")
     values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
-    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc"]:
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground"]:
         bad.append(f"cable form: the media offered are {values}")
     if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
         bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")
@@ -16105,6 +18416,106 @@ def inspect_all(page, args):
     return "\n".join(out)
 
 
+@extra("rack.html: a latch colour set in the Explorer lens reaches 2D, 3D, the saved rack and a reload (#206)")
+def check_rack_lens_latch_colour(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "latch206")
+    out = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 20, as: 'sw'},
+      {op: 'fit', id: '@sw', path: 'port-1', ref: 'generic/qsfp-lc@2'}]).error ?? null""")
+    if out:
+        return [f"latch206: fitting an optic answered {out}"]
+    latch2d = "() => [...document.querySelectorAll('#panes svg [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed", timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    lens = page.frame_locator(".rk-lens iframe")
+    lens.locator('.nm:text-matches("^port-1 —")').click()
+    pick_colour = lens.locator(".optic-fields input[type=color]")
+    pick_colour.wait_for(timeout=READY_MS)
+    pick_colour.evaluate("i => { i.value = '#c22f2f'; i.dispatchEvent(new Event('input', {bubbles: true})); }")
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true", timeout=READY_MS)
+    page.click(".rk-lens-done")
+    try:
+        wait_fn(page, "latch206: the rack holds the colour",
+                "() => window.__rack.doc().racks[0].items[0].fields?.['port-1-occupant']?.['latch-color'] === '#c22f2f'")
+        wait_fn(page, "latch206: 2D shows it",
+                f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#c22f2f'); }}")
+    except RuntimeError as e:
+        bad.append(str(e))
+    if webgl_trouble(page):
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "latch206: the scene")
+    face = page.evaluate("""async () => { const s = window.__rack.scene(); const t = await s.faceText(0, 'front');
+      const d = new DOMParser().parseFromString(t, 'image/svg+xml');
+      return [...d.querySelectorAll('[data-fill-from="latch-color"]')].map(n => n.getAttribute('fill')); }""")
+    if not face or any(f != "#c22f2f" for f in face):
+        bad.append(f"latch206: the 3D face still draws the latch {sorted(set(face or []))}")
+    # saved with the rack: a reload brings the colour back, in 2D and in 3D
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    kept = page.evaluate("() => window.__rack.doc().racks[0].items[0]?.fields ?? null")
+    if (kept or {}).get("port-1-occupant", {}).get("latch-color") != "#c22f2f":
+        bad.append(f"latch206: after a reload the rack holds {kept}")
+    return bad
+
+
+@extra("rack.html: a latch color preset clicked in the Explorer lens reaches 2D, the saved rack and 3D (S-0016)")
+def check_rack_lens_latch_preset(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "preset16")
+    out = page.evaluate("""() => window.__rack.apply([{op: 'place', ref: 'as7726-32x', face: 'front', ru: 20, as: 'sw'},
+      {op: 'fit', id: '@sw', path: 'port-1', ref: 'generic/qsfp-lc@2'}]).error ?? null""")
+    if out:
+        return [f"preset16: fitting an optic answered {out}"]
+    latch2d = "() => [...document.querySelectorAll('#panes svg [data-fill-from=\"latch-color\"]')].map(n => n.getAttribute('fill'))"
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed", timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    lens = page.frame_locator(".rk-lens iframe")
+    lens.locator('.nm:text-matches("^port-1 —")').click()
+    preset = lens.locator('.optic-fields button.preset[aria-label="Latch color: green"]')
+    preset.wait_for(timeout=READY_MS)
+    preset.click()
+    if lens.locator('.optic-fields input.hex').input_value() != "#2fa84f":
+        bad.append(f"preset16: the lens hex box reads {lens.locator('.optic-fields input.hex').input_value()}")
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true", timeout=READY_MS)
+    page.click(".rk-lens-done")
+    try:
+        wait_fn(page, "preset16: the rack holds the color",
+                "() => window.__rack.doc().racks[0].items[0].fields?.['port-1-occupant']?.['latch-color'] === '#2fa84f'")
+        wait_fn(page, "preset16: 2D shows it",
+                f"() => {{ const f = ({latch2d})(); return f.length > 0 && f.every(x => x === '#2fa84f'); }}")
+    except RuntimeError as e:
+        bad.append(str(e))
+    if webgl_trouble(page):
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "preset16: the scene")
+    face = page.evaluate("""async () => { const s = window.__rack.scene(); const t = await s.faceText(0, 'front');
+      const d = new DOMParser().parseFromString(t, 'image/svg+xml');
+      return [...d.querySelectorAll('[data-fill-from="latch-color"]')].map(n => n.getAttribute('fill')); }""")
+    if not face or any(f != "#2fa84f" for f in face):
+        bad.append(f"preset16: the 3D face still draws the latch {sorted(set(face or []))}")
+    return bad
+
+
 @extra("rack.html: agent tools 2 - the page hint, new_rack, an optic fitted and its latch painted, a cassette swapped and its cable re-pointed, cables removed by selector")
 def check_rack_agent_tools_2(page, base):
     bad = []
@@ -16354,6 +18765,50 @@ def check_rack_cable_facts_fallback(page, base):
 
 
 CABLES_3D = "Cables are added in 2D. Switch to 2D to add one."
+
+
+# THE ENDS OF A LARGE RACK'S CABLES, READ WITHOUT A FREEZE (S-0049, cables.js
+# hangTubes): drawCables3d on a stub scene whose every end takes 4 ms to read
+# (a busy face's connectors), 150 cables, so 1.2 s of reading in all. A 1 ms
+# timer beats beside it; `worst` is the longest the page went without one.
+ANCHOR_YIELD_JS = """async ({slice, links}) => {
+  const THREE = await import('/vendor/three/three.module.js');
+  const {drawCables3d} = await import('/site/rack/cables.js');
+  const scene = {three: {THREE, scene: new THREE.Scene()}, metrics: () => ({rackWidth: 482.6}), deviceBoxes: () => []};
+  const plan = {links: Array.from({length: links}, (_, i) => ({id: `c${i}`, from: [`a${i}`, 'port-1', 'front'], to: [`b${i}`, 'port-1', 'front'],
+                                                              media: 'om4', purpose: 'data'}))};
+  let read = 0;
+  const anchor = async () => { read++; const t = performance.now(); while (performance.now() - t < 4) { /* a face's connectors, read */ } return []; };
+  await new Promise(r => setTimeout(r, 50));
+  let last = performance.now(), worst = 0;
+  const beat = setInterval(() => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; }, 1);
+  const t0 = performance.now();
+  const drawn = await drawCables3d(scene, plan, {anchor, boxes: [], slice});
+  const took = performance.now() - t0;
+  await new Promise(r => setTimeout(r, 20));
+  clearInterval(beat);
+  return {worst: Math.round(worst), took: Math.round(took), read, tubes: drawn.tubes.length};
+}"""
+
+
+@extra("rack.html: the 3D scene reads its cables' ends a slice at a time: with every end slow to read, the page gets a turn at least every slice (30 ms, the Rack Builder's) while 150 cables' ends are read, where without a slice it waits for all of them at once (S-0049)")
+def check_cables_3d_anchor_yield(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    sliced = page.evaluate(ANCHOR_YIELD_JS, {"slice": 30, "links": 150})
+    whole = page.evaluate(ANCHOR_YIELD_JS, {"slice": 0, "links": 150})
+    for got in (sliced, whole):
+        if got["read"] != 300 or got["tubes"] != 150:
+            bad.append(f"the stub: {got['read']} ends read and {got['tubes']} cables answered, expected 300 and 150 ({got})")
+    if sliced["worst"] > 200:
+        bad.append(f"with a 30 ms slice the page went {sliced['worst']} ms without a turn while the ends were read ({sliced['took']} ms in all)")
+    if whole["worst"] < 0.6 * whole["took"]:
+        bad.append(f"without a slice the page still had a turn every {whole['worst']} ms of {whole['took']}: the stub does not show what the slice is for")
+    print(f"[check_cables_3d_anchor_yield] 300 ends at 4 ms: the longest wait {sliced['worst']} ms with a 30 ms slice ({sliced['took']} ms in all), "
+          f"{whole['worst']} ms without ({whole['took']} ms)")
+    return bad
 
 
 @extra("rack.html: in 3D the cables are drawn and Cable mode is off with a sentence saying where cables are added; the list still selects, edits and deletes; an edit to a cable's ends or media rebuilds the scene, an edit to its label does not")
@@ -17596,8 +20051,8 @@ def check_rack_export_sheet_cables(page, base):
     if dl.suggested_filename != "Cable-test-sheet.svg":
         bad.append(f"sheet cables: named {dl.suggested_filename!r}")
     got = cables_of(text)
-    want = {"front": (["c1", "c2"], {"c2": "→ demarc U14 port-2-1"}),
-            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt-eth", "c3": "✕ not connected"})}
+    want = {"front": (["c1", "c2"], {"c2": "→ demarc U14 port 2 1"}),
+            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt eth", "c3": "✕ not connected"})}
     for pane, (ids, tags) in want.items():
         g = got.get(pane, {"cables": None, "tags": None})
         if g["cables"] != ids or g["tags"] != tags:
@@ -17655,7 +20110,7 @@ def check_rack_export_sheet_cables(page, base):
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
     # A cross-face cable's tag on a single face still names the far end.
-    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc U14 port-2-1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt-eth":
+    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc U14 port 2 1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt eth":
         bad.append("sheet cables, one face: the cross-face cable's tag does not name its far end")
     # c3 hangs as a lead in the rear pane only, c1 runs in the front pane only: the other face's sheet says so.
     for name, t, note in (("front", front, "1 cable is on the rear face only and is not on this sheet."),
@@ -18794,6 +21249,123 @@ def check_rack_covers(page, base):
 
 
 
+# THE DETAIL HELD BACK BY THE CHECK (rack3d.js startDetail): every scene the page starts building has its
+# startDetail wrapped to keep the detail from starting until `window.__goDetail()` is called. The scene is then
+# up with its sheet parts as plain boxes, as a large rack's is for minutes.
+HOLD_DETAIL_JS = """() => { window.__goDetail = () => {}; window.__holdWatch = setInterval(() => {
+  const s = window.__rack.loadingScene();
+  if (!s || s.__held) return;
+  s.__held = true;
+  const own = s.startDetail;
+  s.startDetail = () => { window.__goDetail = () => own(); };
+}, 5); }"""
+# The vertical manager's box, as a stand-in: whether it is one, and how it is drawn.
+STAND_IN_JS = """() => {
+  const s = window.__rack.scene(), g = s.three.scene.getObjectByName('device-z1'), b = g.children[0];
+  const mats = [].concat(b.material);
+  return {standIn: b.userData.standIn ?? null, relief: g.children.length - 1, covers: (s.coverMeshes ?? []).length, setting: s.covers,
+          mats: [...new Set(mats.map(m => [m.visible, m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite].join('/')))].sort()};
+}"""
+# Where the passes of the detail landed, in order (a device lands when its group holds more than its box), sampled as they come.
+LANDING_JS = """() => { window.__landed = []; window.__landWatch = setInterval(() => {
+  const s = window.__rack.scene(); if (!s) return;
+  for (const g of s.three.scene.children) if (g.name?.startsWith('device-') && g.children.length > 1 && !window.__landed.includes(g.name)) window.__landed.push(g.name);
+}, 0); }"""
+COVERS_Z1_JS = """() => {
+  const s = window.__rack.scene(), g = s.three.scene.getObjectByName('device-z1');
+  const ms = (s.coverMeshes ?? []).filter(o => { for (let n = o; n; n = n.parent) if (n === g) return true; return false; });
+  return {n: ms.length, shown: ms.filter(o => o.visible).length, standIn: g.children[0].userData.standIn ?? null,
+          mats: [...new Set(ms.flatMap(o => [].concat(o.material)).map(m => [m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite].join('/')))].sort()};
+}"""
+# The fixture, with six more switches under the first, each cabled to it: not shared, so each has a detail pass of its own.
+MANY_DEVICES_FIXTURE = FRONT_FIXTURE.replace("  return r;\n}", """  for (let k = 0; k < 6; k++) {
+    ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 1 + 2 * k, face: 'front', label: 'sw-x' + k}));
+    ({rack: r} = K.withCable(r, {a: {item: 'i' + (4 + k), path: 'port-1', view: 'front'}, b: {item: 'i1', path: 'port-' + (10 + k), view: 'front'}, media: 'cat6a'}));
+  }
+  return r;
+}""")
+
+
+@extra("rack.html: in 3D the Covers control reaches a vertical manager while its detail is still being built - its plain box is opaque with the covers on, see-through with see-through and off, repainted at once when the setting changes, and the detail that lands afterwards takes the setting, after an orbit as well; and the sheet parts' detail lands before the devices' (S-0054)")
+def check_rack_3d_standin_covers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1400, "height": 900})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_standin_covers] WebGL unavailable - not exercised")
+        return bad
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(MANY_DEVICES_FIXTURE))
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 10 && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.wait_for_timeout(400)
+    page.evaluate(HOLD_DETAIL_JS)
+    page.click('#covers [data-covers-set="see"]')
+    page.click('#mode [data-mode="3d"]')
+    try:
+        wait_fn(page, "stand-in: the scene up with its cables and the detail held back",
+                "() => { const s = window.__rack.scene(); return s && (s.rackCables?.tubes ?? []).some(t => t.points?.length) && s.three.scene.getObjectByName('device-z1'); }")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__holdWatch)")
+    park_mouse(page)
+    scene = page.evaluate_handle("() => window.__rack.scene()")
+
+    def orbit():
+        page.evaluate("""() => { const s = window.__rack.scene(); s.three.camera.position.x += 150; s.three.controls.update(); s.requestFrame?.(); }""")
+        page.wait_for_timeout(300)
+
+    # THE BOX, HELD: opaque with the covers on, as before with see-through, and the same with off (the box is the whole part).
+    want = {"on": ["true/false/1/true"], "see": ["true/true/0.35/false"], "off": ["true/true/0.35/false"]}
+    for state in ("see", "on", "see", "off", "on"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(300)
+        st = page.evaluate(STAND_IN_JS)
+        if st["standIn"] is not True or st["relief"] or st["covers"]:
+            bad.append(f"stand-in {state}: not held as a plain box ({st}); the check could not test it")
+            break
+        if st["mats"] != want[state]:
+            bad.append(f"stand-in {state}: the box is drawn {st['mats']}, expected {want[state]}")
+        orbit()
+        again = page.evaluate(STAND_IN_JS)
+        if again["mats"] != want[state]:
+            bad.append(f"stand-in {state}, after an orbit: the box is drawn {again['mats']}, expected {want[state]}")
+    # THE DETAIL, LET GO WITH THE COVERS ON: the box gives way to the cover meshes, which take the setting; the sheet parts' first.
+    page.evaluate(LANDING_JS)
+    page.evaluate("() => window.__goDetail()")
+    try:
+        settle_scene(page, "stand-in: the scene complete", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__landWatch)")
+    landed = page.evaluate("() => window.__landed")
+    if page.evaluate("s => window.__rack.scene() !== s", scene):
+        bad.append("stand-in: the scene was rebuilt")
+    # (the manager's drawing is the tallest, so its first face is not the first to land; it must still beat the devices
+    # that were built after the first four: i5 to i9, which ran before it when the sheet parts' passes went last)
+    later = [landed.index(f"device-i{k}") for k in range(5, 10) if f"device-i{k}" in landed]
+    if "device-z1" not in landed or len(later) != 5 or landed.index("device-z1") > min(later):
+        bad.append(f"landing order: {landed}; expected the vertical manager before the switches i5 to i9 (the sheet parts' passes first)")
+    print(f"[check_rack_3d_standin_covers] landing order {landed}")
+    want3 = {"on": lambda st: st["shown"] == st["n"] and all(m.split("/")[1] == "1" and m.split("/")[2] == "true" for m in st["mats"]),
+             "see": lambda st: st["shown"] == st["n"] and all(m.startswith("true/0.3/false") for m in st["mats"]),
+             "off": lambda st: st["shown"] == 0}
+    for state in ("on", "see", "off", "on", "see"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(300)
+        orbit()
+        st = page.evaluate(COVERS_Z1_JS)
+        if not st["n"] or st["standIn"] is not None or not want3[state](st):
+            bad.append(f"landed {state}: the manager's {st['n']} cover meshes ({st['shown']} shown) are {st['mats']} with standIn {st['standIn']}")
+    # (and the box's own materials are put back as the part has them: not left opaque or see-through)
+    box = page.evaluate(STAND_IN_JS)
+    if box["standIn"] is not None or "true/true/0.35/false" in box["mats"] or "true/false/1/true" in box["mats"] and box["relief"] == 0:
+        bad.append(f"landed: the manager's box is {box}")
+    return bad
+
+
 # ── portrayal-site#190: nothing floats while the 3D scene loads ──────────
 # One sample a frame of the scene as it is being built: is the duct there, where,
 # how many of its meshes would be drawn (and whether one is its stand-in box),
@@ -18980,6 +21552,629 @@ STRAP_SIZE_JS = """() => {
 }"""
 
 
+# Every WebGL context the page makes, whether it was a probe (never in the
+# document) or a renderer's, and each one lost or restored; and each
+# loseContext call, with whether its context was already lost (which the browser
+# reports as "loseContext: context lost").
+GL_COUNTER_JS = """(() => {
+  const M = window.__gl = {made: [], lost: [], restored: [], lose: []};
+  const get = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+    const known = this.__glId != null, c = get.call(this, kind, ...rest);
+    if (c && /webgl/.test(kind) && !known) {
+      const id = this.__glId = M.made.length, rec = {id, attached: null};
+      M.made.push(rec);
+      setTimeout(() => { rec.attached = this.isConnected; });
+      this.addEventListener('webglcontextlost', () => M.lost.push(id));
+      this.addEventListener('webglcontextrestored', () => M.restored.push(id));
+    }
+    return c;
+  };
+  for (const P of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
+    const ext = P.getExtension;
+    P.getExtension = function (name) {
+      const x = ext.call(this, name);
+      if (x && name === 'WEBGL_lose_context' && !x.__counted) {
+        const gl = this, lose = x.loseContext.bind(x);
+        x.loseContext = () => { M.lose.push({id: gl.canvas.__glId ?? null, already: gl.isContextLost()}); return lose(); };
+        x.__counted = true;
+      }
+      return x;
+    };
+  }
+})();"""
+# The scene's textures and the device materials it shares: how many textures, the longest side of any, and for
+# each plain model mounted more than once whether every mount draws with one set of body materials.
+SCENE_SHARING_JS = """() => {
+  const s = window.__rack.scene(), seen = new Set(), bodies = new Map();
+  let longest = 0;
+  s.three.scene.traverse(o => {
+    for (const m of [].concat(o.material || [])) for (const k of ['map', 'alphaMap']) {
+      const t = m?.[k]; if (!t || seen.has(t)) continue;
+      seen.add(t); longest = Math.max(longest, t.image?.width ?? 0, t.image?.height ?? 0);
+    }
+  });
+  const r0 = window.__rack.doc().racks[0], ref = new Map([...r0.items, ...(r0.zeroU ?? [])].map(i => [i.id, i.ref]));
+  for (const g of s.three.scene.children) {
+    if (!g.name?.startsWith('device-')) continue;
+    const r = ref.get(g.name.slice(7)); if (!r) continue;
+    (bodies.get(r) ?? bodies.set(r, new Set()).get(r)).add(g.children[0]?.material);
+  }
+  return {textures: seen.size, longest, gl: s.three.renderer.info.memory.textures,
+          sets: Object.fromEntries([...bodies].map(([r, m]) => [r, m.size]))};
+}"""
+
+
+@extra("rack.html: in 3D, picking a cable purpose or a media in the list lights those cables' tubes (and the plugs, and a bundle with one of them as a member) and dims every other, clearing the pick restores every material exactly, and neither rebuilds the scene or makes a renderer (S-0046)")
+def check_rack_3d_filter_dims(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(GL_COUNTER_JS)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_bundle_rack(page, base, "front")
+    r = page.evaluate("""async () => {
+      const K = await import('/vendor/rack/cable-rules.js');
+      let r = window.__rack.doc().racks[0];
+      ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-24', view: 'front'}, b: {item: 'i3', path: 'port-24', view: 'front'}, media: 'cat6', purpose: 'storage'}));
+      r = {...r, cables: r.cables.map(c => c.id === 'c3' ? {...c, purpose: 'storage'} : c.id === 'c4' ? c : {...c, purpose: 'management'})};
+      return r;
+    }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && document.querySelector('#cableList [data-cable-row=\"c4\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_filter_dims] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("""() => { const s = window.__rack.scene(); const w = s?.three.scene;
+      return w && w.getObjectByName('cable-c4') && w.getObjectByName('bundle-b1'); }""", timeout=READY_3D_MS)
+    settle_scene(page, "3D: the filter rack's scene", tubes=True)
+    park_mouse(page)
+    base3 = page.evaluate(HOVER_3D_STATE)
+    page.evaluate("() => { window.__was = window.__rack.scene(); window.__wasGl = window.__rack.scene().three.renderer; window.__made = window.__gl.made.length; }")
+    def judge(label, lit):
+        st = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+        bad.extend(f"3D {label}: {m}" for m in hover_3d_dims(st, base3, lit))
+        same = page.evaluate("() => ({scene: window.__rack.scene() === window.__was, gl: window.__rack.scene().three.renderer === window.__wasGl, made: window.__gl.made.length})")
+        if not same["scene"] or not same["gl"] or same["made"] != page.evaluate("() => window.__made"):
+            bad.append(f"3D {label}: the scene was rebuilt or a renderer made: {same}")
+    def pick(sel, label, lit):
+        page.evaluate("s => document.querySelector(s).click()", sel)
+        page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+        park_mouse(page)
+        judge(label, lit)
+        page.evaluate("s => document.querySelector(s + '[aria-pressed=\"true\"]').click()", sel)
+        page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+        park_mouse(page)
+        if page.evaluate(HOVER_3D_STATE) != base3:
+            bad.append(f"3D {label}: clearing the pick did not restore every material exactly")
+    pick('[data-filter-purpose="management"]', "purpose management", {"cable-c1", "cable-c2", "bundle-b1"})
+    pick('[data-filter-purpose="storage"]', "purpose storage", {"cable-c3", "cable-c4", "bundle-b1"})
+    pick('[data-filter-media="cat6"]', "media cat6", {"cable-c4"})
+    # a hover outranks the pick, and gives it back on leaving
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"management\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    page.hover('#cableList [data-cable-row="c1"]')
+    page.wait_for_timeout(350)
+    judge("hover c1 over the purpose pick (c2 is in the pick, and dims)", {"cable-c1"})
+    park_mouse(page)
+    judge("purpose pick after the hover", {"cable-c1", "cable-c2", "bundle-b1"})
+    return bad
+
+
+# EVERY FRAME THE SCENE DRAWS, AND WHAT IT SHOWED (S-0049, rack3d.js `onDemand`):
+# the renderer's render() wrapped to log, at each frame, a signature of what a
+# restyle changes (each cable's and bundle's meshes, shown or not and their
+# opacity, each cover's, the stage), so a check can say whether a frame was
+# drawn and whether the last one drawn shows the scene as it now is.
+FRAME_LOG_JS = """() => {
+  const s = window.__rack.scene(), r = s.three.renderer, w = s.three.scene;
+  const sig = () => { const out = [];
+    for (const n of ['patch-cables', 'cable-bundles', 'tie-straps']) for (const g of w.getObjectByName(n)?.children ?? [])
+      g.traverse(o => { if (o.isMesh) out.push(o.visible ? 1 : 0, ...[].concat(o.material).map(m => Math.round(m.opacity * 1000))); });
+    for (const m of s.coverMeshes ?? []) out.push(m.visible ? 1 : 0, ...[].concat(m.material).map(x => Math.round(x.opacity * 1000)));
+    out.push(w.background?.getHex?.() ?? 0);
+    return out.join(','); };
+  if (!r.__logged) { const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__drawn.push(sig()); }; r.__logged = true; }
+  window.__drawn = []; window.__sig = sig;
+  return sig();
+}"""
+FRAMES_NOW_JS = "() => ({n: window.__drawn.length, last: window.__drawn.at(-1) ?? null, now: window.__sig()})"
+# How many frames an untouched scene draws in a second, after the last frame
+# anything asked for: up to five tries, for a runner still drawing one.
+IDLE_FRAMES_JS = """async () => { const sleep = t => new Promise(r => setTimeout(r, t));
+  for (let k = 0; k < 5; k++) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return 0; }
+  return window.__drawn.length; }"""
+
+
+@extra("rack.html: the 3D scene draws a frame only when something asks for one: an untouched scene draws none, and a hover, a cable-purpose pick and a covers setting each draw one that shows the change, nothing late; dragging draws and stopping stops (S-0049)")
+def check_rack_3d_on_demand(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # (two purposes, so a pick dims some cables and not others)
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c1' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    page.wait_for_function("() => document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_on_demand] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the on-demand scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate(FRAME_LOG_JS)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"an untouched scene drew {idle} frames in a second; expected none")
+    def step(label, act, settle_ms=0):
+        before = page.evaluate(FRAMES_NOW_JS)
+        page.evaluate("() => { window.__drawn.length = 0; }")
+        act()
+        try:
+            wait_fn(page, f"{label}: a frame that shows it", "() => window.__drawn.length && window.__drawn.at(-1) === window.__sig()", timeout=READY_3D_MS)
+        except RuntimeError as e:
+            st = page.evaluate(FRAMES_NOW_JS)
+            bad.append(f"{label}: {st['n']} frames drawn, the last {'showing the scene as it is' if st['last'] == st['now'] else 'not showing the change'} ({e})")
+            return
+        if settle_ms:
+            page.wait_for_timeout(settle_ms)
+        st = page.evaluate(FRAMES_NOW_JS)
+        if st["last"] != st["now"]:
+            bad.append(f"{label}: the scene changed after its last frame, and no frame showed it")
+        if st["now"] == before["now"]:
+            bad.append(f"{label}: nothing in the scene changed, so this step showed nothing")
+    # a hover by the pointer, over the list (hover.js paintHover3d)
+    step("a hover on c1's row", lambda: page.hover('#cableList [data-cable-row="c1"]'), 400)
+    park_mouse(page)
+    # a pick and a setting by a script's click, which no pointer or key reaches: only the restyle can ask for the frame
+    step("a cable-purpose pick", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()"), 400)
+    step("the pick put down", lambda: page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()"), 400)
+    if not page.evaluate("() => (window.__rack.scene().coverMeshes ?? []).length"):
+        bad.append("fixture: the scene has no cover to set")
+    else:
+        step("covers off", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"off\"]').click()"), 400)
+        step("covers see-through", lambda: page.evaluate("() => document.querySelector('#covers [data-covers-set=\"see\"]').click()"), 400)
+    idle = page.evaluate(IDLE_FRAMES_JS)
+    if idle:
+        bad.append(f"after the steps, the untouched scene drew {idle} frames in a second; expected none")
+    # a drag draws frames, and once the camera is at rest the frames stop
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+    page.evaluate("() => { window.__drawn.length = 0; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(10):
+        page.mouse.move(box[0] + 12 * (k + 1), box[1])
+        page.wait_for_timeout(30)
+    page.mouse.up()
+    dragged = page.evaluate("() => window.__drawn.length")
+    if dragged < 2:
+        bad.append(f"a drag drew {dragged} frames; expected the camera's moves drawn")
+    park_mouse(page)
+    # (the camera eases to rest for a while after a drag, longer where frames are slow; then nothing more is drawn)
+    eased = page.evaluate("""async () => { const sleep = t => new Promise(r => setTimeout(r, t)), t0 = performance.now();
+      while (performance.now() - t0 < 20000) { window.__drawn.length = 0; await sleep(1000); if (!window.__drawn.length) return Math.round(performance.now() - t0); }
+      return null; }""")
+    if eased is None:
+        bad.append("after a drag the scene was still drawing frames 20 s later; expected them to stop once the camera is at rest")
+    print(f"[check_rack_3d_on_demand] untouched: none drawn; a drag drew {dragged}, and none a second after it eased to rest ({eased} ms)")
+    return bad
+
+
+# THE SCENE WHILE ITS CAMERA MOVES (S-0049, rack3d.js `lightWhileMoving`): the
+# draw calls of the last frame drawn, which layers the camera shows, how many
+# meshes are on the relief layer (1) and how many detailed faces are opaque, and
+# what hover.js hoverAt3d finds at the screen point of the middle of each cable.
+LIGHT_STATE_JS = """async () => {
+  const s = window.__rack.scene(), {camera, renderer, scene: w, THREE} = s.three;
+  const {hoverAt3d} = await import('/site/rack/hover.js');
+  let relief = 0, opaque = 0, faces = 0;
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    d.traverse(o => { if (o.isMesh && o.layers.mask === 2) relief++; });
+    // (a body's detailed faces: every slot but the underside's (3), which has no detail pass; a sheet body's are not drawn)
+    [].concat(d.children[0].material).forEach((m, i) => { if (i !== 3 && m.visible && m.map && m.isMeshLambertMaterial) { faces++; if (!m.transparent) opaque++; } });
+  }
+  const r = renderer.domElement.getBoundingClientRect(), picks = {};
+  for (const g of w.getObjectByName('patch-cables')?.children ?? []) {
+    const tube = g.children[0], pos = tube.geometry.attributes.position, mid = new THREE.Vector3().fromBufferAttribute(pos, Math.floor(pos.count / 2));
+    tube.localToWorld(mid); mid.project(camera);
+    const ev = {clientX: r.left + (mid.x + 1) / 2 * r.width, clientY: r.top + (1 - mid.y) / 2 * r.height};
+    picks[g.name] = hoverAt3d(s, ev)?.id ?? null;
+  }
+  return {mask: camera.layers.mask, calls: window.__calls?.at(-1) ?? null, relief, opaque, faces, picks};
+}"""
+
+
+@extra("rack.html: while the 3D camera is dragged the devices' relief is left out of the frames (fewer draw calls, the faces' holes drawn opaque), hovering a cable finds the same cable as at rest, and once the camera is still the detail is drawn again exactly as before; the motion detail is one constant (S-0049)")
+def check_rack_3d_light_moving(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving", 1)
+
+
+@extra("rack.html: on a slow machine (the CPU throttled 6x) the 3D camera still takes the devices' relief back by itself once it is still, the frame drawn by the restore and not by a later pointer event (S-0049-3)")
+def check_rack_3d_light_moving_slow(page, base):
+    return light_moving_run(page, base, "check_rack_3d_light_moving_slow", 6)
+
+
+def light_moving_run(page, base, name, throttle):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    if webgl_trouble(page):
+        print(f"[{name}] no WebGL here - not exercised")
+        return bad
+    if page.evaluate("async () => (await import('/site/rack/scene3d.js')).MOTION_LOD") is not True:
+        bad.append("scene3d.js MOTION_LOD is not on")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the light-moving scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
+      window.__masks = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); window.__masks.push(b.layers.mask); }; s.requestFrame(); }""")
+    wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
+    rest = page.evaluate(LIGHT_STATE_JS)
+    if not rest["relief"] or rest["mask"] != 3 or rest["opaque"]:
+        bad.append(f"at rest: {rest['relief']} meshes on the relief layer, the camera's layers {rest['mask']}, {rest['opaque']} of {rest['faces']} faces opaque; expected relief on layer 1 shown, and no face opaque")
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + 40, r.top + 40]; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(6):
+        page.mouse.move(box[0] + 3 * (k + 1), box[1])
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(400)              # held, still: a drag in hand stays light
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
+    moving = page.evaluate(LIGHT_STATE_JS)
+    cdp = None
+    if throttle > 1:
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": throttle})
+    page.mouse.up()
+    released = time.monotonic()
+    if throttle > 1:
+        # (a machine too slow to keep up: the frames it is given stop coming for a while, as for a page that is hidden or
+        # starved, and the scene has to take the detail back without them; they are held here and let go below)
+        page.evaluate("""() => { const own = window.requestAnimationFrame.bind(window), held = window.__heldFrames = [];
+          window.__ownFrame = own; window.requestAnimationFrame = cb => { held.push(cb); return held.length; }; }""")
+    if moving["mask"] != 1 or not moving["calls"] or moving["calls"] >= rest["calls"]:
+        bad.append(f"while dragged: the camera's layers {moving['mask']}, {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected the relief layer left out, and fewer")
+    if moving["faces"] and moving["opaque"] != moving["faces"]:
+        bad.append(f"while dragged: {moving['opaque']} of {moving['faces']} detailed faces opaque; expected all")
+    # (each cable at the middle of its own tube: found there at rest, it is found there while dragged)
+    own = lambda st: {k for k, v in st["picks"].items() if v and k == f"cable-{v}"}
+    if not own(rest) or own(moving) != own(rest):
+        bad.append(f"hovering the cables while dragged finds {moving['picks']}, at rest {rest['picks']}; expected each cable found at rest found while dragged")
+    park_mouse(page)
+    # (the easing, and MOTION_REST_MS after it, however slow the frames: waited for to a deadline, with no frame
+    # asked for and no pointer moved - the restore draws the frame itself, the last one drawn showing the relief)
+    try:
+        if throttle > 1:
+            # (no animation frame has come: the camera's layers are put back by the restore's own timer, which then asks for the frame)
+            wait_fn(page, "the layers put back", "() => window.__rack.scene().three.camera.layers.mask === 3", timeout=30000, polling=50)
+            page.evaluate("() => { window.requestAnimationFrame = window.__ownFrame; for (const cb of window.__heldFrames.splice(0)) window.__ownFrame(cb); }")
+        wait_fn(page, "the relief back", "() => window.__masks.at(-1) === 3", timeout=30000)
+    except RuntimeError as e:
+        bad.append(f"once the camera was still, the relief was not back within 30 s ({e}); expected the restore to put the layers back and ask for a frame")
+    restored_ms = round((time.monotonic() - released) * 1000)
+    if cdp:
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+    again = page.evaluate(LIGHT_STATE_JS)
+    if again["mask"] != 3 or again["opaque"] or again["calls"] != rest["calls"]:
+        bad.append(f"at rest again: the camera's layers {again['mask']}, {again['opaque']} faces opaque, {again['calls']} draw calls against {rest['calls']} before; expected as before")
+    print(f"[{name}] the relief back {restored_ms} ms after the release (CPU x{throttle}); {rest['relief']} relief meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+          f"{moving['opaque']} of {moving['faces']} faces opaque while dragged; cables found {sum(1 for v in rest['picks'].values() if v)}")
+    return bad
+
+
+# A CORD'S PLUG STAYS DRAWN WHILE THE CAMERA MOVES (S-0055): a switch with two power
+# cords up to two zero-U PDUs. The meshes of each cabled end (the ones hover.js dims
+# by: a part path, `-occupant` for the plug itself) are read off the scene, and
+# drawn with the end's own meshes hidden or not, from a pose behind the rack, the
+# pixels that change are the plug's.
+PLUG_MOVING_RACK = {
+    "format": "portrayal-rack", "version": 4, "id": "plug-moving", "racks": [{
+        "id": "r1", "name": "Plug moving",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                  "railDepth": 900, "usableDepth": 1100, "ref": None},
+        "items": [{"id": "i2", "ref": "s9601-102xc", "cfg": "ac", "ru": 41, "face": "front", "turned": False, "setback": 25, "label": "Device at U41"}],
+        "zeroU": [{"id": "z3", "ref": "evma8365x", "cfg": "base", "label": "PDU-A", "at": "left-rear", "offsetMm": 0},
+                  {"id": "z4", "ref": "evma8365x", "cfg": "base", "label": "PDU-B", "at": "right-rear", "offsetMm": 0}],
+        "cables": [{"id": f"c{n}", "a": {"item": "i2", "path": f"psu-{n - 1}/module/inlet", "view": "rear"},
+                    "b": {"item": z, "path": "outlet-f42", "view": "front"}, "media": "power", "purpose": "", "label": "",
+                    "route": [], "routeEdited": False, "length": {"value": 1, "unit": "m", "source": "entered"}}
+                   for n, z in ((1, "z3"), (2, "z4"))],
+        "bundles": []}]}
+
+PLUG_STATE_JS = """() => {
+  const s = window.__rack.scene(), {scene: w, camera} = s.three;
+  const ends = new Set();
+  for (const c of window.__rack.doc().racks[0].cables) for (const e of [c.a, c.b]) if (e) ends.add(e.item + '|' + String(e.path).split('-occupant')[0]);
+  let plugs = 0, drawn = 0, relief = 0;
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    const id = d.name.slice(7);
+    d.traverse(o => {
+      if (!o.isMesh) return;
+      const p = o.userData?.portrayalPath;
+      if (p && ends.has(id + '|' + String(p).split('-occupant')[0])) { plugs++; if (camera.layers.test(o.layers)) drawn++; }
+      else if (o.layers.mask === 2) relief++;
+    });
+  }
+  return {mask: camera.layers.mask, plugs, drawn, relief, calls: window.__calls?.at(-1) ?? null};
+}"""
+
+# (the frame drawn from behind the rack with the cabled ends' meshes hidden and shown: how many pixels differ)
+PLUG_PIXELS_JS = """() => {
+  const s = window.__rack.scene(), {scene: w, camera, renderer, controls, THREE} = s.three;
+  const ends = new Set(), ms = [];
+  for (const c of window.__rack.doc().racks[0].cables) for (const e of [c.a, c.b]) if (e) ends.add(e.item + '|' + String(e.path).split('-occupant')[0]);
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    d.traverse(o => { const p = o.userData?.portrayalPath; if (o.isMesh && p && String(p).includes('occupant') && ends.has(d.name.slice(7) + '|' + String(p).split('-occupant')[0])) ms.push(o); });
+  }
+  const box = new THREE.Box3();
+  for (const o of ms) { o.updateWorldMatrix(true, false); box.union(new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position).applyMatrix4(o.matrixWorld)); }
+  const t = box.getCenter(new THREE.Vector3());
+  controls.enableDamping = false; controls.target.copy(t); camera.position.set(t.x - 350, t.y + 150, t.z - 450); camera.lookAt(t); controls.update(); camera.updateMatrixWorld();
+  const cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently: true});
+  const snap = () => { renderer.render(w, camera); cv.width = renderer.domElement.width; cv.height = renderer.domElement.height; cx.drawImage(renderer.domElement, 0, 0); return cx.getImageData(0, 0, cv.width, cv.height).data; };
+  const a = snap(); for (const o of ms) o.visible = false; const b = snap(); for (const o of ms) o.visible = true;
+  let diff = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) + Math.abs(a[i+1] - b[i+1]) + Math.abs(a[i+2] - b[i+2]) > 12) diff++;
+  return {mask: camera.layers.mask, diff, meshes: ms.length};
+}"""
+
+
+@extra("rack.html: while the 3D camera is dragged a cabled port's plug stays drawn (on the common layer, in the frame) with the rest of the relief left out, and at rest the plug is drawn as well (S-0055)")
+def check_rack_3d_plugs_moving(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_plugs_moving] no WebGL here - not exercised")
+        return bad
+    rack = PLUG_MOVING_RACK["racks"][0]
+    load_rack_3d_ready(page, base, rack)
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the plugs scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    # (the detail comes after the cables: the plugs are in once the cabled ends' meshes are there)
+    try:
+        wait_fn(page, "the cabled ends' plugs", "() => { const s = window.__rack.scene(); let n = 0; for (const d of s.three.scene.children) d.traverse?.(o => { if (o.isMesh && String(o.userData?.portrayalPath || '').includes('-occupant')) n++; }); return n >= 40; }", timeout=READY_3D_MS)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); }; s.requestFrame(); }""")
+    wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
+    rest = page.evaluate(PLUG_STATE_JS)
+    if not rest["plugs"] or rest["drawn"] != rest["plugs"] or rest["mask"] != 3 or not rest["relief"]:
+        bad.append(f"at rest: {rest['drawn']} of {rest['plugs']} cabled-end meshes drawn, the camera's layers {rest['mask']}, {rest['relief']} other relief meshes; expected all drawn")
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + 40, r.top + 40]; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(6):
+        page.mouse.move(box[0] + 3 * (k + 1), box[1])
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(400)
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
+    moving = page.evaluate(PLUG_STATE_JS)
+    pixels = page.evaluate(PLUG_PIXELS_JS)
+    page.mouse.up()
+    park_mouse(page)
+    if moving["mask"] != 1:
+        bad.append(f"while dragged: the camera's layers {moving['mask']}; expected the relief layer left out (1)")
+    if moving["drawn"] != moving["plugs"]:
+        bad.append(f"while dragged: {moving['drawn']} of {moving['plugs']} cabled-end meshes are on a layer the camera draws; expected all, a cord ends in its plug")
+    if pixels["mask"] != 1 or pixels["diff"] < 200:
+        bad.append(f"while dragged: from behind the rack the plugs change {pixels['diff']} pixels of the frame (the camera's layers {pixels['mask']}); expected them drawn")
+    if not moving["calls"] or moving["calls"] >= rest["calls"]:
+        bad.append(f"while dragged: {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected fewer")
+    print(f"[check_rack_3d_plugs_moving] {rest['plugs']} cabled-end meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+          f"{moving['drawn']} of them drawn while dragged, {pixels['diff']} pixels from behind")
+    return bad
+
+
+# WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
+# startDetail): every scene the page starts building is watched as it appears
+# (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,
+# at that moment, the relief meshes in its devices (a device's group is its body
+# and, once the detail lands, its faces' relief) and the tubes hung.
+WATCH_DETAIL_START_JS = """() => { window.__detailWatch = setInterval(() => {
+  const s = window.__rack.loadingScene();
+  if (!s || s.__watched) return;
+  s.__watched = true;
+  const own = s.startDetail;
+  s.startDetail = () => {
+    if (!s.__atStart) {
+      let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      s.__atStart = {relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length,
+                     bundles: (s.three.scene.getObjectByName('cable-bundles')?.children ?? []).length};
+    }
+    own();
+  };
+}, 10); }"""
+
+
+@extra("rack.html: the 3D scene hangs its cables and bundles before any part's relief detail is built, and the detail that lands afterwards takes the dimming the page already painted: a cable purpose picked before the 3D view opens leaves the other cables' plugs dimmed once their detail is in, and clearing it restores them exactly (S-0049)")
+def check_rack_3d_cables_first(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_bundle_rack(page, base, "front")
+    r = page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      return {...r, cables: r.cables.map(c => ({...c, purpose: c.id === 'c3' ? 'storage' : 'management'}))}; }""")
+    page.evaluate("r => window.__rack.replaceRack(r)", r)
+    page.wait_for_function(ROUTES_CURRENT, timeout=READY_MS)
+    res = page.evaluate("() => window.__rack.apply({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'uplinks'})")
+    if res and res.get("error"):
+        return bad + [f"fixture: the bundle was not made: {res['error']}"]
+    page.wait_for_function("() => document.querySelector('#cableList [data-bundle-row=\"b1\"]') && document.querySelector('[data-filter-purpose=\"storage\"]')", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_rack_3d_cables_first] no WebGL here - not exercised")
+        return bad
+    # the pick made in 2D, before there is a scene: only c3 (and its bundle) stay lit
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    page.evaluate(WATCH_DETAIL_START_JS)
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the cables-first scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__detailWatch)")
+    park_mouse(page)
+    got = page.evaluate("""() => { const s = window.__rack.scene(); let relief = 0;
+      for (const d of s.three.scene.children) if (d.name?.startsWith('device-')) relief += d.children.length - 1;
+      return {at: s.__atStart ?? null, relief, tubes: (s.three.scene.getObjectByName('patch-cables')?.children ?? []).length}; }""")
+    at = got["at"]
+    if at is None:
+        bad.append("the scene's detail was never let go through startDetail (or the scene was not watched)")
+    else:
+        if at["relief"]:
+            bad.append(f"{at['relief']} relief meshes were in the devices before the cables were hung; expected none")
+        if at["tubes"] != got["tubes"] or not at["tubes"]:
+            bad.append(f"when the detail was let go {at['tubes']} cables were hung, of {got['tubes']}; expected all of them")
+        if not at["bundles"]:
+            bad.append("when the detail was let go no bundle was hung; expected the bundle first")
+    if not got["relief"]:
+        bad.append("the complete scene has no relief detail in any device")
+    picked = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    if not all(picked.get(f"plugs-{c}") for c in ("c1", "c2", "c3")):
+        bad.append(f"the fixture's plugs were not found in the detail: {[k for k, v in picked.items() if k.startswith('plugs-') and not v]}")
+    page.evaluate("() => document.querySelector('[data-filter-purpose=\"storage\"][aria-pressed=\"true\"]').click()")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    park_mouse(page)
+    clear = {k: v for k, v in page.evaluate(HOVER_3D_STATE).items() if not k.startswith("envelope-")}
+    bad.extend(f"the purpose picked before 3D, once the detail was in: {m}" for m in hover_3d_dims(picked, clear, {"cable-c3", "bundle-b1"}))
+    print(f"[check_rack_3d_cables_first] detail let go with {at and at['tubes']} tubes and {at and at['bundles']} bundles hung and "
+          f"{at and at['relief']} relief meshes; {got['relief']} once complete")
+    return bad
+
+
+@extra("rack.html: a large rack is built in 3D once, with one renderer, no context lost and no page error; its plain parts share their materials and no face texture is over 4096 px; picking a bundle or a cable type keeps the scene and makes no context; and a lost context stops the scene, says so, and builds it again once when the context comes back, never deleting into the new one (S-0043)")
+def check_rack_3d_large_once(page, base):
+    bad, said = [], []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("console", lambda m: said.append(m.text))
+    page.add_init_script(GL_COUNTER_JS)
+    page.set_viewport_size({"width": 1400, "height": 900})
+    fixture = ring_rack_fixture()
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_large_once] WebGL unavailable - not exercised")
+        return bad
+    page.click('#mode [data-mode="2d"]')
+    page.set_input_files("#openFile", files=[{"name": "ring.rack.json", "mimeType": "application/json", "buffer": json.dumps(fixture).encode()}])
+    wait_fn(page, "large: opened and drawn with its routes",
+            "() => window.__rack.doc().racks[0].name === 'Ring rack' && window.__rack.routesCurrent().current", timeout=300000)
+    page.evaluate("() => { const M = window.__gl; M.made.length = 0; M.lost.length = 0; M.restored.length = 0; M.lose.length = 0; }")
+    t0 = time.time()
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "large: the 3D scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    took = time.time() - t0
+    gl = page.evaluate("() => JSON.parse(JSON.stringify(window.__gl))")
+    renderers = [c for c in gl["made"] if c["attached"]]
+    if len(renderers) != 1:
+        bad.append(f"large: {len(renderers)} renderers made while the scene loaded, expected one (contexts: {gl['made']})")
+    probes_lost = [c["id"] for c in gl["made"] if not c["attached"]]
+    if sorted(gl["lost"]) != sorted(probes_lost) or gl["restored"] or any(x["already"] for x in gl["lose"]):
+        bad.append(f"large: contexts lost {gl['lost']} (only the probes {probes_lost} should be), restored {gl['restored']}, loseContext calls {gl['lose']}")
+    share = page.evaluate(SCENE_SHARING_JS)
+    if share["longest"] > 4096:
+        bad.append(f"large: a face texture {share['longest']} px long, over 4096")
+    # (each of these is mounted more than once in the fixture, with nothing done to it)
+    for ref in ("fhd-cmp5dr", "cmv-sfd42u9w", "pdumv20hvnetlx"):
+        if share["sets"].get(ref) != 1:
+            bad.append(f"large: the plain {ref} mounts draw with {share['sets'].get(ref)} sets of body materials, expected one shared set")
+    print(f"[check_rack_3d_large_once] built in {took:.1f} s with {len(renderers)} renderer, {len(gl['made'])} contexts in all; "
+          f"{share['textures']} textures in the scene ({share['gl']} on the GPU), the longest {share['longest']} px; material sets {share['sets']}")
+    # each corner kept out of the bodies near it answers as against all of them, on the large rack too (S-0049)
+    bad += bend_near_same(page, "check_rack_3d_large_once")
+    # A BUNDLE, THEN A CABLE TYPE, picked and put down twice: the scene stays, no context is made.
+    scene_was = page.evaluate("() => { window.__was = window.__rack.scene(); return window.__gl.made.length; }")
+    idle = "() => window.__rack.idle()"
+    # (each control clicked as a reader's click reaches it; where it sits in a long side panel is not what is checked)
+    def press(sel):
+        wait_fn(page, f"large: {sel} to press", "s => document.querySelector(s)", arg=sel)
+        page.evaluate("s => document.querySelector(s).click()", sel)
+    rows = page.evaluate("() => [...document.querySelectorAll('[data-bundle-row]')].map(b => b.dataset.bundleRow)")
+    if len(rows) < 2:
+        return bad + [f"large: the side panel in 3D lists {len(rows)} bundles ({rows}); expected the fixture's four"]
+    for turn in range(2):
+        press(f'[data-bundle-row="{rows[0] if turn == 0 else rows[-1]}"]')
+        wait_fn(page, "large: the bundle's panel", "() => document.querySelector('#bDone')")
+        wait_fn(page, "large: idle after the bundle", idle)
+        press("#bDone")
+        wait_fn(page, "large: the list again", "() => document.querySelector('[data-filter-row] button')")
+        press('[data-filter-row] button')
+        wait_fn(page, "large: idle after the filter", idle)
+        press('[data-filter-row] button[aria-pressed="true"]')
+        wait_fn(page, "large: idle after the filter is off", idle)
+    page.wait_for_timeout(800)   # past the page's 300 ms rebuild debounce
+    after = page.evaluate("() => ({same: window.__rack.scene() === window.__was, made: window.__gl.made.length})")
+    if not after["same"] or after["made"] != scene_was:
+        bad.append(f"large: picking a bundle and a cable type rebuilt the scene ({not after['same']}) or made {after['made'] - scene_was} contexts")
+    # A LOST CONTEXT: the loop stops, the stage says so; the context back, the scene is built again, once.
+    said.clear()
+    page.evaluate("() => { window.__lostExt = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__lostExt.loseContext(); }")
+    wait_fn(page, "lost: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    lost = page.evaluate("() => ({running: window.__rack.scene().running(), lost: window.__rack.scene().contextLost()})")
+    if lost["running"] or not lost["lost"]:
+        bad.append(f"lost: the scene after its context was lost: {lost}; expected stopped and lost")
+    page.evaluate("() => { window.__was = window.__rack.scene(); window.__lostExt.restoreContext(); }")
+    try:
+        settle_scene(page, "lost: the scene built again", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    again = page.evaluate("() => ({fresh: window.__rack.scene() !== window.__was, notice: !!document.querySelector('#lost3d')})")
+    if not again["fresh"] or again["notice"]:
+        bad.append(f"lost: after the context came back: {again}; expected a new scene and the notice gone")
+    # ...and only once: lost again, it waits for the button.
+    page.evaluate("() => { const x = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__was = window.__rack.scene(); x.loseContext(); setTimeout(() => x.restoreContext(), 300); }")
+    wait_fn(page, "lost again: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    page.wait_for_timeout(1500)
+    if page.evaluate("() => window.__rack.scene() !== window.__was || !document.querySelector('#lost3d')"):
+        bad.append("lost again: the scene was built again by itself a second time; expected the notice and its button to stay")
+    # ...and the button builds it, also from a context the browser has not given back: the lost one is let go quietly.
+    page.evaluate("() => { const x = window.__rack.scene().three.renderer.getContext().getExtension('WEBGL_lose_context'); window.__was = window.__rack.scene(); x.loseContext(); }")
+    wait_fn(page, "lost, no restore: the notice", "() => document.querySelector('#lost3d #lost3dRebuild')")
+    press("#lost3dRebuild")
+    try:
+        settle_scene(page, "lost, no restore: the scene built from the button", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if page.evaluate("() => window.__rack.scene() === window.__was || !!document.querySelector('#lost3d')"):
+        bad.append("lost, no restore: the button did not build a new scene, or the notice stayed")
+    noisy = [t for t in said if "does not belong to this context" in t or "loseContext: context lost" in t or "reading 'trim'" in t]
+    if noisy:
+        bad.append(f"lost: the console said {len(noisy)} GL errors, the first: {noisy[0]}")
+    return bad
+
+
 @extra("rack.html: a strap is as long as its pack is wide where it sits - the members there, square across the run, and a small margin, on a diagonal stretch as on a straight one; it lies square across its run; at Fit on a 42U rack it is never under the least size along the run, and across it only up to twice its pack; at 300% it is its true size; and the sheet's straps are the ones they were (#190)")
 def check_rack_strap_size(page, base):
     bad = []
@@ -19009,8 +22204,9 @@ def check_rack_strap_size(page, base):
     for s in measured:
         where = f"strap at {s['slant']} degrees, {s['riders']} members"
         # ACROSS THE PACK: the members there, measured on their own strokes, and 2 mm each side.
-        if not (s["pack"] + 4 - 1.2 <= s["len"] <= s["pack"] + 4 + 1.2):
-            bad.append(f"{where}: its bar is {s['len']:.1f} mm for a pack {s['pack']:.1f} mm wide there (the bundle's diameter is {s['diameter']}); expected the pack and 2 mm each side")
+        # (S-0040: 1 mm each side on the page, strap-size.js PAGE_STRAP, not the 2 mm of the paper)
+        if not (s["pack"] + 2 - 1.2 <= s["len"] <= s["pack"] + 2 + 1.2):
+            bad.append(f"{where}: its bar is {s['len']:.1f} mm for a pack {s['pack']:.1f} mm wide there (the bundle's diameter is {s['diameter']}); expected the pack and 1 mm each side")
         if abs(s["mid"]) > 1.2:
             bad.append(f"{where}: its bar is {s['mid']:.1f} mm off the middle of its pack")
         # SQUARE ACROSS THE RUN: the members' own strokes cross it at a right angle (within 15 degrees).
@@ -19022,18 +22218,19 @@ def check_rack_strap_size(page, base):
             bad.append(f"{where}: the page noted a pack of {pack} mm, measured {s['pack']:.1f}")
             continue
         # (the whole bar, its rim included: 2.0 packs at the most, unless the pack and its margins are more)
-        px1, most_mm = 1 / fit["scale"], max(s["len"], 2 * pack)
-        want = max(s["len"], min(7 * px1, 2 * pack - 2 * px1))
+        # (S-0040: on the page the least is 5 px, a bar is 1.5 packs at the most, and the rim adds a pixel)
+        px1, most_mm = 1 / fit["scale"], max(s["len"], 1.5 * pack)
+        want = max(s["len"], min(5 * px1, 1.5 * pack - px1))
         if abs(s["least"] - want) > 0.05 or s["cap"] != "butt":
             bad.append(f"{where}: at Fit its least bar is {s['least']:.1f} mm ({s['least'] * fit['scale']:.1f} px, cap {s['cap']}) for a {pack:.1f} mm pack; expected {want:.1f} mm")
         if max(s["rim"], s["rimTrue"], s["least"]) > most_mm + 0.05:
             bad.append(f"{where}: with its rim the bar is {max(s['rim'], s['rimTrue']):.1f} mm, {max(s['rim'], s['rimTrue']) / pack:.2f} times its {pack:.1f} mm pack; expected no more than {most_mm / pack:.2f}")
-        if abs(s["rim"] - min(s["least"] + 2 * px1, most_mm)) > 0.05 or abs(s["rimTrue"] - min(s["len"] + 2 * px1, most_mm)) > 0.05:
+        if abs(s["rim"] - min(s["least"] + px1, most_mm)) > 0.05 or abs(s["rimTrue"] - min(s["len"] + px1, most_mm)) > 0.05:
             bad.append(f"{where}: its rims are {s['rimTrue']:.1f} and {s['rim']:.1f} mm long round bars of {s['len']:.1f} and {s['least']:.1f}; expected a pixel past each end where twice the pack leaves room")
         worst = max(worst, max(s["rim"], s["rimTrue"]) / pack)
         # ALONG THE RUN: 10 mm at scale, and the least bar's own non-scaling 7 px.
-        if s["thick"] != [[10, None], [7, "non-scaling-stroke"]]:
-            bad.append(f"{where}: along the run its bars are {s['thick']}; expected 10 mm at scale and 7 px at the least")
+        if s["thick"] != [[6, None], [5, "non-scaling-stroke"]]:
+            bad.append(f"{where}: along the run its bars are {s['thick']}; expected 6 mm at scale (0.6 of 10) and 5 px at the least")
     # on the composited page at Fit, a strap on the straight run is its own colour for the least size along the run
     # and for no more than twice its pack (and the rim) across it
     up = max((s for s in measured if s["slant"] > 80 or s["slant"] < 10), key=lambda s: s["riders"])
@@ -19041,9 +22238,9 @@ def check_rack_strap_size(page, base):
     w, h, px = png_pixels(page.screenshot())
     ext = strap_extent(px, w, h, up["at"], core)
     along, across_px = (ext[1], ext[0]) if up["slant"] > 45 else (ext[0], ext[1])
-    most = max(up["len"], 2 * up["noted"]) * fit["scale"] + 1
-    if along < 6 or across_px > most:
-        bad.append(f"at Fit: a strap on the straight run is {along} px along the run and {across_px} px across it on the page; expected 6 or more along, and no more than {most:.1f} across")
+    most = max(up["len"], 1.5 * up["noted"]) * fit["scale"] + 1
+    if along < 4 or across_px > most:
+        bad.append(f"at Fit: a strap on the straight run is {along} px along the run and {across_px} px across it on the page; expected 4 or more along, and no more than {most:.1f} across")
     print(f"[check_rack_strap_size] at Fit ({fit['scale']:.2f} px a mm): {len(measured)} straps measured, {len(slanted)} on a slant; bars {sorted({round(s['len'], 1) for s in measured})} mm for packs "
           f"{sorted({round(s['pack'], 1) for s in measured})} mm (diameter {measured[0]['diameter']}); on the page {along} px along the run, {across_px} across; the longest bar, rim included, is {worst:.2f} packs")
     # AT 300% a strap is its true size: the least bar is no longer than the bar at scale.
@@ -19215,6 +22412,12 @@ SECONDS = {
     "check_rack_dcim_settings": 4.4,
 }
 # SECONDS: end
+# THE FOUR CHECKS OF portrayal-site#201, outside the measured table so that regenerating it does not take them out and
+# `shard-weights.py` can measure them in time. Not yet measured on CI: each is the seconds it took here (this host
+# with other work running; one run of each, 31, 145, 171 and 14 s) divided by about 1.7, a guess at the 2-CPU runner's
+# seconds, to be replaced by shard-weights.py's measured ones.
+SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100,
+                "check_rack_warnings_section": 8})
 
 
 def units():
@@ -20542,8 +23745,9 @@ def check_rack_strap_kinds(page, base):
     if sorted((x["kind"], x["width"]) for x in mine) != sorted((x["kind"], x["width_mm"]) for x in b["straps"]):
         bad.append(f"2D: the bars' kinds and widths {sorted((x['kind'], x['width']) for x in mine)} are not the kit's {sorted((x['kind'], x['width_mm']) for x in b['straps'])}")
     for x in s["front"]:
-        if abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
-            bad.append(f"2D: a {x['width']} mm {x['kind']} strap is drawn {x['core']} wide, expected {s['drawnOf'][str(int(x['width']))]}")
+        # S-0040: on the page a strap is drawn 0.6 of its width along the run (strap-size.js PAGE_ALONG); 3D keeps the full width
+        if abs(x["core"] - s["drawnOf"][str(int(x["width"]))] * 0.6) > 1e-9:
+            bad.append(f"2D: a {x['width']} mm {x['kind']} strap is drawn {x['core']} wide, expected {s['drawnOf'][str(int(x['width']))] * 0.6}")
     if abs(s["drawn19"] - 10) > 1e-9 or not (s["drawnOf"]["12"] < s["drawnOf"]["19"] < s["drawnOf"]["25"]):
         bad.append(f"2D: the drawn widths are {s['drawnOf']}: a 19 mm strap should be the 10 it was, 12 narrower and 25 wider")
     # THE WORDS: the bundle's line says its straps by kind, and never the total as a spacing count.
@@ -20590,7 +23794,7 @@ def check_rack_strap_kinds(page, base):
         x = next((x for x in ties2d if x["strap"] == f"tie:{m['item']}|{m['via']}|{m['tie']}"), None)
         face = tray["under"] if m["held"] else tray["top"]
         if not x or abs(x["at"][0] - (450.85 / 2 + (slot["x0"] + slot["x1"]) / 2)) > 1e-6 or abs((H - x["at"][1]) - face) > 5 + 1e-6 \
-                or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))]) > 1e-9:
+                or x["members"] != " ".join(m["cables"]) or x["width"] != m["width_mm"] or abs(x["core"] - s["drawnOf"][str(int(x["width"]))] * 0.6) > 1e-9:
             bad.append(f"2D: the tie strap at {m['item']} {m['via']} slot {m['tie']} is {x}; its slot is at x {(slot['x0'] + slot['x1']) / 2}, the plate's face at {face}")
     # WHICH FACE OF THE PLATE: a cord resting on the tray's top is tied above it, and one held under it is tied
     # under it. Every tie strap here rests, and is above its plate; a held one is pinned by tests/rack/tie-straps.test.mjs,

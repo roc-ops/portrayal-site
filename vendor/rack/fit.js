@@ -10,7 +10,7 @@
 // passes through, so there a U is never shared.
 
 import {RU, OPENING, SIDES as RAILS} from './rails.js';
-import {uLabel, uText, isPosition, zeroUOf, zeroUBottom, zeroUOffset, SIDES, holderOf, holdersOf, railWidth, RAIL_WIDTH_IN, firstU, rollOf} from './model.js';
+import {uLabel, uText, isPosition, zeroUOf, zeroUBottom, zeroUBottomMm, zeroUOffset, SIDES, holderOf, holdersOf, railWidth, RAIL_WIDTH_IN, firstU, rollOf} from './model.js';
 
 // ── HEIGHTS, SPANS AND BOXES (docs/rack-file-v4-design.md section 2.4) ─────
 // PUBLIC: unitsOf, spanOf, itemBox, spanText (kit/README.md). The other names
@@ -111,7 +111,8 @@ export function anchorY(rack, item, chassisOf) {
 export function laneY(ru) { return (ru - 0.5) * RU; }
 // THE NEIGHBOURS A ROUTE LOOKS TO FOR A MANAGER: the devices of a unit or less
 // just above an item and just below it, on any face, above first and nearest
-// first. A caller filters them by face and by what they carry.
+// first, and a manager of any height (one that lists guides). A caller filters
+// them by face and by what they carry.
 // - Above an item of a unit or more: one that starts on its top edge. Above an
 //   item under a unit: one that starts anywhere from its top edge to the next
 //   whole unit, so a half-unit panel in the lower half of a unit still finds
@@ -121,7 +122,10 @@ export function laneY(ru) { return (ru - 0.5) * RU; }
 //   a whole unit or is under a unit itself.
 export function neighbours(rack, item, chassisOf) {
   const [lo, hi] = spanOf(item, chassisOf), small = hi - lo < 1;
-  const near = rack.items.filter(o => o.id !== item.id && itemUnits(o, chassisOf) <= 1);
+  // a device taller than a unit is a neighbour when it is itself a manager
+  // (it lists guides, #1027): a 2U manager over a switch is one a route uses
+  const near = rack.items.filter(o => o.id !== item.id
+    && (itemUnits(o, chassisOf) <= 1 || Object.keys(chassisOf(o.ref)?.guides || {}).length > 0));
   const above = near.filter(o => (small ? o.ru >= hi && o.ru <= Math.ceil(hi) : o.ru === hi)).sort((p, q) => p.ru - q.ru);
   const under = Math.floor(lo) - 1;
   const below = near.filter(o => spanOf(o, chassisOf)[1] === lo
@@ -179,6 +183,13 @@ export const zeroUUnits = c => (Number(c?.ru) >= 1 ? Math.round(c.ru)
 export const zeroUSpan = (z, chassisOf) => {
   const lo = zeroUBottom(z);
   return [lo, lo + zeroUUnits(chassisOf(z.ref)) - 1];
+};
+// THE UNITS ITS MILLIMETRES TOUCH, for the lane a cable runs down: a part at a
+// whole unit runs lo..lo+u-1 as zeroUSpan says, one hung between units also
+// touches the unit it overlaps. A label says zeroUSpan, the nearest unit.
+export const zeroUTouched = (z, chassisOf) => {
+  const [from, to] = zeroUExtent(z, chassisOf);
+  return [Math.floor(from / RU + 1e-6) + 1, Math.max(1, Math.ceil(to / RU - 1e-6))];
 };
 const uSpanText = (frame, lo, hi) => {
   const [a, b] = [uLabel(frame, lo), uLabel(frame, hi)].sort((x, y) => x - y);
@@ -589,7 +600,7 @@ export function shrinkRack(rack, newHeight, chassisOf) {
 // holder is not in the rack is refused until it is hung again or freed.
 const MM_EPS = 1e-6;
 export const zeroUExtent = (z, chassisOf) => {
-  const lo = Number(z?.offsetMm) || 0;
+  const lo = zeroUBottomMm(z);
   return [lo, lo + zeroUUnits(chassisOf(z.ref)) * RU];
 };
 export const notBracket = id => `${id} is not a bracket in this rack.`;

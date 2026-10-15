@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100.0mm" height="21.0mm" viewBox="0 0 100.0 21.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="xmi1021ha" data-path="xmi1021ha" data-class="adapter-panel" data-behaviour="fills" data-ref="fibrain/xmi1021ha@2:2.0.0" data-body-depth="37.0" data-media="fiber" data-model="XMI1021HA" transform="translate(0,0)">
+    <title>xmi1021ha</title>
+    <rect id="xmi1021ha--bezel" x="0.15" y="0.025" width="99.7" height="20.95" rx="0.4" fill="#17191b" stroke="#0c0d0e" stroke-width="0.2" />
+    <rect x="0.25" y="0.125" width="3.025" height="20.75" fill="#222528" />
+    <rect x="96.725" y="0.125" width="3.025" height="20.75" fill="#222528" />
+    <rect x="3.275" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="19.375" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="35.475" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="51.575" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="67.675" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="83.775" y="5.700" width="12.95" height="9.60" fill="#0b0c0d" />
+    <rect x="16.225" y="0.025" width="3.15" height="20.95" fill="#2a2d30" />
+    <rect x="32.325" y="0.025" width="3.15" height="20.95" fill="#2a2d30" />
+    <rect x="48.425" y="0.025" width="3.15" height="20.95" fill="#2a2d30" />
+    <rect x="64.525" y="0.025" width="3.15" height="20.95" fill="#2a2d30" />
+    <rect x="80.625" y="0.025" width="3.15" height="20.95" fill="#2a2d30" />
+    <path d="M 0.15 3.625 L 2.65 3.625 L 2.65 17.325 L 0.15 17.325 M 1.65 6.575 L 1.65 14.375" fill="none" stroke="#0c0d0e" stroke-width="0.15" />
+    <path d="M 99.85 3.625 L 97.35 3.625 L 97.35 17.325 L 99.85 17.325 M 98.35 6.575 L 98.35 14.375" fill="none" stroke="#0c0d0e" stroke-width="0.15" />
+    <circle cx="1.65" cy="1.4" r="0.75" fill="#050506" />
+    <circle cx="1.65" cy="19.6" r="0.75" fill="#050506" />
+    <circle cx="98.35" cy="1.4" r="0.75" fill="#050506" />
+    <circle cx="98.35" cy="19.6" r="0.75" fill="#050506" />
+    <g id="xmi1021ha--lc01" data-path="xmi1021ha/lc01" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(3.4,5.85)">
+      <title>xmi1021ha--lc01</title>
+      <g id="xmi1021ha--lc01--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc01--1" data-path="xmi1021ha/lc01/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc01--1</title>
+        <path id="xmi1021ha--lc01--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc01/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc01--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc01--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc01--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc01--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc01--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc01--2" data-path="xmi1021ha/lc01/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc01--2</title>
+        <path id="xmi1021ha--lc01--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc01/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc01--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc01--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc01--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc01--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc01--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc01--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc02" data-path="xmi1021ha/lc02" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(19.5,5.85)">
+      <title>xmi1021ha--lc02</title>
+      <g id="xmi1021ha--lc02--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc02--1" data-path="xmi1021ha/lc02/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc02--1</title>
+        <path id="xmi1021ha--lc02--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc02/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc02--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc02--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc02--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc02--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc02--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc02--2" data-path="xmi1021ha/lc02/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc02--2</title>
+        <path id="xmi1021ha--lc02--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc02/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc02--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc02--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc02--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc02--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc02--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc02--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc03" data-path="xmi1021ha/lc03" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(35.6,5.85)">
+      <title>xmi1021ha--lc03</title>
+      <g id="xmi1021ha--lc03--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc03--1" data-path="xmi1021ha/lc03/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc03--1</title>
+        <path id="xmi1021ha--lc03--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc03/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc03--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc03--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc03--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc03--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc03--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc03--2" data-path="xmi1021ha/lc03/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc03--2</title>
+        <path id="xmi1021ha--lc03--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc03/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc03--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc03--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc03--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc03--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc03--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc03--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc04" data-path="xmi1021ha/lc04" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(51.7,5.85)">
+      <title>xmi1021ha--lc04</title>
+      <g id="xmi1021ha--lc04--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc04--1" data-path="xmi1021ha/lc04/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc04--1</title>
+        <path id="xmi1021ha--lc04--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc04/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc04--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc04--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc04--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc04--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc04--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc04--2" data-path="xmi1021ha/lc04/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc04--2</title>
+        <path id="xmi1021ha--lc04--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc04/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc04--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc04--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc04--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc04--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc04--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc04--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc05" data-path="xmi1021ha/lc05" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(67.8,5.85)">
+      <title>xmi1021ha--lc05</title>
+      <g id="xmi1021ha--lc05--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc05--1" data-path="xmi1021ha/lc05/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc05--1</title>
+        <path id="xmi1021ha--lc05--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc05/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc05--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc05--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc05--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc05--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc05--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc05--2" data-path="xmi1021ha/lc05/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc05--2</title>
+        <path id="xmi1021ha--lc05--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc05/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc05--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc05--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc05--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc05--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc05--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc05--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc06" data-path="xmi1021ha/lc06" data-class="port" data-ref="fibrain/lc-duplex-adapter@1:1.0.0" data-connector="lc" data-housing-finish="#a0ae61" data-media="fiber" transform="translate(83.9,5.85)">
+      <title>xmi1021ha--lc06</title>
+      <g id="xmi1021ha--lc06--bezel" fill-rule="evenodd" data-z-out="1.0">
+        <path fill="#a0ae61" data-fill-from="housing-finish" d="M 0.4 0 H 12.3 Q 12.7 0 12.7 0.4 V 8.9 Q 12.7 9.3 12.3 9.3 H 0.4 Q 0 9.3 0 8.9 V 0.4 Q 0 0 0.4 0 Z              M 1.905 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.155 0.390 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7 h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="12.7" height="9.3" rx="0.4" fill="none" stroke="#626a3b" stroke-width="0.15" data-stroke-derive="housing-finish" />
+      </g>
+      <g id="xmi1021ha--lc06--1" data-path="xmi1021ha/lc06/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.875,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc06--1</title>
+        <path id="xmi1021ha--lc06--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc06/1/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc06--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc06--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc06--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc06--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc06--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="xmi1021ha--lc06--2" data-path="xmi1021ha/lc06/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.125,0.39) rotate(180 2.35 4.03)" data-z-lift="1.0">
+        <title>xmi1021ha--lc06--2</title>
+        <path id="xmi1021ha--lc06--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="xmi1021ha/lc06/2/bore" data-class="cutout" />
+        <rect id="xmi1021ha--lc06--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="xmi1021ha--lc06--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="xmi1021ha--lc06--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="xmi1021ha--lc06--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="xmi1021ha--lc06--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 6.1" data-cp-dir="front" data-cp-on="xmi1021ha--lc06--bezel" />
+      <g data-cp="optical" data-cp-at="6.35 4.65" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc01-occupant" data-path="xmi1021ha/lc01-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(3.625,9.025)" data-z-lift="1" data-for="xmi1021ha/lc01">
+      <title>xmi1021ha--lc01-occupant</title>
+      <g id="xmi1021ha--lc01-occupant--body" class="cap" data-path="xmi1021ha/lc01-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc01-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc01-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc02-occupant" data-path="xmi1021ha/lc02-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(19.725,9.025)" data-z-lift="1" data-for="xmi1021ha/lc02">
+      <title>xmi1021ha--lc02-occupant</title>
+      <g id="xmi1021ha--lc02-occupant--body" class="cap" data-path="xmi1021ha/lc02-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc02-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc02-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc03-occupant" data-path="xmi1021ha/lc03-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(35.825,9.025)" data-z-lift="1" data-for="xmi1021ha/lc03">
+      <title>xmi1021ha--lc03-occupant</title>
+      <g id="xmi1021ha--lc03-occupant--body" class="cap" data-path="xmi1021ha/lc03-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc03-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc03-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc04-occupant" data-path="xmi1021ha/lc04-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(51.925,9.025)" data-z-lift="1" data-for="xmi1021ha/lc04">
+      <title>xmi1021ha--lc04-occupant</title>
+      <g id="xmi1021ha--lc04-occupant--body" class="cap" data-path="xmi1021ha/lc04-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc04-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc04-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc05-occupant" data-path="xmi1021ha/lc05-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(68.025,9.025)" data-z-lift="1" data-for="xmi1021ha/lc05">
+      <title>xmi1021ha--lc05-occupant</title>
+      <g id="xmi1021ha--lc05-occupant--body" class="cap" data-path="xmi1021ha/lc05-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc05-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc05-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="xmi1021ha--lc06-occupant" data-path="xmi1021ha/lc06-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(84.125,9.025)" data-z-lift="1" data-for="xmi1021ha/lc06">
+      <title>xmi1021ha--lc06-occupant</title>
+      <g id="xmi1021ha--lc06-occupant--body" class="cap" data-path="xmi1021ha/lc06-occupant/body" data-class="cap" data-z-out="5.3" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="xmi1021ha--lc06-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="xmi1021ha--lc06-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

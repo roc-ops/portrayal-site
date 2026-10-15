@@ -40,23 +40,25 @@ export function partName(compByRef, ref) {
 // The device's own bays and cages, every view, each carrying its view; the
 // configuration the item is built as (its own, else the device's default);
 // and what that configuration seats, by the drawing's path.
-export function slotEnv(item, slots, compByRef = null) {
+export function slotEnv(item, slots, compByRef = null, redirects = null) {
   const flat = by => Object.entries(by || {}).flatMap(([view, list]) => (list || []).map(s => ({...s, view})));
   const bays = flat(slots.bays), cages = flat(slots.cages);
   const configs = slots.configs || [];
   const cfg = configs.find(c => c.name === item.cfg) || configs.find(c => c.name === slots.default) || null;
   const cb = builtBays(cfg);
   const occ = builtOccupants(cfg, cages, compByRef ? {bays, compByRef} : null);
-  return {bays, cages, cfg, compByRef,
+  // `follow` reads a ref the library has replaced as its replacement (kit/redirects.js)
+  return {bays, cages, cfg, compByRef, follow: redirects?.follow ?? (ref => ref),
           built: p => (own(cb, p) ? cb[p] || null : undefined),
           builtOcc: p => (own(occ, p) ? occ[p] || null : undefined)};
 }
 
 // What a slot holds under the swaps map `swaps`: the map's answer; else the
 // configuration's, unless a carrier above it was swapped (a fresh seat holds
-// its defaults); else what the slot ships with.
+// its defaults); else what the slot ships with. A ref the library has replaced
+// is read as its replacement; the map is not changed.
 export function holdsAt(env, swaps, path, slot) {
-  if (own(swaps, path)) return swaps[path] || null;
+  if (own(swaps, path)) return (env.follow ? env.follow(swaps[path]) : swaps[path]) || null;
   const reseated = Object.keys(swaps || {}).some(k => k !== path && underCarrier(path, k));
   const was = reseated ? undefined : (slot?.isCage ? env.builtOcc(path) : env.built(path));
   return was !== undefined ? was : slot?.default ?? null;

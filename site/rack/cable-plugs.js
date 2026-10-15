@@ -18,8 +18,25 @@
 import {configuredFace, components, findComp, DIST} from './face.js';
 import {jdist} from '../../vendor/dist.js';
 import {faceCages} from '../../vendor/swap.js';
-import {endKey, plugSeats, connectorOf, looseReason, holderPath} from '../../vendor/rack/cable-rules.js';
+import {endKey, plugSeats, connectorOf, looseReason, holderPath, portPathOf} from '../../vendor/rack/cable-rules.js';
+import {settleEnd, settleEnds} from '../../vendor/rack/ports.js';
+import {loadSlots} from '../../vendor/rack/catalog.js';
+import {zeroUById} from '../../vendor/rack/model.js';
 import {partSel, pathOfProjectionId} from './part-path.js';
+
+// WHAT IS DRAWN AT AN END, for the kit (ctx.drawnAt, kit 0.30.0): the ref of
+// the component drawn at the end's path on that panel, or null. Only the
+// drawing knows which part presents a device's own slot (configs.json does
+// not say), and without it the kit guesses nothing: an outlet-to-outlet cord
+// would go unwarned. Panels are remembered as cableFacts reads them, keyed by
+// item and panel, and replaced when the item is read again.
+const DRAWN = new Map();
+export function drawnAt(end) {
+  const root = DRAWN.get(`${end.item}|${end.view === 'rear' ? 'rear' : 'front'}`);
+  if (!root) return null;
+  const el = root.querySelector(partSel(portPathOf(end.path)));
+  return (el?.getAttribute('data-ref') || '').split(':')[0] || null;
+}
 
 // (a part by its path, as its own drawing or as the projection of a seated module's back: part-path.js)
 const at = (root, path) => root.querySelector(partSel(path));
@@ -37,9 +54,10 @@ function partName(list, ref) {
 // answer built on it is not kept and the next redraw asks again.
 async function readPanel(item, view, list, onFail) {
   const face = await configuredFace({ref: item.ref, cfg: item.cfg, view,
-                                     swaps: item.swaps || {}, fields: item.fields || {}});
+                                     swaps: item.swaps || {}, fields: item.fields || {}, ends: true});
   if (!face) return null;
   const root = new DOMParser().parseFromString(face.text, 'image/svg+xml').documentElement;
+  DRAWN.set(`${item.id}|${view === 'rear' ? 'rear' : 'front'}`, root);
   const idx = await jdist(`${DIST}${item.ref}.configs.json`).catch(err => { onFail(err); return null; });
   return {root, slots: faceCages(root, idx?.cages?.[view] || [], x => findComp(list, x))};
 }
@@ -66,8 +84,38 @@ function readEnd(end, item, panel, list) {
   // is addressed by its path there. An end given an id is not connected, and
   // is told the path to use.
   const meant = !port ? pathOfProjectionId(root, end.path) : null;
-  return {facts, info, seats: isPort ? plugSeats(end.path, slots, item.swaps || {}) : {},
+  return {facts, info, cls: port?.getAttribute('data-class') || null,
+          seats: isPort ? plugSeats(end.path, slots, item.swaps || {}) : {},
           ...(meant ? {reason: `${end.path} is a drawing id, not a port: the port is ${meant} on the ${end.view === 'rear' ? 'rear' : 'front'}.`} : {})};
+}
+
+// THE ENDS ON A PART BESIDE THE RACK (kit 0.36.0, Portrayal #1068): a cord
+// to an outlet of a vertical PDU. No page reads a panel of such a part, so
+// the catalogue answers for the end whole (ports.js settleEnds): what the
+// outlet is, and the plug it takes. At a slot that takes two plugs (a C39) it
+// is the one that pairs with the plug at the cord's other end, so `ends` is
+// what the page read of every other end; the end's own `plug` is not it.
+// Returns {ends: Map(endKey -> {facts, info, reason}), seats: {partId: {path:
+// plugRef}}}, for the ends on such parts only: nothing the page said of a
+// device's end is changed. An end the catalogue cannot answer (its parts list
+// not loaded) is left out: not checked, never called loose. `extra` ends (a
+// cable still being made) are answered and seat nothing.
+export function zeroUFacts(rack, ends, ctx, extra = []) {
+  const items = new Set((rack.items || []).map(i => i.id));
+  const beside = e => !!e?.item && !items.has(e.item) && !!zeroUById(rack, e.item);
+  const cabled = (rack.cables || []).flatMap(c => [c.a, c.b]).filter(beside);
+  const out = {ends: new Map(), seats: {}};
+  if (!cabled.length && !extra.some(beside)) return out;
+  const settled = settleEnds(rack, ends, ctx, extra.filter(beside));
+  for (const e of [...cabled, ...extra.filter(beside)]) {
+    const k = endKey(e), got = settled.get(k);
+    if (got) out.ends.set(k, got);
+  }
+  for (const e of cabled) {
+    const got = out.ends.get(endKey(e)), plug = got && got.reason == null ? got.info?.plug : null;
+    if (plug) out.seats[e.item] = {...out.seats[e.item], [portPathOf(e.path)]: plug};
+  }
+  return out;
 }
 
 // What the page falls back to when reading the cables' faces fails: no plugs,
@@ -78,6 +126,18 @@ const NONE = Object.freeze({seats: Object.freeze({}), ends: new Map()});
 // The last answer, kept: render() asks on every redraw, and most redraws (a
 // selection, a zoom) change neither the cables nor what is seated.
 let memo = {key: '', value: null};
+// ...and the one being read now (portrayal-site#192): a redraw and an
+// assistant's call that ask of the same rack while its panels are still
+// loading are handed one reading, not two that each fetch and parse them.
+let reading = {key: '', promise: null};
+// Every answer that was read whole: each panel and the component index loaded.
+const stood = new WeakSet();
+
+// WHETHER AN ANSWER IS ONE THIS MODULE KEEPS (portrayal-site#192): the answer for a rack with no
+// cabled end, or the last one read with every panel and the component index loaded. An answer
+// built on a fetch that failed is given and not kept (below), and what is worked out from one
+// is not kept either (reading.js): the next ask reads again.
+export const factsStand = facts => facts === NONE || (!!facts && typeof facts === 'object' && stood.has(facts));
 
 // EVERY CABLED END OF THE RACK, read once per redraw:
 //   seats  {itemId: {slotId: plugRef}}   the derived plugs, per item
@@ -88,12 +148,18 @@ export async function cableFacts(rack, extra = []) {
   const cabled = (rack.cables || []).flatMap(c => [c.a, c.b]);
   const ends = [...cabled, ...extra];
   if (!ends.length) return NONE;
-  const out = {seats: {}, ends: new Map()};
   const items = new Map(rack.items.map(i => [i.id, i]));
   const key = JSON.stringify([cabled.map(endKey), extra.map(endKey),
-    [...new Set(ends.map(e => e.item))].map(id => items.get(id) || null)
+    [...new Set(ends.map(e => e.item))].map(id => items.get(id) || zeroUById(rack, id) || null)
       .map(i => i && [i.id, i.ref, i.cfg, i.swaps, i.fields])]);
   if (memo.key === key) return memo.value;
+  if (reading.key === key) return reading.promise;
+  const mine = {key, promise: readFacts(rack, cabled, ends, items, key)};
+  reading = mine;
+  try { return await mine.promise; } finally { if (reading === mine) reading = {key: '', promise: null}; }
+}
+async function readFacts(rack, cabled, ends, items, key) {
+  const out = {seats: {}, ends: new Map()};
   const list = await components();
   const panels = new Map();
   let failed = false;
@@ -113,15 +179,44 @@ export async function cableFacts(rack, extra = []) {
     return panels.get(k);
   };
   const hasCable = new Set(cabled.map(endKey));
+  // The parts lists, for the kit to judge an end on a slot of its own (a power
+  // inlet, a PDU outlet) that the panel shows and no port is at.
+  // Read only when an end needs it, and after its panel: a panel that fails to load must fail as it did.
+  let kit = null;
+  const hostRef = e => items.get(e.item)?.ref ?? zeroUById(rack, e.item)?.ref;
+  const kitCtx = async () => kit ??= {...await loadSlots(DIST, [...new Set(ends.map(hostRef).filter(Boolean))]), drawnAt};
+  // (an end on a part beside the rack is the catalogue's to answer, after the rest: zeroUFacts)
+  const beside = e => !items.has(e.item) && !!zeroUById(rack, e.item);
   for (const end of ends) {
     const k = endKey(end);
-    if (out.ends.has(k)) continue;
+    if (out.ends.has(k) || beside(end)) continue;
     const item = items.get(end.item) || null;
-    const got = readEnd(end, item, item ? await panelOf(item, end.view) : null, list);
-    out.ends.set(k, {facts: got.facts, info: got.info, reason: got.reason ?? looseReason(end, got.facts)});
+    const panel = item ? await panelOf(item, end.view) : null;
+    const got = readEnd(end, item, panel, list);
+    let ans = {facts: got.facts, info: got.info, reason: got.reason ?? looseReason(end, got.facts)};
+    let seats = got.seats;
+    // A SLOT A CABLE LANDS ON THAT IS NOT A PORT (cable-rules.js cableLandsOn):
+    // the kit answers what the end is, and the plug it takes is derived.
+    if (item && panel && !got.reason && !got.facts.port) {
+      const ctx = await kitCtx();
+      ans = settleEnd(rack, end, ans, ctx) ?? ans;
+      if (ans.facts?.slot)
+        seats = plugSeats(end.path, panel.slots, item.swaps || {}, {cls: got.cls, compByRef: ctx.compByRef, plug: end.plug});
+    }
+    out.ends.set(k, ans);
     // seats is keyed by ITEM, as item.swaps is: a front-panel end's plugs and a
     // rear-panel end's share one map, and mergeSeats lays it over both panels.
-    if (item && hasCable.has(k)) out.seats[item.id] = {...(out.seats[item.id] || {}), ...got.seats};
+    if (item && hasCable.has(k)) out.seats[item.id] = {...(out.seats[item.id] || {}), ...seats};
+  }
+  // THE OUTLETS OF A PART BESIDE THE RACK: answered from its parts list, each
+  // plug paired with what the page read at the cord's other end (zeroUFacts).
+  // A parts list that failed to load is a fetch that failed: not kept.
+  if (ends.some(beside)) {
+    const ctx = await kitCtx();
+    if (ends.filter(beside).some(e => !ctx.slotsOf(hostRef(e)))) failed = true;
+    const got = zeroUFacts(rack, out.ends, ctx, ends.slice(cabled.length));
+    for (const [k, v] of got.ends) out.ends.set(k, v);
+    Object.assign(out.seats, got.seats);
   }
   // What is returned is shared (the memo, S.cableFacts, the probe): frozen.
   for (const m of Object.values(out.seats)) Object.freeze(m);
@@ -129,6 +224,6 @@ export async function cableFacts(rack, extra = []) {
   Object.freeze(out);
   // An empty component index, or a panel that failed to load, is a fetch that
   // failed (face.js asks again next time), so an answer built on it is not kept.
-  if (list.length && !failed) memo = {key, value: out};
+  if (list.length && !failed) { memo = {key, value: out}; stood.add(out); }
   return out;
 }

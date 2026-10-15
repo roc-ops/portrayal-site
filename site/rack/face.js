@@ -28,6 +28,8 @@ import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
 import {readSvg, portsOf} from '../../vendor/zones.js';
+import {loadSlots} from '../../vendor/rack/catalog.js';
+import {cableEndPaths, zeroUEnds} from '../../vendor/rack/ports.js';
 
 export const DIST = 'assets/dist/';
 const OPPOSITE = {front: 'rear', rear: 'front'};
@@ -49,15 +51,42 @@ export function components() {
 }
 
 const refKey = c => `${c.ns}/${c.name}@${c.major.slice(1)}`;
-export const findComp = (list, ref) => list.find(c => refKey(c) === String(ref).split(':')[0]);
+// One Map per list, built on its first ask: a linear find that built a template
+// string per component per call cost 0.5 s on a large rack. The first
+// component with a key wins, as the find did.
+const COMP_INDEX = new WeakMap();
+// (rebuilt when the list's length has changed: a caller may splice it in place)
+export function compIndex(list) {
+  let hit = COMP_INDEX.get(list);
+  if (!hit || hit.n !== list.length) {
+    const idx = new Map();
+    for (const c of list) { const k = refKey(c); if (!idx.has(k)) idx.set(k, c); }
+    COMP_INDEX.set(list, hit = {n: list.length, idx});
+  }
+  return hit.idx;
+}
+export const findComp = (list, ref) => compIndex(list).get(String(ref).split(':')[0]);
+
+// One promise per skin URL: a rack with many devices of one kind asked for the
+// same file hundreds of times. A failed fetch is dropped, not kept for good.
+const SKINS = new Map();
+function skinText(url) {
+  let hit = SKINS.get(url);
+  if (!hit) {
+    const drop = () => { if (SKINS.get(url) === hit) SKINS.delete(url); };
+    hit = fetch(url).then(r => { if (r.ok) return r.text(); drop(); return null; })
+      .catch(err => { drop(); throw err; });
+    SKINS.set(url, hit);
+  }
+  return hit;
+}
 
 export async function loadSkin(ref) {
   const c = findComp(await components(), ref);
   if (!c) return null;
   const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
-  const r = await fetch(`${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
-  if (!r.ok) return null;
-  return {comp: c, text: await r.text()};
+  const text = await skinText(`${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+  return text == null ? null : {comp: c, text};
 }
 
 export function applyFields(root, fields) {
@@ -83,8 +112,12 @@ const MEMO = new Map();
 export const setFaceMemoLimit = n => { limit = Math.max(1, n); while (MEMO.size > limit) MEMO.delete(MEMO.keys().next().value); };
 export const faceMemoSize = () => MEMO.size;
 
-export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {}, turned = false}) {
-  const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned};
+// `ends` asks for the slots a cable lands on besides the ports (a power inlet,
+// an outlet, a ground stud): the kit's cableEndPaths names them and zones.js
+// reads each as a port with `end: true`. Off, the ports are what they always
+// were, for the callers that list data ports only.
+export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {}, turned = false, ends = false}) {
+  const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned, ...(ends ? {ends: true} : {})};
   const key = JSON.stringify(canon(args));
   // `build` awaits several times (fetch, jdist, components) and, in the
   // showcase, the caller's `swaps`/`fields` are the SAME object it goes on
@@ -127,7 +160,18 @@ function faceText(url) {
   return hit;
 }
 
-async function build({ref, cfg, view, swaps, fields, turned}) {
+// THE PORTS OF THE MODULES IN A PART BESIDE THE RACK (kit 0.44.0, Portrayal
+// #1080): a vertical PDU's network card holds its ports in a bay of the part,
+// which the part's own drawing does not list as ends. The kit names them
+// (ports.js zeroUEnds), each at `<bay>/module/<port>` on the panel its bay is
+// on, for the panel `view` of the part `z` ({ref, cfg, swaps}).
+export async function zeroUModuleEnds(z, view) {
+  const {slotsOf, compByRef} = await loadSlots(DIST, [z.ref]);
+  return zeroUEnds({ref: z.ref, cfg: z.cfg, swaps: z.swaps || {}}, {slotsOf, compByRef})
+    .filter(e => e.module && e.view === view).map(e => e.path);
+}
+
+async function build({ref, cfg, view, swaps, fields, turned, ends}) {
   const shown = turned ? (OPPOSITE[view] || view) : view;
   let text = await faceText(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
   if (text == null) return null;
@@ -147,7 +191,12 @@ async function build({ref, cfg, view, swaps, fields, turned}) {
     if (hasFields) applyFields(root, fields);
     text = new XMLSerializer().serializeToString(root);
   }
-  const {vb, zones} = readSvg(text);
+  let endPaths = null;
+  if (ends) {
+    const {slotsOf, compByRef} = await loadSlots(DIST, [ref]);
+    endPaths = cableEndPaths({ref, cfg, swaps}, shown, {slotsOf, compByRef});
+  }
+  const {vb, zones} = readSvg(text, endPaths?.length ? {ends: endPaths} : {});
   // THE BACK OF A SEATED MODULE is a projection: its ports carry their path
   // as `data-of` and the kit's zones (0.22.0) give each its drawing id as
   // `path` ("bay-1-rear--b01"). A port is addressed by its path on either

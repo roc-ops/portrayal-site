@@ -116,6 +116,10 @@
    "description": "HOW THIS PART MOVES, which is what a renderer needs and what a catalogue class cannot say. `fills` slides into a chassis aperture - a PSU, a fan, a line card, a blank, a pull-out tab; this is what `bays` holds. `occupies` mates into a receptacle - an optic, a DAC end, a power cord. `mounts` attaches to a surface - a rack ear, a label, a ground lug, a bolted panel. ABSENT means fixed: a cage, a lamp, a button and a printed mark do not come out, and saying nothing is how they say so. Behaviour is per COMPONENT and not per class because two classes are already mixed - `filter` holds five slide-out air filters and one snap-on cover, `inlet` holds two receptacles and one bolted panel - so a class list cannot express what the library already contains. Optic against DAC against AOC stays in `attrs`, where it belongs: those differ in what they are, not in how they move",
    "$comment": "roc-ops/Portrayal#3"
   },
+  "lid": {
+   "type": "boolean",
+   "description": "THIS PART IS A LID: a hinged or removable cover that opens over a duct or a well, as the cover of a finger duct clips off its finger tips. It is not a solid body, so a pass-through (`passes:` on a device view) may lie under it - the cable crosses once the lid is open (L136). Say it only for a part the vendor's own sources show as a cover; absent means the part is solid and a pass-through under it is refused. It changes nothing in the drawing, and it does not excuse a pass-through off its face or one under any other part."
+  },
   "class": {
    "$ref": "#/$defs/segment",
    "description": "WHAT KIND OF PART THIS IS, from a closed vocabulary kept in the power-roles vocabulary rather than repeated here as an enum, so that schema and lint read one list. Every class sits in exactly one power role there, and L51 reports a class that sits in none, so a new class has its power question asked when it is added. The vocabulary is small, and synonyms are merged rather than admitted."
@@ -140,8 +144,16 @@
    "description": "WHICH connection point the `interface` is presented at; default `mate`. Allowed only beside `interface`. A plug mates INTO its receptacle at `mate` and presents its own interface to a boot at its REAR (`boot`), which is a different point: this names it. Paired with that point's `on:`, it is how a part seated on a plug lands on the plug's rear face rather than inside it."
   },
   "mates": {
-   "$ref": "#/$defs/segment",
-   "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host."
+   "oneOf": [
+    {"$ref": "#/$defs/segment"},
+    {
+     "type": "array",
+     "minItems": 1,
+     "uniqueItems": true,
+     "items": {"$ref": "#/$defs/segment"}
+    }
+   ],
+   "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host. ONE INTERFACE, OR A LIST OF THEM for a part that seats in more than one kind of receptacle: a NEMA 5-15P goes into a 5-15R and into a 5-20R, a C14 plug into a C13 outlet and an Eaton C39. Each receptacle keeps its own interface because what each accepts differs, so the part names every one it seats in and is offered by a slot presenting any of them. A single interface and a one-item list say the same thing; write the single interface. One `mate` point serves every interface listed."
   },
   "optical": {
    "type": "object",
@@ -565,6 +577,37 @@
    "type": "string",
    "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
    "description": "THIS PART IS RETIRED, in favour of the `ns/name@major` named here. That is a different question from `unplaced:`, which says why nothing seats a part and is also true of live parts - every `generic/` contract carries one, and it means the opposite of retirement: those are seated by configurations downstream of this library, on purpose, and are not going anywhere. `superseded-by` is the fact a reader cannot get from `unplaced:` prose, however it starts: a specific successor exists, this part should not gain new occupants, and a consumer offering parts to a user must not offer this one. Lint checks the ref names a component major that exists; it does not check that anything still references this major - that is L89's question, not this one's."
+  },
+  "supersedes": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "ref",
+     "signature",
+     "from"
+    ],
+    "properties": {
+     "ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
+      "description": "The component major that was removed and that this part stands in for. A rack file that names it is read as naming this part."
+     },
+     "signature": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The signature of the removed part's published form: its slots, the ids of its parts, its faces and its fibre paths (portrayal.redirects.signature). It is recorded once, from the removed part, and recomputed from this part at every build; the build stops when they differ, because then this part is no drop-in."
+     },
+     "from": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "A commit whose tree still held the removed part, the one the signature was taken from (`python -m portrayal.redirects sign` prints it from a components.json built there)."
+     }
+    }
+   },
+   "description": "THE REMOVED REFS THIS PART STANDS IN FOR. A saved rack names parts by ref, and a ref whose major was removed no longer resolves, so the rack quietly loses the part. The replacement says which refs it replaces, only where it is a drop-in (same part ids, port paths and names), and the build publishes the list on this part's components.json entry as `supersedes`. The rack kit follows an old ref to this part when it reads a swap, and writes the new ref when the rack is next saved after an edit. A ref named here must not be in the library any more: a retired major that is kept says `superseded-by` instead. Lint L184 checks the shape; the build checks the signature."
   },
   "size": {
    "$ref": "#/$defs/wh",

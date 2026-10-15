@@ -21,12 +21,17 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
+import { applyFields, findComp } from './rack/face.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
 import { earHoles } from './rack/ear-holes.js';
 import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 
-export { RU };                      // EIA-310 rack unit; rails.js is the one source
+// what fields.js paintFields stashes a node's drawn value under
+const STASHED = ['data-portrayal-fill', 'data-portrayal-stroke', 'data-portrayal-r',
+                 'data-portrayal-transform', 'data-portrayal-display'];
+
+export { RU };                    // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
 const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
@@ -49,10 +54,13 @@ const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a fla
 // picture and the tags fall off the edge without it; obliquely the margin
 // already swallows it.
 const VIEWS = {
+  // `span` and `centre` are `wide` and `aimX` for a scene whose tags are laid
+  // out: `span` times the width from the farthest tag to the right rail, and how
+  // much of the way to the middle of that width the camera looks.
   iso:   {dir: [0.4647, 0.1608, 0.8707], aim: 0.42, margin: 1.72, z: -60,
-          wide: 1.1, aimX: 0},
+          wide: 1.1, aimX: 0, span: 0.75, centre: 0.5},
   front: {dir: [0, 0, 1],                aim: 0.50, margin: 1.12, z: -60,
-          wide: 2.4, aimX: -0.28},
+          wide: 2.4, aimX: -0.28, span: 1.5, centre: 1},
 };
 // Face raster density for the rack. The single-device viewer defaults to 4 and
 // is looked at from arm's length; a rack is seen from further back, across six
@@ -62,6 +70,37 @@ const PXMM_RELIEF = 5;
 // The top and underside, which a rack almost entirely hides - see the note by
 // COARSE below.
 const PXMM_HIDDEN = 2;
+
+// THE FACES ARE RASTERISED ON THE CPU while a scene that asks for it is alive
+// (`opts.cpuCanvases`; the Rack Builder's). relief.js cuts every face, and
+// every part of one, as a 2D canvas, and keeps it as its texture's image. A
+// browser puts a 2D canvas of any size on the GPU, so on a large rack those
+// canvases held more GPU memory than the textures drawn from them: 1.6 GB of
+// 2.5 GB, measured on one, before a single cable was hung. A 2D context asked
+// for with no options is asked for with `willReadFrequently`, which keeps it
+// in main memory; the textures uploaded from it are the same. One rule for the
+// page while any such scene is alive (counted), and gone with the last.
+// (put back only if it is still this rule: one laid over it since is left standing)
+let cpuCanvasScenes = 0, ownGetContext = null, cpuGetContext = null;
+function holdCpuCanvases() {
+  if (cpuCanvasScenes++ === 0) {
+    ownGetContext = HTMLCanvasElement.prototype.getContext;
+    const own = ownGetContext;
+    cpuGetContext = function (kind, options, ...rest) {
+      return own.call(this, kind, kind === '2d' && options === undefined ? {willReadFrequently: true} : options, ...rest);
+    };
+    HTMLCanvasElement.prototype.getContext = cpuGetContext;
+  }
+}
+function releaseCpuCanvases() {
+  if (cpuCanvasScenes > 0 && --cpuCanvasScenes === 0) {
+    if (HTMLCanvasElement.prototype.getContext === cpuGetContext) HTMLCanvasElement.prototype.getContext = ownGetContext;
+    ownGetContext = cpuGetContext = null;
+  }
+}
+
+// A device face's texture is cut where its cavities and modules are, and the cut is not drawn.
+const FACE_ALPHA_TEST = 0.08;
 
 // BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
 const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
@@ -183,11 +222,137 @@ export function createRackScene(container, opts = {}) {
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
   const renderer = new THREE.WebGLRenderer({antialias: true});
+  // (faces rasterised in main memory while this scene is alive: holdCpuCanvases,
+  // above; taken once the renderer stands, so a scene that never starts holds nothing)
+  const CPU_CANVASES = !!opts.cpuCanvases;
+  if (CPU_CANVASES) holdCpuCanvases();
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.append(renderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  // FEWER FRAMES WHILE THE DETAIL IS BEING BUILT (`opts.buildFrameMs`,
+  // portrayal-site#192). A rack in full detail is tens of thousands of draw
+  // calls a frame (40,000 for 25 parts with 43 cables), and the loop below
+  // drew one at every animation frame while the relief pass was still adding
+  // to it: on a fast GPU a quarter of the build's time went on frames nobody
+  // was steering, and with software GL nearly all of it, so a large rack never
+  // finished. A host that passes `buildFrameMs` gets a frame at most that
+  // often WHILE A DETAIL PASS IS RUNNING AND NOBODY IS HANDLING THE VIEW: the
+  // scene still fills in as it is built, a few times a second. The moment the
+  // pointer moves over the stage, a button or the wheel is used, or the camera
+  // is still easing to rest, every frame is drawn as before; and once the
+  // detail is in, every frame is drawn as before. Nothing is drawn that was
+  // not, and no other caller passes the option.
+  // AND NEVER MORE THAN A FIFTH OF THE TIME: where a frame is slow (software
+  // GL takes over a second for one), `buildFrameMs` apart is back to back, so
+  // the wait is also four times what the last frame took, measured to the
+  // next animation frame the browser gave.
+  const BUILD_FRAME_MS = opts.buildFrameMs > 0 ? opts.buildFrameMs : 0;
+  const HANDLED_MS = 1000;      // how long after the last touch the view counts as handled (the easing runs on)
+  let detailing = 0, lastFrame = -Infinity, handledAt = -Infinity, handling = false, frameCost = 0, costDue = false;
+  const onHandle = () => { handledAt = performance.now(); };
+  const onHandleStart = () => { handling = true; }, onHandleEnd = () => { handling = false; handledAt = performance.now(); };
+  // A CAMERA THAT HAS MOVED IS ALWAYS DRAWN. The controls move the camera in their own pointer handlers as well as
+  // in the loop's update(), so "did update() move it" misses a drag's last step; their `change` event does not.
+  // Until that frame is drawn the camera's matrices are the last frame's, and a host asking what is under the
+  // pointer (the Rack Builder's hover) would be answered for a view that is no longer the one on screen.
+  let cameraMoved = false;
+  const onCameraMoved = () => { cameraMoved = true; };
+  // HOW FAR THE CAMERA HAS MOVED from a pose taken earlier (`poseOf`: where it
+  // is and what it looks at, which is all the controls change), as a share of
+  // its distance to its target: the controls ease to rest by ever smaller
+  // steps, for seconds after a drag, long after a step is too small to see.
+  const poseOf = () => ({p: camera.position.clone(), t: controls.target.clone()});
+  const movedFrom = (pose, share) => {
+    const d = Math.max(1, camera.position.distanceTo(controls.target));
+    return camera.position.distanceTo(pose.p) / d > share || controls.target.distanceTo(pose.t) / d > share;
+  };
+  // A FRAME ONLY WHEN SOMETHING ASKS FOR ONE (opt-in, `opts.onDemand`; the Rack
+  // Builder's). A rack in detail is tens of thousands of draw calls a frame, and
+  // the loop drew one at every animation frame whether anything had changed or
+  // not: 39% of a finished large scene's main thread was redrawing a picture
+  // nobody had touched. With the option a frame is drawn only once the scene is
+  // `dirty`: the camera moved (the controls' `change`, a resize, a reframe),
+  // something was added to the scene or restyled in it (this file's own builds
+  // and its setters, and a host's restyle through `requestFrame()`), or the
+  // reader did anything at all (a pointer, a key or the wheel anywhere in the
+  // document, which is where every hover and pick starts). The loop still runs
+  // at every animation frame, so the controls ease as before; it only stops
+  // drawing the same picture again. Without the option every frame is drawn.
+  // A camera easing to rest is drawn only once it has moved DRAW_MOVE (about an
+  // eighth of a pixel on a stage 1000 px tall) from the frame on screen, so its
+  // last unseen steps draw nothing and the picture is never further than that
+  // from the camera.
+  const ON_DEMAND = !!opts.onDemand;
+  const DRAW_MOVE = 1e-4;
+  let dirty = true, drawnPose = null;
+  const requestFrame = () => { dirty = true; };
+  const READER_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'wheel'];
+  if (ON_DEMAND) for (const type of READER_EVENTS) document.addEventListener(type, requestFrame, {capture: true, passive: true});
+  if (BUILD_FRAME_MS || ON_DEMAND) controls.addEventListener('change', onCameraMoved);
+  // LIGHTER WHILE MOVING (opt-in, `opts.lightWhileMoving`; the Rack Builder's).
+  // A device's relief detail - every cage, port, plug, pin and vent as a mesh
+  // of its own - is nearly all of a large rack's draw calls (139,000 a frame
+  // on one, 650 ms a frame on a fast GPU), and while the camera is dragged or
+  // zoomed nobody reads it. So with the option the relief of a device with a
+  // body is drawn on a layer of its own (RELIEF_LAYER), and while the camera
+  // is handled - from the controls' `start` (a press on the stage, the wheel)
+  // until MOTION_REST_MS after their `end` and the camera's last move (its
+  // easing included) - the camera does not show that layer: the device is its
+  // faces, flat, and a module seated in it its own faceplate (its textured
+  // plane stays on the common layer), and the holes its face is punched with
+  // for its cavities are drawn dark (the face's own materials, opaque while
+  // moving) rather than see-through. At rest the detail is drawn again. A
+  // sheet part (a lacer, a manager) is nothing but its detail, and keeps it.
+  // A host can keep meshes of its own drawn while moving (`opts.keepWhileMoving(id, path)`
+  // for a mesh's part path: the Rack Builder's cabled ports, whose plugs a cord ends in).
+  // Hover picking rays the cables and bundles only (hover.js hoverAt3d, on
+  // the common layer), so it is the same moving or not.
+  const LIGHT_MOVING = !!opts.lightWhileMoving;
+  const RELIEF_LAYER = 1, MOTION_REST_MS = 200;
+  camera.layers.enable(RELIEF_LAYER);
+  const faceMats = new Set();      // the detailed faces' own materials, opaque while moving
+  // (a step of the camera under LIGHT_MOVE, about half a pixel, is the easing's tail, not a move: the detail comes back)
+  const LIGHT_MOVE = 3e-4;
+  let lightHeld = false, movedAt = -Infinity, light = false, lightPose = poseOf(), lightTimer = 0, easedOut = false;
+  // (the detail comes back from a timer of its own, not from the frame loop: the easing after a drag lasts a number of
+  // FRAMES, so where frames are slow it outlasts the hand by seconds, and the restore waited for its last step. Once the
+  // timer has restored the detail, the easing's remaining steps do not take it away again: `easedOut`, until the next press)
+  function restoreLight() {
+    lightTimer = 0;
+    if (!alive || lightHeld) return;
+    const left = MOTION_REST_MS - (performance.now() - movedAt);
+    if (left > 0) { lightTimer = setTimeout(restoreLight, left); return; }
+    easedOut = true;
+    if (light) setLight(false);       // (which asks for the frame that draws it)
+  }
+  const armLight = () => { clearTimeout(lightTimer); lightTimer = setTimeout(restoreLight, MOTION_REST_MS); };
+  if (LIGHT_MOVING) {
+    // (from the controls' `start`, so a drag's first frame is already light, to MOTION_REST_MS after their `end` or the last move)
+    controls.addEventListener('start', () => { lightHeld = true; easedOut = false; clearTimeout(lightTimer); lightTimer = 0; });
+    controls.addEventListener('end', () => { lightHeld = false; movedAt = performance.now(); armLight(); });
+    controls.addEventListener('change', () => {
+      if (!easedOut && movedFrom(lightPose, LIGHT_MOVE)) { movedAt = performance.now(); if (!lightHeld) armLight(); }
+      lightPose = poseOf();
+    });
+  }
+  // (a mesh kept on the common layer while moving: a module's faceplate, or a piece of art, drawn as a textured plane)
+  const flatPart = o => o.geometry?.type === 'PlaneGeometry' && !Array.isArray(o.material) && o.material?.isMeshBasicMaterial && !!o.material.map;
+  function setLight(on) {
+    light = on;
+    if (on) camera.layers.disable(RELIEF_LAYER); else camera.layers.enable(RELIEF_LAYER);
+    for (const m of faceMats) {
+      if (on) { m.transparent = false; m.alphaTest = 0; } else { m.transparent = true; m.alphaTest = FACE_ALPHA_TEST; }
+      m.needsUpdate = true;
+    }
+    requestFrame();
+  }
+  if (BUILD_FRAME_MS) {
+    controls.addEventListener('start', onHandleStart);
+    controls.addEventListener('end', onHandleEnd);
+    for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.addEventListener(type, onHandle, {passive: true});
+  }
   controls.minDistance = 200;
   controls.maxDistance = 6000;
 
@@ -242,7 +407,28 @@ export function createRackScene(container, opts = {}) {
   // reaches the top view must still reach it. roc-ops/portrayal-site#13.
   const COARSE = createReliefScope({PXMM: opts.hiddenPxmm || PXMM_HIDDEN});
   COARSE.overrides = relief.overrides;
-  const scopeFor = view => (view === 'top' || view === 'bottom') ? COARSE : relief;
+  // NO FACE RASTER LONGER THAN `opts.maxFacePx` ON A SIDE (opt-in; the Rack
+  // Builder passes 4096). A part standing the height of the rack is 1867 mm
+  // tall: at 5 px/mm one face is a 9335 px canvas and a 9335 px texture,
+  // past what many GPUs take at all, and the four on one large rack held more
+  // GPU memory between them than a dozen switches. Such a part is drawn at
+  // the density that fits, its own scope copied from the one it would have
+  // had, with only the density changed (same overrides, states and paths).
+  const MAX_FACE_PX = opts.maxFacePx > 0 ? opts.maxFacePx : 0;
+  const capped = new Map();
+  const cappedScope = (base, mm) => {
+    const px = base.pxmm ?? PXMM;
+    if (!MAX_FACE_PX || !(mm * px > MAX_FACE_PX)) return base;
+    const want = Math.floor(MAX_FACE_PX / mm * 100) / 100, key = `${base === COARSE ? 'c' : 'r'}${want}`;
+    if (!capped.has(key)) capped.set(key, {...base, pxmm: want});
+    return capped.get(key);
+  };
+  // (the face's longest side in mm, as faceFrames lays it: front and rear W x H, the sides D x H, top and bottom W x D)
+  const scopeFor = (view, chassis = null) => {
+    const {w = 0, h = 0, d = 0} = chassis || {};
+    return (view === 'top' || view === 'bottom') ? cappedScope(COARSE, Math.max(w, d))
+      : cappedScope(relief, view === 'left' || view === 'right' ? Math.max(d, h) : Math.max(w, h));
+  };
 
   // ── parts taken off ────────────────────────────────────────────────────
   // WHAT IS NOT THERE. A set of data-paths a device is drawn without - a
@@ -297,6 +483,11 @@ export function createRackScene(container, opts = {}) {
   // build meant the whole rack assembled itself somewhere above the default
   // camera and then snapped into place - and did it again on every rebuild,
   // throwing away wherever the viewer had orbited to.
+  // (tagMinX, tagMaxX: x of the farthest front tag's outer edge on the left and of the farthest
+  // rear tag's on the right, null until layoutTags has run or while a column is empty;
+  // framed: the view last framed; cameraTouched: the viewer has moved it since)
+  let tagMinX = null, tagMaxX = null, framed, cameraTouched = false;
+  controls.addEventListener('start', () => { cameraTouched = true; });
   function frameCamera(which) {
     const v = VIEWS[which] || VIEWS[VIEW] || VIEWS.iso;
     const H = UNITS * RU;
@@ -321,8 +512,16 @@ export function createRackScene(container, opts = {}) {
     //
     // The viewing DIRECTION is the one the stage was composed with, kept as a
     // unit vector so the look does not change - only how far back it sits.
-    const target = new THREE.Vector3(RACK_W * (v.aimX || 0), H * v.aim, v.z);
+    // THE TAGS' OWN REACH, once they are laid out (layoutTags): the picture is
+    // centred on the span from the farthest front tag's edge to the farthest rear
+    // tag's (the right rail's outer edge while there is none), and given room by
+    // that span, not by a fixed guess at it.
+    const tagged = tagMinX !== null || tagMaxX !== null;
+    const left = tagMinX ?? -(RACK_W / 2 + 10), right = tagMaxX ?? RACK_W / 2 + 10;
+    const target = new THREE.Vector3(!tagged ? RACK_W * (v.aimX || 0) : (left + right) / 2 * v.centre, H * v.aim, v.z);
     controls.target.copy(target);
+    framed = which;
+    cameraTouched = false;
 
     // The container may not have been measured yet - resize() runs after the
     // first framing - so take the aspect from the element rather than from a
@@ -339,13 +538,15 @@ export function createRackScene(container, opts = {}) {
     // being checked against the height and width of what is directly in
     // front of the camera.
     const depth = FRAME ? RACK_FACE_Z - REAR_FACE_Z : 0;
-    const need = Math.max(H / (2 * half), (RACK_W * v.wide) / (2 * half * aspect),
+    const across = !tagged ? RACK_W * v.wide : (right - left) * v.span;
+    const need = Math.max(H / (2 * half), across / (2 * half * aspect),
                           (depth * 1.15) / (2 * half * aspect));
     camera.position.copy(target)
       .addScaledVector(new THREE.Vector3(...v.dir), need * v.margin);
 
     controls.update();                       // now a no-op delta
     controls.enableDamping = damped;
+    requestFrame();
   }
   frameCamera();
 
@@ -447,6 +648,7 @@ export function createRackScene(container, opts = {}) {
     disposeTree(rack);                       // dispose BEFORE detaching, or
     for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
     rackPosts = [];
+    requestFrame();
     if (!RAILS) return;
     buildPostPair(RACK_FACE_Z, 1);
     if (FRAME) buildPostPair(REAR_FACE_Z, -1);
@@ -512,7 +714,82 @@ export function createRackScene(container, opts = {}) {
 
   // ── devices ────────────────────────────────────────────────────────────
   const mounted = [];   // {entry, group}
-  const tagRow = new Map();   // half-U row -> mm of rail label already laid out there (cleared on rebuild)
+  // The leader lines from each device tag to its device. Their own group, so an
+  // export can set them aside (withoutLeaders) and they are cleared on rebuild.
+  const leaders = new THREE.Group();
+  leaders.name = 'tag-leaders';
+  scene.add(leaders);
+  const TAG_GAP = 120;      // mm clear between the farthest part beside the rack and the tags' inner edge
+  const TAG_GAP_Z = 40;   // mm clear in front of the rack's frontmost part, so a tag clears it from the side too
+  const TAG_GAP_Z_REAR = 120;   // the same behind the rearmost part, more of it: from the left side the rear column is the far one, and perspective draws it in toward the rack
+  const TAG_STEP = 4;      // mm between two tags in a column
+  // The scene without its leaders for as long as `fn` runs (an export): a Line is
+  // written to a GLB, unlike a sprite.
+  async function withoutLeaders(fn) {
+    scene.remove(leaders);
+    try { return await fn(); } finally { if (alive) scene.add(leaders); }
+  }
+  function clearLeaders() {
+    for (const l of [...leaders.children]) { leaders.remove(l); l.geometry.dispose(); l.material.dispose(); }
+  }
+
+  // THE TAGS STAND IN ONE COLUMN OUTSIDE EVERYTHING BESIDE THE RACK, each with a
+  // leader to its device. The column's inner edge is read from the scene - the
+  // farthest left of anything in it but the tags: a part beside the rack, a cable
+  // run - and its depth from the frontmost part, so from the side a tag is beside
+  // the rack rather than over it. Tags are right-aligned, so a leader leaves each
+  // at one x. Two devices at one height do not share a place: the column steps
+  // down, a tag never above the one before it. Run when the scene is complete,
+  // and again by a host that stands parts or hangs cables after build().
+  const extent = new THREE.Box3(), partBox = new THREE.Box3();
+  function layoutTags() {
+    clearLeaders();
+    const tags = mounted.filter(m => m.tag).sort((a, b) => b.group.position.y - a.group.position.y);
+    if (!tags.length) { tagMinX = tagMaxX = null; requestFrame(); return; }
+    let outer = -RACK_W / 2, outerR = RACK_W / 2, front = RACK_FACE_Z, rear = RACK_FACE_Z;
+    for (const o of scene.children) {
+      if (o === leaders || o.isLight || o.isSprite) continue;
+      partBox.makeEmpty().expandByObject(o);
+      if (partBox.isEmpty()) continue;
+      outer = Math.min(outer, partBox.min.x);
+      outerR = Math.max(outerR, partBox.max.x);
+      if (o.name !== 'patch-cables') { front = Math.max(front, partBox.max.z); rear = Math.min(rear, partBox.min.z); }   // (a cable run is not a part a tag must clear in depth)
+    }
+    // A tag is REAR when its part stands at the rear: a rear-facing device, or a zero-U part at a rear
+    // upright. A part spanning front to back (full depth) keeps its tag at the front.
+    const atRear = m => {
+      extent.setFromObject(m.group);
+      if (extent.min.z <= REAR_FACE_Z + 1 && extent.max.z >= RACK_FACE_Z - 1) return false;
+      const zu = m.group.userData.zeroU;
+      return zu ? /rear$/.test(zu.at) : m.entry.face === 'rear';
+    };
+    const colL = outer - TAG_GAP, colR = outerR + TAG_GAP;
+    const floors = {front: Infinity, rear: Infinity};
+    let min = null, max = null;
+    for (const m of tags) {
+      const isRear = atRear(m), side = isRear ? 'rear' : 'front';
+      const w = m.tag.scale.x, h = m.tag.scale.y;
+      const y = Math.min(m.group.position.y, floors[side] - h / 2 - TAG_STEP);   // (floor: the bottom edge of the tag above, in this column)
+      // front column: left of everything, right-aligned, in front; rear column: right of everything, left-aligned, behind
+      const col = isRear ? colR : colL;
+      m.tag.position.set(isRear ? col + w / 2 : col - w / 2, y, isRear ? rear - TAG_GAP_Z_REAR - w / 2 : front + TAG_GAP_Z + w / 2);
+      floors[side] = y - h / 2;
+      if (isRear) max = Math.max(max ?? -Infinity, col + w); else min = Math.min(min ?? Infinity, col - w);
+      // the leader ends on the near face of the part: inside its edge nearest the column, at the tag's own height or the nearest the part has
+      extent.setFromObject(m.group);
+      const end = new THREE.Vector3(isRear ? extent.max.x - 20 : extent.min.x + 20, Math.min(Math.max(y, extent.min.y + 4), extent.max.y - 4),
+                                    isRear ? extent.min.z : extent.max.z);
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(col, y, m.tag.position.z), end]),
+                                  new THREE.LineBasicMaterial({color: new THREE.Color(LABEL.unit), depthTest: false, transparent: true, opacity: 0.85}));
+      line.userData.labelTone = 'unit';
+      line.userData.leaderOf = m.entry.id ?? null;
+      line.renderOrder = 1;
+      leaders.add(line);
+    }
+    tagMinX = min; tagMaxX = max;
+    if (!cameraTouched) frameCamera(framed);   // the opening view is fitted to the tags; one the viewer has moved is left alone
+    requestFrame();   // (the tags moved and the leaders are new)
+  }
 
   // A FACE BELONGS TO A MOUNT, NOT TO A MODEL. The override table is keyed by
   // the URL a face is fetched from, and that URL is `<ref>.<cfg>.<view>.svg` -
@@ -532,6 +809,22 @@ export function createRackScene(container, opts = {}) {
   const faceKey = (entry, view) => `${faceUrl(entry, view)}#mount-${entry.slot}`;
   const faceSrc = (entry, view) =>
     SYNTH.has(faceKey(entry, view)) ? faceKey(entry, view) : faceUrl(entry, view);
+  // ONE BUILD FOR EVERY MOUNT OF A PLAIN PART (opt-in, `entry.share`). Fifty-six
+  // of one lacer on a large rack were fifty-six identical sets of canvases,
+  // textures and relief meshes - most of the build's time and of its GPU
+  // memory. A mount the host marks `share` (the Rack Builder: a part no cable,
+  // swap or written field reaches, so nothing is seated in it and nothing of it
+  // is dimmed or painted for itself) and that has no face of its own in this
+  // scene (SYNTH: a bay swap, a part pulled) is built from the first mount of
+  // the same faces at the same size: one geometry, one set of materials and
+  // textures. Cleared with the mounts (buildAll, dispose).
+  const SHARED = new Map();
+  function shareKey(entry) {
+    if (!entry.share || pulledFor(entry).size) return null;
+    if (RACK_VIEWS.some(v => SYNTH.has(faceKey(entry, v)))) return null;
+    const {w, h, d, shell} = entry.chassis || {};
+    return `${faceUrl(entry, 'front')}|${w}x${h}x${d}|${shell ?? ''}`;
+  }
   function putFace(entry, view, text) {
     const k = faceKey(entry, view);
     setSvgOverride(k, text, relief);
@@ -564,10 +857,12 @@ export function createRackScene(container, opts = {}) {
   // costs no extra fetching: buildDevice asks for the same faces and svgSource
   // memoises both hits and misses.
   async function overrideFaces(entry) {
-    const ov = entry.overrides;
-    if (!ov || !Object.keys(ov).length) return;
-    const byRef = ref => (entry.componentIndex || []).find(
-      c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
+    const ov = entry.overrides || {};
+    const fields = entry.fields || {};
+    const hasFields = Object.keys(fields).length > 0;
+    if (!Object.keys(ov).length && !hasFields) return;
+    const comps = entry.componentIndex || [];
+    const byRef = ref => findComp(comps, ref);
     const loadSkin = async ref => {
       const c = byRef(ref);
       if (!c) return null;
@@ -587,8 +882,27 @@ export function createRackScene(container, opts = {}) {
       docs[view] = doc;
       faces[view] = doc.documentElement;
     }
-    const seated = await seatViews(
-      faces, {bays: entry.bays, cages: entry.cages}, ov, loadSkin, byRef);
+    const seated = Object.keys(ov).length
+      ? await seatViews(faces, {bays: entry.bays, cages: entry.cages}, ov, loadSkin, byRef) : {};
+    // WHAT WAS WRITTEN ON A PART (item.fields: an optic's latch colour, its
+    // label), painted into the same text with the rule 2D uses (face.js
+    // applyFields -> fields.js paintFields), after the seating so a seated
+    // optic is there to paint. Painted into THIS mount's text rather than into
+    // relief's scope-wide field registry: that one is keyed by data-path alone
+    // and a scene holds many devices whose optics share a path.
+    // The stash paintFields leaves (the colour as drawn) is taken off again:
+    // relief repaints the registry over every document it reads and puts back
+    // whatever a stash names, which would undo this.
+    if (hasFields) {
+      for (const [view, root] of Object.entries(faces)) {
+        applyFields(root, fields);
+        for (const attr of STASHED) {
+          root.removeAttribute(attr);
+          for (const n of root.querySelectorAll(`[${attr}]`)) n.removeAttribute(attr);
+        }
+        seated[view] = {...(seated[view] || {}), applied: true};
+      }
+    }
     for (const [view, r] of Object.entries(seated)) {
       // The divergences the pass exists to prevent, said out loud rather than
       // swallowed - the same three the kit's viewer reports.
@@ -637,7 +951,7 @@ export function createRackScene(container, opts = {}) {
     // than in whichever order the decodes happened to finish.
     const plain = () => new THREE.MeshLambertMaterial({color: 0x3a3f44});
     const mat = cv => cv ? new THREE.MeshLambertMaterial(
-      {map: canvasTex(cv), transparent: true, alphaTest: 0.08}) : plain();
+      {map: canvasTex(cv), transparent: true, alphaTest: FACE_ALPHA_TEST}) : plain();
 
     // FLAT FIRST. Nearly all of a device's build time is buildFaceRelief turning
     // every cage, dome and vent into its own extruded geometry - measured at
@@ -649,15 +963,21 @@ export function createRackScene(container, opts = {}) {
     // So the box goes up with plain rasterised faces, which is the whole
     // picture minus the depth, and the relief is added afterwards for anyone
     // who zooms in. Same end state, reached with nobody watching a scrim.
+    // A PART BUILT ONCE FOR EVERY MOUNT OF IT (`shareKey`, below): a mount after
+    // the first takes the first's materials and, as they arrive, its detail.
+    const key = shareKey(entry);
+    const tpl = key && SHARED.get(key);
     const flatCv = {};
-    await Promise.all([
+    if (!tpl) await Promise.all([
       ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false,
-                                  scopeFor(F.view))
+                                  scopeFor(F.view, entry.chassis))
         .then(cv => { flatCv[F.view] = cv; }).catch(() => {})),
-      svgCanvas(f('bottom'), W, D, true, true, COARSE)
+      svgCanvas(f('bottom'), W, D, true, true, scopeFor('bottom', entry.chassis))
         .then(cv => { flatCv.bottom = cv; }).catch(() => {}),
     ]);
-    const mats = ['right', 'left', 'top', 'bottom', 'front', 'rear']
+    // (the same array, not a copy, for a shared part: the detail pass puts each
+    // face's finished material into it, and every mount of the part shows it)
+    const mats = tpl ? tpl.body.material : ['right', 'left', 'top', 'bottom', 'front', 'rear']
       .map(v => mat(flatCv[v]));
 
     const group = new THREE.Group();
@@ -665,13 +985,18 @@ export function createRackScene(container, opts = {}) {
     // item's id, so its GLB says which node is which device; the showcase and
     // the hero pass none, so their scenes and exports are exactly as before.
     if (entry.id) group.name = `device-${entry.id}`;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mats);
+    const body = new THREE.Mesh(tpl ? tpl.body.geometry : new THREE.BoxGeometry(W, H, D), mats);
     // A SHEET BODY HAS NO SIDES (upstream docs/cable-managers-design.md §4):
     // its views are elevations, so painting them on a box stands a picture of
     // the part on every side. The box stays, invisible, as the frame its relief
     // is built in - as kit/viewer3d.js does.
+    // (a shared part's materials are the first mount's, already set, and perhaps lent to its stand-in now)
     const sheet = entry.chassis?.shell === 'sheet';
-    if (sheet) for (const m of mats) m.visible = false;
+    if (sheet && !tpl) for (const m of mats) m.visible = false;
+    if (tpl?.body.userData.standIn) body.userData.standIn = tpl.body.userData.standIn;
+    // (the first mount of a shared part keeps the record the others are built from)
+    const rec = key && !tpl ? {body, sharers: [], faces: [], detail: null} : null;
+    if (rec) SHARED.set(key, rec);
     group.add(body);
     meshes.forEach(m => group.add(m));
     // A SHEET BODY STANDS AS A PLAIN BOX UNTIL ITS DETAIL ARRIVES
@@ -687,23 +1012,31 @@ export function createRackScene(container, opts = {}) {
     // new mesh, geometry or material would take an id, and a USDZ names its
     // parts by those, so every file after would differ by a number. No other
     // caller passes the option.
-    let stoodIn = null;
-    if (sheet && opts.standIn) {
+    let stoodIn = null, paintStand = null;
+    if (sheet && opts.standIn && !tpl) {
       stoodIn = mats.map(m => ({m, own: {visible: m.visible, map: m.map, color: m.color.getHex(), transparent: m.transparent, opacity: m.opacity,
                                          alphaTest: m.alphaTest, depthWrite: m.depthWrite}}));
       for (const {m} of stoodIn) {
-        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.transparent = true; m.opacity = 0.35; m.alphaTest = 0; m.depthWrite = false;
+        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.alphaTest = 0;
         m.needsUpdate = true;
       }
       body.userData.standIn = true;
+      // (opaque when the host's covers are on: it hides the cables inside, as the cover will; a box that failed keeps its dull look)
+      paintStand = () => {
+        if (!stoodIn || body.userData.standIn === 'failed') return;
+        for (const {m} of stoodIn) { m.transparent = !standInOpaque; m.opacity = standInOpaque ? 1 : 0.35; m.depthWrite = standInOpaque; m.needsUpdate = true; }
+      };
+      standInPaints.add(paintStand);
+      paintStand();
     }
     const dropStandIn = () => {
       if (!stoodIn) return;
+      standInPaints.delete(paintStand);
       for (const {m, own} of stoodIn) {
         m.visible = own.visible; m.map = own.map; m.color.setHex(own.color); m.transparent = own.transparent; m.opacity = own.opacity;
         m.alphaTest = own.alphaTest; m.depthWrite = own.depthWrite; m.needsUpdate = true;
       }
-      delete body.userData.standIn;
+      for (const b of [body, ...(rec?.sharers ?? []).map(s => s.body)]) delete b.userData.standIn;
       stoodIn = null;
     };
 
@@ -715,10 +1048,12 @@ export function createRackScene(container, opts = {}) {
     // side panes and the kit's solids have it. It stood on the bottom of its
     // lowest unit here, up to 6.35 mm below where the kit's routes took it to
     // be. Without a catalogue entry the span is the drawing's height in units.
-    // A part beside the rack is no rack item: it stands on its bottom unit.
+    // A part beside the rack is no rack item: it stands on its bottom, in
+    // millimetres (`mm`, the kit's zeroUBottomMm, as its solid does since kit
+    // 0.30.0, #1030), else on its bottom unit.
     const box = entry.chassis?.ru != null && entry.mount !== 'rack-side'
       ? itemBox(null, {ru: entry.ru, ref: entry.ref, roll: entry.roll}, () => entry.chassis)
-      : (u => ({lo: (entry.ru - 1) * RU, hi: (entry.ru - 1 + u) * RU}))(Math.max(1, Math.round(H / RU)));
+      : (u => { const lo = Number.isFinite(entry.mm) ? entry.mm : (entry.ru - 1) * RU; return {lo, hi: lo + u * RU}; })(Math.max(1, Math.round(H / RU)));
     // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
     // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
     // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).
@@ -776,15 +1111,16 @@ export function createRackScene(container, opts = {}) {
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with
-    // the rails.
+    // the rails. None for a part the caller marks `untagged` (the Rack Builder
+    // marks its cable managers): they take no row either, so the equipment
+    // tags close up toward the rail.
     let tag = null;
-    if (RAILS) {
+    if (RAILS && !entry.untagged) {
       tag = labelSprite(entry.label, 30, 'tag');
-      // Labels at one height (a manager and its host, a rear and a front part at one U) sit
-      // side by side, outward from the rail, not on top of one another.
-      const k = Math.round(group.position.y / (RU / 2)), used = tagRow.get(k) || 0;
-      tag.position.set(-(RACK_W / 2 + 120) - used - tag.scale.x / 2, group.position.y, 46);
-      tagRow.set(k, used + tag.scale.x + 12);
+      tag.userData.tagOf = entry.id ?? null;   // (the device it names, by the id its group is named by)
+      // (where it stands is layoutTags's, once the whole rack is: this is only
+      // a place for it while the rack is still being built)
+      tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
       scene.add(tag);
     }
     scene.add(group);
@@ -793,6 +1129,7 @@ export function createRackScene(container, opts = {}) {
     // here, before the mount is ever drawn, not after the whole stack is
     // built: the Rack Builder's parts beside the rack (rack/scene3d.js).
     opts.onMount?.({id: entry.id ?? null, ref: entry.ref, group});
+    requestFrame();
 
     // The faces nobody is looking at yet, plus the underside. Deliberately not
     // awaited: build() resolves once every device is standing, so the scrim
@@ -804,34 +1141,67 @@ export function createRackScene(container, opts = {}) {
     // a viewer who is already looking gets depth before the hidden sides do.
     // `mine` guards a rebuild or dispose landing mid-pass, when this group and
     // its materials are gone.
+    // A LATER MOUNT OF A SHARED PART builds no detail of its own: each face's
+    // detail, as the first mount's pass lands it, is copied into this group
+    // (Object3D.clone: new meshes on the same geometry and materials), and
+    // the host styles it as it would its own (`opts.onFace`). Its scene is
+    // complete when the first mount's is.
+    if (tpl) {
+      const take = (view, per) => {
+        const copies = per.map(m => m.clone());
+        copies.forEach(m => group.add(m));
+        if (copies.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view, group, meshes: copies});
+        requestFrame();
+      };
+      tpl.sharers.push({entry, body, take});
+      for (const {view, per} of tpl.faces) take(view, per);
+      if (tpl.body.userData.standIn === 'failed')
+        opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: null});
+      pending.push(tpl.detail);
+      return group;
+    }
     const mine = epoch;
     const shownNow = VISIBLE_FACES[VIEW] || VISIBLE_FACES.iso;
     const order = [...FACES].sort((a, b) =>
       (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
     const detail = (async () => {
+      // (held until the host lets the detail start, then a few at a time: `opts.holdDetail`, below)
+      if (detailHeld) { await detailHeld; await detailTurn(sheet); }
       try {
+        if (mine !== epoch) return;
         for (const F of order) {
           const per = [];
-          await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
+          await buildFaceRelief(F, {scope: scopeFor(F.view, entry.chassis), src: f(F.view), faceCv, faceSvg,
             facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
             D, bodyBoxMesh: null});
           if (mine !== epoch) return;
+          // (the relief of a device with a body on its own layer, left out while the camera moves: `opts.lightWhileMoving`)
+          // (but not a cabled port's plug: `opts.keepWhileMoving`, so a cord never ends in the air)
+          if (LIGHT_MOVING && !sheet) for (const m of per) m.traverse(o => { if (!flatPart(o) && !opts.keepWhileMoving?.(entry.id, o.userData?.portrayalPath)) o.layers.set(RELIEF_LAYER); });
           per.forEach(m => { group.add(m); meshes.push(m); });
           // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
           // in the same task the meshes join the device, so nothing is drawn
           // between. The Rack Builder reads the covers off it (rack/covers.js).
           // No other caller passes it, and nothing here changes without it.
           if (per.length) opts.onFace?.({id: entry.id ?? null, ref: entry.ref, view: F.view, group, meshes: per});
+          // (and every other mount of a shared part takes it, in the same task)
+          if (rec && per.length) { rec.faces.push({view: F.view, per}); for (const s of rec.sharers) s.take(F.view, per); }
           if (per.length) dropStandIn();
           const i = MAT_SLOT[F.view], cv = faceCv[F.view];
           if (cv && body.material[i] && !sheet) {
             const prev = body.material[i];
             body.material[i] = mat(cv);
+            if (LIGHT_MOVING) {
+              faceMats.delete(prev); faceMats.add(body.material[i]);
+              if (light) { body.material[i].transparent = false; body.material[i].alphaTest = 0; }
+            }
             prev.map && prev.map.dispose();
             prev.dispose();
           }
+          requestFrame();
         }
         dropStandIn();   // a part whose drawing builds nothing is not left as a box
+        requestFrame();
       } catch (err) {
         // ITS DETAIL COULD NOT BE BUILT (a file that did not load): the box
         // stays, so nothing hangs in the air, but it is marked as one that
@@ -839,15 +1209,23 @@ export function createRackScene(container, opts = {}) {
         // told once so its page can say so (`opts.onDetailFailed`). The
         // failure is still the pass's: complete() rejects as it did.
         if (mine === epoch && stoodIn) {
-          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.opacity = 0.2; m.needsUpdate = true; }
-          body.userData.standIn = 'failed';
-          opts.onDetailFailed?.({id: entry.id ?? null, ref: entry.ref, label: entry.label ?? entry.ref, error: err});
+          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.transparent = true; m.opacity = 0.2; m.depthWrite = false; m.needsUpdate = true; }
+          for (const {entry: e, body: b} of [{entry, body}, ...(rec?.sharers ?? [])]) {
+            b.userData.standIn = 'failed';
+            opts.onDetailFailed?.({id: e.id ?? null, ref: e.ref, label: e.label ?? e.ref, error: err});
+          }
+          requestFrame();
         }
         throw err;
+      } finally {
+        if (detailHeld) detailDone();   // (the next device's pass may start)
       }
     })();
+    if (rec) rec.detail = detail;
     // (complete() still rejects with it; this only keeps a failure the host was told of from also being an unhandled one)
     if (opts.onDetailFailed) detail.catch(() => {});
+    // (counted while it runs, for the loop: fewer frames while a detail pass is in hand, `opts.buildFrameMs`)
+    if (BUILD_FRAME_MS) { detailing++; const done = () => { detailing--; }; detail.then(done, done); }
     pending.push(detail);
     return group;
   }
@@ -984,7 +1362,11 @@ export function createRackScene(container, opts = {}) {
       // An RJ45 plug's point is the occupant itself, `<prefix>-occupant`; an
       // optic's LC plugs, or a duplex plug's two, are below it. Never
       // `port-10-occupant` for `port-1`.
-      const pts = cablePoints(doc.svg).filter(p => p.at && (p.path === prefix + '-occupant'
+      // (the face's cable points read once for it, not once for every cable
+      // end asked after: 900 ends of one large rack read a 600-port face's
+      // points 900 times, ten seconds of its build. The face text, and so
+      // its points, are fixed for as long as the doc is cached: faceDoc.)
+      const pts = (doc.cablePoints ??= cablePoints(doc.svg)).filter(p => p.at && (p.path === prefix + '-occupant'
         || p.path.startsWith(prefix + '-occupant/')));
       if (!pts.length) continue;
       const inv = doc.svg.getScreenCTM().inverse();
@@ -1042,6 +1424,38 @@ export function createRackScene(container, opts = {}) {
   // from a previous build knows its group no longer exists.
   let epoch = 0;
   let pending = [];
+  // THE DETAIL WAITS FOR THE HOST (opt-in, `opts.holdDetail`; the Rack
+  // Builder's, which hangs its cables first). On a large rack the relief pass
+  // is thousands of rasterisations, and run beside the cables it took most of
+  // their main thread: cables hung at 95-103 s on one rack where they need
+  // about 11 s of work. With the option every device's relief pass waits,
+  // after the device stands, until the host calls `startDetail()`: a sheet
+  // part stands as its plain box meanwhile (`opts.standIn`). Once started it
+  // stays started. No other caller passes it.
+  let startDetail = null;
+  const detailHeld = opts.holdDetail ? new Promise(go => { startDetail = go; }) : null;
+  // ...AND THEN A FEW AT A TIME, each started in a task of its own: let go all
+  // together, seventy devices' first faces were read in one task of 7 s, and
+  // the page got its scene only after it. DETAIL_AT_ONCE passes run at once
+  // (a pass waits on its images' decoding, so a few overlap that), in the order
+  // the devices were built.
+  const DETAIL_AT_ONCE = 4;
+  let detailRunning = 0;
+  const detailWaiting = [], detailFirst = [];
+  const nextDetail = () => {
+    while (detailRunning < DETAIL_AT_ONCE && (detailFirst.length || detailWaiting.length)) {
+      detailRunning++; setTimeout((detailFirst.length ? detailFirst : detailWaiting).shift());
+    }
+  };
+  // A SHEET PART'S PASS GOES FIRST (`first`), in the order they were built: until its detail lands a vertical
+  // manager is a plain box, and a rack's managers were its last parts to arrive. The turns are handed out
+  // in a task of their own, after every part has asked, so the order is not the order the passes woke in.
+  const detailTurn = first => new Promise(go => { (first ? detailFirst : detailWaiting).push(go); setTimeout(nextDetail); });
+  const detailDone = () => { detailRunning--; nextDetail(); };
+  // THE STAND-INS FOLLOW THE HOST'S COVERS SETTING (`paintStandIns`): opaque when the covers are on, as the
+  // cover will be, else see-through. Each stand-in registers its repaint while it stands.
+  let standInOpaque = false;
+  const standInPaints = new Set();
   let RESOLVED = [], COMPONENTS = null;
   async function hydrate() {
     const configs = new Map();
@@ -1100,11 +1514,21 @@ export function createRackScene(container, opts = {}) {
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
-    tagRow.clear();
+    clearLeaders();
+    tagMinX = tagMaxX = null;
+    requestFrame();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
+    SHARED.clear();           // and the parts built once for those mounts
+    faceMats.clear();         // and their detailed faces' materials
     dropAnchorDocs();         // measured against overrides that are now gone
+    // A BUILD OVERTAKEN STOPS (dispose, a lost context, another build: each
+    // bumps `epoch`): the devices still to come are not built for a scene
+    // nobody will see, holding canvases and textures the next one needs.
+    const mine = epoch;
+    if (!alive) return;       // (disposed before it was asked to build)
     await hydrate();
+    if (mine !== epoch) return;
     if (FIT) {
       const want = fitUnits();
       if (want !== UNITS) {
@@ -1116,8 +1540,10 @@ export function createRackScene(container, opts = {}) {
     for (const entry of RESOLVED) {
       await overrideFaces(entry);
       await pullFaces(entry);      // after the bay override: it composes onto it
+      if (mine !== epoch) return;
       await buildDevice(entry);
     }
+    layoutTags();
   }
 
   function resize() {
@@ -1130,6 +1556,7 @@ export function createRackScene(container, opts = {}) {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    requestFrame();
   }
   const ro = new ResizeObserver(resize);
   ro.observe(container);
@@ -1139,10 +1566,57 @@ export function createRackScene(container, opts = {}) {
   // business drawing sixty frames a second (the front page hero pauses it).
   // Every other caller never touches it, and the loop runs as it always did.
   let raf = 0, alive = true, running = true;
+  // A LOST CONTEXT IS NEVER DRAWN INTO (as vendor/viewer3d.js). A GPU reset or
+  // memory pressure takes the context away; a frame drawn on it then compiles a
+  // program the context cannot answer for and three.js throws from inside the
+  // loop (reading 'trim' of a null info log). So on a loss the loop stops, the
+  // uploads are released now, while GL calls are silent no-ops (left for later,
+  // those deletes reach the restored context with the old one's handles: "object
+  // does not belong to this context"), and the host is told (`opts.onContextLost`).
+  // The scene is not drawn again: its uploads are gone. On restore the host is
+  // told (`opts.onContextRestored`) and builds a new scene if it wants one.
+  let contextLost = false;
+  function onContextLost(ev) {
+    if (!alive) return;                 // dispose() forces this loss on purpose
+    ev.preventDefault();
+    contextLost = true;
+    cancelAnimationFrame(raf);
+    raf = 0;
+    epoch++;                            // a deferred relief pass adds nothing more to it
+    for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
+    disposeTree(scene);
+    opts.onContextLost?.();
+  }
+  function onContextRestored() {
+    if (!alive) return;
+    opts.onContextRestored?.();
+  }
+  renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+  renderer.domElement.addEventListener('webglcontextrestored', onContextRestored);
   function tick() {
-    if (!alive || !running) { raf = 0; return; }
+    if (!alive || !running || contextLost) { raf = 0; return; }
+    // (a frame held back while the detail is being built and nobody is handling the view: `opts.buildFrameMs`, above)
+    const now = BUILD_FRAME_MS ? performance.now() : 0;
+    if (costDue) { frameCost = now - lastFrame; costDue = false; }
+    // (the camera is kept where the controls have it at every animation frame, held back or not, and a camera
+    // that has moved since the last frame is drawn: `cameraMoved`, above)
     controls.update();
-    renderer.render(scene, camera);
+    // (lighter while the camera moves, and in detail again once it has been still a moment: `opts.lightWhileMoving`)
+    if (LIGHT_MOVING) {
+      // (the timer, above, has the say once the hand is off; this takes the detail away at the first frame of a move)
+      const moving = lightHeld || (!easedOut && performance.now() - movedAt < MOTION_REST_MS);
+      if (moving !== light) setLight(moving);
+    }
+    // (and with `opts.onDemand`, only a scene something has changed: `dirty`, above, or a camera moved enough to see)
+    if (ON_DEMAND && cameraMoved && drawnPose && !movedFrom(drawnPose, DRAW_MOVE)) cameraMoved = false;
+    if (cameraMoved || ((!ON_DEMAND || dirty) && !(BUILD_FRAME_MS && detailing > 0 && !handling && now - handledAt > HANDLED_MS && now - lastFrame < Math.max(BUILD_FRAME_MS, Math.min(5000, 4 * frameCost))))) {
+      cameraMoved = false;
+      dirty = false;
+      if (ON_DEMAND) drawnPose = poseOf();
+      renderer.render(scene, camera);
+      lastFrame = now;
+      costDue = !!BUILD_FRAME_MS;
+    }
     raf = requestAnimationFrame(tick);
   }
   tick();
@@ -1178,6 +1652,13 @@ export function createRackScene(container, opts = {}) {
     // Where each cable leaves a seated connector under a path prefix:
     // [{position, normal, view, path}], one per relief.js cable point, or [].
     cableAnchor,
+    // LET GO OF THE FACES THE ANCHORS WERE MEASURED ON: each mount's faces,
+    // parked in the document as hidden SVG (faceDoc), with their cable
+    // points. A host that has asked for every anchor it needs (the Rack
+    // Builder, once its cables are hung) frees them: on a large rack they were
+    // hundreds of documents and over 400,000 live nodes. They are a cache: an
+    // anchor asked for later reads its face again, from the same text.
+    releaseAnchors: dropAnchorDocs,
     // The mounted chassis bodies as world-space boxes: [{ref, box}].
     deviceBoxes,
     // How many post meshes are standing - two for a front (or two-post)
@@ -1198,38 +1679,69 @@ export function createRackScene(container, opts = {}) {
     // THE STAGE, after the fact: the colour behind the rack, and the labels'
     // colours to read against it - {labelColor, labelUnitColor,
     // labelEmphasisColor}, as at construction; one left out is its default.
-    setBackground(c) { scene.background = new THREE.Color(c); },
+    setBackground(c) { scene.background = new THREE.Color(c); requestFrame(); },
     setLabelColors(o = {}) {
       LABEL = labelTones(o);
-      scene.traverse(x => { if (x.isSprite && x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
+      // (the sprites and the tags' leaders)
+      scene.traverse(x => { if (x.userData.labelTone) x.material.color.set(LABEL[x.userData.labelTone]); });
+      requestFrame();
     },
+    layoutTags,
     resize,
     reframe: frameCamera,
+    // Ask for a frame: a host that has changed what the scene shows (a
+    // restyle, something added) says so, for a scene that draws only then
+    // (`opts.onDemand`). Harmless without the option: every frame is drawn.
+    requestFrame,
     // Stop and restart the render loop, for a host that knows it is not seen.
     pause() { running = false; cancelAnimationFrame(raf); raf = 0; },
-    resume() { if (alive && !running) { running = true; tick(); } },
-    running: () => alive && running,
+    resume() { if (alive && !running) { running = true; requestFrame(); tick(); } },
+    running: () => alive && running && !contextLost,
+    // Whether the GL context was taken away (and the scene with it): see onContextLost.
+    contextLost: () => contextLost,
     // What the scene resolved: the stack with chassis, bays and the component
     // index filled in, and the height it settled on. Asked for in
     // roc-ops/portrayal-site#10 - a consumer that used to compute heightRU from
     // chassis.ru should not have to re-fetch what this just read.
     resolved: () => ({heightRU: UNITS, stack: RESOLVED.map(e => ({...e}))}),
     // Export what is on screen, including whatever is currently seated in a bay.
-    toGLB: () => toGLB(scene),
-    toUSDZ: () => toUSDZ(scene),
+    // The text one mounted device's face was cut from (`slot` is its place in the
+    // stack): its seated parts and written fields are in it, as the texture has them.
+    faceText: (slot, view) => RESOLVED[slot] ? svgSource(faceSrc(RESOLVED[slot], view), relief) : Promise.resolve(null),
+    // (written in full detail, the faces as built, even from a camera still moving: `opts.lightWhileMoving`;
+    // the tags' leaders are the page's, as the tags are: never in a file)
+    toGLB: () => { if (light) setLight(false); return withoutLeaders(() => toGLB(scene)); },
+    toUSDZ: () => { if (light) setLight(false); return withoutLeaders(() => toUSDZ(scene)); },
     three: {THREE, scene, camera, renderer, controls},
     // Resolves when the deferred faces - sides, rear, underside - have all been
     // installed. build() does not wait for these on purpose; this is here for a
     // host that wants a complete scene before exporting or grabbing a still.
     complete: async () => { await Promise.all(pending); },
+    // Let the held relief pass start (`opts.holdDetail`); a no-op without the option, or once started.
+    startDetail() { startDetail?.(); },
+    // Draw the plain boxes sheet parts stand as (`opts.standIn`) opaque or see-through; those still to come take it too.
+    paintStandIns(opaque) { standInOpaque = !!opaque; for (const paint of standInPaints) paint(); requestFrame(); },
+    // Whether the scene is still the host's: false once disposed.
+    alive: () => alive,
     dispose() {
+      // ONCE. A second dispose would force the loss of a context already lost,
+      // which the browser reports ("loseContext: context lost").
+      if (!alive) return;
       alive = false;
+      SHARED.clear();
+      faceMats.clear();
+      if (CPU_CANVASES) releaseCpuCanvases();
       dropAnchorDocs();
       epoch++;      // stops any deferred relief pass from touching a dead scene
       pending = [];  // and drops the closures it was holding
       cancelAnimationFrame(raf);
+      clearTimeout(lightTimer);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
+      renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored);
+      if (BUILD_FRAME_MS) for (const type of ['pointermove', 'pointerdown', 'wheel']) renderer.domElement.removeEventListener(type, onHandle);
+      if (ON_DEMAND) for (const type of READER_EVENTS) document.removeEventListener(type, requestFrame, {capture: true});
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;
@@ -1243,7 +1755,8 @@ export function createRackScene(container, opts = {}) {
       // and the next one fails to start. renderer.dispose() frees the objects,
       // not the context; only this frees the context. viewer3d.js has always
       // done it and this module never has.
-      renderer.forceContextLoss();
+      // (not one the browser has already taken: losing it again only says so in the console)
+      if (!renderer.getContext().isContextLost()) renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };

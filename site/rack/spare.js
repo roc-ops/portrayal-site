@@ -1,9 +1,9 @@
 // site/rack/spare.js
 // A CORD'S SPARE, IN THE PAGE'S WORDS. The page draws the path a cable takes
 // between its ports and nothing else, so a 0.5 m cord and a 1 m cord on the
-// same path look alike. Spare is recorded and listed, not drawn (rack file
-// version 4, Portrayal #949 step 4; drawing it is #1011), so the page says
-// the figure.
+// same path look alike. Spare is recorded and listed (rack file version 4,
+// Portrayal #949 step 4), so the page says the figure; where it is stored in a
+// duct or on a tray a loop is drawn there too (kit 0.35.0, spare-loops.js).
 //
 // EVERY FIGURE IS THE KIT'S (kit 0.22.0: rack/route.js spareOf). It names a
 // cable's lengths:
@@ -34,6 +34,7 @@
 
 import {spareOf as kitSpareOf} from '../../vendor/rack/route.js';
 import {lengthParts, endKey} from '../../vendor/rack/cable-rules.js';
+import {FIGURES_HELP} from './agent-text.js';
 
 const M_PER = {m: 1, ft: 0.3048};
 // ONE ROUNDING RULE, THE KIT'S. Every figure is said to the nearest
@@ -45,6 +46,29 @@ const M_PER = {m: 1, ft: 0.3048};
 // The cost is at the edge: a cord a few millimetres under its need reads
 // "0 m short", with the need at the same figure as the cord.
 const r2 = x => Math.round(x * 100) / 100;
+
+// THE KIT'S ANSWER, ASKED ONCE FOR A ROUTE CONTEXT, A RACK AND A CABLE OBJECT
+// (portrayal-site#192): the kit lays the cable each time it is asked, and the
+// list, the hover label and an assistant's inspect all ask. A context is made
+// once for a reading of a rack and never changed (route-context.js), and a
+// rack and a cable are never changed in place, so the kit's answer for the
+// same three objects is the same. null where the kit has none, or throws.
+// (kept for each of the three: the page asks of the rack the routes were read
+// from and an assistant's inspect of the rack as it is, and a cable neither
+// changed is one object in both)
+const kitSpares = new WeakMap();   // route context -> WeakMap(cable object -> WeakMap(rack object -> {k}))
+function kitSpare(rack, cable, routeCtx) {
+  let per = kitSpares.get(routeCtx);
+  if (!per) kitSpares.set(routeCtx, per = new WeakMap());
+  let byRack = per.get(cable);
+  if (!byRack) per.set(cable, byRack = new WeakMap());
+  const had = byRack.get(rack);
+  if (had) return had.k;
+  let k = null;
+  try { k = kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
+  byRack.set(rack, {k});
+  return k;
+}
 
 /** A cable's spare by a route context, or null when it cannot be said: no
  *  context, no length on the cable, a length in a unit other than m or ft, or
@@ -58,19 +82,19 @@ export function spareFor(rack, cable, routeCtx, read = null) {
   if (!cable || !routeCtx) return null;
   const cord = lengthParts(cable.length);
   if (!cord || !Object.hasOwn(M_PER, cord.unit)) return null;
-  let k = null;
   // ASKED OF THE RACK THE ROUTES WERE READ FROM, where that is the same
   // question (`read`: {rack, cable}, from sparesOf). The kit keeps which lay
   // of a cable it chose per rack object and cable object, and lays a cable
   // from both ends the first time it is asked of a new one. The page's rack is
   // a new object once its routed lengths are written, with a new object for
   // each cable whose length was; nothing a route or a spare reads has moved.
-  try { k = read ? kitSpareOf(read.rack, read.cable, routeCtx) : kitSpareOf(rack, cable, routeCtx); } catch { k = null; }
+  const k = read ? kitSpare(read.rack, read.cable, routeCtx) : kitSpare(rack, cable, routeCtx);
   if (!k) return null;
   const own = k.pinned ? {value: cord.value, unit: cord.unit} : {value: k.stock_m, unit: 'm'};
   return {...own, cord: k.stock_m, need: k.need_m, spare: k.spare_m, endPlay: k.end_play_m, toStore: k.to_store_m,
           pinned: k.pinned, needs: k.pinned && k.spare_m < -1e-9 ? k.need_m : null};
 }
+
 
 /** Every cable's spare, by id, by the route context the page read for the
  *  rack (route-context.js routeFacts' `ctx`). A cable with a loose end is left
@@ -110,5 +134,7 @@ export const spareText = s => `${s.value} ${s.unit} cord, ${spareAmount(s)} ${is
 /** "the route needs 0.68 m", in the cord's own unit, when a pinned length is
  *  under the kit's need, else null. */
 export const needsText = s => (s.needs == null ? null : `the route needs ${r2(s.needs / M_PER[s.unit])} ${s.unit}`);
+/** What each figure in a cable's lengths means, in one sentence (agent-text.js has it). */
+export {FIGURES_HELP};
 /** The cable list's one line of explanation. */
-export const SPARE_HELP = 'The drawing shows each cable\'s path. A cord\'s spare is listed here and is not drawn.';
+export const SPARE_HELP = 'The drawing shows each cable\'s path, and a loop where its spare is stored in a duct or on a tray. Spare at an end, or not placed, is listed here and is not drawn.';

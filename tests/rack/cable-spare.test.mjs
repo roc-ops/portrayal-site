@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {sparesOf, spareFor, looseIn, spareText, spareAmount, needsText, SPARE_HELP} from '../../site/rack/spare.js';
+import {sparesOf, spareFor, looseIn, spareText, spareAmount, needsText, SPARE_HELP, FIGURES_HELP} from '../../site/rack/spare.js';
 import {cableMeta} from '../../site/rack/cable-panel.js';
 import {cableText} from '../../site/rack/agent-text.js';
 import * as R from '../../vendor/rack/route.js';
@@ -177,6 +177,10 @@ test('the list\'s line and the agent\'s text carry the same words, and the agent
   assert.doesNotMatch(said + saidShort, /dressing|against the routed length/);
   assert.match(SPARE_HELP, /path/);
   assert.match(SPARE_HELP, /is not drawn\.$/);
+  // one plain sentence says what needs, routed, stock size and short mean, in the text and under the list
+  for (const t of [said, saidShort]) assert.ok(t.includes(FIGURES_HELP), 'the cable text carries the figures sentence');
+  for (const w of [/needs is the path inside the ports, less the maker's allowance/i, /routed is the measured path/, /stock size is the next stock length/, /short means the cord is shorter than it needs/])
+    assert.match(FIGURES_HELP, w);
   // the page source no longer reads the end allowance to derive anything
   const src = readFileSync(new URL('../../site/rack/spare.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /import\s*\{[^}]*(endAllowance|END_ALLOWANCE_BY_MEDIA|pathLength)[^}]*\}/);

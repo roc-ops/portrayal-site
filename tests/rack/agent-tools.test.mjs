@@ -762,7 +762,7 @@ test('descriptions: within bounds, naming only real tools and arguments, and no 
 const DEFAULTS = {
   'describe_rack.section': 'all when left out', 'describe_rack.offset': '0 when left out', 'describe_rack.limit': '40 when left out',
   'find_devices.offset': '0 when left out',
-  'list_free_ports.view': 'both when left out', 'list_free_ports.offset': '0 when left out',
+  'list_free_ports.view': 'both when left out', 'list_free_ports.offset': '0 when left out', 'list_free_ports.kinds': 'all when left out',
   'inspect.cfg': 'its default when left out', 'inspect.section': 'the start when left out', 'inspect.offset': '0 when left out',
   'new_rack.name': 'when left out, the next free', 'new_rack.height': '42 when left out', 'new_rack.kind': 'four-post when left out',
 };

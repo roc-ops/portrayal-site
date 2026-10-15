@@ -83,6 +83,13 @@ export function cavityShell(c, INTO) {
   // Walls and a back are what a box has round a recess; a sheet has nothing
   // round its floor, and built here they are the solid block a sheet body
   // exists not to be.
+  // A PASSAGE THROUGH A SHEET BODY IS AIR. The hole a bay's occupant is seen
+  // through from behind (`seeThrough`), and an open bay's mouth (`hollow`),
+  // have no floor in a box and no walls in a sheet: an open frame's slots
+  // share the one space between its plates. A floor here was a painted plane
+  // across every empty slot, 2 mm behind the face the slot opens in.
+  if (c.sheet && (c.seeThrough || c.hollow))
+    return {walls: false, floor: false, back: false, depth: 0};
   if (c.sheet) return {walls: false, floor: true, back: false, depth: Math.min(c.d, INTO - 2)};
   const open = !!(c.seeThrough || c.hollow);
   const depth = c.hollow ? Math.min(c.d, 6) : Math.min(c.d, INTO - 2);
@@ -1291,7 +1298,36 @@ function seatChain(owner, byPath) {
   return chain;
 }
 
+// ONE id -> element map over a subtree, FIRST MATCH IN DOCUMENT ORDER, which is
+// what `querySelector('[id=...]')` answers when an id repeats. A selector walks
+// the whole subtree for every call; at a few hundred lookups on a big face that
+// was seconds, and a map is one walk. `[id]` is the attribute, as the selector
+// read it, not the `.id` property. Descendants only, like querySelector.
+function idMap(root) {
+  const byId = new Map();
+  for (const n of root.querySelectorAll('[id]')) {
+    const id = n.getAttribute('id');
+    if (!byId.has(id)) byId.set(id, n);
+  }
+  return byId;
+}
+
 export function cablePoints(svg) {
+  // one map per marker host, for this call. A host asked once keeps the
+  // selector (a map is a whole walk, and most hosts hold one cable point's
+  // feature); the second ask in the same host builds the map and every later
+  // one reads it.
+  const hostIds = new Map();
+  const featureOn = (host, on) => {
+    const sel = () => host.querySelector(`[id="${on.replace(/"/g, '\\"')}"]`);
+    // an id with a backslash or a line break is read by the selector as an
+    // escape or refused by it; neither is an id, so those keep the selector
+    if (/[\\\n\r\f]/.test(on)) return sel();
+    let byId = hostIds.get(host);
+    if (byId === undefined) { hostIds.set(host, null); return sel(); }
+    if (byId === null) hostIds.set(host, byId = idMap(host));
+    return byId.get(on) || null;
+  };
   const entries = [...svg.querySelectorAll('[data-cp="cable"]')].map(mk => {
     // The whole attribute, not its first two tokens: "1 2 3" is as malformed
     // as "banana", and silently keeping the 1 and the 2 is the same class of
@@ -1311,8 +1347,7 @@ export function cablePoints(svg) {
     const on = mk.dataset.cpOn;
     if (on) {
       const host = mk.parentElement;
-      const feat = host && host.querySelector
-        ? host.querySelector(`[id="${on.replace(/"/g, '\\"')}"]`) : null;
+      const feat = host && host.querySelector ? featureOn(host, on) : null;
       if (feat && feat.dataset.zOut !== undefined) marker.rear = feat.dataset.zOut;
       else if (feat && feat.dataset.zCyl !== undefined) {
         // a cyl's rear is its far end: its own lift, summed from the feature
@@ -1795,20 +1830,131 @@ export function toSizeBox(text, w, h) {
   });
 }
 
-export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope) {
-  const text = await svgSource(url, scope);
+// ONE RASTER PER DRAWING. Every raster here is an SVG drawn through an image
+// (a Blob, an object URL, an Image, a drawImage), and that is the dearest
+// thing the build does: about 20 ms of main thread each, plus the browser's
+// own work for each image, which no profile names. A face asks for the same
+// drawing many times. Each of a switch's 64 cages is the same art under
+// another id, a cavity's outline is drawn for the punch and again for the
+// plate it seats in, and twenty switches of one model draw everything twenty
+// times. So a raster is kept by what decides its pixels, the text and the
+// canvas size and flip, and drawn once (RASTERS below).
+//
+// WHAT DECIDES THE PIXELS IS NOT EVERY CHARACTER OF THE TEXT. An id, a
+// `data-` attribute and a <title>'s words reach the picture only through
+// the drawing's own stylesheet and its references. So the key leaves out the
+// value of an id that no `#id`, `url(#id)` or `href="#id"` names, the value
+// of a `data-` attribute the stylesheet only tests for presence, every
+// `data-` attribute the stylesheet does not name, and a title's words
+// (rasterKey). Two texts with one key differ only there and draw the same
+// pixels, so the first text seen is the one drawn. Anything else differing,
+// however small, is another key and another raster.
+const _CSS_INFO = new Map();
+function _cssInfo(css) {
+  let info = _CSS_INFO.get(css);
+  if (info) return info;
+  // every `#name` (colours too, which only keep more ids than needed), and
+  // every attribute selector, by whether it reads the value
+  const ids = new Set([...css.matchAll(/#(-?[_a-zA-Z][\w-]*)/g)].map(m => m[1]));
+  const valued = new Set(), present = new Set();
+  for (const m of css.matchAll(/\[\s*([\w-]+)\s*([~|^$*]?=)?/g)) (m[2] ? valued : present).add(m[1]);
+  info = {ids, valued, present, anyId: valued.has('id') || present.has('id')};
+  if (_CSS_INFO.size > 64) _CSS_INFO.clear();
+  _CSS_INFO.set(css, info);
+  return info;
+}
+export function rasterKey(text) {
+  text = String(text ?? '');
+  const css = [...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
+  const info = _cssInfo(css);
+  const refs = new Set(info.ids);
+  for (const m of text.matchAll(/(?:url\(\s*['"]?#|href\s*=\s*["']#)([^)'"\s]+)/g)) refs.add(m[1]);
+  // Inside start tags only, and never inside a <style>: a stylesheet or a
+  // run of text keeps every character it has.
+  const tag = t => t.replace(/(\s)(id|data-[\w.:-]+)="([^"]*)"/g, (all, sp, name, val) => {
+    if (name === 'id') return info.anyId || refs.has(val) ? all : `${sp}id=""`;
+    if (info.valued.has(name)) return all;
+    return info.present.has(name) ? `${sp}${name}=""` : '';
+  });
+  return text.split(/(<style\b[^>]*>[\s\S]*?<\/style>)/).map((part, i) => i % 2 ? part
+    : part.replace(/<[a-zA-Z][^>]*>/g, tag)
+          // the words go, the element stays: a selector may count it
+          .replace(/(<title\b[^>]*>)([^<]+)(<\/title>)/g, '$1.$3')).join('');
+}
+
+// THE KEPT RASTERS, oldest first, bounded by pixels rather than by count:
+// most are a cage's few thousand pixels and a few are a whole face's million.
+// A raster a page asks for again is moved to the back. `setRasterBudget(0)`
+// keeps nothing, and every raster is then drawn again, as before 0.43.0.
+const RASTERS = new Map();
+let _budget = 32e6, _held = 0;
+const _rstats = {asked: 0, drawn: 0, ms: 0};
+export function setRasterBudget(px) { _budget = Math.max(0, +px || 0); _trimRasters(); }
+export function clearRasterCache() { RASTERS.clear(); _held = 0; }
+/** How many rasters were asked for, how many were drawn, and the drawing's main-thread ms. */
+export function rasterStats() { return {..._rstats, kept: RASTERS.size, px: _held}; }
+function _trimRasters() {
+  for (const [k, e] of RASTERS) {
+    if (_held <= _budget) break;
+    RASTERS.delete(k);
+    _held -= e.px;
+  }
+}
+async function _drawSvg(text, cw, ch, flipX, flipY) {
+  const t0 = performance.now();
   const img = new Image();
   const blobUrl = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+  let t = performance.now() - t0;
+  try {
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+    const t1 = performance.now();
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d');
+    if (flipX) { ctx.translate(cv.width, 0); ctx.scale(-1, 1); }
+    if (flipY) { ctx.translate(0, cv.height); ctx.scale(1, -1); }
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    t += performance.now() - t1;
+    return cv;
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+    _rstats.drawn++;
+    _rstats.ms += t;
+  }
+}
+// The kept raster for a text at a canvas size: SHARED, so a caller draws FROM
+// it and never into it. A drawing that fails to load is not kept.
+function _rasterShared(text, cw, ch, flipX = false, flipY = false) {
+  _rstats.asked++;
+  const key = `${cw}x${ch}${flipX ? 'x' : ''}${flipY ? 'y' : ''}|${rasterKey(text)}`;
+  const hit = RASTERS.get(key);
+  if (hit) {
+    RASTERS.delete(key);
+    RASTERS.set(key, hit);
+    return hit.cv;
+  }
+  const e = {cv: _drawSvg(text, cw, ch, flipX, flipY), px: cw * ch};
+  e.cv.catch(() => { if (RASTERS.get(key) === e) { RASTERS.delete(key); _held -= e.px; } });
+  if (_budget > 0) {
+    RASTERS.set(key, e);
+    _held += e.px;
+    _trimRasters();
+  }
+  return e.cv;
+}
+// a canvas of its own, to draw on
+function _copyOf(src) {
   const cv = document.createElement('canvas');
+  cv.width = src.width; cv.height = src.height;
+  if (cv.width && cv.height) cv.getContext('2d').drawImage(src, 0, 0);
+  return cv;
+}
+
+export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope) {
+  const text = await svgSource(url, scope);
   const px = _px(scope);
-  cv.width = Math.round(wmm * px); cv.height = Math.round(hmm * px);
-  const ctx = cv.getContext('2d');
-  if (flipX) { ctx.translate(cv.width, 0); ctx.scale(-1, 1); }
-  if (flipYax) { ctx.translate(0, cv.height); ctx.scale(1, -1); }
-  ctx.drawImage(img, 0, 0, cv.width, cv.height);
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  URL.revokeObjectURL(blobUrl);
+  const cv = _copyOf(await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax));
   cv._svgText = text;      // kept for adaptive re-rasterisation (see LOD below)
   return cv;
 }
@@ -2005,13 +2151,30 @@ export function opticBody({behaviour, body, depth, w, h} = {}) {
 export function nodeTools(svg, {back = false} = {}) {
   const q = sel => [...svg.querySelectorAll(sel)].filter(el => !el.closest('[data-projection]'));
   const inv = svg.getScreenCTM().inverse();
+  // ONE MATRIX AND ONE BOX PER ELEMENT, asked of the document once. An
+  // extraction asks for the same node's several times over (a cavity's rect,
+  // its group's, the art of each, a tilted part's frame), and every ask walks
+  // the node's ancestors again. Kept for the life of these tools, so the
+  // caller does not change the drawing's layout while it uses them: the
+  // extraction moves nothing until it has read everything, and lamps.js reads
+  // a document it has just opened.
+  const ctms = new Map(), rects = new Map();
+  const ctmOf = el => {
+    let m = ctms.get(el);
+    if (!m) ctms.set(el, m = inv.multiply(el.getScreenCTM()));
+    return m;
+  };
   const mmRect = el => {
-    const b = el.getBBox();
-    const m = inv.multiply(el.getScreenCTM());
-    const pts = [[b.x, b.y], [b.x + b.width, b.y + b.height]]
-      .map(([x, y]) => ({x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f}));
-    const x0 = Math.min(pts[0].x, pts[1].x), y0 = Math.min(pts[0].y, pts[1].y);
-    return {x: x0, y: y0, w: Math.abs(pts[1].x - pts[0].x), h: Math.abs(pts[1].y - pts[0].y)};
+    let r = rects.get(el);
+    if (!r) {
+      const b = el.getBBox();
+      const m = ctmOf(el);
+      const pts = [[b.x, b.y], [b.x + b.width, b.y + b.height]]
+        .map(([x, y]) => ({x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f}));
+      const x0 = Math.min(pts[0].x, pts[1].x), y0 = Math.min(pts[0].y, pts[1].y);
+      rects.set(el, r = {x: x0, y: y0, w: Math.abs(pts[1].x - pts[0].x), h: Math.abs(pts[1].y - pts[0].y)});
+    }
+    return {...r};
   };
   const shared = [...q('style, defs')].map(n => n.outerHTML).join('');
   // HOW FAR OFF THE FACE A FEATURE STARTS, summed up the ANCESTOR CHAIN.
@@ -2122,7 +2285,7 @@ export function nodeTools(svg, {back = false} = {}) {
   // card's own art leaves out the optics seated on it, which are FRUs of their
   // own (bodyRole) and cut their own plane.
   const nodeSvg = (el, rect, hide = null) => {
-    const m = inv.multiply(el.getScreenCTM());
+    const m = ctmOf(el);
     const clone = el.cloneNode(true);
     clone.removeAttribute('transform');   // the CTM below already includes it
     // raised descendants (collars, handles) render as their own geometry -
@@ -2137,7 +2300,7 @@ export function nodeTools(svg, {back = false} = {}) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${rect.w} ${rect.h}"` +
       ` width="${rect.w}mm" height="${rect.h}mm">${shared}<!--art-->` + live + `</svg>`;
   };
-  return {inv, mmRect, shared, liftOf, ownerOf, scopeWrap, nodeSvg};
+  return {inv, ctmOf, mmRect, shared, liftOf, ownerOf, scopeWrap, nodeSvg};
 }
 
 // standards-relief extraction: cavities (with interior features) + outward protrusions.
@@ -2203,7 +2366,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // never rebuild to show it (#874).
   markPositionFields(svg);
   for (const el of [...q('[data-show-from][display="none"]')]) el.remove();
-  const {inv, mmRect, shared, liftOf, ownerOf, nodeSvg} = nodeTools(svg, {back});
+  const {ctmOf, mmRect, shared, liftOf, ownerOf, nodeSvg} = nodeTools(svg, {back});
   // TILTED FACETS (docs/tilted-facets-design.md).
   // A node under a `[data-tilt-on]` group is measured foreshortened; it is
   // unprojected here to its true size about its part's anchor, and the builder
@@ -2211,8 +2374,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // drawing with no facets.
   // Lifts inside a tilted part are measured from the plane the part sits on,
   // which is the facet (tiltTools' `base`).
-  const {facetInfo, tiltRec} = tiltTools(svg, {mmRect, liftOf,
-                                               ctmOf: n => inv.multiply(n.getScreenCTM())});
+  const {facetInfo, tiltRec} = tiltTools(svg, {mmRect, liftOf, ctmOf});
   // `proj` keeps the front-view rect: rasters, crops and punches are cut from
   // the face art at it, while geometry takes the true rect.
   const tilted = (e, t) => {
@@ -2252,7 +2414,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
     return hit;
   };
   const ringsOf = (el, stepMm = RING_STEP) => {
-    const m = inv.multiply(el.getScreenCTM());
+    const m = ctmOf(el);
     const paths = el.tagName === 'path' ? [el] : [...el.querySelectorAll('path')];
     const rings = [];
     for (const q of paths) {
@@ -2312,11 +2474,14 @@ export async function extractRelief(url, scope, {back = false} = {}) {
       return t ? tilted(e, t) : e;
     });
 
+  // the cavity nodes are found by id, once per cavity: one map for the drawing,
+  // built at the first cavity that names one
+  let svgIds = null;
   const cavities = [...q('[data-depth]')]
     .filter(el => !el.querySelector('[data-depth]'))
     .map(el => {
       const cavNode = el.dataset.cavity &&
-        svg.querySelector(`[id="${CSS.escape(el.id + '--' + el.dataset.cavity)}"]`);
+        ((svgIds ||= idMap(svg)).get(el.id + '--' + el.dataset.cavity) || null);
       const rect = mmRect(cavNode || el);
       const grpRect = mmRect(el);
       const features = [...el.querySelectorAll('[data-z-top],[data-z-sink]')].map(f => ({
@@ -2529,7 +2694,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
     if (role.sub) {
       // the body index lives with the builder; every nested module is
       // recorded here and the builder keeps the ones that declare boxes
-      const m = inv.multiply(el.getScreenCTM());
+      const m = ctmOf(el);
       subBodies.push({path: full, owner: path, ref: el.dataset.ref.split(':')[0], lift: liftOf(el),
                       toFace: {a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f}});
       // on a facet: its boxes are unprojected and built in the tilt frame
@@ -2585,7 +2750,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
                // placed from the bbox stood that far out through the chassis
                // wall. This is local mm -> face mm, mirror included, so a box
                // in the contract's frame lands where the contract says.
-               toFace: (() => { const m = inv.multiply(el.getScreenCTM());
+               toFace: (() => { const m = ctmOf(el);
                                 return {a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f}; })()});
     // AN OPTIC IN A TILTED CAGE IS TILTED WITH IT. render.py copies the tilt
     // onto the occupant; a seat without it takes its mate-to host's.
@@ -2641,17 +2806,20 @@ export function recolourBody(derived, mats, cv) {
   return c;
 }
 
+// A raster of the caller's own, which it may draw on. `rasterSource` is the
+// kept one itself, for a caller that only draws FROM it: a punch, a mask, a
+// crop, a part laid on another raster.
+export function rasterSource(svgText, wmm, hmm, pxmm = PXMM, flipX = false, flipY = false) {
+  return _rasterShared(svgText, Math.max(1, Math.round(wmm * pxmm)), Math.max(1, Math.round(hmm * pxmm)),
+                       flipX, flipY);
+}
+// ITS CONTEXT IS LEFT FLIPPED, as it always was: a punch drawn into a mirrored
+// face at drawing coordinates lands where the mirrored art put the part.
 export async function rasterize(svgText, wmm, hmm, pxmm = PXMM, flipX = false, flipY = false) {
-  const img = new Image();
-  const blobUrl = URL.createObjectURL(new Blob([svgText], {type: 'image/svg+xml'}));
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
-  const cv = document.createElement('canvas');
-  cv.width = Math.max(1, Math.round(wmm * pxmm)); cv.height = Math.max(1, Math.round(hmm * pxmm));
+  const cv = _copyOf(await rasterSource(svgText, wmm, hmm, pxmm, flipX, flipY));
   const ctx = cv.getContext('2d');
   if (flipX) { ctx.translate(cv.width, 0); ctx.scale(-1, 1); }
   if (flipY) { ctx.translate(0, cv.height); ctx.scale(1, -1); }
-  ctx.drawImage(img, 0, 0, cv.width, cv.height);
-  URL.revokeObjectURL(blobUrl);
   return cv;
 }
 
@@ -2683,7 +2851,7 @@ export async function ventWellWalls({wells = [], apertures = {}, frames = {}, sc
       const x = cv.getContext('2d');
       x.fillStyle = well.wall; x.fillRect(0, 0, cv.width, cv.height);
       for (const a of aps)
-        x.drawImage(await rasterize(a.svgText, a.w, a.h, PX),
+        x.drawImage(await rasterSource(a.svgText, a.w, a.h, PX),
                     Math.round((a.x - r.x) * PX), Math.round((a.y - r.y) * PX));
       const geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv;
       const g = geo.groups.find(q => q.materialIndex === hit.wall);
@@ -2703,6 +2871,262 @@ export async function ventWellWalls({wells = [], apertures = {}, frames = {}, sc
     }
   }
   return done;
+}
+
+// ── A FACE IS DRAWN IN BATCHES ───────────────────────────────────────────────
+// Every cage, pin, latch and wall above is a mesh of its own, most with
+// materials of their own, and each mesh is a draw call for every material it
+// has: a box is six. A switch face was some thousand draws, and a large rack
+// a hundred thousand and more a frame, nearly all of it the GPU being told
+// what to draw next rather than drawing it. So once a face is built
+// (batchRelief, at the end of buildFaceRelief):
+//
+//   - a texture whose pixels and settings equal another's on the face is
+//     that one, so the second is never uploaded;
+//   - a material equal to another (the same kind, colour, textures and
+//     settings) is that one;
+//   - and the meshes that share a material, a part and a frame are one mesh,
+//     their geometry carried into the frame.
+//
+// THREE THINGS KEEP A MESH APART, because something reads it later:
+//   - its PART (`userData.portrayalPath`). A host hides, fades or dims a part
+//     by the path on its meshes (a pulled cover, the Rack Builder's covers and
+//     plugs), and does it through their materials, so a material is shared
+//     only within one part;
+//   - its FRAME. A FRU's group moves (an eject), so what is in it is merged
+//     within it and never with the face around it;
+//   - a LIVE material: one a restyle repaints or recolours later (`live`,
+//     only when the caller collects `ctx.restyle`), which keeps its identity,
+//     though meshes that already share it still merge.
+// What the face looks like does not change: the same triangles, normals,
+// texture coordinates, textures and material settings, in fewer draws. The
+// vertices are carried into their frame here rather than on the GPU, so a
+// value can differ in its last bit, and an edge pixel or a surface level
+// with another can then come out a few levels apart.
+//
+// A PART IS EVERY PATH UNLESS THE HOST SAYS OTHERWISE. A switch's every port
+// is a part, so kept apart a port costs a draw for each material it has.
+// `ctx.parts(path)` lets a host name the parts it styles on its own; the
+// rest are the face's, share materials across parts and merge, and lose
+// their path from what they are merged into (a mesh left whole keeps its
+// own). The Rack Builder styles a cable end's port and its plug (hover.js)
+// and a cover (covers.js), and nothing else.
+// `ctx.batch === false` builds the face as it was before 0.43.0.
+
+// Two textures are one when their settings match and their images are the
+// same object or two canvases with the same pixels. A canvas of over a
+// million pixels is compared by identity only (a whole face).
+const _TEX_FIELDS = ['wrapS', 'wrapT', 'magFilter', 'minFilter', 'anisotropy', 'generateMipmaps', 'colorSpace',
+                     'flipY', 'premultiplyAlpha', 'unpackAlignment', 'format', 'type', 'rotation', 'mapping'];
+function _texSig(t) {
+  return [..._TEX_FIELDS.map(k => t[k]), t.repeat.x, t.repeat.y, t.offset.x, t.offset.y, t.center.x, t.center.y,
+          t.matrixAutoUpdate].join(',');
+}
+function _pixels(img) {
+  if (!img || typeof img.getContext !== 'function' || !img.width || !img.height
+      || img.width * img.height > (1 << 20)) return null;
+  const d = img.getContext('2d').getImageData(0, 0, img.width, img.height).data;
+  // FNV-1a over the words, for a bucket; equal buckets are then compared whole
+  const w = new Uint32Array(d.buffer, d.byteOffset, d.byteLength >> 2);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < w.length; i++) h = Math.imul(h ^ w[i], 16777619);
+  return {key: `${img.width}x${img.height}:${h >>> 0}`, data: d};
+}
+function _sameBytes(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+function _texturePool() {
+  const bySig = new Map(), seen = new Map(), ids = new WeakMap();
+  let n = 0;
+  const idOf = img => { if (!ids.has(img)) ids.set(img, ++n); return ids.get(img); };
+  return tex => {
+    if (!tex) return tex;
+    if (seen.has(tex)) return seen.get(tex);
+    const img = tex.image, px = _pixels(img);
+    const sig = `${_texSig(tex)}|${px ? px.key : `#${idOf(img)}`}`;
+    const list = bySig.get(sig) || bySig.set(sig, []).get(sig);
+    let same = list.find(e => e.img === img || (px && e.px && _sameBytes(e.px.data, px.data)));
+    if (!same) list.push(same = {tex, img, px});
+    seen.set(tex, same.tex);
+    return same.tex;
+  };
+}
+const _MAT_FIELDS = ['type', 'side', 'transparent', 'opacity', 'alphaTest', 'alphaToCoverage', 'visible',
+                     'depthTest', 'depthWrite', 'depthFunc', 'blending', 'wireframe', 'vertexColors',
+                     'flatShading', 'fog', 'toneMapped', 'colorWrite', 'polygonOffset', 'polygonOffsetFactor',
+                     'polygonOffsetUnits', 'premultipliedAlpha', 'dithering', 'forceSinglePass', 'stencilWrite',
+                     'reflectivity', 'refractionRatio', 'combine', 'lightMapIntensity', 'aoMapIntensity',
+                     'emissiveIntensity'];
+const _MAT_MAPS = ['map', 'alphaMap', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'envMap', 'bumpMap',
+                   'normalMap', 'displacementMap'];
+// A material with anything this pass does not know (a clipping plane, a
+// shader hook, user data) is left as it is.
+function _plainMaterial(m) {
+  return (m.isMeshBasicMaterial || m.isMeshLambertMaterial) && !m.clippingPlanes
+    && m.onBeforeCompile === THREE.Material.prototype.onBeforeCompile
+    && m.customProgramCacheKey === THREE.Material.prototype.customProgramCacheKey
+    && !Object.keys(m.userData || {}).length && !m.name && !(m.defines && Object.keys(m.defines).length);
+}
+function _matKey(m, texId) {
+  return [..._MAT_FIELDS.map(k => m[k]), m.color ? m.color.getHex() : '', m.emissive ? m.emissive.getHex() : '',
+          ..._MAT_MAPS.map(k => texId(m[k]))].join('|');
+}
+
+// THE GEOMETRY OF SEVERAL PIECES AS ONE, each carried by its own matrix
+// (column-major 4x4, into the frame they are merged in). A piece is a range
+// of a geometry: `pos`, `nrm`, `uv` as flat arrays, `index` or null, and the
+// `start`/`count` of its draw (of the index when there is one). Only the
+// vertices the range uses are kept. A matrix that mirrors (a negative
+// determinant) reverses each triangle, so a face that was in front still is.
+// Pure, so it is checked under node.
+export function mergePieces(pieces, {normals = true, uvs = true} = {}) {
+  const pos = [], nrm = [], uv = [], idx = [];
+  for (const p of pieces) {
+    const e = p.matrix;
+    const det = e[0] * (e[5] * e[10] - e[9] * e[6]) - e[4] * (e[1] * e[10] - e[9] * e[2])
+              + e[8] * (e[1] * e[6] - e[5] * e[2]);
+    // the normal matrix, row by row: the cofactors of the upper 3x3, which
+    // are its inverse transpose times its determinant
+    const n = [e[5] * e[10] - e[6] * e[9], e[2] * e[9] - e[1] * e[10], e[1] * e[6] - e[2] * e[5],
+               e[6] * e[8] - e[4] * e[10], e[0] * e[10] - e[2] * e[8], e[2] * e[4] - e[0] * e[6],
+               e[4] * e[9] - e[5] * e[8], e[1] * e[8] - e[0] * e[9], e[0] * e[5] - e[1] * e[4]];
+    const nv = p.pos.length / 3;
+    const end = p.index ? Math.min(p.index.length, p.start + p.count) : Math.min(nv, p.start + p.count);
+    const map = new Int32Array(nv).fill(-1);
+    const base = pos.length / 3;
+    let next = 0;
+    const take = v => {
+      if (map[v] >= 0) return map[v];
+      map[v] = base + next++;
+      const x = p.pos[3 * v], y = p.pos[3 * v + 1], z = p.pos[3 * v + 2];
+      pos.push(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13],
+               e[2] * x + e[6] * y + e[10] * z + e[14]);
+      if (normals) {
+        const a = p.nrm[3 * v], b = p.nrm[3 * v + 1], c = p.nrm[3 * v + 2];
+        const nx = n[0] * a + n[1] * b + n[2] * c, ny = n[3] * a + n[4] * b + n[5] * c,
+              nz = n[6] * a + n[7] * b + n[8] * c;
+        const l = Math.hypot(nx, ny, nz) || 1;
+        // (divided by the determinant's sign, it is the inverse transpose's)
+        const s = det < 0 ? -1 / l : 1 / l;
+        nrm.push(nx * s, ny * s, nz * s);
+      }
+      if (uvs) uv.push(p.uv[2 * v], p.uv[2 * v + 1]);
+      return map[v];
+    };
+    for (let i = p.start; i + 2 < end; i += 3) {
+      const a = take(p.index ? p.index[i] : i), b = take(p.index ? p.index[i + 1] : i + 1),
+            c = take(p.index ? p.index[i + 2] : i + 2);
+      if (det < 0) idx.push(a, c, b); else idx.push(a, b, c);
+    }
+  }
+  return {pos, nrm: normals ? nrm : null, uv: uvs ? uv : null, index: idx};
+}
+
+// The pass itself. `anchors` are the groups that move (the face's own group
+// and every FRU group); `keep` the meshes something holds on to after the
+// build (a well's walls, which ventWellWalls repaints); `live` the materials
+// a restyle changes. Returns what it did, for a host or a harness.
+export function batchRelief(root, {anchors = new Set(), keep = new Set(), live = new Set(), parts = null} = {}) {
+  anchors = new Set([root, ...anchors]);
+  // which part a mesh is kept apart as: its own, unless the host has said it
+  // never styles that part on its own (`parts`), when it is the face's
+  const partOf = p => (p && (!parts || parts(p)) ? p : '');
+  root.updateMatrixWorld(true);
+  const texOf = _texturePool();
+  const texIds = new Map();
+  const texId = t => { if (!t) return ''; if (!texIds.has(t)) texIds.set(t, texIds.size + 1); return texIds.get(t); };
+  const pool = new Map();
+  const canon = (m, path) => {
+    if (!m || live.has(m) || !_plainMaterial(m)) return m;
+    for (const k of _MAT_MAPS) if (m[k]) m[k] = texOf(m[k]);
+    const key = `${path}|${_matKey(m, texId)}`;
+    if (!pool.has(key)) pool.set(key, m);
+    return pool.get(key);
+  };
+  const OK_ATTRS = new Set(['position', 'normal', 'uv']);
+  const meshes = [];
+  root.traverse(o => { if (o.isMesh) meshes.push(o); });
+  const buckets = new Map();
+  const drawsOf = mesh => Array.isArray(mesh.material) ? mesh.geometry.groups.length : 1;
+  const before = {meshes: meshes.length, draws: 0};
+  const after = {meshes: 0, draws: 0};
+  for (const mesh of meshes) {
+    before.draws += drawsOf(mesh);
+    const g = mesh.geometry;
+    const path = partOf(mesh.userData.portrayalPath);
+    const plain = mesh.constructor === THREE.Mesh && !keep.has(mesh) && !mesh.children.length
+      && mesh.visible && mesh.renderOrder === 0 && mesh.layers.mask === 1 && mesh.frustumCulled
+      && !mesh.castShadow && !mesh.receiveShadow && !mesh.name && !mesh.morphTargetInfluences
+      && Object.keys(mesh.userData).every(k => k === 'portrayalPath')
+      && g && g.isBufferGeometry && g.attributes.position && !Object.keys(g.morphAttributes).length
+      && Object.keys(g.attributes).every(k => OK_ATTRS.has(k))
+      && Object.values(g.attributes).every(a => !a.isInterleavedBufferAttribute)
+      && g.drawRange.start === 0 && g.drawRange.count === Infinity;
+    let anchor = plain ? mesh.parent : null;
+    while (anchor && !anchors.has(anchor)) anchor = anchor.parent;
+    if (!anchor) {
+      after.meshes++;
+      after.draws += drawsOf(mesh);
+      continue;
+    }
+    const rel = anchor.matrixWorld.clone().invert().multiply(mesh.matrixWorld);
+    const ranges = Array.isArray(mesh.material)
+      ? g.groups.map(r => ({start: r.start, count: r.count, m: mesh.material[r.materialIndex]}))
+      : [{start: 0, count: g.index ? g.index.count : g.attributes.position.count, m: mesh.material}];
+    mesh.userData.__batched = true;
+    for (const r of ranges) {
+      // a range with no material, or an invisible one, was never drawn
+      if (!r.m || r.m.visible === false) continue;
+      const m = canon(r.m, path);
+      const normals = !!g.attributes.normal, uvs = _MAT_MAPS.some(k => m[k]) && !!g.attributes.uv;
+      const key = [anchor.uuid, path, m.uuid, normals, uvs].join('|');
+      let b = buckets.get(key);
+      if (!b) buckets.set(key, b = {anchor, path, m, normals, uvs, pieces: []});
+      b.pieces.push({mesh, matrix: rel.elements, start: r.start, count: r.count});
+    }
+  }
+  // a single whole mesh with one material keeps its place and takes the
+  // pooled material; everything else is rebuilt as merged meshes
+  for (const b of buckets.values()) {
+    const first = b.pieces[0].mesh;
+    after.meshes++;
+    after.draws++;
+    if (b.pieces.length === 1 && !Array.isArray(first.material)) {
+      first.material = b.m;
+      delete first.userData.__batched;
+      continue;
+    }
+    const {normals, uvs} = b;
+    const arr = (a) => a ? a.array : null;
+    const merged = mergePieces(b.pieces.map(p => ({
+      matrix: p.matrix, start: p.start, count: p.count,
+      pos: arr(p.mesh.geometry.attributes.position),
+      nrm: normals ? arr(p.mesh.geometry.attributes.normal) : null,
+      uv: uvs ? arr(p.mesh.geometry.attributes.uv) : null,
+      index: arr(p.mesh.geometry.index)})), {normals, uvs});
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(merged.pos, 3));
+    if (merged.nrm) geo.setAttribute('normal', new THREE.Float32BufferAttribute(merged.nrm, 3));
+    if (merged.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(merged.uv, 2));
+    geo.setIndex(merged.index);
+    geo.computeBoundingBox();
+    geo.computeBoundingSphere();
+    const mesh = new THREE.Mesh(geo, b.m);
+    if (b.path) mesh.userData.portrayalPath = b.path;
+    b.anchor.add(mesh);
+  }
+  // the meshes that were merged leave, and their geometry with them unless a
+  // mesh that stayed draws it too
+  const still = new Set(meshes.filter(m => !m.userData.__batched).map(m => m.geometry));
+  for (const mesh of meshes) {
+    if (!mesh.userData.__batched) continue;
+    delete mesh.userData.__batched;
+    mesh.parent.remove(mesh);
+    if (!still.has(mesh.geometry)) mesh.geometry.dispose();
+  }
+  return {before, after};
 }
 
 // Build the relief geometry for one face: the recesses, raised parts, domes,
@@ -2742,6 +3166,12 @@ export async function buildFaceRelief(F, ctx) {
     // `anim` - the material and its mm size - is what lets the viewer redraw
     // the same texture at several instants of a CSS animation (see lamps.js)
     const reg = (svgText, run, anim = null) => { if (svgText) restyle.push({svgText, run, anim}); };
+    // what a restyle will change, kept whole by the batch pass; with no
+    // `ctx.restyle` nothing ever runs a restyle, so nothing is live
+    const live = new Set();
+    const liveMat = (...ms) => { if (ctx.restyle) for (const m of ms) if (m) live.add(m); };
+    // and the meshes something holds on to after the build
+    const held = new Set();
     // `let`, because the drawing may state a different size below and a face
     // is drawn at its own size rather than at its plane's.
     let fw = F.fw(), fh = F.fh();
@@ -2817,7 +3247,7 @@ export async function buildFaceRelief(F, ctx) {
       if (vb0) {
         const [bx, by, bw, bh] = vb0.slice(1).map(parseFloat);
         beyond = {x: bx, y: by, w: bw, h: bh,
-                  cv: await rasterize(squareFaceplate(cleanText), bw, bh, PX)};
+                  cv: await rasterSource(squareFaceplate(cleanText), bw, bh, PX)};
       }
     }
     const pastFace = r => r.x < -0.01 || r.y < -0.01 || r.x + r.w > fw + 0.01 || r.y + r.h > fh + 0.01;
@@ -2893,7 +3323,7 @@ export async function buildFaceRelief(F, ctx) {
       const d = builtDepth(c);
       // floor + feature art comes from the cavity group rendered standalone, so
       // raised bezel plates (drawn over the cavity on the face) never leak in
-      const gcv = await rasterize(c.grpSvg, c.grpRect.w, c.grpRect.h, PX);
+      const gcv = await rasterSource(c.grpSvg, c.grpRect.w, c.grpRect.h, PX);
       const floorCv = crop(gcv, {x: pc.x - c.grpRect.x, y: pc.y - c.grpRect.y, w: pc.w, h: pc.h}, PX);
       const cavCrops = [];
       const fctx = floorCv.getContext('2d');
@@ -2918,7 +3348,7 @@ export async function buildFaceRelief(F, ctx) {
       // A SHAPED CAVITY'S FLOOR IS ITS OUTLINE. The group art round the opening
       // is the housing's face; at the bottom of the socket it was a second copy
       // of that face. Cut to the outline, what is left is what the walls enclose.
-      const cavCv = c.rings ? await rasterize(c.cavSvg, c.w, c.h, PX) : null;
+      const cavCv = c.rings ? await rasterSource(c.cavSvg, c.w, c.h, PX) : null;
       const shapeFloor = cvs => {
         if (!cavCv) return cvs;
         const x = cvs.getContext('2d');
@@ -2935,7 +3365,7 @@ export async function buildFaceRelief(F, ctx) {
         // facet it stands on instead (the outs loop).
         const pctx = cv.getContext('2d');
         pctx.globalCompositeOperation = 'destination-out';
-        pctx.drawImage(cavCv || await rasterize(c.cavSvg, c.w, c.h, PX),
+        pctx.drawImage(cavCv || await rasterSource(c.cavSvg, c.w, c.h, PX),
                        Math.round(c.x * PX), Math.round(c.y * PX));
         pctx.globalCompositeOperation = 'source-over';
         facePunch[F.view].push({kind: 'shape', svg: c.cavSvg,
@@ -2989,8 +3419,10 @@ export async function buildFaceRelief(F, ctx) {
       if (walls) addTo(walls);
       // a box well whose sides are the chassis: a side against another face
       // shows that face's vents (ventWellWalls, once every face is read)
-      if (walls && ctx.wells && c.wallsInside && !c.rings && !c.round && !c.tilt)
+      if (walls && ctx.wells && c.wallsInside && !c.rings && !c.round && !c.tilt) {
         ctx.wells.push({view: F.view, mesh: walls, well: c, d});
+        held.add(walls);
+      }
       if (!shell.floor) continue;
       // textured floor: the aperture art, pushed to the back of the recess
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(c.w, c.h),
@@ -3002,8 +3434,9 @@ export async function buildFaceRelief(F, ctx) {
       // one raster feeds the floor and every raised feature standing in it, so
       // they are redrawn together from the one group svg they were cut from
       const floorMat = floor.material;
+      liveMat(floorMat);
       reg(c.grpSvg, async text => {
-        const g2 = await rasterize(text, c.grpRect.w, c.grpRect.h, PX);
+        const g2 = await rasterSource(text, c.grpRect.w, c.grpRect.h, PX);
         // the facet clear is REAPPLIED: a restyle re-cuts the floor from the art
         remap(floorMat, clearFloor(shapeFloor(
           crop(g2, {x: pc.x - c.grpRect.x, y: pc.y - c.grpRect.y, w: pc.w, h: pc.h}, PX)),
@@ -3039,6 +3472,7 @@ export async function buildFaceRelief(F, ctx) {
           const mats = sideMats(ft.color);
           mats[4] = new THREE.MeshBasicMaterial({map: canvasTex(ft.faceCv)});
           ft.mat = mats[4];
+          liveMat(ft.mat);
           let m;
           if (ft.round) {
             // CylinderGeometry's materials are [side, +Y cap, -Y cap] and it stands
@@ -3087,7 +3521,8 @@ export async function buildFaceRelief(F, ctx) {
       curOwner = dm.owner;
       curTilt = dm.tilt || null;
       // (LED lamps, bulged fan guards); apex proud, rim sunk 0.15 into the face
-      const dcv = await rasterize(dm.svgText, dm.w, dm.h, PX);
+      // (the kept raster itself: a texture only reads it)
+      const dcv = await rasterSource(dm.svgText, dm.w, dm.h, PX);
       const geo = new THREE.CircleGeometry(0.5, 48);
       const pos = geo.attributes.position;
       for (let i = 0; i < pos.count; i++) {
@@ -3100,6 +3535,7 @@ export async function buildFaceRelief(F, ctx) {
       m.scale.set(dm.w, dm.h, dm.dome + 0.15);
       m.position.set(LX(dm.x, dm.w), LY(dm.y, dm.h), (dm.lift || 0) - 0.15);
       addTo(m);
+      liveMat(m.material);
       reg(dm.svgText, async text => remap(m.material, await rasterize(text, dm.w, dm.h, PX)),
           {mat: m.material, w: dm.w, h: dm.h, path: dm.owner});
     }
@@ -3125,7 +3561,7 @@ export async function buildFaceRelief(F, ctx) {
         const fx = cvs.getContext('2d');
         for (let i = 0; i < o.parts.length; i++) {
           const p = o.parts[i];
-          fx.drawImage(await rasterize(facetTexts[i + 1], p.w, p.h, PX),
+          fx.drawImage(await rasterSource(facetTexts[i + 1], p.w, p.h, PX),
                        Math.round((p.x - o.x) * PX), Math.round((p.y - o.y) * PX));
         }
         return cvs;
@@ -3172,13 +3608,13 @@ export async function buildFaceRelief(F, ctx) {
       // front-view rects scaled into the raster, which then holds either frame.
       const put = async (octx, cvs, e, text) => {
         if (!o.tilt && !e.tilt) {
-          octx.drawImage(await rasterize(text, e.w, e.h, PX),
+          octx.drawImage(await rasterSource(text, e.w, e.h, PX),
                          Math.round((e.x - o.x) * PX), Math.round((e.y - o.y) * PX));
           return;
         }
         const po = projOf(o), pe = projOf(e);
         const kx = cvs.width / po.w, ky = cvs.height / po.h;
-        octx.drawImage(await rasterize(text, pe.w, pe.h, PX),
+        octx.drawImage(await rasterSource(text, pe.w, pe.h, PX),
                        Math.round((pe.x - po.x) * kx), Math.round((pe.y - po.y) * ky),
                        Math.round(pe.w * kx), Math.round(pe.h * ky));
       };
@@ -3483,6 +3919,7 @@ export async function buildFaceRelief(F, ctx) {
         m.position.set(LX(o.x, o.w), LY(o.y, o.h), o.lift + depth / 2);
         addTo(m);
       }
+      liveMat(faceTex, ...bodyMats);
     }
     curOwner = null;
     curTilt = null;
@@ -3511,7 +3948,7 @@ export async function buildFaceRelief(F, ctx) {
       const unpunch = async (ctx2, p) => {
         if (p.kind === 'rect') { ctx2.clearRect(...punchRectPx(p, pf.x, pf.y, PX)); return; }
         ctx2.globalCompositeOperation = 'destination-out';
-        ctx2.drawImage(await rasterize(p.svg, p.w, p.h, PX),
+        ctx2.drawImage(await rasterSource(p.svg, p.w, p.h, PX),
                        Math.round((p.x - pf.x) * PX), Math.round((p.y - pf.y) * PX));
         ctx2.globalCompositeOperation = 'source-over';
       };
@@ -3524,7 +3961,7 @@ export async function buildFaceRelief(F, ctx) {
       const unbore = async ctx2 => {
         for (const c of bores) {
           ctx2.globalCompositeOperation = 'destination-out';
-          ctx2.drawImage(await rasterize(c.cavSvg, c.proj.w, c.proj.h, PX),
+          ctx2.drawImage(await rasterSource(c.cavSvg, c.proj.w, c.proj.h, PX),
                          Math.round((c.proj.x - pf.x) * PX), Math.round((c.proj.y - pf.y) * PX));
           ctx2.globalCompositeOperation = 'source-over';
         }
@@ -3544,7 +3981,7 @@ export async function buildFaceRelief(F, ctx) {
       // and left a hole in the panel where they had been. So the crop is
       // masked by the module's own art, exactly as a cavity's punch is: what
       // the module paints comes with it, and what it does not stays.
-      const mask = await rasterize(f.svgText, pf.w, pf.h, PX);
+      const mask = await rasterSource(f.svgText, pf.w, pf.h, PX);
       // a seated optic with no `body:` gets one (opticBody, built below)
       const ob = opticBody({behaviour: f.behaviour, body: FRU_META[f.path].body,
                             depth: f.depth, w: f.w, h: f.h});
@@ -3560,6 +3997,7 @@ export async function buildFaceRelief(F, ctx) {
         new THREE.MeshBasicMaterial({map: canvasTex(faceCrop), transparent: true, alphaTest: 0.1, alphaToCoverage: true}));
       plane.position.set(LX(f.x, f.w), LY(f.y, f.h), zf + 0.3);
       fg.add(plane);
+      liveMat(plane.material, opticMat);
       // A FIELD OR A STATE WRITTEN ON A MODULE REPAINTS ITS PLANE. The crop above
       // is a one-time cut of the face canvas, so a wattage written on a supply
       // after the build changed the face texture and left the supply's own
@@ -3747,5 +4185,8 @@ export async function buildFaceRelief(F, ctx) {
     plane.position.set(LX(beyond.x, beyond.w), LY(beyond.y, beyond.h), 0.02);
     grp.add(plane);
   }
+  if (ctx.batch !== false)
+    batchRelief(grp, {anchors: new Set(Object.values(fruGroups)), keep: held, live,
+                      parts: typeof ctx.parts === 'function' ? ctx.parts : null});
   meshes.push(grp);
 }

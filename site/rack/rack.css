@@ -171,17 +171,18 @@
 [data-bundle-id]:is(.hot, .hot-member, .on, .on-member) [data-envelope] { visibility: visible; }
 [data-bundle-id].on [data-envelope-rim] { opacity: 1; }
 [data-bundle-id].on [data-envelope-rim] path { stroke: var(--pt-brass); }
-/* STRAPS. A strap is black on a light stage and a light neutral on a dark one,
-   each with a rim of the other tone (stage.js STRAP_PAINT, which a test holds
-   these to), so it is seen on either stage and against every cable colour.
+/* STRAPS. In 2D a strap is a quiet band: a muted dark grey on a light stage and
+   a muted light grey on a dark one, with a hairline rim in the stage's line
+   tone, never white (stage.js STRAP_PAINT_2D, which a test holds these to;
+   strap-size.js narrows it). Sheets and files keep the paper's black and white.
    A strap goes with its bundle: it stays lit while its bundle, or a cable
    that rides it, is the one selected or hovered (.on, .hot), and dims with
    the rest when another cable or bundle is. */
 .cable-focus [data-strap]:not(.on) { opacity: 0.18; }
-.rk-panes[data-stage="light"] [data-strap] [data-strap-part="core"] { stroke: #1b1d20; }
-.rk-panes[data-stage="light"] [data-strap] [data-strap-part="rim"] { stroke: #ffffff; }
-.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="core"] { stroke: #d5d9de; }
-.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="rim"] { stroke: #0b0c0d; }
+.rk-panes[data-stage="light"] [data-strap] [data-strap-part="core"] { stroke: #5b6169; }
+.rk-panes[data-stage="light"] [data-strap] [data-strap-part="rim"] { stroke: #c9cdd2; }
+.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="core"] { stroke: #8a9199; }
+.rk-panes[data-stage="dark"] [data-strap] [data-strap-part="rim"] { stroke: #2a2f35; }
 /* HOVER (#169): a cable or bundle under the pointer, on the stage or in the
    list, stays lit and every other one dims (site/rack/hover.js). It outranks
    a selection's focus and the filter's ghosts while it lasts, and takes
@@ -192,6 +193,12 @@
 .cable-hover [data-cable].hot, .cable-hover [data-cable-tag].hot,
 .cable-hover [data-bundle-id]:is(.hot, .hot-member), .cable-hover [data-strap].hot { opacity: 1; }
 .cable-hover [data-bundles], .cable-hover [data-bundle-straps] { opacity: 1; }
+/* A STORED LOOP OF SPARE (spare-loops.js) goes with its cable: selected, filtered and hovered. */
+[data-spare-loop] { transition: opacity 120ms; }
+[data-spare-loop].ghost { opacity: 0.12; }
+.cable-focus [data-spare-loop]:not(.on) { opacity: 0.18; }
+.cable-hover [data-spare-loop]:not(.hot) { opacity: 0.15; }
+.cable-hover [data-spare-loop].hot { opacity: 1; }
 /* BUSY (#187): the panes while the pair just asked for is being drawn
    (rack-page.js setView). The old pair fades and the pointer says to wait. */
 .rk-panes[aria-busy="true"] { cursor: progress; }
@@ -237,6 +244,21 @@
 .rk-side .rk-cables [data-cable-row]:focus-visible, .rk-side .rk-cables [data-bundle-row]:focus-visible {
   outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 .rk-side .rk-cables .rk-warn { margin: 0; }
+/* The Warnings section above the cable tree (cable-panel.js warningsSection, portrayal-site#192): one row when
+   closed, in the warning colour, with the tree's own disclosure mark; opened, its kinds and their findings. */
+.rk-side .rk-cables .rk-warnings { margin: 0.4rem 0 0; font-size: 0.85rem; }
+.rk-side .rk-cables .rk-warnings-row { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); column-gap: 0.15rem; align-items: center;
+  width: 100%; padding: 0.15rem 0; border: 0; background: none; color: var(--pt-warn); font: inherit; text-align: left; cursor: pointer; }
+.rk-side .rk-cables .rk-warnings-row > .rk-twist { display: grid; place-items: center; }
+.rk-side .rk-cables .rk-warnings-row[aria-expanded="true"] > .rk-twist::before { content: '\25BE'; }
+.rk-side .rk-cables .rk-warnings-row:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+.rk-side .rk-cables .rk-warnings-body { display: grid; gap: 0.4rem; margin: 0.2rem 0 0.2rem 1.65rem; }
+.rk-side .rk-cables .rk-warnings-body[hidden] { display: none; }
+.rk-side .rk-cables .rk-warnings-title { margin: 0; font-weight: 600; color: var(--pt-warn); }
+.rk-side .rk-cables .rk-warnings-list { margin: 0.2rem 0 0; display: grid; gap: 0.5rem; }
+.rk-side .rk-cables .rk-warnings-list[hidden] { display: none; }
+.rk-side .rk-cables .rk-warnings-list > [data-warning-row] { display: grid; gap: 0.2rem; }
+.rk-side .rk-cables .rk-warnings-list [data-warning-pick] { text-align: left; }
 /* What a hovered cable is, beside the pointer on either stage (rack-page.js
    paintTip). It takes no pointer, so it never ends the hover it describes. */
 .rk-cable-tip { position: fixed; z-index: 18; max-width: 22rem; padding: 0.3rem 0.5rem; pointer-events: none;

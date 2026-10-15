@@ -207,8 +207,7 @@ export function createLamps() {
         const tiltRec = el => {
           const t = tiltOf(el);
           if (!t) return null;
-          TT = TT || tiltTools(doc.svg, {mmRect: T.mmRect, liftOf: T.liftOf,
-                                         ctmOf: n => T.inv.multiply(n.getScreenCTM())});
+          TT = TT || tiltTools(doc.svg, {mmRect: T.mmRect, liftOf: T.liftOf, ctmOf: T.ctmOf});
           return TT.tiltRec(t);
         };
         const lit = [...doc.svg.querySelectorAll('[data-path][class*="state-"]')]

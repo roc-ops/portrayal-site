@@ -3,13 +3,13 @@
 // editor's change event autosaves and redraws. What the side panel shows
 // follows S.sel.
 
-import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf} from '../vendor/rack/model.js';
+import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf, endPaneIn} from '../vendor/rack/model.js';
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
-import {drawElevation, uAtY, halfAtY, panelFor} from './rack/elevation.js';
+import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevation.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
-import {zeroUEntries, hangNotices} from '../vendor/rack/zero-u.js';
+import {hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
@@ -28,19 +28,24 @@ import {MODE3D_CSS} from './mode3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE, rollNote} from '../vendor/rack/export-data.js';
-import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
+import {cableFacts, factsStand, drawnAt, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, cablesOf, endName, proposeMedia, countsBy, sameCables3d} from '../vendor/rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables, drawPickTargets, wayEl, inPane} from './rack/cable-view.js';
 import {routeList} from './rack/route-panel.js';
 import {RU, RAIL_W, OPENING} from '../vendor/rack/rails.js';
+import {laneTargets} from './rack/lane-targets.js';
 import {cableForm, cableList, cableMeta, removePanel} from './rack/cable-panel.js';
 import {sparesOf, looseIn, needsText} from './rack/spare.js';
 import {bundleForm, bundleInspector} from './rack/bundle-panel.js';
 import {paintBundles} from './rack/cable-view.js';
-import {litFor, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeFacts, routeNotes, withCableTypes, bendNotice, landedBends} from './rack/route-context.js';
+import {zeroUTargets} from './rack/spare-loops.js';
+import {routeEditSession} from './rack/route-edit.js';
+import {litFor, litForFilter, paintFilter3d, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
+import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
-import {LANE_GAP, routeText} from '../vendor/rack/route.js';
+import {routesOf, sameReading, askOf} from './rack/reading.js';
+import {describeOnce, inspectOnce} from './rack/agent-read.js';
+import {LANE_GAP, routeText, ductsThrough} from '../vendor/rack/route.js';
 import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
 import * as Q from '../vendor/rack/queries.js';
@@ -61,6 +66,9 @@ import {sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
 const PROBE = new URLSearchParams(location.search).get('probe') === '1';
+// PROBE ONLY: `?probe=1&checkKept=1` gives the kit's route context `checkKept: true` (route-context.js kept), so every
+// path the kit reads is laid again from nothing and compared with the one it kept; a difference throws. Not for a page in use.
+if (PROBE && new URLSearchParams(location.search).get('checkKept') === '1') kept.check = true;
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
@@ -98,6 +106,7 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   routes: null,
   routeSel: null,    // {cableId, i}: the route row new waypoints go after
   cableDraft: null,  // {id, values}: what the open cable form holds, kept across a route edit's redraw
+  routeEdit: null,   // the open cable form's route edit (route-edit.js): Cancel takes back its picks
   routePick: null,   // {cableId, at}: the next click on a ring, duct, brush or gutter adds a waypoint there
   saidStep: null,    // the summary of the step the notice says, which Undo may take as its description
   // Cable mode: on or off, and the A end picked and waiting for its B.
@@ -132,6 +141,11 @@ let stage3dEpoch = 0;
 // scene is disposed, so it is always the most recent real camera, in-flight
 // build or not.
 function disposeScene3d() {
+  // A SCENE STILL BEING BUILT IS LET GO TOO (S.loading3d, from mountRack3d's
+  // onScene): it stops building, and its canvases and textures go now rather
+  // than when its build would have finished. Left to finish, an overtaken
+  // build of a large rack held a second full set of them beside the new one's.
+  if (S.loading3d) { S.loading3d.dispose(); S.loading3d = null; }
   if (!S.scene3d) return;
   S.camera3d = {position: S.scene3d.three.camera.position.clone(),
                 target: S.scene3d.three.controls.target.clone()};
@@ -166,6 +180,8 @@ const routesSig = rf => (rf ? JSON.stringify([...rf.routes].map(([id, r]) => [id
   rf.detours?.get(id) ?? null, rf.paths?.get(id)?.points ?? null]))
   // and the kit's tight bends (kit 0.17.0): a cable's type can change what it needs with no point moving
   + JSON.stringify((rf.bendsShown ?? []).map(f => [f.cable, f.at, f.text]))
+  // and where spare is stored (kit 0.35.0): a loop stored or moved moves no point of a path
+  + JSON.stringify((rf.spareLoops ?? []).map(l => [l.cable, l.item, l.via, l.metres, l.at]))
   + bundlesSig(rf) : '');
 // How long a rebuild waits for the routes of the rack as it now is (below):
 // STALE_3D_TRIES times STALE_3D_MS, then it builds without them.
@@ -174,6 +190,7 @@ async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
   S.detailFailed = null;      // what the scene before could not draw is not this one's to say
+  $('lost3d')?.remove();      // nor its lost context
   const camera = S.camera3d;
   // THE SCENE IS HUNG BY THIS RACK'S ROUTES, never the last rack's. After an
   // edit the routes are read again by render(), which can finish after this
@@ -198,9 +215,13 @@ async function rebuild3d() {
   const stage = S.stage;
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
-    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, stage, covers: S.covers,
+    bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, spares: live?.spareLoops ?? null, stage, covers: S.covers,
     onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
-    ...(PROBE ? {onScene: s => { S.probeLoading = s; }} : {})});
+    onContextLost: s => { if (mine === stage3dEpoch) contextLost3d(s); },
+    onContextRestored: () => { if (mine === stage3dEpoch) contextRestored3d(); },
+    onScene: s => { if (mine === stage3dEpoch) S.loading3d = s; else s.dispose(); if (PROBE) S.probeLoading = s; }});
+  // (the scene being built is now the one built; one whose build failed is let go)
+  if (mine === stage3dEpoch && S.loading3d) { if (S.loading3d !== built) S.loading3d.dispose(); S.loading3d = null; }
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // No scene: this browser gives no WebGL, or the build failed, and
   // mountRack3d has put its sentence on the stage. S.scene3d stays null.
@@ -210,6 +231,7 @@ async function rebuild3d() {
   // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
+  paintFilter3d(built, litForFilter(now, S.cableFilter));
   paintHover3d(built, litFor(now, S.hover));
   paintSelected3d(built, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(now));
   // A swatch picked while this was building found no scene to tell.
@@ -226,6 +248,27 @@ async function rebuild3d() {
   if (built.rackCables && built.rackCables.checked === false) {
     if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
   } else if (built.rackCables) S.unchecked3dSaid = false;
+}
+// THE BROWSER TOOK THE 3D VIEW'S GL CONTEXT AWAY (a GPU reset, or the GPU out
+// of memory): the scene has stopped drawing (rack3d.js onContextLost) and holds
+// nothing on the GPU any more. The stage says so, over the dead canvas, with a
+// button to build it again. When the browser gives the context back the view
+// is built again by itself, ONCE for a rack document (S.lost3dRebuilt): a
+// second loss leaves the notice and its button, so a rack too big for this
+// GPU is not built, lost and built again in a loop. 2D is unaffected.
+const LOST_3D = 'The 3D view stopped: the browser took away its graphics context (the GPU was reset or ran out of memory). 2D is unaffected.';
+function contextLost3d(scene) {
+  $('lost3d')?.remove();
+  if (scene?.three?.renderer) scene.three.renderer.domElement.style.visibility = 'hidden';
+  const again = el('button', {type: 'button', id: 'lost3dRebuild', text: 'Build the 3D view again'});
+  again.addEventListener('click', () => { clearTimeout(rebuild3dTimer); rebuild3d(); });
+  $('stage3d').append(el('div', {id: 'lost3d', class: 'rk-notice', role: 'alert'}, [el('p', {text: LOST_3D}), again]));
+}
+function contextRestored3d() {
+  if (S.lost3dRebuilt || S.mode !== '3d') return;
+  S.lost3dRebuilt = true;
+  clearTimeout(rebuild3dTimer);
+  rebuild3d();
 }
 // A PART WHOSE DETAIL COULD NOT BE BUILT IN 3D (a file of its drawing did not
 // load) stays the plain box it stood as while loading (rack3d.js standIn),
@@ -450,7 +493,7 @@ function place(entry, cfg, face, ru, extra = {}) {
 // caller shows its own way (the inspector beside its control, a drag in the
 // notice). The cleared-Explorer-changes note arrives as a finding.
 const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
-function patchItem(id, patch) {
+function patchItem(id, patch, ctx = null) {
   // A control of a panel built for an earlier rack (the redraw that replaces
   // it is still on its way): the device may be gone. Nothing is sent.
   if (!itemById(id)) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
@@ -458,7 +501,7 @@ function patchItem(id, patch) {
     const res = edit({op: 'move', id, ...defined({ru: patch.ru, face: patch.face})}, {report: false});
     return res.error ? {ok: false, reason: res.error} : {ok: true};
   }
-  const res = edit({op: 'patch', id, ...defined(patch)});
+  const res = edit({op: 'patch', id, ...defined(patch)}, ctx ? {ctx} : {});
   return res.error ? {ok: false, reason: res.error} : {ok: true};
 }
 
@@ -470,9 +513,16 @@ async function explore(id) {
   const it = itemById(id);
   if (!it) { render(); return; }               // a stale panel's button: the device is gone
   const docId = theDoc().id, ref = it.ref;
-  const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
+  // A part the library replaced (kit 0.32.0): a saved rack may name a holder by a
+  // ref whose major was removed. The kit's redirects go to the lens, so Explorer
+  // holds the replacement, and to the patch that takes its answer, so the holder
+  // is kept as the replacement instead of being left out. A parts list that
+  // does not load changes nothing: the lens opens as it did.
+  const slots = await loadSlots(DIST, [ref]).catch(() => null);
+  const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label,
+                              redirects: slots?.redirects ?? null});
   if (res && theDoc().id === docId && itemById(id)?.ref === ref)
-    patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
+    patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields}, slots?.redirects ? slots : null);
 }
 
 // THE ONE WAY AN EDIT REACHES THE RACK: a command, through the editor (spec
@@ -484,10 +534,11 @@ async function explore(id) {
 // still redraws, as the caller may have changed the selection, unless `quiet`:
 // the frame form's echoed change event (see onFrame) must not redraw, or it
 // would wipe the notice the first pass just showed.
-function edit(cmds, {say = false, report = true, quiet = false} = {}) {
+function edit(cmds, {say = false, report = true, quiet = false, ctx = null} = {}) {
   // (an end given a drawing id is refused here, with the path to use: part-path.js)
   const idNo = projectionIdRefusal(cmds);
-  const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(bundling(cmds) ? {ctx: bundleCtx()} : {})});
+  const own = {...(bundling(cmds) ? bundleCtx() : {}), ...(ctx ?? {})};
+  const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(Object.keys(own).length ? {ctx: own} : {})});
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
   if (res.error) { if (report) { S.notice = {text: res.error, kind: 'error'}; renderSoon(); } return res; }
@@ -560,7 +611,8 @@ function onChange(ev) {
   if (sameScene(ev.before, ev.after)) keepScene(ev.before, ev.after);
   else scheduleRebuild3d();
   // What is not a step changes nothing a route reads: the routes stay this rack's.
-  if (!ev.step) keepRoutes(ev.before, ev.after);
+  // (and so does the one reading of the rack that every reader shares: reading.js)
+  if (!ev.step) { keepRoutes(ev.before, ev.after); sameReading(ev.before, ev.after); }
   // NOT A STEP, NOT A REDRAW: the DCIM settings are stored from inside render()
   // (flushDcimDraft) and the routed lengths during one, so redrawing for them
   // would loop. Neither changes what the page shows.
@@ -596,6 +648,7 @@ function setDoc(doc, notes = docNotes(doc)) {
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
+  S.lost3dRebuilt = false;   // (and another rack's 3D view may be built again once after a lost context: contextRestored3d)
   try { localStorage.setItem(LAST, theDoc().id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
@@ -676,29 +729,34 @@ function addNotice(text, kind = 'error') {
   if (old?.text.includes(text)) return;
   S.notice = old ? {text: `${old.text} ${text}`, kind: old.kind} : {text, kind};
 }
+// An end's device, or the part beside the rack it is on (a PDU's outlet: kit 0.36.0, Portrayal #1068).
+const endHost = id => itemById(id) ?? zeroUById(rack(), id);
 function pruneCable() {
   const r = rack(), a = S.cable.a;
-  if (a && (!itemById(a.item) || !portFree(r, a, {uOf}).ok)) S.cable.a = null;
+  if (a && (!endHost(a.item) || !portFree(r, a, {uOf}).ok)) S.cable.a = null;
   const s = S.sel;
-  if (s?.kind === 'cable-form' && !s.id && !(itemById(s.a.item) && itemById(s.b.item))) {
+  if (s?.kind === 'cable-form' && !s.id && !(endHost(s.a.item) && endHost(s.b.item))) {
     S.sel = null;
     addNotice(NOT_ADDED);
   }
 }
 function onCableClick(ev) {
   if (S.sel?.kind === 'cable-form') return;      // the form is open: finish or cancel it first
-  const group = ev.target.closest('[data-item-id][data-panel]');
-  const item = group ? itemById(group.dataset.itemId) : null;
-  const path = item && group.dataset.panel !== 'missing' ? portAt(ev.target, group) : null;
+  // (an outlet of a part beside the rack is picked as a device's slot is: its group lists its outlets, elevation.js)
+  const group = ev.target.closest('[data-item-id][data-panel], [data-zerou-id][data-cable-ends]');
+  const item = group?.dataset.itemId ? itemById(group.dataset.itemId) : null;
+  const part = group?.dataset.zerouId ? zeroUById(rack(), group.dataset.zerouId) : null;
+  const path = (item && group.dataset.panel !== 'missing') || part ? portAt(ev.target, group) : null;
   if (!path) return;
-  // The end's view is the device's own panel, not the pane it was clicked in.
-  const end = {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)};
+  // The end's view is the device's own panel, not the pane it was clicked in; a part's is the panel drawn.
+  const end = item ? {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)}
+    : {item: part.id, path, view: group.dataset.zerouPanel === 'rear' ? 'rear' : 'front'};
   if (S.cable.a && sameEnd(S.cable.a, end)) { S.cable.a = null; render(); return; }   // the same port again: unpick it
   const free = portFree(rack(), end, {uOf});
   if (!free.ok) { S.notice = {text: free.reason, kind: 'error'}; render(); return; }
   if (!S.cable.a) { S.cable.a = end; render(); return; }
   // The A end is checked again now: the rack may have changed since it was picked.
-  if (!itemById(S.cable.a.item) || !portFree(rack(), S.cable.a, {uOf}).ok) { S.cable.a = null; render(); return; }
+  if (!endHost(S.cable.a.item) || !portFree(rack(), S.cable.a, {uOf}).ok) { S.cable.a = null; render(); return; }
   S.sel = {kind: 'cable-form', id: null, a: S.cable.a, b: end};
   S.cable.a = null;
   render();
@@ -720,8 +778,10 @@ function cableFormPanel(sel) {
   if (sel.id && !cable) { S.sel = null; return homePanel(); }
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
+  // An end on a power or ground slot says what it is: "C13 outlet", "C20 inlet".
+  const named = e => `${endName(r, e, uOf)}${info(e)?.connector ? ` (${info(e).connector})` : ''}`;
   const form = cableForm({
-    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
+    title: cable ? 'Edit cable' : 'New cable', endA: named(a), endB: named(b),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
     routed: cable?.length?.source === 'routed' ? cable.length : null,
@@ -734,7 +794,7 @@ function cableFormPanel(sel) {
         // The cable may be gone: then there is nothing to save, and nothing is sent.
         const cur = now.cables.find(c => c.id === cable.id);
         if (!cur) { S.sel = null; render(); return; }
-        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null;
+        S.sel = {kind: 'cable', id: cable.id}; S.cableDraft = null; S.routeEdit = null;   // the route edits stand
         // A media from a file this page does not know stays as itself: left
         // alone, it is not sent, so the command's list of media never refuses it.
         const {media, ...rest} = fields;
@@ -745,8 +805,17 @@ function cableFormPanel(sel) {
       const res = edit({op: 'cable.add', a, b, ...fields});
       S.sel = res.error ? null : {kind: 'cable', id: res.created.ids[0]};
     },
-    onCancel: () => { S.cableDraft = null; select(cable ? {kind: 'cable', id: cable.id} : null); }});
+    // Cancel takes back the route edits made since the form opened, as one
+    // step, and adds no Undo step of its own (route-edit.js).
+    onCancel: () => {
+      S.cableDraft = null; S.routePick = null;
+      const undone = cable && S.routeEdit?.cableId === cable.id ? S.routeEdit.cancel() : 0;
+      S.routeEdit = null;
+      if (undone) S.notice = {kind: 'note', text: `Route edits cancelled: the route is as it was (${undone === 1 ? 'one step' : `${undone} steps`} undone; Redo brings ${undone === 1 ? 'it' : 'them'} back).`};
+      select(cable ? {kind: 'cable', id: cable.id} : null);
+    }});
   if (!cable) return form;
+  if (S.routeEdit?.cableId !== cable.id) S.routeEdit = routeEditSession(ed, cable.id);   // the route as the edit begins
   const d = S.cableDraft?.id === cable.id ? S.cableDraft.values : null;
   if (d) {
     for (const [k, v] of Object.entries(d)) form.querySelector(`#${k}`).value = v;
@@ -775,18 +844,22 @@ function editRoute(cableId, list, text) {
     S.routePick = null; if (S.sel?.id === cableId || !now.cables.some(x => x.id === cableId)) S.sel = null; render(); return;
   }
   S.focusNext = 'routeAdd';
-  edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
-            : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  const res = edit(list ? {op: 'cable.route', id: cableId, route: list, summary: text}
+                        : {op: 'cable.route.reset', id: cableId, summary: text}, {say: true});
+  if (S.routeEdit?.cableId === cableId) S.routeEdit.noteEdit(res);   // Cancel takes these back (route-edit.js)
 }
 // The waypoints a cable shows: the stored list once edited, else the page's own choice.
 function shownRoute(cable) {
   const res = routesNow()?.routes.get(cable.id);
-  const nameOf = id => itemById(id)?.label ?? id;
+  // (a part beside the rack by its label too: a route may name its duct or a window, kit 0.35.0)
+  const nameOf = id => itemById(id)?.label ?? (rack().zeroU || []).find(z => z.id === id)?.label ?? id;
   const frame = rack().frame;
   const list = cable.routeEdited ? cable.route ?? [] : res?.waypoints ?? [];
   const gone = new Set(cable.routeEdited ? (res?.gone ?? []) : []);
+  // a lane run says the ducts beside the rack it goes through (route.js ductsThrough)
+  const through = ductsThrough(rack(), chassisOf, nameOf);
   return {list, auto: !cable.routeEdited,
-    rows: list.map(w => ({text: routeText([w], nameOf, frame), gone: gone.has(w)}))};
+    rows: list.map(w => ({text: routeText([w], nameOf, frame, through), gone: gone.has(w)}))};
 }
 function routePanel(cable) {
   const id = cable.id, {list, auto, rows} = shownRoute(cable);
@@ -811,23 +884,26 @@ function routePanel(cable) {
 }
 
 // Pick targets for a route being edited: every pathway the pane draws, and a
-// lane target per U on each gutter (the rear pane mirrors the sides).
+// lane target per U on each gutter (the rear pane mirrors the sides). A PART
+// BESIDE THE RACK (kit 0.35.0) offers its duct, the whole part, under the
+// lanes, and each window through its back over them (spare-loops.js
+// zeroUTargets): a click adds {item: <its id>, via}, which the kit resolves
+// to the lane run through it.
 function drawRoutePicking() {
   const r = rack(), ctx = routesNow()?.ctx;
   for (const svg of S.svgs) {
-    const view = svg.dataset.pane, targets = [];
+    const view = svg.dataset.pane, targets = [], windows = [];
     if (ctx) for (const it of r.items) for (const g of ctx.guidesOf(it.id)) {
       const e = wayEl(svg, {item: it.id, via: g.via});
       if (e) targets.push({item: it.id, via: g.via, box: inPane(svg, e)});
     }
-    const sides = r.frame.kind === 'two-post' ? ['left', 'right'] : ['left', 'right'].map(sd => `${sd}-${view}`);
-    for (const lane of sides) {
-      const left = (view === 'front') === lane.startsWith('left');
-      const x = left ? -RAIL_W - LANE_GAP : OPENING + RAIL_W;
-      for (let ru = 1; ru <= r.frame.heightRU; ru++)
-        targets.push({lane, ru, x, y: (r.frame.heightRU - ru) * RU, w: LANE_GAP, h: RU});
+    if (ctx) for (const z of r.zeroU || []) {
+      const e = svg.querySelector(`[data-zerou-id="${CSS.escape(z.id)}"]`);
+      if (!e) continue;
+      for (const t of zeroUTargets(r, ctx, z, inPane(svg, e))) (t.kind === 'pass' ? windows : targets).push(t);
     }
-    drawPickTargets(svg, targets);
+    targets.push(...laneTargets(r.frame, view));
+    drawPickTargets(svg, [...targets, ...windows]);
   }
 }
 
@@ -897,7 +973,8 @@ function treeHooks(r) {
       t.show = pin;
     }
   }
-  return {open, stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
+  // (`state(key)`: what the reader set for a row, undefined if never: the Warnings section starts closed whatever the rack's size)
+  return {open, state: key => t.state[key], stop: t.stop, onToggle: set, onStop: id => { t.stop = id; }};
 }
 function cableListPanel() {
   const r = rack();
@@ -909,15 +986,26 @@ function cableListPanel() {
   // ...and each tight bend the page rings, in the kit's sentence: the notice
   // says them once, and here they stay, beside the ring and body findings.
   // (the ring and body findings as the routes read them: routesNow() is these routes for this rack, names and all)
-  const notes = now ? routeNotes(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
-  return cableList({rack: r, ends: S.cableFacts.ends, notes, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
-    spares: sparesNow(),
+  const lap = lapsOf();
+  // (by kind and by what each is about: the list shows them as one section that opens, cable-panel.js warningsSection;
+  // what the reader has opened there is kept with the tree's rows, per rack document)
+  const warnings = now ? routeWarnings(r, now, nameOfId, {bends: now.bendsShown ?? [], asRead: true}) : [];
+  lap('notes');
+  const spares = sparesNow();
+  lap('spares');
+  if (lap.times) queueMicrotask(() => { lap('list'); S.probeSide = {...lap.times, notes_n: warnings.reduce((n, k) => n + k.rows.reduce((m, x) => m + x.texts.length, 0), 0)}; });
+  return cableList({rack: r, ends: S.cableFacts.ends, warnings, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
+    // a finding picked pins its cable, as its row in the tree does, or selects its manager
+    onWarningPick: w => select(w.cable ? {kind: 'cable', id: w.cable} : {kind: 'item', id: w.item}),
+    spares,
     tree: treeHooks(r),
     ...bundleListHooks(),
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
       paintCables(S.svgs, rack(), {selectedId: selectedCable(), bundleId: pinnedBundle(), on: next});
+      // the scene is restyled the same way, never rebuilt
+      if (S.scene3d) paintFilter3d(S.scene3d, litForFilter(rack(), next));
     },
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
@@ -1027,8 +1115,8 @@ const homePanel = () => el('div', {}, [
 
 // Undo and Redo walk the editor's history (spec §3.3); onChange says what was
 // undone or redone, saves and redraws.
-function undoStep() { ed.undo(); }
-function redoStep() { ed.redo(); }
+function undoStep() { if (ed.undo()) S.routeEdit?.noteUndo(); }
+function redoStep() { if (ed.redo()) S.routeEdit?.noteRedo(); }
 
 // ── Export (spec §8) ────────────────────────────────────────────────────
 // Every export is built from the rack by exports.js, never from the panes. A
@@ -1204,6 +1292,17 @@ function flushDcimDraft() {
 const probeHeld = at => { const h = S.probeHold; if (!h || h.at !== at || h.taken) return null; h.taken = true; h.reach(); return h.gate; };
 // How many redraws are running: a bundle command waits for one (bundleCommand).
 let rendering = 0;
+// PROBE ONLY: WHERE A REDRAW'S TIME GOES (portrayal-site#192, tools/rack-speed.py). `lapsOf()` gives a
+// redraw a stopwatch: lap(name) adds the time since the last lap to `name`. Without ?probe=1 it is
+// a function that does nothing, and S.probeTimes is never set, so a redraw runs exactly as it did.
+const NO_LAP = Object.assign(() => {}, {times: null});
+function lapsOf() {
+  if (!PROBE) return NO_LAP;
+  const times = {}, t0 = performance.now();
+  let last = t0;
+  return Object.assign(k => { const now = performance.now(); times[k] = (times[k] ?? 0) + now - last; last = now; },
+    {times, t0, since: () => performance.now() - t0});
+}
 // `keepRoutes` (a switch of pair, setView): the rack has not changed, so what
 // the last redraw read of it is still true and is drawn from again (redraw).
 async function render(opts) {
@@ -1213,12 +1312,14 @@ async function render(opts) {
 async function redraw(keepRoutes = false) {
   flushDcimDraft();
   const mine = ++S.draws;
+  const lap = lapsOf();
   pruneCable();
   pruneFilter();
   // The route row and the typed fields belong to one open cable form too.
   const formOf = S.sel?.kind === 'cable-form' ? S.sel.id : null;
   if (S.routeSel && S.routeSel.cableId !== formOf) S.routeSel = null;
   if (S.cableDraft && S.cableDraft.id !== formOf) S.cableDraft = null;
+  if (S.routeEdit && S.routeEdit.cableId !== formOf) S.routeEdit = null;
   // Picking belongs to one open cable form, outside Cable mode.
   // (nor from the side: there is no ring, duct or gutter to click there, and the page says so)
   if (S.routePick && sidesShown()) { S.routePick = null; addNotice(PICK_SIDES, 'note'); }
@@ -1262,6 +1363,7 @@ async function redraw(keepRoutes = false) {
         return UNCHECKED;
       });
     if (!kept && facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
+    lap('facts');
     // ROUTES (spec 5, 8): resolved from the drawings each render. A routed
     // length is the document's, so when one changes it is stored by the
     // lengths.routed command, which is not an undo step - it is the page's
@@ -1271,7 +1373,19 @@ async function redraw(keepRoutes = false) {
     else if (r.cables.length) {
       const at = theDoc();
       if (S.probeHold) { const held = probeHeld('routes'); if (held) await held; }
-      const rf = await routeFacts(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // READ ONCE FOR THIS RACK OBJECT (reading.js, portrayal-site#192): a redraw that changes nothing a route
+      // reads (a selection, a row opened, a notice) is handed the routes the last one read, and so is every
+      // export and every call an assistant makes. A step is a new rack object, and is read afresh.
+      const read = await routesOf(r, chassisOf, {cableFacts: facts}).catch(err => { console.warn('[portrayal] routes', err); return null; });
+      // A REDRAW ASKED FOR LATER IN THE SAME TASK STILL OVERTAKES THIS ONE. Reading the routes always took long enough
+      // that a second redraw asked for by the same click (a pane's own handler, then the page's, which puts a pinned
+      // cable down) began before this one drew, and this one stood down for it (`mine`, below). Handed routes already
+      // read, this one would finish first and show the one-shot notice, and the second would then draw it away: a
+      // taken port's "already has a cable" flashed and was gone. So the task that asked is let finish first.
+      await new Promise(next => setTimeout(next));
+      // (the page's own copy: `rack` is the rack this redraw draws, which a reading shared with the rack before a
+      // change that is not a step does not name, and `bendsShown` is this redraw's, by the ends as it read them)
+      const rf = read && {...read, rack: r, bendsShown: landedBends(read.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null)};
       if (mine !== S.draws) return;
       if (!rf) { S.routes = null; if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d(); }
       // THE RACK MOVED WHILE ITS FACES AND ROUTES WERE READ, and nothing has
@@ -1283,9 +1397,8 @@ async function redraw(keepRoutes = false) {
       // redraw was going to read. `r` is the rack this redraw began with.
       else if (rack() !== r || theDoc() !== at) { renderSoon(); return; }
       else {
-        // (before the scene's signature is compared: it counts the bends
-        // shown, and the scene's own was taken with them set)
-        rf.bendsShown = landedBends(rf.bendFindings, r, e => facts.ends.get(endKey(e))?.reason != null);
+        // (the bends shown are set before the scene's signature is compared:
+        // it counts them, and the scene's own was taken with them set)
         S.routes = rf;
         if (S.scene3d && S.scene3dRoutes !== routesSig(rf)) scheduleRebuild3d();
         // THE BEND NOTICE (kit 0.17.0, Portrayal #973): each corner of a
@@ -1316,10 +1429,12 @@ async function redraw(keepRoutes = false) {
       S.bendsSaid = '';
       if (S.scene3d && S.scene3dRoutes) scheduleRebuild3d();   // '' when it was hung without routes
     }
+    lap('routes');
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
-    const zeroU = zeroUEntries(r, chassisOf);
+    // (a part beside the rack is drawn with the plugs at its cabled outlets, as a device is: cable-plugs.js zeroUFacts)
+    const zeroU = zeroUDrawn(r, chassisOf).map(z => (facts.seats[z.id] ? {...z, swaps: facts.seats[z.id]} : z));
     // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
     // from the same items, parts and routes. Nothing in it is a target for
     // placing, moving or cabling.
@@ -1339,6 +1454,7 @@ async function redraw(keepRoutes = false) {
     return;
   }
   if (mine !== S.draws) return;
+  lap('panes');
   S.cableFacts = facts;
   S.factsRack = r;       // the rack these were read for (a switch of pair draws from them again: `kept`, above)
   if (!kept) S.factsPending = pending.length;
@@ -1359,6 +1475,7 @@ async function redraw(keepRoutes = false) {
   if (!$('panes').hidden) {
     applyZoom($('panes'), S.svgs, S.zoom);
     setZoomLabel();
+    lap('layout');
     // Cables are measured off the laid-out panes (getScreenCTM), so they are
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled && sides) {
@@ -1394,13 +1511,21 @@ async function redraw(keepRoutes = false) {
     for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
       const it = itemById(e.item);
       if (it) markPort(S.svgs.find(s => s.dataset.pane === paneOf(it, e.view)), it.id, e.path);
+      // (an outlet of a part beside the rack, on the pane that part looks out of: model.js endPaneIn)
+      else if (zeroUById(r, e.item)) markPort(S.svgs.find(s => s.dataset.pane === endPaneIn(r, e)), e.item, e.path);
     }
   }
+  lap('cables');
   renderSide();
+  lap('side');
   paintAgentMark();
   // a selected cable or bundle shows its bundle's envelope in the scene, as on the panes
-  if (S.scene3d) paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
+  if (S.scene3d) {
+    paintFilter3d(S.scene3d, litForFilter(rack(), S.cableFilter));
+    paintSelected3d(S.scene3d, {cable: selectedCable(), bundle: pinnedBundle()}, pinnedLit(rack()));
+  }
   paintTip();   // a cable under the pointer may have just changed its cord
+  if (lap.times) { lap('rest'); S.probeTimes = {...lap.times, total: lap.since(), kept: !!kept, cableCount: r.cables.length, draw: mine}; S.probeDone = (S.probeDone ?? 0) + 1; }
 }
 
 // The one-shot notice, shown once beside whatever the side panel now shows
@@ -2187,17 +2312,21 @@ async function bootInner() {
 // The queries, bound to this page's readers: the probe hook and the agent tools
 // ask the same questions the same way.
 const facePorts = async (item, view) =>
-  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields}))?.ports ?? []);
+  ((await configuredFace({ref: item.ref, cfg: item.cfg, view, swaps: item.swaps, fields: item.fields, ends: true}))?.ports ?? []);
+// WHAT LAYS CABLES IS ANSWERED ONCE FOR A RACK (agent-read.js, portrayal-site#192): a window of describe with the
+// routes, and the inspect of a cable or a bundle. A device's inspect lays nothing and is asked each time.
 const boundQueries = () => ({
   // ctx: the routing context and the cable types, for a bundle's line (agentContext with route)
-  describe: (r, win, ctx = {}) => Q.describe(r, {...ctx, chassisOf}, win),
+  // (asked of the rack the routes were read from where that is the same question: reading.js askOf)
+  describe: (r, win, ctx = {}) => describeOnce(Q.describe, r, win, {...ctx, chassisOf}, askOf(r, ctx.route)),
   catalog: filter => Q.catalog(S.devices, filter),
   fitsAt: (r, spot) => Q.fitsAt(r, spot, {chassisOf}),
   freeUs: (r, spot) => Q.freeUs(r, spot, {chassisOf}),
-  freePorts: (r, id) => Q.freePorts(r, id, {portsOf: facePorts}),
+  // (ctx: the per-call context's parts lists, for a device's power ends and a PDU's outlets; opts: kinds, type, near)
+  freePorts: (r, id, ctx = {}, opts = {}) => Q.freePorts(r, id, {...ctx, portsOf: facePorts}, opts),
   looseEnds: r => Q.looseEnds(r, {cableFacts}),
   selectCables: (r, sel, ctx) => Q.selectCables(r, sel, ctx),
-  inspect: (r, id, ctx) => Q.inspect(r, id, ctx),
+  inspect: (r, id, ctx) => inspectOnce(Q.inspect, r, id, ctx, factsStand),
 });
 
 // THE KIT'S PER-CALL CONTEXT for an agent's call (agent-context.js): the
@@ -2206,8 +2335,9 @@ const boundQueries = () => ({
 // loadSlots memoizes through the dist fetch, so a warm call fetches nothing.
 const agentContext = agentContextFor({
   // chassisOf is read through, not captured: the catalog replaces it once loaded.
-  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts,
-  routeFacts: r => routeFacts(r, chassisOf), cableTypes: () => cableTypesReady});
+  loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts, drawnAt,
+  // (the one reading of the rack, which the redraw has usually made already: reading.js)
+  routeFacts: r => routesOf(r, chassisOf), cableTypes: () => cableTypesReady});
 
 const ready = boot();
 if (PROBE) {
@@ -2226,6 +2356,15 @@ if (PROBE) {
     // Probe only: the 3D scene being built, from before its first device (scene() answers only once it is hung).
     loadingScene: () => S.probeLoading ?? null,
     redraw: () => render(),
+    // Probe only (portrayal-site#192): how many times the routes were read and the kit laid a cable
+    // (route-context.js reads), where the last finished redraw's time went (lapsOf), how many redraws
+    // have finished, and whether one is running or queued.
+    reads: () => ({routeFacts: reads.routeFacts, lays: reads.reach / 2, last: reads.last ? {...reads.last} : null}),
+    times: () => (S.probeTimes ? {...S.probeTimes, sidePanel: S.probeSide ? {...S.probeSide} : null} : null),
+    drawn: () => S.probeDone ?? 0,
+    // Probe only: whether the route context the page last read had the kit's `checkKept` on (?probe=1&checkKept=1).
+    checkKept: () => S.routes?.ctx?.checkKept === true,
+    idle: () => rendering === 0 && !renderQueued,
     // Probe only: the kit's solid bodies for the rack as it is (solids.js solidsOf), as plain data.
     solids: () => solidsOf(rack(), {chassisOf}).map(b => ({item: b.item, part: b.part, box: {...b.box}, zeroU: b.zeroU === true})),
     // Probe only: a bundle command as a panel sends it (bundleCommand): it waits for the rack's routes.
@@ -2287,10 +2426,12 @@ if (PROBE) {
     // The bundles the page drew by (bundle-view.js bundleFacts), as plain data.
     bundles: () => (S.routes?.bundles ? [...S.routes.bundles.values()].map(f => ({id: f.id, name: f.name, drawn: f.drawn,
       diameter: f.diameter, count: f.straps?.count ?? null, kinds: f.straps?.kinds ?? null, widths: f.straps?.widths ?? null, straps: (f.straps?.straps ?? []).map(x => ({...x})),
-      warnings: [...f.check.warnings], checked: f.check.checked})) : null),
+      warnings: [...f.check.warnings], checked: f.check.checked, bend_mm: f.check.bend?.radius_mm ?? null})) : null),
     // Probe only: the tie slots a strap is at (the kit's anchorsOf) and the tie straps of single cables the page draws.
     anchors: () => (S.routes?.anchors ?? []).map(a => ({...a, bundles: [...a.bundles], cables: [...a.cables]})),
     tieStraps: () => (S.routes?.tieStraps ?? []).map(m => ({...m, at: {...m.at}, cables: [...m.cables]})),
+    // Probe only: the stored loops of spare the page draws (kit 0.35.0 spareMarks; spare-loops.js).
+    spareLoops: () => (S.routes?.spareLoops ?? []).map(l => ({...l, at: {...l.at}})),
     cableFacts: () => ({seats: S.cableFacts.seats,
       reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

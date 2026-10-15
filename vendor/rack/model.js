@@ -7,6 +7,7 @@
 // committed, and a shared, mutated rack is how a save would catch half an edit.
 
 import {RU} from './rails.js';
+import {hexColor} from './cable-geometry.js';
 
 export const FORMAT = 'portrayal-rack';
 // Zero-U parts and `side` (#926) did not raise it: both are optional keys a
@@ -139,6 +140,11 @@ const bundleItems = bundles => bundleList(bundles).flatMap(b => [
   ...(Array.isArray(b.members) ? b.members : []).flatMap(m => (plainObj(m) ? [m.a, m.b] : []))])
   .filter(w => plainObj(w) && typeof w.item === 'string' && w.item).map(w => ({id: w.item}));
 export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables), ...bundleItems(rack.bundles)];
+// A ZERO-U ID THE SAME WAY (P-0019): a cord kept when its PDU was taken away
+// still names the PDU's id, so the next part placed beside the rack is not
+// handed it.
+export const zeroUIdsInUse = rack => [...(Array.isArray(rack.zeroU) ? rack.zeroU : []).filter(z => typeof z?.id === 'string'),
+  ...endItems(rack.cables)];
 // A CABLE ID IS NEVER REUSED WHILE A BUNDLE NAMES IT: ids come one past the
 // highest, so a removed c9 could be handed to the next cable, and a bundle
 // still naming c9 would pick it up.
@@ -183,6 +189,26 @@ const plainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
 export const zeroUOf = rack => (Array.isArray(rack?.zeroU) ? rack.zeroU : []).filter(z => plainObject(z)
   && typeof z.id === 'string' && z.id && typeof z.ref === 'string' && z.ref && typeof z.at === 'string' && z.at);
 export const zeroUById = (rack, id) => zeroUOf(rack).find(z => z.id === id) ?? null;
+// WHAT A CABLE END IS ON (P-0019): a rack item, or a part beside the rack
+// whose own slots take a cable end (the outlets of a zero-U PDU). An end is
+// `{item, path, view}` either way: `item` is the id of whichever it is, and
+// `view` the part's own panel, as on an item. null when neither is there.
+export const endHostOf = (rack, id) => (rack?.items || []).find(i => i.id === id) ?? zeroUById(rack, id);
+// The face of the rack a part beside it looks out of: a rear upright carries
+// its part facing rearward (solids.js zeroUPlacer); a front upright, and
+// either upright of a two-post, facing forward. Its own rear panel looks the
+// other way.
+export const zeroUPane = (z, view = 'front') => {
+  const out = /-rear$/.test(String(z?.at)) ? 'rear' : 'front';
+  return view === 'rear' ? (out === 'rear' ? 'front' : 'rear') : out;
+};
+// The pane an end's panel faces on whatever it is on, or null when it is on nothing.
+export const endPaneIn = (rack, end) => {
+  const it = (rack?.items || []).find(i => i.id === end?.item);
+  if (it) return ((end.view === 'rear') === !!it.turned) ? it.face : (it.face === 'front' ? 'rear' : 'front');
+  const z = zeroUById(rack, end?.item);
+  return z ? zeroUPane(z, end.view === 'rear' ? 'rear' : 'front') : null;
+};
 // WHAT A ZERO-U PART HANGS ON (version 4, `heldBy: {parts: [id, ...]}`): the
 // ids of the zero-U entries that hold it, such as the two brackets of a PDU;
 // none for a part that stands on its own.
@@ -190,7 +216,11 @@ export const holdersOf = z => (plainObject(z?.heldBy) && Array.isArray(z.heldBy.
   ? z.heldBy.parts.filter(id => typeof id === 'string' && id) : []);
 // A part's bottom U and its offset, each from the other: U1 is offset 0.
 export const zeroUOffset = ru => Math.round((ru - 1) * RU * 100) / 100;
-export const zeroUBottom = z => Math.max(1, Math.round((Number(z?.offsetMm) || 0) / RU) + 1);
+// THE ONE OWNER OF A ZERO-U PART'S BOTTOM is `offsetMm`, in mm (version 4): fit,
+// the solids and so the routes read it here. `zeroUBottom` is the nearest U to
+// it, for a label or a lane waypoint, and is never drawn from.
+export const zeroUBottomMm = z => Math.max(0, Number(z?.offsetMm) || 0);
+export const zeroUBottom = z => Math.max(1, Math.round(zeroUBottomMm(z) / RU) + 1);
 
 export const updateItem = (rack, id, patch) =>
   ({...rack, items: rack.items.map(i => (i.id === id ? {...i, ...patch} : i))});
@@ -367,6 +397,13 @@ const routesEqual = (a, b) => a.length === b.length && a.every((w, i) =>
 // at all - is not thrown away: it moves, whole, to the cable's
 // `lengthAsWritten`, so nothing downstream reads a bad number and the file
 // still holds what was written. Loading what was saved changes nothing more.
+//
+// A COLOUR IS READ THE SAME WAY (#1028). `color` is the cable's own colour:
+// `#rgb` or `#rrggbb`, kept as lower case `#rrggbb` (cable-geometry.js
+// hexColor). A cable with no such key has none, and loads as it always did.
+// A `color` that is no colour (a name, a number, an object) moves, whole, to
+// `colorAsWritten`, and the cable has no `color`: it is drawn by its ends,
+// its type or its media, never in a colour guessed from what was written.
 const readEnd = e => ({...(e && typeof e === 'object' && !Array.isArray(e) ? e : {}), item: String(e?.item ?? ''), path: String(e?.path ?? ''),
                        view: e?.view === 'rear' ? 'rear' : 'front'});
 // A length is a number, or a string of plain decimal digits: Number() would
@@ -412,7 +449,8 @@ export function readCables(list, bundles = []) {
   const out = [];
   const seen = new Set();
   for (const raw of list) {
-    const {length: len, slack: slackRaw, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    const {length: len, slack: slackRaw, color: colorRaw, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    const color = hexColor(colorRaw);
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
@@ -444,6 +482,7 @@ export function readCables(list, bundles = []) {
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
               route, ...(routeAsWritten ? {routeAsWritten} : {}),
               ...(routeEdited === true ? {routeEdited: true} : {}), ...readSlack(slackRaw),
+              ...(color ? {color} : colorRaw == null ? {} : {colorAsWritten: colorRaw}),
               ...(length ? {length} : len == null ? {} : {lengthAsWritten: len})});
   }
   return out;

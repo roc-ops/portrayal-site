@@ -9,7 +9,7 @@
 // path's own `allowance`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {leadStops, bendStops, bendNotice, landedBends} from '../../site/rack/route-context.js';
+import {leadStops, bendStops, bendNotice, bendPoints, landedBends} from '../../site/rack/route-context.js';
 import * as R from '../../vendor/rack/route.js';
 
 // The lacer of cable-lay.test.mjs: a tray floor 100 mm deep on a panel at U41,
@@ -56,14 +56,22 @@ test('the end allowance is the kit\'s: the old names are gone, and a length is t
   assert.notEqual(R.endAllowance(r.cables[0]), R.endAllowance(r.cables[1]));
 });
 
+// Two more cords through the same ring, from two more ports of the switch to two more of the panel.
+const PORTS = {'sw|p1': -40, 'pp|lc1': 40, 'sw|p2': -25, 'pp|lc2': 25, 'sw|p3': -10, 'pp|lc3': 10};
+const wide = ctxOf({portX: end => PORTS[`${end.item}|${end.path}`] ?? null});
+const cords3 = media => [cord(media),
+  {...cord(media), id: 'c2', a: {item: 'sw', path: 'p2', view: 'front'}, b: {item: 'pp', path: 'lc2', view: 'front'}},
+  {...cord(media), id: 'c3', a: {item: 'sw', path: 'p3', view: 'front'}, b: {item: 'pp', path: 'lc3', view: 'front'}}];
+
 test('the bend notice is the kit\'s sentences, the first three and how many more', () => {
-  const r = rack([cord('aoc')]);
-  const found = R.bendFindings(r, ctxOf(), id => id.toUpperCase());
+  const r = rack(cords3('aoc'));
+  const found = R.bendFindings(r, wide, id => id.toUpperCase());
   // NOT VACUOUS: this fixture has tight bends, each in the kit's own words
   assert.ok(found.length > 3, `the fixture gives ${found.length} findings`);
   for (const f of found) {
     assert.equal(f.kind, 'tight-bend');
-    assert.match(f.text, /^c1 (turns [\d.]+ degrees|doubles back) .+ the cable \(aoc\) needs 30 mm/);
+    // a bend is one corner, or (kit 0.27.0) two turns on one short leg, said as one
+    assert.match(f.text, /^c\d (turns ([\d.]+ degrees|twice within [\d.]+ mm)|doubles back) .+ the cable \(aoc\) needs 30 mm/);
     assert.equal(f.at.length, 3);
   }
   assert.equal(bendNotice(found), `${found.slice(0, 3).map(f => f.text).join(' ')} And ${found.length - 3} more.`);
@@ -71,6 +79,26 @@ test('the bend notice is the kit\'s sentences, the first three and how many more
   assert.equal(bendNotice(found.slice(0, 3)), found.slice(0, 3).map(f => f.text).join(' '));
   assert.equal(bendNotice([]), '');
   assert.equal(bendNotice(null), '');
+  // the advice of a lead put into a ring too close for it, once for each distinct advice, after the sentences
+  const tight = [{text: 'one.', advice: 'Move the lacer.'}, {text: 'two.', advice: 'Move the lacer.'}, {text: 'three.'}];
+  assert.equal(bendNotice(tight), 'one. two. three. Move the lacer.');
+  assert.equal(bendNotice([...tight, {text: 'four.', advice: 'Not named.'}]), 'one. two. three. And 1 more. Move the lacer.');
+});
+
+test('a pair of turns on one short leg is one finding, ringed at each corner (kit 0.27.0)', () => {
+  const r = rack([cord('aoc')]);
+  const found = R.bendFindings(r, ctxOf(), id => id.toUpperCase());
+  const pair = found.find(f => f.turns);
+  assert.ok(pair, 'the fixture has a pair');
+  assert.equal(pair.turns.length, 2);
+  // the finding's own `at` is the middle of the leg between the turns: it rings neither corner
+  assert.deepEqual(bendPoints(pair), pair.turns.map(t => t.at));
+  assert.notDeepEqual(bendPoints(pair)[0], pair.at);
+  // a single bend is ringed at its `at`; a finding with no place is ringed nowhere
+  const single = found.find(f => !f.turns);
+  assert.deepEqual(bendPoints(single), [single.at]);
+  assert.deepEqual(bendPoints({}), []);
+  assert.deepEqual(bendPoints(null), []);
 });
 
 test('each cable is judged by its own bend radius: bendOf in the context is what a finding needs', () => {

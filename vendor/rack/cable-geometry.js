@@ -7,25 +7,94 @@
 import {throughRings} from './route-path.js';
 
 
+// THE COLOUR A CABLE IS DRAWN IN (#1028). In order:
+//   1. the colour stated on the cable itself (`color`, a saved key);
+//   2. else the jacket colour its two seated ends state, when both state one
+//      and the two agree (`jackets`);
+//   3. else the colour of its named cable type, where the type states one
+//      (`typeColor`, cable-types.js jacketLookup);
+//   4. else its media's, from `COLORS` below.
+// ONE TABLE HOLDS THE DEFAULTS, `COLORS`. `JACKETS`, under it, names the same
+// colours by another set of keys and holds none of its own.
+//
+// A COLOUR IS HEX, `#rgb` or `#rrggbb` in either case, as `jacket-color` is
+// written on every cable end of the library and as fields.js strokeShade
+// reads one. hexColor answers it as lower case `#rrggbb`, or null for
+// anything else: a colour name, a CSS function, a number. A value that is no
+// colour is never drawn: the next rule of the order decides.
+export function hexColor(v) {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(typeof v === 'string' ? v.trim() : '');
+  if (!m) return null;
+  const h = m[1].length === 3 ? [...m[1]].map(c => c + c).join('') : m[1];
+  return `#${h.toLowerCase()}`;
+}
+
 // OS2 jackets are yellow; copper is coloured by what it is for.
 export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '#9aa3ad'},
   // The Rack Builder's media (cable-rules.js MEDIA), beside the showcase's
   // two: OM3 and OM4 aqua, OM5 lime green, Cat 6 and 6A blue, a DAC black, an
   // AOC dark grey, and a neutral grey for a cable whose media is not set.
-  // Added keys only: colorOf, and every colour the showcase draws, are unchanged.
   om3: '#2bb3c8', om4: '#2bb3c8', om5: '#9acd32', cat6: '#5aa7ff', cat6a: '#5aa7ff',
-  dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad'};
+  dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad',
+  // A power cable is the black every cord end of the library is drawn in
+  // (`jacket-color`, #1c1c1c), so the cable carries on from its plug's stub.
+  // A ground wire is green; the shade is an estimate, no source is held.
+  power: '#1c1c1c', ground: '#3f9b4b'};
 // Own keys only: a hand-edited media or purpose named like something every
 // object has (toString, constructor, __proto__) is unknown, not a colour.
 const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
-export const colorOf = l => l.media === 'copper'
-  ? (own(COLORS.copper, l.purpose) || COLORS.copper.server) : (own(COLORS, l.media) || COLORS.os2);
+// A media's colour and nothing else: rule 4.
+export const mediaColor = l => (l?.media === 'copper'
+  ? (own(COLORS.copper, l.purpose) || COLORS.copper.server) : (own(COLORS, l?.media) || COLORS.os2));
 
-// JACKETS: what a cable's outer sheath looks like, by what it is. Multimode
-// fibre and AOCs are aqua, single-mode is yellow (the same yellow as os2), a
-// twinax DAC is black, and copper patch leads are blue. The front-page hero
-// colours its cables by these; the showcase's plan keeps colorOf.
-export const JACKETS = {mm: '#2bb3c8', sm: COLORS.os2, dac: '#15171a', cu: COLORS.copper.server};
+// BOTH ENDS AGREE: the one jacket colour two ends state, or null. An end that
+// states none (nothing is seated there, what is seated has no jacket, or its
+// jacket is at its part's own default: ports.js seatedJacket) settles nothing,
+// so one stated end and one bare end is no agreement, and nor are two ends
+// that state different colours. `#ABC` and `#aabbcc` are one colour.
+export function agreedJacket(jackets) {
+  if (!Array.isArray(jackets) || jackets.length !== 2) return null;
+  const [a, b] = jackets.map(hexColor);
+  return a && a === b ? a : null;
+}
+
+// `{color, from}` for a cable or a link of a plan (cable-rules.js cablePlan):
+// the colour by the order above, and which rule gave it: 'cable', 'ends',
+// 'type' or 'media'. It reads `color`, `jackets` ([end a's, end b's], each a
+// colour or null) and `typeColor` beside `media` and `purpose`; a link with
+// none of the three is coloured by its media, as every link was before.
+export function cableColor(l) {
+  const stated = hexColor(l?.color);
+  if (stated) return {color: stated, from: 'cable'};
+  const ends = agreedJacket(l?.jackets);
+  if (ends) return {color: ends, from: 'ends'};
+  const type = hexColor(l?.typeColor);
+  if (type) return {color: type, from: 'type'};
+  return {color: mediaColor(l), from: 'media'};
+}
+export const colorOf = l => cableColor(l).color;
+
+// A BUNDLE'S BAND, where a view draws one thing for the whole bundle (a
+// sleeve, a swatch in a list): the colour every member is drawn in when they
+// are all one colour, else no colour at all (`color: null`, `mixed: true`).
+// The kit picks none for a mixed bundle: any one member's would say the
+// others are that colour too. A view then keeps the band it draws today, and
+// each member keeps its own colour wherever it is drawn on its own.
+// `colors` is the members' drawn colours (colorOf of each).
+export function bundleColor(colors) {
+  const seen = [...new Set((colors || []).map(hexColor).filter(Boolean))];
+  return seen.length === 1 ? {color: seen[0], mixed: false} : {color: null, mixed: seen.length > 1};
+}
+
+// `JACKETS`: the same colours by what a sheath is, for the front-page hero,
+// whose links name a jacket and no media: multimode fibre, single-mode, a
+// twinax DAC, a copper patch lead. Each is an entry of `COLORS` and no colour
+// is written here, so the two cannot drift.
+// AN OPEN QUESTION, NOT SETTLED HERE: the hero draws an AOC with the `mm`
+// jacket, aqua, as multimode fibre; `COLORS` draws the media `aoc` dark grey.
+// Both are drawn as they were. A reading that an AOC is aqua belongs in
+// `COLORS.aoc`, and changes every drawing of one.
+export const JACKETS = {mm: COLORS.om4, sm: COLORS.os2, dac: COLORS.dac, cu: COLORS.copper.server};
 export const colorOfJacket = j => JACKETS[j] || JACKETS.sm;
 
 // PLUGS: what an LC plug's plastic looks like, by the fibre it carries, as in
@@ -37,6 +106,20 @@ export const PLUGS = {sm: '#2a6fd4', mm: JACKETS.mm};
 export const plugColorOf = j => PLUGS[j] || null;
 
 export const WIDTH = 3;          // mm: a patch lead, to scale
+
+// THE WIDTH A CABLE IS DRAWN AT (#1060), mm. A power cord is drawn at its real
+// outside diameter, so it meets the stub of the plug it lands on (a cord end's
+// stub is `cable-od` wide); every other media is WIDTH, as it always was.
+// `diameterOf` is the page's cable types lookup (cable-types.js
+// diameterLookup); a cord that names no type is the power-c13 cord, whose
+// figure is route.js DIAMETERS.power (held equal by rack-cord-width.mjs: this
+// file cannot import route.js, which imports it by way of solids.js).
+const POWER_OD = 7.1;
+export function widthOf(cable, diameterOf = null) {
+  if (cable?.media !== 'power') return WIDTH;
+  const d = typeof diameterOf === 'function' ? diameterOf(cable) : null;
+  return typeof d === 'number' && d > 0 ? d : POWER_OD;
+}
 // How far a cable hangs below the lower of its two ends: a little always, more
 // the farther apart they are, and a few mm more per cable already hung between
 // the same two devices, so parallel runs fan out instead of stacking.

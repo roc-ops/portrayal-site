@@ -8,11 +8,12 @@
 import {COMMANDS, apply as applyCommands} from '../../vendor/rack/commands.js';
 import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
-import {LIMIT, fit, ranges, clip, cutList, runs, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
+import {LIMIT, fit, ranges, clip, cutList, runs, freeLine, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
 import {spareFor, spareText, needsText} from './spare.js';
 import {projectionIdRefusal} from './part-path.js';
-import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult} from './agent-edit.js';
+import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult, touchedCables, findingNotes} from './agent-edit.js';
+import {american} from '../colors.js';
 
 export {LIMIT, fit, ranges};
 
@@ -26,7 +27,7 @@ export const agentMay = (op, commands = COMMANDS) =>
 // names where a kit description names one of its own functions.
 const ARG_WORDS = {
   rack: 'Edits go to the rack that is open; describe_rack names it.',
-  a: 'One end: {item, path, view}: a device id, a port path from list_free_ports, and front or rear.',
+  a: 'One end: {item, path, view}: a device id or a zeroU id (a PDU outlet), a path from list_free_ports, and front or rear.',
   b: 'The other end: {item, path, view}, as for a.',
   length: 'How long: {value, unit} with unit m or ft (m when left out), or null for not known.',
   holes: 'The rail holes: {style, thread}: square or tapped, and the thread of tapped holes.',
@@ -55,7 +56,8 @@ const ARG_WORDS_BY_OP = {
 };
 const TOOL_WORDS = [[/\bdescribe\(\)/g, 'describe_rack'], [/\bfreePorts\(\)/g, 'list_free_ports'],
                     [/\bcatalog\(\)/g, 'find_devices'], [/\binspect\(\)/g, 'inspect']];
-const words = d => TOOL_WORDS.reduce((s, [re, w]) => s.replace(re, w), d);
+// and in US spelling: the kit's descriptions are written "colour"
+const words = d => american(TOOL_WORDS.reduce((s, [re, w]) => s.replace(re, w), d));
 // Every description at any depth, in this site's words.
 const reword = node => {
   if (Array.isArray(node)) return node.map(reword);
@@ -141,6 +143,17 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
     inputSchema: {type: 'object', properties, ...(required.length ? {required} : {}), additionalProperties: false},
     execute: safe(run),
   });
+  // What the kit finds of the cables an edit touched (bends, rings, spare), read from the routes after it: apply
+  // returns none of them. A cable that cannot be read leaves its notes out; the edit has been made either way.
+  const laidFindings = async (commands, res) => {
+    const rack = ed.rack();
+    const ids = touchedCables(rack, commands, res).slice(0, 8);
+    if (!ids.length) return [];
+    try {
+      const ctx = await context(rack, [], {route: true});
+      return findingNotes(await Promise.all(ids.map(async id => ({id, o: await queries.inspect(rack, id, ctx)}))));
+    } catch { return []; }
+  };
   const tools = [
     tool('describe_rack', 'Describe the rack',
       'Read the open rack: its name, id and totals first, then what Undo would take back, the DCIM import settings, the cable ends that do not land, and its devices, the parts beside the rack, its cables and its bundles with their ids. section, offset and limit page a long listing. Call this first; edit_rack and inspect address things by these ids.',
@@ -268,25 +281,32 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         return say(us.length ? `${ref} fits on the ${face} at ${ranges(us)}${note}.` : `${ref} fits nowhere on the ${face} of this rack.`);
       }),
     tool('list_free_ports', 'List free ports',
-      'List the ports of one device that have no cable, grouped into runs, with speed and media. An empty cage is marked: a fiber cable needs an optic fitted there first (edit_rack fit). cable.add takes a port as {item, path, view}. The first line gives the total; a long list comes in pages, and the first line says what to send next.',
-      {id: {type: 'string', description: 'The device id from describe_rack, e.g. i3.'},
+      'List the free ports of a device, or the free outlets of a PDU beside the rack (zeroU id, e.g. z3), in runs. Data ports: speed and media; an empty cage needs an optic first (edit_rack fit). Power ends: connector and plug; an outlet also its type, label and U. cable.add takes {item, path, view}. A long list pages; the first line says what to send next.',
+      {id: {type: 'string', description: 'The device id or zeroU id from describe_rack, e.g. i3 or z3.'},
        item: {type: 'string', description: 'Old name for id; id is preferred.'},
        view: {type: 'string', enum: ['front', 'rear'], description: "Only the ports on the device's front or rear panel. Both when left out."},
+       kinds: {type: 'array', items: {type: 'string', enum: ['data', 'power', 'ground', 'other']}, description: 'Only these kinds of end, e.g. ["power"] for a power cord. All when left out.'},
+       type: {type: 'string', description: 'Only outlets of this coupler type, e.g. C13, C19 or C39.'},
+       near: {type: 'integer', description: 'A unit, as the rack numbers them: a PDU\'s outlets nearest it come first.'},
        offset: {type: 'integer', minimum: 0, description: 'Skip this many runs; 0 when left out.'}},
       [], UNTRUSTED,
-      async ({id, item, view, offset}) => {
+      async ({id, item, view, kinds, type, near, offset}) => {
         const which = id ?? item;
         if (!which) return refuse('Send id: the device id from describe_rack, e.g. i3.');
         const rack = ed.rack();
-        const ports = await queries.freePorts(rack, which);
+        // The parts lists (the per-call context): a device's power ends and a PDU's outlets are the catalogue's.
+        const ctx = await Promise.resolve(context(rack, [])).catch(() => ({}));
+        const ports = await queries.freePorts(rack, which, ctx, {kinds, type, near});
         if (ports.error) return refuse(ports.error);
         // What each cage holds, from inspect: a port in a cage is free whether
         // or not an optic is seated, and an agent has to know which.
-        const o = await Promise.resolve(context(rack, [])).then(ctx => queries.inspect(rack, which, ctx)).catch(() => ({}));
+        const o = await Promise.resolve(queries.inspect(rack, which, ctx)).catch(() => ({}));
         const holds = new Map((o.cages ?? []).map(c => [`${c.view}|${c.path}`, c.holds ?? null]));
         const order = new Intl.Collator('en', {numeric: true});
+        // (a PDU's outlets near a unit come nearest first, as the kit sorts them; a device's ports by path)
+        const byNear = near != null && ports.some(p => p.u !== undefined);
         const shown = ports.filter(p => !view || p.view === view)
-          .sort((a, b) => (a.view === b.view ? order.compare(a.path, b.path) : a.view === 'front' ? -1 : 1))
+          .sort((a, b) => (a.view !== b.view ? (a.view === 'front' ? -1 : 1) : byNear ? 0 : order.compare(a.path, b.path)))
           .map(p => {
             // Only the cage's own port is the cage: an optic's own ports
             // (port-1-occupant/...) are ports on the optic, not cages.
@@ -294,8 +314,9 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
             const isCage = portPathOf(p.path) === p.path && holds.has(k);
             return {...p, cage: isCage ? (holds.get(k) ? `cage, holds ${holds.get(k)}` : 'cage, empty') : null};
           });
-        const lines = runs(shown, p => JSON.stringify([p.view, p.speed, p.media, p.cage]))
-          .map(p => `${p.path}, ${p.view}: ${[p.speed, p.media, p.cage].filter(Boolean).join(' ') || 'port'}`);
+        // (an outlet is its own line: its label and unit are its own)
+        const lines = runs(shown, p => (p.type !== undefined || p.u !== undefined ? p.path : JSON.stringify([p.view, p.speed, p.media, p.cage, p.kind, p.connector, p.plug])))
+          .map(freeLine);
         const where = view ? `on the ${view}` : 'front and rear';
         const name = `${which}${o.label ? ` (${clip(o.label, 40)})` : ''}`;
         if (!lines.length) return say(`${name}: no free ports ${where}.`);
@@ -343,6 +364,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const verb = {'cable.remove': dry_run ? 'Would remove' : 'Removed', 'cable.update': dry_run ? 'Would update' : 'Updated'};
         const echoed = reached(x).map(s => `${verb[s.op]}: ${s.ids.join(', ')}.`);
         const notes = x.unchecked ? ['Note: some ports could not be checked, so a loose cable may have been missed.'] : [];
+        if (!dry_run) notes.push(...await laidFindings(x.commands, res));
         return say(editResult(res, {dryRun: !!dry_run, echoed, notes}));
       }),
     tool('new_rack', 'Start a new rack',
