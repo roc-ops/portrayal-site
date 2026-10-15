@@ -51,15 +51,40 @@ export function components() {
 }
 
 const refKey = c => `${c.ns}/${c.name}@${c.major.slice(1)}`;
-export const findComp = (list, ref) => list.find(c => refKey(c) === String(ref).split(':')[0]);
+// One Map per list, built on its first ask: a linear find that built a template
+// string per component per call cost 0.5 s on a large rack. The first
+// component with a key wins, as the find did.
+const COMP_INDEX = new WeakMap();
+export function compIndex(list) {
+  let idx = COMP_INDEX.get(list);
+  if (!idx) {
+    idx = new Map();
+    for (const c of list) { const k = refKey(c); if (!idx.has(k)) idx.set(k, c); }
+    COMP_INDEX.set(list, idx);
+  }
+  return idx;
+}
+export const findComp = (list, ref) => compIndex(list).get(String(ref).split(':')[0]);
+
+// One promise per skin URL: a rack with many devices of one kind asked for the
+// same file hundreds of times. A failed fetch is dropped, not kept for good.
+const SKINS = new Map();
+function skinText(url) {
+  let hit = SKINS.get(url);
+  if (!hit) {
+    hit = fetch(url).then(r => (r.ok ? r.text() : null))
+      .catch(err => { if (SKINS.get(url) === hit) SKINS.delete(url); throw err; });
+    SKINS.set(url, hit);
+  }
+  return hit;
+}
 
 export async function loadSkin(ref) {
   const c = findComp(await components(), ref);
   if (!c) return null;
   const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
-  const r = await fetch(`${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
-  if (!r.ok) return null;
-  return {comp: c, text: await r.text()};
+  const text = await skinText(`${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+  return text == null ? null : {comp: c, text};
 }
 
 export function applyFields(root, fields) {
