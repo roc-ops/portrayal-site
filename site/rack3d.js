@@ -481,9 +481,10 @@ export function createRackScene(container, opts = {}) {
   // build meant the whole rack assembled itself somewhere above the default
   // camera and then snapped into place - and did it again on every rebuild,
   // throwing away wherever the viewer had orbited to.
-  // (tagMinX: x of the farthest tag's outer edge, null until layoutTags has run;
+  // (tagMinX, tagMaxX: x of the farthest front tag's outer edge on the left and of the farthest
+  // rear tag's on the right, null until layoutTags has run or while a column is empty;
   // framed: the view last framed; cameraTouched: the viewer has moved it since)
-  let tagMinX = null, framed, cameraTouched = false;
+  let tagMinX = null, tagMaxX = null, framed, cameraTouched = false;
   controls.addEventListener('start', () => { cameraTouched = true; });
   function frameCamera(which) {
     const v = VIEWS[which] || VIEWS[VIEW] || VIEWS.iso;
@@ -510,10 +511,12 @@ export function createRackScene(container, opts = {}) {
     // The viewing DIRECTION is the one the stage was composed with, kept as a
     // unit vector so the look does not change - only how far back it sits.
     // THE TAGS' OWN REACH, once they are laid out (layoutTags): the picture is
-    // centred on the span from the farthest tag's edge to the right rail's outer
-    // edge, and given room by that span, not by a fixed guess at it.
-    const left = tagMinX === null ? null : tagMinX, right = RACK_W / 2 + 10;
-    const target = new THREE.Vector3(left === null ? RACK_W * (v.aimX || 0) : (left + right) / 2 * v.centre, H * v.aim, v.z);
+    // centred on the span from the farthest front tag's edge to the farthest rear
+    // tag's (the right rail's outer edge while there is none), and given room by
+    // that span, not by a fixed guess at it.
+    const tagged = tagMinX !== null || tagMaxX !== null;
+    const left = tagMinX ?? -(RACK_W / 2 + 10), right = tagMaxX ?? RACK_W / 2 + 10;
+    const target = new THREE.Vector3(!tagged ? RACK_W * (v.aimX || 0) : (left + right) / 2 * v.centre, H * v.aim, v.z);
     controls.target.copy(target);
     framed = which;
     cameraTouched = false;
@@ -533,7 +536,7 @@ export function createRackScene(container, opts = {}) {
     // being checked against the height and width of what is directly in
     // front of the camera.
     const depth = FRAME ? RACK_FACE_Z - REAR_FACE_Z : 0;
-    const across = left === null ? RACK_W * v.wide : (right - left) * v.span;
+    const across = !tagged ? RACK_W * v.wide : (right - left) * v.span;
     const need = Math.max(H / (2 * half), across / (2 * half * aspect),
                           (depth * 1.15) / (2 * half * aspect));
     camera.position.copy(target)
@@ -716,7 +719,8 @@ export function createRackScene(container, opts = {}) {
   scene.add(leaders);
   const TAG_GAP = 120;      // mm clear between the farthest part beside the rack and the tags' inner edge
   const TAG_GAP_Z = 40;   // mm clear in front of the rack's frontmost part, so a tag clears it from the side too
-  const TAG_STEP = 4;       // mm between two tags in a column
+  const TAG_GAP_Z_REAR = 120;   // the same behind the rearmost part, more of it: from the left side the rear column is the far one, and perspective draws it in toward the rack
+  const TAG_STEP = 4;      // mm between two tags in a column
   // The scene without its leaders for as long as `fn` runs (an export): a Line is
   // written to a GLB, unlike a sprite.
   async function withoutLeaders(fn) {
@@ -739,33 +743,48 @@ export function createRackScene(container, opts = {}) {
   function layoutTags() {
     clearLeaders();
     const tags = mounted.filter(m => m.tag).sort((a, b) => b.group.position.y - a.group.position.y);
-    if (!tags.length) { tagMinX = null; requestFrame(); return; }
-    let outer = -RACK_W / 2, front = RACK_FACE_Z;
+    if (!tags.length) { tagMinX = tagMaxX = null; requestFrame(); return; }
+    let outer = -RACK_W / 2, outerR = RACK_W / 2, front = RACK_FACE_Z, rear = RACK_FACE_Z;
     for (const o of scene.children) {
       if (o === leaders || o.isLight || o.isSprite) continue;
       partBox.makeEmpty().expandByObject(o);
       if (partBox.isEmpty()) continue;
       outer = Math.min(outer, partBox.min.x);
-      if (o.name !== 'patch-cables') front = Math.max(front, partBox.max.z);   // (a cable run is not a part a tag must clear in depth)
+      outerR = Math.max(outerR, partBox.max.x);
+      if (o.name !== 'patch-cables') { front = Math.max(front, partBox.max.z); rear = Math.min(rear, partBox.min.z); }   // (a cable run is not a part a tag must clear in depth)
     }
-    const col = outer - TAG_GAP;
-    let floor = Infinity, min = col;
-    for (const m of tags) {
-      const w = m.tag.scale.x, h = m.tag.scale.y;
-      const y = Math.min(m.group.position.y, floor - h / 2 - TAG_STEP);   // (floor: the bottom edge of the tag above)
-      m.tag.position.set(col - w / 2, y, front + TAG_GAP_Z + w / 2);
-      floor = y - h / 2;
-      min = Math.min(min, col - w);
-      // the leader ends on the device: inside its left edge, at the tag's own height or the nearest the device has
+    // A tag is REAR when its part stands at the rear: a rear-facing device, or a zero-U part at a rear
+    // upright. A part spanning front to back (full depth) keeps its tag at the front.
+    const atRear = m => {
       extent.setFromObject(m.group);
-      const end = new THREE.Vector3(extent.min.x + 20, Math.min(Math.max(y, extent.min.y + 4), extent.max.y - 4), extent.max.z);
+      if (extent.min.z <= REAR_FACE_Z + 1 && extent.max.z >= RACK_FACE_Z - 1) return false;
+      const zu = m.group.userData.zeroU;
+      return zu ? /rear$/.test(zu.at) : m.entry.face === 'rear';
+    };
+    const colL = outer - TAG_GAP, colR = outerR + TAG_GAP;
+    const floors = {front: Infinity, rear: Infinity};
+    let min = null, max = null;
+    for (const m of tags) {
+      const isRear = atRear(m), side = isRear ? 'rear' : 'front';
+      const w = m.tag.scale.x, h = m.tag.scale.y;
+      const y = Math.min(m.group.position.y, floors[side] - h / 2 - TAG_STEP);   // (floor: the bottom edge of the tag above, in this column)
+      // front column: left of everything, right-aligned, in front; rear column: right of everything, left-aligned, behind
+      const col = isRear ? colR : colL;
+      m.tag.position.set(isRear ? col + w / 2 : col - w / 2, y, isRear ? rear - TAG_GAP_Z_REAR - w / 2 : front + TAG_GAP_Z + w / 2);
+      floors[side] = y - h / 2;
+      if (isRear) max = Math.max(max ?? -Infinity, col + w); else min = Math.min(min ?? Infinity, col - w);
+      // the leader ends on the near face of the part: inside its edge nearest the column, at the tag's own height or the nearest the part has
+      extent.setFromObject(m.group);
+      const end = new THREE.Vector3(isRear ? extent.max.x - 20 : extent.min.x + 20, Math.min(Math.max(y, extent.min.y + 4), extent.max.y - 4),
+                                    isRear ? extent.min.z : extent.max.z);
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(col, y, m.tag.position.z), end]),
                                   new THREE.LineBasicMaterial({color: new THREE.Color(LABEL.unit), depthTest: false, transparent: true, opacity: 0.85}));
       line.userData.labelTone = 'unit';
+      line.userData.leaderOf = m.entry.id ?? null;
       line.renderOrder = 1;
       leaders.add(line);
     }
-    tagMinX = min;
+    tagMinX = min; tagMaxX = max;
     if (!cameraTouched) frameCamera(framed);   // the opening view is fitted to the tags; one the viewer has moved is left alone
     requestFrame();   // (the tags moved and the leaders are new)
   }
@@ -1476,7 +1495,7 @@ export function createRackScene(container, opts = {}) {
     }
     mounted.length = 0;
     clearLeaders();
-    tagMinX = null;
+    tagMinX = tagMaxX = null;
     requestFrame();
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under

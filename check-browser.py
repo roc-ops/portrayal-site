@@ -5686,7 +5686,8 @@ def check_rack_3d_tags_out(page, base):
       ({rack: r} = K.withCable(r, {a: {item: 'i1', path: 'port-32', view: 'front'}, b: {item: 'i3', path: 'bay-4/module/lc2', view: 'front'}, media: 'os2'}));
       r = {...r, zeroU: [
         {id: 'z1', ref: 'cmv-sfd42u9w', cfg: cat['cmv-sfd42u9w'].default, label: 'vmgr', at: 'right-front', offsetMm: 0},
-        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0}]};
+        {id: 'z2', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-1', at: 'left-front', offsetMm: 0},
+        {id: 'z3', ref: 'pdumv20hvnetlx', cfg: cat['pdumv20hvnetlx'].default, label: 'pdu-rear', at: 'right-rear', offsetMm: 0}]};
       return r;
     }""")
     page.evaluate("r => window.__rack.replaceRack(r)", built)
@@ -5737,13 +5738,13 @@ def check_rack_3d_tags_out(page, base):
     for view in ("default", "front", "iso", "three-quarter-right", "side-right", "side-left"):
         got = page.evaluate(measure, view)
         tags, tag_of = got["tags"], {t["of"] for t in got["tags"]}
-        if tag_of != {"i1", "i3", "i4", "i5", "z2"}:   # leaf-1, pp-1, leaf-rear, leaf-2 and the PDU
-            bad.append(f"{view}: tags for {sorted(map(str, tag_of))}, expected leaf-1, pp-1, leaf-rear, leaf-2 and the PDU only")
+        if tag_of != {"i1", "i3", "i4", "i5", "z2", "z3"}:   # leaf-1, pp-1, leaf-rear, leaf-2 and the two PDUs
+            bad.append(f"{view}: tags for {sorted(map(str, tag_of))}, expected leaf-1, pp-1, leaf-rear, leaf-2 and the two PDUs only")
             continue
         for t in tags:
             for p in got["parts"]:
                 if hit(t, p):
-                    bad.append(f"{view}: tag of {t['of']} overlaps {p['name']} on screen")
+                    bad.append(f"{view}: tag of {t['of']} overlaps {p['name']} on screen: tag {round(t['l'])}-{round(t['r'])}, part {round(p['l'])}-{round(p['r'])}")
                     break
         for i, t in enumerate(tags):
             for o in tags[i + 1:]:
@@ -5757,11 +5758,46 @@ def check_rack_3d_tags_out(page, base):
                 bad.append(f"{view}: {len(got['leaders'])} leaders for {len(tags)} tags")
             for t in tags:
                 d = got["devices"].get(t["of"])
-                near = [l for l in got["leaders"] if abs(l["from"][0] - t["r"]) < 6 and t["t"] - 4 <= l["from"][1] <= t["b"] + 4]
+                edge = t["l"] if t["of"] in ("i4", "z3") else t["r"]   # (a rear tag's leader leaves its left edge, a front tag's its right)
+                near = [l for l in got["leaders"] if abs(l["from"][0] - edge) < 6 and t["t"] - 4 <= l["from"][1] <= t["b"] + 4]
                 if not near or not d:
                     bad.append(f"{view}: no leader from the tag of {t['of']} (device {d})")
                 elif not any(d["l"] - 2 <= l["to"][0] <= d["r"] + 2 and d["t"] - 2 <= l["to"][1] <= d["b"] + 2 for l in near):
                     bad.append(f"{view}: the leader of {t['of']} ends at {[l['to'] for l in near]}, off its device {d}")
+    # Two columns, in the scene's own units (S-0056): front tags left of everything and in front of it,
+    # rear tags right of everything and behind it, each leader to the near face of its own part.
+    cols2 = page.evaluate("""() => {
+      const s = window.__rack.scene(), {THREE, scene: sc} = s.three;
+      const tags = sc.children.filter(c => c.isSprite && c.userData.tagOf !== undefined);
+      const rest = new THREE.Box3(), b = new THREE.Box3();
+      for (const o of sc.children) { if (o.isLight || o.isSprite || o.name === 'tag-leaders') continue; b.makeEmpty().expandByObject(o); if (!b.isEmpty()) rest.union(b); }
+      const dev = id => new THREE.Box3().setFromObject(sc.getObjectByName('device-' + id));
+      const lines = sc.getObjectByName('tag-leaders').children.map(l => { const a = l.geometry.attributes.position;
+        return {of: l.userData.leaderOf, from: [a.getX(0), a.getY(0), a.getZ(0)], to: [a.getX(1), a.getY(1), a.getZ(1)]}; });
+      return {rest: {minX: rest.min.x, maxX: rest.max.x, minZ: rest.min.z, maxZ: rest.max.z},
+              tags: tags.map(t => ({of: t.userData.tagOf, x0: t.position.x - t.scale.x / 2, x1: t.position.x + t.scale.x / 2, z: t.position.z, y: t.position.y})),
+              dev: Object.fromEntries(tags.map(t => { const d = dev(t.userData.tagOf); return [t.userData.tagOf, {minZ: d.min.z, maxZ: d.max.z}]; })),
+              lines};
+    }""")
+    rest = cols2["rest"]
+    for t in cols2["tags"]:
+        if t["of"] in ("i4", "z3"):
+            if not (t["x0"] > rest["maxX"] and t["z"] < rest["minZ"]):
+                bad.append(f"rear tag of {t['of']} is not right of and behind everything: {t} against {rest}")
+        elif not (t["x1"] < rest["minX"] and t["z"] > rest["maxZ"]):
+            bad.append(f"front tag of {t['of']} is not left of and in front of everything: {t} against {rest}")
+    rear_ys = sorted((t["y"] for t in cols2["tags"] if t["of"] in ("i4", "z3")), reverse=True)
+    if len(rear_ys) != 2 or rear_ys[0] == rear_ys[1]:
+        bad.append(f"the rear column's tags share a place: {rear_ys}")
+    for l in cols2["lines"]:
+        d = cols2["dev"].get(l["of"])
+        # (the part's detail is built after the tags are laid out, so its box has grown by the time it is measured here)
+        rear_part = l["of"] in ("i4", "z3")
+        if d is None or abs(l["to"][2] - (d["minZ"] if rear_part else d["maxZ"])) > 100 \
+                or (l["to"][2] > d["minZ"] + 100 if rear_part else l["to"][2] < d["maxZ"] - 100):
+            bad.append(f"the leader of {l['of']} ends at z {l['to'][2]}, not on its part's near face ({d})")
+        if l["of"] in ("i4", "z3") and l["from"][0] <= rest["maxX"]:
+            bad.append(f"the leader of rear part {l['of']} leaves from x {l['from'][0]}, not the right column")
     # Tags and leaders turn with the stage's label colours, and the leaders are in no file.
     cols = page.evaluate("""() => { const s = window.__rack.scene(); s.setLabelColors({labelColor: '#123456', labelUnitColor: '#654321'});
       const sc = s.three.scene, hex = o => o.material.color.getHexString();
