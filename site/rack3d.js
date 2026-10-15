@@ -993,18 +993,26 @@ export function createRackScene(container, opts = {}) {
     // new mesh, geometry or material would take an id, and a USDZ names its
     // parts by those, so every file after would differ by a number. No other
     // caller passes the option.
-    let stoodIn = null;
+    let stoodIn = null, paintStand = null;
     if (sheet && opts.standIn && !tpl) {
       stoodIn = mats.map(m => ({m, own: {visible: m.visible, map: m.map, color: m.color.getHex(), transparent: m.transparent, opacity: m.opacity,
                                          alphaTest: m.alphaTest, depthWrite: m.depthWrite}}));
       for (const {m} of stoodIn) {
-        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.transparent = true; m.opacity = 0.35; m.alphaTest = 0; m.depthWrite = false;
+        m.visible = true; m.map = null; m.color.setHex(0x3a3f44); m.alphaTest = 0;
         m.needsUpdate = true;
       }
       body.userData.standIn = true;
+      // (opaque when the host's covers are on: it hides the cables inside, as the cover will; a box that failed keeps its dull look)
+      paintStand = () => {
+        if (!stoodIn || body.userData.standIn === 'failed') return;
+        for (const {m} of stoodIn) { m.transparent = !standInOpaque; m.opacity = standInOpaque ? 1 : 0.35; m.depthWrite = standInOpaque; m.needsUpdate = true; }
+      };
+      standInPaints.add(paintStand);
+      paintStand();
     }
     const dropStandIn = () => {
       if (!stoodIn) return;
+      standInPaints.delete(paintStand);
       for (const {m, own} of stoodIn) {
         m.visible = own.visible; m.map = own.map; m.color.setHex(own.color); m.transparent = own.transparent; m.opacity = own.opacity;
         m.alphaTest = own.alphaTest; m.depthWrite = own.depthWrite; m.needsUpdate = true;
@@ -1139,7 +1147,7 @@ export function createRackScene(container, opts = {}) {
       (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
     const detail = (async () => {
       // (held until the host lets the detail start, then a few at a time: `opts.holdDetail`, below)
-      if (detailHeld) { await detailHeld; await detailTurn(); }
+      if (detailHeld) { await detailHeld; await detailTurn(sheet); }
       try {
         if (mine !== epoch) return;
         for (const F of order) {
@@ -1182,7 +1190,7 @@ export function createRackScene(container, opts = {}) {
         // told once so its page can say so (`opts.onDetailFailed`). The
         // failure is still the pass's: complete() rejects as it did.
         if (mine === epoch && stoodIn) {
-          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.opacity = 0.2; m.needsUpdate = true; }
+          for (const {m} of stoodIn) { m.color.setHex(0x5a4a3a); m.transparent = true; m.opacity = 0.2; m.depthWrite = false; m.needsUpdate = true; }
           for (const {entry: e, body: b} of [{entry, body}, ...(rec?.sharers ?? [])]) {
             b.userData.standIn = 'failed';
             opts.onDetailFailed?.({id: e.id ?? null, ref: e.ref, label: e.label ?? e.ref, error: err});
@@ -1414,12 +1422,21 @@ export function createRackScene(container, opts = {}) {
   // the devices were built.
   const DETAIL_AT_ONCE = 4;
   let detailRunning = 0;
-  const detailWaiting = [];
+  const detailWaiting = [], detailFirst = [];
   const nextDetail = () => {
-    while (detailRunning < DETAIL_AT_ONCE && detailWaiting.length) { detailRunning++; setTimeout(detailWaiting.shift()); }
+    while (detailRunning < DETAIL_AT_ONCE && (detailFirst.length || detailWaiting.length)) {
+      detailRunning++; setTimeout((detailFirst.length ? detailFirst : detailWaiting).shift());
+    }
   };
-  const detailTurn = () => new Promise(go => { detailWaiting.push(go); nextDetail(); });
+  // A SHEET PART'S PASS GOES FIRST (`first`), in the order they were built: until its detail lands a vertical
+  // manager is a plain box, and a rack's managers were its last parts to arrive. The turns are handed out
+  // in a task of their own, after every part has asked, so the order is not the order the passes woke in.
+  const detailTurn = first => new Promise(go => { (first ? detailFirst : detailWaiting).push(go); setTimeout(nextDetail); });
   const detailDone = () => { detailRunning--; nextDetail(); };
+  // THE STAND-INS FOLLOW THE HOST'S COVERS SETTING (`paintStandIns`): opaque when the covers are on, as the
+  // cover will be, else see-through. Each stand-in registers its repaint while it stands.
+  let standInOpaque = false;
+  const standInPaints = new Set();
   let RESOLVED = [], COMPONENTS = null;
   async function hydrate() {
     const configs = new Map();
@@ -1683,6 +1700,8 @@ export function createRackScene(container, opts = {}) {
     complete: async () => { await Promise.all(pending); },
     // Let the held relief pass start (`opts.holdDetail`); a no-op without the option, or once started.
     startDetail() { startDetail?.(); },
+    // Draw the plain boxes sheet parts stand as (`opts.standIn`) opaque or see-through; those still to come take it too.
+    paintStandIns(opaque) { standInOpaque = !!opaque; for (const paint of standInPaints) paint(); requestFrame(); },
     // Whether the scene is still the host's: false once disposed.
     alive: () => alive,
     dispose() {
