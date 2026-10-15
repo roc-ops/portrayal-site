@@ -21,7 +21,7 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
-import { applyFields } from './rack/face.js';
+import { applyFields, findComp } from './rack/face.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
 import { earHoles } from './rack/ear-holes.js';
@@ -861,8 +861,8 @@ export function createRackScene(container, opts = {}) {
     const fields = entry.fields || {};
     const hasFields = Object.keys(fields).length > 0;
     if (!Object.keys(ov).length && !hasFields) return;
-    const byRef = ref => (entry.componentIndex || []).find(
-      c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
+    const comps = entry.componentIndex || [];
+    const byRef = ref => findComp(comps, ref);
     const loadSkin = async ref => {
       const c = byRef(ref);
       if (!c) return null;
