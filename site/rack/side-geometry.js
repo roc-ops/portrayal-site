@@ -30,8 +30,9 @@
 // WHERE A PART IS IN DEPTH is the kit's rule (solids.js itemPlacer and
 // zeroUPlacer, which are not exported): its envelope is placed here the same
 // way, and tests/rack/side-view.test.mjs holds the two together over every
-// case solidsOf places. Devices sit flush on their rail plane, as in 3D: the
-// catalogue states no setback yet (Portrayal #908).
+// case solidsOf places. A device's faceplate stands its setback (fit.js
+// setbackOf: the item's, the device's ears, the frame's) behind its rail plane,
+// into the rack, as in 3D and as route.js panelZ has it.
 
 import {RU, SIDES} from '../../vendor/rack/rails.js';
 import {railOf, setbackOf} from '../../vendor/rack/fit.js';

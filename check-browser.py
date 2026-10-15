@@ -22180,6 +22180,169 @@ def check_rack_3d_large_once(page, base):
     return bad
 
 
+ANGLED_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "angled-setback-rack.json"
+
+# THE ANGLED ENDS OF THE ANGLED FIXTURE, measured off the built scene (S-0060). Each asks for a cable's first end
+# (the shelf's), the facet its cage stands on, the optic seated in it and how to find the optic's mating point:
+# `head` is the front face of the wide head (an SC receptacle), `stub` the end of the thin stub (an AOC's cable).
+# The cage's axis is the +z of the facet's tilt group (relief.js tiltGroupIn), the plug's the same of the group its
+# own meshes are in; the mating point is read off the optic's meshes in that group's frame and carried back to the room.
+ANGLED_ENDS_JS = """async asked => {
+  const s = window.__rack.scene(), T = s.three.THREE, root = s.three.scene;
+  root.updateMatrixWorld(true);
+  const meshesIn = o => { let n = 0; o.traverse(m => { if (m.isMesh) n++; }); return n; };
+  const facets = new Map();
+  root.traverse(o => { const t = o.userData?.tilt; if (t && (!facets.has(t.on) || meshesIn(o) > meshesIn(facets.get(t.on)))) facets.set(t.on, o); });
+  const axisOf = g => new T.Vector3(0, 0, 1).transformDirection(g.matrixWorld).normalize();
+  const deg = (a, b) => Math.acos(Math.min(1, Math.max(-1, a.dot(b)))) * 180 / Math.PI;
+  const out = {};
+  for (const {cable, on, optic, kind} of asked) {
+    const cage = facets.get(on), tube = s.rackCables.tubes.find(t => t.link.id === cable);
+    if (!cage || !tube?.points?.length) { out[cable] = {missing: !cage ? 'the facet' : 'the tube'}; continue; }
+    const meshes = [];
+    root.traverse(m => { const p = m.userData?.portrayalPath; if (m.isMesh && p && (p === optic || p.startsWith(optic + '/'))) meshes.push(m); });
+    if (!meshes.length) { out[cable] = {missing: 'the optic'}; continue; }
+    let g = meshes[0].parent; while (g && !g.userData?.tilt) g = g.parent;
+    if (!g) { out[cable] = {missing: 'the optic\\'s tilt group'}; continue; }
+    const inv = g.matrixWorld.clone().invert();
+    const boxes = meshes.map(m => { const p = m.geometry.attributes.position, b = new T.Box3(); m.updateWorldMatrix(true, false);
+      for (let i = 0; i < p.count; i++) { const v = new T.Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv); if (Number.isFinite(v.x + v.y + v.z)) b.expandByPoint(v); }
+      return b; }).filter(b => !b.isEmpty());
+    const wide = b => b.max.x - b.min.x, thin = b => wide(b) <= 8 && b.max.y - b.min.y <= 8;
+    const pool = boxes.filter(kind === 'head' ? (b => wide(b) >= 13 && wide(b) <= 15) : thin);
+    const top = pool.reduce((a, b) => (!a || b.max.z > a.max.z ? b : a), null);
+    const mate = top ? new T.Vector3((top.min.x + top.max.x) / 2, (top.min.y + top.max.y) / 2, top.max.z).applyMatrix4(g.matrixWorld) : null;
+    const end = tube.points[0], leg = tube.points[1].clone().sub(end).normalize();
+    out[cable] = {cage: axisOf(cage).toArray(), plug: axisOf(g).toArray(), leg: leg.toArray(),
+                  legDeg: deg(leg, axisOf(cage)), plugDeg: deg(axisOf(g), axisOf(cage)),
+                  gap: mate ? end.distanceTo(mate) : null, end: end.toArray(), mate: mate && mate.toArray(), pool: pool.length};
+  }
+  return out;
+}"""
+
+ANGLED_ASKED = [{"cable": "c1", "on": "lt-1--module--face-1", "optic": "lt-1/module/port-1-occupant", "kind": "head"},
+                {"cable": "c2", "on": "nt-a--module--face-port-1", "optic": "nt-a/module/port-1-occupant", "kind": "stub"}]
+
+
+def open_angled_fixture(page, base):
+    """The angled fixture opened in 2D with its routes read; the fixture, as a dict."""
+    rack = json.loads(ANGLED_FIXTURE.read_text())
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n && window.__rack.routesCurrent().current",
+                           arg=len(rack["cables"]), timeout=READY_MS)
+    page.wait_for_timeout(400)
+    return rack
+
+
+@extra("rack.html: in 3D a cable to a cage on a tilted facet leaves along the cage's axis and ends at its optic's mating point - an SFP in an SC cage and a QSFP28 AOC in a QSFP28 cage on a Lightspan shelf: the last leg and the plug's axis are parallel to the cage's within a degree and the tube ends within a millimetre of the mating point - and a cable to a straight cage leaves straight out of its face as it did (S-0060)")
+def check_rack_3d_angled_ends(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_angled_fixture(page, base)
+    if webgl_trouble(page):
+        print("[check_rack_3d_angled_ends] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the angled rack", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    got = page.evaluate(ANGLED_ENDS_JS, ANGLED_ASKED)
+    shown = []
+    for cable, what in (("c1", "the SC cage (22 deg)"), ("c2", "the QSFP28 cage (45 deg)")):
+        m = got.get(cable) or {}
+        if m.get("missing"):
+            bad.append(f"{cable} ({what}): no {m['missing']} in the scene")
+            continue
+        if m["pool"] < 1 or m["gap"] is None:
+            bad.append(f"{cable} ({what}): the optic's mating face was not found among its meshes")
+            continue
+        if m["legDeg"] > 1:
+            bad.append(f"{cable} ({what}): the tube's last leg is {m['legDeg']:.2f} deg off the cage's axis {[round(v, 3) for v in m['cage']]}; expected within 1")
+        if m["plugDeg"] > 1:
+            bad.append(f"{cable} ({what}): the plug's axis is {m['plugDeg']:.2f} deg off the cage's; expected within 1")
+        if m["gap"] > 1:
+            bad.append(f"{cable} ({what}): the tube ends {m['gap']:.2f} mm from the optic's mating point; expected within 1 mm")
+        shown.append(f"{cable} leg {m['legDeg']:.2f} deg, plug {m['plugDeg']:.2f} deg, gap {m['gap']:.2f} mm")
+    # the cages are the angles the library states, so a fixture that drifts to straight cannot pass for the rest
+    if got.get("c1", {}).get("cage") and abs(got["c1"]["cage"][0] - 0.3746) > 0.01 or got.get("c2", {}).get("cage") and abs(got["c2"]["cage"][0] - 0.7071) > 0.01:
+        bad.append(f"the cages' axes are {got['c1'].get('cage')} and {got['c2'].get('cage')}; expected 22 and 45 deg off the face's normal")
+    # A STRAIGHT CAGE LEAVES STRAIGHT, no tilt on its end and the face's normal: the switch's ends, the rear switches', the DAC ends
+    anchors = page.evaluate("""async () => { const s = window.__rack.scene(), r = {};
+      for (const [k, item, path] of [['sw-sfp', 'i2', 'port-1'], ['sw-dac', 'i2', 'port-50'], ['flush', 'i5', 'port-49'], ['rear-a', 'i3', 'port-49'], ['rear-b', 'i4', 'port-49']]) {
+        const cable = await s.cableAnchor({id: item}, path, {view: 'front'}), port = await s.portAnchor({id: item}, path, {view: 'front'});
+        r[k] = {cable: cable.map(g => ({n: g.normal.toArray(), tilt: g.tilt ?? null})), port: port && {n: port.normal.toArray()}};
+      }
+      return r; }""")
+    for k, a in anchors.items():
+        want = -1 if k.startswith("rear") else 1
+        ns = [c["n"] for c in a["cable"]] + ([a["port"]["n"]] if not a["cable"] and a["port"] else [])
+        if not ns:
+            bad.append(f"straight cage {k}: no anchor at all")
+        for n in ns:
+            if abs(n[0]) > 1e-9 or abs(n[1]) > 1e-9 or abs(n[2] - want) > 1e-9:
+                bad.append(f"straight cage {k}: its end leaves along {[round(v, 4) for v in n]}; expected straight out of its face, {[0, 0, want]}")
+        if any(c["tilt"] for c in a["cable"]):
+            bad.append(f"straight cage {k}: its end is marked tilted: {a['cable']}")
+    print(f"[check_rack_3d_angled_ends] {'; '.join(shown)}")
+    return bad
+
+
+@extra("rack.html: in Left / Right a device is drawn its setback behind its rail line in both panes - a front device at 30 and at 20 mm, one at 0 where it was, a rear-facing one set back from the rear rail - at the depth the kit's solids stand, and the plugs and the kit's cable ends are at the same faceplate (S-0060)")
+def check_rack_side_setback(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    rack = open_angled_fixture(page, base)
+    to_sides(page, cables=len(rack["cables"]))
+    d = page.evaluate(SIDE_BODIES_JS)
+    rd = d["frame"]["railDepth"]
+    L, R = d["panes"].get("left"), d["panes"].get("right")
+    if not L or not R:
+        return bad + [f"the side panes are {list(d['panes'])}, expected left and right"]
+    eps = 0.05
+    # item: (what, face, setback); the faceplate's depth is the rail plane moved into the rack by the setback
+    items = {"i1": ("the shelf", "front", 30), "i2": ("the switch", "front", 20), "i5": ("the flush switch", "front", 0),
+             "i3": ("the rear switch with a setback", "rear", 25), "i4": ("the rear switch on its rail", "rear", 0)}
+    plate = {}
+    for iid, (what, face, sb) in items.items():
+        z = -sb if face == "front" else -rd + sb
+        plate[iid] = z
+        kit, l, r = d["kit"].get(iid), L["bodies"].get(iid), R["bodies"].get(iid)
+        if not kit or not l or not r:
+            bad.append(f"{iid} ({what}): kit box {bool(kit)}, drawn in the left pane {bool(l)}, in the right pane {bool(r)}")
+            continue
+        # the left pane's x is z and the right pane's is -z; a front device's faceplate is its far end in z, a rear one's its near end
+        lf = l["x1"] if face == "front" else l["x0"]
+        rf = -r["x0"] if face == "front" else -r["x1"]
+        if abs(lf - z) > eps or abs(rf - z) > eps:
+            bad.append(f"{iid} ({what}, setback {sb}, {face}): its faceplate is at depth {lf:.2f} in the left pane and {rf:.2f} in the right; expected {z:.2f}, {sb} mm behind the {face} rail line")
+        if abs(l["x0"] - kit["z0"]) > eps or abs(l["x1"] - kit["z1"]) > eps:
+            bad.append(f"{iid} ({what}): drawn at depth {l['x0']:.2f}..{l['x1']:.2f}, the kit's solid is at {kit['z0']:.2f}..{kit['z1']:.2f}")
+    # the cable ends follow: the kit's points start at the faceplate, and each plug block stands out from it
+    paths = page.evaluate("() => Object.fromEntries(Object.entries(window.__rack.paths() || {}).map(([k, v]) => { const p = v.points || v; return [k, [p[0].z, p.at(-1).z]]; }))")
+    ends = {"c1": ("i1", "i2"), "c2": ("i1", "i2"), "c3": ("i3", "i4"), "c4": ("i5", "i2")}
+    for cid, (a, b) in ends.items():
+        got = paths.get(cid)
+        if not got or abs(got[0] - plate[a]) > eps or abs(got[1] - plate[b]) > eps:
+            bad.append(f"{cid}: the kit's path runs from depth {got and got[0]} to {got and got[1]}; expected {plate[a]} and {plate[b]}, the two faceplates")
+        for name, pane in (("left", L), ("right", R)):
+            span = pane["plugs"].get(cid, {})
+            for end, iid in (("a", a), ("b", b)):
+                s = span.get(end)
+                # a block's span is its two ends across the pane (X = z on the left, -z on the right) and its y
+                z = plate[iid] if name == "left" else -plate[iid]
+                if not s or not any(abs(v - z) < eps for v in s[:2]):
+                    bad.append(f"{cid}'s {end} plug in the {name} pane spans {s and s[:2]}; expected it to start at its device's faceplate, depth {z}")
+    print(f"[check_rack_side_setback] faceplates at {plate}")
+    return bad
+
+
 @extra("rack.html: a strap is as long as its pack is wide where it sits - the members there, square across the run, and a small margin, on a diagonal stretch as on a straight one; it lies square across its run; at Fit on a 42U rack it is never under the least size along the run, and across it only up to twice its pack; at 300% it is its true size; and the sheet's straps are the ones they were (#190)")
 def check_rack_strap_size(page, base):
     bad = []

@@ -218,3 +218,49 @@ test('a plug is the kit\'s straight run out of each port, by its reach', () => {
   // an end with no reach point (the kit gave none) has no block
   assert.deepEqual(plugSpans([pts[0], pts[2], pts[5]]), {});
 });
+
+// A DEVICE'S SETBACK (S-0060): its faceplate stands that many mm behind its rail plane, into the rack, whichever
+// rail it is on. The front rail plane is z 0 and the rear one -railDepth, so a front device's faceplate is at
+// -setback and a rear device's at -railDepth + setback; the right pane draws depth back from the front rail plane
+// (X = -z) and the left pane the same mirrored (X = z).
+test('a device with a setback is drawn that far behind its rail, front or rear, in both panes, where the kit puts its envelope', () => {
+  const refs = ['dcs500', 'as7326-56x', 'ws-c4948e', 'as7726-32x', 'lmfs-f'].filter(r => devices[r]);
+  assert.ok(refs.length >= 4, 'sample devices were read');
+  let seen = 0;
+  for (const ref of refs) for (const frame of [four, two]) for (const face of ['front', 'rear']) for (const setback of [0, 20, 30, -10]) {
+    const it = {id: 'i1', ref, ru: 10, face, turned: false, ...(setback ? {setback} : {})}, rack = rackOf(frame, [it]), c = devices[ref];
+    const mine = itemDepth(rack, it, c), kit = kitBox(rack, 'i1');
+    // the faceplate end: the rail plane moved into the rack by the setback
+    const rail = face === 'front' ? 0 : -(frame.kind === 'two-post' ? 0 : frame.railDepth);
+    const plate = face === 'front' ? rail - setback : rail + setback;
+    close(mine.zFront, plate, `${ref} ${frame.kind} ${face} setback ${setback}: faceplate`);
+    close(face === 'front' ? mine.z1 : mine.z0, plate, `${ref} ${frame.kind} ${face} setback ${setback}: the body's face end`);
+    close(mine.z1 - mine.z0, c.d, `${ref} ${frame.kind} ${face} setback ${setback}: depth`);
+    // the same end in the panes: the right pane's X is -z, the left pane's z
+    const box = pane => sideBox(pane, frame, mine, 0, c.h);
+    const l = box('left'), r = box('right');
+    close(l.x, mine.z0, 'left pane x'); close(l.x + l.w, mine.z1, 'left pane x end');
+    close(r.x, -mine.z1, 'right pane x'); close(r.x + r.w, -mine.z0, 'right pane x end');
+    // and where the kit places the envelope
+    if (kit?.envelope) { close(mine.z0, kit.z0, `${ref} ${frame.kind} ${face} setback ${setback}: kit z0`); close(mine.z1, kit.z1, `${ref} ${frame.kind} ${face} setback ${setback}: kit z1`); }
+    seen++;
+  }
+  assert.ok(seen >= 80, `only ${seen} placings were compared`);
+  // none stated, none moved: the same device with setback 0 and with none is in one place
+  const a = {id: 'i1', ref: 'dcs500', ru: 10, face: 'front', turned: false}, b = {...a, setback: 0};
+  assert.deepEqual(itemDepth(rackOf(four, [a]), a, devices.dcs500), itemDepth(rackOf(four, [b]), b, devices.dcs500));
+});
+
+test('a device\'s setback is taken as the kit takes it: the item\'s, else the frame\'s, and a turned device sets back from the rail it is on', () => {
+  const c = devices.dcs500, rd = four.railDepth;
+  const frame = normalizeFrame({kind: 'four-post', heightRU: 42, setback: 12});
+  const it = {id: 'i1', ref: 'dcs500', ru: 10, face: 'front', turned: false};
+  close(itemDepth(rackOf(frame, [it]), it, c).zFront, -12, 'the frame\'s setback');
+  const own = {...it, setback: 25};
+  close(itemDepth(rackOf(frame, [own]), own, c).zFront, -25, 'the item\'s setback wins');
+  // turned end over end: its body is behind its front rail, its back at the faceplate end (solids.js itemPlacer)
+  const turned = {...own, turned: true}, t = itemDepth(rackOf(frame, [turned]), turned, c);
+  close(t.z1, -25, 'turned: the body ends at the setback plane');
+  const rearTurned = {...turned, face: 'rear'}, rt = itemDepth(rackOf(frame, [rearTurned]), rearTurned, c);
+  close(rt.z0, -rd + 25, 'rear and turned: the body starts at the rear rail plane moved in by the setback');
+});
