@@ -305,6 +305,8 @@ export function createRackScene(container, opts = {}) {
   // for its cavities are drawn dark (the face's own materials, opaque while
   // moving) rather than see-through. At rest the detail is drawn again. A
   // sheet part (a lacer, a manager) is nothing but its detail, and keeps it.
+  // A host can keep meshes of its own drawn while moving (`opts.keepWhileMoving(id, path)`
+  // for a mesh's part path: the Rack Builder's cabled ports, whose plugs a cord ends in).
   // Hover picking rays the cables and bundles only (hover.js hoverAt3d, on
   // the common layer), so it is the same moving or not.
   const LIGHT_MOVING = !!opts.lightWhileMoving;
@@ -1155,7 +1157,8 @@ export function createRackScene(container, opts = {}) {
             D, bodyBoxMesh: null});
           if (mine !== epoch) return;
           // (the relief of a device with a body on its own layer, left out while the camera moves: `opts.lightWhileMoving`)
-          if (LIGHT_MOVING && !sheet) for (const m of per) m.traverse(o => { if (!flatPart(o)) o.layers.set(RELIEF_LAYER); });
+          // (but not a cabled port's plug: `opts.keepWhileMoving`, so a cord never ends in the air)
+          if (LIGHT_MOVING && !sheet) for (const m of per) m.traverse(o => { if (!flatPart(o) && !opts.keepWhileMoving?.(entry.id, o.userData?.portrayalPath)) o.layers.set(RELIEF_LAYER); });
           per.forEach(m => { group.add(m); meshes.push(m); });
           // A HOST MAY STYLE A FACE'S DETAIL AS IT ARRIVES (`opts.onFace`): called
           // in the same task the meshes join the device, so nothing is drawn
