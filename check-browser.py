@@ -6111,6 +6111,679 @@ def check_rack_ring_rear_pane(page, base):
     return bad
 
 
+# EACH PANE DRAWS ITS OWN FACE, AND A CROSS-FACE TAG IS ASKED FOR (#194). The
+# rack the fault was found on: a patch panel over two 64-port switches, 96 OS2
+# cords in 8 bundles of 12. Four bundles run from the panel's front to the
+# switches; the other four from its REAR, through the rear lacer, up a rear
+# lane, round to a front lane and through a front lacer to a switch.
+def faces_rack_96(odd=False, same_u=False):
+    """`odd`: the same rack with three things changed. c96 is in no bundle. c1,
+    in no bundle either, runs from the front of a switch to the front of the
+    panel by a ring of the REAR lacer. And the last six cords of b5 and of b6
+    change switches, so each of those bundles leaves the front face at two
+    heights. `same_u`: each rear-to-front run crosses to the front lane at the
+    U of the rear lane first, then goes down the front lane."""
+    lacer = lambda n, ru, face="front", **on: {"id": f"i{n}", "ref": "fhd-cmp5dr", "cfg": "base", "label": "FHD-CMP5DR", "ru": ru,
+                                               "face": face, "turned": False, "swaps": {}, "fields": {}, **on}
+    switch = lambda n, ru: {"id": f"i{n}", "ref": "dcs500", "cfg": "ac-f2b", "label": "AS7816-64X", "ru": ru, "face": "front", "turned": False,
+                            "swaps": {f"port-{p}": "generic/qsfp-lc@2" for p in [*range(12), *range(20, 44), *range(52, 64)]}, "fields": {}}
+    items = [{"id": "i1", "ref": "fhd-1ufce", "cfg": "base", "label": "FHD-1UFCE", "ru": 42, "face": "front", "turned": False,
+              "swaps": {f"bay-{b}": "fs/fhd-fap12lcd-os2@1" for b in range(1, 5)}, "fields": {}},
+             switch(2, 40), switch(3, 38), lacer(4, 42, on="i1", unit=1), lacer(5, 41, on="i2", unit=2), lacer(6, 39, on="i3", unit=2),
+             lacer(7, 42, "rear"), lacer(8, 40, on="i2", unit=1), lacer(9, 38, on="i3", unit=1)]
+    ring = lambda item, n: {"item": item, "via": f"guide-{n}"}
+    lane = lambda side, ru: {"lane": side, "ru": ru}
+    cables, bundles = [], []
+    members = lambda ids: [{"cable": c} for c in ids if not (odd and c in ("c1", "c96"))]
+    # the front of the panel to a switch: bay, switch, its first port, and the bundle's route
+    front = [(1, "i2", 0, [ring("i5", 2), ring("i5", 1), lane("left-front", 40), lane("left-front", 42), ring("i4", 1)]),
+             (2, "i3", 0, [ring("i6", 2), ring("i6", 1), lane("left-front", 38), lane("left-front", 42), ring("i4", 1), ring("i4", 2)]),
+             (3, "i3", 20, [ring("i6", 4), ring("i6", 5), lane("right-front", 38), lane("right-front", 42), ring("i4", 5), ring("i4", 4)]),
+             (4, "i2", 20, [ring("i5", 4), ring("i5", 5), lane("right-front", 40), lane("right-front", 42), ring("i4", 5)])]
+    for bay, sw, p0, route in front:
+        ids = []
+        for k in range(12):
+            ids.append(f"c{len(cables) + 1}")
+            cables.append({"id": ids[-1], "a": {"item": sw, "path": f"port-{p0 + k}", "view": "front"},
+                           "b": {"item": "i1", "path": f"bay-{bay}/module/lc{k + 1:02d}", "view": "front"}, "media": "os2", "route": []})
+        bundles.append({"id": f"b{bay}", "number": bay, "label": f"PP Bay {bay} front", "members": members(ids), "route": route})
+    # the REAR of the panel round to the front of a switch: bay, switch, first port, the rear lacer's ring, the
+    # side, the switch's U, its lacer, the ring there, the next ring in, and which of the twelve go on to that one
+    rear = [(1, "i3", 32, 5, "left", 38, "i9", 1, 2, range(8, 12)), (2, "i2", 32, 4, "left", 40, "i8", 1, 2, range(8, 12)),
+            (3, "i2", 52, 2, "right", 40, "i8", 5, 4, range(0, 4)), (4, "i3", 52, 1, "right", 38, "i9", 5, 4, range(0, 4))]
+    for bay, sw, p0, g7, side, ru, mgr, g, g2, inner in rear:
+        ids, route = [], [ring("i7", g7), lane(f"{side}-rear", 42), lane(f"{side}-front", ru), ring(mgr, g)]
+        for k in range(12):
+            ids.append(f"c{len(cables) + 1}")
+            cables.append({"id": ids[-1], "a": {"item": "i1", "path": f"bay-{bay}/module/b{k + 1:02d}", "view": "rear"},
+                           "b": {"item": sw, "path": f"port-{p0 + k}", "view": "front"}, "media": "os2",
+                           "route": [*route, *([ring(mgr, g2)] if k in inner else [])], "routeEdited": True})
+        bundles.append({"id": f"b{bay + 4}", "number": bay + 4, "label": f"PP Bay {bay} rear", "members": members(ids),
+                        "route": [*route, ring(mgr, g2)]})
+    by = {c["id"]: c for c in cables}
+    if odd:
+        by["c1"].update(route=[ring("i7", 3)], routeEdited=True)
+        for k in range(6):
+            x, y = by[f"c{67 + k}"], by[f"c{55 + k}"]
+            x["b"], y["b"] = y["b"], x["b"]
+            x["route"], y["route"] = x["route"][:2] + y["route"][2:], y["route"][:2] + x["route"][2:]
+    if same_u:
+        def cross(route):
+            out = []
+            for k, w in enumerate(route):
+                out.append(w)
+                nxt = route[k + 1] if k + 1 < len(route) else {}
+                if w.get("lane", "").endswith("-rear") and nxt.get("lane", "").endswith("-front") and nxt["ru"] != w["ru"]:
+                    out.append(lane(nxt["lane"], w["ru"]))
+            return out
+        for x in [*cables, *bundles]:
+            x["route"] = cross(x["route"])
+    return {"id": "r1", "name": "Faces", "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up",
+                                                   "holes": {"style": "square", "thread": None}, "railDepth": 740, "usableDepth": 1000, "ref": None},
+            "items": items, "zeroU": [{"id": f"z{n}", "ref": "cmv-sfd42u9w", "cfg": "base", "label": "CMV-SFD42U9W", "at": f"{s}-front", "offsetMm": 0}
+                                      for n, s in ((1, "left"), (2, "right"))],
+            "cables": cables, "bundles": bundles}
+
+
+# The cross-face tags of each pane: how many the drawing holds, and which of
+# them show (the cables' own by cable id, the bundles' by bundle id, their
+# texts), as the browser computes it.
+FACE_TAGS_JS = """() => Object.fromEntries([...document.querySelectorAll('#paneFront > svg, #paneRear > svg')].map(svg => {
+  const tags = [...svg.querySelectorAll('[data-cable-tags] .cable-tag:not(.not-connected)')];
+  const shown = tags.filter(t => { const s = getComputedStyle(t); return s.visibility === 'visible' && s.display !== 'none'; });
+  return [svg.dataset.pane, {held: tags.length, cables: shown.filter(t => t.dataset.cableId).map(t => t.dataset.cableId),
+    bundles: shown.filter(t => t.dataset.bundleTag).map(t => t.dataset.bundleTag), text: shown.map(t => t.querySelector('text').textContent),
+    takesPointer: tags.filter(t => !shown.includes(t) && getComputedStyle(t).pointerEvents !== 'none').length}];
+}))"""
+
+# How near each cable's stroke on a pane comes to a ring of its OWN route that
+# stands on a manager the OTHER face carries, at the kit's own points for that
+# ring turned to the pane (x mirrored on the rear pane, y down): per pane, how
+# many cables were measured and which come within 15 mm of one.
+FACE_WRONG_JS = """async () => {
+  const R = await import('/vendor/rack/rails.js');
+  const rack = window.__rack.doc().racks[0], paths = window.__rack.paths(), H = rack.frame.heightRU * R.RU, out = {};
+  for (const svg of document.querySelectorAll('#paneFront > svg, #paneRear > svg')) {
+    const pane = svg.dataset.pane, inv = svg.getScreenCTM().inverse(), hits = [];
+    let measured = 0;
+    for (const c of rack.cables) {
+      const far = (paths[c.id]?.points ?? []).filter(q => q.item && /^guide-/.test(q.via ?? '') && q.at !== 'approach' && q.at !== 'lead'
+        && rack.items.find(i => i.id === q.item)?.face !== pane)
+        .map(q => [pane === 'rear' ? R.OPENING / 2 - q.x : R.OPENING / 2 + q.x, H - q.y, `${q.item} ${q.via}`]);
+      const g = svg.querySelector(`[data-cables] [data-cable][data-cable-id="${c.id}"]`);
+      if (!far.length || !g) continue;
+      measured++;
+      let best = Infinity, at = null;
+      for (const p of g.querySelectorAll('path')) {
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 1) {
+          const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m);
+          for (const f of far) { const d = Math.hypot(w.x - f[0], w.y - f[1]); if (d < best) { best = d; at = f[2]; } }
+        }
+      }
+      if (best < 15) hits.push(`${c.id} ${Math.round(best * 10) / 10} mm from ${at}`);
+    }
+    out[pane] = {measured, hits};
+  }
+  return out;
+}"""
+
+# The sheet's cross-face tags: per pane, the bundles' and the cables' own, each
+# with its box as drawn (its stacking transform applied), and what a sheet must not carry.
+FACE_SHEET_JS = """async () => {
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js');
+  const text = (await X.sheetSvg(window.__rack.doc().racks[0], (await C.loadCatalog('/assets/dist/')).chassisOf, {date: new Date(2026, 0, 2)})).data;
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml'), out = {reach: doc.querySelectorAll('[data-tag-reach]').length, panes: {}};
+  for (const pane of doc.querySelectorAll('svg[data-pane]')) {
+    const tags = [...pane.querySelectorAll('[data-cable-tags] > g')].filter(t => !t.hasAttribute('data-not-connected'));
+    const box = t => { const r = t.querySelector('rect'), dy = +(/translate\\(0 ([-\\d.]+)\\)/.exec(t.getAttribute('transform') ?? '')?.[1] ?? 0);
+      return [+r.getAttribute('x'), +r.getAttribute('y') + dy, +r.getAttribute('width'), +r.getAttribute('height')]; };
+    const boxes = tags.map(box);
+    const meet = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
+    out.panes[pane.getAttribute('data-pane')] = {bundles: tags.filter(t => t.hasAttribute('data-bundle-tag')).map(t => t.getAttribute('data-bundle-tag')),
+      cables: tags.filter(t => t.hasAttribute('data-cable-tag')).map(t => t.getAttribute('data-cable-id')),
+      text: tags.map(t => t.querySelector('text').textContent), inked: tags.every(t => t.querySelector('rect').getAttribute('fill') && !t.getAttribute('class')),
+      overlap: boxes.some((a, i) => boxes.some((b, j) => j > i && meet(a, b)))};
+  }
+  return out;
+}"""
+
+
+# A point (screen px) in the middle of a bundle's band on a pane: on a band
+# stretch's own centre line, in the gutter (over no device and no empty U),
+# and under a member's stroke - where the member's stroke used to win.
+BAND_MIDDLE_JS = """([pane, id]) => {
+  const svg = document.querySelector(`svg[data-pane="${pane}"]`);
+  const on = (o, s) => o.isPointInStroke(new DOMPoint(s.x, s.y).matrixTransform(o.getScreenCTM().inverse()));
+  const strokes = [...svg.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id] path')];
+  for (const p of svg.querySelectorAll(`:scope > [data-cables] [data-bundle-id="${id}"] path[data-bundle-trunk]`)) {
+    const L = p.getTotalLength(), m = p.getScreenCTM();
+    for (const f of [0.5, 0.35, 0.65, 0.2, 0.8, 0.45, 0.55, 0.3, 0.7, 0.1, 0.9]) {
+      const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(m), e = document.elementFromPoint(s.x, s.y);
+      // (a touch is taken by the nearest thing it can act on within a finger's width: no empty U, device or tag within 14 px)
+      const clear = [[0, 0], [14, 0], [-14, 0], [0, 14], [0, -14]].every(([dx, dy]) => !document.elementFromPoint(s.x + dx, s.y + dy)?.closest('[data-item-id], [data-u], [data-cable-tags]'));
+      if (e && e.closest(`svg[data-pane="${pane}"]`) && clear && strokes.some(o => on(o, s))) return [s.x, s.y];
+    }
+  }
+  return null;
+}"""
+# A point (screen px) on a cable's own stroke outside every bundle's band, where it is the last stroke painted.
+CABLE_TAIL_JS = """([pane, id]) => {
+  const svg = document.querySelector(`svg[data-pane="${pane}"]`);
+  const on = (o, s) => o.isPointInStroke(new DOMPoint(s.x, s.y).matrixTransform(o.getScreenCTM().inverse()));
+  const bands = [...svg.querySelectorAll(':scope > [data-cables] [data-bundle-id] path')];
+  const all = [...svg.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id] path')].reverse();
+  for (const p of svg.querySelectorAll(`:scope > [data-cables] [data-cable][data-cable-id="${id}"] path`)) {
+    const L = p.getTotalLength(), m = p.getScreenCTM();
+    for (let t = 1; t < L; t += 1) {
+      const q = p.getPointAtLength(t), s = new DOMPoint(q.x, q.y).matrixTransform(m);
+      if (!bands.some(o => on(o, s)) && all.find(o => on(o, s))?.closest('[data-cable-id]').dataset.cableId === id
+          && document.elementFromPoint(s.x, s.y)?.closest(`svg[data-pane="${pane}"]`)) return [s.x, s.y];
+    }
+  }
+  return null;
+}"""
+
+
+def hover_to_tag(page, pane, cid):
+    """Bring a cable's cross-face tag up as a pointer does (#194): onto the
+    cable's own stroke where it runs under the tag's reach and no other
+    cable is painted over it, then onto the tag. Returns the tag's selector,
+    or None when the stroke has no such point or the tag did not stay shown."""
+    tag = f'svg[data-pane="{pane}"] [data-cable-tags] [data-cable-tag][data-cable-id="{cid}"]'
+    pt = page.evaluate("""([pane, id]) => {
+      const svg = document.querySelector(`svg[data-pane="${pane}"]`);
+      const reach = svg.querySelector(`[data-cable-tags] [data-cable-tag][data-cable-id="${id}"] [data-tag-reach]`);
+      if (!reach) return null;
+      const b = reach.getBoundingClientRect();
+      // the stroke the page takes the pointer to be on (hover.js hoverAt2d): the last one painted there, unless it is a member's inside its own bundle's band
+      const on = (o, s) => o.isPointInStroke(new DOMPoint(s.x, s.y).matrixTransform(o.getScreenCTM().inverse()));
+      const bands = [...svg.querySelectorAll(':scope > [data-cables] [data-bundle-id] path')];
+      const all = [...svg.querySelectorAll(':scope > [data-cables] [data-cable][data-cable-id] path')].reverse();
+      const top = s => { const c = all.find(o => on(o, s))?.closest('[data-cable-id]').dataset.cableId;
+        return c && bands.some(o => on(o, s) && (o.closest('[data-bundle-id]').dataset.members || '').split(' ').includes(c)) ? null : c; };
+      for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)) {
+        const L = p.getTotalLength(), m = p.getScreenCTM();
+        for (let t = L; t >= 0; t -= 0.25) {
+          const q = p.getPointAtLength(t), s = new DOMPoint(q.x, q.y).matrixTransform(m);
+          if (s.x > b.left + 0.5 && s.x < b.right - 0.5 && s.y > b.top + 0.5 && s.y < b.bottom - 0.5 && top(s) === id) return [s.x, s.y];
+        }
+      }
+      return null;
+    }""", [pane, cid])
+    if not pt:
+        return None
+    page.mouse.move(pt[0], pt[1])
+    page.wait_for_timeout(250)
+    if not page.is_visible(tag):
+        return None
+    page.hover(tag)
+    page.wait_for_timeout(250)
+    return tag if page.is_visible(tag) else None
+
+
+@extra("rack.html: on the 96-cable rack each pane draws only its own face's stretches, no cross-face tag shows until its cable or bundle is hovered, focused, clicked, tapped or pinned (a bundle inside its band, with a tag for each place it leaves the face), a cable by the other face and back is two stubs, and the sheet carries one tag per bundle (#194)")
+def check_rack_faces_and_tags(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1900, "height": 1400})
+    drawn = ("() => window.__rack.routesCurrent().current && document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96"
+             " && document.querySelectorAll('#paneRear > svg [data-cables] [data-cable]').length === 48"
+             " && document.querySelectorAll('#paneFront > svg [data-cables] [data-bundle-id]').length === 8")
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", faces_rack_96())
+    try:
+        page.wait_for_function(drawn, timeout=READY_3D_MS)
+    except Exception:
+        return bad + ["fixture: the 96 cables and 8 bundles were not drawn (front 96 strokes, rear 48, 8 bands)"]
+    page.wait_for_timeout(600)
+    park_mouse(page)
+    both = lambda got, key: {p: sorted(got[p][key]) for p in ("front", "rear")}
+
+    # 1. A PANE DRAWS ONLY ITS OWN FACE.
+    wrong = page.evaluate(FACE_WRONG_JS)
+    for p in ("front", "rear"):
+        if wrong[p]["measured"] != 48:
+            bad.append(f"faces: {wrong[p]['measured']} cross-face cables were measured on the {p} pane, expected 48")
+        if wrong[p]["hits"]:
+            bad.append(f"faces: on the {p} pane {len(wrong[p]['hits'])} cables run on to a ring of the other face: {wrong[p]['hits'][:3]}")
+
+    # 2. AT REST, NO TAG.
+    rest = page.evaluate(FACE_TAGS_JS)
+    for p in ("front", "rear"):
+        if rest[p]["held"] != 52:
+            bad.append(f"tags: the {p} pane holds {rest[p]['held']} cross-face tags, expected 48 cables' and 4 bundles'")
+        if rest[p]["cables"] or rest[p]["bundles"]:
+            bad.append(f"tags: at rest the {p} pane shows {len(rest[p]['cables'])} cable tags and {len(rest[p]['bundles'])} bundle tags, expected none")
+        if rest[p]["takesPointer"]:
+            bad.append(f"tags: {rest[p]['takesPointer']} hidden tags on the {p} pane take the pointer")
+    if page.evaluate("() => document.querySelectorAll('#panes [data-cable-tags] .cable-tag:focus').length") or any(
+            page.evaluate("() => { const t = document.querySelector('#paneRear [data-cable-tag][data-cable-id=\"c61\"]'); t.focus(); return document.activeElement === t; }")
+            for _ in (0,)):
+        bad.append("tags: a hidden tag takes keyboard focus")
+
+    # 3. A CABLE'S ROW: its own tag, one on each pane it has an end on.
+    page.click("#bundleItem-b6 > .rk-twist")
+    row, head = '#cableList [data-cable-row="c61"]', '#cableList [data-bundle-row="b6"]'
+    try:
+        page.wait_for_selector(row, state="visible", timeout=5000)
+    except Exception:
+        return bad + ["fixture: opening bundle b6 in the cable list did not show c61's row"]
+    page.hover(row)
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if both(got, "cables") != {"front": ["c61"], "rear": ["c61"]} or got["front"]["bundles"] or got["rear"]["bundles"]:
+        bad.append(f"hover c61's row: the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}; expected c61's alone on each pane")
+    # (two switches carry one label: the tag says which by its U)
+    if got["rear"]["text"] != ["→ AS7816-64X U40 port 32"] or got["front"]["text"] != ["→ FHD-1UFCE bay 2 b01"]:
+        bad.append(f"hover c61's row: its tags read {got['front']['text']} and {got['rear']['text']}")
+    park_mouse(page)
+    if page.evaluate(FACE_TAGS_JS) != rest:
+        bad.append("hover c61's row: leaving it did not hide its tag again")
+
+    # 4. A BUNDLE'S ROW: one tag for the bundle on each pane, where it leaves the face, and none of its members'.
+    page.hover(head)
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
+        bad.append(f"hover b6's row: the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}; expected b6's one on each pane")
+    # (the rear one does not fit with the bundle's name beside the switch's and its U: the device stays whole, and the bundle is said by its id)
+    if got["rear"]["text"] != ["→ AS7816-64X U40 ×12 · b6"] or got["front"]["text"] != ["→ FHD-1UFCE ×12 · PP Bay 2 rear"]:
+        bad.append(f"hover b6's row: its tags read {got['front']['text']} and {got['rear']['text']}")
+    # NO TWO TAGS OF A PANE READ THE SAME, none is cut at its end, and each fits its pill.
+    said = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => [p, [...document.querySelectorAll(
+      `svg[data-pane="${p}"] [data-cable-tags] .cable-tag:not(.not-connected)`)].map(t => t.querySelector('text').textContent)]))""")
+    for p in ("front", "rear"):
+        if len(set(said[p])) != len(said[p]) or any(t.endswith("…") or len(t) > 33 for t in said[p]):
+            twice = sorted({t for t in said[p] if said[p].count(t) > 1})
+            bad.append(f"tags: on the {p} pane {len(said[p]) - len(set(said[p]))} tags read the same as another ({twice[:3]}), "
+                       f"or one is cut at its end or over 33 characters ({[t for t in said[p] if t.endswith('…') or len(t) > 33][:3]})")
+    # where it leaves the face: in the gutter, level with its members' own tags
+    at = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => { const s = document.querySelector(`svg[data-pane="${p}"]`);
+      const y = t => +t.querySelector('rect').getAttribute('y'), x = t => { const r = t.querySelector('rect'); return [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')]; };
+      const b = s.querySelector('[data-bundle-tag="b6"]');
+      if (!b) return [p, null];
+      const ms = b.dataset.members.split(' ').map(id => s.querySelector(`[data-cable-tag][data-cable-id="${id}"]`));
+      return [p, {members: ms.length, dy: Math.max(...ms.map(m => Math.abs(y(m) - y(b)))), overOpening: x(b)[1] > 0 && x(b)[0] < 450.85}]; }))""")
+    for p in ("front", "rear"):
+        if not at[p]:
+            bad.append(f"hover b6's row: the {p} pane holds no tag for the bundle")
+        elif at[p]["members"] != 12 or at[p]["dy"] > 30 or at[p]["overOpening"]:
+            bad.append(f"hover b6's row: on the {p} pane its tag stands for {at[p]['members']} cables, {at[p]['dy']:.1f} mm from the furthest of their own, over the rack opening: {at[p]['overOpening']}")
+    park_mouse(page)
+    if page.evaluate(FACE_TAGS_JS) != rest:
+        bad.append("hover b6's row: leaving it did not hide its tag again")
+
+    # 5. THE KEYBOARD: focus on a row shows what the pointer over it does.
+    at_row = "() => { const a = document.activeElement; return a?.dataset?.cableRow ?? a?.dataset?.bundleRow ?? a?.dataset?.cableItem ?? a?.dataset?.bundleItem ?? null; }"
+    page.focus(head)
+    page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if page.evaluate(at_row) != "c61":
+        bad.append(f"keyboard: Down from b6's header did not reach c61's row ({page.evaluate(at_row)!r}), so focus was not measured")
+    elif both(got, "cables") != {"front": ["c61"], "rear": ["c61"]} or got["front"]["bundles"] or got["rear"]["bundles"]:
+        bad.append(f"keyboard: with focus on c61's row the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}")
+    page.keyboard.press("ArrowUp")
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if page.evaluate(at_row) != "b6" or both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
+        bad.append(f"keyboard: with focus on {page.evaluate(at_row)!r} (b6's header wanted) the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}")
+    page.evaluate("() => document.activeElement?.blur()")
+    page.wait_for_timeout(350)
+    if page.evaluate(FACE_TAGS_JS) != rest:
+        bad.append("keyboard: focus leaving the rows did not hide the tag again")
+
+    # 6. THE DRAWING. Where cables run bundled the pointer is on the BUNDLE: in the
+    # middle of b6's band (away from its rim, where a member's stroke is under
+    # the pointer too) its one tag shows, and none of its members'. On a
+    # member's own tail, outside the band, it is on that cable.
+    pressed = lambda cid, on=True: f"() => document.querySelector('#cableRow-{cid}')?.getAttribute('aria-pressed') === '{'true' if on else 'false'}'"
+    mid = page.evaluate(BAND_MIDDLE_JS, ["rear", "b6"])
+    btag = 'svg[data-pane="rear"] [data-cable-tags] [data-bundle-tag="b6"]'
+    if not mid:
+        bad.append("drawing: found no point in the middle of b6's band in the rear pane's gutter, under a member's stroke")
+    else:
+        page.mouse.move(mid[0], mid[1])
+        page.wait_for_timeout(350)
+        got = page.evaluate(FACE_TAGS_JS)
+        if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
+            bad.append(f"drawing: with the pointer in the middle of b6's band the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}")
+        # ...and its tag can be reached from there, and takes the keyboard: Enter, then Space, selects the bundle
+        for key in ("Enter", "Space"):
+            page.mouse.move(mid[0], mid[1])
+            page.wait_for_timeout(300)
+            try:
+                page.hover(btag, timeout=5000)
+                page.wait_for_timeout(250)
+                page.focus(btag)
+                page.keyboard.press(key)
+                page.wait_for_selector("#bPin", timeout=10000)
+            except Exception as e:
+                bad.append(f"drawing: {key} on b6's tag, reached from its band, did not select the bundle ({str(e).splitlines()[0][:90]})")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(700)
+            park_mouse(page)
+        # A CLICK there pins the bundle; so does a TAP (a touch has no hover); a tap on nothing lets it go.
+        page.mouse.click(mid[0], mid[1])
+        try:
+            page.wait_for_selector("#bPin", timeout=10000)
+        except Exception:
+            bad.append("drawing: a click in the middle of b6's band did not pin the bundle")
+        park_mouse(page)
+        page.wait_for_timeout(500)
+        got = page.evaluate(FACE_TAGS_JS)
+        if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
+            bad.append(f"drawing: b6 pinned by a click, the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(700)
+        nothing = page.evaluate("""() => { const r = document.querySelector('#paneRear > svg').getBoundingClientRect();
+          for (const [x, y] of [[r.left + 12, r.bottom - 12], [r.right - 12, r.bottom - 12], [r.left + 12, r.top + r.height / 2]]) {
+            const e = document.elementFromPoint(x, y);
+            if (e && e.closest('#paneRear > svg') && !e.closest('[data-u], [data-item-id], [data-zerou-id], [data-cable-tags], [tabindex], [role="button"]')) return [x, y];
+          }
+          return null; }""")
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": True})
+        tap = lambda x, y: (cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]}),
+                            cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}))
+        try:
+            page.evaluate("() => { window.__taps = []; document.addEventListener('pointerdown', e => window.__taps.push(e.pointerType), true); }")
+            tap(mid[0], mid[1])
+            try:
+                page.wait_for_selector("#bPin", timeout=10000)
+            except Exception:
+                bad.append("touch: a tap in the middle of b6's band did not pin the bundle")
+            page.wait_for_timeout(500)
+            got = page.evaluate(FACE_TAGS_JS)
+            if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]}:
+                bad.append(f"touch: b6 pinned by a tap, the bundle tags shown are {both(got, 'bundles')}")
+            if not nothing:
+                bad.append("touch: found no empty part of the rear pane to tap")
+            else:
+                tap(nothing[0], nothing[1])
+                page.wait_for_timeout(900)
+                got = page.evaluate(FACE_TAGS_JS)
+                if page.query_selector("#bPin") or got["front"]["bundles"] or got["rear"]["bundles"]:
+                    bad.append(f"touch: a tap on nothing left b6 pinned (its panel {'open' if page.query_selector('#bPin') else 'gone'}, bundle tags {both(got, 'bundles')})")
+            if "touch" not in page.evaluate("() => window.__taps"):
+                bad.append(f"touch: the taps did not reach the page as touch pointers ({page.evaluate('() => window.__taps')}), so no tap was measured")
+        finally:
+            cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": False})
+            cdp.detach()
+        if page.query_selector("#bPin"):
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(700)
+        park_mouse(page)
+    # a member's own tail, outside every band: that cable
+    if not page.is_visible(row):
+        page.click("#bundleItem-b6 > .rk-twist")
+        page.wait_for_timeout(300)
+    cid, tail = next(((c, t) for p in ("front", "rear") for c in (f"c{n}" for n in range(61, 73)) for t in [page.evaluate(CABLE_TAIL_JS, [p, c])] if t), (None, None))
+    if not tail:
+        bad.append("drawing: found no point on the own stroke of a cable of b6, outside every band, on either pane")
+    else:
+        page.mouse.move(tail[0], tail[1])
+        page.wait_for_timeout(350)
+        got = page.evaluate(FACE_TAGS_JS)
+        if both(got, "cables") != {"front": [cid], "rear": [cid]} or got["front"]["bundles"] or got["rear"]["bundles"]:
+            bad.append(f"drawing: with the pointer on {cid}'s own tail the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}")
+        park_mouse(page)
+    # THE TAG'S REACH is no thicker than its cable's stroke, so it lies over nothing the
+    # cable's end does not: with c61 pinned, 4 mm to either side of the strip of its
+    # front tag (which stands in the duct beside the rack) the pointer is on the duct.
+    page.click(row)
+    try:
+        page.wait_for_function(pressed("c61"), timeout=10000)
+    except Exception:
+        bad.append("reach: a click on c61's row did not pin it")
+    park_mouse(page)
+    page.wait_for_timeout(600)
+    reach = page.evaluate("""() => { const svg = document.querySelector('#paneFront > svg'), t = svg.querySelector('[data-cable-tag][data-cable-id="c61"]');
+      const r = t.querySelector('[data-tag-reach]'), b = r.getBBox(), m = r.getScreenCTM();
+      const at = (x, y) => { const p = new DOMPoint(x, y).matrixTransform(m), e = document.elementFromPoint(p.x, p.y); return !e ? null : e.closest('[data-cable-tags]') ? 'tag' : e.closest('[data-zerou-id]') ? 'duct' : e.closest('[data-item-id]') ? 'item' : e.tagName; };
+      return {thick: b.height, long: b.width, on: at(b.x + b.width / 2, b.y + b.height / 2), beside: [at(b.x + b.width / 2, b.y - 4), at(b.x + b.width / 2, b.y + b.height + 4)],
+              ports: [...svg.querySelectorAll('[data-class="port"]')].filter(p => { const q = p.getBoundingClientRect(), s = r.getBoundingClientRect(); return q.left < s.right && s.left < q.right && q.top < s.bottom && s.top < q.bottom; }).length}; }""")
+    if reach["thick"] > 4.3 or reach["on"] != "tag" or reach["beside"] != ["duct", "duct"] or reach["ports"]:
+        bad.append(f"reach: c61's front tag's strip is {reach['thick']:.1f} mm thick (4.2 at most) and {reach['long']:.1f} long; the pointer on it is on {reach['on']!r}, "
+                   f"4 mm to either side on {reach['beside']} (the duct expected), and it lies over {reach['ports']} ports")
+
+    # 7. PINNED: the tag stays with the pointer gone, beside another's hover, until it is let go.
+    if not page.evaluate(pressed("c61")):
+        page.click(row)
+        page.wait_for_function(pressed("c61"), timeout=10000)
+    park_mouse(page)
+    page.wait_for_timeout(600)
+    got = page.evaluate(FACE_TAGS_JS)
+    if both(got, "cables") != {"front": ["c61"], "rear": ["c61"]} or got["front"]["bundles"] or got["rear"]["bundles"]:
+        bad.append(f"pin c61: with the pointer gone the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}")
+    page.hover('#cableList [data-bundle-row="b5"]')
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if both(got, "cables") != {"front": ["c61"], "rear": ["c61"]} or both(got, "bundles") != {"front": ["b5"], "rear": ["b5"]}:
+        bad.append(f"pin c61, hover b5: the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}")
+    park_mouse(page)
+    page.keyboard.press("Escape")
+    try:
+        page.wait_for_function(pressed("c61", False), timeout=10000)
+    except Exception:
+        bad.append("pin c61: Escape did not let the selection go")
+    page.wait_for_timeout(600)
+    park_mouse(page)
+    if page.evaluate(FACE_TAGS_JS) != rest:
+        bad.append("pin c61: with the selection let go a tag still shows")
+    # a pinned bundle keeps its one tag; a click on the empty stage lets it go
+    page.click(head)
+    try:
+        page.wait_for_selector("#bPin", timeout=10000)
+    except Exception:
+        bad.append("pin b6: its panel did not open")
+    park_mouse(page)
+    page.wait_for_timeout(600)
+    got = page.evaluate(FACE_TAGS_JS)
+    if both(got, "bundles") != {"front": ["b6"], "rear": ["b6"]} or got["front"]["cables"] or got["rear"]["cables"]:
+        bad.append(f"pin b6: with the pointer gone the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(900)
+    park_mouse(page)
+    got = page.evaluate(FACE_TAGS_JS)
+    if got["front"]["bundles"] or got["rear"]["bundles"] or got["front"]["cables"] or got["rear"]["cables"]:
+        bad.append(f"pin b6: let go, the tags shown are bundles {both(got, 'bundles')}, cables {both(got, 'cables')}")
+
+    # 8. THE SHEET, which cannot be hovered: one tag per bundle on each face it leaves, none per member.
+    sheet = page.evaluate(FACE_SHEET_JS)
+    want = {"front": ["b5", "b6", "b7", "b8"], "rear": ["b5", "b6", "b7", "b8"]}
+    if {p: sorted(v["bundles"]) for p, v in sheet["panes"].items()} != want or any(v["cables"] for v in sheet["panes"].values()):
+        bad.append(f"sheet: its tags are bundles { {p: v['bundles'] for p, v in sheet['panes'].items()} } and cables "
+                   f"{ {p: len(v['cables']) for p, v in sheet['panes'].items()} }; expected 8 bundle tags (4 a face) and no cable's own")
+    if sheet["reach"] or any(v["overlap"] or not v["inked"] for v in sheet["panes"].values()):
+        bad.append(f"sheet: a tag overlaps another, keeps a class or lacks its ink, or a pointer strip reached the file: {sheet['reach']} strips, "
+                   f"{ {p: [v['overlap'], v['inked']] for p, v in sheet['panes'].items()} }")
+
+    # 9. THE ODD RACK: c96 in no bundle; c1, in none, from the front to the front by a
+    # ring of the REAR lacer; b5 and b6 each leaving the front face at two heights.
+    page.evaluate("r => window.__rack.replaceRack(r)", faces_rack_96(odd=True))
+    try:
+        page.wait_for_function(drawn + " && window.__rack.doc().racks[0].bundles[7].members.length === 11", timeout=READY_3D_MS)
+    except Exception:
+        return bad + ["fixture: the odd rack was not drawn"]
+    page.wait_for_timeout(600)
+    park_mouse(page)
+    # A BUNDLE THAT LEAVES A FACE AT TWO HEIGHTS has a tag for each, each with its own count.
+    page.hover('#cableList [data-bundle-row="b5"]')
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if got["front"]["bundles"] != ["b5", "b5"] or sorted(got["front"]["text"]) != ["→ FHD-1UFCE ×6 · PP Bay 1 rear"] * 2 or got["rear"]["bundles"] != ["b5"] \
+            or got["rear"]["text"] != ["→ front face ×12 · PP Bay 1 rear"] or got["front"]["cables"] or got["rear"]["cables"]:
+        bad.append(f"two heights: hovering b5's row shows bundle tags {both(got, 'bundles')} reading {got['front']['text']} and {got['rear']['text']}, cables {both(got, 'cables')}; "
+                   "expected two of six on the front face and one of twelve on the rear")
+    apart = page.evaluate("""() => { const ys = [...document.querySelectorAll('#paneFront > svg [data-bundle-tag="b5"] rect')].map(r => +r.getAttribute('y')); return Math.abs(ys[0] - ys[1]); }""")
+    if not apart or apart < 44:
+        bad.append(f"two heights: b5's two tags on the front face stand {apart} mm apart, expected about two U (88.9)")
+    park_mouse(page)
+    # A CABLE THAT GOES BY THE OTHER FACE AND COMES BACK is two stubs off to the side, never one line across the face.
+    away = page.evaluate("""() => { const svg = document.querySelector('#paneFront > svg'), g = svg.querySelector('[data-cables] [data-cable][data-cable-id="c1"]');
+      const base = svg.dataset.baseBox.split(' ').map(Number), b = g.getBBox();
+      const main = [...g.querySelectorAll(':scope > path')].filter(p => +p.getAttribute('stroke-width') === 3 && p.getTotalLength() > 60);
+      const ends = main.map(p => { const q = p.getPointAtLength(p.getTotalLength()); return Math.round(q.x); });
+      return {strokes: main.length, ends, column: Math.round(base[0] + base[2] + 8), right: Math.round(b.x + b.width),
+              tags: [...svg.querySelectorAll('[data-cable-tag][data-cable-id="c1"]')].map(t => [t.querySelector('text').textContent, t.querySelector('title').textContent]),
+              rear: document.querySelectorAll('#paneRear > svg [data-cable-id="c1"]').length}; }""")
+    if away["strokes"] != 2 or away["ends"] != [away["column"]] * 2 or [t[0] for t in away["tags"]] != ["↔ by the rear face"] * 2 \
+            or any("by the rear face" not in t[1] or "AS7816-64X" not in t[1] for t in away["tags"]):
+        bad.append(f"away and back: c1 is drawn on the front pane as {away['strokes']} runs ending at x {away['ends']} (two, each at the side column, x {away['column']}, expected), "
+                   f"with tags {away['tags']}")
+    row1 = '#cableList [data-cable-row="c1"]'
+    if not page.is_visible(row1):
+        page.click("#cableGroup-none > .rk-twist")
+        page.wait_for_timeout(300)
+    page.hover(row1)
+    page.wait_for_timeout(350)
+    got = page.evaluate(FACE_TAGS_JS)
+    if got["front"]["cables"] != ["c1", "c1"] or got["front"]["bundles"] or got["rear"]["cables"] or got["rear"]["bundles"]:
+        bad.append(f"away and back: hovering c1's row shows cables {both(got, 'cables')}, bundles {both(got, 'bundles')}; expected its two stubs' tags on the front pane")
+    park_mouse(page)
+    # A CABLE IN NO BUNDLE: its tag comes up from its own stroke, and a click on the tag pins it.
+    tag = hover_to_tag(page, "rear", "c96")
+    if not tag:
+        bad.append("drawing: the pointer on c96's stroke on the rear pane, then on its tag, does not keep the tag shown")
+    else:
+        got = page.evaluate(FACE_TAGS_JS)
+        if both(got, "cables") != {"front": ["c96"], "rear": ["c96"]} or got["front"]["bundles"] or got["rear"]["bundles"]:
+            bad.append(f"drawing: with the pointer on c96's tag the tags shown are cables {both(got, 'cables')}, bundles {both(got, 'bundles')}")
+        page.click(tag)
+        try:
+            page.wait_for_function(pressed("c96"), timeout=10000)
+        except Exception:
+            bad.append("drawing: a click on c96's tag did not select it")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(700)
+        park_mouse(page)
+    # THE SHEET of the odd rack: a tag for each group of each bundle, c96's own on each face, c1's two on the front; none on another.
+    sheet = page.evaluate(FACE_SHEET_JS)
+    got = {p: [sorted(v["bundles"]), sorted(v["cables"])] for p, v in sheet["panes"].items()}
+    if got != {"front": [["b5", "b5", "b6", "b6", "b7", "b8"], ["c1", "c1", "c96"]], "rear": [["b5", "b6", "b7", "b8"], ["c96"]]}:
+        bad.append(f"sheet, the odd rack: its tags are {got}; expected b5 and b6 twice, b7 and b8 once, c96 and c1's two on the front, and the four bundles and c96 on the rear")
+    if sheet["reach"] or any(v["overlap"] or not v["inked"] for v in sheet["panes"].values()):
+        bad.append(f"sheet, the odd rack: a tag overlaps another or lacks its ink, or a pointer strip reached the file ({sheet['reach']} strips, "
+                   f"{ {p: [v['overlap'], v['inked']] for p, v in sheet['panes'].items()} })")
+    return bad
+
+
+# A STRAP STANDS ON ITS RUN AS THE RUN IS DRAWN (#195). Each bundle strap band
+# in the scene, against two things: the drawn tubes of the CABLES IT TIES
+# (their centre lines, sampled each mm: how far its centre is from the nearest
+# point of one, which is what a floating strap is far from), and its own
+# bundle's envelope tubes (how far from the nearest point, and how far its
+# axis is turned from the tube's direction there, in degrees).
+STRAPS_ON_TUBE_JS = """() => {
+  const s = window.__rack.scene(), {THREE, scene: world} = s.three;
+  world.updateMatrixWorld(true);
+  const tubes = {}, cables = {};
+  world.traverse(o => { const b = o.userData?.envelope?.bundle; if (!o.isMesh || !b) return;
+    const path = o.geometry.parameters.path, n = Math.max(40, Math.ceil(path.getLength()));
+    for (let i = 0; i <= n; i++) (tubes[b] ||= []).push([o.localToWorld(path.getPointAt(i / n).clone()), path.getTangentAt(i / n).clone().transformDirection(o.matrixWorld)]); });
+  for (const t of s.rackCables.tubes) { const m = t.mesh?.children?.[0], path = m?.geometry?.parameters?.path; if (!path) continue;
+    cables[t.link.id] = path.getSpacedPoints(Math.max(40, Math.ceil(path.getLength()))).map(q => m.localToWorld(q)); }
+  const members = Object.fromEntries(window.__rack.doc().racks[0].bundles.map(b => [b.id, b.members.map(m => m.cable)]));
+  const out = [];
+  world.traverse(o => { const u = o.userData?.strap; if (!o.isMesh || !u || typeof u !== 'object' || !u.bundle) return;
+    const p = o.getWorldPosition(new THREE.Vector3()), axis = new THREE.Vector3(0, 1, 0).applyQuaternion(o.getWorldQuaternion(new THREE.Quaternion()));
+    let d = Infinity, tan = null, dc = Infinity, measured = 0;
+    for (const [q, t] of tubes[u.bundle] ?? []) { const x = q.distanceTo(p); if (x < d) { d = x; tan = t; } }
+    for (const id of members[u.bundle] ?? []) { if (cables[id]) measured++; for (const q of cables[id] ?? []) dc = Math.min(dc, q.distanceTo(p)); }
+    out.push({name: o.name, d: Math.round(d * 10) / 10, cable: Math.round(dc * 10) / 10, measured, pack: u.diameter,
+              turn: tan ? Math.round(Math.acos(Math.min(1, Math.abs(axis.dot(tan)))) * 1800 / Math.PI) / 10 : null}); });
+  return out;
+}"""
+# Each bundle strap bar on the side panes against the strokes of the cables it
+# ties, on its own pane: how far its middle is from the nearest point of one.
+STRAPS_ON_SIDE_JS = """() => [...document.querySelectorAll('#panes svg[data-pane]')].flatMap(svg => {
+  const inv = svg.getScreenCTM().inverse();
+  return [...svg.querySelectorAll('[data-strap]:not([data-tie])')].map(bar => {
+    const l = bar.querySelector('line[data-strap-part="core"]:not([data-strap-least])');
+    const c = [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2];
+    let d = Infinity;
+    for (const id of (bar.dataset.members || '').split(' ').filter(Boolean))
+      for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] > path`)) {
+        const m = inv.multiply(p.getScreenCTM()), L = p.getTotalLength();
+        for (let t = 0; t <= L; t += 0.5) { const q = p.getPointAtLength(t), w = new DOMPoint(q.x, q.y).matrixTransform(m); d = Math.min(d, Math.hypot(w.x - c[0], w.y - c[1])); }
+      }
+    return {pane: svg.dataset.pane, name: `${bar.dataset.strap} at ${bar.dataset.along} mm`, d: Math.round(d * 10) / 10};
+  });
+})"""
+
+
+@extra("rack.html: on the 96-cable rack, and with each rear-to-front run crossing at one U, every bundle strap stands on the cables it ties - within its pack of their drawn tubes in 3D, on its bundle's tube and turned to it, and on their strokes in the Left / Right views - and the strap counts are the kit's (#195)")
+def check_rack_straps_on_run(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1900, "height": 1400})
+
+    def measure(where, sides):
+        """The side panes' bars, then the scene's bands, for the rack the page holds; back on the faces in 2D after."""
+        page.click('#view2d [data-view="sides"]')
+        wait_fn(page, f"{where}: the side panes' cables", "() => document.querySelectorAll('#panes svg[data-pane=\"left\"] [data-cables] [data-cable]').length === 96"
+                " && document.querySelectorAll('#panes svg[data-pane=\"right\"] [data-cables] [data-cable]').length === 96")
+        page.wait_for_timeout(600)
+        side = page.evaluate(STRAPS_ON_SIDE_JS)
+        per = {p: len([x for x in side if x["pane"] == p]) for p in ("left", "right")}
+        if per != {"left": sides, "right": sides}:
+            bad.append(f"{where}, side: the panes draw {per} bundle straps, expected {sides} each")
+        off = [x for x in side if x["d"] > 3]
+        if off:
+            bad.append(f"{where}, side: {len(off)} of {len(side)} strap bars stand more than 3 mm from the cables they tie: "
+                       f"{[(x['pane'], x['name'], x['d']) for x in off[:6]]}")
+        page.click('#view2d [data-view="faces"]')
+        wait_fn(page, f"{where}: the faces back", "() => document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96")
+        page.click('#mode [data-mode="3d"]')
+        wait_fn(page, f"{where}: the scene's bundles", "() => window.__rack.scene()?.rackCables?.bundles && window.__rack.scene().three", timeout=READY_3D_MS)
+        page.wait_for_timeout(600)
+        bands = page.evaluate(STRAPS_ON_TUBE_JS)
+        if len(bands) != kit:
+            bad.append(f"{where}, 3D: the scene has {len(bands)} bundle strap bands, the kit {kit} straps")
+        if any(x["measured"] < 2 for x in bands):
+            bad.append(f"{where}, 3D: {len([x for x in bands if x['measured'] < 2])} bands were measured against fewer than two of their cables' tubes")
+        off = [x for x in bands if x["cable"] > x["pack"] / 2 + 3]
+        if off:
+            bad.append(f"{where}, 3D: {len(off)} of {len(bands)} strap bands stand further from the nearest cable they tie than their pack's radius and 3 mm: "
+                       f"{[(x['name'], x['cable']) for x in off]}")
+        off = [x for x in bands if x["d"] > 3]
+        if off:
+            bad.append(f"{where}, 3D: {len(off)} of {len(bands)} strap bands stand more than 3 mm from their bundle's tube: {[(x['name'], x['d']) for x in off]}")
+        turned = [x for x in bands if x["turn"] is None or x["turn"] > 10]
+        if turned:
+            bad.append(f"{where}, 3D: {len(turned)} strap bands are turned more than 10 degrees from their tube's direction: {[(x['name'], x['turn']) for x in turned[:6]]}")
+        # (pressed in the page: the panes of 96 cords take longer to come back than a click waits for)
+        page.evaluate("() => document.querySelector('#mode [data-mode=\"2d\"]').click()")
+        wait_fn(page, f"{where}: 2D again", "() => !document.getElementById('panes').hidden && document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96", timeout=READY_3D_MS)
+
+    load_rack_3d_ready(page, base, faces_rack_96())
+    wait_fn(page, "straps: the bundles' routes", "() => window.__rack.routesCurrent().current && (window.__rack.bundles() || []).length === 8")
+    page.wait_for_timeout(600)
+    # THE COUNTS ARE THE KIT'S, as main draws them (kit 0.44): 52 on the eight bundles, and the BOM's line with the tie slots' 20.
+    kit = sum(b["count"] or 0 for b in page.evaluate("() => window.__rack.bundles()"))
+    cols, rows, text = read_csv(export_file(page, "bom"))
+    line = [r for r in rows if "strap" in " ".join(str(v) for v in r.values()).lower()]
+    if kit != 52 or len(line) != 1 or "76" not in [str(v) for v in line[0].values()]:
+        bad.append(f"counts: the kit gives the bundles {kit} straps (52 expected) and the BOM's strap line is {line} (one line of 76 expected)")
+    measure("the rack", 50)
+
+    # THE SAME WITH EACH REAR-TO-FRONT RUN CROSSING AT ONE U: the rear lane and the
+    # front lane it crosses to are then two stops at one height, which a member's
+    # path has to be read apart by where they are.
+    page.evaluate("r => window.__rack.replaceRack(r)", faces_rack_96(same_u=True))
+    wait_fn(page, "one U: the routes", "() => window.__rack.routesCurrent().current && (window.__rack.routes() || []).some(([id, ws]) => id === 'c61' && ws.filter(w => w.lane && w.ru === 42).length === 2)")
+    wait_fn(page, "one U: the cables", "() => document.querySelectorAll('#paneFront > svg [data-cables] [data-cable]').length === 96")
+    page.wait_for_timeout(900)
+    kit = sum(b["count"] or 0 for b in page.evaluate("() => window.__rack.bundles()"))
+    measure("crossing at one U", 52)
+    return bad
+
+
 # CABLE BUNDLES (portrayal-site#142). Three Cat6A cables from one copper
 # switch through one ring of its lacer, up the left-front lane to a second
 # switch: the kit works their trunk out as mgr-1 ring 1 > left-front U20-U30,
@@ -8365,7 +9038,8 @@ def check_rack_pinned_highlight(page, base):
       const H = await import('/site/rack/hover.js'), svg = document.querySelector('#paneFront > svg');
       for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)) {
         const L = p.getTotalLength(), m = p.getScreenCTM();
-        for (let f = 0.1; f < 0.95; f += 0.03) {
+        // (finely: a bundle's member is itself under the pointer only on its own tail, outside its bundle's band, #194)
+        for (let f = 0.005; f < 0.995; f += 0.005) {
           const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(m), el = document.elementFromPoint(s.x, s.y);
           if (!el?.closest('#paneFront')) continue;
           const t = H.hoverAt2d(svg, {clientX: s.x, clientY: s.y, target: el});
@@ -8374,20 +9048,23 @@ def check_rack_pinned_highlight(page, base):
       }
       return null; }"""
     tip = "() => { const t = document.getElementById('cableTip'); return t && !t.hidden ? t.dataset.cableTip : null; }"
-    at1, at4 = page.evaluate(on_stroke, "c1"), page.evaluate(on_stroke, "c4")
+    # (a bundle's member is itself under the pointer only on its own tail outside the band, #194, and one member's
+    # tail can lie under another's: the first of the three with a tail of its own is the one hovered)
+    one, at1 = next(((c, a) for c in ("c1", "c2", "c3") if (a := page.evaluate(on_stroke, c))), ("c1", None))
+    at4 = page.evaluate(on_stroke, "c4")
     if not at1 or not at4:
-        bad.append(f"label: found no point on c1's stroke ({at1}) or on c4's ({at4}) to hover")
+        bad.append(f"label: found no point on a stroke of b1's members ({at1}) or on c4's ({at4}) to hover")
     else:
         page.mouse.move(at1[0], at1[1])
         page.wait_for_timeout(400)
-        if page.evaluate(tip) != "c1":
-            bad.append(f"label: over c1's stroke with c4 pinned the hover label names {page.evaluate(tip)!r}, expected c1")
+        if page.evaluate(tip) != one:
+            bad.append(f"label: over {one}'s stroke with c4 pinned the hover label names {page.evaluate(tip)!r}, expected {one}")
         page.mouse.move(at4[0], at4[1])
         page.wait_for_timeout(400)
         if page.evaluate(tip) is not None:
             bad.append(f"label: over the pinned cable's own stroke the hover label shows ({page.evaluate(tip)!r})")
         park_mouse(page)
-        see({"c4"}, False, "2D, after the pointer was over c1's stroke and c4's")
+        see({"c4"}, False, f"2D, after the pointer was over {one}'s stroke and c4's")
     # a click on a control does not put it down: the zoom, then the stage's swatch
     page.click("#zoomIn")
     page.click("#zoomFit")
@@ -16216,8 +16893,8 @@ def check_rack_cables_drawn(page, base):
     if by(front, "tags", "c1"):
         bad.append("cables drawn: c1 has a tag, and both its ends are in one pane")
     # c2: front pane to rear pane - each pane hangs it off to the side column, with a tag naming the far end.
-    # (a port is named in words, kit 0.26.0 portLabel: "port-2-1" is "port 2 1")
-    for pane, name, text in ((front, "front", "→ demarc port 2 1"), (rear, "rear", "→ leaf-1 mgmt eth")):
+    # (a port is named in words, kit 0.26.0 portLabel: "port-2-1" is "port 2 1"; two devices of one label carry their U, #194)
+    for pane, name, text in ((front, "front", "→ demarc U14 port 2 1"), (rear, "rear", "→ leaf-1 mgmt eth")):
         tag = by(pane, "tags", "c2")
         if not tag or tag["text"] != text or tag["loose"]:
             bad.append(f"cables drawn: c2's tag on the {name} is {tag}, expected {text!r}")
@@ -16403,8 +17080,12 @@ def check_rack_cables_clicks(page, base):
         bad.append("cable clicks: a cable stroke is a tab stop")
     if page.evaluate("() => [...document.querySelectorAll('[data-cables] [data-cable]')].some(g => getComputedStyle(g).pointerEvents !== 'none')"):
         bad.append("cable clicks: a cable stroke takes pointer events")
-    if page.evaluate("() => [...document.querySelectorAll('[data-cable-tags] [data-cable-tag]')].some(g => getComputedStyle(g).pointerEvents === 'none' || g.getAttribute('tabindex') !== '0')"):
-        bad.append("cable clicks: a tag is not interactive")
+    # (a tag that shows: a cross-face tag is hidden, and takes nothing, until its cable is hovered or pinned, #194)
+    if page.evaluate("() => [...document.querySelectorAll('[data-cable-tags] [data-cable-tag]')].some(g => g.getAttribute('tabindex') !== '0'"
+                     " || (getComputedStyle(g).pointerEvents === 'none') !== (getComputedStyle(g).visibility !== 'visible'))"):
+        bad.append("cable clicks: a tag that shows is not interactive, or a hidden one is")
+    if not page.evaluate("() => [...document.querySelectorAll('[data-cable-tags] [data-cable-tag]')].some(g => getComputedStyle(g).visibility === 'visible')"):
+        bad.append("cable clicks: no tag shows, so none was measured as interactive")
 
     # A real click over a stroke on a device selects that device.
     pt = on_dev[len(on_dev) // 2]
@@ -16466,8 +17147,9 @@ def check_rack_cables_clicks(page, base):
         return bad + [f"cable clicks: {e}"]
     got = page.evaluate(PANES_JS)
     tag = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
-    if not tag or tag["text"] != f"→ {LIT} port 2 1":
-        bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally")
+    # (two devices carry the label here, so the tag says which by its U, #194)
+    if not tag or tag["text"] != f"→ {LIT} U14 port 2 1":
+        bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally, and its U")
     if page.evaluate("() => document.querySelectorAll('svg[data-pane] b').length"):
         bad.append("cable clicks: a label injected markup into the pane")
 
@@ -16494,12 +17176,13 @@ def check_rack_cables_clicks(page, base):
         bad.append(f"cable clicks: a tag runs outside its pane's viewBox ({over})")
     got = page.evaluate(PANES_JS)
     t2 = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
-    if not t2 or not t2["text"].endswith("…") or len(t2["text"]) > 33:
-        bad.append(f"cable clicks: the long tag reads {t2['text'] if t2 else None!r}, expected a short text with an ellipsis")
+    # (shortened in the middle of the device's name, never at the end, where the U and the port are: #194)
+    if not t2 or "…" not in t2["text"] or not t2["text"].endswith(" U14 port 2 1") or not t2["text"].startswith("→ a-rather") or len(t2["text"]) > 33:
+        bad.append(f"cable clicks: the long tag reads {t2['text'] if t2 else None!r}, expected a short text with an ellipsis in the name and its U and port whole")
     titles = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => [p, [...document.querySelectorAll(
       `svg[data-pane="${p}"] [data-cable-tag]`)].map(t => [t.dataset.cableId, t.querySelector('title')?.textContent || ''])]))""")
     full = dict(titles["front"]).get("c2", "")
-    if f"→ {LONG} port-2-1" != full:
+    if f"→ {LONG} U14 port-2-1" != full:
         bad.append(f"cable clicks: the long tag's title is {full!r}, expected its full text")
     loose = dict(titles["rear"]).get("c3", "")
     if "✕ not connected" not in loose or "port-2 holds no optic" not in loose:
@@ -16865,10 +17548,23 @@ def check_rack_cable_list(page, base):
     if page.evaluate(LIT_JS)["front"]["focus"]:
         bad.append("cable list: the panes are still dimmed with nothing selected")
 
-    # A TAG selects its cable too, by a click or from the keyboard.
-    page.click('svg[data-pane="rear"] [data-cable-tags] [data-cable-tag][data-cable-id="c3"]')
+    # A TAG selects its cable too, by a click or from the keyboard. A cross-face
+    # tag shows only while its cable is hovered or pinned (#194): the pointer
+    # comes to it from the cable's own stroke, and the keyboard is on it while
+    # the pointer holds it shown.
+    park_mouse(page)
+    tag3 = hover_to_tag(page, "rear", "c3")
+    if not tag3:
+        return bad + ["cable list: the pointer on c3's stroke on the rear pane, then on its tag, does not show the tag"]
+    page.click(tag3)
     wait_fn(page, "cable list: the rear tag selects c3", pressed_js("c3"))
-    page.focus('svg[data-pane="front"] [data-cable-tag][data-cable-id="c2"]')
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable list: Esc lets c3 go", pressed_js("c3", False))
+    park_mouse(page)
+    tag2 = hover_to_tag(page, "front", "c2")
+    if not tag2:
+        return bad + ["cable list: the pointer on c2's stroke on the front pane, then on its tag, does not show the tag"]
+    page.focus(tag2)
     page.keyboard.press("Enter")
     wait_fn(page, "cable list: Enter on the front tag selects c2", pressed_js("c2"))
     if page.evaluate(LIT_JS)["rear"]["on"] != ["c2"]:
@@ -16878,7 +17574,11 @@ def check_rack_cable_list(page, base):
     page.keyboard.press("Escape")
     wait_fn(page, "cable list: Esc lets the selection go", pressed_js("c2", False))
     # Space on a tag selects too; selecting a device lets the cable go.
-    page.focus('svg[data-pane="rear"] [data-cable-tags] [data-cable-tag][data-cable-id="c3"]')
+    park_mouse(page)
+    tag3 = hover_to_tag(page, "rear", "c3")
+    if not tag3:
+        return bad + ["cable list: c3's tag did not show a second time"]
+    page.focus(tag3)
     page.keyboard.press("Space")
     wait_fn(page, "cable list: Space on the rear tag selects c3", pressed_js("c3"))
     page.click('svg[data-pane="rear"] [data-item-id="i4"][data-panel]', position={"x": 8, "y": 8})
@@ -18687,8 +19387,8 @@ def check_rack_cable_polish(page, base):
     page.fill("#cLabel", "typed")
     tag = 'svg[data-pane="front"] [data-cable-tags] [data-cable-id="c2"]'
     page.dispatch_event(tag, "click")
-    page.focus(tag)
-    page.keyboard.press("Enter")
+    # (the tag is hidden with nothing hovered, #194, and takes no focus: the key is sent to it as its handler hears it)
+    page.dispatch_event(tag, "keydown", {"key": "Enter", "bubbles": True, "cancelable": True})
     page.wait_for_timeout(400)
     if not page.query_selector("#cableForm") or page.input_value("#cLabel") != "typed":
         bad.append("polish: a tag click discarded the new cable's form")
@@ -19356,7 +20056,7 @@ def check_rack_export_sheet_cables(page, base):
     if dl.suggested_filename != "Cable-test-sheet.svg":
         bad.append(f"sheet cables: named {dl.suggested_filename!r}")
     got = cables_of(text)
-    want = {"front": (["c1", "c2"], {"c2": "→ demarc port 2 1"}),
+    want = {"front": (["c1", "c2"], {"c2": "→ demarc U14 port 2 1"}),
             "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt eth", "c3": "✕ not connected"})}
     for pane, (ids, tags) in want.items():
         g = got.get(pane, {"cables": None, "tags": None})
@@ -19415,7 +20115,7 @@ def check_rack_export_sheet_cables(page, base):
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
     # A cross-face cable's tag on a single face still names the far end.
-    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port 2 1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt eth":
+    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc U14 port 2 1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt eth":
         bad.append("sheet cables, one face: the cross-face cable's tag does not name its far end")
     # c3 hangs as a lead in the rear pane only, c1 runs in the front pane only: the other face's sheet says so.
     for name, t, note in (("front", front, "1 cable is on the rear face only and is not on this sheet."),
@@ -19958,7 +20658,7 @@ TREE_JS = """() => {
 STROKE_CLEAR_JS = """id => {
   const svg = document.querySelector('#paneFront > svg');
   const g = svg.querySelector(`[data-cables] [data-cable][data-cable-id="${id}"]`);
-  // (a member's stroke outranks its bundle's band under the pointer: only other cables are in the way)
+  // (only other cables are in the way. Inside its bundle's band the pointer on a member is on the bundle, #194)
   const others = [...svg.querySelectorAll('[data-cables] [data-cable] path')].filter(p => !g.contains(p));
   for (const p of g.querySelectorAll('path')) {
     const L = p.getTotalLength();
@@ -20200,19 +20900,42 @@ def check_rack_cable_tree(page, base):
         park_mouse(page)
         if page.evaluate(marks):
             bad.append(f"mark: rows are still marked with the pointer off the stage: {page.evaluate(marks)}")
-        # with b1 open, the member's own row is the one marked
+        # with b1 open, the member's own row is the one marked: on its own tail, outside the band (inside it the pointer is on the bundle)
         page.click("#bundleItem-b1 > .rk-twist")
-        page.mouse.move(pt[0], pt[1])
-        page.wait_for_timeout(350)
-        if page.evaluate(marks) != ["cableItem-c1"]:
-            bad.append(f"mark: with b1 open and c1 under the pointer the marked rows are {page.evaluate(marks)}")
+        own = page.evaluate("""async () => {
+          const H = await import('/site/rack/hover.js'), svg = document.querySelector('#paneFront > svg');
+          for (const id of (svg.querySelector('[data-cables] [data-bundle-id="b1"]').dataset.members || '').split(' '))
+            for (const p of svg.querySelectorAll(`[data-cables] [data-cable][data-cable-id="${id}"] path`)) {
+              const L = p.getTotalLength(), m = p.getScreenCTM();
+              for (let f = 0.005; f < 0.995; f += 0.005) {
+                const q = p.getPointAtLength(L * f), s = new DOMPoint(q.x, q.y).matrixTransform(m), el = document.elementFromPoint(s.x, s.y);
+                if (!el?.closest('#paneFront')) continue;
+                const t = H.hoverAt2d(svg, {clientX: s.x, clientY: s.y, target: el});
+                if (t?.kind === 'cable' && t.id === id) return [id, s.x, s.y];
+              }
+            }
+          return null; }""")
+        if not own:
+            bad.append("mark: found no point on the own tail of a cable of b1, outside its bundle's band")
+        else:
+            page.mouse.move(own[1], own[2])
+            page.wait_for_timeout(350)
+            if page.evaluate(marks) != [f"cableItem-{own[0]}"]:
+                bad.append(f"mark: with b1 open and {own[0]}'s own tail under the pointer the marked rows are {page.evaluate(marks)}")
+            page.mouse.move(pt[0], pt[1])
+            page.wait_for_timeout(350)
+            if page.evaluate(marks) != ["bundleItem-b1"]:
+                bad.append(f"mark: with b1 open and the pointer on c1 inside its band the marked rows are {page.evaluate(marks)}, expected the bundle's")
         park_mouse(page)
         page.click("#bundleItem-b1 > .rk-twist")
     # A CABLE PINNED FROM THE STAGE (its tag) opens the row it is under, and that is remembered.
     page.click("#cableGroup-none > .rk-twist")
     if tree_rows(page)[1]["~none"]["expanded"] != "false":
         bad.append("pin: the unbundled group did not close")
-    page.click('svg[data-pane="front"] [data-cable-tags] [data-cable-tag][data-cable-id="c4"]')
+    tag4 = hover_to_tag(page, "front", "c4")   # a cross-face tag shows while its cable is under the pointer (#194)
+    if not tag4:
+        return bad + ["pin: the pointer on c4's stroke on the front pane, then on its tag, does not show the tag"]
+    page.click(tag4)
     wait_fn(page, "tree: the tag pins c4", "() => document.querySelector('#cableRow-c4')?.getAttribute('aria-pressed') === 'true'")
     t, rows = tree_rows(page)
     if rows["~none"]["expanded"] != "true" or not rows["c4"]["shows"]:
@@ -21599,12 +22322,14 @@ DEFAULT_SECONDS = 2.0
 SECONDS = {
     "stage-rail": 286,
     "check_rack_bend_notice": 248,
+    "check_rack_faces_and_tags": 148,
     "check_rack_routes_follow_edits": 145,
     "check_rack_strap_kinds": 134,
     "check_rack_ring_clearance": 126,
     "check_rack_cable_spare": 125,
     "check_rack_covers": 119,
     "check_3d_download_waits_for_scene": 117,
+    "check_rack_straps_on_run": 116,
     "check_takeaway_cables_3d": 107,
     "check_rack_side_exports_same": 98,
     "check_rack_cables_3d": 88,

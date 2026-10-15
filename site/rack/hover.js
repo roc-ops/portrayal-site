@@ -81,6 +81,13 @@ export function paintHover2d(svgs, lit) {
       n.classList.toggle('hot', !!lit && lit.cables.has(n.dataset.cableId));
     for (const n of svg.querySelectorAll('[data-bundle-id]'))
       n.classList.toggle('hot', !!lit && lit.bundles.has(n.dataset.bundleId));
+    // A CROSS-FACE TAG IS SHOWN FOR WHAT IS HOVERED (#194; rack.css): a cable's
+    // own tag for a cable, and for a bundle its one tag, not its members'.
+    const alone = !!lit && lit.bundles.size === 0;
+    for (const n of svg.querySelectorAll('[data-cable-tag][data-cable-id]'))
+      n.classList.toggle('hot-tag', alone && lit.cables.has(n.dataset.cableId));
+    for (const n of svg.querySelectorAll('[data-bundle-tag]'))
+      n.classList.toggle('hot-tag', !!lit && lit.bundles.has(n.dataset.bundleTag));
     // A STRAP GOES WITH ITS BUNDLE: lit while its bundle, or a cable that rides
     // it, is lit, and dimmed with the rest otherwise.
     for (const n of svg.querySelectorAll('[data-strap]'))
@@ -259,11 +266,13 @@ export async function withoutBendRings(scene, fn) {
 }
 
 /** The hover target under a pointer on a 2D pane: a tag (it takes the
- *  pointer), else a cable's stroke, else a bundle's band. Strokes are
- *  click-through (pointer-events: none), so they are found by geometry. */
+ *  pointer), else a bundle's band, else a cable's stroke. Strokes take no
+ *  pointer (pointer-events: none), so they are found by geometry. */
 export function hoverAt2d(svg, ev) {
   const tag = ev.target?.closest?.('[data-cable-tags] [data-cable-id]');
   if (tag) return {kind: 'cable', id: tag.dataset.cableId};
+  const btag = ev.target?.closest?.('[data-cable-tags] [data-bundle-tag]');
+  if (btag) return {kind: 'bundle', id: btag.dataset.bundleTag};
   const hit = sel => {
     for (const p of [...svg.querySelectorAll(sel)].reverse()) {
       const m = p.getScreenCTM();
@@ -273,10 +282,16 @@ export function hoverAt2d(svg, ev) {
     }
     return null;
   };
-  const c = hit(':scope > [data-cables] [data-cable][data-cable-id] path');
-  if (c) return {kind: 'cable', id: c.closest('[data-cable-id]').dataset.cableId};
-  const b = hit(':scope > [data-cables] [data-bundle-id] path');
-  if (b) return {kind: 'bundle', id: b.closest('[data-bundle-id]').dataset.bundleId};
+  // WHERE CABLES RUN BUNDLED, THE BUNDLE IS WHAT IS POINTED AT (#194): inside
+  // a bundle's band (its envelope, shown or not) the pointer is on the bundle,
+  // whichever member's stroke is under it; on a member's own tail, outside
+  // the band, it is on that cable. One member of a bundle is reached by its
+  // row in the cable list.
+  // (a cable that only passes through another bundle's band is no member of it: it is itself there)
+  const b = hit(':scope > [data-cables] [data-bundle-id] path')?.closest('[data-bundle-id]');
+  const c = hit(':scope > [data-cables] [data-cable][data-cable-id] path')?.closest('[data-cable-id]').dataset.cableId;
+  if (b && (c == null || (b.dataset.members || '').split(' ').includes(c))) return {kind: 'bundle', id: b.dataset.bundleId};
+  if (c != null) return {kind: 'cable', id: c};
   return null;
 }
 
@@ -293,9 +308,10 @@ export function hoverAt3d(scene, ev) {
   ray.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), camera);
   // A bundle's envelope is a see-through sleeve round its members, shown or
   // not: a ray that meets a cable or a strap after passing through it is on
-  // that cable or strap (a member under the pointer is hovered alone, as in
-  // 2D, where a cable's stroke outranks the band). Through an envelope and
-  // nothing else, it is on the bundle.
+  // that cable or strap (a member under the pointer is hovered alone: the
+  // scene has depth, and the ray says which is in front. On the 2D panes,
+  // which have none, the bundle is what is pointed at inside its band:
+  // hoverAt2d). Through an envelope and nothing else, it is on the bundle.
   let sleeve = null;
   for (const hit of ray.intersectObjects(targets, true)) {
     for (let o = hit.object; o && o.parent; o = o.parent) {

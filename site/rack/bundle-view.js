@@ -17,6 +17,7 @@ import {bundlesOf, bundleName, bundleCheck, straps as strapsOf, strapSpacing, sp
         waypointText, onTrunk, bundleDiameter} from '../../vendor/rack/bundles.js';
 import {waypointKey} from '../../vendor/rack/bundle-route.js';
 import {pointOf, DIAMETERS} from '../../vendor/rack/route.js';
+import {RU} from '../../vendor/rack/rails.js';
 
 // A strap as drawn, along the run (mm). The kit keeps straps STRAP_W (20 mm)
 // off rings; a strap drawn half that wide reads as a strap, not a block.
@@ -356,6 +357,91 @@ export function strapAt(pts, s) {
   const d = p.map((v, k) => q[k] - v), L = Math.hypot(...d);
   if (!(L > 0)) return null;
   return {at: p.map((v, k) => v + d[k] * s.t), dir: d.map(v => v / L)};
+}
+
+// THE POINTS THE KIT LAYS A MEMBER THROUGH BETWEEN TWO TRUNK STOPS (waypoints
+// k and k + 1 of `trunk`): {a, b, mid}, the kit's own points (rack mm) at the
+// first stop, at the second, and between them in order from the first. Taken
+// from the first member whose path runs from one waypoint straight to the
+// other; null when none does. `mid` is [] where the kit adds no point there:
+// the run between the two stops is then straight. This is the run as it is
+// DRAWN (the 3D trunk and the side views' cables go through these points), so
+// it is what a strap is stood on (#195).
+// A LANE STOP IS ONE POINT OF THE MEMBER'S PATH. The kit's lane points carry
+// no lane name, only where they are, and two lanes at one U (a rear lane and
+// the front lane it crosses to) stand at one height: `laneAt(w)`, the kit's
+// own point for a lane waypoint (route.js pointOf), tells them apart - the
+// stop is the path's lane point at that height nearest it, across the rack
+// and in depth. Without it a stop at such a U matched both points, and a run
+// from one to the other was read as no run at all.
+export function trunkSpanPoints(trunk, k, members, paths, laneAt = null) {
+  const at = (P, w) => {
+    const all = P.map((q, i) => i).filter(i => (w.lane ? P[i].at === 'lane' && Math.abs(P[i].y - (w.ru - 0.5) * RU) < 1e-6
+      : P[i].item === w.item && P[i].via === w.via && P[i].at !== 'lead'));
+    if (!w.lane || all.length < 2 || !laneAt) return all;
+    let p = null;
+    try { p = laneAt(w); } catch { p = null; }
+    return p ? [all.reduce((m, i) => (Math.hypot(P[i].x - p.x, P[i].z - p.z) < Math.hypot(P[m].x - p.x, P[m].z - p.z) ? i : m))] : all;
+  };
+  for (const id of members ?? []) {
+    const P = paths?.get(id)?.points;
+    if (!P?.length || !trunk[k] || !trunk[k + 1]) continue;
+    const a = at(P, trunk[k]), b = at(P, trunk[k + 1]);
+    if (!a.length || !b.length) continue;
+    let mid;
+    if (Math.max(...a) < Math.min(...b)) mid = P.slice(Math.max(...a) + 1, Math.min(...b));
+    else if (Math.max(...b) < Math.min(...a)) mid = P.slice(Math.max(...b) + 1, Math.min(...a)).reverse();
+    else continue;
+    // (another stop, or a lead of the member's own, between them: it does not run straight from one to the other)
+    if (mid.some(q => q.item || q.at === 'lead' || q.at === 'lane' || q.at === 'reach' || q.end)) continue;
+    return {a: a.map(i => P[i]), b: b.map(i => P[i]), mid};
+  }
+  return null;
+}
+
+// A PLACE ALONG A LINE OF POINTS, BY ITS LENGTH: fraction `t` (0 to 1) of the
+// whole length of the line through `points` ([x, y] or [x, y, z] each), as
+// {k, f, at, dir}: the leg it falls on (from points[k]), how far along that
+// leg, the point, and the leg's direction. null for a line of no length.
+export function alongLine(points, t) {
+  const legs = points.slice(1).map((q, k) => Math.hypot(...q.map((v, n) => v - points[k][n])));
+  const total = legs.reduce((a, b) => a + b, 0);
+  if (!(total > 0)) return null;
+  let left = Math.min(1, Math.max(0, t)) * total, k = 0;
+  // (a leg of no length is stepped over; the last leg with any length takes what rounding leaves)
+  const last = legs.reduce((n, L, i) => (L > 0 ? i : n), 0);
+  while (k < last && (!(legs[k] > 0) || left > legs[k])) { left -= legs[k]; k++; }
+  const f = Math.min(1, Math.max(0, left / legs[k])), p = points[k], q = points[k + 1];
+  return {k, f, at: p.map((v, n) => v + (q[n] - v) * f), dir: p.map((v, n) => (q[n] - v) / legs[k])};
+}
+
+// A TAG IS NEVER CUT AT ITS END (#194): what tells two tags apart is at the
+// end - a port's path, a bundle's name - so two different ends cut there read
+// the same. A text too long for its pill (over `max` characters) loses the
+// MIDDLE of a part instead (`parts` in order, joined as they are; `cut` names
+// the ones that may be shortened, the first of them first), and its title
+// keeps it whole.
+const midCut = (text, n) => { const cs = Array.from(String(text)); if (cs.length <= n) return cs.join('');
+  const keep = Math.max(2, n - 1), head = Math.ceil(keep / 2); return `${cs.slice(0, head).join('')}…${cs.slice(cs.length - (keep - head)).join('')}`; };
+export function fitText(parts, cut, max) {
+  const out = parts.map(String), len = () => Array.from(out.join('')).length;
+  for (const k of cut) {
+    const over = len() - max;
+    if (over <= 0) break;
+    out[k] = midCut(out[k], Math.max(3, Array.from(out[k]).length - over));
+  }
+  return out.join('');
+}
+
+// How far a point is from a line of points (each [x, y] or [x, y, z]): to the nearest place on any of its legs.
+export function offLine(p, line) {
+  let best = line.length === 1 ? Math.hypot(...p.map((v, n) => v - line[0][n])) : Infinity;
+  for (let k = 0; k + 1 < line.length; k++) {
+    const a = line[k], d = line[k + 1].map((v, n) => v - a[n]), L2 = d.reduce((s, v) => s + v * v, 0);
+    const f = L2 > 0 ? Math.min(1, Math.max(0, p.reduce((s, v, n) => s + (v - a[n]) * d[n], 0) / L2)) : 0;
+    best = Math.min(best, Math.hypot(...p.map((v, n) => v - a[n] - d[n] * f)));
+  }
+  return best;
 }
 
 // The trunk's waypoints cut into stretches a view can draw: each a run of

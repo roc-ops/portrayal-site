@@ -137,9 +137,19 @@ function leadDown(g, a, color, drop, outboard, width) {
 // own (cable-view.js), which looks an item up by its id and panel.
 // `widthOf(link)` is the width a cable is drawn at, mm: the kit's widthOf over
 // the cable types (a power cord at its real diameter); WIDTH when not given.
-export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
+// `stackGutter: false` leaves a routed cross-face tag at its own cable's
+// height, for a caller that shows one tag at a time or stacks what it keeps
+// (cable-view.js); the record's `tags` say which gutter each is in.
+// A LINK THAT LEAVES THIS FACE AND COMES BACK (`link.away2d[view]`: {head,
+// tail, headRings, tailRings}, its caller's: both ends land here, and between
+// them its route goes by the other face) is never drawn as one line it does
+// not take. It is two stubs, each as a cross-face cable ends: from an end
+// through its own waypoints here to the last of them (or, with none, off to
+// the side column), with a tag from `awayTag(at, link)` at each. The record
+// lists both (`tags`) and says so (`away`).
+export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, awayTag = null, farLoose = () => false,
                                                outboard = 1, ends = ends2d, bendOf = () => null,
-                                               widthOf = () => WIDTH}) {
+                                               widthOf = () => WIDTH, stackGutter = true}) {
   // The CABLES are the drawing, and exports keep them (standalone() drops
   // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
   // controls - a cross-face button, a not-connected link to the stage that
@@ -187,7 +197,32 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     const [landedSide] = live[0];
     const [otherSide, other] = sides.find(([k]) => k !== landedSide);
     const otherHere = (other[2] || 'front') === view;
-    if (starts.length === 2) {
+    // One end's run to where the cable leaves this face: through its waypoints
+    // here to the last of them, where its tag sits just outboard of that
+    // gutter point; with none, a hang off to the side column and its tag there.
+    const leave = (a, v, rings, make) => {
+      const fan = fans.get(key) || 0; fans.set(key, fan + 1);
+      if (v?.length) {
+        const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
+        column.push({rec, want: last[1], lane: dir, place: y => {
+          stroke(g, bent(rec, [a, ...v], bendOf(link), rings ? [null, ...rings] : null), color, W);
+          return make([last[0] + dir * 6, y]);
+        }});
+      } else {
+        column.push({rec, want: a[1] + 30, place: y => {
+          const b = [edgeX, y];
+          stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, W);
+          return make(b);
+        }});
+      }
+    };
+    const away = starts.length === 2 && awayTag ? link.away2d?.[view] : null;
+    if (away) {
+      rec.tagged = true; rec.away = true;
+      leave(starts[0], away.head, away.headRings, at => awayTag(at, link));
+      // (the tail runs to the `to` end: from that end it is passed the other way, and its rings with it)
+      leave(starts[1], [...away.tail].reverse(), away.tailRings && reverseMarks(away.tailRings), at => awayTag(at, link));
+    } else if (starts.length === 2) {
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const [a, b] = starts;
       const via = link.via2d?.[view], rings = link.rings2d?.[view];
@@ -210,29 +245,15 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
         return looseTag([edgeX, y], other, link, i);
       }});
     } else {
-      const fan = fans.get(key) || 0; fans.set(key, fan + 1);
-      const a = starts[0];
       rec.tagged = true;
-      // via2d runs from the plan's `from` end; a is the end that landed here.
-      const via = link.via2d?.[view];
-      if (via?.length) {
-        // A ROUTED cross-face cable stops at its last waypoint (spec §7): it
-        // does not cross the face to the side column. Its tag sits just
-        // outboard of that gutter point.
-        // Its ring marks (link.rings2d, turned to this pane by its caller)
-        // reverse with it: a ring passed from the far end is passed the other way.
-        const v = landedSide === 'from' ? via : [...via].reverse();
-        const rv = link.rings2d?.[view], rings = rv && (landedSide === 'from' ? rv : reverseMarks(rv));
-        const last = v[v.length - 1], dir = last[0] < OPENING / 2 ? -1 : 1;
-        column.push({rec, want: last[1], lane: dir, place: y => {
-          stroke(g, bent(rec, [a, ...v], bendOf(link), rings ? [null, ...rings] : null), color, W);
-          return tag([last[0] + dir * 6, y], other, link);
-        }});
-      } else column.push({rec, want: a[1] + 30, place: y => {
-        const b = [edgeX, y];
-        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, W);
-        return tag(b, other, link);
-      }});
+      // via2d runs from the plan's `from` end; the end that landed here is where
+      // this starts. A ROUTED cross-face cable stops at its last waypoint (spec
+      // §7): it does not cross the face to the side column. Its ring marks
+      // (link.rings2d, turned to this pane by its caller) reverse with it: a
+      // ring passed from the far end is passed the other way.
+      const via = link.via2d?.[view], rv = link.rings2d?.[view];
+      leave(starts[0], via?.length ? (landedSide === 'from' ? via : [...via].reverse()) : null,
+            rv && (landedSide === 'from' ? rv : reverseMarks(rv)), at => tag(at, other, link));
     }
     const t = svgEl('title', {});
     t.textContent = `${link.from[0]} ${link.from[1]} → ${link.to[0]} ${link.to[1]} · ${link.purpose}, ${link.media}`;
@@ -246,14 +267,16 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
   let y = -Infinity;
   const gutterY = new Map();          // routed tags stack per gutter, apart from the column
   for (const c of column) {
-    let at;
-    if (c.lane) { at = Math.max(c.want, (gutterY.get(c.lane) ?? -Infinity) + TAG_H); gutterY.set(c.lane, at); }
+    let at, t0 = 0;
+    if (c.lane) { at = stackGutter ? Math.max(c.want, (gutterY.get(c.lane) ?? -Infinity) + TAG_H) : c.want; gutterY.set(c.lane, at); t0 = c.lane; }
     else at = y = Math.max(c.want, y + TAG_H);
     const t = c.place(at);
     t.setAttribute('data-link-index', String(c.rec.i));
     t.setAttribute('data-cable-tag', 'true');
     tagLayer.append(t);
-    c.rec.tag = t;
+    c.rec.tag ??= t;
+    // every tag of the record, each with the gutter it is in (-1 or 1; 0 in the side column)
+    (c.rec.tags ??= []).push({el: t, gutter: t0});
   }
   // Lowest top first; a stable sort keeps plan order between equals.
   drawn.sort((a, b) => b.top - a.top);
