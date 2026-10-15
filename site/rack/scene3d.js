@@ -802,6 +802,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
     onScene?.(built);
     built.stageColor = stage;
     built.covers = covers;
+    built.paintStandIns(covers === 'on');   // (the boxes parts stand as are opaque with the covers on, as the covers will be)
     built.setStage = c => { built.stageColor = c; built.setBackground(c); built.setLabelColors(labelsFor(c)); paintStraps3d(built, c); };
     // (the detail is let go once the cables are hung, or the build has ended
     // without them: a disposed scene's passes stop at their own epoch check)
