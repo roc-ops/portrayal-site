@@ -8047,11 +8047,15 @@ def check_rack_ears_meet_face(page, base):
             if abs(gl) > 0.05 or abs(gr) > 0.05:
                 bad.append(f"{d['ref']}: its generic ears stop {gl:.2f} mm (left) and {gr:.2f} mm (right) short of its "
                            f"{d['faceW']} mm face; they must meet it")
-    for ref in ("xcu", "s9600-72xc", "tm-340"):
+    for ref in ("s9600-72xc", "tm-340"):
         if not any(d["ref"] == ref and d["kind"] == "generic" for d in got):
             bad.append(f"{ref}: no generic ears drawn, so nothing was measured for it")
-    if generic < 3:
-        bad.append(f"only {generic} generic ear pairs measured, expected 3")
+    # THE XCU IS A SHEET BODY since kit 0.48.0 (Portrayal #1086: a floor, two walls and a cover), and the kit's plan gives a
+    # sheet body no generic ear (face.js earPlanFor): it is still centred, and draws none
+    if any(d["ref"] == "xcu" and d["kind"] == "generic" for d in got):
+        bad.append("xcu: generic ears drawn on a sheet body, which the kit's plan gives none")
+    if generic < 2:
+        bad.append(f"only {generic} generic ear pairs measured, expected 2")
     return bad
 
 
@@ -8872,8 +8876,9 @@ def check_rack_half_unit(page, base):
     # its ear: as tall as the half unit it fills (the kit's itemBox lo to hi; it was as tall as the body,
     # 22.2 of the half's 22.225 mm), with one screw a side at the one hole that half holds (the kit's holesIn)
     half_top = bottom(x) - RU / 2
-    if len(x["flanges"]) != 2 or any(abs(y - half_top) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in x["flanges"]):
-        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected two from y {half_top:.3f}, {RU / 2} tall (the lower half of U20)")
+    # (the XCU is a sheet body since kit 0.48.0, Portrayal #1086, and the kit's plan gives a sheet body no generic ear: no flange)
+    if x["flanges"]:
+        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected none (a sheet body has no generic ear)")
     if len(x["screws"]) != 2 or any(abs(cy - (bottom(x) - 6.35)) > 1e-6 for cy in x["screws"]):
         bad.append(f"2D: the XCU's screws are at {x['screws']}, expected one a side at {bottom(x) - 6.35:.3f} (6.35 mm above the unit's bottom)")
     # its port: the cable leaves it inside the body, and the kit's height for the port is in the lower half too
@@ -8912,8 +8917,8 @@ def check_rack_half_unit(page, base):
     if abs((lo - base_y) - (bottom(x) - (top + x["h"]))) > 1e-6:
         bad.append(f"2D and 3D: the XCU's body is {bottom(x) - (top + x['h']):.4f} mm above its unit's bottom in 2D and {lo - base_y:.4f} in 3D")
     # (over the half it fills, 2 mm clear, as a whole unit's is 4.5 mm clear of its span; it was as tall as the body)
-    if len(x3["flanges"]) != 2 or any(abs(y - (base_y + RU / 4)) > 1e-6 or abs(h - (RU / 2 - 2)) > 1e-6 for y, h in x3["flanges"]):
-        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected two at {base_y + RU / 4:.3f}, {RU / 2 - 2} tall")
+    if x3["flanges"]:
+        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected none (a sheet body has no generic ear)")
     if len(x3["heads"]) != 2 or any(abs(y - (base_y + 6.35)) > 1e-6 for y in x3["heads"]):
         bad.append(f"3D: the XCU's screw heads are at {x3['heads']}, expected one a side at {base_y + 6.35:.3f}")
     if t["port"] is None or not lo <= t["port"] <= hi or abs(t["port"] - ya) > 1.0:
@@ -23490,8 +23495,9 @@ def check_rack_two_half_units(page, base):
         if not gi or abs((H - (gi["ty"] + gi["y0"] + gi["h"] / 2)) - ki["mid"]) > 1e-6:
             bad.append(f"2D: {iid}'s face is centred {H - (gi['ty'] + gi['y0'] + gi['h'] / 2) if gi else None} mm up; the kit's itemBox is centred at {ki['mid']}")
             continue
-        if len(gi["flanges"]) != 2 or any(abs((H - y - h) - ki["lo"]) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in gi["flanges"]):
-            bad.append(f"2D: {iid}'s ear flanges {gi['flanges']} are not its half, {ki['lo']} to {ki['hi']}")
+        # (the XCU is a sheet body since kit 0.48.0, and the kit's plan gives a sheet body no generic ear: no flange)
+        if gi["flanges"]:
+            bad.append(f"2D: {iid}'s ear flanges {gi['flanges']}, expected none (a sheet body has no generic ear)")
         if len(gi["screws"]) != 2 or any(abs((H - cy) - ki["holes"][0]) > 1e-6 for cy in gi["screws"]):
             bad.append(f"2D: {iid}'s screws are at {[H - cy for cy in gi['screws']]}, the kit's hole for its half is at {ki['holes']}")
     if abs(k["items"]["i1"]["holes"][0] - (11 * RU + 38.10)) > 1e-6 or abs(k["items"]["i2"]["holes"][0] - (11 * RU + 6.35)) > 1e-6:
@@ -23535,14 +23541,30 @@ def check_rack_two_half_units(page, base):
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the two halves")
     t = page.evaluate(V4_3D_JS)
-    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    solids = item_solids(page)
     for iid in ("i1", "i2"):
         ki, d = k["items"][iid], t.get(iid) or {}
-        if d.get("y") is None or abs(d["y"] - ki["mid"]) > 1e-6 or abs(d["y"] - (solids[iid]["y0"] + solids[iid]["y1"]) / 2) > 1e-6:
+        if d.get("y") is None or abs(d["y"] - ki["mid"]) > 1e-6 or abs(d["y"] - (solids[iid]["y0"] + solids[iid]["y1"]) / 2) > (1.5 if solids[iid].get("pieces") else 1e-6):
             bad.append(f"3D: {iid}'s body is centred at {d.get('y')}; the kit's itemBox at {ki['mid']} and its solid at {(solids[iid]['y0'] + solids[iid]['y1']) / 2}")
         if sorted(d.get("heads") or []) != [ki["holes"][0]] * 2 and any(abs(y - ki["holes"][0]) > 1e-6 for y in d.get("heads") or [0]) or len(d.get("heads") or []) != 2:
             bad.append(f"3D: {iid}'s screw heads are at {d.get('heads')}, expected one a side at {ki['holes'][0]}")
     return bad
+
+
+def item_solids(page):
+    """Each item's solid in the 3D scene, as the kit's box. A device's solid is its envelope; a part the kit builds from a
+    body (the XCU patch panel since kit 0.48.0: a floor, two walls and a cover, open at the back and the front) has no
+    envelope, and is the box round the pieces it has, marked "pieces" (a box read to the millimetre in height: the scene's
+    own box leaves out a skin's thickness)."""
+    solids = {}
+    for s in page.evaluate("() => window.__rack.solids()"):
+        b = solids.get(s["item"])
+        if s["part"] == "envelope":
+            solids[s["item"]] = s["box"]
+        elif b is None or b.get("pieces"):
+            n = s["box"]
+            solids[s["item"]] = {"pieces": True, **(n if b is None else {k: (min if k.endswith("0") else max)(b[k], n[k]) for k in n})}
+    return solids
 
 
 # A version-3 file as the page saved one, with a key this page does not know at
@@ -23686,19 +23708,9 @@ def check_rack_v4_keys_kept(page, base):
     settle_scene(page, "3D: the version-4 rack")
     t = page.evaluate(V4_3D_JS)
     faceZ = page.evaluate("() => window.__rack.scene().metrics().faceZ")
-    # A device's solid is its envelope; a part the kit builds from a body (the XCU patch panel since kit 0.48.0: a floor, two
-    # walls and a cover, open at the back and the front) has no envelope, and is the box round the pieces it has.
-    solids = {}
-    for s in page.evaluate("() => window.__rack.solids()"):
-        b = solids.get(s["item"])
-        if s["part"] == "envelope":
-            solids[s["item"]] = s["box"]
-        elif b is None or b.get("pieces"):
-            n = s["box"]
-            solids[s["item"]] = {"pieces": True, **(n if b is None else {k: (min if k.endswith("0") else max)(b[k], n[k]) for k in n})}
+    solids = item_solids(page)
     for iid in ("i1", "i2", "i3", "i5"):
         b, d = solids[iid], t.get(iid) or {}
-        # (a box round pieces is read to the millimetre in height: the scene's own box leaves out a skin's thickness)
         tol_y = 1.5 if b.get("pieces") else 1e-6
         if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > tol_y:
             bad.append(f"3D: {iid} is at depth {None if d.get('z') is None else d['z'] - faceZ:.3f}, height {d.get('y')}; the kit's solid is centred at depth {(b['z0'] + b['z1']) / 2:.3f}, height {(b['y0'] + b['y1']) / 2:.3f}")
