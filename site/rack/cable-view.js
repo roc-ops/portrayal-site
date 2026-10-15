@@ -91,9 +91,47 @@ export function inPane(svg, el) {
 // horizontal manager's rear pane is a "through" panel (its rear-brush and
 // pass-through-N), so that one is looked in too.
 export function wayEl(svg, w) {
+  const ix = indexFor(svg);
+  if (ix) return ix.way(w);
   const g = svg.querySelector(`[data-item-id="${CSS.escape(w.item)}"][data-panel="mounted"], [data-item-id="${CSS.escape(w.item)}"][data-panel="through"]`);
-  return g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
-    || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
+  return wayIn(g, w);
+}
+const wayIn = (g, w) => g && (['', '-end'].map(s => g.querySelector(`[id="${CSS.escape(w.via + s)}"]`)).find(Boolean)
+  || g.querySelector(`[id="guide--${CSS.escape(w.via)}"], [id="pass--${CSS.escape(w.via)}"]`));
+
+// ONE DRAW'S INDEX OF A PANE. A whole-pane querySelector per waypoint or cable
+// end cost 2.8 s on a pane of several hundred thousand nodes, so drawRackCables
+// walks the pane once and answers from Maps: an item's panel group (the first in
+// document order, as querySelector found it), a waypoint's element (memoised),
+// and a group's cablePoints (read once). Only while that draw runs; the panes'
+// device groups do not change during it.
+let ACTIVE = null;
+const indexFor = svg => (ACTIVE && ACTIVE.svg === svg ? ACTIVE : null);
+function paneIndex(svg) {
+  const panels = new Map(), mounted = new Map(), ways = new Map(), points = new Map();
+  for (const el of svg.querySelectorAll('[data-item-id][data-panel], [data-zerou-id]')) {
+    const id = el.getAttribute('data-item-id');
+    if (id != null && el.hasAttribute('data-panel')) {
+      if (!panels.has(id)) panels.set(id, el);
+      const p = el.getAttribute('data-panel');
+      if ((p === 'mounted' || p === 'through') && !mounted.has(id)) mounted.set(id, el);
+    }
+    const z = el.getAttribute('data-zerou-id');
+    if (z != null && !panels.has(z)) panels.set(z, el);
+  }
+  return {
+    svg,
+    group: id => panels.get(id) ?? null,
+    way(w) {
+      const k = `${w.item}\u0000${w.via}`;
+      if (!ways.has(k)) ways.set(k, wayIn(mounted.get(w.item) ?? null, w) ?? null);
+      return ways.get(k);
+    },
+    points(g) {
+      if (!points.has(g)) points.set(g, cablePoints(g));
+      return points.get(g);
+    },
+  };
 }
 
 // A waypoint's point in a pane, or null when it is not on this pane.
@@ -122,7 +160,8 @@ function wayPoint(svg, w, view, frame, k, ductX = () => null, shift = 0) {
 }
 
 // (an end on a part beside the rack is on that part's drawing: a PDU's outlet, kit 0.36.0)
-const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel], [data-zerou-id="${CSS.escape(itemId)}"]`);
+const panelGroup = (svg, itemId) => indexFor(svg)?.group(itemId) ?? (indexFor(svg) ? null : slowGroup(svg, itemId));
+const slowGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel], [data-zerou-id="${CSS.escape(itemId)}"]`);
 
 // A port's box in the pane's own user space, or null when the pane does not
 // draw it. `svg` must be in the document and laid out (getScreenCTM).
@@ -144,7 +183,7 @@ function endPoints(svg, itemId, path) {
   const g = panelGroup(svg, itemId);
   if (!g || g.dataset.panel === 'missing') return null;
   const inv = svg.getScreenCTM().inverse();
-  const pts = cablePoints(g).filter(p => p.at && plugAt(p.path, path));
+  const pts = (indexFor(svg)?.points(g) ?? cablePoints(g)).filter(p => p.at && plugAt(p.path, path));
   if (pts.length) return pts.map(p => {
     const q = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
     return [q.x, q.y];
@@ -188,6 +227,13 @@ function freeSpan2d(points, place) {
 // `spares` is spare.js sparesOf's Map: a cable in it names its cord and its
 // spare in its title, as its row in the list does.
 export function drawRackCables(svg, rack, reasons, uOf, routes = null, spares = null) {
+  const outer = ACTIVE;
+  ACTIVE = paneIndex(svg);
+  try { return drawRackCablesIn(svg, rack, reasons, uOf, routes, spares); }
+  finally { ACTIVE = outer; }
+}
+
+function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
