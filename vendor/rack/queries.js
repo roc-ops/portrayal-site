@@ -10,7 +10,7 @@ import {uLabel, zeroUOf, zeroUBottom, firstU, holderOf, rollOf, uText} from './m
 import {whereText, carriesLane} from './zero-u.js';
 import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText, isElementId, addressFor, portLabel,
         takesCableEnd, receptacleOf, endKind, connectorName, endPlug, couplerRole} from './cable-rules.js';
-import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds} from './ports.js';
+import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds, backEnds} from './ports.js';
 import {zeroUById, zeroUBottomMm} from './model.js';
 import {RU} from './rails.js';
 import {configFacts} from './catalog.js';
@@ -321,6 +321,13 @@ export async function freePorts(rack, itemId, ctx, {kinds = null, type = null, n
       seen.add(`${view}|${path}`);
       if (!portFree(rack, {item: itemId, path, view}).ok) continue;
       out.push({path, view, label: portLabel(path), media: p.media ?? null, speed: p.speed ?? null});
+    }
+    // the far ends of a passive panel's adapters, which no panel of the device
+    // draws when the panel sits in a drawer (ports.js backEnds)
+    if (want('data')) for (const e of backEnds(item, {slotsOf, compByRef, redirects}).filter(x => x.view === view)) {
+      if (seen.has(`${view}|${e.path}`) || !portFree(rack, {item: itemId, path: e.path, view}).ok) continue;
+      seen.add(`${view}|${e.path}`);
+      out.push({path: e.path, view, label: portLabel(e.path), media: e.media ?? null, speed: null});
     }
     // the catalogue's ends the reader did not hand in (above)
     if (!(want('power') || want('ground') || want('other'))) continue;
