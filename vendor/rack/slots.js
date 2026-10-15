@@ -34,7 +34,7 @@ export function partName(compByRef, ref) {
   if (!ref) return 'nothing';
   const c = partOf(compByRef, ref);
   const first = String(c?.description || '').split(/\s[-–]\s|\.\s|\.$/)[0].trim();
-  return first && first.length <= 60 ? first : ref;
+  return first && first.length <= 60 ? first : c?.attrs?.model || ref;
 }
 
 // The device's own bays and cages, every view, each carrying its view; the

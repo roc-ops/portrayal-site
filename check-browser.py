@@ -8047,11 +8047,15 @@ def check_rack_ears_meet_face(page, base):
             if abs(gl) > 0.05 or abs(gr) > 0.05:
                 bad.append(f"{d['ref']}: its generic ears stop {gl:.2f} mm (left) and {gr:.2f} mm (right) short of its "
                            f"{d['faceW']} mm face; they must meet it")
-    for ref in ("xcu", "s9600-72xc", "tm-340"):
+    for ref in ("s9600-72xc", "tm-340"):
         if not any(d["ref"] == ref and d["kind"] == "generic" for d in got):
             bad.append(f"{ref}: no generic ears drawn, so nothing was measured for it")
-    if generic < 3:
-        bad.append(f"only {generic} generic ear pairs measured, expected 3")
+    # THE XCU IS A SHEET BODY since kit 0.48.0 (Portrayal #1086: a floor, two walls and a cover), and the kit's plan gives a
+    # sheet body no generic ear (face.js earPlanFor): it is still centred, and draws none
+    if any(d["ref"] == "xcu" and d["kind"] == "generic" for d in got):
+        bad.append("xcu: generic ears drawn on a sheet body, which the kit's plan gives none")
+    if generic < 2:
+        bad.append(f"only {generic} generic ear pairs measured, expected 2")
     return bad
 
 
@@ -8872,8 +8876,9 @@ def check_rack_half_unit(page, base):
     # its ear: as tall as the half unit it fills (the kit's itemBox lo to hi; it was as tall as the body,
     # 22.2 of the half's 22.225 mm), with one screw a side at the one hole that half holds (the kit's holesIn)
     half_top = bottom(x) - RU / 2
-    if len(x["flanges"]) != 2 or any(abs(y - half_top) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in x["flanges"]):
-        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected two from y {half_top:.3f}, {RU / 2} tall (the lower half of U20)")
+    # (the XCU is a sheet body since kit 0.48.0, Portrayal #1086, and the kit's plan gives a sheet body no generic ear: no flange)
+    if x["flanges"]:
+        bad.append(f"2D: the XCU's ear flanges are {x['flanges']}, expected none (a sheet body has no generic ear)")
     if len(x["screws"]) != 2 or any(abs(cy - (bottom(x) - 6.35)) > 1e-6 for cy in x["screws"]):
         bad.append(f"2D: the XCU's screws are at {x['screws']}, expected one a side at {bottom(x) - 6.35:.3f} (6.35 mm above the unit's bottom)")
     # its port: the cable leaves it inside the body, and the kit's height for the port is in the lower half too
@@ -8912,8 +8917,8 @@ def check_rack_half_unit(page, base):
     if abs((lo - base_y) - (bottom(x) - (top + x["h"]))) > 1e-6:
         bad.append(f"2D and 3D: the XCU's body is {bottom(x) - (top + x['h']):.4f} mm above its unit's bottom in 2D and {lo - base_y:.4f} in 3D")
     # (over the half it fills, 2 mm clear, as a whole unit's is 4.5 mm clear of its span; it was as tall as the body)
-    if len(x3["flanges"]) != 2 or any(abs(y - (base_y + RU / 4)) > 1e-6 or abs(h - (RU / 2 - 2)) > 1e-6 for y, h in x3["flanges"]):
-        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected two at {base_y + RU / 4:.3f}, {RU / 2 - 2} tall")
+    if x3["flanges"]:
+        bad.append(f"3D: the XCU's ear flanges are {x3['flanges']} (centre y, height), expected none (a sheet body has no generic ear)")
     if len(x3["heads"]) != 2 or any(abs(y - (base_y + 6.35)) > 1e-6 for y in x3["heads"]):
         bad.append(f"3D: the XCU's screw heads are at {x3['heads']}, expected one a side at {base_y + 6.35:.3f}")
     if t["port"] is None or not lo <= t["port"] <= hi or abs(t["port"] - ya) > 1.0:
@@ -22422,7 +22427,11 @@ SECONDS = {
 # with other work running; one run of each, 31, 145, 171 and 14 s) divided by about 1.7, a guess at the 2-CPU runner's
 # seconds, to be replaced by shard-weights.py's measured ones.
 SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100,
-                "check_rack_warnings_section": 8})
+                "check_rack_warnings_section": 8,
+                # S-0061: measured here (66 s and 6 s), as the others above are
+                "check_rack_lamps_and_displays_parity": 110, "check_rack_keystone_rear_jacks": 10,
+                # S-0061-2: a guess until measured (the keystone check's 10 s and a 3D build)
+                "check_rack_fibrain_coupler_ends": 25})
 
 
 def units():
@@ -23486,8 +23495,9 @@ def check_rack_two_half_units(page, base):
         if not gi or abs((H - (gi["ty"] + gi["y0"] + gi["h"] / 2)) - ki["mid"]) > 1e-6:
             bad.append(f"2D: {iid}'s face is centred {H - (gi['ty'] + gi['y0'] + gi['h'] / 2) if gi else None} mm up; the kit's itemBox is centred at {ki['mid']}")
             continue
-        if len(gi["flanges"]) != 2 or any(abs((H - y - h) - ki["lo"]) > 1e-6 or abs(h - RU / 2) > 1e-6 for y, h in gi["flanges"]):
-            bad.append(f"2D: {iid}'s ear flanges {gi['flanges']} are not its half, {ki['lo']} to {ki['hi']}")
+        # (the XCU is a sheet body since kit 0.48.0, and the kit's plan gives a sheet body no generic ear: no flange)
+        if gi["flanges"]:
+            bad.append(f"2D: {iid}'s ear flanges {gi['flanges']}, expected none (a sheet body has no generic ear)")
         if len(gi["screws"]) != 2 or any(abs((H - cy) - ki["holes"][0]) > 1e-6 for cy in gi["screws"]):
             bad.append(f"2D: {iid}'s screws are at {[H - cy for cy in gi['screws']]}, the kit's hole for its half is at {ki['holes']}")
     if abs(k["items"]["i1"]["holes"][0] - (11 * RU + 38.10)) > 1e-6 or abs(k["items"]["i2"]["holes"][0] - (11 * RU + 6.35)) > 1e-6:
@@ -23531,14 +23541,30 @@ def check_rack_two_half_units(page, base):
     page.click('#mode [data-mode="3d"]')
     settle_scene(page, "3D: the two halves")
     t = page.evaluate(V4_3D_JS)
-    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    solids = item_solids(page)
     for iid in ("i1", "i2"):
         ki, d = k["items"][iid], t.get(iid) or {}
-        if d.get("y") is None or abs(d["y"] - ki["mid"]) > 1e-6 or abs(d["y"] - (solids[iid]["y0"] + solids[iid]["y1"]) / 2) > 1e-6:
+        if d.get("y") is None or abs(d["y"] - ki["mid"]) > 1e-6 or abs(d["y"] - (solids[iid]["y0"] + solids[iid]["y1"]) / 2) > (1.5 if solids[iid].get("pieces") else 1e-6):
             bad.append(f"3D: {iid}'s body is centred at {d.get('y')}; the kit's itemBox at {ki['mid']} and its solid at {(solids[iid]['y0'] + solids[iid]['y1']) / 2}")
         if sorted(d.get("heads") or []) != [ki["holes"][0]] * 2 and any(abs(y - ki["holes"][0]) > 1e-6 for y in d.get("heads") or [0]) or len(d.get("heads") or []) != 2:
             bad.append(f"3D: {iid}'s screw heads are at {d.get('heads')}, expected one a side at {ki['holes'][0]}")
     return bad
+
+
+def item_solids(page):
+    """Each item's solid in the 3D scene, as the kit's box. A device's solid is its envelope; a part the kit builds from a
+    body (the XCU patch panel since kit 0.48.0: a floor, two walls and a cover, open at the back and the front) has no
+    envelope, and is the box round the pieces it has, marked "pieces" (a box read to the millimetre in height: the scene's
+    own box leaves out a skin's thickness)."""
+    solids = {}
+    for s in page.evaluate("() => window.__rack.solids()"):
+        b = solids.get(s["item"])
+        if s["part"] == "envelope":
+            solids[s["item"]] = s["box"]
+        elif b is None or b.get("pieces"):
+            n = s["box"]
+            solids[s["item"]] = {"pieces": True, **(n if b is None else {k: (min if k.endswith("0") else max)(b[k], n[k]) for k in n})}
+    return solids
 
 
 # A version-3 file as the page saved one, with a key this page does not know at
@@ -23661,7 +23687,7 @@ def check_rack_v4_keys_kept(page, base):
         if text not in said:
             bad.append(f"v4: the kit's notice is not on the page: {text!r}")
     if "sw-upside-down: Mounted upside down. It is fitted, routed and exported that way, and drawn upright here." not in said \
-            or "outlet states or readings: they are kept in the file" not in said:
+            or "readings: they are kept in the file" not in said:
         bad.append(f"v4: the page does not say what it draws upright or does not draw: {said[-600:]!r}")
     # WHAT IT CAN DRAW, DRAWN RIGHT: the units number from startU, the holes are round, a quarter-rolled item is an outline.
     two = page.evaluate("""() => { const svg = document.querySelector('#paneFront svg');
@@ -23682,10 +23708,11 @@ def check_rack_v4_keys_kept(page, base):
     settle_scene(page, "3D: the version-4 rack")
     t = page.evaluate(V4_3D_JS)
     faceZ = page.evaluate("() => window.__rack.scene().metrics().faceZ")
-    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    solids = item_solids(page)
     for iid in ("i1", "i2", "i3", "i5"):
         b, d = solids[iid], t.get(iid) or {}
-        if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > 1e-6:
+        tol_y = 1.5 if b.get("pieces") else 1e-6
+        if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > tol_y:
             bad.append(f"3D: {iid} is at depth {None if d.get('z') is None else d['z'] - faceZ:.3f}, height {d.get('y')}; the kit's solid is centred at depth {(b['z0'] + b['z1']) / 2:.3f}, height {(b['y0'] + b['y1']) / 2:.3f}")
     if abs(solids["i1"]["z1"] - (-50)) > 1e-6 or abs(solids["i3"]["z1"] - (-12)) > 1e-6:
         bad.append(f"kit: the set-back faces are at {solids['i1']['z1']} and {solids['i3']['z1']}, expected 50 and 12 mm behind the rail")
@@ -24126,23 +24153,24 @@ def check_rack_kept_notices_follow_edits(page, base):
         until("after the assistant's quarter turn", has, kit[0])
     tool([{"op": "patch", "id": "i1", "roll": None}])
     until("after the quarter turn is taken off", lacks, "rolled a quarter turn")
-    # 3. AN OUTLET STATE, by the assistant (it has the parts lists): said, with the kit's sentence for a state that is not one; cleared: gone.
-    SET = "pdu-a carries outlet states or readings: they are kept in the file and written to the exports, and not drawn here yet."
+    # 3. AN OUTLET STATE, by the assistant (it has the parts lists): drawn now (settable.js), so nothing says it is not; cleared: still nothing.
+    SET = "pdu-a carries readings: they are kept in the file and written to the exports, and not drawn here yet."
     err = tool([{"op": "state.set", "id": "z1", "path": "outlet-a2", "state": "off"}])
     if err:
         bad.append(f"state.set was refused: {err}")
-    until("after state.set", has, SET)
+    page.wait_for_timeout(800)
+    until("after state.set", lacks, "not drawn here yet")
     if (page.evaluate("() => window.__rack.doc().racks[0].zeroU[0].states") or {}).get("outlet-a2") != "off":
         bad.append("state.set did not store the state")
     tool([{"op": "state.set", "id": "z1", "path": "outlet-a2", "state": None}])
-    until("after the state is cleared", lacks, "outlet states or readings")
+    until("after the state is cleared", lacks, "not drawn here yet")
     # 4. READINGS, by the assistant: the same sentence; cleared: gone.
     err = tool([{"op": "readings.set", "id": "z1", "readings": {"source": "snmp", "at": "2026-10-11T12:00:00Z", "values": {"outlet-a1": {"current-a": 1.2}}}}])
     if err:
         bad.append(f"readings.set was refused: {err}")
     until("after readings.set", has, SET)
     tool([{"op": "readings.set", "id": "z1", "readings": None}])
-    until("after the readings are cleared", lacks, "outlet states or readings")
+    until("after the readings are cleared", lacks, "carries readings")
     # 5. A HANG. No part in the library offers a slot yet, so zerou.hang cannot hang one; a rack that says a part
     # hangs (an edit that puts it there, as an opened file would) gets the kit's sentence, and loses it on undo.
     no = tool([{"op": "zerou.hang", "id": "z1", "on": ["z9"]}])
@@ -24162,6 +24190,359 @@ def check_rack_kept_notices_follow_edits(page, base):
     page.wait_for_timeout(500)
     if kept():
         bad.append(f"with every key taken off again, the panel still says {kept()}")
+    return bad
+
+
+# LAMPS, DIGITS, OUTLETS, BREAKERS AND DISPLAYS: the page's control and the assistant's tool set the same thing
+# and give the same document and the same drawing (kit 0.45.0, 0.47.0; R-0027). The public test rack is built
+# from library parts: a switch with LEDs, a device with seven-segment status digits and a beacon, two PDUs with
+# outlet lamps, breakers and the eNMC display.
+LAMPS_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "lamps-displays.rack.json"
+KEYSTONE_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "keystone-rear.rack.json"
+FIBRAIN_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "fibrain-coupler.rack.json"
+LOGO_SVG = (b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48"><rect width="64" height="48" fill="#10213f"/>'
+            b'<rect x="6" y="20" width="12" height="22" fill="#4aa3ff"/><rect x="26" y="10" width="12" height="32" fill="#4aa3ff"/></svg>')
+LOGO_URL = "data:image/svg+xml;base64," + __import__("base64").b64encode(LOGO_SVG).decode()
+# (what it is, entry, kind, path, value)
+SETTABLE_THINGS = [
+    ("a device LED (led-sys on a switch)", "i1", "state", "led-sys", "ok"),
+    ("a port link lamp", "i1", "state", "led-port-4/lamp", "on"),
+    ("status digits", "i1", "state", "status-display/digit-2", "4"),
+    ("a PDU outlet lamp", "z1", "state", "led-a1", "on"),
+    ("a PDU breaker", "z1", "state", "breaker-a/rocker", "off"),
+    ("a display's text", "z1", "text", "network-module/module/lcd", ["PDU A", "192.0.2.17", "OUTLET A  4.2 A"]),
+    ("a display's image", "z2", "image", "network-module/module/lcd", LOGO_URL),
+    ("a beacon's digits", "i2", "digits", "beacon", "1f"),
+]
+# What a drawing shows of an entry: the state classes by path, and the groups a display is painted in
+# (its clip's counter taken out, which is the only thing that differs between two paints).
+PAINTED_JS = """({id, scope}) => {
+  const sel = id.startsWith('z') ? `[data-zerou-id="${id}"]` : `[data-item-id="${id}"][data-panel]`;
+  const out = {states: {}, displays: []};
+  const read = (root, tag) => {
+    for (const e of root.querySelectorAll('[data-path]')) {
+      const c = [...e.classList].filter(x => x.startsWith('state-')).sort().join(' ');
+      if (c) out.states[tag + ':' + e.getAttribute('data-path')] = c;
+    }
+    for (const n of root.querySelectorAll('[data-portrayal-display]')) out.displays.push(tag + ':' + n.outerHTML.replace(/portrayal-display-clip-\\d+/g, 'clip'));
+  };
+  for (const pane of ['paneFront', 'paneRear']) for (const g of document.querySelectorAll(`#${pane} svg ${sel}`)) read(g, pane);
+  return out; }"""
+PAINTED_3D_JS = """async ids => {
+  const s = window.__rack.scene(), out = {};
+  for (const id of ids) for (const view of ['front', 'rear']) {
+    const text = await s.paintedText(id, view);
+    const div = document.createElement('div'); div.innerHTML = text || '';
+    const o = out[`${id}:${view}`] = {states: {}, displays: []};
+    for (const e of div.querySelectorAll('[data-path]')) {
+      const c = [...e.classList].filter(x => x.startsWith('state-')).sort().join(' ');
+      if (c) o.states[e.getAttribute('data-path')] = c;
+    }
+    for (const n of div.querySelectorAll('[data-portrayal-display]')) o.displays.push(n.outerHTML.replace(/portrayal-display-clip-\\d+/g, 'clip'));
+  }
+  return out; }"""
+
+
+def _bare(rack):
+    import copy
+    r = copy.deepcopy(rack)
+    for e in r["items"] + r["zeroU"]:
+        e.pop("states", None)
+        e.pop("displays", None)
+    return r
+
+
+def _click_entry(page, ident):
+    sel = (f'#paneRear svg [data-zerou-hit="{ident}"]' if ident.startswith("z") else f'#paneFront svg [data-item-id="{ident}"][data-panel]')
+    box = page.evaluate("s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }", sel)
+    page.mouse.click(box[0], box[1])
+
+
+def _ui_set(page, ident, kind, path, value):
+    """The page's own control: select the entry, pick the part, say what it is, press the button."""
+    _click_entry(page, ident)
+    if kind == "state":
+        page.wait_for_selector("#stPath", timeout=READY_MS)
+        page.select_option("#stPath", path)
+        page.select_option("#stState", value)
+        page.click("#stSet")
+        return
+    page.wait_for_selector("#dpPath", timeout=READY_MS)
+    page.select_option("#dpPath", path)
+    if kind == "text":
+        page.fill("#dpText", "\n".join(value))
+    elif kind == "digits":
+        page.fill("#dpDigits", value)
+    else:
+        page.set_input_files("#dpImage", files=[{"name": "logo.svg", "mimeType": "image/svg+xml", "buffer": LOGO_SVG}])
+    page.click("#dpSet")
+
+
+def _tool_command(ident, kind, path, value):
+    if kind == "state":
+        return {"op": "state.set", "id": ident, "path": path, "state": value}
+    content = {"text": value} if kind == "text" else {"digits": value} if kind == "digits" else {"image": value}
+    return {"op": "display.set", "id": ident, "path": path, "content": content}
+
+
+def _painted(page, ident):
+    return page.evaluate(PAINTED_JS, {"id": ident})
+
+
+def _wait_painted_differs(page, label, ident, was, timeout=READY_MS):
+    deadline = time.time() + timeout / 1000
+    while time.time() < deadline:
+        now = _painted(page, ident)
+        if now != was:
+            return now
+        page.wait_for_timeout(150)
+    raise RuntimeError(f"{label}: the drawing of {ident} did not change")
+
+
+def _open_bare(page, base, rack, items):
+    page.evaluate("r => window.__rack.replaceRack(r)", _bare(rack))
+    page.wait_for_function("n => document.querySelectorAll('#paneFront svg [data-item-id][data-panel]').length >= n", arg=items, timeout=READY_MS)
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.every(i => !i.states && !i.displays)", timeout=READY_MS)
+    page.wait_for_timeout(300)
+
+
+def _shot(page, name, selector, within, pad=8):
+    """With PORTRAYAL_SHOTS set, a picture of one part, the page zoomed in on it; nothing otherwise."""
+    folder = os.environ.get("PORTRAYAL_SHOTS")
+    if not folder:
+        return
+    for _ in range(6):
+        page.click("#zoomIn")
+    page.wait_for_timeout(800)
+    box = page.evaluate("""([s, w]) => { const e = document.querySelector(w).querySelector(s); if (!e) return null; e.scrollIntoView({block: 'center', inline: 'center'});
+      const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }""", [selector, within])
+    if box:
+        page.screenshot(path=str(pathlib.Path(folder) / name), clip={"x": max(0, box[0] - pad), "y": max(0, box[1] - pad), "width": box[2] + 2 * pad, "height": box[3] + 2 * pad})
+    page.click("#zoomFit")
+    page.wait_for_timeout(300)
+
+
+@extra("rack.html: a lamp, a status digit, an outlet lamp, a breaker and a display's text, image and digits are each set by the page's own control and by the assistant's tool, and both give the same rack file and the same drawing, in 2D and in 3D; the drawing shows what was set")
+def check_rack_lamps_and_displays_parity(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(LAMPS_FIXTURE.read_text())
+    rack = fixture["racks"][0]
+    open_fixture(page, base, fixture)
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "agent tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    # THE FILE AS OPENED draws what it says, with no control touched.
+    for ident, path, cls in (("i1", "led-sys", "state-ok"), ("i1", "status-display/digit-2", "state-4"), ("z1", "led-a1", "state-on")):
+        got = _painted(page, ident)["states"]
+        if not any(k.endswith(f":{path}") and v == cls for k, v in got.items()):
+            bad.append(f"opened: {ident} {path} is not drawn {cls}: {got}")
+    if not _painted(page, "z1")["displays"] or not _painted(page, "i2")["states"]:
+        bad.append("opened: the PDU's display text and the beacon's digits are not drawn")
+    n = len(rack["items"])
+    for what, ident, kind, path, value in SETTABLE_THINGS:
+        _open_bare(page, base, rack, n)
+        was = _painted(page, ident)
+        before = page.evaluate("() => window.__rack.doc().racks[0]")
+        try:
+            _ui_set(page, ident, kind, path, value)
+            ui_drawn = _wait_painted_differs(page, f"{what}: the page's control", ident, was)
+        except Exception as e:
+            bad.append(f"{what}: the page's control did not set it: {e}")
+            continue
+        ui_doc = page.evaluate("() => window.__rack.doc().racks[0]")
+        err = page.evaluate("() => document.querySelector('#stError, #settable .rk-error')?.textContent || ''")
+        if err:
+            bad.append(f"{what}: the page's control says {err!r}")
+        _shot(page, f"{ident}-{kind}-{path.replace('/', '_')}.png", f'[data-path="{path}"]', "#paneRear" if ident.startswith("z") else "#paneFront")
+        _open_bare(page, base, rack, n)
+        res = agent_call(page, "edit_rack", {"commands": [_tool_command(ident, kind, path, value)]})
+        if res.get("isError"):
+            bad.append(f"{what}: the assistant's tool was refused: {res['content'][0]['text']}")
+            continue
+        try:
+            tool_drawn = _wait_painted_differs(page, f"{what}: the assistant's tool", ident, was)
+        except Exception as e:
+            bad.append(f"{what}: the assistant's tool did not draw it: {e}")
+            continue
+        tool_doc = page.evaluate("() => window.__rack.doc().racks[0]")
+        if ui_doc != tool_doc:
+            bad.append(f"{what}: the rack file differs, control {json.dumps(ui_doc)[:300]} / tool {json.dumps(tool_doc)[:300]}")
+        if ui_drawn != tool_drawn:
+            bad.append(f"{what}: the drawing differs, control {json.dumps(ui_drawn)[:300]} / tool {json.dumps(tool_drawn)[:300]}")
+        if ui_doc == before:
+            bad.append(f"{what}: setting it changed nothing in the file")
+        # read back by the assistant
+        back = agent_call(page, "inspect", {"id": ident, "section": "displays" if kind != "state" else "settable"})
+        shown = back["content"][0]["text"]
+        if (kind == "state" and f"{path} {value}" not in shown) or (kind != "state" and "shows nothing" in shown):
+            bad.append(f"{what}: the assistant's read-back does not say it: {shown[:300]!r}")
+    # A PART THAT IS NO DISPLAY, and a state the part does not declare: refused by the tool, naming what the part has
+    # (the page's controls offer only what the part declares, so they cannot send either).
+    _open_bare(page, base, rack, n)
+    for cmd, words in (({"op": "display.set", "id": "i1", "path": "led-sys", "content": {"text": ["x"]}}, "is not a display"),
+                       ({"op": "state.set", "id": "i1", "path": "led-sys", "state": "purple"}, "it can be")):
+        r2 = agent_call(page, "edit_rack", {"commands": [cmd]})
+        said = r2["content"][0]["text"] if r2.get("content") else ""
+        if not r2.get("isError") or words not in said:
+            bad.append(f"{cmd['op']}: the tool did not refuse {cmd} in the kit's words: {said!r}")
+    # 3D: every thing set by the page's controls, then by the tool, and the textures are cut from the same text.
+    if webgl_trouble(page):
+        print("[check_rack_lamps_and_displays_parity] no WebGL here - the 3D half was not checked")
+        return bad
+    ids = ["i1", "i2", "z1", "z2"]
+    painted = {}
+    for route in ("control", "tool"):
+        _open_bare(page, base, rack, n)
+        for what, ident, kind, path, value in SETTABLE_THINGS:
+            if route == "control":
+                _ui_set(page, ident, kind, path, value)
+                page.wait_for_function("([id]) => { const d = window.__rack.doc().racks[0]; const e = [...d.items, ...d.zeroU].find(x => x.id === id); return !!(e.states || e.displays); }", arg=[ident], timeout=READY_MS)
+            else:
+                agent_call(page, "edit_rack", {"commands": [_tool_command(ident, kind, path, value)]})
+        page.click('#mode [data-mode="3d"]')
+        try:
+            settle_scene(page, f"3D: {route}")
+        except RuntimeError as e:
+            bad.append(str(e))
+            return bad
+        painted[route] = page.evaluate(PAINTED_3D_JS, ids)
+        painted[route + "-doc"] = page.evaluate("() => window.__rack.doc().racks[0]")
+        page.click('#mode [data-mode="2d"]')
+    if painted["control"] != painted["tool"]:
+        diff = [k for k in painted["control"] if painted["control"][k] != painted["tool"].get(k)]
+        bad.append(f"3D: the textures are cut from different text for {diff}")
+    if painted["control-doc"] != painted["tool-doc"]:
+        bad.append("3D: the rack file after every control differs from the file after every tool call")
+    got = painted["control"]
+    if "led-sys" not in got["i1:front"]["states"] or "led-a1" not in str(got["z1:rear"]["states"] | got["z1:front"]["states"]) \
+            or not (got["z1:rear"]["displays"] or got["z1:front"]["displays"]) or not (got["z2:rear"]["displays"] or got["z2:front"]["displays"]):
+        bad.append(f"3D: the texts hold no lamp, outlet lamp or display: {json.dumps(got)[:400]}")
+    # (and a mount's lamps are its own: the second PDU's outlet lamp was never set)
+    if "led-a1" in str(got["z2:rear"]["states"] | got["z2:front"]["states"]):
+        bad.append("3D: the second PDU's outlet lamp is lit, though only the first one was set")
+    return bad
+
+
+@extra("rack.html: a cable to a keystone module's rear jack (b1) and another to the same jack's front (p1) are both added by the page, drawn and routed; a cable to a rear jack on a part that has none is refused when it is added, by the page's command and by the assistant's tool")
+def check_rack_keystone_rear_jacks(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(KEYSTONE_FIXTURE.read_text())
+    open_fixture(page, base, fixture)
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "agent tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    page.wait_for_timeout(1500)       # the parts lists the add-time check reads, as the last draw read them
+    def pick(pane, owner, path):
+        box = page.evaluate("""([pane, owner, path]) => { const g = document.querySelector(`#${pane} svg ${owner}`);
+          const e = g && g.querySelector(`[data-path="${path}"], [data-of="${path}"]`); if (!e) return null;
+          const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""", [pane, owner, path])
+        if not box:
+            raise RuntimeError(f"{pane}: no {path} on {owner}")
+        page.mouse.click(box[0], box[1])
+    def add_by_clicks(first, second, label):
+        if page.get_attribute("#cableBtn", "aria-pressed") != "true":
+            page.click("#cableBtn")
+        page.wait_for_selector("#cableHelp", timeout=READY_MS)
+        pick(*first)
+        pick(*second)
+        page.wait_for_selector("#cSave", timeout=READY_MS)
+        page.select_option("#cMedia", "cat6")
+        page.click("#cSave")
+        page.wait_for_function("n => window.__rack.doc().racks[0].cables.length === n", arg=label, timeout=READY_MS)
+    try:
+        # the rear: the PDU's network card to the back of jack 1 (b1), both on the rear pane
+        add_by_clicks(("paneRear", '[data-zerou-id="z1"]', "network-module/module/eth0"),
+                      ("paneRear", '[data-item-id="i2"][data-panel]', "bay-1/module/b1"), 1)
+        # the front: jack 1 (p1) to the switch's management port
+        add_by_clicks(("paneFront", '[data-item-id="i2"][data-panel]', "bay-1/module/p1"),
+                      ("paneFront", '[data-item-id="i1"][data-panel]', "oob"), 2)
+    except Exception as e:
+        return bad + [f"keystone: a cable was not added by clicks: {e}"]
+    cables = page.evaluate("() => window.__rack.doc().racks[0].cables.map(c => ({a: c.a, b: c.b}))")
+    ends = sorted(f"{e['item']}/{e['path']}/{e['view']}" for c in cables for e in (c["a"], c["b"]))
+    if "i2/bay-1/module/b1/rear" not in ends or "i2/bay-1/module/p1/front" not in ends:
+        bad.append(f"keystone: the cables end on {ends}")
+    try:
+        page.wait_for_function("() => (window.__rack.routes() || []).length === 2", timeout=READY_MS)
+    except Exception:
+        bad.append(f"keystone: the cables are not both routed: {page.evaluate('() => (window.__rack.routes() || []).length')} routes")
+    if page.evaluate("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id], #paneRear svg [data-cables] [data-cable-id]').length") < 2:
+        bad.append("keystone: the cables are not drawn")
+    # REFUSED WHEN ADDED: the page's command (the cable form saves through it) and the assistant's tool, each with the kit's sentence
+    for label, cmd, words in (
+            ("a rear jack on a part that has none (the blank panel)", {"op": "cable.add", "a": {"item": "i1", "path": "console", "view": "front"},
+                                                                       "b": {"item": "i2", "path": "bay-2/module/b1", "view": "rear"}, "media": "cat6"}, ["no port b1"]),
+            ("the front jack asked for at the rear", {"op": "cable.add", "a": {"item": "i1", "path": "console", "view": "front"},
+                                                      "b": {"item": "i2", "path": "bay-1/module/p2", "view": "rear"}, "media": "cat6"}, ["p2", "front"])):
+        r1 = page.evaluate("c => window.__rack.apply(c).error ?? null", cmd)
+        r2 = agent_call(page, "edit_rack", {"commands": [cmd]})
+        t2 = r2["content"][0]["text"] if r2.get("content") else ""
+        if not r1 or not all(w in r1 for w in words):
+            bad.append(f"keystone: the page's command did not refuse {label} in the kit's words: {r1!r}")
+        if not r2.get("isError") or not all(w in t2 for w in words):
+            bad.append(f"keystone: the assistant's tool did not refuse {label} in the kit's words: {t2!r}")
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 2:
+        bad.append("keystone: a refused cable was added")
+    return bad
+
+
+@extra("rack.html: a Fibrain XCU's adapter takes a cable end on its outer face and another on its inner face, both added by the page's command and by the assistant's tool, the free-ports list gives the inner ends, both cables route in 2D and 3D, and a made-up adapter is refused")
+def check_rack_fibrain_coupler_ends(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_fixture(page, base, json.loads(FIBRAIN_FIXTURE.read_text()))
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "agent tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    page.wait_for_timeout(1500)       # the parts lists the add-time check reads, as the last draw read them
+    slot = "drawer/module/slot-1/module/"
+    # the list the assistant picks ends from: the drawing gives the outer ends, the catalogue the inner ones (no panel draws them)
+    for view, first in (("front", "sc01"), ("rear", "b01")):
+        listed = agent_call(page, "list_free_ports", {"id": "i1", "view": view})["content"][0]["text"]
+        if f"{slot}{first}" not in listed:
+            bad.append(f"fibrain: list_free_ports on the {view} does not list {slot}{first}: {listed[:300]!r}")
+    cable = lambda item, path, view: {"op": "cable.add", "a": {"item": item, "path": "pon", "view": "rear"},
+                                      "b": {"item": "i1", "path": slot + path, "view": view}, "media": "os2"}
+    err = page.evaluate("c => window.__rack.apply(c).error ?? null", cable("i2", "b01", "rear"))
+    if err:
+        bad.append(f"fibrain: the page's command refused a cable to the inner face: {err}")
+    res = agent_call(page, "edit_rack", {"commands": [cable("i3", "sc01", "front")]})
+    if res.get("isError"):
+        bad.append(f"fibrain: the assistant's tool refused a cable to the outer face: {res['content'][0]['text']}")
+    for path, view in (("sc99", "front"), ("b99", "rear")):
+        r1 = page.evaluate("c => window.__rack.apply(c).error ?? null", cable("i2", path, view))
+        r2 = agent_call(page, "edit_rack", {"commands": [cable("i3", path, view)]})
+        t2 = r2["content"][0]["text"] if r2.get("content") else ""
+        if not r1 or f"no port {path}" not in r1:
+            bad.append(f"fibrain: the page's command did not refuse {path} in the kit's words: {r1!r}")
+        if not r2.get("isError") or f"no port {path}" not in t2:
+            bad.append(f"fibrain: the assistant's tool did not refuse {path} in the kit's words: {t2!r}")
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 2:
+        bad.append("fibrain: the cables are not the two that were accepted")
+    try:
+        page.wait_for_function("() => (window.__rack.routes() || []).length === 2", timeout=READY_MS)
+    except Exception:
+        bad.append(f"fibrain: the cables are not both routed in 2D: {page.evaluate('() => (window.__rack.routes() || []).length')} routes")
+    if webgl_trouble(page):
+        print("[check_rack_fibrain_coupler_ends] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "fibrain 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    tubes = page.evaluate("() => (window.__rack.scene().rackCables?.tubes ?? []).filter(t => t.points?.length > 1).length")
+    if tubes != 2:
+        bad.append(f"fibrain 3D: {tubes} cables are hung, expected 2")
+    # THE PANEL'S BODY IS OPEN BEHIND THE ADAPTERS: a floor, two side walls and a cover, and no wall at the back or the front
+    parts = sorted(s["part"] for s in page.evaluate("() => window.__rack.solids()") if s["item"] == "i1")
+    if parts != ["interior/floor", "shell-top/cover", "side-left/wall", "side-right/wall"]:
+        bad.append(f"fibrain 3D: the panel's solids are {parts}, expected a floor, two side walls and a cover (open at the back and the front)")
     return bad
 
 

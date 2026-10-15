@@ -60,6 +60,24 @@ function chainIn(comp, steps, compByRef) {
   return out.length ? out : null;
 }
 
+// IS THE BACK OF A PART IN A BAY OF A MODULE REACHED FROM THE DEVICE'S OTHER
+// PANEL: only where every module the part sits in, from the device's bay down,
+// is a mechanical carrier (class `mechanical`: a drawer, a tray), which has
+// nothing of its own between the part and the back of the device. A card with
+// electronics (line card, riser) hides what its own bays hold. `bayId` is the
+// device's bay, `carrier` the path of the bay the part sits in. `R` is the
+// resolver of the item's seats.
+function carriedByMechanical(R, bayId, carrier, compByRef) {
+  if (carrier === bayId) return true;
+  const via = carrier.slice(bayId.length + MODULE.length).split(MODULE);
+  let path = bayId;
+  for (const id of via) {
+    if (partOf(compByRef, R.refAt(`${path}/module`))?.class !== 'mechanical') return false;
+    path = `${path}/module/${id}`;
+  }
+  return true;
+}
+
 // WHAT AN END THAT LANDS BY ITS SLOT IS (cable-rules.js receptacleOf), with
 // the plug the slot gives it (endPlug) and its name for a person. `comps` are
 // the components that could say what it is, the nearest first: a screw of a
@@ -110,15 +128,18 @@ export function seatedPort(item, end, ctx, {seen = false} = {}) {
   const env = slotEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
   const bay = env.bays.find(b => b.id === p.slice(0, first));
   if (!bay || !OTHER[bay.view]) return null;
+  const carrier = p.slice(0, cut), steps = p.slice(cut + MODULE.length).split('/');
   // ONLY A BAY THAT IS SPOKEN FOR: by the item's swaps, or by the
   // configuration's own list. configs.json lists every bay of the device, and
   // a device may give a bay to some configurations only (a double-width
   // power bay where another has two card slots), which it does not publish.
   // A bay nothing names reads as holding its default, and in a configuration
-  // that has no such bay the build draws nothing there.
-  if (!seen && !Object.hasOwn(swaps, bay.id) && env.built(bay.id) === undefined) return null;
+  // that has no such bay the build draws nothing there. A BAY OF A MODULE IN
+  // THE DEVICE'S BAY (a holder in a drawer's slot) is spoken for by its own
+  // path: a configuration that fills the slots does not name the drawer.
+  const named = id => Object.hasOwn(swaps, id) || env.built(id) !== undefined;
+  if (!seen && !named(bay.id) && !(carrier !== bay.id && named(carrier))) return null;
   const R = resolverFor(env, swaps);
-  const carrier = p.slice(0, cut), steps = p.slice(cut + MODULE.length).split('/');
   const ref = R.refAt(`${carrier}/module`);
   const base = {item: true, drawing: true, port: false, cage: false, occupied: false, onView: null, back: false};
   if (!ref) return R.entryAt(carrier) ? {...base, holder: {path: carrier, part: null, ref: null}} : null;
@@ -127,8 +148,12 @@ export function seatedPort(item, end, ctx, {seen = false} = {}) {
   const holder = {path: carrier, part: modelOf(comp, ref), ref: String(ref).split(':')[0]};
   const view = end.view === 'rear' ? 'rear' : 'front';
   const face = portIn(comp, steps, ctx.compByRef);
-  // only what sits in one of the device's own bays shows its back
-  const rear = carrier === bay.id ? partOf(ctx.compByRef, faceRef(comp.faces?.rear)) : null;
+  // only what sits in one of the device's own bays shows its back, and a
+  // PASSIVE PANEL in a bay of a mechanical carrier (a holder in a drawer's
+  // slot): the glass runs through the drawer, so each adapter has an end on
+  // the far panel too
+  const open = comp.class === 'adapter-panel' && carriedByMechanical(R, bay.id, carrier, ctx.compByRef);
+  const rear = carrier === bay.id || open ? partOf(ctx.compByRef, faceRef(comp.faces?.rear)) : null;
   const behind = rear ? portIn(rear, steps, ctx.compByRef) : null;
   const back = !!behind && view === OTHER[bay.view];
   const drawn = back ? behind : face && view === bay.view ? face : null;
@@ -154,6 +179,76 @@ export function seatedPort(item, end, ctx, {seen = false} = {}) {
   return {...base, port: true, onView: view, back, holder, cage: slot?.kind === 'cage',
           occupied: !!slot && holdsAt(env, swaps, p, {...slot, isCage: true}) != null,
           info: connectorOf({portMedia: drawn.attrs?.media || '', iface: slot?.interface || drawn.attrs?.connector || ''})};
+}
+
+// AN END THE CATALOGUE KNOWS TO BE LOOSE, said when the cable is made and not
+// later: a cable end under a bay whose seated part is known and has no port at
+// that path on that panel (seatedPort says `port: false` with a part held).
+// The sentence is the loose-end finding's own (looseReason), so a dry run, the
+// real add and the finding agree. An empty bay, a bay the catalogue cannot
+// answer for and an item whose parts lists are not loaded are not refused: the
+// end is kept as given and the page's drawing decides. Returns the first
+// reason, or null.
+//
+// A PORT A PASSIVE PANEL DOES NOT COMPOSE (a made-up `p9`, the rear of a panel
+// with no rear) is refused too, though seatedPort leaves it to the drawing: a
+// panel (class adapter-panel) has no port its contract does not compose, which
+// a card may (a test point only its skin draws). The panel may sit in a bay of
+// a module in the device's bay (a holder in a drawer's slot).
+export function seatedEndReason(rack, ends, ctx) {
+  for (const end of ends) {
+    const item = (rack.items || []).find(i => i.id === end.item);
+    if (!item || isElementId(end.path)) continue;
+    const own = seatedPort(item, end, ctx) ?? absentOnPanel(item, end, ctx);
+    // (a part at the path that takes no cable is the page's to call loose: a
+    // rack file may hold such an end on purpose)
+    if (!own || own.port || !own.holder?.part || own.part) continue;
+    const reason = looseReason(end, own);
+    if (reason) return reason;
+  }
+  return null;
+}
+function absentOnPanel(item, end, ctx) {
+  if (!loaded(ctx)) return null;
+  const p = portPathOf(end?.path ?? ''), first = p.indexOf(MODULE), cut = p.lastIndexOf(MODULE);
+  if (first < 0) return null;
+  const steps = p.slice(cut + MODULE.length).split('/');
+  const slots = ctx.slotsOf(item.ref);
+  if (steps.length !== 1 || !slots || slots.error) return null;
+  const env = slotEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
+  const bay = env.bays.find(b => b.id === p.slice(0, first)), carrier = p.slice(0, cut);
+  const named = id => Object.hasOwn(swaps, id) || env.built(id) !== undefined;
+  if (!bay || !OTHER[bay.view] || !(named(bay.id) || (carrier !== bay.id && named(carrier)))) return null;
+  const R = resolverFor(env, swaps), ref = R.refAt(`${carrier}/module`), comp = partOf(ctx.compByRef, ref);
+  if (!comp || comp.class !== 'adapter-panel' || portIdsOf(comp, ctx.compByRef).has(steps[0])
+      || !carriedByMechanical(R, bay.id, carrier, ctx.compByRef)) return null;
+  return {item: true, drawing: true, port: false, holder: {path: carrier, part: modelOf(comp, ref), ref: String(ref).split(':')[0]}};
+}
+
+// THE FAR END OF EVERY ADAPTER OF A PASSIVE PANEL IN A MECHANICAL CARRIER, from
+// the catalogue: a panel (class adapter-panel) seated in a bay of a drawer or a
+// tray that sits in a bay of the device has its adapters' other ends on the
+// panel opposite the bay's. A page that reads a drawing lists the backs of
+// what the device's own bays hold, where the host draws them; a holder in a
+// drawer is no bay of the device, so no panel draws its back, and this lists
+// them. [{path, view, media?}], the path `<bay>/module/<part>` of the part of
+// the panel's rear face, in natural order.
+export function backEnds(item, ctx) {
+  if (!item || !loaded(ctx)) return [];
+  const slots = ctx.slotsOf(item.ref);
+  if (!slots || slots.error) return [];
+  const env = shownEnv(item, slots, ctx.compByRef, ctx.redirects), swaps = item.swaps || {};
+  const R = resolverFor(env, swaps), out = [];
+  for (const b of slotTree(env, swaps).bays) {
+    const comp = b.holds ? partOf(ctx.compByRef, b.holds) : null;
+    if (comp?.class !== 'adapter-panel' || !OTHER[b.view] || !b.path.includes(MODULE)
+        || !carriedByMechanical(R, b.path.slice(0, b.path.indexOf(MODULE)), b.path, ctx.compByRef)) continue;
+    const rear = partOf(ctx.compByRef, faceRef(comp.faces?.rear));
+    for (const q of list(rear?.parts))
+      if (partOf(ctx.compByRef, q.ref)?.class === 'port')
+        out.push({path: `${b.path}/module/${q.id}`, view: OTHER[b.view], media: q.attrs?.media ?? partOf(ctx.compByRef, q.ref)?.attrs?.media ?? null});
+  }
+  return out.sort((a, b) => natural.compare(a.path, b.path));
 }
 
 // ── what a DCIM calls the port ─────────────────────────────────────────────

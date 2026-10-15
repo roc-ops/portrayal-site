@@ -10,10 +10,11 @@ import {uLabel, zeroUOf, zeroUBottom, firstU, holderOf, rollOf, uText} from './m
 import {whereText, carriesLane} from './zero-u.js';
 import {portFree, endKey, proposeMedia, mismatch, endName, carriedU, portPathOf, matches, lengthText, isElementId, addressFor, portLabel,
         takesCableEnd, receptacleOf, endKind, connectorName, endPlug, couplerRole} from './cable-rules.js';
-import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds} from './ports.js';
+import {seatedPort, settleEnds, shownEnv, cableEndPaths, zeroUEnds, backEnds} from './ports.js';
 import {zeroUById, zeroUBottomMm} from './model.js';
 import {RU} from './rails.js';
 import {configFacts} from './catalog.js';
+import {settableOf} from './states.js';
 import {waypointLanesOf, pathwaysOf, resolveRoute, pathLength, routePath, routeText, bendFindingsOf, coverFindingsOf, ringFindingsOf, ductsThrough,
   zeroUPathways, pathwaysAt, windowsOf} from './route.js';
 import {catalogEntries} from './catalog.js';
@@ -25,6 +26,7 @@ import {bundleCheck, bundleOfCable, membersText, spacingText, strapSpacing, stra
 import {slotEnv, slotTree, partName, partOf, resolverFor} from './slots.js';
 import {auditRack, readAsTexts, unknownTexts} from '../redirects.js';
 import {fieldRows} from '../fields.js';
+import {displayList} from './displays.js';
 
 export function fitsAt(rack, {ref, face, ru}, {chassisOf}) {
   const spot = isRackFace(chassisOf(ref)) ? placement(rack, {face, ru}, chassisOf) : {face, ru};
@@ -320,6 +322,13 @@ export async function freePorts(rack, itemId, ctx, {kinds = null, type = null, n
       if (!portFree(rack, {item: itemId, path, view}).ok) continue;
       out.push({path, view, label: portLabel(path), media: p.media ?? null, speed: p.speed ?? null});
     }
+    // the far ends of a passive panel's adapters, which no panel of the device
+    // draws when the panel sits in a drawer (ports.js backEnds)
+    if (want('data')) for (const e of backEnds(item, {slotsOf, compByRef, redirects}).filter(x => x.view === view)) {
+      if (seen.has(`${view}|${e.path}`) || !portFree(rack, {item: itemId, path: e.path, view}).ok) continue;
+      seen.add(`${view}|${e.path}`);
+      out.push({path: e.path, view, label: portLabel(e.path), media: e.media ?? null, speed: null});
+    }
     // the catalogue's ends the reader did not hand in (above)
     if (!(want('power') || want('ground') || want('other'))) continue;
     for (const e of slotEnds(item, {slotsOf, compByRef, redirects}).filter(x => x.view === view)) {
@@ -427,6 +436,19 @@ const capacityFact = c => (c?.capacity?.count != null
   ? {capacity: {count: c.capacity.count, basis: c.capacity.basis ?? '', media: c.capacity.media ?? null,
                 ...(c.capacity.estimated === true ? {estimated: true} : {})}} : {});
 
+// WHAT AN ENTRY'S PARTS CAN BE SET TO, and what it is set to (P-0041), for
+// `inspect` of a device or a part beside the rack: `settable` is
+// `[{can: [names], paths: [...]}]`, the lamps, outlets and breakers its
+// configuration declares grouped by vocabulary (`state.set` takes any path
+// listed); `states` is what the entry is set to now. Each is left out when
+// there is none, and `settable` when the parts list is not loaded.
+function settableFacts(entry, ctx) {
+  const facts = typeof ctx.slotsOf === 'function' ? configFacts(ctx.slotsOf(entry.ref), entry.cfg) : null;
+  const settable = settableOf(facts);
+  const set = entry.states && typeof entry.states === 'object' && Object.keys(entry.states).length ? entry.states : null;
+  return {...(settable.length ? {settable} : {}), ...(set ? {states: {...set}} : {})};
+}
+
 function itemFacts(rack, item, ctx) {
   const c = ctx.chassisOf?.(item.ref) || null;
   const slots = typeof ctx.slotsOf === 'function' ? ctx.slotsOf(item.ref) : null;
@@ -441,6 +463,7 @@ function itemFacts(rack, item, ctx) {
   // its rings, ducts, pass-throughs and trays, and which hold spare (issue 1)
   const ways = pathwayFacts(rack, item.id, ctx);
   if (ways.length) out.pathways = ways;
+  Object.assign(out, settableFacts(item, ctx));
   // A DEVICE OF A HEIGHT THAT IS NO WHOLE NUMBER OF UNITS may start on a
   // whole unit or on a half, and whether its ears meet the rail holes there
   // is checked only when the catalogue states its ear slot heights. None
@@ -458,6 +481,9 @@ function itemFacts(rack, item, ctx) {
     const parts = [...tree.bays.map(b => [`${b.path}/module`, b.holds]), ...tree.cages.map(g => [`${g.path}-occupant`, g.holds])];
     out.fields = parts.flatMap(([path, ref]) => fieldRows(partOf(ctx.compByRef, ref)?.fields, item.fields?.[path])
       .map(r => ({path, key: r.key, type: r.type, value: r.value, default: r.default, ...(r.type === 'choice' ? {choices: r.options} : {})})));
+    // its displays and what each shows - what `display.set` takes
+    const shown = displayList(rack, ctx, item.id);
+    if (shown.length) out.displays = shown.map(({item: _i, ...d}) => d);
   }
   // A REF THE LIBRARY HAS REPLACED IS READ AS ITS REPLACEMENT, and a ref it no
   // longer has is kept and named (kit/redirects.js): the file is not changed
@@ -659,8 +685,16 @@ function zeroUFacts(rack, z, ctx) {
     // ITS ENDS (P-0019): each outlet a cable can end on, by type, the unit
     // it stands at and the cable on it (null when free), from the catalogue
     // and the cables on it, when there are any
-    ...zeroUEndFacts(rack, z, ctx), ...(on.length ? {cables: on} : {})};
+    ...zeroUEndFacts(rack, z, ctx), ...(on.length ? {cables: on} : {}), ...settableFacts(z, ctx),
+    ...(shownOn(rack, z, ctx).length ? {displays: shownOn(rack, z, ctx)} : {})};
 }
+const shownOn = (rack, z, ctx) => displayList(rack, ctx, z.id).map(({item: _i, ...d}) => d);
+
+// WHICH PARTS ARE DISPLAYS, and what each shows: every display of every device
+// and part beside the rack (or those of `item`) that says what kind it is, as
+// {item, path, kind, columns, rows, takes, text, shows}. A device whose parts
+// list is not loaded is skipped. What `display.set` takes the path from.
+export const displays = (rack, ctx = {}, {item} = {}) => displayList(rack, ctx, item ?? null);
 function zeroUEndFacts(rack, z, ctx) {
   if (typeof ctx.slotsOf !== 'function' || typeof ctx.compByRef !== 'function') return {};
   const ends = zeroUEnds(z, ctx);

@@ -33,6 +33,7 @@ const ARG_WORDS = {
   holes: 'The rail holes: {style, thread}: square or tapped, and the thread of tapped holes.',
   swaps: 'Replaces every swap: {slot path: part ref}. To change one slot, use fit.',
   fields: 'Replaces every field: {part path: {key: value}}. To set one, use field.',
+  content: 'What it shows: {text: [lines]}, {digits: "04"} or {image: data URL or library path}; null clears.',
 };
 const ARG_WORDS_BY_OP = {
   // kit 0.22.0 (rack file version 4): a held device is kept and freed; none can be put on a host yet
@@ -199,11 +200,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         }
       }),
     tool('inspect', 'Inspect a device or cable',
-      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields and cables. A cable: its ends, media, length, routed length, stock size and spare, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
+      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields, what state.set and display.set take, and cables. A cable: its ends, media, length, routed length, stock size and spare, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
       {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
        ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
        cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
-       section: {type: 'string', enum: INSPECT_SECTIONS, description: 'Where a page starts: bays, cages, fields or cables. The start when left out.'},
+       section: {type: 'string', enum: INSPECT_SECTIONS, description: 'Where a page starts: bays, cages, fields, settable, displays or cables. The start when left out.'},
        offset: {type: 'integer', minimum: 0, description: 'Where in section the page starts; 0 when left out.'}},
       [], UNTRUSTED,
       async ({id, ref, cfg, section, offset}) => {

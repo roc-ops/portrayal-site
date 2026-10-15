@@ -15,13 +15,15 @@ import {ownRoute, autoRoute, routedLength, pointOf, portPoint, routePath} from '
 import {fits, fitsDepth, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU, setbackOf, isZeroUPart} from './fit.js';
 import {whereText, zeroUName, fitsHang, hangingOn} from './zero-u.js';
 import {stateRefusal} from './states.js';
+import {displayRefusal, displaysOf} from './displays.js';
+import {shapeRefusal, contentNotes, contentKind} from '../displays.js';
 import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
-import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
+import {portIdsOf, zeroUEnds, zeroUEndsText, seatedEndReason} from './ports.js';
 import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, waypointLanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
@@ -546,6 +548,40 @@ function readingsSet(rack, {id, readings}, ctx) {
   return done(withEntry(rack, id, {...rest, readings: structuredClone(readings)}), `Stored the readings of ${name}.`);
 }
 
+// WHAT A DISPLAY SHOWS (docs/display-content-design.md), on a device or on a
+// part beside the rack, by the path of the display. The content is checked
+// against the display when the parts lists are loaded: a part that is no
+// display, and content the display cannot take, are refused with a sentence;
+// text longer than the display, or a picture that does not fill its window,
+// is kept and said.
+function displaySet(rack, {id, path, content}, ctx) {
+  const e = entryOf(rack, id);
+  if (!e) return {error: GONE};
+  const had = e.displays && typeof e.displays === 'object' ? e.displays : {};
+  const name = entryName(e, ctx.chassisOf);
+  if (content == null) {
+    if (!Object.hasOwn(had, path)) return unchanged(rack);
+    const {[path]: _was, ...rest} = had;
+    const {displays: _d, ...bare} = e;
+    return done(withEntry(rack, id, Object.keys(rest).length ? {...e, displays: rest} : bare), `Cleared what ${path} on ${name} shows.`);
+  }
+  const bad = shapeRefusal(content);
+  if (bad) return {error: bad};
+  const s = slotsFor(ctx, e.ref);
+  if (s?.error) return s;
+  let notes = [];
+  if (s) {
+    const no = displayRefusal({...e, label: name}, path, content, ctx);
+    if (no) return {error: no};
+    const d = displaysOf(e, ctx)?.find(x => x.path === path);
+    notes = d ? contentNotes(d, content, `${path} on ${name}`) : [];
+  }
+  if (same(had[path], content)) return unchanged(rack);
+  const shown = {text: 'text', digits: `"${content.digits}"`, image: 'an image'}[contentKind(content)];
+  return done(withEntry(rack, id, {...e, displays: {...had, [path]: structuredClone(content)}}),
+    `${path} on ${name} now shows ${shown}.${notes.length ? ` ${notes.join(' ')}` : ''}`, {findings: notes.map(note)});
+}
+
 // What a frame change did to the parts beside the rack, as sentences.
 function zeroUSaid({moved, removed}, chassisOf) {
   const names = list => list.map(z => zeroUName(z, chassisOf)).join(', ');
@@ -659,10 +695,16 @@ function zeroUEndRefused(rack, ends, ctx) {
   }
   return null;
 }
+// AN END ON A VIEW OR PORT THAT A SEATED PART DOES NOT HAVE is refused with the
+// sentence the loose-end finding gives (ports.js seatedEndReason).
+function seatedEndRefused(rack, ends, ctx) {
+  const why = seatedEndReason(rack, ends, ctx);
+  return why ? {error: `${why}.`} : null;
+}
 function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, ctx) {
   const {chassisOf} = ctx;
   if (!hasEnd(rack, a.item) || !hasEnd(rack, b.item)) return {error: NOT_ADDED};
-  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx);
+  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx) ?? seatedEndRefused(rack, [a, b], ctx);
   if (refused) return refused;
   const tint = parseColor(color);
   if (!tint.ok) return {error: tint.reason};
@@ -685,7 +727,8 @@ function cableUpdate(rack, {id, a, b, ...p}, ctx) {
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
   if (moved.some(k => !hasEnd(rack, ends[k].item))) return {error: GONE};
-  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx);
+  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx)
+    ?? seatedEndRefused(rack, moved.map(k => ends[k]), ctx);
   if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
@@ -1368,13 +1411,20 @@ export const COMMANDS = {
     args: args(['id', 'on'], {id: ID('part beside the rack'),
       on: {type: ['array', 'null'], minItems: 1, description: 'The ids of the brackets that hold it, or null to take it off them.',
         items: {type: 'string', minLength: 1, description: 'A bracket id, or "@name" from earlier in this batch.'}}})},
-  'state.set': {run: stateSet, description: 'Set what one part of a placed device or of a part beside the rack is, such as an outlet of a PDU on or off; null clears it. Refused, with what the part can be, when it declares no such state.',
+  'state.set': {run: stateSet, description: 'Set what one part of a placed device or of a part beside the rack is, such as a status lamp lit, a port lamp up, a PSU or fan lamp ok, or an outlet of a PDU on or off; null clears it. `inspect` of the device lists every path it can set and what each can be (`settable`). Refused, with what the device does declare, when the path or the state is not one of them.',
     args: args(['id', 'path', 'state'], {id: ID('device or part beside the rack'),
-      path: {type: 'string', minLength: 1, description: 'The part, by its path on the device (e.g. outlet-a1).'},
+      path: {type: 'string', minLength: 1, description: 'The part, by its path on the device, as `inspect` lists it under settable (e.g. led-sys, led-port-3, outlet-a1).'},
       state: {type: ['string', 'null'], minLength: 1, description: 'The state name, as the part declares it (e.g. on, off); null to clear.'}})},
   'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
     args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
       readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
+  'display.set': {run: displaySet, description: 'Set what a display of a placed device or of a part beside the rack shows: text (lines, cut to its columns and rows), digits (a segment display) or an image (fitted to the window; a GIF shows its first frame); null clears it. Refused, with the displays it has, when the path is no display or the display cannot show that. The displays query lists them.',
+    args: args(['id', 'path', 'content'], {id: ID('device or part beside the rack'),
+      path: {type: 'string', minLength: 1, description: 'The display, by its path as the displays query lists it (e.g. network-module/module/lcd).'},
+      content: {type: ['object', 'null'], additionalProperties: false, description: 'One of text, digits or image; null to clear.',
+        properties: {text: {type: 'array', items: {type: 'string'}, description: 'The lines of text, for a pixel or character display.'},
+                     digits: {type: 'string', description: 'The digits of a segment display: 0 to 9, a to f, a space for blank; right-aligned.'},
+                     image: {type: 'string', minLength: 1, description: 'A data URL of an SVG, PNG, JPEG or GIF up to 512 KiB, or a library asset path.'}}}})},
   'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack. Its cables (the cords on a PDU\'s outlets) are kept as loose ends, or removed with it.',
     args: args(['id'], {id: ID('part beside the rack'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
   'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',

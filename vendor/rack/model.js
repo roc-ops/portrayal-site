@@ -8,6 +8,7 @@
 
 import {RU} from './rails.js';
 import {hexColor} from './cable-geometry.js';
+import {shapeRefusal} from '../displays.js';
 
 export const FORMAT = 'portrayal-rack';
 // Zero-U parts and `side` (#926) did not raise it: both are optional keys a
@@ -43,7 +44,7 @@ const unknownOf = (o, known) => Object.fromEntries(Object.entries(o && typeof o 
   .filter(([k]) => !known.includes(k)).map(([k, v]) => [k, structuredClone(v)]));
 const FRAME_KEYS = ['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref', 'startU', 'setback', 'width'];
 const ITEM_KEYS = ['id', 'ref', 'cfg', 'label', 'ru', 'face', 'turned', 'swaps', 'fields', 'on', 'unit', 'side', 'setback', 'roll',
-                   'states', 'readings', 'readingsAsWritten'];
+                   'states', 'readings', 'readingsAsWritten', 'displays'];
 const RACK_KEYS = ['id', 'name', 'frame', 'items', 'zeroU', 'cables', 'dcim', 'bundles'];
 const DOC_KEYS = ['format', 'version', 'id', 'racks'];
 // The rail hole styles. `round` (version 4) is an unthreaded round hole.
@@ -295,6 +296,21 @@ function readSettings(src, who, said) {
       said?.(`${Object.keys(dropped).join(', ')} on ${who} had a state that is not a name, so ${Object.keys(dropped).length === 1 ? 'it was' : 'they were'} dropped.`);
     if (plainRecord(src.states)) out.states = kept;
   }
+  // WHAT A DISPLAY SHOWS (docs/display-content-design.md): a map of part path
+  // to its content, read entry by entry as `states` is. An entry that is none
+  // of {text: [lines]}, {digits: text}, {image: text} is dropped and said. Whether
+  // the part is a display, and can show it, is for rack/displays.js, which can
+  // see the device.
+  if ('displays' in src) {
+    const kept = {}, dropped = [];
+    for (const [k, v] of Object.entries(plainRecord(src.displays) ? src.displays : {})) {
+      if (k && !shapeRefusal(v)) kept[k] = v; else dropped.push(k);
+    }
+    if (!plainRecord(src.displays)) said?.(`The displays of ${who} were not a map of part to what it shows, so they were dropped.`);
+    else if (dropped.length)
+      said?.(`${dropped.join(', ')} on ${who} had content that is not text, digits or an image, so ${dropped.length === 1 ? 'it was' : 'they were'} dropped.`);
+    if (plainRecord(src.displays) && Object.keys(kept).length) out.displays = structuredClone(kept);
+  }
   // `readings: null` says there are none, and is no key at all
   if (src.readings != null) {
     const r = src.readings;
@@ -335,7 +351,7 @@ function readZeroU(list, said) {
     if (typeof z.id !== 'string' || !z.id || seen.has(z.id)) z.id = nextId([...taken, ...[...seen].map(id => ({id}))], 'z');
     seen.add(z.id);
     // what it is set to is read as on an item; where it stands is kept as written
-    const {states: _s, readings: _r, readingsAsWritten: _w, ...rest} = z;
+    const {states: _s, readings: _r, readingsAsWritten: _w, displays: _d, ...rest} = z;
     return {...rest, ...readSettings(z, String(z.label ?? z.ref ?? z.id), said)};
   });
 }

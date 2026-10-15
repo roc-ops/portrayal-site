@@ -27,6 +27,7 @@ import { nestedBays, applyOverrides, applyOccupantOverrides, applyRearOverrides,
 import { jdist, faceFile, distResolver } from './dist.js';
 import { paintFields, unpaintFields, fieldRows, fieldAccepts, decodeFields, drawnField,
          adjustmentsOf, adjustmentAccepts, paintAdjustments } from './fields.js';
+import { paintDisplays } from './displays.js';
 import { fibreOf, farPath, fibreLabel, connectorLabel, moduleOf } from './optical.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -207,7 +208,7 @@ export function createShell(opts = {}) {
   // listings.json, or null for the hardware's own (#709). It never changes
   // what is drawn - a listing draws nothing - only whose box this is.
   const state = {device: null, listing: null, cfg: null, view: null, module: null, sel: null,
-                 svg: null, meta: null, cfgBays: {}, cfgOccupants: {}, cfgFields: {},
+                 svg: null, meta: null, cfgBays: {}, cfgOccupants: {}, cfgFields: {}, cfgDisplays: {},
                  // {slot path: turn} - the configuration's `turn:`s, then the
                  // reader's (#829); a slot absent takes the build's default
                  cfgTurns: {},
@@ -1693,7 +1694,7 @@ export function createShell(opts = {}) {
       // the mounted face may have arrived for this view while it loaded
       store: (view, face) => !state.faces[view] && !!(state.faces[view] = face),
     // a face that arrives here knows only what the build drew (#811)
-    }).then(n => { repaintFields(); return n; });
+    }).then(n => { repaintFields(); repaintDisplays(); return n; });
   }
 
   // THE TREE AGAIN, WITH THE READER STILL IN IT. refreshTree draws every fold
@@ -1832,6 +1833,7 @@ export function createShell(opts = {}) {
     el.status.textContent = state.module ? '' :
       `${(state.meta.bays[bayView()] || []).length} bays`;
     repaintFields();
+    repaintDisplays();
     emit('load', svg);
   }
 
@@ -1900,6 +1902,7 @@ export function createShell(opts = {}) {
     state.refused = {};
     state.failed = {};
     state.cfgFields = {};
+    state.cfgDisplays = {};
     for (const k of Object.keys(builtFields)) delete builtFields[k];
   }
 
@@ -2152,6 +2155,28 @@ export function createShell(opts = {}) {
     // and its members stand where the session put them
     moveAdjusted();
   }
+  // WHAT A DISPLAY SHOWS in the 2D drawings (docs/display-content-design.md):
+  // `setDisplays({'network-module/module/lcd': {text: ['192.0.2.7']}})`, the
+  // whole map each time and {} clears. The content is painted flat on the
+  // display's window and, for a segment display, as the state of each digit;
+  // the rule is displays.js's, shared with the 3D side, and the host mirrors
+  // the same map into the 3D viewer's setDisplays. A path this device does not
+  // draw is kept and painted when a face that has it arrives. Answers the
+  // paths drawn on the faces held now.
+  function setDisplays(map) {
+    state.cfgDisplays = {};
+    for (const [k, v] of Object.entries(map || {}))
+      if (k && v && typeof v === 'object') state.cfgDisplays[k] = structuredClone(v);
+    const drew = repaintDisplays();
+    emit('displays', {all: state.cfgDisplays, drew});
+    emit('change');
+    return drew;
+  }
+  function repaintDisplays() {
+    const drew = [];
+    for (const d of faceDocs()) drew.push(...Object.keys(paintDisplays(d, state.cfgDisplays)));
+    return [...new Set(drew)];
+  }
   // A PART THAT HAS BEEN SWAPPED OUT TAKES ITS FIELDS WITH IT: a rating set on
   // one breaker says nothing about the fuse holder that replaced it.
   function dropFieldsUnder(key) {
@@ -2192,7 +2217,7 @@ export function createShell(opts = {}) {
   }
 
   return {
-    state, el, ready, on, emit, setFields, fieldsOf, resetField, applyFields,
+    state, el, ready, on, emit, setFields, fieldsOf, resetField, applyFields, setDisplays,
     select, fit, refreshTree, loadFaces, loadDevice, loadStage, openModule, swapBay,
     swapCage, cageFor, applySwaps, swapDelta,
     // a seated lug's turn (#829): set one, apply a link's, the URL's delta,
