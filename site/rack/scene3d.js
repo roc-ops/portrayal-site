@@ -26,7 +26,7 @@ import {clearCurve, tightText, insideOf, radiusOf} from './bend3d.js';
 import {landedBends, bendPoints, widthLookup} from './route-context.js';
 import {coverPathsOf, takeCovers, COVERS_DEFAULT} from './covers.js';
 import {LOOP_PAINT, LOOP_LONG, LOOP_SHORT, loopScale, loopTitle} from './spare-loops.js';
-import {paintLanded3d} from './hover.js';
+import {paintLanded3d, portKey} from './hover.js';
 
 const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D only.";
 
@@ -708,6 +708,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // its mounts (rack3d.js `share`): nothing of it is dimmed, lit or painted for
   // itself, so its mounts can share one set of materials.
   const cabledItems = new Set((rack.cables || []).flatMap(c => [c.a?.item, c.b?.item]));
+  const cabledEnds = new Set((rack.cables || []).flatMap(c => [c.a, c.b]).filter(Boolean).map(e => portKey(e.item, e.path)));
   const plain = (id, overrides, fields) => !cabledItems.has(id) && !Object.keys(overrides || {}).length && !Object.keys(fields || {}).length;
   const stack = rack.items.map(item => ({
     id: item.id,
@@ -797,6 +798,8 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
       // is dragged or zoomed the devices' relief is left out, and drawn again
       // at rest. MOTION_LOD, above, switches it off.
       lightWhileMoving: MOTION_LOD,
+      // (but a cabled end's port and plug stay drawn: a cord does not end in the air; the ends hover.js dims by)
+      keepWhileMoving: (id, path) => !!path && cabledEnds.has(portKey(id, path)),
       onMount: ({id}) => { placeZeroU(built, sideParts.filter(z => z.id === id), chassisOf); placeSided(built, rack.items.filter(i => i.id === id), chassisOf); },
     });
     onScene?.(built);

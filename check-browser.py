@@ -20889,6 +20889,120 @@ def light_moving_run(page, base, name, throttle):
     return bad
 
 
+# A CORD'S PLUG STAYS DRAWN WHILE THE CAMERA MOVES (S-0055): a switch with two power
+# cords up to two zero-U PDUs. The meshes of each cabled end (the ones hover.js dims
+# by: a part path, `-occupant` for the plug itself) are read off the scene, and
+# drawn with the end's own meshes hidden or not, from a pose behind the rack, the
+# pixels that change are the plug's.
+PLUG_MOVING_RACK = {
+    "format": "portrayal-rack", "version": 4, "id": "plug-moving", "racks": [{
+        "id": "r1", "name": "Plug moving",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                  "railDepth": 900, "usableDepth": 1100, "ref": None},
+        "items": [{"id": "i2", "ref": "s9601-102xc", "cfg": "ac", "ru": 41, "face": "front", "turned": False, "setback": 25, "label": "Device at U41"}],
+        "zeroU": [{"id": "z3", "ref": "evma8365x", "cfg": "base", "label": "PDU-A", "at": "left-rear", "offsetMm": 0},
+                  {"id": "z4", "ref": "evma8365x", "cfg": "base", "label": "PDU-B", "at": "right-rear", "offsetMm": 0}],
+        "cables": [{"id": f"c{n}", "a": {"item": "i2", "path": f"psu-{n - 1}/module/inlet", "view": "rear"},
+                    "b": {"item": z, "path": "outlet-f42", "view": "front"}, "media": "power", "purpose": "", "label": "",
+                    "route": [], "routeEdited": False, "length": {"value": 1, "unit": "m", "source": "entered"}}
+                   for n, z in ((1, "z3"), (2, "z4"))],
+        "bundles": []}]}
+
+PLUG_STATE_JS = """() => {
+  const s = window.__rack.scene(), {scene: w, camera} = s.three;
+  const ends = new Set();
+  for (const c of window.__rack.doc().racks[0].cables) for (const e of [c.a, c.b]) if (e) ends.add(e.item + '|' + String(e.path).split('-occupant')[0]);
+  let plugs = 0, drawn = 0, relief = 0;
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    const id = d.name.slice(7);
+    d.traverse(o => {
+      if (!o.isMesh) return;
+      const p = o.userData?.portrayalPath;
+      if (p && ends.has(id + '|' + String(p).split('-occupant')[0])) { plugs++; if (camera.layers.test(o.layers)) drawn++; }
+      else if (o.layers.mask === 2) relief++;
+    });
+  }
+  return {mask: camera.layers.mask, plugs, drawn, relief, calls: window.__calls?.at(-1) ?? null};
+}"""
+
+# (the frame drawn from behind the rack with the cabled ends' meshes hidden and shown: how many pixels differ)
+PLUG_PIXELS_JS = """() => {
+  const s = window.__rack.scene(), {scene: w, camera, renderer, controls, THREE} = s.three;
+  const ends = new Set(), ms = [];
+  for (const c of window.__rack.doc().racks[0].cables) for (const e of [c.a, c.b]) if (e) ends.add(e.item + '|' + String(e.path).split('-occupant')[0]);
+  for (const d of w.children) {
+    if (!d.name?.startsWith('device-')) continue;
+    d.traverse(o => { const p = o.userData?.portrayalPath; if (o.isMesh && p && String(p).includes('occupant') && ends.has(d.name.slice(7) + '|' + String(p).split('-occupant')[0])) ms.push(o); });
+  }
+  const box = new THREE.Box3();
+  for (const o of ms) { o.updateWorldMatrix(true, false); box.union(new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position).applyMatrix4(o.matrixWorld)); }
+  const t = box.getCenter(new THREE.Vector3());
+  controls.enableDamping = false; controls.target.copy(t); camera.position.set(t.x - 350, t.y + 150, t.z - 450); camera.lookAt(t); controls.update(); camera.updateMatrixWorld();
+  const cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently: true});
+  const snap = () => { renderer.render(w, camera); cv.width = renderer.domElement.width; cv.height = renderer.domElement.height; cx.drawImage(renderer.domElement, 0, 0); return cx.getImageData(0, 0, cv.width, cv.height).data; };
+  const a = snap(); for (const o of ms) o.visible = false; const b = snap(); for (const o of ms) o.visible = true;
+  let diff = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) + Math.abs(a[i+1] - b[i+1]) + Math.abs(a[i+2] - b[i+2]) > 12) diff++;
+  return {mask: camera.layers.mask, diff, meshes: ms.length};
+}"""
+
+
+@extra("rack.html: while the 3D camera is dragged a cabled port's plug stays drawn (on the common layer, in the frame) with the rest of the relief left out, and at rest the plug is drawn as well (S-0055)")
+def check_rack_3d_plugs_moving(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_plugs_moving] no WebGL here - not exercised")
+        return bad
+    rack = PLUG_MOVING_RACK["racks"][0]
+    load_rack_3d_ready(page, base, rack)
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the plugs scene", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    # (the detail comes after the cables: the plugs are in once the cabled ends' meshes are there)
+    try:
+        wait_fn(page, "the cabled ends' plugs", "() => { const s = window.__rack.scene(); let n = 0; for (const d of s.three.scene.children) d.traverse?.(o => { if (o.isMesh && String(o.userData?.portrayalPath || '').includes('-occupant')) n++; }); return n >= 40; }", timeout=READY_3D_MS)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    park_mouse(page)
+    page.evaluate("""() => { const s = window.__rack.scene(), r = s.three.renderer; window.__calls = [];
+      const own = r.render.bind(r); r.render = (a, b) => { own(a, b); window.__calls.push(r.info.render.calls); }; s.requestFrame(); }""")
+    wait_fn(page, "a frame at rest", "() => window.__calls.length", timeout=READY_3D_MS)
+    rest = page.evaluate(PLUG_STATE_JS)
+    if not rest["plugs"] or rest["drawn"] != rest["plugs"] or rest["mask"] != 3 or not rest["relief"]:
+        bad.append(f"at rest: {rest['drawn']} of {rest['plugs']} cabled-end meshes drawn, the camera's layers {rest['mask']}, {rest['relief']} other relief meshes; expected all drawn")
+    box = page.evaluate("() => { const r = document.querySelector('#stage3d canvas').getBoundingClientRect(); return [r.left + 40, r.top + 40]; }")
+    page.mouse.move(*box)
+    page.mouse.down()
+    for k in range(6):
+        page.mouse.move(box[0] + 3 * (k + 1), box[1])
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(400)
+    page.evaluate("() => { window.__calls.length = 0; window.__rack.scene().requestFrame(); }")
+    wait_fn(page, "a frame while held", "() => window.__calls.length", timeout=READY_3D_MS)
+    moving = page.evaluate(PLUG_STATE_JS)
+    pixels = page.evaluate(PLUG_PIXELS_JS)
+    page.mouse.up()
+    park_mouse(page)
+    if moving["mask"] != 1:
+        bad.append(f"while dragged: the camera's layers {moving['mask']}; expected the relief layer left out (1)")
+    if moving["drawn"] != moving["plugs"]:
+        bad.append(f"while dragged: {moving['drawn']} of {moving['plugs']} cabled-end meshes are on a layer the camera draws; expected all, a cord ends in its plug")
+    if pixels["mask"] != 1 or pixels["diff"] < 200:
+        bad.append(f"while dragged: from behind the rack the plugs change {pixels['diff']} pixels of the frame (the camera's layers {pixels['mask']}); expected them drawn")
+    if not moving["calls"] or moving["calls"] >= rest["calls"]:
+        bad.append(f"while dragged: {moving['calls']} draw calls a frame against {rest['calls']} at rest; expected fewer")
+    print(f"[check_rack_3d_plugs_moving] {rest['plugs']} cabled-end meshes; {rest['calls']} draw calls at rest, {moving['calls']} while dragged; "
+          f"{moving['drawn']} of them drawn while dragged, {pixels['diff']} pixels from behind")
+    return bad
+
+
 # WHAT THE SCENE HELD WHEN ITS DETAIL WAS LET GO (scene3d.js mountRack3d, rack3d.js
 # startDetail): every scene the page starts building is watched as it appears
 # (window.__rack.loadingScene, the probe's), and its startDetail wrapped to count,
