@@ -206,20 +206,21 @@ export function takeCovers(scene, meshes, paths) {
 export function paintCovers3d(scene, state) {
   if (!scene) return;
   scene.covers = state;
-  if (!scene.coversHeld) apply(scene, state);
+  if (!scene.coversHeld) { apply(scene, state); scene.paintStandIns?.(state === 'on'); }
   scene.requestFrame?.();
 }
 
 /** Run `fn` with every cover as it was built (shown, its own materials), then
  *  as the setting has it again: what a GLB or USDZ is written under. */
 export async function withCoversAsBuilt(scene, fn) {
-  if (!scene?.coverMeshes?.length) return fn();   // no cover in it (or a stub scene): nothing to put back
+  if (!scene?.coverMeshes?.length && !scene?.paintStandIns) return fn();   // no cover in it (or a stub scene): nothing to put back
   scene.coversHeld = (scene.coversHeld || 0) + 1;
   apply(scene, 'on');
+  scene.paintStandIns?.(false);   // (a part still standing as its box is written as it stands today, see-through, whatever the setting)
   scene.requestFrame?.();
   try { return await fn(); } finally {
     scene.coversHeld -= 1;
-    if (!scene.coversHeld) apply(scene, scene.covers ?? COVERS_DEFAULT);
+    if (!scene.coversHeld) { apply(scene, scene.covers ?? COVERS_DEFAULT); scene.paintStandIns?.((scene.covers ?? COVERS_DEFAULT) === 'on'); }
     scene.requestFrame?.();
   }
 }

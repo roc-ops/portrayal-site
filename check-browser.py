@@ -20377,6 +20377,123 @@ def check_rack_covers(page, base):
 
 
 
+# THE DETAIL HELD BACK BY THE CHECK (rack3d.js startDetail): every scene the page starts building has its
+# startDetail wrapped to keep the detail from starting until `window.__goDetail()` is called. The scene is then
+# up with its sheet parts as plain boxes, as a large rack's is for minutes.
+HOLD_DETAIL_JS = """() => { window.__goDetail = () => {}; window.__holdWatch = setInterval(() => {
+  const s = window.__rack.loadingScene();
+  if (!s || s.__held) return;
+  s.__held = true;
+  const own = s.startDetail;
+  s.startDetail = () => { window.__goDetail = () => own(); };
+}, 5); }"""
+# The vertical manager's box, as a stand-in: whether it is one, and how it is drawn.
+STAND_IN_JS = """() => {
+  const s = window.__rack.scene(), g = s.three.scene.getObjectByName('device-z1'), b = g.children[0];
+  const mats = [].concat(b.material);
+  return {standIn: b.userData.standIn ?? null, relief: g.children.length - 1, covers: (s.coverMeshes ?? []).length, setting: s.covers,
+          mats: [...new Set(mats.map(m => [m.visible, m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite].join('/')))].sort()};
+}"""
+# Where the passes of the detail landed, in order (a device lands when its group holds more than its box), sampled as they come.
+LANDING_JS = """() => { window.__landed = []; window.__landWatch = setInterval(() => {
+  const s = window.__rack.scene(); if (!s) return;
+  for (const g of s.three.scene.children) if (g.name?.startsWith('device-') && g.children.length > 1 && !window.__landed.includes(g.name)) window.__landed.push(g.name);
+}, 0); }"""
+COVERS_Z1_JS = """() => {
+  const s = window.__rack.scene(), g = s.three.scene.getObjectByName('device-z1');
+  const ms = (s.coverMeshes ?? []).filter(o => { for (let n = o; n; n = n.parent) if (n === g) return true; return false; });
+  return {n: ms.length, shown: ms.filter(o => o.visible).length, standIn: g.children[0].userData.standIn ?? null,
+          mats: [...new Set(ms.flatMap(o => [].concat(o.material)).map(m => [m.transparent, Math.round(m.opacity * 100) / 100, m.depthWrite].join('/')))].sort()};
+}"""
+# The fixture, with six more switches under the first, each cabled to it: not shared, so each has a detail pass of its own.
+MANY_DEVICES_FIXTURE = FRONT_FIXTURE.replace("  return r;\n}", """  for (let k = 0; k < 6; k++) {
+    ({rack: r} = M.withItem(r, {ref: 'ws-c4948e', cfg: cat['ws-c4948e'].default, ru: 1 + 2 * k, face: 'front', label: 'sw-x' + k}));
+    ({rack: r} = K.withCable(r, {a: {item: 'i' + (4 + k), path: 'port-1', view: 'front'}, b: {item: 'i1', path: 'port-' + (10 + k), view: 'front'}, media: 'cat6a'}));
+  }
+  return r;
+}""")
+
+
+@extra("rack.html: in 3D the Covers control reaches a vertical manager while its detail is still being built - its plain box is opaque with the covers on, see-through with see-through and off, repainted at once when the setting changes, and the detail that lands afterwards takes the setting, after an orbit as well; and the sheet parts' detail lands before the devices' (S-0054)")
+def check_rack_3d_standin_covers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1400, "height": 900})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_3d_standin_covers] WebGL unavailable - not exercised")
+        return bad
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(MANY_DEVICES_FIXTURE))
+    page.wait_for_function("() => document.querySelectorAll('#paneFront svg [data-cables] [data-cable-id]').length >= 10 && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.wait_for_timeout(400)
+    page.evaluate(HOLD_DETAIL_JS)
+    page.click('#covers [data-covers-set="see"]')
+    page.click('#mode [data-mode="3d"]')
+    try:
+        wait_fn(page, "stand-in: the scene up with its cables and the detail held back",
+                "() => { const s = window.__rack.scene(); return s && (s.rackCables?.tubes ?? []).some(t => t.points?.length) && s.three.scene.getObjectByName('device-z1'); }")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__holdWatch)")
+    park_mouse(page)
+    scene = page.evaluate_handle("() => window.__rack.scene()")
+
+    def orbit():
+        page.evaluate("""() => { const s = window.__rack.scene(); s.three.camera.position.x += 150; s.three.controls.update(); s.requestFrame?.(); }""")
+        page.wait_for_timeout(300)
+
+    # THE BOX, HELD: opaque with the covers on, as before with see-through, and the same with off (the box is the whole part).
+    want = {"on": ["true/false/1/true"], "see": ["true/true/0.35/false"], "off": ["true/true/0.35/false"]}
+    for state in ("see", "on", "see", "off", "on"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(300)
+        st = page.evaluate(STAND_IN_JS)
+        if st["standIn"] is not True or st["relief"] or st["covers"]:
+            bad.append(f"stand-in {state}: not held as a plain box ({st}); the check could not test it")
+            break
+        if st["mats"] != want[state]:
+            bad.append(f"stand-in {state}: the box is drawn {st['mats']}, expected {want[state]}")
+        orbit()
+        again = page.evaluate(STAND_IN_JS)
+        if again["mats"] != want[state]:
+            bad.append(f"stand-in {state}, after an orbit: the box is drawn {again['mats']}, expected {want[state]}")
+    # THE DETAIL, LET GO WITH THE COVERS ON: the box gives way to the cover meshes, which take the setting; the sheet parts' first.
+    page.evaluate(LANDING_JS)
+    page.evaluate("() => window.__goDetail()")
+    try:
+        settle_scene(page, "stand-in: the scene complete", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    page.evaluate("() => clearInterval(window.__landWatch)")
+    landed = page.evaluate("() => window.__landed")
+    if page.evaluate("s => window.__rack.scene() !== s", scene):
+        bad.append("stand-in: the scene was rebuilt")
+    # (the manager's drawing is the tallest, so its first face is not the first to land; it must still beat the devices
+    # that were built after the first four: i5 to i9, which ran before it when the sheet parts' passes went last)
+    later = [landed.index(f"device-i{k}") for k in range(5, 10) if f"device-i{k}" in landed]
+    if "device-z1" not in landed or len(later) != 5 or landed.index("device-z1") > min(later):
+        bad.append(f"landing order: {landed}; expected the vertical manager before the switches i5 to i9 (the sheet parts' passes first)")
+    print(f"[check_rack_3d_standin_covers] landing order {landed}")
+    want3 = {"on": lambda st: st["shown"] == st["n"] and all(m.split("/")[1] == "1" and m.split("/")[2] == "true" for m in st["mats"]),
+             "see": lambda st: st["shown"] == st["n"] and all(m.startswith("true/0.3/false") for m in st["mats"]),
+             "off": lambda st: st["shown"] == 0}
+    for state in ("on", "see", "off", "on", "see"):
+        page.click(f'#covers [data-covers-set="{state}"]')
+        page.wait_for_timeout(300)
+        orbit()
+        st = page.evaluate(COVERS_Z1_JS)
+        if not st["n"] or st["standIn"] is not None or not want3[state](st):
+            bad.append(f"landed {state}: the manager's {st['n']} cover meshes ({st['shown']} shown) are {st['mats']} with standIn {st['standIn']}")
+    # (and the box's own materials are put back as the part has them: not left opaque or see-through)
+    box = page.evaluate(STAND_IN_JS)
+    if box["standIn"] is not None or "true/true/0.35/false" in box["mats"] or "true/false/1/true" in box["mats"] and box["relief"] == 0:
+        bad.append(f"landed: the manager's box is {box}")
+    return bad
+
+
 # ── portrayal-site#190: nothing floats while the 3D scene loads ──────────
 # One sample a frame of the scene as it is being built: is the duct there, where,
 # how many of its meshes would be drawn (and whether one is its stand-in box),
