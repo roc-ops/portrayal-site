@@ -713,7 +713,7 @@ async function hangCables(scene, rack, facts, routes, chassisOf = null, paths = 
 export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false, routes = null, paths = null,
                                               ctx = null, bundles = null, bendOf = null, bends = null, spares = null, stage = '#101214',
                                               covers = COVERS_DEFAULT, onScene = null, onDetailFailed = null, onContextLost = null,
-                                              onContextRestored = null}) {
+                                              onContextRestored = null, paint = null}) {
   const frame = rack.frame;
   const began = performance.now();
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
@@ -741,10 +741,14 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
   // itself, so its mounts can share one set of materials.
   const cabledItems = new Set((rack.cables || []).flatMap(c => [c.a?.item, c.b?.item]));
   const cabledEnds = new Set((rack.cables || []).flatMap(c => [c.a, c.b]).filter(Boolean).map(e => portKey(e.item, e.path)));
-  const plain = (id, overrides, fields) => !cabledItems.has(id) && !Object.keys(overrides || {}).length && !Object.keys(fields || {}).length;
+  // WHAT A LAMP IS SET TO AND WHAT A DISPLAY SHOWS (settable.js; `paint`: {id: {states, displays}}) goes onto the
+  // part's own relief scope (rack3d.js scopeFor), so a part with either is its own build, as one with a field is
+  const painted = id => !!paint?.get(id);
+  const plain = (id, overrides, fields) => !cabledItems.has(id) && !painted(id) && !Object.keys(overrides || {}).length && !Object.keys(fields || {}).length;
   const stack = rack.items.map(item => ({
     id: item.id,
     ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label, fields: item.fields || {},
+    ...(painted(item.id) ? {states: paint.get(item.id).states, displays: paint.get(item.id).displays} : {}),
     share: plain(item.id, mergeSeats(item.swaps, facts.seats[item.id]), item.fields),
     face: item.face, turned: item.turned, overrides: mergeSeats(item.swaps, facts.seats[item.id]),
     chassis: chassisOf?.(item.ref) || undefined,
@@ -762,6 +766,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null, fa
                 // (the plug at each cabled outlet, paired with the cord's other end: cable-plugs.js zeroUFacts;
                 // a part with a cord on it is not shared, `plain` counts the cabled ends)
                 face: faceOfAt(z.at) === 'rear' ? 'rear' : 'front', turned: false, overrides: mergeSeats({}, facts.seats[z.id]),
+                ...(painted(z.id) ? {states: paint.get(z.id).states, displays: paint.get(z.id).displays} : {}),
                 share: plain(z.id, mergeSeats({}, facts.seats[z.id]), null),
                 chassis: chassisOf(z.ref), mount: 'rack-side',
                 ...(isCableManager(chassisOf(z.ref)) ? {untagged: true} : {})});

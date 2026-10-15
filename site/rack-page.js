@@ -11,6 +11,7 @@ import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevati
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
 import {hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
+import {displayNotices} from '../vendor/rack/displays.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
 import {frameForm} from './rack/frame-form.js';
@@ -43,6 +44,8 @@ import {routeEditSession} from './rack/route-edit.js';
 import {litFor, litForFilter, paintFilter3d, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
 import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
+import {paints, paintMaps} from './rack/settable.js';
+import {settablePanel} from './rack/settable-panel.js';
 import {routesOf, sameReading, askOf} from './rack/reading.js';
 import {describeOnce, inspectOnce} from './rack/agent-read.js';
 import {LANE_GAP, routeText, ductsThrough} from '../vendor/rack/route.js';
@@ -213,7 +216,9 @@ async function rebuild3d() {
   const sig = routesSig(live);
   disposeScene3d();
   const stage = S.stage;
-  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail,
+  const paint = await paintOf(forRack);
+  if (mine !== stage3dEpoch || S.mode !== '3d') return;
+  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail, paint,
     routes: live?.routes ?? null, paths: live?.paths ?? null, ctx: live?.ctx ?? null, bundles: bundles3d(live),
     bendOf: (live?.types ?? cableTypes)?.bendOf ?? null, bends: live?.bendsShown ?? null, spares: live?.spareLoops ?? null, stage, covers: S.covers,
     onDetailFailed: f => { if (mine === stage3dEpoch) detailFailed(forRack, f); },
@@ -537,7 +542,7 @@ async function explore(id) {
 function edit(cmds, {say = false, report = true, quiet = false, ctx = null} = {}) {
   // (an end given a drawing id is refused here, with the path to use: part-path.js)
   const idNo = projectionIdRefusal(cmds);
-  const own = {...(bundling(cmds) ? bundleCtx() : {}), ...(ctx ?? {})};
+  const own = {...(bundling(cmds) ? bundleCtx() : {}), ...(cabling(cmds) ? partsCtx() : {}), ...(ctx ?? {})};
   const res = idNo ? {error: idNo} : ed.apply(cmds, {origin: 'ui', ...(Object.keys(own).length ? {ctx: own} : {})});
   // A refusal the caller reports is its to redraw too: the inspector shows it
   // beside the control it snaps back, and a redraw would take that away.
@@ -546,6 +551,15 @@ function edit(cmds, {say = false, report = true, quiet = false, ctx = null} = {}
   if (res.noop && !quiet) renderSoon();
   return res;
 }
+// A CABLE END IS CHECKED AGAINST THE PART IT LANDS ON AT ADD TIME (kit 0.46.0): an end under a bay whose seated
+// part has no port at that path on that panel is refused, with the loose-end finding's sentence (a rear jack on a
+// part that has none, the front of a jack asked for at the rear). The kit needs the parts lists for it, as the
+// assistant's edit_rack sends them (agentContext). The form saves in the same task it is clicked, so what is
+// sent is the lists as the last draw read them (`warmParts`), not a wait for them: a device whose list is not
+// read yet is not refused, as the kit says of a part it cannot answer for.
+const cabling = cmds => (Array.isArray(cmds) ? cmds : [cmds]).some(c => c?.op === 'cable.add' || c?.op === 'cable.update');
+let warmParts = null;
+const partsCtx = () => (warmParts ? {slotsOf: warmParts.slotsOf, compByRef: warmParts.compByRef} : {});
 // A BUNDLE COMMAND READS THE ROUTES (kit 0.7.0, docs/cable-bundles-design.md
 // 3.1): the last render's routing context and the cable types' diameters, so
 // the kit works a trunk out from its cables and checks its size. Without them
@@ -669,7 +683,10 @@ function setDoc(doc, notes = docNotes(doc)) {
 //     stateNotices);
 //   - a device mounted upside down, in the kit's sentence (rollNote): it is
 //     fitted, routed and exported as mounted, and drawn upright;
-//   - states and readings that do apply: kept, exported, and not drawn.
+//   - a display's content the display cannot take, or cuts or fits (displays.js
+//     displayNotices); the lamps and digits and the displays that do apply are
+//     drawn in 2D and 3D (settable.js);
+//   - readings: kept, exported, and not drawn.
 // DERIVED FROM THE RACK AS IT IS, AFTER EVERY CHANGE (setDoc, and onChange for
 // every step: an edit here, an assistant's, undo, redo), not said once when a
 // file opens: a roll, a state, a reading or a hang set by a command is said as
@@ -677,13 +694,15 @@ function setDoc(doc, notes = docNotes(doc)) {
 // in the side panel (keptParagraphs) until then; a version-3 rack has none.
 const keptOf = r => ({
   hung: zeroUOf(r).some(z => z.heldBy != null), rolled: r.items.filter(i => rollOf(i) === 180),
-  set: [...r.items, ...zeroUOf(r)].filter(e => e.states != null || e.readings != null || e.readingsAsWritten != null)});
+  // (states and displays are drawn, 2D and 3D: settable.js; what the kit keeps of them and cannot apply is said late, below)
+  set: [...r.items, ...zeroUOf(r)].filter(e => e.states != null || e.displays != null || e.readings != null || e.readingsAsWritten != null),
+  read: [...r.items, ...zeroUOf(r)].filter(e => e.readings != null || e.readingsAsWritten != null)});
 let keptRun = 0;
 async function sayKept() {
   const mine = ++keptRun, r = rack(), k = keptOf(r);
   const said = [...frameNotices(r, chassisOf),
     ...k.rolled.map(i => `${i.label}: ${rollNote(i)} It is fitted, routed and exported that way, and drawn upright here.`)];
-  if (k.set.length) said.push(`${k.set.length === 1 ? `${k.set[0].label || k.set[0].ref} carries` : `${k.set.length} parts carry`} outlet states or readings: they are kept in the file and written to the exports, and not drawn here yet.`);
+  if (k.read.length) said.push(`${k.read.length === 1 ? `${k.read[0].label || k.read[0].ref} carries` : `${k.read.length} parts carry`} readings: they are kept in the file and written to the exports, and not drawn here yet.`);
   // what needs no parts list is said at once; the rest when the lists are read
   const show = list => { if (mine !== keptRun || rack() !== r) return;
     if (JSON.stringify(list) !== JSON.stringify(S.kept ?? [])) { S.kept = list; renderSoon(); } };
@@ -692,7 +711,7 @@ async function sayKept() {
   if (!k.hung && !k.set.length) { S.keptLate = []; return; }
   try {
     const ctx = await agentContext(r, zeroUOf(r).map(z => z.ref));
-    const late = [...(k.hung ? hangNotices(r, ctx) : []), ...(k.set.length ? stateNotices(r, ctx) : [])];
+    const late = [...(k.hung ? hangNotices(r, ctx) : []), ...(k.set.length ? [...stateNotices(r, ctx), ...displayNotices(r, ctx)] : [])];
     if (mine !== keptRun || rack() !== r) return;
     S.keptLate = late;
     show([...said, ...late]);
@@ -1431,10 +1450,17 @@ async function redraw(keepRoutes = false) {
     }
     lap('routes');
     if (S.probeHold) { const held = probeHeld('drawn'); if (held) await held; }
-    const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
-      ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
+    // WHAT EACH ENTRY IS SET TO AND SHOWS (settable.js), for the rack as it is: handed to each drawing as its `paint`
+    const paint = await paintOf(r);
+    const items = itemsWithU(r, chassisOf).map(it => {
+      const seated = facts.seats[it.id] ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it;
+      return paint.has(it.id) ? {...seated, paint: paint.get(it.id)} : seated;
+    });
     // (a part beside the rack is drawn with the plugs at its cabled outlets, as a device is: cable-plugs.js zeroUFacts)
-    const zeroU = zeroUDrawn(r, chassisOf).map(z => (facts.seats[z.id] ? {...z, swaps: facts.seats[z.id]} : z));
+    const zeroU = zeroUDrawn(r, chassisOf).map(z => {
+      const seated = facts.seats[z.id] ? {...z, swaps: facts.seats[z.id]} : z;
+      return paint.has(z.id) ? {...seated, paint: paint.get(z.id)} : seated;
+    });
     // THE SIDE PAIR (#187): the same two panes, drawn by side-elevation.js
     // from the same items, parts and routes. Nothing in it is a target for
     // placing, moving or cabling.
@@ -1455,6 +1481,8 @@ async function redraw(keepRoutes = false) {
   }
   if (mine !== S.draws) return;
   lap('panes');
+  // (the parts lists of everything drawn are read by now: what an end is checked against when a cable is added)
+  agentContext(r, []).then(c => { warmParts = c; }).catch(() => {});
   S.cableFacts = facts;
   S.factsRack = r;       // the rack these were read for (a switch of pair draws from them again: `kept`, above)
   if (!kept) S.factsPending = pending.length;
@@ -1745,13 +1773,16 @@ function renderSide() {
   else if (sel.kind === 'zerou') {
     const z = zeroUById(r, sel.id);
     if (!z) { S.sel = null; body = homePanel(); }
-    else body = zeroUInspector({z, rack: r, chassis: chassisOf(z.ref), chassisOf,
-      // Like every panel's controls, these act on the part as it is now, or say it is gone.
-      onUpdate: patch => {
-        const res = edit({op: 'zerou.update', id: z.id, ...patch}, {report: false});
-        return res.error ? {ok: false, reason: res.error} : {ok: true};
-      },
-      onRemove: () => { S.sel = null; edit({op: 'zerou.remove', id: z.id}, {say: true}); }});
+    else {
+      body = zeroUInspector({z, rack: r, chassis: chassisOf(z.ref), chassisOf,
+        // Like every panel's controls, these act on the part as it is now, or say it is gone.
+        onUpdate: patch => {
+          const res = edit({op: 'zerou.update', id: z.id, ...patch}, {report: false});
+          return res.error ? {ok: false, reason: res.error} : {ok: true};
+        },
+        onRemove: () => { S.sel = null; edit({op: 'zerou.remove', id: z.id}, {say: true}); }});
+      body.append(settableSection(z.id));
+    }
   }
   else if (sel.kind === 'remove') {
     const it = itemById(sel.id);
@@ -1832,6 +1863,8 @@ function renderSide() {
         }
       },
       onExplore: () => explore(it.id)}),
+      // (its lamps, digits and displays, which the kit says it can take: filled in once its parts list is read)
+      settableSection(it.id),
       managerRows({host: it, rack: r, chassisOf,
         attachable: (face, ru) => r.items.find(i => i.face === face && i.ru === ru && !i.on && isRackFace(chassisOf(i.ref))) ?? null,
         onAttach: id => attachManager(id),
@@ -2338,6 +2371,51 @@ const agentContext = agentContextFor({
   loadSlots: refs => loadSlots(DIST, refs), chassisOf: ref => chassisOf(ref), cableFacts, drawnAt,
   // (the one reading of the rack, which the redraw has usually made already: reading.js)
   routeFacts: r => routesOf(r, chassisOf), cableTypes: () => cableTypesReady});
+
+// WHAT EACH ENTRY IS SET TO AND SHOWS, for one rack object: {id: {states, displays}} (settable.js), read once for
+// the rack as it is, by the 2D panes and the 3D scene alike. A picture that is a library asset is read from the
+// dist. A rack that sets nothing reads no parts list for it; one whose lists cannot be read draws as it was.
+let paintMemo = null;
+function paintOf(r) {
+  if (!paints(r)) return Promise.resolve(new Map());
+  if (paintMemo?.rack !== r) {
+    const bytesOf = async path => {
+      const res = await fetch(`${DIST}${path}`);
+      if (!res.ok) throw new Error(`${path}: ${res.status}`);
+      return new Uint8Array(await res.arrayBuffer());
+    };
+    paintMemo = {rack: r, maps: agentContext(r, []).then(ctx => paintMaps(r, ctx, bytesOf))
+      .catch(err => { console.warn('[portrayal] what the lamps and displays are set to could not be read', err); return new Map(); })};
+  }
+  return paintMemo.maps;
+}
+
+// THE CONTROLS FOR WHAT A PART IS SET TO AND WHAT ITS DISPLAYS SHOW (settable-panel.js), in the side panel of a device
+// or a part beside the rack. They send the commands the assistant's edit_rack sends (state.set, display.set), with the
+// parts lists the kit checks them against; what the part can take is the kit's own answer (inspect's `settable`,
+// the `displays` query). The section is empty until the parts list is read, and stays empty for a part that
+// declares nothing to set. It acts on the rack as it is when clicked, and says so if the part is gone.
+function settableSection(id) {
+  const host = el('div', {id: 'settableHost'});
+  const forRack = rack();
+  (async () => {
+    try {
+      const ctx = await agentContext(forRack, []);
+      const info = {...(await Q.inspect(forRack, id, ctx)), displays: Q.displays(forRack, ctx, {item: id})};
+      if (S.sel?.id !== id) return;
+      const send = cmd => {
+        if (!zeroUById(rack(), id) && !itemById(id)) return {ok: false, reason: GONE};
+        const res = edit(cmd, {report: false, ctx});
+        return res.error ? {ok: false, reason: res.error} : {ok: true};
+      };
+      const panel = settablePanel({info,
+        onState: (path, state) => send({op: 'state.set', id, path, state}),
+        onDisplay: (path, content) => send({op: 'display.set', id, path, content})});
+      if (panel) host.replaceChildren(panel);
+    } catch (err) { console.warn('[portrayal] what a part can be set to could not be read', err); }
+  })();
+  return host;
+}
 
 const ready = boot();
 if (PROBE) {

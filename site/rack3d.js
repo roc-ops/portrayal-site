@@ -16,7 +16,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools, cablePoints,
-         setNodeStates, nodeStates } from '../vendor/relief.js';
+         setNodeStates, nodeStates, setNodeDisplays, restyleText } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -424,10 +424,34 @@ export function createRackScene(container, opts = {}) {
     return capped.get(key);
   };
   // (the face's longest side in mm, as faceFrames lays it: front and rear W x H, the sides D x H, top and bottom W x D)
-  const scopeFor = (view, chassis = null) => {
+  //
+  // WHAT A MOUNT'S LAMPS ARE SET TO AND ITS DISPLAYS SHOW (`entry.states`,
+  // `entry.displays`: {path: state}, {path: content}, from the rack file by
+  // way of the kit's statesFor and displaysFor). The relief's registry of
+  // both is per scope, and a rack holds many mounts of one part set differently,
+  // so a mount that has either is built on a scope of its own: a copy of the one
+  // it would have had (the same overrides, density and paths) with a registry of
+  // its own. Every face of that mount is cut from a document that carries them,
+  // as the kit's viewer does for one device, and nothing else in the scene is
+  // touched. The top and underside carry no lamp and keep the shared scope.
+  const own = new Map();
+  const ownScope = (base, entry) => {
+    const named = entry?.states && Object.keys(entry.states).length, shown = entry?.displays && Object.keys(entry.displays).length;
+    if (!named && !shown) return base;
+    if (!own.has(entry.slot)) own.set(entry.slot, new Map());
+    const per = own.get(entry.slot);
+    if (!per.has(base)) {
+      const mine = {...base, states: new Map(), displays: new Map(), lampBinds: new Map(), pulled: new Set(base.pulled || [])};
+      setNodeStates(Object.fromEntries(Object.entries(entry.states || {}).map(([p, s]) => [p, `state-${s}`])), mine);
+      setNodeDisplays(entry.displays || {}, mine);
+      per.set(base, mine);
+    }
+    return per.get(base);
+  };
+  const scopeFor = (view, chassis = null, entry = null) => {
     const {w = 0, h = 0, d = 0} = chassis || {};
     return (view === 'top' || view === 'bottom') ? cappedScope(COARSE, Math.max(w, d))
-      : cappedScope(relief, view === 'left' || view === 'right' ? Math.max(d, h) : Math.max(w, h));
+      : ownScope(cappedScope(relief, view === 'left' || view === 'right' ? Math.max(d, h) : Math.max(w, h)), entry);
   };
 
   // ── parts taken off ────────────────────────────────────────────────────
@@ -970,7 +994,7 @@ export function createRackScene(container, opts = {}) {
     const flatCv = {};
     if (!tpl) await Promise.all([
       ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false,
-                                  scopeFor(F.view, entry.chassis))
+                                  scopeFor(F.view, entry.chassis, entry))
         .then(cv => { flatCv[F.view] = cv; }).catch(() => {})),
       svgCanvas(f('bottom'), W, D, true, true, scopeFor('bottom', entry.chassis))
         .then(cv => { flatCv.bottom = cv; }).catch(() => {}),
@@ -1171,7 +1195,7 @@ export function createRackScene(container, opts = {}) {
         if (mine !== epoch) return;
         for (const F of order) {
           const per = [];
-          await buildFaceRelief(F, {scope: scopeFor(F.view, entry.chassis), src: f(F.view), faceCv, faceSvg,
+          await buildFaceRelief(F, {scope: scopeFor(F.view, entry.chassis, entry), src: f(F.view), faceCv, faceSvg,
             facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
             D, bodyBoxMesh: null});
           if (mine !== epoch) return;
@@ -1708,6 +1732,13 @@ export function createRackScene(container, opts = {}) {
     // The text one mounted device's face was cut from (`slot` is its place in the
     // stack): its seated parts and written fields are in it, as the texture has them.
     faceText: (slot, view) => RESOLVED[slot] ? svgSource(faceSrc(RESOLVED[slot], view), relief) : Promise.resolve(null),
+    // The same text with what the rack sets on that mount painted into it, as its texture is cut from it:
+    // its lamps and digits, and what its displays show (the mount's own scope: scopeFor). For a probe.
+    paintedText: async (id, view) => {
+      const e = RESOLVED.find(x => x.id === id);
+      const text = e ? await svgSource(faceSrc(e, view), relief) : null;
+      return text ? restyleText(text, scopeFor(view, e.chassis, e)) : null;
+    },
     // (written in full detail, the faces as built, even from a camera still moving: `opts.lightWhileMoving`;
     // the tags' leaders are the page's, as the tags are: never in a file)
     toGLB: () => { if (light) setLight(false); return withoutLeaders(() => toGLB(scene)); },

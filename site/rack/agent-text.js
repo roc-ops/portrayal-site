@@ -93,8 +93,21 @@ export function windowLines(lines, offset, room) {
 // The kit's inspect (vendor/rack/queries.js) answers with plain data; this is
 // how an agent reads it (spec 2026-10-08 section 3): the device, then its bays,
 // cages, fields and cables, in runs.
-export const INSPECT_SECTIONS = ['bays', 'cages', 'fields', 'cables'];
-const TITLE = {bays: 'Bays', cages: 'Cages', fields: 'Fields', cables: 'Cables'};
+// (settable and displays: kit 0.45.0 and 0.47.0, what state.set and display.set take, and what each is set to now)
+export const INSPECT_SECTIONS = ['bays', 'cages', 'fields', 'settable', 'displays', 'cables'];
+const TITLE = {bays: 'Bays', cages: 'Cages', fields: 'Fields', settable: 'Lamps, digits and outlets state.set takes', displays: 'Displays display.set takes', cables: 'Cables'};
+const orWords = xs => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`);
+// paths in runs: led-port-0/lamp .. led-port-52/lamp is one entry
+const pathsText = paths => cutList(runs([...paths].sort((a, b) => a.localeCompare(b, 'en', {numeric: true})).map(path => ({path})), () => 0).map(r => r.path), 6);
+// WHAT A DEVICE'S PARTS CAN BE SET TO (inspect's `settable`, [{can, paths}], grouped by vocabulary) and what it
+// is set to now (`states`); and its displays ([{path, text, shows}]), as the kit gives them
+export function settableLines(o) {
+  const now = Object.entries(o.states ?? {});
+  return [...(now.length ? [`set now: ${cutList(now.map(([p, s]) => `${p} ${s}`), 10)}`] : []),
+    ...(o.settable ?? []).map(g => `${pathsText(g.paths)} can be ${orWords(g.can)}`)];
+}
+export const displayLines = o => (o.displays ?? []).map(d =>
+  `${d.path}: ${d.text}; ${d.shows ? `shows ${clip(JSON.stringify(d.shows), 100)}` : 'shows nothing'}`);
 const NOT_LOADED = 'Its parts list could not be loaded, so its bays, cages and fields are not shown.';
 const paren = s => (s ? ` (${s})` : '');
 const both = (...xs) => xs.filter(Boolean).join(', ');
@@ -116,6 +129,10 @@ export function itemHead(o, {configs = 8} = {}) {
   }
   const ways = pathwaysLine(o.pathways);
   if (ways) out.push(ways);
+  // what state.set and display.set take, in one line: the lists are sections of their own, further on
+  const nset = (o.settable ?? []).reduce((n, g) => n + g.paths.length, 0);
+  if (nset) out.push(`state.set takes ${nset} paths of lamps, digits, outlets or breakers${o.states ? `; set now: ${cutList(Object.entries(o.states).map(([p, s]) => `${p} ${s}`), 3)}` : ''} (section settable lists them).`);
+  if (o.displays?.length) out.push(`display.set takes ${cutList(o.displays.map(d => d.path), 3)} (section displays says what each shows).`);
   if (o.slots === 'not loaded') out.push(NOT_LOADED);
   return out;
 }
@@ -151,6 +168,8 @@ export function sectionLines(o) {
       const isDefault = f.value == null || v === String(f.default ?? '');
       return `${f.path}: ${f.key} = ${v === '' ? '""' : clip(v, 160)}${isDefault ? ' (default)' : ''} (${f.type})${f.choices?.length ? `; choices: ${cutList(f.choices)}` : ''}`;
     }),
+    settable: settableLines(o),
+    displays: displayLines(o),
     cables: (o.cables ?? []).map(c => `${c.id}: its ${c.end} end on ${c.path}${c.view === 'rear' ? ' (rear)' : ''}, to ${c.other}`),
   };
 }
@@ -311,6 +330,9 @@ export function zeroUText(z) {
     z.lane ? `The ${z.lane} cable lane runs through it.` : 'No cable lane runs through it.',
     // its duct and windows, which a route and cable.slack may name (kit 0.35.0)
     ...(pathwaysLine(z.pathways) ? [pathwaysLine(z.pathways), `A route names them as {item: ${z.id}, via}.`] : []),
+    // its lamps, outlets and breakers (state.set) and its displays (display.set), as a device's are said
+    ...(settableLines(z).length ? ['Lamps, digits and outlets state.set takes:', ...settableLines(z)] : []),
+    ...(displayLines(z).length ? ['Displays display.set takes:', ...displayLines(z)] : []),
     'Move it with zerou.update, take it away with zerou.remove.',
   ].join('\n'));
 }
