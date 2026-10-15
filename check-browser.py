@@ -12307,6 +12307,124 @@ def check_rack_pdu_cords(page, base):
     return bad
 
 
+# A 1U-class switch with a management port at U41 and a vertical PDU at each
+# rear upright (kit 0.44.0, Portrayal #1080): the PDU's network card is in a
+# bay of the part, and its ports are ends a cable can take.
+PDU_CARD_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'Card', kind: 'four-post'}), {heightRU: 42});
+  ({rack: r} = M.withItem(r, {ref: 's9601-102xc', cfg: 'ac', ru: 41, label: 'sw-1'}));
+  return {...r, zeroU: [{id: 'z1', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-A', at: 'left-rear', offsetMm: 0},
+                        {id: 'z2', ref: 'evma8365x', cfg: cat['evma8365x'].default, label: 'PDU-B', at: 'right-rear', offsetMm: 0}]};
+}"""
+CARD = "network-module/module/"
+
+
+@extra("rack.html: a vertical PDU's network card (kit 0.44.0) - its eth0, eth1 and usb-0 are picked as a cable end in Cable mode and by the assistant, the cable is drawn to the jack on the PDU's face on the Rear pane and routed in 3D, a made-up port is refused with the list, and the assistant lists the card's free ports")
+def check_rack_pdu_network_card(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(PDU_CARD_RACK_JS))
+    mgmt = {"item": "i1", "path": "mgmt", "view": "front"}
+    try:
+        # The card's ports are listed for picking, on the pane the PDU looks out of.
+        wait_fn(page, "card: PDU-A's card ports are listed for picking",
+                "p => { const e = (document.querySelector('#paneRear svg [data-zerou-id=\"z1\"]')?.getAttribute('data-cable-ends') || '').split(' ');"
+                " return p.every(x => e.includes(x)); }",
+                arg=[CARD + p for p in ("eth0", "eth1", "usb-0", "usb-1", "sensor", "pdu-plus-1")])
+        page.click("#cableBtn")
+        sel = '#paneFront svg [data-item-id="i1"][data-panel] [data-path="mgmt"]'
+        box = page.evaluate("""sel => { const e = document.querySelector(sel); if (!e) return null;
+          const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", sel)
+        if not box:
+            return bad + ["picking: the management port is not drawn on the front pane"]
+        page.mouse.click(box[0], box[1])
+        box = page.evaluate("""p => { const e = document.querySelector(`#paneRear svg [data-zerou-id="z1"] [data-path="${p}"]`); if (!e) return null;
+          const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }""", CARD + "eth0")
+        if not box:
+            return bad + ["picking: eth0 of PDU-A's card is not drawn on the rear pane"]
+        page.mouse.click(box[0], box[1])
+        wait_sel(page, "card: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    end_b = page.text_content("#cEndB") or ""
+    if "PDU-A" not in end_b or "eth0" not in end_b:
+        bad.append(f"form: the card's end does not say what it is: {end_b!r}")
+    media = page.eval_on_selector_all("#cMedia option", "o => o.map(x => x.value)")
+    if "cat6" not in media:
+        bad.append(f"form: no Cat6 among the media offered for a card's RJ45: {media}")
+    else:
+        page.select_option("#cMedia", "cat6")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "card: the cable is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["a"] != mgmt or c1["b"] != {"item": "z1", "path": CARD + "eth0", "view": "front"} or c1["media"] != "cat6":
+        bad.append(f"saved: the cable is {c1}")
+    # The assistant: eth1 and usb-0 as ends, a made-up port refused with the list.
+    page.click("#cableBtn")
+    for cid, a_path, b_path, media_ in (("c2", "console", "eth1", "cat6"), ("c3", "usb", "usb-0", "cat6")):
+        res = page.evaluate("""([a, b, m]) => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i1', path: a, view: 'front'},
+                                                                       b: {item: 'z1', path: b, view: 'front'}, media: m}]})
+                                 .then(r => ({error: !!r.isError, text: r.content[0].text}))""", [a_path, CARD + b_path, media_])
+        if res["error"]:
+            bad.append(f"agent: cable.add to {b_path} was refused: {res['text']}")
+    res = page.evaluate("""() => window.__tools.edit_rack.execute({commands: [{op: 'cable.add', a: {item: 'i1', path: 'port-0', view: 'front'},
+                                                                   b: {item: 'z2', path: 'network-module/module/eth9', view: 'front'}, media: 'cat6'}]})
+                             .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if not res["error"] or "eth9" not in res["text"] or CARD + "eth0" not in res["text"]:
+        bad.append(f"agent: a made-up port on the card was not refused with the list: {res}")
+    try:
+        wait_fn(page, "card: the cables are measured",
+                "() => { const p = window.__rack.paths(); return !!(p && p.c1?.measured > 0 && p.c2?.measured > 0 && p.c3?.measured > 0); }")
+        for cid in ("c1", "c2", "c3"):
+            wait_sel(page, f"card: {cid} on the rear pane", f'svg[data-pane="rear"] [data-cables] [data-cable-id="{cid}"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 3:
+        bad.append("agent: the refused cable was saved")
+    # Drawn to the jack on the PDU's face (the USB-C opening for usb-0)
+    for cid, port in (("c1", "eth0/jack"), ("c2", "eth1/jack"), ("c3", "usb-0/opening")):
+        at = page.evaluate(CORD_AT_OUTLET_JS, ["Rear", cid, "z1", CARD + port])
+        if not at.get("drawn") or not at.get("outlet") or at.get("miss", 99) > 20:
+            bad.append(f"2D: {cid} is not drawn to {port} of the card on the rear pane: {at}")
+    row = page.text_content('#cableItem-c1') or ""
+    if "PDU-A" not in row or "eth0" not in row or page.query_selector('#cableItem-c1 [data-loose]'):
+        bad.append(f"list: c1's row reads {row!r}")
+    # The assistant's read-backs: the card's free ports, and the cable's own
+    free = page.evaluate("""() => window.__tools.list_free_ports.execute({id: 'z1', kinds: ['data']})
+                              .then(r => ({error: !!r.isError, text: r.content[0].text}))""")
+    if free["error"] or CARD + "sensor," not in free["text"] or CARD + "eth0," in free["text"] or CARD + "usb-1," not in free["text"]:
+        bad.append(f"agent: PDU-A's free data ports read {free['text']!r}")
+    said = page.evaluate("""async id => { const out = await window.__tools.inspect.execute({id});
+      return (out?.content ?? []).map(c => c.text ?? '').join('\\n'); }""", "c1")
+    if "eth0" not in said or "PDU-A" not in said or "Crosses a body" in said:
+        bad.append(f"agent: inspect c1 reads {said!r}")
+    # 3D: a tube for each cable, each ending at the card's jack
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "card: 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    got = page.evaluate("""() => { const s = window.__rack.scene(), rc = s.rackCables;
+      return {tubes: (s.three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name).sort(),
+              anchors: (rc?.anchors ?? []).map(a => `${a.i}:${a.side}:${a.anchor.path}`).sort()}; }""")
+    if got["tubes"] != ["cable-c1", "cable-c2", "cable-c3"]:
+        bad.append(f"3D: the scene's cables are {got['tubes']}")
+    for p in ("eth0", "eth1", "usb-0"):
+        if not any(a.endswith(f":to:{CARD}{p}-occupant") for a in got["anchors"]):
+            bad.append(f"3D: no anchor at the card's {p} among {got['anchors']}")
+    return bad
+
+
 @extra("rack.html: zero-U - a vertical duct placed beside a two-post rack is drawn in 2D and 3D, a cable's lane runs through it and fills it, narrow brackets go on one rail each, and the exports carry it with no position")
 def check_rack_zero_u(page, base):
     bad = []
