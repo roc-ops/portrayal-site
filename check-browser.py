@@ -22424,7 +22424,9 @@ SECONDS = {
 SECONDS.update({"check_rack_speed_budgets": 18, "check_rack_reading_fresh_after_edit": 85, "check_rack_kept_paths_hold": 100,
                 "check_rack_warnings_section": 8,
                 # S-0061: measured here (66 s and 6 s), as the others above are
-                "check_rack_lamps_and_displays_parity": 110, "check_rack_keystone_rear_jacks": 10})
+                "check_rack_lamps_and_displays_parity": 110, "check_rack_keystone_rear_jacks": 10,
+                # S-0061-2: a guess until measured (the keystone check's 10 s and a 3D build)
+                "check_rack_fibrain_coupler_ends": 25})
 
 
 def units():
@@ -23684,10 +23686,21 @@ def check_rack_v4_keys_kept(page, base):
     settle_scene(page, "3D: the version-4 rack")
     t = page.evaluate(V4_3D_JS)
     faceZ = page.evaluate("() => window.__rack.scene().metrics().faceZ")
-    solids = {s["item"]: s["box"] for s in page.evaluate("() => window.__rack.solids()") if s["part"] == "envelope"}
+    # A device's solid is its envelope; a part the kit builds from a body (the XCU patch panel since kit 0.48.0: a floor, two
+    # walls and a cover, open at the back and the front) has no envelope, and is the box round the pieces it has.
+    solids = {}
+    for s in page.evaluate("() => window.__rack.solids()"):
+        b = solids.get(s["item"])
+        if s["part"] == "envelope":
+            solids[s["item"]] = s["box"]
+        elif b is None or b.get("pieces"):
+            n = s["box"]
+            solids[s["item"]] = {"pieces": True, **(n if b is None else {k: (min if k.endswith("0") else max)(b[k], n[k]) for k in n})}
     for iid in ("i1", "i2", "i3", "i5"):
         b, d = solids[iid], t.get(iid) or {}
-        if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > 1e-6:
+        # (a box round pieces is read to the millimetre in height: the scene's own box leaves out a skin's thickness)
+        tol_y = 1.5 if b.get("pieces") else 1e-6
+        if d.get("z") is None or abs((d["z"] - faceZ) - (b["z0"] + b["z1"]) / 2) > 1e-6 or abs(d["y"] - (b["y0"] + b["y1"]) / 2) > tol_y:
             bad.append(f"3D: {iid} is at depth {None if d.get('z') is None else d['z'] - faceZ:.3f}, height {d.get('y')}; the kit's solid is centred at depth {(b['z0'] + b['z1']) / 2:.3f}, height {(b['y0'] + b['y1']) / 2:.3f}")
     if abs(solids["i1"]["z1"] - (-50)) > 1e-6 or abs(solids["i3"]["z1"] - (-12)) > 1e-6:
         bad.append(f"kit: the set-back faces are at {solids['i1']['z1']} and {solids['i3']['z1']}, expected 50 and 12 mm behind the rail")
@@ -24174,6 +24187,7 @@ def check_rack_kept_notices_follow_edits(page, base):
 # outlet lamps, breakers and the eNMC display.
 LAMPS_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "lamps-displays.rack.json"
 KEYSTONE_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "keystone-rear.rack.json"
+FIBRAIN_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "fibrain-coupler.rack.json"
 LOGO_SVG = (b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48"><rect width="64" height="48" fill="#10213f"/>'
             b'<rect x="6" y="20" width="12" height="22" fill="#4aa3ff"/><rect x="26" y="10" width="12" height="32" fill="#4aa3ff"/></svg>')
 LOGO_URL = "data:image/svg+xml;base64," + __import__("base64").b64encode(LOGO_SVG).decode()
@@ -24461,6 +24475,62 @@ def check_rack_keystone_rear_jacks(page, base):
             bad.append(f"keystone: the assistant's tool did not refuse {label} in the kit's words: {t2!r}")
     if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 2:
         bad.append("keystone: a refused cable was added")
+    return bad
+
+
+@extra("rack.html: a Fibrain XCU's adapter takes a cable end on its outer face and another on its inner face, both added by the page's command and by the assistant's tool, the free-ports list gives the inner ends, both cables route in 2D and 3D, and a made-up adapter is refused")
+def check_rack_fibrain_coupler_ends(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_fixture(page, base, json.loads(FIBRAIN_FIXTURE.read_text()))
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "agent tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    page.wait_for_timeout(1500)       # the parts lists the add-time check reads, as the last draw read them
+    slot = "drawer/module/slot-1/module/"
+    # the list the assistant picks ends from: the drawing gives the outer ends, the catalogue the inner ones (no panel draws them)
+    for view, first in (("front", "sc01"), ("rear", "b01")):
+        listed = agent_call(page, "list_free_ports", {"id": "i1", "view": view})["content"][0]["text"]
+        if f"{slot}{first}" not in listed:
+            bad.append(f"fibrain: list_free_ports on the {view} does not list {slot}{first}: {listed[:300]!r}")
+    cable = lambda item, path, view: {"op": "cable.add", "a": {"item": item, "path": "pon", "view": "rear"},
+                                      "b": {"item": "i1", "path": slot + path, "view": view}, "media": "os2"}
+    err = page.evaluate("c => window.__rack.apply(c).error ?? null", cable("i2", "b01", "rear"))
+    if err:
+        bad.append(f"fibrain: the page's command refused a cable to the inner face: {err}")
+    res = agent_call(page, "edit_rack", {"commands": [cable("i3", "sc01", "front")]})
+    if res.get("isError"):
+        bad.append(f"fibrain: the assistant's tool refused a cable to the outer face: {res['content'][0]['text']}")
+    for path, view in (("sc99", "front"), ("b99", "rear")):
+        r1 = page.evaluate("c => window.__rack.apply(c).error ?? null", cable("i2", path, view))
+        r2 = agent_call(page, "edit_rack", {"commands": [cable("i3", path, view)]})
+        t2 = r2["content"][0]["text"] if r2.get("content") else ""
+        if not r1 or f"no port {path}" not in r1:
+            bad.append(f"fibrain: the page's command did not refuse {path} in the kit's words: {r1!r}")
+        if not r2.get("isError") or f"no port {path}" not in t2:
+            bad.append(f"fibrain: the assistant's tool did not refuse {path} in the kit's words: {t2!r}")
+    if page.evaluate("() => window.__rack.doc().racks[0].cables.length") != 2:
+        bad.append("fibrain: the cables are not the two that were accepted")
+    try:
+        page.wait_for_function("() => (window.__rack.routes() || []).length === 2", timeout=READY_MS)
+    except Exception:
+        bad.append(f"fibrain: the cables are not both routed in 2D: {page.evaluate('() => (window.__rack.routes() || []).length')} routes")
+    if webgl_trouble(page):
+        print("[check_rack_fibrain_coupler_ends] no WebGL here - the 3D half was not checked")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "fibrain 3D", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    tubes = page.evaluate("() => (window.__rack.scene().rackCables?.tubes ?? []).filter(t => t.points?.length > 1).length")
+    if tubes != 2:
+        bad.append(f"fibrain 3D: {tubes} cables are hung, expected 2")
+    # THE PANEL'S BODY IS OPEN BEHIND THE ADAPTERS: a floor, two side walls and a cover, and no wall at the back or the front
+    parts = sorted(s["part"] for s in page.evaluate("() => window.__rack.solids()") if s["item"] == "i1")
+    if parts != ["interior/floor", "shell-top/cover", "side-left/wall", "side-right/wall"]:
+        bad.append(f"fibrain 3D: the panel's solids are {parts}, expected a floor, two side walls and a cover (open at the back and the front)")
     return bad
 
 
