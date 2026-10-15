@@ -63,7 +63,7 @@ export function litFor(rack, target) {
 // not of the cable's group, so the lit set names the ends as well, `item|port`
 // (a plug on `port-1-occupant/tx` is on `port-1`). `dim` holds the ends of
 // every cable not lit, less any end a lit cable also holds.
-const portKey = (item, path) => `${item}|${String(path).split('-occupant')[0]}`;
+export const portKey = (item, path) => `${item}|${String(path).split('-occupant')[0]}`;
 function plugsFor(rack, litCables) {
   const on = new Set(), dim = new Set();
   for (const c of rack.cables || [])
