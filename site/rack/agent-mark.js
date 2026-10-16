@@ -18,6 +18,11 @@ export function markTouched(root, ids, on) {
   for (const id of ids) {
     const q = CSS.escape(id);
     for (const n of root.querySelectorAll(`svg [data-item-id="${q}"], svg [data-cable-id="${q}"], svg [data-zerou-id="${q}"]`))
+    {
       n.classList.toggle('rk-agent-touched', on);
+      // An element drawn with no class is left as it was drawn: class="" is a difference from the same drawing made
+      // again, which shows when the mark runs out between two draws of the page.
+      if (!on && !n.getAttribute('class')) n.removeAttribute('class');
+    }
   }
 }

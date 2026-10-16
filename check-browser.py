@@ -10469,7 +10469,9 @@ def reading_fresh_after_edit(page, base, check_kept):
             bad.append(f"{where}: a redraw of a rack that had not changed read the routes {reads_after['routeFacts'] - reads['routeFacts']} times and laid {reads_after['lays'] - reads['lays']:g} cables; expected neither")
         for key in got_state:
             if again_state[key] != got_state[key]:
-                bad.append(f"{where}: {key} changed when the page was drawn again with no edit")
+                a, b = json.dumps(got_state[key]), json.dumps(again_state[key])
+                k = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), min(len(a), len(b)))
+                bad.append(f"{where}: {key} changed when the page was drawn again with no edit: ...{a[max(0, k - 200):k + 200]} against ...{b[max(0, k - 200):k + 200]}")
         # each tool again: no route is read, and no cable is laid for an answer already given
         # (a dry run is not a reading: the kit runs the command, which lays what the command needs laid)
         for name, a, first in got_tools:
