@@ -12908,7 +12908,7 @@ def check_rack_dc_ground(page, base):
     if not page.is_visible("#cKind"):
         return bad + ["form: the kind is not offered for two power ends"]
     kinds = page.eval_on_selector_all("#cKind option", "o => o.map(x => x.textContent)")
-    if kinds != ["Power cable (AC)", "DC feed", "Ground wire"]:
+    if kinds != ["Not set", "Power cable (AC)", "DC feed", "Ground wire"]:
         bad.append(f"form: the kinds offered are {kinds}")
     if page.input_value("#cKind") != "dc" or page.input_value("#cMedia") != "power":
         bad.append(f"form: DC ends propose kind {page.input_value('#cKind')!r} on media {page.input_value('#cMedia')!r}")
@@ -12918,6 +12918,10 @@ def check_rack_dc_ground(page, base):
     page.select_option("#cKind", "ground")
     if page.input_value("#cMedia") != "ground" or "does not suit" not in (page.text_content("#cWarn") or ""):
         bad.append(f"form: a ground wire on power ends: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")
+    # an AC cord over DC ends is said too: the media is the same, the kind is not
+    page.select_option("#cKind", "ac")
+    if page.input_value("#cMedia") != "power" or "Power cable (AC) does not suit end B, which is DC power." not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: an AC kind on DC ends: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")
     page.select_option("#cKind", "dc")
     if page.input_value("#cMedia") != "power" or (page.text_content("#cWarn") or "").strip():
         bad.append(f"form: back to a DC feed: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")

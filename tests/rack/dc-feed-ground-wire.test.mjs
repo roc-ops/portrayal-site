@@ -13,7 +13,7 @@ import {createRackEditor} from '../../vendor/rack/editor.js';
 import {newDoc} from '../../vendor/rack/model.js';
 import {settleEnd, cableEndPaths} from '../../vendor/rack/ports.js';
 import {mismatch, looseReason, proposeMedia, MEDIA, MEDIA_LABELS} from '../../vendor/rack/cable-rules.js';
-import {kindLabel, KINDS, kindOfMedia, mediaOfKind} from '../../site/rack/cable-kinds.js';
+import {kindLabel, KINDS, kindOfMedia, kindWarnings, mediaOfKind} from '../../site/rack/cable-kinds.js';
 
 const dist = f => JSON.parse(readFileSync(new URL(`../../assets/dist/${f}`, import.meta.url)));
 const devices = dist('rack.json').devices;
@@ -108,5 +108,19 @@ test('a ground wire runs from stud to stud and lands, and a ground wire on a pow
   assert.deepEqual(mismatch('ground', a.info, b.info), []);
   const res = ed.apply({op: 'cable.add', a: stud('i3'), b: stud('i4'), media: 'ground'}, {origin: 'agent', ctx});
   assert.equal(res.error, undefined, res.error);
-  assert.match(mismatch('ground', a.info, infoOf(rack, dc).info).join(' '), /does not suit end B, which is power|The ends differ/);
+  assert.deepEqual(mismatch('ground', a.info, infoOf(rack, dc).info),
+    ['The ends differ: A is ground, B is power.', 'Ground wire does not suit end B, which is power.']);
+});
+
+test('the kind chosen is held against the AC or DC each end states, and an end that states none is not warned', () => {
+  const rack = rackWith().rack();
+  const dcEnd = infoOf(rack, dc).info;
+  // (the panel's output states no AC or DC, so only the terminal, end B, is held to the kind)
+  assert.deepEqual(kindWarnings('ac', infoOf(rack, out).info, dcEnd), ['Power cable (AC) does not suit end B, which is DC power.']);
+  assert.deepEqual(kindWarnings('dc', infoOf(rack, out).info, dcEnd), []);
+  assert.deepEqual(kindWarnings('dc', {family: 'power', mode: 'ac', role: 'inlet'}, null),
+    ['DC feed does not suit end A, which is AC power.']);
+  assert.deepEqual(kindWarnings('dc', {family: 'power', mode: null, role: 'inlet'}, null), []);
+  assert.deepEqual(kindWarnings('ground', dcEnd, dcEnd), []);
+  assert.deepEqual(kindWarnings('', dcEnd, dcEnd), []);
 });

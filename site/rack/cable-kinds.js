@@ -22,6 +22,19 @@ export function kindOfMedia(media, a = null, b = null) {
   return a?.mode === 'dc' || b?.mode === 'dc' ? 'dc' : 'ac';
 }
 
+// The kit's mismatch cannot tell an AC cord from a DC feed (one media), so the
+// kind chosen is held against the AC or DC each end states: a warning where it
+// contradicts one, nothing where the end says nothing.
+const ACDC = {ac: 'AC', dc: 'DC'};
+export function kindWarnings(kind, a = null, b = null) {
+  if (kind !== 'ac' && kind !== 'dc') return [];
+  const out = [];
+  for (const [k, e] of [['A', a], ['B', b]])
+    if (e?.family === 'power' && ACDC[e.mode] && e.mode !== kind)
+      out.push(`${kindLabel(kind)} does not suit end ${k}, which is ${ACDC[e.mode]} power.`);
+  return out;
+}
+
 // Whether the form offers kinds at all: the cable is power cabling already, or
 // an end says it is power or ground.
 export const offersKinds = (media, a = null, b = null) =>
