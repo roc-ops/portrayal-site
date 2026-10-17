@@ -24070,9 +24070,124 @@ def check_rack_strap_kinds(page, base):
     return bad
 
 
+# A BUNDLE WHOSE TRUNK IS ONE WAYPOINT IS A TIE (Portrayal #1126, kit 0.51.0):
+# the bundle fixture's cables through the ring of its lacer, held by one strap
+# round the pack there.
+TIE_RING = [{"item": "i2", "via": "guide-1"}]
+TIE_2D_JS = """() => ['paneFront', 'paneRear'].flatMap(pane => [...document.querySelectorAll(`#${pane} svg [data-strap="b1"]`)].map(n => {
+  const l = n.querySelector('line');
+  return {pane, kind: n.dataset.strapKind, width: +n.dataset.strapWidth, members: n.dataset.members,
+          at: [(+l.getAttribute('x1') + +l.getAttribute('x2')) / 2, (+l.getAttribute('y1') + +l.getAttribute('y2')) / 2]}; }))"""
+TIE_3D_JS = """() => { const out = [], fz = window.__rack.scene().metrics().faceZ;
+  window.__rack.scene().three.scene.traverse(o => { if (o.isMesh && o.userData.strap && o.userData.strap.bundle === 'b1')
+    out.push({name: o.name, kind: o.userData.strap.kind, width: o.userData.strap.width_mm, at: [o.position.x, o.position.y, o.position.z - fz]}); });
+  return out; }"""
+
+
+def tie_rack(page, ports, route):
+    rack = bundle_fixture(page, "front", ports)
+    rack["bundles"] = [{"id": "b1", "number": 1, "label": "", "members": [{"cable": c["id"]} for c in rack["cables"]], "route": route}]
+    return rack
+
+
+@extra("rack.html: a bundle whose trunk is one waypoint is a tie - one strap at its ring in 2D and 3D, counted once in the BOM and the schedule at the kit's width (19 or 25 mm); a saved rack that holds one loads as it was; a bundle of two waypoints is drawn and counted as before (Portrayal #1126)")
+def check_rack_bundle_tie(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.click('#mode [data-mode="2d"]')
+    gl = not webgl_trouble(page)
+    ports = [f"port-{k}" for k in range(1, 13)]
+
+    def open_rack(saved, n):
+        page.evaluate("r => window.__rack.replaceRack(r)", saved)
+        wait_fn(page, "tie: the routes", "n => window.__rack.routesCurrent().current && (window.__rack.routes() || []).length === n && window.__rack.routes().every(([, ws]) => ws.length)", arg=n)
+        wait_fn(page, "tie: the bundle", "() => (window.__rack.bundles() || []).length === 1")
+        page.wait_for_timeout(600)
+
+    def sums(where):
+        """What the BOM and the schedule say of the bundle's straps."""
+        _, rows, _ = read_csv(export_file(page, "bom"))
+        line = [r for r in rows if "Hook-and-loop cable strap" in " ".join(str(v) for v in r.values())]
+        sched = read_csv(export_file(page, "cables"))[2]
+        return line, sched
+
+    for count, wide in ((3, 19), (12, 25)):
+        saved = tie_rack(page, ports[:count], TIE_RING)
+        open_rack(saved, count)
+        where = f"{count} cables"
+        # A SAVED RACK THAT HOLDS A ONE-WAYPOINT BUNDLE LOADS AS IT WAS.
+        kept = page.evaluate("() => window.__rack.doc().racks[0].bundles")
+        if kept != saved["bundles"]:
+            bad.append(f"{where}: the saved bundle came back as {kept}, expected {saved['bundles']}")
+        b = page.evaluate("() => window.__rack.bundles()[0]")
+        if b["count"] != 1 or (b["kinds"] or {}).get("tie") != 1 or [(s["kind"], s["width_mm"]) for s in b["straps"]] != [("tie", wide)]:
+            bad.append(f"{where}: the kit gives the tie {b['count']} straps, {b['kinds']}, {[(s['kind'], s['width_mm']) for s in b['straps']]}; expected one tie strap, {wide} mm")
+            continue
+        pt = b["straps"][0]["point"]
+        # 2D: ONE STRAP AT THE RING, ON THE FRONT PANE (the cables go through the lacer on the front)
+        bars = page.evaluate(TIE_2D_JS)
+        if [(x["pane"], x["kind"], x["width"]) for x in bars] != [("paneFront", "tie", wide)]:
+            bad.append(f"{where}, 2D: the panes draw {[(x['pane'], x['kind'], x['width']) for x in bars]}; expected one {wide} mm tie strap on the front")
+        else:
+            H = saved["frame"]["heightRU"] * 44.45
+            # (within the pack: the kit's point is on one member's line, the strap at the pack's middle)
+            if abs(bars[0]["at"][0] - (450.85 / 2 + pt["x"])) > 20 or abs(bars[0]["at"][1] - (H - pt["y"])) > 20:
+                bad.append(f"{where}, 2D: the strap is at {bars[0]['at']}, the kit's place for it is {(450.85 / 2 + pt['x'], H - pt['y'])}")
+            if set(bars[0]["members"].split()) != {c["id"] for c in saved["cables"]}:
+                bad.append(f"{where}, 2D: the strap names {bars[0]['members']}, expected every cable")
+        # THE BILL OF MATERIALS AND THE SCHEDULE, ONCE, AT THE KIT'S WIDTH
+        line, sched = sums(where)
+        text = " ".join(str(v) for v in line[0].values()) if line else ""
+        if len(line) != 1 or "1" not in (line[0].get("qty"), line[0].get("Qty")) or "1 round a bundle tied at one point" not in text or f"1 of {wide} mm wide" not in text:
+            bad.append(f"{where}, BOM: the strap line is {line}; expected one strap, round a bundle tied at one point, 1 of {wide} mm")
+        if "tied at" not in sched or "1 strap" not in sched:
+            bad.append(f"{where}, schedule: no bundle note saying it is tied at one point with 1 strap")
+        # THE SIDE PANE: ONE STRAP AT THE RING (this assertion was written after the code)
+        page.click('#view2d [data-view="sides"]')
+        wait_fn(page, "tie: the side pair's cables", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-cables] [data-cable-id]').length > 0")
+        side = page.evaluate("""() => [...document.querySelectorAll('svg[data-pane="left"] [data-strap="b1"]')].map(n => ({kind: n.dataset.strapKind, width: +n.dataset.strapWidth}))""")
+        if [(x["kind"], x["width"]) for x in side] != [("tie", wide)]:
+            bad.append(f"{where}, side: the left pane draws {side}; expected one {wide} mm tie strap")
+        page.click('#view2d [data-view="faces"]')
+        wait_fn(page, "tie: the faces again", "() => !!document.querySelector('#paneFront svg[data-pane=\"front\"]')")
+        # 3D
+        if gl:
+            page.click('#mode [data-mode="3d"]')
+            settle_scene(page, f"3D: the tie, {where}", tubes=True)
+            bands = page.evaluate(TIE_3D_JS)
+            if [(x["kind"], x["width"]) for x in bands] != [("tie", wide)]:
+                bad.append(f"{where}, 3D: the scene has {[(x['kind'], x['width']) for x in bands]}; expected one {wide} mm tie band")
+            elif abs(bands[0]["at"][0] - pt["x"]) > 20 or abs(bands[0]["at"][1] - pt["y"]) > 20:
+                bad.append(f"{where}, 3D: the band is at {bands[0]['at']}, the kit's place for it is {pt}")
+            page.click('#mode [data-mode="2d"]')
+
+    # A BUNDLE OF TWO WAYPOINTS IS DRAWN AND COUNTED AS IT WAS: every strap the kit gives, no tie.
+    saved = tie_rack(page, ports[:3], TIE_RING + [{"lane": "left-front", "ru": 25}])
+    open_rack(saved, 3)
+    b = page.evaluate("() => window.__rack.bundles()[0]")
+    bars = page.evaluate(TIE_2D_JS)
+    if not b["count"] or "tie" in (b["kinds"] or {}) or sorted((x["kind"], x["width"]) for x in bars) != sorted((s["kind"], s["width_mm"]) for s in b["straps"]):
+        bad.append(f"two waypoints: the kit gives {b['count']} straps {b['kinds']}, the front pane draws {[(x['kind'], x['width']) for x in bars]}")
+    line, _ = sums("two waypoints")
+    if len(line) != 1 or str(b["count"]) not in (line[0].get("qty"), line[0].get("Qty")) or "tied at one point" in str(line):
+        bad.append(f"two waypoints: the BOM's strap line is {line}; expected the bundle's {b['count']}")
+    if gl:
+        page.click('#mode [data-mode="3d"]')
+        settle_scene(page, "3D: two waypoints", tubes=True)
+        bands = page.evaluate(TIE_3D_JS)
+        if sorted((x["kind"], x["width"]) for x in bands) != sorted((s["kind"], s["width_mm"]) for s in b["straps"]):
+            bad.append(f"two waypoints, 3D: {[(x['kind'], x['width']) for x in bands]}, the kit's {[(s['kind'], s['width_mm']) for s in b['straps']]}")
+    else:
+        print("[check_rack_bundle_tie] no WebGL here - the 3D half was not checked")
+    return bad
+
+
 # Eleven copper cords down one lane to a switch at the top, with no horizontal
 # manager: each runs from the lane across the switch's face to its port.
-COVER_FIXTURE = """async () => {
+COVER_FIXTURE ="""async () => {
   const M = await import('/vendor/rack/model.js'), K = await import('/vendor/rack/cable-rules.js');
   let r = M.newRack({name: 'Span over ports'});
   ({rack: r} = M.withItem(r, {ref: 'ds1000', cfg: 'f2b', ru: 42, face: 'front', label: 'MGMT-SW1'}));
