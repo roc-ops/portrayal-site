@@ -23039,14 +23039,14 @@ KIT_JS = """async ([target, patch, fail]) => {
 # The modules files the VENDORED KIT writes for the rack on the page, by the name nautobotModuleFile(depth)
 # gives them: the kit's own moduleImportRows, run on what dcimContext reads, as dcimKit runs it - so what a
 # test expects of the zip is the kit's answer, not a copy of it.
-KIT_MODULES_JS = """async () => {
+KIT_MODULES_JS = """async (patch) => {
   const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js'),
         D = await import('/vendor/rack/dcim-rules.js'), E = await import('/vendor/rack/export-data.js');
   const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
-  const {rack} = D.kitNames(window.__rack.doc().racks[0]);
+  const {rack} = D.kitNames({...window.__rack.doc().racks[0], ...(patch.dcim ? {dcim: patch.dcim} : {})});
   const ctx = await X.dcimContext(rack, of, 'nautobot');
   const names = E.uniqueNames(ctx.items);
-  const dev = E.deviceImportRows({rack, items: ctx.items, types: ctx.types, target: 'nautobot', dcim: {}, why: ctx.why});
+  const dev = E.deviceImportRows({rack, items: ctx.items, types: ctx.types, target: 'nautobot', dcim: (await import('/vendor/rack/model.js')).dcimOf(rack), why: ctx.why});
   const out = new Set(dev.left.map(l => l.id)), kept = new Set(ctx.items.filter(i => !out.has(i.id)).map(i => i.id));
   const mod = D.moduleImportRows({target: 'nautobot', parts: ctx.parts, names, kept,
     deviceOf: id => ctx.types.get(id)?.lists ?? null,
@@ -23356,14 +23356,14 @@ def check_rack_dcim_kit_nested(page, base):
         bad.append(f"nested kit, Nautobot: the files are {own}")
     if kit["files"].get("2b-modules-depth-1.csv") != kit["zip"].get("2b-modules-depth-1.csv"):
         bad.append("nested kit, Nautobot: the builder does not report 2b-modules-depth-1.csv as the text in the zip")
-    want = page.evaluate(KIT_MODULES_JS)
+    want = page.evaluate(KIT_MODULES_JS, KIT_SETTINGS)
     if want["depths"] != [1] or not want["rows"][0]:
         bad.append(f"nested kit, Nautobot: the kit's own modules export has sections at depths {want['depths']} with rows {want['rows']}, not rows at depth 1")
     for name, text in want["files"].items():
         if kit["zip"].get(name) != text:
             bad.append(f"nested kit, Nautobot: {name} in the zip is {kit['zip'].get(name)!r}, the kit's modules export gives {text!r}")
     readme = kit["zip"]["README.txt"]
-    at = [readme.find(n) for n in ("2-modules.csv (", f"2b-modules-depth-1.csv ({want['rows'][0]} rows)", "3-cables.csv (")]
+    at = [readme.find(n) for n in ("2-modules.csv (", "2b-modules-depth-1.csv (", "3-cables.csv (")]
     if min(at) < 0 or at != sorted(at):
         bad.append(f"nested kit, Nautobot: the README does not list 2-modules.csv, 2b-modules-depth-1.csv and 3-cables.csv in that order: {at}")
     if len(kit["notes"]) != readme_count(readme):
