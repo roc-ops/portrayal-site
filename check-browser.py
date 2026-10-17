@@ -23036,6 +23036,27 @@ KIT_JS = """async ([target, patch, fail]) => {
 }"""
 
 
+# The modules files the VENDORED KIT writes for the rack on the page, by the name nautobotModuleFile(depth)
+# gives them: the kit's own moduleImportRows, run on what dcimContext reads, as dcimKit runs it - so what a
+# test expects of the zip is the kit's answer, not a copy of it.
+KIT_MODULES_JS = """async () => {
+  const X = await import('/site/rack/exports.js'), C = await import('/vendor/rack/catalog.js'),
+        D = await import('/vendor/rack/dcim-rules.js'), E = await import('/vendor/rack/export-data.js');
+  const of = (await C.loadCatalog('/assets/dist/')).chassisOf;
+  const {rack} = D.kitNames(window.__rack.doc().racks[0]);
+  const ctx = await X.dcimContext(rack, of, 'nautobot');
+  const names = E.uniqueNames(ctx.items);
+  const dev = E.deviceImportRows({rack, items: ctx.items, types: ctx.types, target: 'nautobot', dcim: {}, why: ctx.why});
+  const out = new Set(dev.left.map(l => l.id)), kept = new Set(ctx.items.filter(i => !out.has(i.id)).map(i => i.id));
+  const mod = D.moduleImportRows({target: 'nautobot', parts: ctx.parts, names, kept,
+    deviceOf: id => ctx.types.get(id)?.lists ?? null,
+    moduleOf: ref => ctx.modules.find(m => m.ref === ref)?.type ?? null});
+  const files = {[D.nautobotModuleFile(0)]: E.toCsv(mod.columns, mod.rows)};
+  for (const s of mod.deeper) files[D.nautobotModuleFile(s.depth)] = E.toCsv(s.columns, s.rows);
+  return {files, depths: mod.deeper.map(s => s.depth), rows: mod.deeper.map(s => s.rows.length)};
+}"""
+
+
 def built_kit(page, target, patch=None, fail=None):
     got = page.evaluate(KIT_JS, [target, patch or {}, fail])
     with zipfile.ZipFile(io.BytesIO(bytes(got.pop("zip")))) as z:
@@ -23285,6 +23306,73 @@ def check_rack_dcim_kit_nautobot(page, base):
         bad.append(f"Nautobot kit, ends unchecked: cables {kit['zip']['3-cables.csv']!r}, left {left}")
     if len(kit_rows(kit, "1-devices.csv")) != 4:
         bad.append("Nautobot kit, ends unchecked: the devices file lost rows")
+    return bad
+
+
+KIT_GOLDEN = HERE / "tests" / "rack" / "golden" / "dcim-kit"
+KIT_NESTED_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "nested-module.rack.json"
+KIT_SETTINGS = {"dcim": {"site": "Lab 1", "role": "Router"}}
+
+
+@extra("rack.html: a rack with no module in a module gives the same import kit as before - every file but the type files, for NetBox and for Nautobot, byte for byte (tests/rack/golden/dcim-kit; PORTRAYAL_WRITE_GOLDEN=1 rewrites it)")
+def check_rack_dcim_kit_golden(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"kit golden: {e}"]
+    for target in ("netbox", "nautobot"):
+        kit = built_kit(page, target, KIT_SETTINGS)
+        own = [n for n in kit["names"] if not n.startswith("types/")]
+        folder = KIT_GOLDEN / target
+        if os.environ.get("PORTRAYAL_WRITE_GOLDEN"):
+            folder.mkdir(parents=True, exist_ok=True)
+            for n in own:
+                (folder / n).write_bytes(kit["zip"][n].encode("utf-8"))
+            continue
+        held = sorted(p.name for p in folder.iterdir()) if folder.is_dir() else []
+        if sorted(own) != held:
+            bad.append(f"kit golden, {target}: the zip holds {own}, the golden {held}")
+        for n in own:
+            want = (folder / n).read_bytes().decode("utf-8") if (folder / n).is_file() else None
+            if kit["zip"][n] != want:
+                bad.append(f"kit golden, {target}: {n} is not the golden text: "
+                           + "".join(list(difflib.unified_diff((want or "").splitlines(True), kit["zip"][n].splitlines(True), n=0))[:12]))
+    return bad
+
+
+@extra("rack.html: a module in a module (a Fibrain panel in an XCU10 drawer's slot-1) is in the Nautobot zip as its own file, 2b-modules-depth-1.csv, between 2-modules.csv and the cables, and the README lists the files in import order; the NetBox files are unchanged")
+def check_rack_dcim_kit_nested(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_fixture(page, base, json.loads(KIT_NESTED_FIXTURE.read_text()))
+    except RuntimeError as e:
+        return bad + [f"nested kit: {e}"]
+    kit = built_kit(page, "nautobot", KIT_SETTINGS)
+    own = [n for n in kit["names"] if not n.startswith("types/")]
+    if own != ["1-devices.csv", "2-modules.csv", "2b-modules-depth-1.csv", "3-cables.csv", "import_cables.py", "README.txt"]:
+        bad.append(f"nested kit, Nautobot: the files are {own}")
+    if kit["files"].get("2b-modules-depth-1.csv") != kit["zip"].get("2b-modules-depth-1.csv"):
+        bad.append("nested kit, Nautobot: the builder does not report 2b-modules-depth-1.csv as the text in the zip")
+    want = page.evaluate(KIT_MODULES_JS)
+    if want["depths"] != [1] or not want["rows"][0]:
+        bad.append(f"nested kit, Nautobot: the kit's own modules export has sections at depths {want['depths']} with rows {want['rows']}, not rows at depth 1")
+    for name, text in want["files"].items():
+        if kit["zip"].get(name) != text:
+            bad.append(f"nested kit, Nautobot: {name} in the zip is {kit['zip'].get(name)!r}, the kit's modules export gives {text!r}")
+    readme = kit["zip"]["README.txt"]
+    at = [readme.find(n) for n in ("2-modules.csv (", f"2b-modules-depth-1.csv ({want['rows'][0]} rows)", "3-cables.csv (")]
+    if min(at) < 0 or at != sorted(at):
+        bad.append(f"nested kit, Nautobot: the README does not list 2-modules.csv, 2b-modules-depth-1.csv and 3-cables.csv in that order: {at}")
+    if len(kit["notes"]) != readme_count(readme):
+        bad.append(f"nested kit, Nautobot: {readme_count(readme)} README notes; the builder reports {len(kit['notes'])}")
+
+    kit = built_kit(page, "netbox", KIT_SETTINGS)
+    own = [n for n in kit["names"] if not n.startswith("types/")]
+    if own != ["1-rack.csv", "2-devices.csv", "3-modules.csv", "4-cables.csv", "README.txt"]:
+        bad.append(f"nested kit, NetBox: the files are {own}")
     return bad
 
 
