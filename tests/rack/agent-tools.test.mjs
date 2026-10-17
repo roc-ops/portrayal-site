@@ -57,7 +57,16 @@ test('every export kind maps to a page export key', () => {
 });
 
 const PORTS = [{path: 'port-1', cls: 'port', speed: '100G', media: 'qsfp28'}, {path: 'port-2', cls: 'port', speed: '100G', media: 'qsfp28'}];
-const setup = ({doc = M.newDoc(), ports = PORTS, facts = {ends: new Map()}, devices = SIZES, library = null, context = null} = {}) => {
+// two rack products, as rack.json's `frames` rows state them (the rest of a row is not read by the tools)
+const FRAMES = {
+  'apc/ar203a@1': {ref: 'apc/ar203a@1', manufacturer: 'APC', model: 'AR203A', form: '4-post-frame', ru: 44,
+    'part-numbers': {AR203A: 'Open frame'}, rails: [{id: 'front'}, {id: 'rear', depth: {fixed: 740}}]},
+  'generic/4-post-cabinet@1': {ref: 'generic/4-post-cabinet@1', manufacturer: 'Generic', model: '4-post-cabinet', form: '4-post-cabinet', ru: 42,
+    aliases: ['server cabinet'], rails: [{id: 'front'}, {id: 'rear', depth: {min: 700, max: 900, step: 50}}]},
+  'generic/2-post-frame@1': {ref: 'generic/2-post-frame@1', manufacturer: 'Generic', model: '2-post-frame', form: '2-post-frame', ru: 42,
+    rails: [{id: 'front'}]},
+};
+const setup = ({doc = M.newDoc(), ports = PORTS, facts = {ends: new Map()}, devices = SIZES, library = null, context = null, frames = FRAMES} = {}) => {
   const ed = createRackEditor({doc, chassisOf});
   // Every per-call context the tools ask for, so a test can see what was loaded.
   const contexts = [];
@@ -75,7 +84,7 @@ const setup = ({doc = M.newDoc(), ports = PORTS, facts = {ends: new Map()}, devi
   };
   const exported = [];
   const runExport = async key => { exported.push(key); return {name: `rack.${key}`, notes: 'Exported 1 device.'}; };
-  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries, runExport, context: context ?? ctxFor, library}).map(t => [t.name, t]));
+  const tools = Object.fromEntries(rackTools({ed, chassisOf, queries, runExport, context: context ?? ctxFor, library, frames}).map(t => [t.name, t]));
   return {ed, tools, exported, contexts, run: (name, args = {}) => tools[name].execute(args)};
 };
 const text = r => r.content[0].text;
@@ -83,7 +92,7 @@ const text = r => r.content[0].text;
 test('the tools: names, bounds, annotations', () => {
   const {tools} = setup();
   assert.deepEqual(Object.keys(tools).sort(),
-    ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo']);
+    ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'find_rack_products', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo']);
   assert.equal(tools.new_rack.annotations.readOnlyHint, false);
   for (const t of Object.values(tools)) {
     assert.ok(t.description.length <= 500, `${t.name} description is ${t.description.length}`);
@@ -91,7 +100,7 @@ test('the tools: names, bounds, annotations', () => {
       assert.ok((p.description ?? '').length <= 150, `${t.name}.${k} description is too long`);
     assert.equal(t.inputSchema.type, 'object');
   }
-  for (const n of ['describe_rack', 'find_devices', 'check_fit', 'list_free_ports', 'inspect']) assert.equal(tools[n].annotations.readOnlyHint, true);
+  for (const n of ['describe_rack', 'find_devices', 'find_rack_products', 'check_fit', 'list_free_ports', 'inspect']) assert.equal(tools[n].annotations.readOnlyHint, true);
   for (const n of ['describe_rack', 'list_free_ports', 'inspect']) assert.equal(tools[n].annotations.untrustedContentHint, true);
 });
 
@@ -197,6 +206,26 @@ test('find_devices: offset pages, and the header says what comes next', async ()
   assert.match(last, /^45 matches, showing 41-45\.\n/);
   assert.equal(last.split('\n').length, 6);
 });
+
+test('find_rack_products: the kit\'s search by words and form, one line per product with its rail depth', async () => {
+  const {run} = setup();
+  assert.equal(text(await run('find_rack_products', {text: 'ar203a'})),
+    '1 match.\napc/ar203a@1 | APC AR203A | 44U | 4-post-frame | rail depth fixed at 740 mm');
+  assert.equal(text(await run('find_rack_products', {text: 'server cabinet'})),
+    '1 match.\ngeneric/4-post-cabinet@1 | Generic 4-post-cabinet | 42U | 4-post-cabinet | rail depth 700-900 mm in steps of 50');
+  assert.equal(text(await run('find_rack_products', {form: '2-post-frame'})),
+    '1 match.\ngeneric/2-post-frame@1 | Generic 2-post-frame | 42U | 2-post-frame | rail depth not stated');
+  assert.match(text(await run('find_rack_products')), /^3 matches\.\napc\/ar203a@1 \|/);
+  assert.match(text(await run('find_rack_products', {text: 'zzz'})), /^0 matches\./);
+});
+
+test('frame.apply and frame.customise are offered by edit_rack, from the command table', () => {
+  const ops = setup().tools.edit_rack.inputSchema.properties.commands.items.oneOf.map(b => b.properties.op.const);
+  assert.ok(ops.includes('frame.apply') && ops.includes('frame.customise'));
+  const apply = setup().tools.edit_rack.inputSchema.properties.commands.items.oneOf.find(b => b.properties.op.const === 'frame.apply');
+  assert.match(apply.properties.ref.description, /find_rack_products/);
+});
+
 test('check_fit with and without a U, and for an unknown device', async () => {
   const {ed, run} = setup();
   ed.apply({op: 'place', ref: 'r740xd', face: 'front', ru: 10, label: 'srv'});
@@ -719,7 +748,7 @@ test('new_rack with no library is refused, and the open rack is untouched', asyn
 });
 
 // ── round 2: the wording pass (plan Task 9) ──
-const TOOL_NAMES = ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo'];
+const TOOL_NAMES = ['check_fit', 'describe_rack', 'edit_rack', 'export_rack', 'find_devices', 'find_rack_products', 'inspect', 'list_free_ports', 'new_rack', 'redo', 'undo'];
 // Every description in a tool: its own, and every one in its schema at any depth.
 const described = t => {
   const out = [{where: t.name, d: t.description, long: true}];

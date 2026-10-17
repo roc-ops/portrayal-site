@@ -14054,6 +14054,269 @@ def check_rack_frame_focus(page, base):
     return bad
 
 
+# THE FRAME PICKER (Portrayal #935 step 2, #1131): the rack products of rack.json's `frames`, offered beside the
+# generic frame. The kit decides everything (frameProducts, frame.apply, frame.customise, editRefusal); these
+# checks look at what the page does with its answers.
+FRAME_REFS = ["apc/ar201@1", "apc/ar203a@1", "generic/2-post-frame@1", "generic/4-post-cabinet@1", "generic/4-post-frame@1"]
+RANGED_REF = "test/ranged@1"
+
+
+def with_ranged_product(page):
+    # None of the five products states a rail depth range (AR203A fixes one, the generic frames state none), so the
+    # range is tried on a sixth row added to the catalogue the page loads: the generic four-post frame with a
+    # rear rail that takes 700 to 900 mm in steps of 50, factory 750.
+    def patch(route):
+        resp = route.fetch()
+        data = resp.json()
+        row = json.loads(json.dumps(data["frames"]["generic/4-post-frame@1"]))
+        row.update({"ref": RANGED_REF, "vendor": "test", "name": "ranged", "manufacturer": "Test", "model": "Ranged", "ru": 36})
+        row["rails"] = [{"id": "front"}, {"id": "rear", "depth": {"min": 700, "max": 900, "step": 50, "factory": 750}}]
+        data["frames"][RANGED_REF] = row
+        route.fulfill(response=resp, json=data)
+    page.route("**/assets/dist/rack.json", patch)
+
+
+def open_frame_form(page, base, label, ranged=False):
+    if ranged:
+        with_ranged_product(page)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    wait_fn(page, "frame picker: ready", "() => window.__rack && window.__rack.ready")
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, label)
+    page.click("#frameBtn")
+    wait_sel(page, f"{label}: the frame form", "#fHeight")
+
+
+def frame_of(page):
+    return page.evaluate("() => window.__rack.doc().racks[0].frame")
+
+
+def product_refs(page):
+    return page.evaluate("() => [...document.querySelectorAll('#fProducts [data-product-ref]')].map(b => b.dataset.productRef)")
+
+
+@extra("rack.html: the frame form lists the five rack products, and a search finds AR203A by its part number and the form narrows the list")
+def check_rack_frame_picker_lists(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-lists")
+    wait_sel(page, "picker: the product list", "#fProducts [data-product-ref]")
+    got = product_refs(page)
+    if sorted(got) != FRAME_REFS:
+        bad.append(f"picker: the list holds {got}, expected the five products {FRAME_REFS}")
+    page.fill("#fProdSearch", "AR203A")
+    wait_fn(page, "picker: search by part number", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
+    if product_refs(page) != ["apc/ar203a@1"]:
+        bad.append(f"picker: a search for the part number AR203A finds {product_refs(page)}")
+    page.fill("#fProdSearch", "")
+    page.select_option("#fProdForm", "4-post-cabinet")
+    wait_fn(page, "picker: the cabinet form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
+    if product_refs(page) != ["generic/4-post-cabinet@1"]:
+        bad.append(f"picker: the form cabinet lists {product_refs(page)}")
+    page.select_option("#fProdForm", "2-post-frame")
+    wait_fn(page, "picker: the two-post form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 2")
+    if sorted(product_refs(page)) != ["apc/ar201@1", "generic/2-post-frame@1"]:
+        bad.append(f"picker: the form two-post lists {product_refs(page)}")
+    page.select_option("#fProdForm", "")
+    page.fill("#fProdSearch", "no such rack zzz")
+    wait_fn(page, "picker: nothing found", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 0")
+    if not (page.text_content("#fProducts") or "").strip():
+        bad.append("picker: a search that finds nothing says nothing")
+    return bad
+
+
+@extra("rack.html: choosing AR203A gives the frame its height, numbering, holes and depths, and shows its name and ref")
+def check_rack_frame_picker_apply(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-apply")
+    wait_sel(page, "picker: AR203A", '#fProducts [data-product-ref="apc/ar203a@1"]')
+    page.click('#fProducts [data-product-ref="apc/ar203a@1"]')
+    wait_fn(page, "picker: the ref is set", "() => window.__rack.doc().racks[0].frame.ref === 'apc/ar203a@1'")
+    f = frame_of(page)
+    want = {"kind": "four-post", "heightRU": 44, "numbering": "bottom-up", "railDepth": 740, "usableDepth": 740}
+    for k, v in want.items():
+        if f.get(k) != v:
+            bad.append(f"apply: frame.{k} is {f.get(k)!r}, expected {v!r}")
+    if (f.get("holes") or {}).get("style") != "square":
+        bad.append(f"apply: the holes are {f.get('holes')!r}, expected square")
+    wait_sel(page, "apply: the product on the frame", "#fProduct")
+    shown = page.text_content("#fProduct") or ""
+    if "AR203A" not in shown or "apc/ar203a@1" not in shown:
+        bad.append(f"apply: the frame shows {shown!r}, expected the product's name and ref")
+    wait_fn(page, "apply: the height field follows", "() => document.getElementById('fHeight')?.value === '44'")
+    return bad
+
+
+@extra("rack.html: while a product is applied its numbers cannot be edited, and the rail depth is taken inside the product's range and step and refused outside it")
+def check_rack_frame_picker_fixed(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-fixed", ranged=True)
+    wait_sel(page, "fixed: AR203A", '#fProducts [data-product-ref="apc/ar203a@1"]')
+    page.click('#fProducts [data-product-ref="apc/ar203a@1"]')
+    wait_sel(page, "fixed: the product on the frame", "#fProduct")
+    for sel in ("#fKind", "#fHeight", "#fNumbering", "#fHoles", "#fRail", "#fUsable"):
+        if not page.is_disabled(sel):
+            bad.append(f"fixed: {sel} can be edited while AR203A is applied")
+    # the kit refuses the same edit when a command, not the form, asks
+    before = frame_of(page)
+    for patch in ({"heightRU": 30}, {"numbering": "top-down"}, {"kind": "two-post"}, {"usableDepth": 500}, {"railDepth": 800}):
+        r = page.evaluate("p => window.__rack.apply({op: 'frame', ...p})", patch)
+        if not (r and r.get("error")):
+            bad.append(f"fixed: frame {patch} was not refused while AR203A is applied ({r})")
+    if frame_of(page) != before:
+        bad.append(f"fixed: a refused edit changed the frame: {before} -> {frame_of(page)}")
+    # a product with a range: the depth is the factory depth, and inside the range and step it is taken
+    page.fill("#fProdSearch", "ranged")
+    wait_sel(page, "fixed: the ranged product", f'#fProducts [data-product-ref="{RANGED_REF}"]')
+    page.click(f'#fProducts [data-product-ref="{RANGED_REF}"]')
+    wait_fn(page, "fixed: the ranged product is applied", f"() => window.__rack.doc().racks[0].frame.ref === '{RANGED_REF}'")
+    if frame_of(page).get("railDepth") != 750:
+        bad.append(f"fixed: the ranged product's factory depth is not on the frame ({frame_of(page).get('railDepth')!r})")
+    wait_fn(page, "fixed: the rail field", "() => document.getElementById('fRail') && !document.getElementById('fRail').disabled")
+    got = page.evaluate("() => { const r = document.getElementById('fRail'); return [r.min, r.max, r.step]; }")
+    if got != ["700", "900", "50"]:
+        bad.append(f"fixed: the rail field's min, max and step are {got}, expected the product's 700, 900, 50")
+    if not page.is_disabled("#fHeight"):
+        bad.append("fixed: the height can be edited while the ranged product is applied")
+    page.fill("#fRail", "800")
+    page.dispatch_event("#fRail", "change")
+    wait_fn(page, "fixed: 800 accepted", "() => window.__rack.doc().racks[0].frame.railDepth === 800")
+    page.fill("#fRail", "1000")
+    page.dispatch_event("#fRail", "change")
+    wait_fn(page, "fixed: 1000 refused, said",
+            "() => /from 700 to 900/.test(document.querySelector('.rk-side .rk-notice')?.textContent || '')")
+    page.fill("#fRail", "820")
+    page.dispatch_event("#fRail", "change")
+    wait_fn(page, "fixed: 820 refused, said",
+            "() => /steps of 50/.test(document.querySelector('.rk-side .rk-notice')?.textContent || '')")
+    if frame_of(page).get("railDepth") != 800:
+        bad.append(f"fixed: the depth is {frame_of(page).get('railDepth')!r} after two refused values, expected 800")
+    return bad
+
+
+@extra("rack.html: Customise clears the ref, keeps every number, and frees the form")
+def check_rack_frame_picker_customise(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-customise")
+    wait_sel(page, "customise: AR203A", '#fProducts [data-product-ref="apc/ar203a@1"]')
+    page.click('#fProducts [data-product-ref="apc/ar203a@1"]')
+    wait_sel(page, "customise: the product on the frame", "#fCustomise")
+    applied = frame_of(page)
+    page.click("#fCustomise")
+    wait_fn(page, "customise: the ref is cleared", "() => window.__rack.doc().racks[0].frame.ref === null")
+    after = frame_of(page)
+    if {**after, "ref": applied["ref"]} != applied:
+        bad.append(f"customise: the numbers changed: {applied} -> {after}")
+    wait_fn(page, "customise: the form is free", "() => !document.getElementById('fProduct') && !document.getElementById('fHeight').disabled")
+    page.fill("#fHeight", "30")
+    page.dispatch_event("#fHeight", "change")
+    wait_fn(page, "customise: the height can be edited", "() => window.__rack.doc().racks[0].frame.heightRU === 30")
+    return bad
+
+
+@extra("rack.html: a saved rack whose ref the catalogue lacks loads and shows the kit's note; one whose numbers no longer match offers to apply the product again")
+def check_rack_frame_picker_unknown(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-unknown")
+    doc = page.evaluate("() => structuredClone(window.__rack.doc())")
+    doc["id"] = "doc-frame-unknown"
+    doc["racks"][0]["name"] = "Unknown product"
+    doc["racks"][0]["frame"] = {**doc["racks"][0]["frame"], "heightRU": 30, "ref": "acme/gone@1"}
+    page.evaluate("d => window.__rack.loadDoc(d)", doc)
+    wait_fn(page, "unknown: the rack loaded", "() => window.__rack.doc().racks[0].name === 'Unknown product'")
+    wait_fn(page, "unknown: the kit's note",
+            "() => /acme\\/gone@1, which the catalogue does not have/.test(document.querySelector('.rk-side')?.textContent || '')")
+    if frame_of(page)["heightRU"] != 30 or frame_of(page)["ref"] != "acme/gone@1":
+        bad.append(f"unknown: the file's own frame was changed on load: {frame_of(page)}")
+    page.click("#frameBtn")
+    wait_sel(page, "unknown: the frame form", "#fNote")
+    if "does not have" not in (page.text_content("#fNote") or ""):
+        bad.append(f"unknown: the frame form does not say it ({page.text_content('#fNote')!r})")
+    wait_sel(page, "unknown: a product to apply", '#fProducts [data-product-ref="apc/ar203a@1"]')
+    page.click('#fProducts [data-product-ref="apc/ar203a@1"]')
+    wait_fn(page, "unknown: AR203A applied", "() => window.__rack.doc().racks[0].frame.ref === 'apc/ar203a@1' && window.__rack.doc().racks[0].frame.heightRU === 44")
+    # a product the catalogue has, whose fixed numbers the file no longer matches
+    changed = page.evaluate("() => structuredClone(window.__rack.doc())")
+    changed["id"] = "doc-frame-changed"
+    changed["racks"][0]["name"] = "Changed product"
+    changed["racks"][0]["frame"]["heightRU"] = 30
+    page.evaluate("d => window.__rack.loadDoc(d)", changed)
+    wait_fn(page, "changed: the rack loaded", "() => window.__rack.doc().racks[0].name === 'Changed product'")
+    wait_fn(page, "changed: the kit's note",
+            "() => /no longer match/.test(document.querySelector('.rk-side')?.textContent || '')")
+    page.click("#frameBtn")
+    wait_sel(page, "changed: the offer to apply again", "#fReapply")
+    page.click("#fReapply")
+    wait_fn(page, "changed: applied again", "() => window.__rack.doc().racks[0].frame.heightRU === 44")
+    wait_fn(page, "changed: the note is gone", "() => !document.getElementById('fNote')")
+    return bad
+
+
+FRAME_NULL_GOLDEN = HERE / "tests" / "rack" / "golden" / "frame-null" / "racks.json"
+FRAME_NULL_PANES_JS = """() => Object.fromEntries(['front', 'rear'].map(p => {
+  const svg = document.querySelector(`svg[data-pane="${p}"]`).cloneNode(true);
+  // the cable layers are drawn from routes read after the first draw; the elevation is what a frame decides
+  svg.querySelectorAll('[data-cables]').forEach(n => n.remove());
+  return [p, svg.outerHTML];
+}))"""
+
+
+@extra("rack.html: a rack with ref null looks, works and saves as before - the racks the tests keep, panes and saved file, against tests/rack/golden/frame-null (PORTRAYAL_WRITE_GOLDEN=1 rewrites it)")
+def check_rack_frame_null_golden(page, base):
+    import hashlib
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    sha = lambda s: hashlib.sha256(s.encode("utf-8")).hexdigest()
+    seen = {}
+    folder = HERE / "tests" / "rack" / "fixtures"
+    for path in sorted(folder.glob("*.json")):
+        fixture = json.loads(path.read_text())
+        if "racks" not in fixture:   # a bare rack (the cable-lay one), not a file
+            fixture.pop("_note", None)
+            fixture = {"format": "portrayal-rack", "version": 4, "id": "doc-frame-null", "racks": [fixture]}
+        try:
+            open_fixture(page, base, fixture)
+        except Exception as e:
+            bad.append(f"frame null, {path.name}: {str(e).splitlines()[0]}")
+            continue
+        wait_fn(page, f"frame null, {path.name}: idle", "() => window.__rack.idle()")
+        panes = page.evaluate(FRAME_NULL_PANES_JS)
+        saved = page.evaluate("() => JSON.stringify(window.__rack.doc())")
+        seen[path.name] = {"front": sha(panes["front"]), "rear": sha(panes["rear"]), "saved": sha(saved)}
+        f = json.loads(saved)["racks"][0]["frame"]
+        if f.get("ref") is not None:
+            bad.append(f"frame null, {path.name}: the file's frame has a ref ({f.get('ref')!r})")
+        # the form: every control it always had, free to edit, and no product on the frame
+        page.click("#frameBtn")
+        wait_sel(page, f"frame null, {path.name}: the frame form", "#fHeight")
+        ids = ["fName", "fKind", "fHeight", "fNumbering", "fHoles", "fUsable"] + (["fRail"] if f["kind"] == "four-post" else [])
+        for i in ids:
+            if not page.query_selector(f"#{i}") or page.is_disabled(f"#{i}"):
+                bad.append(f"frame null, {path.name}: #{i} is missing or cannot be edited")
+        if page.query_selector("#fProduct") or page.query_selector("#fNote") or page.query_selector("#fCustomise"):
+            bad.append(f"frame null, {path.name}: the form shows a product on a frame with no ref")
+        if not page.query_selector("#fProducts [data-product-ref]"):
+            bad.append(f"frame null, {path.name}: the picker is not offered")
+    if os.environ.get("PORTRAYAL_WRITE_GOLDEN"):
+        FRAME_NULL_GOLDEN.parent.mkdir(parents=True, exist_ok=True)
+        FRAME_NULL_GOLDEN.write_text(json.dumps(seen, indent=1, sort_keys=True) + "\n")
+        return bad
+    if not FRAME_NULL_GOLDEN.is_file():
+        return bad + [f"frame null: no golden at {FRAME_NULL_GOLDEN.relative_to(HERE)}"]
+    held = json.loads(FRAME_NULL_GOLDEN.read_text())
+    if sorted(held) != sorted(seen):
+        bad.append(f"frame null: the golden holds {sorted(held)}, the racks are {sorted(seen)}")
+    for name, got in seen.items():
+        for k, v in got.items():
+            if held.get(name, {}).get(k) != v:
+                bad.append(f"frame null, {name}: the {k} is not the golden's")
+    return bad
+
+
 @extra("rack.html: place from the picker; both faces show it; a device that won't fit says why")
 def check_rack_place(page, base):
     bad = []
@@ -18359,7 +18622,7 @@ const mc = {registerTool(t, o) {
 Object.defineProperty(Document.prototype, 'modelContext', {get: () => mc, configurable: true});
 """
 RELAY_FRAME = "iframe[data-webmcp-relay]"
-AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "inspect", "list_free_ports", "new_rack", "redo", "undo"]
+AGENT_TOOLS = ["check_fit", "describe_rack", "edit_rack", "export_rack", "find_devices", "find_rack_products", "inspect", "list_free_ports", "new_rack", "redo", "undo"]
 
 
 def agent_call(page, name, args):
