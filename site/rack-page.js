@@ -100,7 +100,7 @@ function loadView() {
   catch { return 'faces'; }
 }
 function saveView(v) { try { localStorage.setItem(VIEW_KEY, v); } catch { /* forgets */ } }
-const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
+const S = {sel: null, lib: null, save: null, devices: {}, frames: {}, draws: 0, notice: null, entries: [],
   dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), view: loadView(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   covers: loadCovers(),   // the covers of the parts beside the rack: 'on', 'see' or 'off' (covers.js); the reader's, never the rack's
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
@@ -122,6 +122,8 @@ const S = {sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null
   tree: {doc: null, state: {}, stop: null, pinned: null, show: null},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
+// The rack products a frame can be set from (rack.json `frames`), by ref, and the kit's lookup of one.
+let frameOf = () => null;
 // How tall a device is, in U: a device is named with its position (model.js
 // positionOf), and that needs its height. Reads chassisOf as it is when asked.
 const uOf = item => heightOf(chassisOf)(item);
@@ -1354,7 +1356,10 @@ async function redraw(keepRoutes = false) {
   // The pair the panes show names them (#187): Front and Rear, or Left and Right.
   const sides = S.view === 'sides';
   [$('headFront').textContent, $('headRear').textContent] = PAIRS[S.view];
-  $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
+  // (a frame set from a rack product names it; one with no ref is summed up as it always was)
+  const product = r.frame.ref != null ? frameOf(r.frame.ref) : null;
+  $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}${product ? ` · ${[product.manufacturer, product.model].filter(Boolean).join(' ')}` : ''}`;
+  if (r.frame.ref != null) $('frameSummary').title = r.frame.ref; else $('frameSummary').removeAttribute('title');
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' || S.sel?.kind === 'remove' ? S.sel.id : null;
   let front, rear, facts, sideCables = null;
   // A SWITCH OF PAIR READS NOTHING AGAIN (#187). Reading the cables' faces and
@@ -1760,7 +1765,12 @@ function renderSide() {
     // every edit) makes some browsers re-fire 'change' on it as it loses focus,
     // echoing the same edit a second time. The command makes that echo a no-op,
     // and `quiet` keeps it from redrawing away the notice the first pass showed.
-    onFrame: patch => edit({op: 'frame', ...patch}, {quiet: true})});
+    onFrame: patch => edit({op: 'frame', ...patch}, {quiet: true}),
+    // A rack product (rack.json frames; the kit's frame.apply and frame.customise). Both say what they did,
+    // and an apply the kit refuses (a product the frame cannot hold) says why.
+    frames: S.frames, frameOf,
+    onApply: ref => edit({op: 'frame.apply', ref}, {say: true}),
+    onCustomise: () => edit({op: 'frame.customise'}, {say: true})});
   else if (sel.kind === 'dcim') body = dcimForm({rack: r, draft: S.dcimDraft,
     // Typing only keeps a draft. Done saves it once, against the rack as it is
     // when Done is clicked, not as it was when the form was built.
@@ -2156,6 +2166,8 @@ async function bootInner() {
   const cat = await loadCatalog('assets/dist/');
   S.devices = cat.devices;
   chassisOf = cat.chassisOf;
+  frameOf = cat.frameOf;
+  S.frames = cat.frames;
   S.entries = cat.entries;
   S.lib = await openLibrary();
   // a write the library refuses is said in the side panel for as long as it is true (saveFailedLine)
@@ -2318,12 +2330,12 @@ async function bootInner() {
   // The kit's editor: its command table holds the parts beside the rack and
   // narrow parts on one rail (zerou.*, side.*, kit 0.6.0) and the bundles
   // (bundle.*, 0.7.0) beside every other command.
-  ed = createRackEditor({doc, chassisOf});
+  ed = createRackEditor({doc, chassisOf, frameOf});
   ed.on('change', onChange);
   // AGENTS (spec 2026-10-07-rack-agent-tools): the same editor, as WebMCP tools.
   // Registered now for a browser that has WebMCP; the Connect your AI switch
   // (site/agent/relay.js) registers them for one that doesn't.
-  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, context: agentContext, library: agentLibrary});
+  S.agentTools = rackTools({ed, chassisOf, queries: boundQueries(), runExport, context: agentContext, library: agentLibrary, frames: S.frames});
   // The page hint names the tools only once they are registered (agent-hint.js).
   const toolNames = S.agentTools.map(t => t.name);
   writeHint(document, []);

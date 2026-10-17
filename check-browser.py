@@ -18629,6 +18629,41 @@ def agent_call(page, name, args):
     return page.evaluate("([n, a]) => window.__tools[n].execute(a)", [name, args])
 
 
+@extra("rack.html: an assistant finds a rack product with find_rack_products, sets the frame from it with edit_rack frame.apply, is refused a fixed number, and customises it")
+def check_rack_agent_frame_products(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    wait_fn(page, "agent frame: ready", "() => window.__rack && window.__rack.ready")
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "agent-frame")
+    wait_fn(page, "agent frame: tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    found = agent_call(page, "find_rack_products", {"text": "ar203a"})["content"][0]["text"]
+    if not found.startswith("1 match.\napc/ar203a@1 | APC AR203A | 44U | 4-post-frame"):
+        bad.append(f"agent frame: find_rack_products answered {found!r}")
+    if not agent_call(page, "find_rack_products", {"form": "4-post-frame"})["content"][0]["text"].startswith("2 matches."):
+        bad.append("agent frame: the four-post frames are not two")
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "frame.apply", "ref": "apc/ar203a@1"}]})
+    if res.get("isError"):
+        bad.append(f"agent frame: frame.apply answered {res}")
+    f = page.evaluate("() => window.__rack.doc().racks[0].frame")
+    if f.get("ref") != "apc/ar203a@1" or f.get("heightRU") != 44 or f.get("railDepth") != 740:
+        bad.append(f"agent frame: the frame after frame.apply is {f}")
+    refused = agent_call(page, "edit_rack", {"commands": [{"op": "frame", "heightRU": 30}]})
+    if not refused.get("isError") or "customise" not in refused["content"][0]["text"]:
+        bad.append(f"agent frame: a fixed height was not refused with the way out: {refused}")
+    if agent_call(page, "edit_rack", {"commands": [{"op": "frame.apply", "ref": "acme/none@1"}]}).get("isError") is not True:
+        bad.append("agent frame: a product the catalogue lacks was accepted")
+    res = agent_call(page, "edit_rack", {"commands": [{"op": "frame.customise"}, {"op": "frame", "heightRU": 30}]})
+    if res.get("isError"):
+        bad.append(f"agent frame: customise then a height answered {res}")
+    f = page.evaluate("() => window.__rack.doc().racks[0].frame")
+    if f.get("ref") is not None or f.get("heightRU") != 30:
+        bad.append(f"agent frame: the frame after customise is {f}")
+    return bad
+
+
 @extra("rack.html: agent tools - registered on load, an agent's edit shown and undone, a dry run, an export, a busy export, a removed panel")
 def check_rack_agent_tools(page, base):
     bad = []
