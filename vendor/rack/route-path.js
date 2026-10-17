@@ -195,9 +195,8 @@ const turnDeg = (u, v) => {
 // beside a right angle no longer takes half the leg it needs a tenth of. A
 // leg whose other corner doubles back is still halved, so one fold does not
 // take all the room of its neighbours. A cable's own path is judged this way
-// (route.js routePath `bends`), since the kit lays it point by point; a
-// bundle's trunk, a sketch through waypoint centres, keeps the halves
-// (bundles.js bendCheck).
+// (route.js routePath `bends`), since the kit lays it point by point, and so
+// is a bundle's trunk (bundles.js bendCheck, #984).
 export function cornersOf(pts, {share = 'half'} = {}) {
   const P = [];
   pts.forEach((p, k) => { if (p && (!P.length || norm(sub(p, P.at(-1).p)) > 1e-6)) P.push({p, k}); });

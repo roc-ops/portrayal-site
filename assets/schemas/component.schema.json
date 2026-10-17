@@ -38,6 +38,7 @@
     "kind",
     "name",
     "version",
+    "audience",
     "description",
     "provenance",
     "unplaced",
@@ -106,6 +107,11 @@
   "version": {
    "type": "string",
    "pattern": "^\\d+\\.\\d+\\.\\d+$"
+  },
+  "audience": {
+   "type": "string",
+   "pattern": "^(public|internal|nda|customer:[a-z0-9-]+)$",
+   "description": "who this component is for. One of `public`, `internal`, `nda`, or `customer:<name>` for one named customer, the name in lower case letters, digits and hyphens. OPTIONAL: absent means `public`. A project that keeps private entries beside the public library labels them with it. Portrayal's own library only uses `public`, and lint L192 holds it to that."
   },
   "behaviour": {
    "enum": [
@@ -424,8 +430,10 @@
        "node"
       ],
       "if": {
-       "required": [
-        "facet"
+       "anyOf": [
+        {"required": ["facet"]},
+        {"required": ["profile"]},
+        {"required": ["profile-y"]}
        ]
       },
       "else": {
@@ -489,7 +497,7 @@
        },
        "lift": {
         "type": "number",
-        "description": "standoff: the feature starts this many mm off the face (floating handle bars, stacked washers). Greater than 0, except on a feature that declares `facet`, where a negative lift sinks the facet's root edge that far below the plate, into a `pocket` at least that deep (L117)."
+        "description": "standoff: the feature starts this many mm off the face (floating handle bars, stacked washers). Greater than 0, except on a feature that declares `facet`, where a negative lift sinks the facet's root edge that far below the plate, into a `pocket` at least that deep (L117), and on one that declares `profile` or `profile-y`, where a negative lift starts the wedge that far BEHIND the face, so a ramp on a housing's side wall can slope back along the mating axis (a header's latch ramp: `lift` -8, `profile` running from -8 at its outer edge up to the face at its inner one). The node then stands outside the part's drawn outline, as a latch arm does."
        },
        "knurl": {
         "type": "boolean",
@@ -608,6 +616,112 @@
     }
    },
    "description": "THE REMOVED REFS THIS PART STANDS IN FOR. A saved rack names parts by ref, and a ref whose major was removed no longer resolves, so the rack quietly loses the part. The replacement says which refs it replaces, only where it is a drop-in (same part ids, port paths and names), and the build publishes the list on this part's components.json entry as `supersedes`. The rack kit follows an old ref to this part when it reads a swap, and writes the new ref when the rack is next saved after an edit. A ref named here must not be in the library any more: a retired major that is kept says `superseded-by` instead. Lint L184 checks the shape; the build checks the signature."
+  },
+  "dc": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["ports"],
+   "description": "THE DC ENDS OF THIS PART: where it takes direct current in or hands it on, and which conductor of the circuit lands on which terminal. A DC feed is one cable of several conductors, so its end is a PORT, and the port's POLES are the terminals one conductor each lands on. Absent means the part states none, which is what most of the library is; a part that draws its terminals as art alone has no port a feed can land on. Optional and additive: nothing that reads a contract without it changes.",
+   "properties": {
+    "ports": {
+     "type": "array",
+     "minItems": 1,
+     "description": "the DC ports, in the order the part presents them. An `id` is unique on the part (L188).",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "direction", "poles"],
+      "properties": {
+       "id": {
+        "$ref": "#/$defs/segment",
+        "description": "the name of the end. With one port on a part its path is the part's own; with several, the part's path and this id."
+       },
+       "direction": {
+        "enum": ["input", "output"],
+        "description": "`input` takes power in (a load, a panel's feed); `output` hands it on (a supply, a panel's circuit). Two outputs or two inputs on one feed are a finding."
+       },
+       "voltage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["nominal"],
+        "description": "THE VOLTAGE OF THE END, WITH ITS SIGN. A -48 V plant is written -48, never 48: the sign is how a feed knows a battery conductor from a positive one, and the role of a pole is never a voltage. L191 holds the signs of one end together.",
+        "properties": {
+         "nominal": {
+          "type": "number",
+          "not": {"const": 0},
+          "description": "the stated nominal volts, signed"
+         },
+         "range": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"type": "number"},
+          "description": "the two limits the end works across, signed, in the order the source gives them"
+         }
+        }
+       },
+       "rating-a": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "the end's current in amperes: a supply's input current, or an output's own figure. An output protected by a breaker or fuse in a bay takes the protector's rating from the device instead, so it is left out here."
+       },
+       "awg": {
+        "type": "array",
+        "minItems": 1,
+        "items": {"type": "number"},
+        "description": "the conductor sizes the end takes, in AWG, where a source gives them"
+       },
+       "side": {
+        "enum": ["a", "b"],
+        "description": "which feed of an A/B pair this end belongs to, where the part is one half of a pair. A device placement may set it (the same part is feed A in one place and feed B in another)."
+       },
+       "poles": {
+        "type": "array",
+        "minItems": 1,
+        "description": "ONE PER CONDUCTOR, in the order the cable lists its conductors. All of them name a slot of this part or all name a connection point of it (L189).",
+        "items": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": ["role", "slot"],
+         "properties": {
+          "role": {
+           "$ref": "#/$defs/segment",
+           "description": "which conductor lands here, from the DC role vocabulary: `batt`, `rtn`, `pos`, `neg`, `gnd`, or `unstated` where no source says (L187). A role other than `unstated` needs a `source.poles` that names a `provenance` entry; an `unstated` one needs a `dc-polarity` gap on every device that places the part (L190)."
+          },
+          "slot": {
+           "$ref": "#/$defs/segment",
+           "description": "what the conductor lands on, in this part's terms: the id of a composed part that presents a slot (a screw, a stud pair), or a connection point (a pluggable connector's contact). L188 holds that it resolves."
+          },
+          "stand-in": {
+           "type": "object",
+           "additionalProperties": false,
+           "required": ["order"],
+           "description": "THE DECLARED STAND-IN of a pole whose role is `unstated`: how it is told apart until a source states the polarity. Never a guess promoted to a role; a check that runs on it runs by position and says so.",
+           "properties": {
+            "order": {
+             "$ref": "#/$defs/segment",
+             "description": "the reading order of the poles that stands in for their roles, such as `left-to-right`"
+            }
+           }
+          }
+         }
+        }
+       },
+       "source": {
+        "type": "object",
+        "description": "WHERE EACH FACT OF THE PORT CAME FROM, as the `provenance` key that says it: `poles` for the roles, and any of `voltage`, `rating-a`, `awg`, `side` for those. A key names an entry under this part's `provenance` (L187).",
+        "propertyNames": {
+         "enum": ["poles", "voltage", "rating-a", "awg", "side"]
+        },
+        "additionalProperties": {
+         "type": "string",
+         "minLength": 1
+        }
+       }
+      }
+     }
+    }
+   }
   },
   "size": {
    "$ref": "#/$defs/wh",
@@ -1275,9 +1389,22 @@
      "rotate": {
       "type": "number",
       "description": "degrees to rotate the OCCUPANT where it sits - the carrier's own plate, windows and printing do not move. The same key a device bay offers, so a riser at the far end of a chassis can say that its cards face the other way. Prefer this over `mirror` for anything with relief: a reflection puts a bracket's raised tab on the inside of the box, where a half-turn keeps it facing out at the viewer, which is what the metal does."
+     },
+     "span": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/segment"},
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "THE SIBLING BAYS A CARD WIDER THAN ONE SLOT COVERS when it is seated here, in order along the card's component side (the bay's own +y, turned by its `rotate`). A card `slot-width: n` wide takes the first n - 1 of them, and each must hold nothing, after defaults resolve: a configuration that seats a two-slot card in `slot-1` also empties `slot-2`. Ids in this same `bays:` map only, so a card never spans two risers. Absent means a card seated here is one slot wide. L185 holds the geometry, L186 the exclusion."
      }
     }
    }
+  },
+  "slot-width": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 4,
+   "description": "HOW MANY ADJACENT SLOTS THIS PART TAKES when it is seated in a bay: 2 for a dual-slot PCIe card (CEM figure 11-11), whose cooler covers the opening beside its own. Absent means 1. A bay seats it only if its `span` names enough siblings, and those siblings hold nothing while it is there."
   },
   "guide": {
    "type": "object",

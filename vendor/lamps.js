@@ -29,7 +29,7 @@
 // module takes its lamps with it.
 
 import * as THREE from 'three';
-import { nodeTools, rasterize, canvasTex, tiltOf, tiltTools, tiltGroupIn, unproject,
+import { nodeTools, rasterSource, canvasTex, tiltOf, tiltTools, tiltGroupIn, unproject,
          withoutLampColors } from './relief.js';
 
 // SOMETHING UNDER THE LIVE ART. A blink is opacity 1 <-> 0 on the lamp, so a
@@ -152,7 +152,7 @@ export function createLamps() {
   async function add(key, r, pxmm) {
     const frames = [];
     for (const s of r.stops)
-      frames.push(canvasTex(await rasterize(phaseSvg(r.text, (s + 1e-4) * r.dur), r.w, r.h, pxmm)));
+      frames.push(canvasTex(await rasterSource(phaseSvg(r.text, (s + 1e-4) * r.dur), r.w, r.h, pxmm)));
     if (recs.has(key)) { for (const f of frames) f.dispose(); return; } // superseded mid-raster
     const old = r.mat.map;
     if (old && !r.mesh) { for (const f of frames) { f.repeat.copy(old.repeat); f.offset.copy(old.offset); } }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="12.6mm" height="18.0mm" viewBox="0 0 12.6 18.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="eps12v-8pin-plug" data-path="eps12v-8pin-plug" data-class="port" data-ref="generic/eps12v-8pin-plug@1:1.0.0" data-connector="eps12v" data-media="eps12v" data-pins="8" data-pins-12v="4" data-pins-ground="4" transform="translate(0,0)">
+    <title>eps12v-8pin-plug</title>
+    <path id="eps12v-8pin-plug--body" fill="#3a3e44" fill-rule="evenodd" stroke="#4a4d52" stroke-width="0.12" d="M 0 0 H 12.6 V 16.2 L 10.8 18 H 0 Z M 3.7 1.2 H 5.9 V 4.2 H 2.5 V 2.4 Z M 6.7 1.2 H 10.1 V 4.2 H 6.7 Z M 2.5 5.4 H 5.9 V 8.4 H 2.5 Z M 6.7 5.4 H 10.1 V 8.4 H 6.7 Z M 2.5 9.6 H 5.9 V 12.6 H 2.5 Z M 6.7 9.6 H 10.1 V 12.6 H 6.7 Z M 2.5 13.8 H 5.9 V 16.8 H 2.5 Z M 6.7 13.8 H 10.1 V 16.8 H 6.7 Z" data-z-out="20.1" data-z-color="#3a3e44" data-z-shape="1" />
+    <path id="eps12v-8pin-plug--back" fill="#26282c" stroke="#4a4d52" stroke-width="0.12" d="M 0.05 0.05 H 12.55 V 16.18 L 10.78 17.95 H 0.05 Z" data-z-out="20.05" data-z-lift="17.6" data-z-color="#26282c" data-z-shape="1" />
+    <rect id="eps12v-8pin-plug--latch-arm" x="3.3" y="-1.2" width="6" height="1.4" rx="0.3" fill="#2c3036" stroke="#4a4d52" stroke-width="0.1" data-z-out="19.1" data-z-lift="2.0" data-z-color="#2c3036" />
+    <rect id="eps12v-8pin-plug--latch-hook" x="3.35" y="-2.2" width="5.9" height="1.05" rx="0.3" fill="#3a3e43" stroke="#4a4d52" stroke-width="0.1" data-z-out="5.0" data-z-lift="2.05" data-z-color="#3a3e43" />
+    <g>
+      <circle id="eps12v-8pin-plug--wire-1" cx="4.2" cy="2.7" r="1.1" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-2" cx="8.4" cy="2.7" r="1.1" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-3" cx="4.2" cy="6.9" r="1.1" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-4" cx="8.4" cy="6.9" r="1.1" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-5" cx="4.2" cy="11.1" r="1.1" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-6" cx="8.4" cy="11.1" r="1.1" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-7" cx="4.2" cy="15.3" r="1.1" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="20.0" />
+      <circle id="eps12v-8pin-plug--wire-8" cx="8.4" cy="15.3" r="1.1" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="20.0" />
+    </g>
+    <rect id="eps12v-8pin-plug--comb" x="0.8" y="0.8" width="11" height="16.4" rx="1.2" fill="#2a2c30" stroke="#4a4d52" stroke-width="0.1" data-z-out="28.1" data-z-lift="26.1" data-z-color="#2a2c30" data-z-shape="1" />
+    <circle id="eps12v-8pin-plug--stub" cx="6.3" cy="9" r="4.5" fill="#1c1c1c" stroke="#4a4d52" stroke-width="0.12" data-r-from="cable-od" data-fill-from="jacket-color" data-z-cyl="22.1" data-z-lift="28.0" />
+    <g data-cp="cable" data-cp-at="6.3 9" data-cp-dir="front" data-cp-on="eps12v-8pin-plug--stub" />
+    <g data-cp="mate" data-cp-at="6.3 9" data-cp-dir="front" />
+  </g>
+</svg>

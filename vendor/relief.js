@@ -1888,12 +1888,10 @@ function _cssInfo(css) {
   _CSS_INFO.set(css, info);
   return info;
 }
-export function rasterKey(text) {
-  text = String(text ?? '');
-  const css = [...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
-  const info = _cssInfo(css);
-  const refs = new Set(info.ids);
-  for (const m of text.matchAll(/(?:url\(\s*['"]?#|href\s*=\s*["']#)([^)'"\s]+)/g)) refs.add(m[1]);
+const _STYLES = /<style\b[^>]*>([\s\S]*?)<\/style>/g;
+const _URL_REFS = /(?:url\(\s*['"]?#|href\s*=\s*["']#)([^)'"\s]+)/g;
+const _cssOf = text => [...text.matchAll(_STYLES)].map(m => m[1]).join('\n');
+function _normText(text, info, refs) {
   // Inside start tags only, and never inside a <style>: a stylesheet or a
   // run of text keeps every character it has.
   const tag = t => t.replace(/(\s)(id|data-[\w.:-]+)="([^"]*)"/g, (all, sp, name, val) => {
@@ -1905,6 +1903,118 @@ export function rasterKey(text) {
     : part.replace(/<[a-zA-Z][^>]*>/g, tag)
           // the words go, the element stays: a selector may count it
           .replace(/(<title\b[^>]*>)([^<]+)(<\/title>)/g, '$1.$3')).join('');
+}
+/** The whole text, normalised: the reference for what `rasterKey` tells apart. */
+export function rasterKeyText(text) {
+  text = String(text ?? '');
+  const info = _cssInfo(_cssOf(text));
+  const refs = new Set(info.ids);
+  for (const m of text.matchAll(_URL_REFS)) refs.add(m[1]);
+  return _normText(text, info, refs);
+}
+
+// THE SHARED PREFIX IS NORMALISED ONCE. A node's text is the face's whole
+// `<style>` and `<defs>` (nodeSvg's `shared`), then `<!--art-->`, then its own
+// art, so the same tens of kilobytes (up to a megabyte) came to rasterKey for
+// every feature and were split, rewritten and joined each time, and each
+// kept raster held the whole text as its key. Here the prefix is rewritten
+// once per distinct prefix, given a short number, and a key is that number,
+// the ids of the prefix that only the art refers to (the one thing the art
+// can change in the prefix's rewrite) and the art's own rewrite. Texts that
+// `rasterKeyText` tells apart never share a key; a text that does not split
+// cleanly (no marker, a stylesheet or an open tag across it) is keyed from
+// its whole text.
+const _MARK = '<!--art-->';
+const _PIDS = new Map();
+let _pfxChars = 0, _pfxN = 0, _pidN = 0;
+// (Never a Map keyed by a long text: V8 hashes a string over 16,383
+// characters by its length alone, so every text of one length collides and
+// each lookup compares them in full.)
+function _prefixOf(p) {
+  const info = _cssInfo(_cssOf(p));
+  const refs = new Set(info.ids);
+  for (const m of p.matchAll(_URL_REFS)) refs.add(m[1]);
+  // each id value, with the places (by order among the prefix's ids) it stands at
+  const ids = new Map();
+  let nth = 0;
+  for (const m of p.matchAll(/\sid="([^"]*)"/g)) {
+    const at = ids.get(m[1]);
+    if (at) at.push(nth++); else ids.set(m[1], [nth++]);
+  }
+  // it splits cleanly: ends between tags, and every <style> in it is closed
+  const ok = p.lastIndexOf('<') < p.lastIndexOf('>') && p.lastIndexOf('<style') <= p.lastIndexOf('</style>')
+    && p.split('<style').length === p.split('</style>').length;
+  if (_pfxChars + p.length > 32e6 || _pfxN >= 256) { _BY_SIG.clear(); _pfxChars = _pfxN = 0; }
+  _pfxChars += p.length;
+  _pfxN++;
+  return {p, ok, info, refs, ids, id: undefined};
+}
+// The prefix's number: its rewrite against its own references. What the art
+// refers to in it is named beside the number (rasterKey), never rewritten in.
+function _prefixId(e) {
+  if (e.id === undefined) {
+    const out = _normText(e.p, e.info, e.refs);
+    let id = _PIDS.get(out);
+    if (id === undefined) {
+      if (_PIDS.size >= 256) _PIDS.clear();
+      id = ++_pidN;      // never reused: a cleared number only costs a draw, never a wrong share
+      _PIDS.set(out, id);
+    }
+    e.id = id;
+  }
+  return e.id;
+}
+// A prefix is found by its length and its two ends, then confirmed by
+// comparing the text against it, rather than cutting and hashing tens of
+// kilobytes for every ask.
+const _BY_SIG = new Map();
+function _prefixFor(text, at) {
+  const sig = `${at}|${text.slice(0, 32)}|${text.slice(at - 32, at)}`;
+  const list = _BY_SIG.get(sig);
+  const p = text.slice(0, at);         // `===` of two flat strings is a memcmp; `startsWith` is a loop, 40 times slower
+  if (list) for (const e of list) if (e.p === p) return e;
+  const e = _prefixOf(p);
+  const kept = _BY_SIG.get(sig);       // _prefixOf may have cleared the index
+  if (kept) kept.push(e); else _BY_SIG.set(sig, [e]);
+  return e;
+}
+// The keys of the last two texts, so a text asked again at once (the same
+// string, most often: a cavity's outline is asked for the punch and again for
+// the plate) is a comparison and no work. Two, not a Map (see above) and not
+// more: texts of one face share their start, so a different one is compared
+// as far as it goes.
+const _RING = [{text: null, key: ''}, {text: null, key: ''}];
+let _ringAt = 0;
+export function rasterKey(text) {
+  text = String(text ?? '');
+  for (const e of _RING) if (e.text === text) return e.key;
+  const key = _rasterKey(text);
+  _RING[_ringAt] = {text, key};
+  _ringAt ^= 1;
+  return key;
+}
+function _rasterKey(text) {
+  const at = text.indexOf(_MARK);
+  if (at > 0) {
+    const e = _prefixFor(text, at);
+    const r = text.slice(at);
+    if (e.ok && !r.includes('<style')) {
+      const refs = new Set();
+      for (const m of r.matchAll(_URL_REFS)) refs.add(m[1]);
+      const all = {has: v => refs.has(v) || e.refs.has(v)};
+      // an id of the prefix that only the art names stays in the prefix's
+      // rewrite, so it is part of the key; a stylesheet that reads `id` keeps all
+      let named = '';
+      if (refs.size && !e.info.anyId) {
+        const ids = [];
+        // the name and where it stands: two prefixes of one rewrite may hold it on different elements
+        for (const v of refs) if (e.ids.has(v) && !e.refs.has(v)) ids.push(`${v}@${e.ids.get(v)}`);
+        if (ids.length) named = '\u0002' + ids.sort().join('\u0002');
+      }
+      return `${_prefixId(e)}${named}\u0001${_normText(r, e.info, all)}`;
+    }
+  }
+  return rasterKeyText(text);
 }
 
 // THE KEPT RASTERS, oldest first, bounded by pixels rather than by count:
@@ -1979,8 +2089,10 @@ function _copyOf(src) {
 export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope) {
   const text = await svgSource(url, scope);
   const px = _px(scope);
-  const cv = _copyOf(await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax));
-  cv._svgText = text;      // kept for adaptive re-rasterisation (see LOD below)
+  // The kept raster itself, not a copy: every caller makes a texture of it and
+  // draws nothing on it. A caller that draws on its canvas takes `rasterize`.
+  const cv = await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax);
+  cv._svgText ??= text;    // kept for adaptive re-rasterisation (see LOD below); an equal text draws the same
   return cv;
 }
 // A face canvas is inevitably non-power-of-two (a 548x44mm side is 2192x176 at
@@ -3563,7 +3675,7 @@ export async function buildFaceRelief(F, ctx) {
       m.position.set(LX(dm.x, dm.w), LY(dm.y, dm.h), (dm.lift || 0) - 0.15);
       addTo(m);
       liveMat(m.material);
-      reg(dm.svgText, async text => remap(m.material, await rasterize(text, dm.w, dm.h, PX)),
+      reg(dm.svgText, async text => remap(m.material, await rasterSource(text, dm.w, dm.h, PX)),
           {mat: m.material, w: dm.w, h: dm.h, path: dm.owner});
     }
     for (const o of outs) {   // protrusions: bezel plates, handles, studs, tubes
