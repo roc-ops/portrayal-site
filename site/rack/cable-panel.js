@@ -11,6 +11,7 @@ import {bundlesOf, bundleOfCable} from '../../vendor/rack/bundles.js';
 import {bundleHeader, memberLine} from './bundle-panel.js';
 import {spareText, needsText, SPARE_HELP, FIGURES_HELP} from './spare.js';
 import {LOOSE, wireTree} from './cable-tree.js';
+import {KINDS, kindOfMedia, mediaOfKind, offersKinds} from './cable-kinds.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -61,8 +62,18 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
       ? `${routed.value} ${routed.unit || 'm'} (routed: the route needs ${routed.need} m). Type a length to override it.` : ''});
   const warn = el('p', {id: 'cWarn', class: 'rk-warn', role: 'status'});
   const err = el('p', {id: 'cError', class: 'rk-error', role: 'alert'});
+  // THE KIND of power cabling (cable-kinds.js): offered where the cable or an end is power or ground, over the same two media.
+  // Choosing one sets the media; the media is what the file holds.
+  const kind = el('select', {id: 'cKind', 'aria-describedby': 'cWarn'}, KINDS.map(k => option(k.id, k.label, '')));
+  const kindRow = field('Kind', kind);
+  const syncKind = () => {
+    kindRow.hidden = !offersKinds(media.value, infoA, infoB);
+    kind.value = kindOfMedia(media.value, infoA, infoB) ?? 'ac';
+  };
   const showWarn = () => { warn.textContent = mismatch(media.value, infoA, infoB).join(' '); };
-  media.addEventListener('change', showWarn);
+  media.addEventListener('change', () => { syncKind(); showWarn(); });
+  kind.addEventListener('change', () => { media.value = mediaOfKind(kind.value); showWarn(); });
+  syncKind();
   const clearErr = () => { err.textContent = ''; };
   length.addEventListener('input', clearErr);
   unit.addEventListener('change', clearErr);
@@ -72,6 +83,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
     el('h3', {text: title}),
     el('p', {id: 'cEndA', class: 'rk-muted', text: `A: ${endA}`}),
     el('p', {id: 'cEndB', class: 'rk-muted', text: `B: ${endB}`}),
+    kindRow,
     field('Media', media),
     warn,
     field('Purpose', purpose),
