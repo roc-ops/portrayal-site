@@ -12871,6 +12871,122 @@ def check_rack_power_cords(page, base):
     return bad
 
 
+# A DC DISTRIBUTION PANEL, A DEVICE WITH A DC TERMINAL AND TWO DEVICES WITH A
+# GROUND STUD PAIR (portrayal-site#202): the panel's output and the device's
+# terminal are on the rear pane, so are the studs.
+DC_RACK_JS = """async () => {
+  const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+  const cat = (await C.loadCatalog('/assets/dist/')).devices;
+  let r = M.withFrame(M.newRack({name: 'DC', kind: 'four-post'}), {heightRU: 24});
+  ({rack: r} = M.withItem(r, {ref: '300cb08-c', cfg: cat['300cb08-c'].default, ru: 2, label: 'dist-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'gl-12xb-240d', cfg: cat['gl-12xb-240d'].default, ru: 6, label: 'radio-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 10, label: 'srv-1'}));
+  ({rack: r} = M.withItem(r, {ref: 'mx150', cfg: cat['mx150'].default, ru: 14, label: 'srv-2'}));
+  return r;
+}"""
+
+
+@extra("rack.html: a DC feed and a ground wire - each end is picked in Cable mode, the form names the kind (DC feed, Ground wire) over the media and warns of a kind that does not suit its ends, and each is saved, drawn on the Rear pane and in 3D, listed, and carried by the BOM and the schedule")
+def check_rack_dc_ground(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(DC_RACK_JS))
+    try:
+        wait_fn(page, "dc: the terminal is listed for picking",
+                "() => (document.querySelector('#paneRear svg [data-item-id=\"i2\"][data-panel]')?.getAttribute('data-cable-ends') || '').split(' ').includes('dc-1')")
+        # THE DC FEED: the panel's output, then the device's terminal.
+        page.click("#cableBtn")
+        power_click(page, "Rear", "i1", "output-b8")
+        power_click(page, "Rear", "i2", "dc-1")
+        wait_sel(page, "dc: the new-cable form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if not page.is_visible("#cKind"):
+        return bad + ["form: the kind is not offered for two power ends"]
+    kinds = page.eval_on_selector_all("#cKind option", "o => o.map(x => x.textContent)")
+    if kinds != ["Not set", "Power cable (AC)", "DC feed", "Ground wire"]:
+        bad.append(f"form: the kinds offered are {kinds}")
+    if page.input_value("#cKind") != "dc" or page.input_value("#cMedia") != "power":
+        bad.append(f"form: DC ends propose kind {page.input_value('#cKind')!r} on media {page.input_value('#cMedia')!r}")
+    if (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: a DC feed between a DC output and a DC terminal is warned: {page.text_content('#cWarn')!r}")
+    # a kind that does not suit the ends is said, and still saves (a warning, never a refusal)
+    page.select_option("#cKind", "ground")
+    if page.input_value("#cMedia") != "ground" or "does not suit" not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: a ground wire on power ends: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")
+    # an AC cord over DC ends is said too: the media is the same, the kind is not
+    page.select_option("#cKind", "ac")
+    if page.input_value("#cMedia") != "power" or "Power cable (AC) does not suit end B, which is DC power." not in (page.text_content("#cWarn") or ""):
+        bad.append(f"form: an AC kind on DC ends: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")
+    page.select_option("#cKind", "dc")
+    if page.input_value("#cMedia") != "power" or (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: back to a DC feed: media {page.input_value('#cMedia')!r}, warning {page.text_content('#cWarn')!r}")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "dc: the feed is saved", "() => window.__rack.doc().racks[0].cables.length === 1")
+        wait_sel(page, "dc: the feed on the rear pane", 'svg[data-pane="rear"] [data-cables] [data-cable-id="c1"]')
+        wait_sel(page, "dc: the list row", '#cableList [data-cable-row="c1"]')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    c1 = page.evaluate("() => window.__rack.doc().racks[0].cables[0]")
+    if c1["media"] != "power" or c1["a"] != {"item": "i1", "path": "output-b8", "view": "rear"} \
+            or not c1["b"]["path"].startswith("dc-1") or "kind" in c1:
+        bad.append(f"saved: the feed is {c1}")
+    row = page.text_content("#cableItem-c1") or ""
+    if "output-b8" not in row or "dc-1" not in row or "Power cable" not in row or page.query_selector("#cableItem-c1 [data-loose]"):
+        bad.append(f"list: the feed's row reads {row!r}")
+    # THE GROUND WIRE: stud to stud, picked on the rear pane.
+    if page.get_attribute("#cableBtn", "aria-pressed") != "true":
+        page.click("#cableBtn")
+    # (a click lands on one of the pair's studs, the pair's middle being bare chassis; either picks the pair)
+    power_click(page, "Rear", "i3", "ground-studs/1")
+    step = page.text_content("#cableStep") or ""
+    power_click(page, "Rear", "i4", "ground-studs/2")
+    try:
+        wait_sel(page, "dc: the ground form", "#cableForm")
+    except RuntimeError as e:
+        return bad + [f"{e} (after the first stud: {step!r}; now: {page.text_content('#cableStep')!r})"]
+    if page.input_value("#cKind") != "ground" or page.input_value("#cMedia") != "ground":
+        bad.append(f"form: stud ends propose kind {page.input_value('#cKind')!r} on media {page.input_value('#cMedia')!r}")
+    if (page.text_content("#cWarn") or "").strip():
+        bad.append(f"form: a ground wire between two studs is warned: {page.text_content('#cWarn')!r}")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "dc: the wire is saved", "() => window.__rack.doc().racks[0].cables.length === 2")
+        wait_sel(page, "dc: the wire on the rear pane", 'svg[data-pane="rear"] [data-cables] [data-cable-id="c2"]')
+        wait_sel(page, "dc: the wire's row", '#cableItem-c2')
+    except RuntimeError as e:
+        return bad + [str(e)]
+    g = page.text_content("#cableItem-c2") or ""
+    if "Ground wire" not in g or "ground-studs" not in g or "Loose end" in g or "does not suit" in g:
+        bad.append(f"list: the wire's row reads {g!r}")
+    # Both are tubes in 3D. (Cable mode is left first.)
+    if page.get_attribute("#cableBtn", "aria-pressed") == "true":
+        page.click("#cableBtn")
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "dc: 3D", tubes=True)
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        got = page.evaluate("() => (window.__rack.scene().three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name).sort()")
+        if got != ["cable-c1", "cable-c2"]:
+            bad.append(f"3D: the scene's cables are {got}")
+    page.click('#mode [data-mode="2d"]')
+    # The BOM counts both, the schedule lists both as connected.
+    bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
+    if "Power cable" not in bom or "Ground wire" not in bom:
+        bad.append(f"BOM: the feed and the wire are not counted: {bom!r}")
+    sched = pathlib.Path(export_file(page, "cables").path()).read_text(encoding="utf-8")
+    if "dist-1" not in sched or "radio-1" not in sched or "ground-studs" not in sched or "loose end" in sched:
+        bad.append(f"schedule: the feed and the wire are not listed as connected: {sched!r}")
+    return bad
+
+
 # A RACK WITH A VERTICAL PDU AT EACH REAR UPRIGHT (kit 0.36.0, Portrayal
 # #1068): a 2U switch with two C20 inlets at U35 and a 1U console with two C14
 # inlets at U42, both on the front rails, so their inlets are on the rear pane
