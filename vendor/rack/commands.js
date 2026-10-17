@@ -20,6 +20,7 @@ import {shapeRefusal, contentNotes, contentKind} from '../displays.js';
 import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
+import {appliedFrame, editRefusal, unholdable} from './frames.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
@@ -609,6 +610,42 @@ function zeroUSaid({moved, removed}, chassisOf) {
 // point on their own side when the kind changes, down when the rack is lower,
 // and off it when they no longer fit; each is named.
 function frame(rack, p, ctx) {
+  // A FRAME THAT HOLDS A RACK PRODUCT is edited only in what the product
+  // leaves open (frames.js editRefusal); customising it frees the rest.
+  const bad = editRefusal(rack.frame, p.holes ? {...p, holes: {...rack.frame.holes, ...p.holes}} : p, ctx.frameOf);
+  return bad ? {error: bad} : frameWith(rack, p, ctx);
+}
+
+// APPLY A RACK PRODUCT: its ref and its numbers go into the frame by the same
+// path a frame edit takes, so a lower height packs devices down and the parts
+// beside the rack follow. Nothing is written that rack file version 3 lacks.
+function frameApply(rack, {ref}, ctx) {
+  if (typeof ctx.frameOf !== 'function') return {error: 'The rack products are not loaded, so a product cannot be applied.'};
+  const row = ctx.frameOf(ref);
+  if (!row) return {error: `There is no rack product ${ref}.`};
+  const no = unholdable(row);
+  if (no) return {error: no};
+  // the first unit is the file's own (startU) and is never written here, so a
+  // frame not counting from the product's would stay out of step with it
+  const start = row.numbering?.start ?? 1;
+  if (firstU(rack.frame) !== start)
+    return {error: `${row.manufacturer} ${row.model} counts from U${start}, and this frame counts from U${firstU(rack.frame)}; set the first unit to ${start} first.`};
+  const next = appliedFrame(rack.frame, row);
+  const patch = Object.fromEntries(['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref']
+    .filter(k => !same(next[k], rack.frame[k])).map(k => [k, next[k]]));
+  if (!Object.keys(patch).length) return unchanged(rack);
+  const r = frameWith(rack, patch, ctx);
+  if (r.error || r.rack === rack) return r;
+  const said = `Set the frame to ${row.manufacturer} ${row.model} (${row.ref}).`;
+  return {...r, summary: r.summary === 'Changed the rack frame.' ? said : `${said} ${r.summary}`};
+}
+
+function frameCustomise(rack) {
+  if (rack.frame.ref == null) return unchanged(rack);
+  return done(withFrame(rack, {ref: null}), `The frame keeps its numbers and no longer follows ${rack.frame.ref}: it is a generic frame.`);
+}
+
+function frameWith(rack, p, ctx) {
   const r = frameItems(rack, p, ctx);
   if (r.error || r.rack === rack) return r;
   const z = settleZeroU(r.rack, ctx.chassisOf);
@@ -1379,7 +1416,7 @@ export const COMMANDS = {
     args: args(['id'], {id: ID('cable manager')})},
   detach: {run: detach, description: 'Unbolt a cable manager from its device; it stays at its U on its own.',
     args: args(['id'], {id: ID('cable manager')})},
-  frame: {run: frame, description: 'Change the rack frame. A lower height packs devices down and removes from the bottom what still does not fit; their cables are kept as loose ends.',
+  frame: {run: frame, description: 'Change the rack frame. A lower height packs devices down and removes from the bottom what still does not fit; their cables are kept as loose ends. A frame set from a rack product refuses a number the product fixes, and takes a rail depth only within its range; customise it first to change those.',
     args: args([], {kind: {enum: ['four-post', 'two-post'], description: 'four-post or two-post.'},
       heightRU: {type: 'integer', minimum: 1, maximum: 100, description: 'How many U tall, from 1 to 100.'},
       numbering: {enum: ['bottom-up', 'top-down'], description: 'Which way the U labels count.'},
@@ -1390,6 +1427,10 @@ export const COMMANDS = {
       usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'},
       startU: {type: 'integer', minimum: 1, description: 'The number of the first unit, for a rack whose labels do not start at 1.'},
       setback: {type: ['number', 'null'], description: 'Millimetres a faceplate stands behind its rail in this rack, for a device that states none; null for flush.'}})},
+  'frame.apply': {run: frameApply, description: "Set the rack frame from a rack product: its ref is kept in the frame, and its height, kind, numbering, rail holes, rail depth and usable depth are copied in. Devices are packed as for a lower frame height. Refused when the catalogue has no such product.",
+    args: args(['ref'], {ref: {type: 'string', minLength: 1, description: "The product, as the catalogue lists it: vendor/name@major, e.g. apc/ar203a@1."}})},
+  'frame.customise': {run: frameCustomise, description: 'Stop following the rack product the frame was set from. Every number stays; the frame becomes a generic one that can be edited freely.',
+    args: args([], {})},
   rename: {run: rename, description: 'Rename the rack.', args: args(['name'], {name: {type: 'string', description: 'The new name.'}})},
   dcim: {run: dcim, step: false, description: 'Set the names a NetBox or Nautobot import needs: the site (or location) and the device role. Not an undo step.',
     args: args([], {site: {type: 'string', description: "NetBox's site, Nautobot's location."}, role: {type: 'string', description: 'The device role.'}})},

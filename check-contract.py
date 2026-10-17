@@ -1192,6 +1192,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
     "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
+    "rack/frames": "rack products applied to a frame (Portrayal #1131): frame.apply and frame.customise run it; the Rack Builder uses it, and no recipe on this page calls it yet",
 }
 _kpkg_f = VENDOR / "kit-package.json"
 try:
