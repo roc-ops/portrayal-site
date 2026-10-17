@@ -66,12 +66,106 @@ export function flatDist(base) {
 }
 
 /** `opts.dist` as a path -> URL function: a function is used as it is, a
- *  string (or nothing, then `fallback`) is a build directory's base. */
+ *  string (or nothing, then `fallback`) is a build directory's base, and a list
+ *  of those is several builds read as one library (`layeredDist`). */
 export function distResolver(dist, fallback) {
+  if (Array.isArray(dist)) return dist.length === 1 ? distResolver(dist[0], fallback) : layeredDist(dist);
   // `||`, not `??`: an empty string meant "the default" before this function
   // existed (callers wrote `opts.dist || '../dist'`), and '' as a base would
   // put every file at the site root
   return typeof dist === 'function' ? dist : flatDist(dist || fallback);
+}
+
+// ---- several builds read as one library -------------------------------------
+//
+// AN OVERLAY LIBRARY (`build.sh --overlay-library`) is built into a dist of its
+// own, and the kit loads it beside the public one: `dist: [publicDist,
+// overlayDist]`. A later root ADDS devices and parts. An id in two roots is an
+// error that names both and is never a replacement, so a private entry cannot
+// shadow a public one - the build refuses the same thing first
+// (spec/tools/portrayal/overlay.py), and this is the check for two dists that
+// were built apart.
+
+/** What a root is called in a sentence: its base, or its place in the list. */
+export const rootName = (root, i) => (typeof root === 'string' ? root : `dist root ${i + 1}`);
+
+/** The error for an id two roots both hold. */
+export const clash = (what, id, a, b) =>
+  new Error(`${what} ${id} is in both ${a} and ${b}; an overlay adds to the public library and never replaces an entry of it`);
+
+/**
+ * `roots` as one path -> URL function. Which root holds a file is learnt from
+ * each root's `devices.json` and `components.json`, so `distAt.ready` settles
+ * once that is known (it rejects on an id two roots hold); a path asked before
+ * that goes to the first root. `readIndex` waits for it, and every index the
+ * shell and the viewer read goes through `readIndex`.
+ */
+export function layeredDist(roots) {
+  const layers = roots.map(r => distResolver(r, '../dist'));
+  const names = roots.map(rootName);
+  const device = new Map();     // device name -> layer
+  const part = new Map();       // `ns--name--major` -> layer
+  const distAt = path => {
+    const skin = path.startsWith('components/') ? path.slice('components/'.length) : null;
+    const i = skin !== null ? part.get(skin.split('--').slice(0, 3).join('--'))
+      : device.get(path.split('.')[0]);
+    return layers[i ?? 0](path);
+  };
+  distAt.layers = layers;
+  distAt.names = names;
+  distAt.ready = (async () => {
+    const lists = await Promise.all(layers.map(async at => ({
+      devices: (await jdist(at('devices.json'))).devices || [],
+      // a root without parts of its own may have no components.json
+      components: await jdist(at('components.json')).then(j => j.components || [], () => []),
+    })));
+    lists.forEach(({devices, components}, i) => {
+      for (const d of devices) {
+        if (device.has(d.name)) throw clash('device', d.name, names[device.get(d.name)], names[i]);
+        device.set(d.name, i);
+      }
+      for (const c of components) {
+        // as a skin file spells it: components.json's `major` is `v1`
+        const k = `${c.ns}--${c.name}--${c.major}`;
+        if (part.has(k)) throw clash('component', `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`, names[part.get(k)], names[i]);
+        part.set(k, i);
+      }
+    });
+  })();
+  // a rejection nobody awaited yet is still reported where it is read
+  distAt.ready.catch(() => {});
+  return distAt;
+}
+
+// the list each merged index holds, and what names an entry in it
+const MERGED = {
+  'devices.json': {key: 'devices', id: d => d.name, what: 'device'},
+  'components.json': {key: 'components', id: c => `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`, what: 'component'},
+};
+
+/**
+ * One of the library-wide indexes, as `distAt` serves it. Over one build that
+ * is the file; over `layeredDist` the devices.json and components.json lists
+ * of every root, joined in order. Any other file is the first root's.
+ */
+export async function readIndex(distAt, file) {
+  if (!distAt.layers) return jdist(distAt(file));
+  await distAt.ready;
+  const m = MERGED[file];
+  if (!m) return jdist(distAt.layers[0](file));
+  const seen = new Map(), all = [];
+  let first;
+  for (const [i, at] of distAt.layers.entries()) {
+    const j = await jdist(at(file)).catch(err => { if (file === 'components.json') return {}; throw err; });
+    first ??= j;
+    for (const e of j[m.key] || []) {
+      const id = m.id(e);
+      if (seen.has(id)) throw clash(m.what, id, distAt.names[seen.get(id)], distAt.names[i]);
+      seen.set(id, i);
+      all.push(e);
+    }
+  }
+  return {...first, [m.key]: all};
 }
 
 /** An exact version (semver, prerelease and build allowed), a package this

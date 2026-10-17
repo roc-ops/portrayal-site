@@ -4,7 +4,7 @@
 // envelope, the `solids` a route may not (solids.js). Loaded once per page through `dist`, the
 // same build every other kit module reads.
 
-import {jdist} from '../dist.js';
+import {jdist, clash, rootName} from '../dist.js';
 import {redirectsOf} from '../redirects.js';
 
 const urlOf = (dist, path) => (typeof dist === 'function' ? dist(path) : `${String(dist).replace(/\/$/, '')}/${path}`);
@@ -16,10 +16,25 @@ export const catalogEntries = devices => Object.entries(devices)
   .map(([name, e]) => ({name, ...e}))
   .sort((a, b) => cmp(a.manufacturer, b.manufacturer) || cmp(a.model, b.model));
 
+// ONE DIST ROOT, OR A LIST OF THEM. `[publicDist, overlayDist]` reads an overlay
+// library (build.sh --overlay-library) beside the public one: a later root adds
+// devices and parts, and an id in two roots is an error naming both
+// (dist.js `clash`), never a replacement. A list of one is that root.
+const rootsOf = dist => (Array.isArray(dist) ? dist : [dist]);
+
 export async function loadCatalog(dist) {
-  const j = await jdist(urlOf(dist, 'rack.json'));
-  if (j?.format !== 1) throw new Error(`rack.json: format ${j?.format}; this kit reads format 1`);
-  const devices = j.devices || {};
+  const roots = rootsOf(dist);
+  const devices = {};
+  const from = {};
+  for (const [i, root] of roots.entries()) {
+    const j = await jdist(urlOf(root, 'rack.json'));
+    if (j?.format !== 1) throw new Error(`rack.json: format ${j?.format}; this kit reads format 1`);
+    for (const [name, e] of Object.entries(j.devices || {})) {
+      if (Object.hasOwn(devices, name)) throw clash('device', name, rootName(roots[from[name]], from[name]), rootName(root, i));
+      devices[name] = e;
+      from[name] = i;
+    }
+  }
   return {chassisOf: chassisLookup(devices), entries: catalogEntries(devices), devices};
 }
 
@@ -58,20 +73,37 @@ export function configFacts(slots, cfg) {
           states: c.states || {}, names: c.names || {}, ...(c.displays ? {displays: c.displays} : {}), slots: c.slots || [], mountPoints: c['mount-points'] || []};
 }
 
+// `dist` is one root or a list of them (rootsOf). A part or a device that two
+// roots both hold rejects the load with an error naming both: of everything
+// else here a miss answers null, but a private entry silently standing in for
+// a public one is the one answer this must not give.
 export async function loadSlots(dist, refs = []) {
+  const roots = rootsOf(dist);
   const comps = new Map();
+  const compRoot = new Map();
   let list = [];
-  try {
-    list = (await jdist(urlOf(dist, 'components.json')))?.components || [];
-    for (const c of list) comps.set(compKey(c), c);
-  } catch { /* every part is unknown: compByRef answers null */ list = []; }
+  for (const [i, root] of roots.entries()) {
+    let part = [];
+    try { part = (await jdist(urlOf(root, 'components.json')))?.components || []; }
+    catch { /* every part of this root is unknown: compByRef answers null */ }
+    for (const c of part) {
+      const k = compKey(c);
+      if (comps.has(k)) throw clash('component', k, rootName(roots[compRoot.get(k)], compRoot.get(k)), rootName(root, i));
+      comps.set(k, c);
+      compRoot.set(k, i);
+      list.push(c);
+    }
+  }
   const slots = new Map();
   await Promise.all([...new Set(refs)].filter(r => typeof r === 'string' && DEVICE_NAME.test(r)).map(async ref => {
-    try {
-      const j = await jdist(urlOf(dist, `${ref}.configs.json`));
-      slots.set(ref, {bays: j?.bays || {}, cages: j?.cages || {}, configs: j?.configs || [], default: j?.default ?? null,
-                      'pdu-class': j?.['pdu-class'] ?? null});
-    } catch { slots.set(ref, null); }
+    // each root is asked; the one that holds the device answers, and two that do are a clash
+    const found = (await Promise.all(roots.map(async (root, i) => {
+      try { return {i, j: await jdist(urlOf(root, `${ref}.configs.json`))}; } catch { return null; }
+    }))).filter(Boolean);
+    if (found.length > 1) throw clash('device', ref, rootName(roots[found[0].i], found[0].i), rootName(roots[found[1].i], found[1].i));
+    const j = found[0]?.j;
+    slots.set(ref, j ? {bays: j?.bays || {}, cages: j?.cages || {}, configs: j?.configs || [], default: j?.default ?? null,
+                        'pdu-class': j?.['pdu-class'] ?? null} : null);
   }));
   return {
     slotsOf: ref => slots.get(ref) ?? null,

@@ -267,12 +267,13 @@ export function backEnds(item, ctx) {
 //             and without the {module}/ a type file writes before them. More
 //             than one list: the part's positions are split between two kinds
 //             of port (a stated trunk position beside a front one).
-// Only a port one step under a module in one of the device's own bays: a
-// module inside a card has no module bay to be imported into (dcim-rules.js).
+// Only a port one step under a module (`holder`): the module may sit in a bay
+// of another module, a Fibrain panel in the XCU10 drawer, and dcim-rules.js
+// names it through each level (#1024).
 export function fibrePorts(item, end, ctx) {
   const at = seatedPort(item, end, ctx);
   if (!at?.port || !at.holder?.ref) return null;
-  const p = portPathOf(end.path), cut = p.indexOf(MODULE);
+  const p = portPathOf(end.path), cut = p.lastIndexOf(MODULE);
   const part = p.slice(cut + MODULE.length);
   if (part.includes('/')) return null;
   const key = `${at.back ? 'rear:' : ''}${part}`;

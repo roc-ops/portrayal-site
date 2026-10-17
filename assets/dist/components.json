@@ -95785,6 +95785,34 @@
    },
    "bays": {},
    "behaviour": "fills",
+   "cages": [
+    {
+     "accepts": [
+      "generic/micro-usb-b-plug@1"
+     ],
+     "at": [
+      9.15,
+      8.03
+     ],
+     "bores": [],
+     "default": null,
+     "group-states": false,
+     "id": "usb",
+     "interface": "micro-usb-b",
+     "kind": "connector",
+     "lift": 0.0,
+     "mate": [
+      12.905,
+      9.41
+     ],
+     "media": null,
+     "mirror": false,
+     "occupant-attrs": {},
+     "rotate": null,
+     "tilt": null,
+     "turns": null
+    }
+   ],
    "class": "supervisor",
    "composed-by": 1,
    "conforms": null,
@@ -116708,6 +116736,7 @@
      "accepts": [
       "dell/pcie-filler-fh-14g@2",
       "std/pcie-bracket-fh@2",
+      "std/pcie-bracket-fh-2slot@1",
       "common/pcie-card-fh@2",
       "ufispace/n3100-4c@1",
       "nvidia/mcx4111a-fh@1",
@@ -116738,7 +116767,10 @@
      "size": {
       "h": 21.59,
       "w": 120.02
-     }
+     },
+     "span": [
+      "slot-2"
+     ]
     },
     "slot-2": {
      "accepts": [
@@ -116888,7 +116920,7 @@
    ],
    "superseded-by": null,
    "supersedes": [],
-   "version": "2.1.0"
+   "version": "2.2.0"
   },
   {
    "attrs": {
@@ -209662,7 +209694,7 @@
    "bays": {},
    "behaviour": null,
    "class": "port",
-   "composed-by": 16,
+   "composed-by": 19,
    "conforms": "c13-plug",
    "description": "A moulded straight IEC C13 cord connector on its cord, seen from the cable end as a front elevation sees it seated: the overmould, keyed by the two cut corners on its earth side, the round strain relief and a short straight stub of cord whose diameter is the cable-od field. Seats in an `iec-c14` inlet at its own mate point; the cord leaves from the stub's far end.",
    "element-boxes": {},
@@ -211353,6 +211385,68 @@
    "superseded-by": null,
    "supersedes": [],
    "version": "1.0.1"
+  },
+  {
+   "attrs": {
+    "connector": "eps12v",
+    "media": "eps12v",
+    "pins": 8,
+    "pins-12v": 4,
+    "pins-ground": 4
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "port",
+   "composed-by": 1,
+   "conforms": "mini-fit-8-plug",
+   "description": "A 2 x 4 cable plug of the EPS12V (CPU 8-pin) kind on its cord, seen from the cable end. It is the housing and a short straight stub of wire bundle whose diameter is the cable-od field. It seats in an `eps12v-8pin` header at its own mate point. A PCIe 8-pin plug does not mate it.",
+   "element-boxes": {},
+   "elements": [],
+   "fields": {
+    "cable-od": {
+     "default": 9.0,
+     "label": "Wire bundle diameter",
+     "type": "number",
+     "unit": "mm"
+    },
+    "jacket-color": {
+     "default": "#1c1c1c",
+     "label": "Sleeve colour",
+     "type": "text"
+    }
+   },
+   "files": {
+    "default": "components/generic--eps12v-8pin-plug--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    6.3,
+    9.0
+   ],
+   "mates": "eps12v-8pin",
+   "name": "eps12v-8pin-plug",
+   "ns": "generic",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 14
+   },
+   "seats": 0,
+   "size": {
+    "h": 18.0,
+    "w": 12.6
+   },
+   "size-confidence": {
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the 12.6 is printed on NVIDIA's adapter drawing for the PCIe plug of the same family; the 18.0 is four pitches and a wall",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
   },
   {
    "attrs": {
@@ -213218,6 +213312,134 @@
     "w": "registry"
    },
    "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
+    "connector": "pcie-16pin",
+    "media": "pcie-16pin",
+    "pins": 16,
+    "pins-power": 12,
+    "pins-sense": 4
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "port",
+   "composed-by": 2,
+   "conforms": "pcie-16pin-plug",
+   "description": "The 16-pin GPU power cable housing (12 power and 4 sense contacts, 3.00 pitch) seen from the cable end. A short straight stub of wire bundle follows it, its diameter the cable-od field. The same housing serves 12VHPWR and 12V-2x6 cables. It seats in a `pcie-12vhpwr` or `pcie-12v-2x6` header at its mate point.",
+   "element-boxes": {},
+   "elements": [],
+   "fields": {
+    "cable-od": {
+     "default": 10.0,
+     "label": "Wire bundle diameter",
+     "type": "number",
+     "unit": "mm"
+    },
+    "jacket-color": {
+     "default": "#1c1c1c",
+     "label": "Sleeve colour",
+     "type": "text"
+    }
+   },
+   "files": {
+    "default": "components/generic--pcie-16pin-plug--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    10.425,
+    5.85
+   ],
+   "mates": [
+    "pcie-12vhpwr",
+    "pcie-12v-2x6"
+   ],
+   "name": "pcie-16pin-plug",
+   "ns": "generic",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 22
+   },
+   "seats": 0,
+   "size": {
+    "h": 11.7,
+    "w": 20.85
+   },
+   "size-confidence": {
+    "h": "estimated",
+    "w": "drawing"
+   },
+   "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
+    "connector": "pcie-8pin",
+    "media": "pcie-8pin",
+    "pins": 8,
+    "pins-12v": 3,
+    "pins-ground": 5
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "port",
+   "composed-by": 1,
+   "conforms": "mini-fit-8-plug",
+   "description": "The PCIe 8-pin (6+2) cable plug on its cord, seen from the cable end. It is the 2 x 4 housing and a short straight stub of wire bundle whose diameter is the cable-od field. It seats in a `pcie-8pin` header at its own mate point. An EPS12V header does not take it.",
+   "element-boxes": {},
+   "elements": [],
+   "fields": {
+    "cable-od": {
+     "default": 9.0,
+     "label": "Wire bundle diameter",
+     "type": "number",
+     "unit": "mm"
+    },
+    "jacket-color": {
+     "default": "#1c1c1c",
+     "label": "Sleeve colour",
+     "type": "text"
+    }
+   },
+   "files": {
+    "default": "components/generic--pcie-8pin-plug--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    6.3,
+    9.0
+   ],
+   "mates": "pcie-8pin",
+   "name": "pcie-8pin-plug",
+   "ns": "generic",
+   "parts": [],
+   "relief-confidence": {
+    "drawing": 1,
+    "estimated": 13
+   },
+   "seats": 0,
+   "size": {
+    "h": 18.0,
+    "w": 12.6
+   },
+   "size-confidence": {
+    "h": "estimated",
+    "w": "drawing"
+   },
+   "size-notes": "the 12.6 is printed on NVIDIA's adapter drawing; the 18.0 is four pitches and a wall, not printed",
    "skins": [
     "default"
    ],
@@ -364047,6 +364269,122 @@
   },
   {
    "attrs": {
+    "input": "none",
+    "lane-rate-gbps": 50,
+    "lanes-per-card": 96,
+    "media": "nvlink",
+    "role": "nvlink"
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "inlet",
+   "composed-by": 0,
+   "conforms": "nvlink-a100-pcie-connector",
+   "description": "One NVLink bridge connector on the top edge of an A100 PCIe card, seen from above with its long side along the card. The card has three, each shipped under a removable cap. It presents `nvlink-a100-pcie`, which the two-slot bridge nvidia/nvlink-bridge-a100-2slot@1 mates at both of its ends.",
+   "element-boxes": {
+    "opening": {
+     "at": [
+      0.0,
+      0.0
+     ],
+     "size": [
+      6.6,
+      49.5
+     ]
+    }
+   },
+   "elements": [
+    "opening"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/nvidia--nvlink-a100-connector--v1--default.svg"
+   },
+   "interface": "nvlink-a100-pcie",
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    3.3,
+    24.75
+   ],
+   "name": "nvlink-a100-connector",
+   "ns": "nvidia",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 3
+   },
+   "seats": 0,
+   "size": {
+    "d": 2.5,
+    "h": 49.5,
+    "w": 6.6
+   },
+   "size-confidence": {
+    "d": "estimated",
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "read off a public product render; NVIDIA's keep-out figure carries no dimensions",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
+    "connector": "nvlink-a100-pcie",
+    "media": "nvlink",
+    "part-number": "900-53651-0000-000",
+    "per-card-pair": 3,
+    "spans-slots": 2,
+    "weight-g": 20.5
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "port",
+   "composed-by": 1,
+   "conforms": null,
+   "description": "NVIDIA's two-slot NVLink bridge for the A100 PCIe card, 900-53651-0000-000, seen from above. One bridge spans two adjacent cards, plugging into the same top-edge connector on each. Those sit two slot pitches (2 x 20.32) apart, and three bridges join one pair of cards. `mate` seats on the first card and `mate-b` on the second. The library seats a part at `mate` only, so nothing seats the second end yet.",
+   "element-boxes": {},
+   "elements": [],
+   "fields": {},
+   "files": {
+    "default": "components/nvidia--nvlink-bridge-a100-2slot--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    3.3,
+    24.75
+   ],
+   "mates": "nvlink-a100-pcie",
+   "name": "nvlink-bridge-a100-2slot",
+   "ns": "nvidia",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 8
+   },
+   "seats": 0,
+   "size": {
+    "h": 49.5,
+    "w": 47.24
+   },
+   "size-confidence": {
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the span is two slot pitches plus one connector's width; the body between the ends is not dimensioned in anything held",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
     "model": "BTOH-16",
     "outputs": 16,
     "part-number": "1078904679-01",
@@ -369124,6 +369462,38 @@
     "depth": 60.0,
     "sides": {}
    },
+   "cages": [
+    {
+     "accepts": [
+      "common/lc-duplex-dust-cap@2",
+      "generic/lc-duplex-plug@2"
+     ],
+     "at": [
+      4.5,
+      4.0
+     ],
+     "bores": [
+      "1",
+      "2"
+     ],
+     "default": null,
+     "group-states": false,
+     "id": "dcm",
+     "interface": "lc-duplex",
+     "kind": "connector",
+     "lift": 3.175,
+     "mate": [
+      11.1,
+      9.82
+     ],
+     "media": null,
+     "mirror": false,
+     "occupant-attrs": {},
+     "rotate": 0,
+     "tilt": null,
+     "turns": null
+    }
+   ],
    "class": "filter",
    "composed-by": 1,
    "conforms": null,
@@ -369231,6 +369601,38 @@
     "depth": 60.0,
     "sides": {}
    },
+   "cages": [
+    {
+     "accepts": [
+      "common/lc-duplex-dust-cap@2",
+      "generic/lc-duplex-plug@2"
+     ],
+     "at": [
+      4.5,
+      4.0
+     ],
+     "bores": [
+      "1",
+      "2"
+     ],
+     "default": null,
+     "group-states": false,
+     "id": "dcm",
+     "interface": "lc-duplex",
+     "kind": "connector",
+     "lift": 3.175,
+     "mate": [
+      11.1,
+      9.82
+     ],
+     "media": null,
+     "mirror": false,
+     "occupant-attrs": {},
+     "rotate": 0,
+     "tilt": null,
+     "turns": null
+    }
+   ],
    "class": "filter",
    "composed-by": 1,
    "conforms": null,
@@ -369338,6 +369740,38 @@
     "depth": 60.0,
     "sides": {}
    },
+   "cages": [
+    {
+     "accepts": [
+      "common/lc-duplex-dust-cap@2",
+      "generic/lc-duplex-plug@2"
+     ],
+     "at": [
+      4.5,
+      4.0
+     ],
+     "bores": [
+      "1",
+      "2"
+     ],
+     "default": null,
+     "group-states": false,
+     "id": "dcm",
+     "interface": "lc-duplex",
+     "kind": "connector",
+     "lift": 3.175,
+     "mate": [
+      11.1,
+      9.82
+     ],
+     "media": null,
+     "mirror": false,
+     "occupant-attrs": {},
+     "rotate": 0,
+     "tilt": null,
+     "turns": null
+    }
+   ],
    "class": "filter",
    "composed-by": 1,
    "conforms": null,
@@ -369445,6 +369879,38 @@
     "depth": 60.0,
     "sides": {}
    },
+   "cages": [
+    {
+     "accepts": [
+      "common/lc-duplex-dust-cap@2",
+      "generic/lc-duplex-plug@2"
+     ],
+     "at": [
+      4.5,
+      4.0
+     ],
+     "bores": [
+      "1",
+      "2"
+     ],
+     "default": null,
+     "group-states": false,
+     "id": "dcm",
+     "interface": "lc-duplex",
+     "kind": "connector",
+     "lift": 3.175,
+     "mate": [
+      11.1,
+      9.82
+     ],
+     "media": null,
+     "mirror": false,
+     "occupant-attrs": {},
+     "rotate": 0,
+     "tilt": null,
+     "turns": null
+    }
+   ],
    "class": "filter",
    "composed-by": 1,
    "conforms": null,
@@ -370000,6 +370466,140 @@
    "superseded-by": null,
    "supersedes": [],
    "version": "2.2.0"
+  },
+  {
+   "attrs": {
+    "input": "dc",
+    "media": "pcie-12v-2x6",
+    "pins": 16,
+    "pins-power": 12,
+    "pins-sense": 4,
+    "pitch-mm": 3.0,
+    "power-rated-w": 600
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "inlet",
+   "composed-by": 1,
+   "conforms": "pcie-16pin-header",
+   "description": "The 16-pin 12V-2x6 GPU power connector of PCIe CEM 5.1 and ATX 3.1 on a board. It is the 12VHPWR housing with the sense contacts recessed further, so they touch only when the power contacts are home. It presents `pcie-12v-2x6`, which generic/pcie-16pin-plug@1 mates.",
+   "element-boxes": {
+    "opening": {
+     "at": [
+      0.0,
+      0.0
+     ],
+     "size": [
+      20.85,
+      11.7
+     ]
+    }
+   },
+   "elements": [
+    "opening"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/std--12v-2x6-header--v1--default.svg"
+   },
+   "interface": "pcie-12v-2x6",
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    10.425,
+    5.85
+   ],
+   "name": "12v-2x6-header",
+   "ns": "std",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 18
+   },
+   "seats": 0,
+   "size": {
+    "d": 9.0,
+    "h": 11.7,
+    "w": 20.85
+   },
+   "size-confidence": {
+    "d": "estimated",
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the opening is taken as the plug's own outline; no header drawing was readable",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
+    "input": "dc",
+    "media": "pcie-12vhpwr",
+    "pins": 16,
+    "pins-power": 12,
+    "pins-sense": 4,
+    "pitch-mm": 3.0,
+    "power-rated-w": 600
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "inlet",
+   "composed-by": 2,
+   "conforms": "pcie-16pin-header",
+   "description": "The 16-pin 12VHPWR GPU power connector of PCIe CEM 5.0 and ATX 3.0 on a board, seen end on from the cable side. It has twelve power contacts on a 3.00 pitch and four sense contacts below them. It presents `pcie-12vhpwr`, which generic/pcie-16pin-plug@1 mates. A CEM 5.1 card uses std/12v-2x6-header@1.",
+   "element-boxes": {
+    "opening": {
+     "at": [
+      0.0,
+      0.0
+     ],
+     "size": [
+      20.85,
+      11.7
+     ]
+    }
+   },
+   "elements": [
+    "opening"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/std--12vhpwr-header--v1--default.svg"
+   },
+   "interface": "pcie-12vhpwr",
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    10.425,
+    5.85
+   ],
+   "name": "12vhpwr-header",
+   "ns": "std",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 18
+   },
+   "seats": 0,
+   "size": {
+    "d": 9.0,
+    "h": 11.7,
+    "w": 20.85
+   },
+   "size-confidence": {
+    "d": "estimated",
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the opening is taken as the plug's own outline; no header drawing was readable",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
   },
   {
    "attrs": {
@@ -371055,6 +371655,74 @@
     "w": "registry"
    },
    "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
+    "current-rating-a": 9.0,
+    "input": "dc",
+    "media": "eps12v",
+    "pins": 8,
+    "pins-12v": 4,
+    "pins-ground": 4,
+    "pitch-mm": 4.2,
+    "voltage-rating-v": 600
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "inlet",
+   "composed-by": 1,
+   "conforms": "mini-fit-8-header",
+   "description": "The 8-pin CPU / EPS12V power connector on a board, seen end on from the cable side. It is a Molex Mini-Fit Jr. 2 x 4 header with four 12 V and four ground contacts. The A100's brief says it carries one (\"CPU 8-pin\"). It presents `eps12v-8pin`, which generic/eps12v-8pin-plug@1 mates.",
+   "element-boxes": {
+    "opening": {
+     "at": [
+      0.0,
+      0.0
+     ],
+     "size": [
+      12.6,
+      18.0
+     ]
+    }
+   },
+   "elements": [
+    "opening"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/std--eps12v-header--v1--default.svg"
+   },
+   "interface": "eps12v-8pin",
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    6.3,
+    9.0
+   ],
+   "name": "eps12v-header",
+   "ns": "std",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 10
+   },
+   "seats": 0,
+   "size": {
+    "d": 9.9,
+    "h": 18.0,
+    "w": 12.6
+   },
+   "size-confidence": {
+    "d": "estimated",
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the 12.6 is printed on NVIDIA's adapter drawing; the 18.0 and the 9.9 are not dimensioned for this connector",
    "skins": [
     "default"
    ],
@@ -372414,6 +373082,73 @@
   },
   {
    "attrs": {
+    "input": "dc",
+    "media": "pcie-8pin",
+    "pins": 8,
+    "pins-12v": 3,
+    "pins-ground": 5,
+    "pitch-mm": 4.2,
+    "power-rated-w": 150
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "inlet",
+   "composed-by": 1,
+   "conforms": "mini-fit-8-header",
+   "description": "The PCIe 8-pin (6+2) power connector on a board, seen end on. It is a 2 x 4 Mini-Fit housing with the PCIe polarisation, three 12 V and five ground contacts. It presents `pcie-8pin`, which generic/pcie-8pin-plug@1 mates. It is the size of std/eps12v-header@1 and not the same interface.",
+   "element-boxes": {
+    "opening": {
+     "at": [
+      0.0,
+      0.0
+     ],
+     "size": [
+      12.6,
+      18.0
+     ]
+    }
+   },
+   "elements": [
+    "opening"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/std--pcie-8pin-header--v1--default.svg"
+   },
+   "interface": "pcie-8pin",
+   "kind": "component",
+   "major": "v1",
+   "mate": [
+    6.3,
+    9.0
+   ],
+   "name": "pcie-8pin-header",
+   "ns": "std",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 10
+   },
+   "seats": 0,
+   "size": {
+    "d": 9.9,
+    "h": 18.0,
+    "w": 12.6
+   },
+   "size-confidence": {
+    "d": "estimated",
+    "h": "estimated",
+    "w": "estimated"
+   },
+   "size-notes": "the 12.6 is printed on NVIDIA's adapter drawing; the 18.0 and the 9.9 are not dimensioned for this connector",
+   "skins": [
+    "default"
+   ],
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
     "card-height-max": 111.28,
     "chassis-opening": 100.71,
     "material": "0.86 mm (20 GA) low carbon steel, zinc plated",
@@ -372424,7 +373159,7 @@
    "bays": {},
    "behaviour": null,
    "class": "bracket",
-   "composed-by": 38,
+   "composed-by": 39,
    "conforms": "pcie-bracket-fh",
    "description": "Standard (full height) PCI Express add-in card I/O bracket - the faceplate every PCIe card presents at the chassis wall, with the connector opening its I/O looks through and the retention tab that drops into the chassis card-guide slot",
    "element-boxes": {
@@ -372467,6 +373202,76 @@
    "superseded-by": null,
    "supersedes": [],
    "version": "2.0.0"
+  },
+  {
+   "attrs": {
+    "body-width": 38.74,
+    "material": "0.86 mm (20 GA) low carbon steel, zinc plated",
+    "slot-pitch": 20.32,
+    "slots": 2,
+    "tab-width": 10.2
+   },
+   "bays": {},
+   "behaviour": null,
+   "class": "bracket",
+   "composed-by": 1,
+   "conforms": "pcie-bracket-fh-2slot",
+   "description": "Two-slot (full height) PCI Express add-in card I/O bracket. The faceplate of a dual-slot card, two slot pitches across, with two retention tabs and an I/O and venting window in each slot",
+   "element-boxes": {
+    "window-1": {
+     "at": [
+      25.38,
+      6.35
+     ],
+     "size": [
+      81.93,
+      12.06
+     ]
+    },
+    "window-2": {
+     "at": [
+      25.38,
+      26.67
+     ],
+     "size": [
+      81.93,
+      12.06
+     ]
+    }
+   },
+   "elements": [
+    "window-1",
+    "window-2"
+   ],
+   "fields": {},
+   "files": {
+    "default": "components/std--pcie-bracket-fh-2slot--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "name": "pcie-bracket-fh-2slot",
+   "ns": "std",
+   "parts": [],
+   "relief-confidence": {
+    "drawing": 1
+   },
+   "seats": 1,
+   "size": {
+    "h": 41.91,
+    "w": 120.07
+   },
+   "size-confidence": {
+    "h": "registry",
+    "w": "registry"
+   },
+   "size-notes": "PCIe CEM 5.0 figure 11-13, both figures printed",
+   "skins": [
+    "default"
+   ],
+   "slot-width": 2,
+   "superseded-by": null,
+   "supersedes": [],
+   "version": "1.0.0"
   },
   {
    "attrs": {
@@ -385573,8 +386378,8 @@
  "relief-confidence": {
   "borrowed": 12,
   "datasheet": 42,
-  "drawing": 277,
-  "estimated": 3397,
+  "drawing": 279,
+  "estimated": 3513,
   "measured": 41,
   "photo-measured": 28,
   "registry": 7
@@ -385582,11 +386387,11 @@
  "size-confidence": {
   "borrowed": 351,
   "datasheet": 522,
-  "drawing": 729,
-  "estimated": 451,
+  "drawing": 731,
+  "estimated": 472,
   "known-wrong": 24,
   "measured": 116,
   "photo-measured": 321,
-  "registry": 200
+  "registry": 202
  }
 }

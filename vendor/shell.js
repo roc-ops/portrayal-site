@@ -23,8 +23,8 @@ import { nestedBays, applyOverrides, applyOccupantOverrides, applyRearOverrides,
          builtOccupants, builtBays, faceCages, cageAt, pruneCarrier,
          freshBaysUnder, seatFace, faceQueue, swapOverrides, faceEntries, faceTree, ownerPath,
          builtTurns, turnOverrides, acceptTurns, decodeTurns, seatTurn, turnable,
-         slotOptions, slotResolver } from './swap.js';
-import { jdist, faceFile, distResolver } from './dist.js';
+         slotOptions, slotResolver, spanWhy, coveredBy, slotWidth } from './swap.js';
+import { jdist, faceFile, distResolver, readIndex } from './dist.js';
 import { paintFields, unpaintFields, fieldRows, fieldAccepts, decodeFields, drawnField,
          adjustmentsOf, adjustmentAccepts, paintAdjustments } from './fields.js';
 import { paintDisplays } from './displays.js';
@@ -232,6 +232,15 @@ export function createShell(opts = {}) {
   const bayFor = path => (state.meta?.bays?.[bayView()] || []).find(b => b.id === path)
     || (state.svg ? nestedBays(state.svg, compByRef).find(b => b.id === path) : null)
     || null;
+
+  // WHAT A SPAN IS JUDGED ON (docs/pcie-two-slot-bays-design.md): what each
+  // bay holds now - the state's answer, else the bay's default - and the
+  // index entry of a part. swap.js spanWhy and coveredBy read through it.
+  const spanCtx = {
+    holds: p => (Object.prototype.hasOwnProperty.call(state.cfgBays || {}, p)
+      ? state.cfgBays[p] : bayFor(p)?.default) || null,
+    comp: ref => { try { return ref ? compByRef(String(ref).split(':')[0]) || null : null; } catch (e) { return null; } },
+  };
 
   // A CAGE OF THE FACE ON SCREEN, found from the port OR from the optic in it.
   // `meta.cages` is keyed by view exactly as `meta.bays` is, so it is read
@@ -1093,9 +1102,21 @@ export function createShell(opts = {}) {
     const cage = cageFor(path);
     if (bay) {
       const cur = (state.cfgBays?.[bay.id]) ?? bay.default ?? '';
+      // A BAY A TWO-SLOT CARD COVERS holds nothing while it is there, so it
+      // says what covers it and offers no choice; a two-slot option whose
+      // covered bay is full is listed, disabled, with what to empty
+      const by = coveredBy(bay.id, spanCtx);
       const opts = ['<option value="">— open —</option>']
-        .concat(bay.accepts.map(a => `<option value="${a}"${a === cur ? ' selected' : ''}>${a}</option>`));
-      html += `<div class="row"><span>occupant</span><select id="occ">${opts.join('')}</select></div>`;
+        .concat(bay.accepts.map(a => {
+          const why = a === cur ? null : spanWhy(bay.id, a, spanCtx);
+          return `<option value="${a}"${a === cur ? ' selected' : ''}${why ? ` disabled title="${esc(why)}"` : ''}>${a}</option>`;
+        }));
+      if (by) {
+        const card = spanCtx.holds(by);
+        html += `<div class="row"><span>covered by</span><code>${esc(card || '')}</code> in <code>${esc(by)}</code>, `
+              + `${slotWidth(spanCtx.comp(card))} slots wide</div>`;
+      }
+      html += `<div class="row"><span>occupant</span><select id="occ"${by ? ' disabled' : ''}>${opts.join('')}</select></div>`;
       if (!bay.accepts.length)
         html += `<div class="row" style="color:var(--warn)">no component modelled for this slot</div>`;
     }
@@ -1369,6 +1390,9 @@ export function createShell(opts = {}) {
     const bay = cage ? null : bayFor(key);
     const target = cage || bay;
     if (!target || (ref && !(target.accepts || []).includes(ref))) return null;
+    // a two-slot card over a full bay, or anything into a covered one
+    const spanned = bay ? spanWhy(key, ref, spanCtx) : null;
+    if (spanned) { console.warn(`[portrayal] ${spanned}`); return null; }
     const svg = state.svg;
     const gen = state.cfgGen;
     const live = claim(key);
@@ -1911,8 +1935,10 @@ export function createShell(opts = {}) {
   addEventListener('resize', fit);
 
   const ready = (async () => {
-    DEVICES = DEVICES.length ? DEVICES : (await j('devices.json')).devices;
-    COMPONENTS = COMPONENTS.length ? COMPONENTS : (await j('components.json')).components;
+    // readIndex, not `j`: over a list of dist roots (an overlay library) these
+    // two are every root's joined
+    DEVICES = DEVICES.length ? DEVICES : (await readIndex(distAt, 'devices.json')).devices;
+    COMPONENTS = COMPONENTS.length ? COMPONENTS : (await readIndex(distAt, 'components.json')).components;
     // OPTIONAL, for a build from before listings (#677): without the file the
     // picker offers the hardware alone, which is what it always did.
     try { LISTINGS = (await j('listings.json')).listings || {}; } catch { LISTINGS = {}; }
