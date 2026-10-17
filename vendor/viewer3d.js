@@ -36,7 +36,7 @@ import { seatViews, seatBack, refusalReason } from './swap.js';
 import { positionsChanged } from './fields.js';
 import { bevelledArrays } from './bevel.js';
 import { expandStates } from './states.js';
-import { jdist, faceFile, distResolver } from './dist.js';
+import { jdist, faceFile, distResolver, readIndex } from './dist.js';
 import { createLamps } from './lamps.js';
 
 const CLS_LABEL = {fan: 'Fan module', psu: 'Power supply', tab: 'Info tab'};
@@ -1262,7 +1262,7 @@ export function createViewer(container, opts = {}) {
   // bytes arrive once per page even with the shell asking for them too.
   async function ensureComponents() {
     if (COMP_INDEX) return;
-    const cidx = await jdist(distAt('components.json'));
+    const cidx = await readIndex(distAt, 'components.json');
     COMP_INDEX = cidx.components;
     BODY_META = Object.fromEntries(cidx.components.filter(c => c.body)
       .map(c => [`${c.ns}/${c.name}@${c.major.slice(1)}`, c.body]));

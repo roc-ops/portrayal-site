@@ -40,7 +40,7 @@ import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
 import {looseIn} from './spare.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
-import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
+import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT, nautobotModuleFile} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {sheetBundleNotes} from './bundle-view.js';
 import {COLORS, colorOf} from './cables.js';
@@ -657,8 +657,10 @@ const scriptHref = () => {
 // in the order they are imported, with a README.txt that says what to do with
 // each, what must already exist, and everything the kit could not carry.
 //   NetBox:   types/…, 1-rack.csv, 2-devices.csv, 3-modules.csv, 4-cables.csv
-//   Nautobot: types/…, 1-devices.csv, 2-modules.csv, 3-cables.csv and
-//             import_cables.py, which creates the cables from that file
+//   Nautobot: types/…, 1-devices.csv, 2-modules.csv, 2b-modules-depth-1.csv
+//             (and one more for each deeper level of modules in modules, only
+//             when the rack has one), 3-cables.csv and import_cables.py,
+//             which creates the cables from that file
 // Every CSV is written verbatim (no formula guard: an importer reads it
 // literally) and is in the zip even with no rows. A device's name is
 // uniqueNames' and its U is positionOf, the same in every file. A row the
@@ -708,6 +710,9 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
                                unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
 
   const rows = {devices: dev.rows.length, modules: mod.rows.length, cables: cab.rows.length};
+  // Nautobot: a module in a bay of a module is a file for each depth, after the modules file (`deeper`, outermost first).
+  const deeper = mod.deeper ?? [];
+  if (nautobot) rows.modulesIn = deeper.map(s => s.rows.length);
   const rackLeft = [];
   if (!nautobot) {
     // A RACK THE KIT SCREENS OUT (kit 0.22.0: a name NetBox would refuse) gives
@@ -721,6 +726,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   }
   add(F.devices, toCsv(dev.columns, dev.rows));
   add(F.modules, toCsv(mod.columns, mod.rows));
+  for (const s of deeper) add(nautobotModuleFile(s.depth), toCsv(s.columns, s.rows));
   add(F.cables, toCsv(cab.columns, cab.rows));
   let script = false;
   if (nautobot) {
