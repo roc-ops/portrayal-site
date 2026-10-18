@@ -60,7 +60,8 @@ export function strapsText(st, every) {
   if (!n) return null;
   const parts = [k.spacing ? `${k.spacing}${every ? ` every ${every.value} ${every.unit}` : ' along it'}` : null,
                  k.breakout ? `${k.breakout} where a cable leaves` : null,
-                 k.anchor ? `${k.anchor} at ${k.anchor === 1 ? 'a tray tie slot' : 'tray tie slots'}` : null].filter(Boolean);
+                 k.anchor ? `${k.anchor} at ${k.anchor === 1 ? 'a tray tie slot' : 'tray tie slots'}` : null,
+                 k.tie ? 'tied at one point' : null].filter(Boolean);
   const head = `${n} strap${n === 1 ? '' : 's'}`;
   return parts.length === 1 && k.spacing === n && every ? `${head} every ${every.value} ${every.unit}` : `${head} (${parts.join(', ')})`;
 }

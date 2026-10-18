@@ -23891,6 +23891,7 @@ def check_rack_bundle_tie(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.set_viewport_size({"width": 1600, "height": 1000})
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.click('#mode [data-mode="2d"]')
@@ -23941,6 +23942,15 @@ def check_rack_bundle_tie(page, base):
             bad.append(f"{where}, BOM: the strap line is {line}; expected one strap, round a bundle tied at one point, 1 of {wide} mm")
         if "tied at" not in sched or "1 strap" not in sched:
             bad.append(f"{where}, schedule: no bundle note saying it is tied at one point with 1 strap")
+        # THE TIE IS A GROUP OF ITS OWN in what the side panel and an agent's reading say of the straps (no empty "()")
+        wait_fn(page, "tie: the agent tools", "() => !!window.__tools && !!window.__tools.inspect")
+        panel = page.evaluate("() => document.querySelector('.rk-side')?.textContent || ''")
+        if "1 strap ()" in panel or "1 strap (tied at one point)" not in panel:
+            bad.append(f"{where}, side panel: the bundle's straps read {re.findall(r'1 strap[^A-Z]{0,40}', panel)}; expected '1 strap (tied at one point)'")
+        said = agent_call(page, "inspect", {"id": "b1"})["content"][0]["text"]
+        want = "1 in all (0 spaced, 0 where a cable joins or leaves, 0 at tray tie slots, 1 tied at one point)"
+        if want not in said:
+            bad.append(f"{where}, agent: inspect reads {[l for l in said.splitlines() if l.startswith('straps')]}; expected the tie as a group of its own: {want!r}")
         # THE SIDE PANE: ONE STRAP AT THE RING (this assertion was written after the code)
         page.click('#view2d [data-view="sides"]')
         wait_fn(page, "tie: the side pair's cables", "() => document.querySelectorAll('svg[data-pane=\"left\"] [data-cables] [data-cable-id]').length > 0")
