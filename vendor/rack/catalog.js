@@ -26,16 +26,26 @@ export async function loadCatalog(dist) {
   const roots = rootsOf(dist);
   const devices = {};
   const from = {};
+  // the rack products a frame can be set from (frames.js), by ref; a rack.json
+  // built before the key has none
+  const frames = {};
+  const framesFrom = {};
   for (const [i, root] of roots.entries()) {
     const j = await jdist(urlOf(root, 'rack.json'));
     if (j?.format !== 1) throw new Error(`rack.json: format ${j?.format}; this kit reads format 1`);
+    for (const [ref, row] of Object.entries(j.frames || {})) {
+      if (Object.hasOwn(frames, ref)) throw clash('rack product', ref, rootName(roots[framesFrom[ref]], framesFrom[ref]), rootName(root, i));
+      frames[ref] = row;
+      framesFrom[ref] = i;
+    }
     for (const [name, e] of Object.entries(j.devices || {})) {
       if (Object.hasOwn(devices, name)) throw clash('device', name, rootName(roots[from[name]], from[name]), rootName(root, i));
       devices[name] = e;
       from[name] = i;
     }
   }
-  return {chassisOf: chassisLookup(devices), entries: catalogEntries(devices), devices};
+  return {chassisOf: chassisLookup(devices), entries: catalogEntries(devices), devices,
+          frameOf: ref => (Object.hasOwn(frames, ref) ? frames[ref] : null), frames};
 }
 
 // THE PARTS OF THE DEVICES IN A RACK, for the commands that check a bay, a

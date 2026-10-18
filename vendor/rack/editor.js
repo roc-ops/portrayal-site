@@ -6,6 +6,7 @@ import {apply as applyCommands, COMMANDS} from './commands.js';
 import {settleManagers} from './managers.js';
 import {overlapNotices, frameNotices} from './fit.js';
 import {createHistory} from './history.js';
+import {frameState} from './frames.js';
 import {auditRack, loadedText, unknownTexts} from '../redirects.js';
 
 // What a command that is not a step owns is kept across an undo or redo: Undo
@@ -16,8 +17,11 @@ const keepDcim = (rack, from) => {
   return 'dcim' in from ? {...bare, dcim: from.dcim} : bare;
 };
 
-export function createRackEditor({doc, chassisOf, cap = 100}) {
-  const ctx = {chassisOf};
+// `frameOf` looks a rack product up by its ref (`catalog.js`); a page that loads
+// no catalogue of products passes none, and a frame set from one is drawn from
+// its own numbers and edited as a generic one.
+export function createRackEditor({doc, chassisOf, frameOf, cap = 100}) {
+  const ctx = frameOf ? {chassisOf, frameOf} : {chassisOf};
   const history = createHistory({cap});
   const listeners = new Set();
   let current = doc;
@@ -79,7 +83,8 @@ export function createRackEditor({doc, chassisOf, cap = 100}) {
         findings.push(...s.notices.map(text => ({kind: 'note', text})));
         // what the fit of before allowed and this one does not is kept where
         // it is, and named (fit.js overlapNotices)
-        findings.push(...[...overlapNotices(s.rack, chassisOf), ...frameNotices(s.rack, chassisOf)].map(text => ({kind: 'note', text})));
+        findings.push(...[...overlapNotices(s.rack, chassisOf), ...frameNotices(s.rack, chassisOf),
+                          frameState(s.rack.frame, withCtx(extra).frameOf).note].filter(Boolean).map(text => ({kind: 'note', text})));
         return s.rack;
       });
       if (extra?.redirects) {

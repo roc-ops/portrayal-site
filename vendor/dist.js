@@ -209,6 +209,7 @@ export async function packageDist({at = JSDELIVR, index = 'latest'} = {}) {
   const pk = await jdist(`${base}packages.json`);
   for (const [what, ref] of [
     ...Object.entries(pk.components || {}).map(([ns, r]) => [`components/${ns}`, r]),
+    ...Object.entries(pk.racks || {}).map(([key, r]) => [`racks/${key}`, r]),
     ...Object.entries(pk.devices || {})]) {
     if (!ref || !PACKAGE.test(String(ref.package)) || !SEMVER.test(String(ref.version)))
       throw new Error(`packages.json: ${what} names ${JSON.stringify(ref)}, not @portrayal/<name> at a version`);
@@ -220,15 +221,49 @@ export async function packageDist({at = JSDELIVR, index = 'latest'} = {}) {
     // a skin is `components/<ns>--<name>--<major>--<skin>.svg`, and each
     // namespace's skins are a package of their own
     const skin = path.startsWith('components/') ? path.slice('components/'.length) : null;
+    // a rack product is `racks/<vendor>--<name>.rack.json`, in the package of
+    // that rack (#935); the package holds it at its root
+    const rack = path.startsWith('racks/') ? path.slice('racks/'.length) : null;
+    const rackKey = rack !== null && rack.endsWith('.rack.json')
+      ? rack.slice(0, -'.rack.json'.length).replace('--', '/') : null;
     // a device's files all start `<device>.` and device names hold no dot
     const ref = skin !== null ? held(pk.components, skin.split('--')[0])
+      : rackKey !== null ? held(pk.racks, rackKey)
       : held(pk.devices, path.split('.')[0]);
     // a name no package holds falls to the index, where it misses as it
     // would in a build directory
-    return ref ? at(ref.package, ref.version) + (skin ?? path) : base + path;
+    return ref ? at(ref.package, ref.version) + (skin ?? rack ?? path) : base + path;
   };
   distAt.packages = pk;
   return distAt;
+}
+
+// ---- rack products (#935) ----------------------------------------------------
+//
+// A rack product is `kind: rack`: a frame or a cabinet the library models, read
+// by the ref a saved rack file's `frame.ref` carries, `<vendor>/<name>@<major>`.
+// Its compiled file is `racks/<vendor>--<name>.rack.json` in a build directory
+// and at the root of its own `@portrayal/racks-<vendor>-<name>` package.
+
+const RACK_REF = /^([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9._-]*)@(\d+)$/;
+
+/** The dist path of the file that holds a rack ref's product. The ref becomes
+ *  part of a URL, so a malformed one is refused here and never reaches it. */
+export function rackFile(ref) {
+  const m = RACK_REF.exec(String(ref));
+  if (!m) throw new Error(`not a rack ref: ${JSON.stringify(ref)}`);
+  return `racks/${m[1]}--${m[2]}.rack.json`;
+}
+
+/** The product a rack ref names. The library holds one version of a product,
+ *  so a ref to another major is not answered with it: the page is told, and
+ *  offers to apply the product again. */
+export async function readRack(distAt, ref) {
+  const doc = await jdist(distAt(rackFile(ref)));
+  const major = RACK_REF.exec(ref)[3];
+  if (String(doc.version).split('.')[0] !== major)
+    throw new Error(`${ref}: the library holds ${doc.name} ${doc.version}`);
+  return doc;
 }
 
 /** Forget everything fetched so far. For harnesses that rebuild dist in place. */
