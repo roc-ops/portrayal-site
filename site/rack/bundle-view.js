@@ -60,7 +60,8 @@ export function strapsText(st, every) {
   if (!n) return null;
   const parts = [k.spacing ? `${k.spacing}${every ? ` every ${every.value} ${every.unit}` : ' along it'}` : null,
                  k.breakout ? `${k.breakout} where a cable leaves` : null,
-                 k.anchor ? `${k.anchor} at ${k.anchor === 1 ? 'a tray tie slot' : 'tray tie slots'}` : null].filter(Boolean);
+                 k.anchor ? `${k.anchor} at ${k.anchor === 1 ? 'a tray tie slot' : 'tray tie slots'}` : null,
+                 k.tie ? 'tied at one point' : null].filter(Boolean);
   const head = `${n} strap${n === 1 ? '' : 's'}`;
   return parts.length === 1 && k.spacing === n && every ? `${head} every ${every.value} ${every.unit}` : `${head} (${parts.join(', ')})`;
 }
@@ -280,6 +281,15 @@ export function trunkLay(rack, fact, {paths = null, ctx = null, diameterOf = nul
     const [u, v] = packed.get(i)[r];
     return {x: u * n.x, y: u * n.y, z: v, u, v};
   };
+  // where the middle of a pack of `on` (diameter D) is at node k, from the nodes' middle line
+  const middleOf = (on, D, k) => {
+    const vs = on.map(m => offset(m.cable, k)).filter(Boolean);
+    if (!vs.length) return {x: 0, y: 0};
+    const xs = vs.map(v => v.x), ys = vs.map(v => v.y);
+    // on a floor the pack stands on its lowest member's underside; elsewhere it is about its members' middle
+    return {x: (Math.min(...xs) + Math.max(...xs)) / 2,
+            y: floor(k) ? Math.min(...ys) - width / 2 + D / 2 : (Math.min(...ys) + Math.max(...ys)) / 2};
+  };
   // the stretches between one node and the next, with the members that ride
   // both, the diameter of those, and where their pack's middle is at each end
   const stretches = [];
@@ -288,20 +298,14 @@ export function trunkLay(rack, fact, {paths = null, ctx = null, diameterOf = nul
     const on = at(i).filter(m => m.lo <= j && j <= m.hi).sort((p, q) => p.slot - q.slot);
     if (on.length < 2) continue;
     const D = sizeOf(on);
-    const middle = k => {
-      const vs = on.map(m => offset(m.cable, k)).filter(Boolean);
-      if (!vs.length) return {x: 0, y: 0};
-      const xs = vs.map(v => v.x), ys = vs.map(v => v.y);
-      // on a floor the pack stands on its lowest member's underside; elsewhere it is about its members' middle
-      return {x: (Math.min(...xs) + Math.max(...xs)) / 2,
-              y: floor(k) ? Math.min(...ys) - width / 2 + D / 2 : (Math.min(...ys) + Math.max(...ys)) / 2};
-    };
-    stretches.push({from: i, to: j, members: on.map(m => m.cable), diameter: D, c0: middle(i), c1: middle(j),
+    stretches.push({from: i, to: j, members: on.map(m => m.cable), diameter: D, c0: middleOf(on, D, i), c1: middleOf(on, D, j),
                     s0: T[i].seg + T[i].t, s1: T[j].seg + T[j].t});
   }
   return {T, nodes, index, order: order.map(m => m.cable), pitch, diameter: Dmax, lay, stretches,
           at: i => lay.get(i) ?? null, pos: i => pos.get(i) ?? null, across: i => across.get(i) ?? null, run: i => run.get(i) ?? null,
           offset, pack, indexOf: w => index.get(waypointKey(w)) ?? -1,
+          // the pack at one node, for a tie (a one-waypoint trunk has no stretch): its members, diameter and middle
+          packAt: i => { const l = lay.get(i); return l ? {members: l.members, diameter: l.diameter, c: middleOf(at(i), l.diameter, i)} : null; },
           // the stretch a strap is on ({segment, t}: the kit's place along the trunk), and how far along it
           stretchAt: s => { const v = s.segment + s.t; const st = stretches.find(x => x.s0 <= v + 1e-9 && v <= x.s1 + 1e-9);
             return st ? {stretch: st, f: st.s1 > st.s0 ? (v - st.s0) / (st.s1 - st.s0) : 0} : null; }};

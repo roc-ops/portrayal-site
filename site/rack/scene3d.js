@@ -417,6 +417,24 @@ async function hangBundles(scene, rack, facts, boxes = null, tubes = null) {
       return best ? {p: best.p, tan: best.t} : {p: q, tan: new THREE.Vector3(...hit.dir)};
     };
     (f.straps?.straps ?? []).forEach((s, k) => {
+      // A ONE-WAYPOINT TRUNK IS A TIE (kit 0.51.0, Portrayal #1126): no run, one band round the pack at its
+      // ring, along the way the cables go through it (the kit's, else the stop's own entry to exit).
+      if (s.kind === 'tie') {
+        const mid = pts[0];
+        if (!mid) return;
+        const q = stops[0], way = s.dir ? new THREE.Vector3(s.dir.x, s.dir.y, s.dir.z)
+          : q.length > 1 ? q.at(-1).clone().sub(q[0]) : new THREE.Vector3(0, 0, 1);
+        if (!(way.lengthSq() > 1e-9)) way.set(0, 0, 1);
+        const Dt = lay?.at(lay.indexOf(L.trunk[0]))?.diameter ?? D;
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(Dt / 2 + 1.5, Dt / 2 + 1.5, STRAP_BAND * strapDrawn(s) / STRAP_DRAWN, 20, 1, false), strapMat);
+        band.position.copy(mid);
+        band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), way.normalize());
+        band.name = `bundle-${f.id}-strap-${k}`;
+        band.userData.strap = {bundle: f.id, along_mm: 0, diameter: Dt, kind: 'tie', width_mm: s.width_mm ?? null};
+        g.add(band);
+        at.push(band.position.clone());
+        return;
+      }
       const r = spans.find(x => x.from <= s.segment && s.segment + 1 <= x.to);
       // (either end of its segment is not in the scene: counted, not drawn)
       if (!r) return;

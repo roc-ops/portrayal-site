@@ -355,7 +355,7 @@ export function bundleText(b) {
     `route: ${b.route?.text ? clip(b.route.text, 300) : 'nowhere yet'}`,
     // by kind, as the kit counts them (0.22.0: straps().kinds); a count is not "every 12 in" unless it is the spacing straps
     `straps: ${every ? `spaced every ${every.value} ${every.unit}` : 'no spacing straps'}${b.straps?.count != null ? `; ${b.straps.count} in all` +
-      `${b.straps.kinds ? ` (${b.straps.kinds.spacing} spaced, ${b.straps.kinds.breakout} where a cable joins or leaves, ${b.straps.kinds.anchor} at tray tie slots)` : ''}` : ''}`,
+      `${b.straps.kinds ? ` (${b.straps.kinds.spacing} spaced, ${b.straps.kinds.breakout} where a cable joins or leaves, ${b.straps.kinds.anchor} at tray tie slots${b.straps.kinds.tie ? `, ${b.straps.kinds.tie} tied at one point` : ''})` : ''}` : ''}`,
     b.checked ? [size ?? 'size not known', b.length?.metres != null ? `trunk ${len(b.length.metres)}` : null].filter(Boolean).join('; ')
       : (b.members.length < 2 ? 'Fewer than two cables, so it is not drawn or checked.' : 'Not checked: the routes are not known here.'),
     b.bend ? `bend: ${b.bend.radius_mm > 0 ? `radius ${Math.round(b.bend.radius_mm)} mm${b.bend.by ? `, set by ${b.bend.by}` : ''}` : 'no radius known'}` +
