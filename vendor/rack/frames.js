@@ -20,8 +20,11 @@ const EPS = 1e-6;
 
 const rearOf = row => (row.rails || []).find(r => r.id === 'rear') ?? null;
 const depthOf = row => rearOf(row)?.depth ?? null;
-const named = row => [row.manufacturer, row.model].filter(Boolean).join(' ') || row.ref;
 const mm = n => `${n} mm`;
+
+// THE NAME A ROW IS SHOWN BY: its maker and model (`APC AR201`), or its ref
+// when it has neither. A row's own `name` is the short id, not this.
+export const frameName = row => [row.manufacturer, row.model].filter(Boolean).join(' ') || row.ref;
 
 export const kindOf = row => FORM_KIND[row.form] ?? (rearOf(row) ? 'four-post' : 'two-post');
 
@@ -31,7 +34,7 @@ export function unholdable(row) {
   if (row.width != null && row.width !== RAIL_WIDTH) bits.push(`${row.width} in rails`);
   if ((row.numbering?.start ?? 1) !== 1) bits.push(`numbering from U${row.numbering.start}`);
   if (row.holes?.style === 'round') bits.push('round holes');
-  return bits.length ? `${named(row)} has ${bits.join(' and ')}, which this rack file cannot hold yet.` : null;
+  return bits.length ? `${frameName(row)} has ${bits.join(' and ')}, which this rack file cannot hold yet.` : null;
 }
 
 // THE RAIL DEPTH a row allows: {fixed}, {min, max, step?, factory?} or null
@@ -48,10 +51,10 @@ const stepOff = (v, r) => r.step > 0 && Math.abs(Math.round((v - r.min) / r.step
 export function railRefusal(row, value) {
   const r = railRange(row);
   if (!r) return null;
-  if (r.fixed) return value === r.min ? null : `${named(row)} fixes the rail depth at ${mm(r.min)}.`;
+  if (r.fixed) return value === r.min ? null : `${frameName(row)} fixes the rail depth at ${mm(r.min)}.`;
   if (value < r.min - EPS || value > r.max + EPS)
-    return `${named(row)} takes a rail depth from ${r.min} to ${r.max} mm, not ${value}.`;
-  if (stepOff(value, r)) return `${named(row)} sets the rail depth in steps of ${r.step} mm from ${r.min}, so ${value} is not one.`;
+    return `${frameName(row)} takes a rail depth from ${r.min} to ${r.max} mm, not ${value}.`;
+  if (stepOff(value, r)) return `${frameName(row)} sets the rail depth in steps of ${r.step} mm from ${r.min}, so ${value} is not one.`;
   return null;
 }
 
@@ -110,7 +113,7 @@ export function frameState(frame, frameOf) {
     note: `This frame was set from ${frame.ref}, which the catalogue does not have, so it is drawn from the numbers in the file. Apply a product to set it again.`};
   const bad = mismatches(frame, row);
   if (bad.length) return {state: 'changed', row, mismatched: bad,
-    note: `This frame's ${bad.join(', ')} no longer match ${named(row)} (${frame.ref}), so it is drawn from the numbers in the file. Apply the product again to set them.`};
+    note: `This frame's ${bad.join(', ')} no longer match ${frameName(row)} (${frame.ref}), so it is drawn from the numbers in the file. Apply the product again to set them.`};
   return {state: 'product', row, note: null};
 }
 
@@ -130,7 +133,7 @@ export function editRefusal(frame, patch, frameOf) {
   const same = (k, v) => (k === 'startU' ? v === f.startU : k === 'holes' ? (v?.style ?? frame.holes.style) === f.holes.style && (v?.thread === undefined ? frame.holes.thread : v.thread) === f.holes.thread : v === f[k]);
   for (const k of Object.keys(KEYS)) {
     if (!(k in patch) || f[k] == null) continue;
-    if (!same(k, patch[k])) return `${named(row)} fixes ${KEYS[k]}; customise the frame to change it.`;
+    if (!same(k, patch[k])) return `${frameName(row)} fixes ${KEYS[k]}; customise the frame to change it.`;
   }
   if ('railDepth' in patch && patch.railDepth != null) return railRefusal(row, patch.railDepth);
   return null;

@@ -20,7 +20,7 @@ import {shapeRefusal, contentNotes, contentKind} from '../displays.js';
 import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
-import {appliedFrame, editRefusal, unholdable} from './frames.js';
+import {appliedFrame, editRefusal, frameName, unholdable} from './frames.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
         connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
@@ -629,14 +629,14 @@ function frameApply(rack, {ref}, ctx) {
   // frame not counting from the product's would stay out of step with it
   const start = row.numbering?.start ?? 1;
   if (firstU(rack.frame) !== start)
-    return {error: `${row.manufacturer} ${row.model} counts from U${start}, and this frame counts from U${firstU(rack.frame)}; set the first unit to ${start} first.`};
+    return {error: `${frameName(row)} counts from U${start}, and this frame counts from U${firstU(rack.frame)}; set the first unit to ${start} first.`};
   const next = appliedFrame(rack.frame, row);
   const patch = Object.fromEntries(['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref']
     .filter(k => !same(next[k], rack.frame[k])).map(k => [k, next[k]]));
   if (!Object.keys(patch).length) return unchanged(rack);
   const r = frameWith(rack, patch, ctx);
   if (r.error || r.rack === rack) return r;
-  const said = `Set the frame to ${row.manufacturer} ${row.model} (${row.ref}).`;
+  const said = `Set the frame to ${frameName(row)} (${row.ref}).`;
   return {...r, summary: r.summary === 'Changed the rack frame.' ? said : `${said} ${r.summary}`};
 }
 
