@@ -18664,6 +18664,104 @@ def check_rack_agent_frame_products(page, base):
     return bad
 
 
+def focus_in_frame_form(page):
+    return page.evaluate("() => { const a = document.activeElement; return !!a && !!a.closest('.rk-frame') && a !== document.body; }")
+
+
+def picker_kept(page, text, form, label, bad):
+    got = page.evaluate("() => [document.getElementById('fProdSearch')?.value, document.getElementById('fProdForm')?.value]")
+    if got != [text, form]:
+        bad.append(f"{label}: the search and the form filter are {got}, expected {[text, form]}")
+
+
+@extra("rack.html: choosing a product, Customise and Apply again by keyboard leave focus in the frame form and keep the search and the form filter")
+def check_rack_frame_picker_focus_kept(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_frame_form(page, base, "picker-focus")
+    wait_sel(page, "focus: the product list", "#fProducts [data-product-ref]")
+    page.focus("#fProdSearch")
+    page.keyboard.type("ar20")
+    page.select_option("#fProdForm", "4-post-frame")
+    wait_fn(page, "focus: one product left", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
+    page.focus("#fProdSearch")
+    page.keyboard.press("Tab")                     # the form filter
+    page.keyboard.press("Tab")                     # the one product
+    if page.evaluate("() => document.activeElement?.dataset?.productRef") != "apc/ar203a@1":
+        bad.append("focus: two Tabs from the search did not reach the product")
+    page.keyboard.press("Enter")
+    wait_fn(page, "focus: the product is applied", "() => window.__rack.doc().racks[0].frame.ref === 'apc/ar203a@1'")
+    wait_sel(page, "focus: the held product", "#fProduct")
+    if not focus_in_frame_form(page):
+        bad.append("apply: keyboard focus left the frame form")
+    picker_kept(page, "ar20", "4-post-frame", "apply", bad)
+    if product_refs(page) != ["apc/ar203a@1"]:
+        bad.append(f"apply: the filtered list is {product_refs(page)} after the apply")
+    # a file whose numbers no longer match the product: Apply ... again
+    changed = page.evaluate("() => structuredClone(window.__rack.doc())")
+    changed["id"] = "doc-focus-changed"
+    changed["racks"][0]["frame"]["heightRU"] = 30
+    page.evaluate("d => window.__rack.loadDoc(d)", changed)
+    wait_sel(page, "focus: the apply-again button", "#fReapply")
+    page.focus("#fReapply")
+    page.keyboard.press("Enter")
+    wait_fn(page, "focus: applied again", "() => window.__rack.doc().racks[0].frame.heightRU === 44 && !document.getElementById('fReapply')")
+    if not focus_in_frame_form(page):
+        bad.append("apply again: keyboard focus left the frame form")
+    picker_kept(page, "ar20", "4-post-frame", "apply again", bad)
+    page.focus("#fCustomise")
+    page.keyboard.press("Enter")
+    wait_fn(page, "focus: customised", "() => window.__rack.doc().racks[0].frame.ref === null && !document.getElementById('fProduct')")
+    if not focus_in_frame_form(page):
+        bad.append("customise: keyboard focus left the frame form")
+    picker_kept(page, "ar20", "4-post-frame", "customise", bad)
+    return bad
+
+
+NEW_FORM = "6-post-test"
+
+
+@extra("rack.html: a catalogue row of a new form shows that form in the filter, and the kit's frameName in the list, the summary bar and find_rack_products")
+def check_rack_frame_picker_kit_values(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+
+    def patch(route):
+        resp = route.fetch()
+        data = resp.json()
+        row = json.loads(json.dumps(data["frames"]["generic/4-post-frame@1"]))
+        row.update({"ref": "test/newform@1", "vendor": "test", "name": "newform", "manufacturer": "Zed", "model": "Z9 Plus",
+                    "form": NEW_FORM, "ru": 33})
+        data["frames"]["test/newform@1"] = row
+        route.fulfill(response=resp, json=data)
+    page.route("**/assets/dist/rack.json", patch)
+    open_frame_form(page, base, "picker-kit")
+    options = page.evaluate("() => [...document.querySelectorAll('#fProdForm option')].map(o => o.value)")
+    if NEW_FORM not in options:
+        bad.append(f"kit values: the filter offers {options}, expected the new form {NEW_FORM}")
+    if sorted(o for o in options if o) != sorted({"2-post-frame", "4-post-frame", "4-post-cabinet", NEW_FORM}):
+        bad.append(f"kit values: the filter's forms are {options}, expected the catalogue's four")
+    wait_sel(page, "kit values: the new product", '#fProducts [data-product-ref="test/newform@1"]')
+    named = page.text_content('#fProducts [data-product-ref="test/newform@1"] .rk-product-name')
+    if named != "Zed Z9 Plus":
+        bad.append(f"kit values: the list names the product {named!r}, expected 'Zed Z9 Plus'")
+    page.select_option("#fProdForm", NEW_FORM)
+    wait_fn(page, "kit values: the new form narrows the list", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
+    page.click('#fProducts [data-product-ref="test/newform@1"]')
+    wait_fn(page, "kit values: the product is applied", "() => window.__rack.doc().racks[0].frame.ref === 'test/newform@1'")
+    page.click("#frameBtn")                        # back to the summary
+    wait_fn(page, "kit values: the summary bar names it", "() => /Zed Z9 Plus/.test(document.getElementById('frameSummary')?.textContent || '')")
+    wait_fn(page, "kit values: tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    found = agent_call(page, "find_rack_products", {"form": NEW_FORM})["content"][0]["text"]
+    if not found.startswith("1 match.\ntest/newform@1 | Zed Z9 Plus | 33U | " + NEW_FORM):
+        bad.append(f"kit values: find_rack_products answered {found!r}")
+    enum = page.evaluate("() => window.__tools.find_rack_products.inputSchema.properties.form.enum")
+    if not enum or NEW_FORM not in enum:
+        bad.append(f"kit values: find_rack_products offers the forms {enum}, expected the new form among them")
+    return bad
+
+
 @extra("rack.html: agent tools - registered on load, an agent's edit shown and undone, a dry run, an export, a busy export, a removed panel")
 def check_rack_agent_tools(page, base):
     bad = []
