@@ -18702,6 +18702,8 @@ def check_rack_frame_picker_focus_kept(page, base):
     changed["id"] = "doc-focus-changed"
     changed["racks"][0]["frame"]["heightRU"] = 30
     page.evaluate("d => window.__rack.loadDoc(d)", changed)
+    wait_fn(page, "focus: the kit's note", "() => /no longer match/.test(document.querySelector('.rk-side')?.textContent || '')")
+    page.click("#frameBtn")                        # a loaded rack closes the form: open it again
     wait_sel(page, "focus: the apply-again button", "#fReapply")
     page.focus("#fReapply")
     page.keyboard.press("Enter")

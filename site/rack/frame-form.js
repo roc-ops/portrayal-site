@@ -13,16 +13,19 @@
 
 import {el} from './dom.js';
 import {THREADS} from '../../vendor/rack/model.js';
-import {frameProducts, frameState, fixedNumbers, railRange} from '../../vendor/rack/frames.js';
+import {frameProducts, frameState, fixedNumbers, railRange, frameName} from '../../vendor/rack/frames.js';
+import {formsOf, formLabel} from './frame-forms.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});
 
-// The forms a product can be (rack.json `form`), as the picker's filter words them.
-const FORMS = [['2-post-frame', 'Two-post'], ['4-post-frame', 'Four-post'], ['4-post-cabinet', 'Cabinet']];
-const nameOf = row => [row.manufacturer, row.model].filter(Boolean).join(' ') || row.ref;
+// `picker` is the search text and form filter ({text, form}), kept by the page so they outlive the form's
+// rebuild; `onPicker` is told when either changes. The id a chosen product's button takes is pickId(ref), so
+// the page can put the keyboard back on it.
+export const pickId = ref => `fPick-${ref}`;
 
-export function frameForm({rack, frames = {}, frameOf = null, onName, onFrame, onApply, onCustomise}) {
+export function frameForm({rack, frames = {}, frameOf = null, picker = {text: '', form: ''}, onPicker = () => {},
+                           onName, onFrame, onApply, onCustomise}) {
   const f = rack.frame;
   const err = el('p', {class: 'rk-error', role: 'alert'});
   const field = (label, control) => el('label', {}, [label, control]);
@@ -80,7 +83,7 @@ export function frameForm({rack, frames = {}, frameOf = null, onName, onFrame, o
     : range && !range.fixed ? `Front-to-rear rail depth (mm, ${range.min} to ${range.max})` : 'Front-to-rear rail depth (mm)';
   return el('div', {class: 'rk-frame'}, [
     el('h3', {text: 'Frame'}),
-    productPicker({frames, current: f.ref, state, onApply, onCustomise}),
+    productPicker({frames, current: f.ref, state, picker, onPicker, onApply, onCustomise}),
     field('Name', name),
     field('Frame', kind),
     field('Height (U)', height),
@@ -95,7 +98,7 @@ export function frameForm({rack, frames = {}, frameOf = null, onName, onFrame, o
 
 // THE PICKER: what the frame holds (name, ref, Customise, and the kit's note when the file's numbers no longer
 // follow the product), and the catalogue's products to choose from, narrowed by words and by form.
-function productPicker({frames, current, state, onApply, onCustomise}) {
+function productPicker({frames, current, state, picker, onPicker, onApply, onCustomise}) {
   const row = state.row;
   const held = [];
   if (current != null) {
@@ -103,30 +106,35 @@ function productPicker({frames, current, state, onApply, onCustomise}) {
       title: 'Stop following the product. Every number stays; the frame can then be edited freely.'});
     customise.addEventListener('click', () => onCustomise());
     held.push(el('div', {id: 'fProduct', class: 'rk-product-held'}, [
-      el('strong', {text: row ? nameOf(row) : 'Unknown product'}), ' ', el('code', {text: current}), ' ', customise]));
+      el('strong', {text: row ? frameName(row) : 'Unknown product'}), ' ', el('code', {text: current}), ' ', customise]));
     if (state.note) held.push(el('p', {id: 'fNote', class: 'rk-muted', text: state.note}));
     if (state.state === 'changed') {
-      const again = el('button', {type: 'button', id: 'fReapply', text: `Apply ${nameOf(row)} again`});
+      const again = el('button', {type: 'button', id: 'fReapply', text: `Apply ${frameName(row)} again`});
       again.addEventListener('click', () => onApply(current));
       held.push(el('p', {}, [again]));
     }
   }
-  const search = el('input', {id: 'fProdSearch', type: 'search', placeholder: 'Name, part number or alias', autocomplete: 'off'});
-  const form = el('select', {id: 'fProdForm'}, [option('', 'Any form', ''), ...FORMS.map(([v, t]) => option(v, t, ''))]);
+  const search = el('input', {id: 'fProdSearch', type: 'search', placeholder: 'Name, part number or alias', autocomplete: 'off',
+    value: picker.text});
+  // The forms are the catalogue's own; one the filter holds that the catalogue no longer has is kept as a choice.
+  const forms = formsOf(frames);
+  if (picker.form && !forms.includes(picker.form)) forms.push(picker.form);
+  const form = el('select', {id: 'fProdForm'}, [option('', 'Any form', picker.form), ...forms.map(v => option(v, formLabel(v), picker.form))]);
   const list = el('ul', {id: 'fProducts', class: 'rk-products'});
   const show = () => {
     const rows = frameProducts(frames, {text: search.value, form: form.value || null});
     list.replaceChildren(...(rows.length ? rows.map(r => {
-      const b = el('button', {type: 'button', 'data-product-ref': r.ref, ...(r.ref === current ? {'aria-pressed': 'true'} : {}),
+      const b = el('button', {type: 'button', id: pickId(r.ref), 'data-product-ref': r.ref, ...(r.ref === current ? {'aria-pressed': 'true'} : {}),
         title: r.description ?? ''}, [
-        el('span', {class: 'rk-product-name', text: nameOf(r)}),
-        el('span', {class: 'rk-muted', text: ` ${r.ru}U ${FORMS.find(([v]) => v === r.form)?.[1] ?? r.form}`})]);
+        el('span', {class: 'rk-product-name', text: frameName(r)}),
+        el('span', {class: 'rk-muted', text: ` ${r.ru}U ${formLabel(r.form)}`})]);
       b.addEventListener('click', () => onApply(r.ref));
       return el('li', {}, [b]);
     }) : [el('li', {class: 'rk-muted', text: 'No rack product matches.'})]));
   };
-  search.addEventListener('input', show);
-  form.addEventListener('change', show);
+  const changed = () => { onPicker({text: search.value, form: form.value}); show(); };
+  search.addEventListener('input', changed);
+  form.addEventListener('change', changed);
   show();
   return el('fieldset', {class: 'rk-picker'}, [
     el('legend', {text: 'Rack product'}),

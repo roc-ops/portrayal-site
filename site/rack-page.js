@@ -8,13 +8,14 @@ import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
 import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevation.js';
+import {frameName} from '../vendor/rack/frames.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
 import {hangNotices} from '../vendor/rack/zero-u.js';
 import {stateNotices} from '../vendor/rack/states.js';
 import {displayNotices} from '../vendor/rack/displays.js';
 import {loadCatalog, loadSlots} from '../vendor/rack/catalog.js';
 import {loadCableTypes} from '../vendor/rack/cable-types.js';
-import {frameForm} from './rack/frame-form.js';
+import {frameForm, pickId} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
 import {projectionIdRefusal} from './rack/part-path.js';
@@ -100,7 +101,7 @@ function loadView() {
   catch { return 'faces'; }
 }
 function saveView(v) { try { localStorage.setItem(VIEW_KEY, v); } catch { /* forgets */ } }
-const S = {sel: null, lib: null, save: null, devices: {}, frames: {}, draws: 0, notice: null, entries: [],
+const S = {sel: null, lib: null, save: null, devices: {}, frames: {}, picker: {text: '', form: ''}, draws: 0, notice: null, entries: [],
   dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), view: loadView(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   covers: loadCovers(),   // the covers of the parts beside the rack: 'on', 'see' or 'off' (covers.js); the reader's, never the rack's
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
@@ -1358,7 +1359,7 @@ async function redraw(keepRoutes = false) {
   [$('headFront').textContent, $('headRear').textContent] = PAIRS[S.view];
   // (a frame set from a rack product names it; one with no ref is summed up as it always was)
   const product = r.frame.ref != null ? frameOf(r.frame.ref) : null;
-  $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}${product ? ` · ${[product.manufacturer, product.model].filter(Boolean).join(' ')}` : ''}`;
+  $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}${product ? ` · ${frameName(product)}` : ''}`;
   if (r.frame.ref != null) $('frameSummary').title = r.frame.ref; else $('frameSummary').removeAttribute('title');
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' || S.sel?.kind === 'remove' ? S.sel.id : null;
   let front, rear, facts, sideCables = null;
@@ -1769,8 +1770,12 @@ function renderSide() {
     // A rack product (rack.json frames; the kit's frame.apply and frame.customise). Both say what they did,
     // and an apply the kit refuses (a product the frame cannot hold) says why.
     frames: S.frames, frameOf,
-    onApply: ref => edit({op: 'frame.apply', ref}, {say: true}),
-    onCustomise: () => edit({op: 'frame.customise'}, {say: true})});
+    // The search text and the form filter outlive the rebuild an apply causes; the keyboard goes back to the
+    // product just chosen (or, where the filter hides it, to the search), and after Customise to the height,
+    // the first number that can be edited again.
+    picker: S.picker, onPicker: p => { S.picker = p; },
+    onApply: ref => { S.focusNext = [pickId(ref), 'fProdSearch']; return edit({op: 'frame.apply', ref}, {say: true}); },
+    onCustomise: () => { S.focusNext = ['fHeight', 'fProdSearch']; return edit({op: 'frame.customise'}, {say: true}); }});
   else if (sel.kind === 'dcim') body = dcimForm({rack: r, draft: S.dcimDraft,
     // Typing only keeps a draft. Done saves it once, against the rack as it is
     // when Done is clicked, not as it was when the form was built.
@@ -1917,7 +1922,7 @@ function renderSide() {
   // Where the keyboard goes when the control that had it is gone with its
   // panel (a Delete, the remove panel opening or closing): named by the
   // action, taken by the redraw that shows it.
-  const next = S.focusNext ? document.getElementById(S.focusNext) : null;
+  const next = [S.focusNext ?? []].flat().map(id => document.getElementById(id)).find(Boolean) ?? null;
   S.focusNext = null;
   S.focusRow = null;
   // the rebuilt list has the mark of what is still under the pointer on the stage

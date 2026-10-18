@@ -10,7 +10,8 @@ import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, freeLine, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
-import {frameProducts, railRange} from '../../vendor/rack/frames.js';
+import {frameProducts, frameName, railRange} from '../../vendor/rack/frames.js';
+import {formsOf} from './frame-forms.js';
 import {spareFor, spareText, needsText} from './spare.js';
 import {projectionIdRefusal} from './part-path.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult, touchedCables, findingNotes} from './agent-edit.js';
@@ -274,7 +275,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
     tool('find_rack_products', 'Find rack products',
       'Search the rack products a frame can be set from (edit_rack frame.apply): by words in the maker, name, part number, alias or ref, or by form. Each result gives the ref, height in U, form and rail depth. The first line counts the matches.',
       {text: {type: 'string', description: 'Words to look for, e.g. "apc" or a part number.'},
-       form: {type: 'string', enum: ['2-post-frame', '4-post-frame', '4-post-cabinet'], description: 'Only this form of rack.'}},
+       form: {type: 'string', ...(formsOf(frames).length ? {enum: formsOf(frames)} : {}), description: 'Only this form of rack.'}},
       [], READ,
       async ({text, form}) => {
         const all = frameProducts(frames, {text, form});
@@ -284,7 +285,7 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
           return !r ? 'rail depth not stated' : r.fixed ? `rail depth fixed at ${r.min} mm`
             : `rail depth ${r.min}-${r.max} mm${r.step ? ` in steps of ${r.step}` : ''}`;
         };
-        const line = r => clip(`${r.ref} | ${[r.manufacturer, r.model].filter(Boolean).join(' ')} | ${r.ru}U | ${r.form} | ${depth(r)}`, 300);
+        const line = r => clip(`${r.ref} | ${frameName(r)} | ${r.ru}U | ${r.form} | ${depth(r)}`, 300);
         const n = all.length;
         return say([`${n} match${n === 1 ? '' : 'es'}.`, ...windowLines(all.map(line), 0, LIMIT - 120)].join('\n'));
       }),
