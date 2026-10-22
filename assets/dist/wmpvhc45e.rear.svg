@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="170.0mm" height="2108.0mm" viewBox="0 0 170.0 2108.0" data-device="wmpvhc45e" data-view="rear" data-shell="sheet" data-weight-kg="10.43" data-material="ABS" data-cover-material="PVC" data-color="Black" data-mounting-hardware="four mounting brackets and eight #12-24 x 1/2 in screws" data-cable-capacity="342" data-cable-capacity-basis="front channel: 0.185 in (4.70 mm, Cat 6A 28 AWG) cable at the 30% recommended fill of its 30.7 sq in usable area; 570 at the 50% maximum fill - Panduit Cable Capacity Calculator V14" data-cable-capacity-rear="342" data-cable-capacity-rear-basis="rear channel: 0.185 in (4.70 mm, Cat 6A 28 AWG) cable at the 30% recommended fill of its 30.7 sq in usable area; 570 at the 50% maximum fill - Panduit Cable Capacity Calculator V14" data-cable-capacity-per-finger="24" data-cable-capacity-per-finger-basis="each large finger opening accommodates up to 24 Category 6 cables - the NetRunner specification sheet RKSP112, Key Features and Benefits" data-operating-temp="60 C maximum" data-storage-temp="65 C maximum" data-rohs="RoHS Compliant" data-ul="UL 2416" data-csa="CSA C22.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit WMPVHC45E","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"panduit/wmpvhc-base@1":"1.0.0","panduit/wmpvhc-cover@1":"1.0.0","panduit/wmpvhc-fingers@1":"1.0.0"},"source-sha256":"2f5ca8510f0c1cc0be1e329b2306bf6cd5b3987c8f9b8f142aa9546dcdfa8847","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="WMPVHC45E" x="0" y="0" width="170" height="2108" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--rear-duct" data-class="guide" data-guide="duct" data-guide-run="y" data-guide-finger-pitch="44.45" data-guide-finger-gap="25.4" x="19" y="0" width="132" height="2108" fill="none" stroke="none" pointer-events="none" />
+  <g id="rear-base" data-path="rear-base" data-class="mechanical" data-ref="panduit/wmpvhc-base@1:1.0.0" data-depth="166.1" data-wall="#232527" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the backbone, front channel first">
+    <title>rear-base</title>
+    <path id="rear-base--floor" fill="#232527" fill-rule="evenodd" d="     M0,0 H170 V2108 H0 Z     M57.05,70.65 A27.95,27.95 0 0 1 112.95,70.65 V83.35 A27.95,27.95 0 0 1 57.05,83.35 Z     M57.05,338.9 A27.95,27.95 0 0 1 112.95,338.9 V415.1 A27.95,27.95 0 0 1 57.05,415.1 Z     M57.05,628.9 A27.95,27.95 0 0 1 112.95,628.9 V705.1 A27.95,27.95 0 0 1 57.05,705.1 Z     M57.05,941.65 A27.95,27.95 0 0 1 112.95,941.65 V954.35 A27.95,27.95 0 0 1 57.05,954.35 Z     M57.05,1124.65 A27.95,27.95 0 0 1 112.95,1124.65 V1137.35 A27.95,27.95 0 0 1 57.05,1137.35 Z     M57.05,1392.9 A27.95,27.95 0 0 1 112.95,1392.9 V1469.1 A27.95,27.95 0 0 1 57.05,1469.1 Z     M57.05,1682.9 A27.95,27.95 0 0 1 112.95,1682.9 V1759.1 A27.95,27.95 0 0 1 57.05,1759.1 Z     M57.05,1995.65 A27.95,27.95 0 0 1 112.95,1995.65 V2008.35 A27.95,27.95 0 0 1 57.05,2008.35 Z" data-path="rear-base/floor" data-class="bezel" />
+  </g>
+  <g id="rear-fingers-left-1" data-path="rear-fingers-left-1" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="7" transform="translate(8.0,66.6)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-left-1</title>
+    <rect id="rear-fingers-left-1--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-1--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-1/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="rear-fingers-left-2" data-path="rear-fingers-left-2" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="8" transform="translate(8.0,733.35)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-left-2</title>
+    <rect id="rear-fingers-left-2--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-2--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-2/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="rear-fingers-left-3" data-path="rear-fingers-left-3" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="9" transform="translate(8.0,1400.1)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-left-3</title>
+    <rect id="rear-fingers-left-3--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-left-3--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-left-3/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="rear-fingers-right-1" data-path="rear-fingers-right-1" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="10" transform="translate(122.0,66.6)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-right-1</title>
+    <rect id="rear-fingers-right-1--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-1--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-1/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="rear-fingers-right-2" data-path="rear-fingers-right-2" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="11" transform="translate(122.0,733.35)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-right-2</title>
+    <rect id="rear-fingers-right-2--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-2--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-2/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="rear-fingers-right-3" data-path="rear-fingers-right-3" data-class="mechanical" data-ref="panduit/wmpvhc-fingers@1:1.0.0" data-material="ABS" data-rel-pos="12" transform="translate(122.0,1400.1)" data-group="fingers" data-group-role="furniture" data-description="the sections of 15 fingers, left then right, top to bottom; the front channel first" data-z-lift="-166.1" data-in="rear-base" data-under="cover-rear-1 cover-rear-2">
+    <title>rear-fingers-right-3</title>
+    <rect id="rear-fingers-right-3--f1" x="0" y="0" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f1" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f2" x="0" y="44.45" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f2" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f3" x="0" y="88.9" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f3" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f4" x="0" y="133.35" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f4" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f5" x="0" y="177.8" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f5" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f6" x="0" y="222.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f6" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f7" x="0" y="266.7" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f7" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f8" x="0" y="311.15" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f8" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f9" x="0" y="355.6" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f9" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f10" x="0" y="400.05" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f10" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f11" x="0" y="444.5" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f11" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f12" x="0" y="488.95" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f12" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f13" x="0" y="533.4" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f13" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f14" x="0" y="577.85" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f14" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+    <rect id="rear-fingers-right-3--f15" x="0" y="622.25" width="40" height="19.05" rx="6" fill="#454a4e" data-path="rear-fingers-right-3/f15" data-class="bezel" data-z-out="-16.1" data-z-color="#26282a" />
+  </g>
+  <g id="cover-rear-1" data-path="cover-rear-1" data-class="mechanical" data-behaviour="mounts" data-ref="panduit/wmpvhc-cover@1:1.0.0" data-material="PVC" data-rel-pos="3" transform="translate(0.0,0.0)" data-group="cover" data-group-role="furniture" data-description="the dual-hinge covers, two a face, upper first, front first, shipped fitted" data-z-lift="-166.1" data-in="rear-base">
+    <title>cover-rear-1</title>
+    <rect id="cover-rear-1--plate" x="0" y="0" width="170" height="1054" rx="3" fill="#333639" data-path="cover-rear-1/plate" data-class="bezel" data-z-out="0" data-z-lift="162.6" data-z-color="#333639" />
+  </g>
+  <g id="cover-rear-2" data-path="cover-rear-2" data-class="mechanical" data-behaviour="mounts" data-ref="panduit/wmpvhc-cover@1:1.0.0" data-material="PVC" data-rel-pos="4" transform="translate(0.0,1054.0)" data-group="cover" data-group-role="furniture" data-description="the dual-hinge covers, two a face, upper first, front first, shipped fitted" data-z-lift="-166.1" data-in="rear-base">
+    <title>cover-rear-2</title>
+    <rect id="cover-rear-2--plate" x="0" y="0" width="170" height="1054" rx="3" fill="#333639" data-path="cover-rear-2/plate" data-class="bezel" data-z-out="0" data-z-lift="162.6" data-z-color="#333639" />
+  </g>
+</svg>

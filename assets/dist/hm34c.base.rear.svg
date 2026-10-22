@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="116.84mm" viewBox="0 0 482.6 116.84" data-device="hm34c" data-view="rear" data-shell="sheet" data-material="Steel" data-wire-diameter-mm="5.715" data-finish="Black Powder Coated" data-cover="Included, hinged and removable" data-pass-through-holes="Standard" data-vertical-manager="VM Series" data-replacement-cover="HM3C">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Hubbell HM34C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"hubbell/hm-plate-3u@1":"1.0.0","hubbell/hm-ring-3u@1":"1.0.1"},"source-sha256":"29d06f740f1295c5b71062258e8452314c2ebc7cbc64513ab82811477c38b844","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="HM34C" x="0" y="0" width="482.6" height="116.84" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="rear-plate" data-path="rear-plate" data-class="mechanical" data-ref="hubbell/hm-plate-3u@1:1.0.0" data-depth="101.6" data-wall="#1b1d20" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel centre plate with its four windows">
+    <title>rear-plate</title>
+    <path id="rear-plate--plate" fill="#1b1d20" fill-rule="evenodd" d="     M0,0 H482.6 V116.84 H0 Z     M46.3,14.605 H100.3 Q115.3,14.605 115.3,29.605 V87.235 Q115.3,102.235 100.3,102.235 H46.3 Q31.3,102.235 31.3,87.235 V29.605 Q31.3,14.605 46.3,14.605 Z     M158.3,14.605 H212.3 Q227.3,14.605 227.3,29.605 V87.235 Q227.3,102.235 212.3,102.235 H158.3 Q143.3,102.235 143.3,87.235 V29.605 Q143.3,14.605 158.3,14.605 Z     M270.3,14.605 H324.3 Q339.3,14.605 339.3,29.605 V87.235 Q339.3,102.235 324.3,102.235 H270.3 Q255.3,102.235 255.3,87.235 V29.605 Q255.3,14.605 270.3,14.605 Z     M382.3,14.605 H436.3 Q451.3,14.605 451.3,29.605 V87.235 Q451.3,102.235 436.3,102.235 H382.3 Q367.3,102.235 367.3,87.235 V29.605 Q367.3,14.605 382.3,14.605 Z" data-path="rear-plate/plate" data-class="bezel" />
+  </g>
+  <g id="rear-1" data-path="rear-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-3u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="105.41 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="1" transform="translate(14.4425,0.0)" data-group="rear-guides" data-group-role="furniture" data-description="the five wire rings behind the plate, left to right as seen from behind" data-z-lift="-101.6" data-in="rear-plate">
+    <title>rear-1</title>
+    <rect id="rear-1--root" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#4b525a" data-path="rear-1/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="rear-1--post" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#59616a" data-path="rear-1/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="104.84" rx="0.65" fill="#9aa3ad" />
+    <rect id="rear-1--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-1/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="rear-1--bottom" x="0" y="111.125" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-1/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="rear-2" data-path="rear-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-3u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="105.41 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="2" transform="translate(126.4425,0.0)" data-group="rear-guides" data-group-role="furniture" data-description="the five wire rings behind the plate, left to right as seen from behind" data-z-lift="-101.6" data-in="rear-plate">
+    <title>rear-2</title>
+    <rect id="rear-2--root" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#4b525a" data-path="rear-2/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="rear-2--post" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#59616a" data-path="rear-2/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="104.84" rx="0.65" fill="#9aa3ad" />
+    <rect id="rear-2--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-2/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="rear-2--bottom" x="0" y="111.125" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-2/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="rear-3" data-path="rear-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-3u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="105.41 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="3" transform="translate(238.4425,0.0)" data-group="rear-guides" data-group-role="furniture" data-description="the five wire rings behind the plate, left to right as seen from behind" data-z-lift="-101.6" data-in="rear-plate">
+    <title>rear-3</title>
+    <rect id="rear-3--root" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#4b525a" data-path="rear-3/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="rear-3--post" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#59616a" data-path="rear-3/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="104.84" rx="0.65" fill="#9aa3ad" />
+    <rect id="rear-3--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-3/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="rear-3--bottom" x="0" y="111.125" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-3/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="rear-4" data-path="rear-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-3u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="105.41 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="4" transform="translate(350.4425,0.0)" data-group="rear-guides" data-group-role="furniture" data-description="the five wire rings behind the plate, left to right as seen from behind" data-z-lift="-101.6" data-in="rear-plate">
+    <title>rear-4</title>
+    <rect id="rear-4--root" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#4b525a" data-path="rear-4/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="rear-4--post" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#59616a" data-path="rear-4/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="104.84" rx="0.65" fill="#9aa3ad" />
+    <rect id="rear-4--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-4/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="rear-4--bottom" x="0" y="111.125" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-4/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="rear-5" data-path="rear-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-3u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="105.41 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="5" transform="translate(462.4425,0.0)" data-group="rear-guides" data-group-role="furniture" data-description="the five wire rings behind the plate, left to right as seen from behind" data-z-lift="-101.6" data-in="rear-plate">
+    <title>rear-5</title>
+    <rect id="rear-5--root" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#4b525a" data-path="rear-5/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="rear-5--post" x="0" y="0" width="5.715" height="116.84" rx="2.8575" fill="#59616a" data-path="rear-5/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="104.84" rx="0.65" fill="#9aa3ad" />
+    <rect id="rear-5--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-5/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="rear-5--bottom" x="0" y="111.125" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="rear-5/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <rect id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="rect" data-pass-cover="open" x="31.3" y="14.605" width="84" height="87.63" fill="none" stroke="none" />
+    <rect id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="rect" data-pass-cover="open" x="143.3" y="14.605" width="84" height="87.63" fill="none" stroke="none" />
+    <rect id="pass--pass-through-3" data-class="pass" data-pass="pass-through-3" data-pass-shape="rect" data-pass-cover="open" x="255.3" y="14.605" width="84" height="87.63" fill="none" stroke="none" />
+    <rect id="pass--pass-through-4" data-class="pass" data-pass="pass-through-4" data-pass-shape="rect" data-pass-cover="open" x="367.3" y="14.605" width="84" height="87.63" fill="none" stroke="none" />
+  </g>
+</svg>

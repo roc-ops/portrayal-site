@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="300.1mm" viewBox="0 0 440.0 300.1" data-device="gl-12xc-p600d" data-view="top" data-weight-max-kg="4.5" data-weight-note="datasheet &quot;&lt;10lbs&quot;" data-enclosure="Metal" data-overall-dimensions="12 x 19 x 1.75 in with the ears (datasheet; its mm column reads 305 x 228.6 x 44.45, the 228.6 a slip for 482.6); body modelled from CAD 440 x 45.0 x 300.1" data-switching-capacity="128 Gbps" data-readylink-clients-per-port="16" data-power-self-max-w="80" data-power-self-scope="excluding PoE output" data-poe-budget-w="520" data-poe-budget-scope="using dual power; 220 W using single power" data-poe-per-port="max per PSE: PoE 15.4 W, PoE+ 30 W, PoE++ 90 W; ports 11 and 12 of each line card are PoE++" data-power-input="100-240V AC, 50/60 Hz; 48-56VDC" data-power-supply="AC/DC, internal, (2) 300W" data-cooling="ten 40 x 20 mm fans behind the side-wall grilles, five per side" data-operating-temp-c="0 to 40" data-operating-humidity="10 to 90 percent noncondensing" data-optics-sfp-plus="vendor optics line per the ReadyLinks Optics datasheet: SFP-1/10G-MM, SFP-1/10G-SM, SFP-1/10G-SM-SF-23 and -SF-32 (BiDi) 1/10G transceivers; no third-party support statement published" data-layer-2="IGMP snooping; STP/RSTP with priorities and port-level disable; port isolation; storm control; voice VLAN; port mirroring; LACP; multicast/broadcast rate limiting; MAC blocking; flow control; 802.1X; jumbo frames; proprietary loop protection; DHCP snooping/guarding; egress rate limit; LLDP-MED; port restricted by MAC; device isolation with ACLs" data-layer-3="DHCP server; IP routing; static routing between local networks; network isolation with ACLs" data-interfaces="ReadyView, Ethernet/Fiber In-Band, Ethernet/Fiber Out-of-Band" data-button-functions="factory reset" data-eol="none-announced" data-airflow="side">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"ReadyLinks GL-12xC-P600D","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"1ab047abf1497e424c3e2629c1211204d35fbdc269356b1e43b82d5a89442797","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="GL-12xC-P600D" data-sku="GL-12xC-P600D" data-part-number="" x="0" y="0" width="440" height="300.1" rx="1.2" fill="#141619" stroke="#0c0d0f" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="lid" data-kind="cover" x="6.2" y="6.25" width="427.6" height="293.7" rx="0.3" fill="#17191c" />
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.9mm" height="545.3mm" viewBox="0 0 440.9 545.3" data-device="qfx5100-48t" data-view="top" data-weight-note="24.79 lb (11.2 kg) with FRUs installed (Table 3)" data-depth-note="21.47 in (54.5 cm) (Table 3)" data-switching-capacity="1.44 Tbps, 1.08 Bpps (datasheet); the guide gives 720 Gbps full duplex" data-shared-packet-buffer="12 MB shared packet buffer (datasheet)" data-rj45-speeds="10 GbE, 1 GbE or 100 Mbps over shielded twisted pair, up to 100 m" data-qsfp-plus-speeds="40 GbE; or four 10 GbE with a breakout cable" data-power-typical-w="322" data-power-max-w="395" data-power-envelope="unstated" data-power-datasheet-w="335" data-power-dc-typical-w="300" data-power-dc-max-w="385" data-power-input-ac="110 to 240 VAC single phase (datasheet); the guide's table gives no value" data-power-input-dc="rated -48 to -60 VDC, operating range -40 to -72 VDC, 10 A maximum (guide Table 17)" data-redundancy-note="two supplies, load-sharing and fully redundant; both should be installed" data-fans="five fan modules, hot-swappable; the switch runs 30 seconds without thermal shutdown while one is replaced" data-operating-temp="0 to 40 C (32 to 104 F) normal operation; the room must not change by more than 2 C a minute" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing; 5 to 93 percent short term" data-altitude="no performance degradation to 2000 m (6562 ft)" data-cpu="1.5 GHz dual-core Intel" data-memory="8 GB" data-storage="32 GB SSD" data-software="Junos OS" data-virtual-chassis="up to 10 switches in a ring; also a Virtual Chassis Fabric leaf and a QFabric node" data-optics-qsfp="40 GbE QSFP+, QSFP+ direct attach and active optical cable, breakout cables to SFP+" data-oob="management port C0 (RJ-45, em0), C1 (SFP, em1) and a second SFP port C0, with link and status lamps" data-console="RJ-45 console port (CON)" data-usb="one USB port for image updates" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5100-48T","device-version":"0.1.3","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"52b7736dc12a74337392660ac025a910ad7d784cd49d611a20c8f03780f4b81f","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5100-48T" data-sku="QFX5100-48TH-AFO" data-part-number="" x="0" y="0" width="440.9" height="545.3" rx="1.2" fill="#a3a7ac" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

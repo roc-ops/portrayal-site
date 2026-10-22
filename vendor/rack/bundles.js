@@ -13,16 +13,13 @@
 import {bundlesOf, bundleName, isWaypoint, uLabel, withoutMembers, endHostOf} from './model.js';
 import {ownRoute, resolveRoute, trunkRoute, trunkMeasures, pointOf, routePath, routeText, DIAMETERS} from './route.js';
 import {traysOf} from './solids.js';
-import {elementsOf, elementText, waypointKey, followTrunk, andList} from './bundle-route.js';
+import {bendOf, bendIsDefault, defaultBecause} from './resting.js';
+import {elementsOf, elementText, waypointKey, followTrunk, andList, bundleDiameter} from './bundle-route.js';
 import {zeroUOnLane, carriesLane} from './zero-u.js';
 import {cornersOf, STRAIGHT_DEG} from './route-path.js';
 
 export {bundlesOf, bundleName, settleBundles} from './model.js';
-export {deriveTrunk, followTrunk, elementsOf} from './bundle-route.js';
-
-// The share of a bundle's circle its cables fill: tightly combed, a little
-// tighter than a perfect hexagonal pack of equal round cables (7/9 to 37/49).
-export const BUNDLE_PACK = 0.8;
+export {deriveTrunk, followTrunk, elementsOf, BUNDLE_PACK, bundleDiameter} from './bundle-route.js';
 // The largest a bundle may be across anywhere: 2.5 in.
 export const MAX_BUNDLE_MM = 63.5;
 // A strap's width along the run, for keeping straps off rings: a drawing figure.
@@ -223,7 +220,6 @@ function diameter(cable, ctx) {
   const m = typeof cable?.media === 'string' && Object.hasOwn(DIAMETERS, cable.media) ? DIAMETERS[cable.media] : null;
   return m ? [m, true] : [UNSET_D, false];
 }
-export const bundleDiameter = ds => Math.sqrt(ds.reduce((a, d) => a + d * d, 0) / BUNDLE_PACK);
 
 // THE CHECKS FOR ONE BUNDLE. Warn, never refuse (decision 2). Returns
 //   {checked, size: {max_mm, at, limit_mm, limitBy, estimated} | null,
@@ -296,14 +292,10 @@ export function bundleCheck(rack, b, ctx = {}) {
 // for a single cable's path too; they are exported from here as before.
 export {cornersOf, STRAIGHT_DEG};
 
-// A member's installed minimum bend radius in mm (`ctx.bendOf`, cable-types.js
-// bendLookup), or null: no type, a type with no radius, no types loaded, or a
-// reader that throws.
-function bendMm(cable, ctx) {
-  let r = null;
-  try { r = typeof ctx.bendOf === 'function' ? ctx.bendOf(cable) : null; } catch { r = null; }
-  return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : null;
-}
+// A member's bend radius in mm is resting.js's bendOf, the one a cable's own
+// path is judged by (#1132): the type's installed radius (`ctx.bendOf`,
+// cable-types.js bendLookup), else its media's, else the default a cable with
+// no type is given. The bend is unchecked only where no types are loaded.
 // "an 18 mm bend", "a 25 mm bend": the article for a number said aloud.
 const an = t => (/^(8|1[18](\.|$))/.test(t) ? 'an' : 'a');
 
@@ -328,10 +320,12 @@ const an = t => (/^(8|1[18](\.|$))/.test(t) ? 'an' : 'a');
 //   Where the line cannot be read, the straight lines from one resolved
 //   waypoint to the next (pointOf at each) stand in.
 //   A corner on a pathway that states a radius is the pathway's.
-// A point is checked against the members present that have a radius. One
-// where none has is unchecked (`ok: null`), never a pass; the members with no
-// radius are listed, at the point and for the bundle. Returns
-//   {bend: {radius_mm, by, unchecked, points, violations}, warnings, notes}
+// A point is checked against the members present. A member with no cable type
+// is given the default radius a cable alone is given (resting.js bendOf), and
+// is listed in `defaulted`, which the note and a warning that it sets say. Only
+// where no types are loaded is a point unchecked (`ok: null`), never a pass,
+// the members listed in `unchecked`, at the point and for the bundle. Returns
+//   {bend: {radius_mm, by, unchecked, defaulted, points, violations}, warnings, notes}
 // where each point (and each violation, a point with `ok: false`) is
 //   {kind: 'corner' | 'pathway', at, waypoint, angle_deg?, legs_mm?,
 //    room_mm, source, estimated, need_mm, by, members, unchecked, ok,
@@ -345,7 +339,9 @@ export function bendCheck(rack, b, L, pathways, ctx = {}) {
   const byId = new Map((rack.cables || []).map(c => [c.id, c]));
   const loaded = typeof ctx.bendOf === 'function';
   const riding = L.members.filter(m => m.ji != null && m.li != null);
-  const rOf = new Map(riding.map(m => [m.cable, loaded ? bendMm(byId.get(m.cable), ctx) : null]));
+  const rOf = new Map(riding.map(m => [m.cable, loaded ? bendOf(byId.get(m.cable), ctx) : null]));
+  // the members judged at the default for want of a cable type (#1132)
+  const defaulted = loaded ? riding.map(m => m.cable).filter(id => bendIsDefault(byId.get(id), ctx)) : [];
   const needOf = ms => {
     let need = null, by = null;
     for (const m of ms) { const r = rOf.get(m.cable); if (r != null && (need == null || r > need)) { need = r; by = m.cable; } }
@@ -413,19 +409,16 @@ export function bendCheck(rack, b, L, pathways, ctx = {}) {
   const violations = points.filter(p => p.ok === false);
   const kind = id => { const c = byId.get(id); const t = c?.type || c?.media; return t ? `${id} (${t})` : id; };
   const warnings = violations.map(p => {
-    const needs = `${kind(p.by)} needs ${round1(p.need_mm)} mm`;
+    const needs = `${kind(p.by)} needs ${round1(p.need_mm)} mm${defaulted.includes(p.by) ? ` (the default, ${defaultBecause(byId.get(p.by))})` : ''}`;
     if (p.kind === 'pathway')
       return `${name} passes ${p.at}, which holds it to ${an(String(p.room_mm))} ${p.room_mm} mm bend; ${needs}, ${p.short_mm} mm short.`;
     if (p.room_mm === 0) return `${name} doubles back at ${p.at}, with no room for a bend; ${needs}.`;
     return `${name} turns at ${p.at} with room for ${an(String(p.room_mm))} ${p.room_mm} mm bend; ${needs}, ${p.short_mm} mm short.`;
   });
   const notes = [];
-  const un = all.unchecked, has = un.length === 1 ? 'has' : 'have';
   if (!loaded && riding.length) notes.push(`${name}'s bend is not checked: the cable types are not loaded.`);
-  else if (un.length && un.length === riding.length)
-    notes.push(`${name}'s bend is not checked: ${andList(un)} ${has} no cable type with a bend radius.`);
-  else if (un.length) notes.push(`${name}'s bend is not checked for ${andList(un)}, which ${has} no cable type with a bend radius.`);
-  return {bend: {radius_mm: all.need, by: all.by, unchecked: un, points, violations}, warnings, notes};
+  else if (defaulted.length) notes.push(`${name}'s bend is checked at ${round1(rOf.get(defaulted[0]))} mm for ${andList(defaulted)}, the default for a cable with ${defaulted.some(id => byId.get(id)?.type) ? 'no known bend radius' : 'no cable type'}.`);
+  return {bend: {radius_mm: all.need, by: all.by, unchecked: all.unchecked, defaulted, points, violations}, warnings, notes};
 }
 
 // EVERY BUNDLE'S CHECKS, as findings {kind: 'warning' | 'note', bundle, text}.

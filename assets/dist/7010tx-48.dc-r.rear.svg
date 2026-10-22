@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.0mm" height="43.5mm" viewBox="0 0 439.0 43.5" data-device="7010tx-48" data-view="rear" data-weight="3.9 kg (8.6 lb) for the 7010TX-48, -48C, -48-DC and -48C-DC (guide Table 1, data sheet)" data-size-over-ears="48.3 x 4.4 x 25.8 cm (19 x 1.75 x 10.0 in) with the mounting ears (guide Table 1)" data-depth-with-fans="27.6 cm (10.8 in) &quot;incl. fans&quot; (data sheet); the modelled 258.0 mm is the guide's" data-throughput="296 Gbps, non-blocking" data-packets-per-second="220 Mpps" data-latency="from 2.8 microseconds (25G SFP to RJ-45)" data-packet-buffer="4 MB fully shared packet buffer" data-mac-addresses-max="64000" data-ports-max-speed="52 ports of 1 Gbps; four ports of 10 Gbps; four ports of 25 Gbps" data-power-typical-w="75" data-power-max-w="100" data-power-envelope="unstated" data-psu-redundancy="1+1; two internal supplies, at least one of which must be connected" data-input-ac="100 - 240 VAC, 2.2 A, 50/60 Hz (guide Table 3), IEC 60320 C14" data-input-dc="-40 to -72 VDC, 2.5 A, AWG 14 to 18 ring lug (guide Tables 3 and 4)" data-efficiency="93 percent (Platinum) AC, 92 percent DC (data sheet)" data-airflow="back-to-front" data-noise="46.5 dBA typical at 27 C, 56.5 dBA maximum (data sheet)" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-25 to 70 C (guide Table 2); the data sheet says -40 to 70 C" data-humidity="5 to 90 percent non-condensing (guide Table 2); the data sheet says 5 to 95 percent" data-altitude="0 to 3,000 m (10,000 ft) operating" data-cpu="Dual-Core x86" data-memory="4 GB for the 7010TX-48 and -48-DC; 8 GB for the -48C and -48C-DC (data sheet)" data-storage="8 GB flash" data-optics-sfp28="1000BASE-SX/LX, 10GBASE-CR, -AOC, -SR, -LR, -ER, -ZR and 25GBASE-CR, -AOC, -SR, -LR (data sheet)" data-eos-license="license group G2; minimum EOS 4.26.0 (7010TX-48, -48-DC), 4.31.1 (-48C), 4.33.2 (-48C-DC)" data-console="RJ-45 RS-232 serial on the front, 9600 baud 8N1, no flow control" data-oob="one 10/100/1000 management port on the front" data-usb="one USB port on the front, for software or configuration updates" data-emc="FCC Class A, ICES-003, EN 55032, EN IEC 61000-3-2:2019, EN 61000-3-3, EN 55035, EN 300 386" data-safety="EN 62368-1:2014 + A11:2017, IEC 62368-1:2014" data-certifications="BSMI, CE, KCC, NRTL, RCM, UKCA, VCCI (data sheet)" data-rohs="RoHS 2011/65/EU and 2015/863/EU (data sheet, Directives)" data-eol="announced" data-eol-announcement="https://www.arista.com/en/support/advisories-notices/end-of-sale/22420-end-of-sale-of-the-arista-7010tx-48-switches" data-end-of-sale="2026-03-20" data-end-of-life="2031-03-20" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='arista/7010tx-fan@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='arista/7010tx-fan@'] .state-red { --led-color: #ef4444; }
+    #led-ps1.state-fault, #led-ps1 .state-fault, #led-ps2.state-fault, #led-ps2 .state-fault { --led-color: #ef4444; }
+    #led-ps1.state-ok, #led-ps1 .state-ok, #led-ps2.state-ok, #led-ps2 .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Arista 7010TX-48","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"arista/7010tx-dc-terminal@1":"1.0.0","arista/7010tx-fan@1":"1.0.0","common/ground-screw-m4@1":"1.0.1","common/ground-stud-pair-5-8-m4@1":"1.0.0","common/led-dot@1":"1.1.0","common/terminal-screw-34@1":"1.0.1"},"source-sha256":"32c534f9c128067303c79816a7298322824e152ecaea50eaf71a48f3df9c04fd","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="7010TX-48" data-sku="DCS-7010TX-48-DC-R" data-part-number="" x="0" y="0" width="439" height="43.5" rx="1.2" fill="#9b9ea6" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="hole-ps1" data-kind="hole" x="28.4" y="5.3" width="3.2" height="3.2" rx="1.6" fill="#1a1c1f" />
+    <rect id="hole-ps2" data-kind="hole" x="407.5" y="5.3" width="3.2" height="3.2" rx="1.6" fill="#1a1c1f" />
+    <rect id="sticker-asy" data-kind="label-plate" x="97.5" y="10" width="27" height="6.5" rx="0.4" fill="#a9c9e3" />
+    <rect id="sticker-sn" data-kind="label-plate" x="97.5" y="18.8" width="27" height="6.2" rx="0.4" fill="#dcdde0" />
+    <rect id="sticker-mac" data-kind="label-plate" x="97.5" y="26.8" width="27" height="6.2" rx="0.4" fill="#dcdde0" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="270" y="2.6" width="110" height="27" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="270" y="29.6" width="80" height="10.2" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="29.3" cy="41.5" rx="1" ry="1" fill="#101214" id="cutout--led-ps1" data-path="cutout:led-ps1" data-class="cutout" />
+    <ellipse cx="409.5" cy="41.8" rx="1" ry="1" fill="#101214" id="cutout--led-ps2" data-path="cutout:led-ps2" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="13.6" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b3a67" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps1">DC</text>
+    <path d="M 0 -0.5 H 4.6 M 0 0.5 H 1.2 M 1.7 0.5 H 2.9 M 3.4 0.5 H 4.6" fill="none" stroke="#2b3a67" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(16.4 5.4)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps1" />
+    <text x="424.2" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b3a67" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps2">DC</text>
+    <path d="M 0 -0.5 H 4.6 M 0 0.5 H 1.2 M 1.7 0.5 H 2.9 M 3.4 0.5 H 4.6" fill="none" stroke="#2b3a67" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(427 5.4)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps2" />
+    <path d="M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156" fill="none" stroke="#2b3a67" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(39.5 6.9)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps1" />
+    <path d="M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156" fill="none" stroke="#2b3a67" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(396.8 6.9)" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps2" />
+    <path d="M -1.1 0 H 1.1" fill="none" stroke="#2b3a67" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" transform="translate(43.8 20.5)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps1" />
+    <path d="M -1.1 0 H 1.1 M 0 -1.1 V 1.1" fill="none" stroke="#2b3a67" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" transform="translate(43.8 29)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps1" />
+    <path d="M -1.1 0 H 1.1" fill="none" stroke="#2b3a67" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" transform="translate(395.4 20.5)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps2" />
+    <path d="M -1.1 0 H 1.1 M 0 -1.1 V 1.1" fill="none" stroke="#2b3a67" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" transform="translate(395.4 29)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-ps2" />
+    <text x="23.8" y="42" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#2b3a67" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ps1">PS1</text>
+    <text x="415.5" y="42" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#2b3a67" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ps2">PS2</text>
+    <text x="56" y="40.8" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b3a67" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">INPUTS (2): 40-72V DC 1.8A-1.0A (1.8A-1.0A)</text>
+    <path d="M 0 0 H 28.5 V 33.2 H 0 Z M 0 12.0 H 28.5" fill="none" stroke="#2b4a7a" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(56.3 4)" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -4.3 3.6 L 0 -3.6 L 4.3 3.6 Z" fill="none" stroke="#2b4a7a" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(63 9)" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -4.3 3.6 L 0 -3.6 L 4.3 3.6 Z M 0.5 -1.5 L -1.2 0.6 L 0.8 0.6 L -0.6 2.6" fill="none" stroke="#2b4a7a" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" transform="translate(75.5 9)" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="70.5" y="20" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b3a67" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Disconnect all power cords</text>
+    <text x="70.5" y="22" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b3a67" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">to remove power.</text>
+    <text x="151.3" y="7.1" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#2b3a67" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan">INLET</text>
+    <path d="M -0.9779 -1.1 L -0.9779 1.1 L 0.9779 0 Z" fill="#2b3a67" stroke="none" stroke-linejoin="round" transform="translate(142.3 5.8)" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan" />
+    <path d="M 0 0 H 16.3 V 7.2 H 0 Z" fill="none" stroke="#2b4a7a" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(139.4 9.4)" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan" />
+    <path d="M -3.2 0 a 3.2 3.2 0 1 1 3.2 3.2 M 3.2 0 a 3.2 3.2 0 1 1 -3.2 -3.2" fill="none" stroke="#2b4a7a" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(145.8 22.2)" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan" />
+    <text x="153.3" y="23" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b3a67" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan">180°</text>
+    <path d="M 0 0 H 16.3 V 8.0 H 0 Z" fill="none" stroke="#2b4a7a" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(138.9 28.5)" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan" />
+    <text x="142.8" y="39.5" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#2b3a67" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan">EXIT</text>
+    <path d="M 0.9779 -1.1 L 0.9779 1.1 L -0.9779 0 Z" fill="#2b3a67" stroke="none" stroke-linejoin="round" transform="translate(151 38.4)" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan" />
+    <text x="166.4" y="30.6" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b3a67" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan">&lt;1 min</text>
+    <path d="M 0 -1.65 L 0 -0.3 M -1.5 -0.3 L 1.5 -0.3 M -0.93 0.36 L 0.93 0.36 M -0.42 1.02 L 0.42 1.02" fill="none" stroke="#2b3a67" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(366.3 34.4)" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground" />
+  </g>
+  <g id="led-ps1" data-path="led-ps1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(28.3,40.5)" data-group="psu-leds" data-group-role="indicator" data-description="Table 6 - Power Supply Status: off not inserted or not powered; green operating normally; red failed" data-states="off ok fault" data-for="dc-ps1">
+    <title>led-ps1</title>
+    <circle id="led-ps1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ps1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ps1/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-ps2" data-path="led-ps2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(408.5,40.8)" data-group="psu-leds" data-group-role="indicator" data-description="Table 6 - Power Supply Status: off not inserted or not powered; green operating normally; red failed" data-states="off ok fault" data-for="dc-ps2">
+    <title>led-ps2</title>
+    <circle id="led-ps2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ps2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ps2/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="fan" data-path="fan" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan</title>
+    <rect id="fan--opening" x="175" y="2.3" width="90" height="40" fill="#101214" />
+    <g id="fan--module" data-path="fan/module" data-class="fan" data-behaviour="fills" data-ref="arista/7010tx-fan@1:1.0.0" data-airflow="back-to-front" data-hot-swap="yes" data-redundancy="dual inline fans in one module" data-role="chassis-fan" data-states="ok fault absent" transform="translate(220,22.3) translate(-45,-20)">
+      <title>fan--module</title>
+      <rect id="fan--module--slot" x="0" y="0" width="90" height="40" rx="0.8" fill="#3c4047" />
+      <g id="fan--module--labels">
+        <rect id="fan--module--label-inlet" x="0" y="0.6" width="10" height="38.8" rx="0.6" fill="#154269" />
+        <rect id="fan--module--label-exit" x="79.1" y="0.6" width="8.9" height="38.8" rx="0.6" fill="#832841" />
+      </g>
+      <g id="fan--module--mod-b2f" data-show-from="airflow" data-show="back-to-front" transform="translate(15 1.3)">
+        <rect id="fan--module--plate-b2f" x="0" y="0" width="73" height="38.2" rx="1.2" fill="#bfc2cb" stroke="#7d818a" stroke-width="0.3" />
+        <rect x="35" y="3.4" width="15.5" height="30.5" rx="1.0" fill="#202226" />
+        <rect x="36.3" y="5.6" width="11.8" height="26.8" rx="0.6" fill="#dcdde2" />
+        <rect x="36.8" y="4.4" width="3.2" height="3.8" rx="0.4" fill="#767a82" />
+        <rect x="36.8" y="29.6" width="3.2" height="3.8" rx="0.4" fill="#767a82" />
+        <rect x="30.5" y="11.4" width="15" height="14.5" rx="1.4" fill="#c4c7d0" stroke="#2b2d33" stroke-width="0.5" />
+        <circle id="fan--module--led-b2f" cx="5.0" cy="18.6" r="0.7" fill="var(--led-color, #1c1e22)" data-path="fan/module/led-b2f" data-class="led" data-states="green red off" />
+        <g fill="#2b4a7a" transform="translate(10.3 18.8)">
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(30)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(120)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(210)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(300)" />
+        </g>
+        <g id="fan--module--b2f-silkscreen">
+          <text x="39.4" y="18.65" font-family="sans-serif" font-size="2.6" font-weight="bold" fill="#2b3a67" text-anchor="middle" transform="rotate(-90 39.4 18.65)">FAN</text>
+          <text x="43.2" y="18.65" font-family="sans-serif" font-size="2.6" font-weight="bold" fill="#2b3a67" text-anchor="middle" transform="rotate(-90 43.2 18.65)">7010X</text>
+        </g>
+      </g>
+      <g id="fan--module--mod-f2b" data-show-from="airflow" data-show="front-to-back" transform="translate(2.3 1.3) rotate(180 36.5 19.1)" display="none">
+        <rect id="fan--module--plate-f2b" x="0" y="0" width="73" height="38.2" rx="1.2" fill="#bfc2cb" stroke="#7d818a" stroke-width="0.3" />
+        <rect x="35" y="3.4" width="15.5" height="30.5" rx="1.0" fill="#202226" />
+        <rect x="36.3" y="5.6" width="11.8" height="26.8" rx="0.6" fill="#dcdde2" />
+        <rect x="36.8" y="4.4" width="3.2" height="3.8" rx="0.4" fill="#767a82" />
+        <rect x="36.8" y="29.6" width="3.2" height="3.8" rx="0.4" fill="#767a82" />
+        <rect x="30.5" y="11.4" width="15" height="14.5" rx="1.4" fill="#c4c7d0" stroke="#2b2d33" stroke-width="0.5" />
+        <circle id="fan--module--led-f2b" cx="5.0" cy="18.6" r="0.7" fill="var(--led-color, #1c1e22)" data-path="fan/module/led-f2b" data-class="led" data-states="green red off" />
+        <g fill="#2b4a7a" transform="translate(10.3 18.8)">
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(30)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(120)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(210)" />
+          <ellipse cx="0" cy="-1.1" rx="0.6" ry="1.2" transform="rotate(300)" />
+        </g>
+        <g id="fan--module--f2b-silkscreen">
+          <text x="39.4" y="18.65" font-family="sans-serif" font-size="2.6" font-weight="bold" fill="#2b3a67" text-anchor="middle" transform="rotate(-90 39.4 18.65)">FAN</text>
+          <text x="43.2" y="18.65" font-family="sans-serif" font-size="2.6" font-weight="bold" fill="#2b3a67" text-anchor="middle" transform="rotate(-90 43.2 18.65)">7010X</text>
+        </g>
+      </g>
+      <g id="fan--module--band-inlet" data-show-from="airflow" data-show="back-to-front">
+        <path d="M 2.2 23.9 H 5.0 V 22.3 L 7.6 24.6 L 5.0 26.9 V 25.3 H 2.2 Z M 8.2 22.4 V 26.8" fill="#d8dde6" stroke="#d8dde6" stroke-width="0.5" />
+        <g id="fan--module--inlet-silkscreen">
+          <text x="5.0" y="13.2" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#e4e8ee" text-anchor="middle">AIR</text>
+          <text x="5.0" y="16.2" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#e4e8ee" text-anchor="middle">INLET</text>
+        </g>
+      </g>
+      <g id="fan--module--band-exit" data-show-from="airflow" data-show="front-to-back" display="none">
+        <path d="M 87.0 23.9 H 84.2 V 22.3 L 81.6 24.6 L 84.2 26.9 V 25.3 H 87.0 Z M 81.0 22.4 V 26.8" fill="#e3d4da" stroke="#e3d4da" stroke-width="0.5" />
+        <g id="fan--module--exit-silkscreen">
+          <text x="84.1" y="13.2" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#f0e3e8" text-anchor="middle">AIR</text>
+          <text x="84.1" y="16.2" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#f0e3e8" text-anchor="middle">EXIT</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="dc-ps1" data-path="dc-ps1" data-class="inlet" data-behaviour="mounts" data-ref="arista/7010tx-dc-terminal@1:1.0.0" data-media="dc-terminal" data-rel-pos="1" transform="translate(8.4,11.2)" data-group="dc-inputs" data-group-role="service" data-description="the two -48 V DC terminal blocks of the internal DC supplies PS1 and PS2">
+    <title>dc-ps1</title>
+    <g id="dc-ps1--guards">
+      <rect x="0" y="0" width="4.6" height="27.4" rx="0.5" fill="#c3c7ce" stroke="#8c919a" stroke-width="0.3" />
+      <rect x="37.8" y="0" width="4.6" height="27.4" rx="0.5" fill="#c3c7ce" stroke="#8c919a" stroke-width="0.3" />
+      <rect x="0" y="0" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="0" y="25.2" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="37.8" y="0" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="37.8" y="25.2" width="4.6" height="2.2" fill="#4a4d52" />
+    </g>
+    <rect id="dc-ps1--block" x="10.9" y="2.0" width="20.6" height="23.4" rx="0.6" fill="#8d9097" stroke="#5f636a" stroke-width="0.3" />
+    <rect id="dc-ps1--pole-1" x="16.2" y="4.8" width="7.0" height="7.0" rx="0.8" fill="#6f737a" data-path="dc-ps1/pole-1" data-class="terminal" />
+    <rect id="dc-ps1--pole-2" x="16.2" y="14.1" width="7.0" height="7.0" rx="0.8" fill="#6f737a" data-path="dc-ps1/pole-2" data-class="terminal" />
+    <rect id="dc-ps1--barrier" x="10.9" y="12.6" width="20.6" height="0.9" fill="#4d5057" />
+    <rect id="dc-ps1--cover" x="9.4" y="0.6" width="23.6" height="26.2" rx="0.8" fill="#d9dde3" fill-opacity="0.35" stroke="#a9aeb7" stroke-width="0.3" />
+    <g id="dc-ps1--lug-1" data-path="dc-ps1/lug-1" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(18.0,6.6)">
+      <title>dc-ps1--lug-1</title>
+      <circle id="dc-ps1--lug-1--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="dc-ps1--lug-1--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="dc-ps1--lug-1--head" />
+    </g>
+    <g id="dc-ps1--lug-2" data-path="dc-ps1/lug-2" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(18.0,15.9)">
+      <title>dc-ps1--lug-2</title>
+      <circle id="dc-ps1--lug-2--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="dc-ps1--lug-2--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="dc-ps1--lug-2--head" />
+    </g>
+    <g data-cp="dc-in" data-cp-at="21.2 13.7" data-cp-dir="front" />
+  </g>
+  <g id="dc-ps2" data-path="dc-ps2" data-class="inlet" data-behaviour="mounts" data-ref="arista/7010tx-dc-terminal@1:1.0.0" data-media="dc-terminal" data-rel-pos="2" transform="translate(388.4,11.2)" data-group="dc-inputs" data-group-role="service" data-description="the two -48 V DC terminal blocks of the internal DC supplies PS1 and PS2">
+    <title>dc-ps2</title>
+    <g id="dc-ps2--guards">
+      <rect x="0" y="0" width="4.6" height="27.4" rx="0.5" fill="#c3c7ce" stroke="#8c919a" stroke-width="0.3" />
+      <rect x="37.8" y="0" width="4.6" height="27.4" rx="0.5" fill="#c3c7ce" stroke="#8c919a" stroke-width="0.3" />
+      <rect x="0" y="0" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="0" y="25.2" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="37.8" y="0" width="4.6" height="2.2" fill="#4a4d52" />
+      <rect x="37.8" y="25.2" width="4.6" height="2.2" fill="#4a4d52" />
+    </g>
+    <rect id="dc-ps2--block" x="10.9" y="2.0" width="20.6" height="23.4" rx="0.6" fill="#8d9097" stroke="#5f636a" stroke-width="0.3" />
+    <rect id="dc-ps2--pole-1" x="16.2" y="4.8" width="7.0" height="7.0" rx="0.8" fill="#6f737a" data-path="dc-ps2/pole-1" data-class="terminal" />
+    <rect id="dc-ps2--pole-2" x="16.2" y="14.1" width="7.0" height="7.0" rx="0.8" fill="#6f737a" data-path="dc-ps2/pole-2" data-class="terminal" />
+    <rect id="dc-ps2--barrier" x="10.9" y="12.6" width="20.6" height="0.9" fill="#4d5057" />
+    <rect id="dc-ps2--cover" x="9.4" y="0.6" width="23.6" height="26.2" rx="0.8" fill="#d9dde3" fill-opacity="0.35" stroke="#a9aeb7" stroke-width="0.3" />
+    <g id="dc-ps2--lug-1" data-path="dc-ps2/lug-1" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(18.0,6.6)">
+      <title>dc-ps2--lug-1</title>
+      <circle id="dc-ps2--lug-1--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="dc-ps2--lug-1--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="dc-ps2--lug-1--head" />
+    </g>
+    <g id="dc-ps2--lug-2" data-path="dc-ps2/lug-2" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(18.0,15.9)">
+      <title>dc-ps2--lug-2</title>
+      <circle id="dc-ps2--lug-2--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="dc-ps2--lug-2--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="dc-ps2--lug-2--head" />
+    </g>
+    <g data-cp="dc-in" data-cp-at="21.2 13.7" data-cp-dir="front" />
+  </g>
+  <g id="ground" data-path="ground" data-class="ground" data-behaviour="mounts" data-ref="common/ground-stud-pair-5-8-m4@1:1.0.0" data-connector="stud-pair-5-8" data-rel-pos="1" transform="translate(354.26,30.3)" data-group="grounding" data-group-role="furniture" data-description="the rear grounding pair, two tapped holes for a two-hole lug">
+    <title>ground</title>
+    <g id="ground--pair" />
+    <g id="ground--1" data-path="ground/1" data-class="ground" data-ref="common/ground-screw-m4@1:1.0.1" data-connector="terminal-stud" transform="translate(0,0)">
+      <title>ground--1</title>
+      <g id="ground--1--head" data-z-cyl="3.1" data-z-color="#b9bec4">
+        <circle cx="4" cy="4" r="3.9" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 2.24 4 H 5.76 M 4 2.24 V 5.76" fill="none" stroke="#4e5359" stroke-width="0.48" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="4 4" data-cp-dir="front" data-cp-on="ground--1--head" />
+    </g>
+    <g id="ground--2" data-path="ground/2" data-class="ground" data-ref="common/ground-screw-m4@1:1.0.1" data-connector="terminal-stud" transform="translate(15.875,0)">
+      <title>ground--2</title>
+      <g id="ground--2--head" data-z-cyl="3.1" data-z-color="#b9bec4">
+        <circle cx="4" cy="4" r="3.9" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 2.24 4 H 5.76 M 4 2.24 V 5.76" fill="none" stroke="#4e5359" stroke-width="0.48" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="4 4" data-cp-dir="front" data-cp-on="ground--2--head" />
+    </g>
+    <g data-cp="mate" data-cp-at="11.9375 4" data-cp-dir="front" />
+  </g>
+</svg>

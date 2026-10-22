@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96.4mm" height="18.8mm" viewBox="0 0 96.4 18.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/system-id-button-14g@'] .state-identify { --led-color: #2563eb; }</style>
+  <g id="r960-rear-io-board" data-path="r960-rear-io-board" data-class="expansion-card" data-behaviour="fills" data-ref="dell/r960-rear-io-board@1:1.0.0" data-body-depth="121.5" data-power-absent="not-published" transform="translate(0,0)">
+    <title>r960-rear-io-board</title>
+    <rect id="r960-rear-io-board--plate" x="0.15" y="0.15" width="96.1" height="18.5" rx="0.6" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.3" />
+    <circle cx="17.2" cy="7.2" r="4.4" fill="#d9dde1" stroke="#b5bbc1" stroke-width="0.3" />
+    <g id="r960-rear-io-board--silkscreen">
+      <text x="17.7" y="14.4" font-family="sans-serif" font-size="2.4" fill="#2b2f33" text-anchor="middle">iDRAC</text>
+      <polygon points="22.2,12.2 23.6,12.9 22.2,13.6" fill="#2b2f33" />
+      <text x="85.6" y="14.2" font-family="sans-serif" font-size="2.0" fill="#2b2f33" text-anchor="middle">SS</text>
+    </g>
+    <g id="r960-rear-io-board--system-id" data-path="r960-rear-io-board/system-id" data-class="button" data-ref="dell/system-id-button-14g@1:1.0.1" transform="translate(13.7,3.7)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+      <title>r960-rear-io-board--system-id</title>
+      <circle id="r960-rear-io-board--system-id--lamp" cx="3.5" cy="3.5" r="3.2" fill="var(--led-color, #c2c7cc)" stroke="#8d949b" stroke-width="0.45" data-path="r960-rear-io-board/system-id/lamp" data-class="led" data-states="off identify" data-description="the button's own illumination, lit while system ID is active" />
+    </g>
+    <g id="r960-rear-io-board--idrac" data-path="r960-rear-io-board/idrac" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(26.55,3.2) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+      <title>r960-rear-io-board--idrac</title>
+      <g id="r960-rear-io-board--idrac--jack" data-path="r960-rear-io-board/idrac/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>r960-rear-io-board--idrac--jack</title>
+        <path id="r960-rear-io-board--idrac--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="r960-rear-io-board--idrac--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="r960-rear-io-board--idrac--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="r960-rear-io-board/idrac/jack/opening" data-class="cutout" />
+        <g id="r960-rear-io-board--idrac--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="r960-rear-io-board--idrac--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="r960-rear-io-board--idrac--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="r960-rear-io-board/idrac/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="r960-rear-io-board--idrac--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="r960-rear-io-board/idrac/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="r960-rear-io-board--usb-1" data-path="r960-rear-io-board/usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" transform="translate(46.1,2.45)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+      <title>r960-rear-io-board--usb-1</title>
+      <rect id="r960-rear-io-board--usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="r960-rear-io-board/usb-1/opening" data-class="cutout" />
+      <rect id="r960-rear-io-board--usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="r960-rear-io-board--usb-2" data-path="r960-rear-io-board/usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" transform="translate(46.1,10.65)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+      <title>r960-rear-io-board--usb-2</title>
+      <rect id="r960-rear-io-board--usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="r960-rear-io-board/usb-2/opening" data-class="cutout" />
+      <rect id="r960-rear-io-board--usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="r960-rear-io-board--video" data-path="r960-rear-io-board/video" data-class="port" data-ref="common/vga-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(61.2,1.55)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+      <title>r960-rear-io-board--video</title>
+      <g id="r960-rear-io-board--video--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="r960-rear-io-board--video--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="r960-rear-io-board--video--shell" data-path="r960-rear-io-board/video/shell" data-class="port" data-inner="1" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(5.165,0.55)">
+        <title>r960-rear-io-board--video--shell</title>
+        <path id="r960-rear-io-board--video--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="r960-rear-io-board/video/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <g id="r960-rear-io-board--video--shell--socket-floor">
+          <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+          <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+          <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+          <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+          <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+          <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+          <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+          <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+          <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+          <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+          <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+          <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+          <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+          <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+          <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+        </g>
+        <path id="r960-rear-io-board--video--shell--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="6.73" data-z-color="#1f4f9e" data-z-shape="1" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

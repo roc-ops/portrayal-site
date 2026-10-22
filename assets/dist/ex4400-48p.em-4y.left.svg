@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="399.0mm" height="43.7mm" viewBox="0 0 399.0 43.7" data-device="ex4400-48p" data-view="left" data-weight="7.22 kg with no power supply, fan module or extension module (EX4400-48P); 5.88 kg for the -S" data-depth-with-modules="430.0 mm with power supply and fan modules; 440.7 mm with an extension module as well" data-mounting="two-post kit EX-RMK in the box; four-post kit EX-4PST-RMK and wall kit EX-WMK separate" data-throughput="324 Gbps unidirectional, 648 Gbps bidirectional, as printed in Table 21" data-poe-standard="IEEE 802.3bt (PoE-bt), fast PoE and perpetual PoE, up to 90 W per port on 48 ports" data-poe-budget-1600w="773 W at 110 V and 1310 W at 230 V with one supply, 1796 W and 2200 W with two" data-poe-budget-earlier-junos="Junos OS 22.2R1 and earlier: 768 W at 110 V and 1290 W at 230 V with one supply. Two supplies give 1440 W and 1800 W." data-power-redundancy="1+1 with two supplies of one rating" data-heat-dissipation="456.94 BTU/hr idle and 470.58 at 100 percent traffic with a 1600 W AC supply; 6693.83 and 6707.47 with PoE" data-operating-temp="0 C to 45 C (32 F to 113 F)" data-storage-temp="-40 C to 70 C (-40 F to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing" data-altitude="no performance degradation up to 1828.8 m (6000 ft) at 40 C" data-cpu="quad-core x86" data-memory="4 GB DDR4 with ECC" data-storage="20 GB eMMC" data-virtual-chassis="up to 10 switches over the QSFP28 ports, which are Virtual Chassis ports by default" data-macsec="AES-256 on all RJ-45, SFP and SFP+ network ports and the SFP28 and QSFP28 extension module ports" data-optics-qsfp28="The two rear ports take 100GbE QSFP28 or 40GbE QSFP+ transceivers (40G from Junos OS 22.1R1). Breakout cables give 4x25G and 4x10G. The exact list is in the Hardware Compatibility Tool" data-qsfp28-channelization="each QSFP28 port runs as 100G, as 40G from Junos OS 22.1R1, or channelized" data-extension-slot="one slot for the EX4400-EM-4S, EX4400-EM-4Y or EX4400-EM-1C module" data-console="USB-C on the front and RJ-45 (CON) on the rear" data-oob="MGMT RJ-45 on the rear, 10/100/1000, with link activity and status lamps" data-usb="USB-A on the rear" data-cloud="Juniper Mist Wired Assurance, and the Junos CLI and J-Web" data-seismic="Tested for Zone 4 earthquake according to NEBS GR-63-CORE, Issue 5" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4400-48P","device-version":"0.1.6","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"b6a16f3bf963f8f5a59e39269687e78627810a7d32a53e61512077c2faa160f5","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4400-48P" x="0" y="0" width="399" height="43.7" rx="1.2" fill="#777777" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

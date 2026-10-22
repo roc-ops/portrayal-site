@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="434.0mm" height="773.5mm" viewBox="0 0 434.0 773.5" data-device="r6615" data-view="top" data-ru="1" data-weight-max-kg="20.2" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Dell PowerEdge R6615","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/dimm-plan@1":"1.2.0","common/pcie-card-plan-lp@1":"1.0.0","dell/backplane-cover-1u-16g@1":"1.0.0","dell/boss-n1-plan@1":"1.0.0","dell/fan-1u-16g@1":"1.0.0","dell/fan-bracket-1u-16g@1":"1.0.0","dell/lom-2x1g-plan-16g@1":"1.0.0","dell/ocp3-sff-plan@1":"1.0.0","dell/psu-60mm-plan@1":"1.0.0","dell/r6615-heatsink@1":"1.0.0","dell/r6615-system-board@1":"1.0.0","dell/rear-io-board-plan-16g@1":"1.0.0","dell/riser-2-lp-plan-16g@1":"1.0.0","dell/riser-3-plan-16g@1":"1.0.0","dell/system-cover-1u-16g@1":"1.0.0","std/drive-25-plan@1":"1.4.0"},"source-sha256":"d0bffbe4ca9a61ce943f7502bf4b13602ff41da99dc8b2fed7e014c194adc45a","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PowerEdge R6615" x="0" y="0" width="434" height="773.5" rx="1.2" fill="#2f3439" stroke="#1d2125" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="749.3" width="434" height="24.2" rx="0.6" fill="#2f3439" />
+  </g>
+  <g id="system-board" data-path="system-board" data-class="mechanical" data-ref="dell/r6615-system-board@1:1.0.0" data-depth="38.3" data-wall="#1e2226" data-walls="inside" data-rel-pos="1" transform="translate(5.1,1.4)" data-group="interior" data-group-role="furniture" data-description="the system board and the fan bracket" data-under="heatsink-1 fan-bracket system-cover backplane-cover fan-1 fan-2 fan-3 fan-4 dimm-a12 dimm-a8 dimm-a10 dimm-a4 dimm-a6 dimm-a2 dimm-a1 dimm-a5 dimm-a3 dimm-a9 dimm-a7 dimm-a11">
+    <title>system-board</title>
+    <rect id="system-board--board" x="0" y="0" width="425.0" height="456.0" fill="#1f5f3a" stroke="#123d25" stroke-width="0.5" data-path="system-board/board" data-class="bezel" />
+    <g id="system-board--sockets" fill="#d8d3c3" stroke="#a29d8d" stroke-width="0.2">
+      <rect x="14.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="29.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="44.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="59.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="74.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="89.30" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="213.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="228.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="243.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="258.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="273.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+      <rect x="288.00" y="262.4" width="5.9" height="153.9" rx="0.5" />
+    </g>
+  </g>
+  <g id="fan-bracket" data-path="fan-bracket" data-class="mechanical" data-ref="dell/fan-bracket-1u-16g@1:1.0.0" data-depth="40.0" data-wall="#2b3035" data-rel-pos="2" transform="translate(3.45,480.5)" data-group="interior" data-group-role="furniture" data-description="the system board and the fan bracket" data-under="system-cover">
+    <title>fan-bracket</title>
+    <rect id="fan-bracket--frame" x="0" y="0" width="428.3" height="70.6" fill="#3a4045" stroke="#22262a" stroke-width="0.4" data-path="fan-bracket/frame" data-class="bezel" />
+  </g>
+  <g id="boss-plan" data-class="mechanical" transform="translate(403.25,0.0)" data-projection="1" data-of="boss/module" data-in="system-board" data-under="system-cover">
+    <title>boss-plan</title>
+    <rect x="0" y="0" width="29.9" height="185.1" rx="1" fill="#5a6066" stroke="#3a4045" stroke-width="0.4" />
+    <rect x="4" y="6" width="9.5" height="108" rx="0.6" fill="#2b3035" />
+    <rect x="16.4" y="6" width="9.5" height="108" rx="0.6" fill="#2b3035" />
+    <rect x="3" y="120" width="23.9" height="60" rx="0.8" fill="#1f5f3a" />
+  </g>
+  <g id="psu-1-plan" data-class="mechanical" transform="translate(341.14,0.0)" data-projection="1" data-of="psu-1/module" data-in="system-board" data-under="system-cover">
+    <title>psu-1-plan</title>
+    <rect x="0" y="0" width="59.8" height="222.0" rx="1" fill="#8d949c" stroke="#5f666d" stroke-width="0.4" />
+    <rect x="3" y="4" width="53.8" height="26" rx="1" fill="#6d747a" />
+    <rect x="6" y="200" width="47.8" height="16" rx="1" fill="#5a6066" />
+  </g>
+  <g id="psu-2-plan" data-class="mechanical" transform="translate(6.29,0.0)" data-projection="1" data-of="psu-2/module" data-in="system-board" data-under="system-cover">
+    <title>psu-2-plan</title>
+    <rect x="0" y="0" width="59.8" height="222.0" rx="1" fill="#8d949c" stroke="#5f666d" stroke-width="0.4" />
+    <rect x="3" y="4" width="53.8" height="26" rx="1" fill="#6d747a" />
+    <rect x="6" y="200" width="47.8" height="16" rx="1" fill="#5a6066" />
+  </g>
+  <g id="lom-plan" data-class="mechanical" transform="translate(277.0,1.6)" data-projection="1" data-of="lom/module" data-in="system-board" data-under="system-cover">
+    <title>lom-plan</title>
+    <rect x="0" y="0" width="60.6" height="117.2" rx="1" fill="#1f5f3a" stroke="#123d25" stroke-width="0.4" />
+    <rect x="2" y="0" width="56.6" height="20" fill="#9aa1a8" />
+  </g>
+  <g id="rio-plan" data-class="mechanical" transform="translate(97.7,0.0)" data-projection="1" data-of="rio/module" data-in="system-board" data-under="system-cover">
+    <title>rio-plan</title>
+    <rect x="0" y="0" width="90.0" height="121.5" rx="1" fill="#1f5f3a" stroke="#123d25" stroke-width="0.4" />
+    <rect x="2" y="0" width="86" height="22" fill="#9aa1a8" />
+  </g>
+  <g id="ocp-plan" data-class="mechanical" transform="translate(195.15,0.6)" data-projection="1" data-of="ocp/module" data-in="system-board" data-under="system-cover">
+    <title>ocp-plan</title>
+    <rect x="0" y="0" width="76.0" height="115.0" rx="1" fill="#1f5f3a" stroke="#123d25" stroke-width="0.4" />
+    <rect x="2" y="0" width="72" height="14" fill="#9aa1a8" />
+    <rect x="26" y="45" width="24" height="24" rx="1" fill="#2b3035" />
+  </g>
+  <g id="riser-3-slot-3-plan" data-class="expansion-card" data-wall="#1a1d21" data-power-absent="not-published" data-role="expansion-card" transform="translate(86.3,0.0)" data-projection="1" data-of="riser-3/module/slot-3/module" data-in="system-board" data-under="riser-3-plan system-cover">
+    <title>riser-3-slot-3-plan</title>
+    <g id="riser-3-slot-3-plan--body" data-class="bezel" data-of="riser-3/module/slot-3/module/body">
+      <rect x="0" y="0" width="79.2" height="173.8" rx="0.8" fill="#1f5138" stroke="#123a28" stroke-width="0.5" />
+      <rect x="0" y="0" width="79.2" height="3.0" fill="#8a9096" stroke="#5c6167" stroke-width="0.3" />
+      <rect x="75.2" y="30.0" width="3.0" height="89.0" rx="0.3" fill="#c9a227" />
+      <rect x="8.0" y="40.0" width="59.2" height="59.2" rx="1.0" fill="#2a2e33" stroke="#1a1d21" stroke-width="0.4" />
+    </g>
+  </g>
+  <g id="riser-3-plan" data-class="mechanical" transform="translate(71.4,0.0)" data-projection="1" data-of="riser-3/module" data-in="system-board" data-under="system-cover">
+    <title>riser-3-plan</title>
+    <rect x="8.90" y="0.00" width="83.70" height="252.80" rx="1" fill="#a9afb5" stroke="#6d747a" stroke-width="0.4" />
+    <rect x="0.00" y="0.00" width="14.70" height="6.30" rx="1" fill="#5a6066" stroke="#3a4045" stroke-width="0.4" />
+  </g>
+  <g id="riser-2-slot-2-plan" data-class="expansion-card" data-wall="#1a1d21" data-power-absent="not-published" data-role="expansion-card" transform="translate(168.13,0.0)" data-projection="1" data-of="riser-2/module/slot-2/module" data-in="system-board" data-under="riser-2-plan system-cover">
+    <title>riser-2-slot-2-plan</title>
+    <g id="riser-2-slot-2-plan--body" data-class="bezel" data-of="riser-2/module/slot-2/module/body">
+      <rect x="0" y="0" width="79.2" height="173.8" rx="0.8" fill="#1f5138" stroke="#123a28" stroke-width="0.5" />
+      <rect x="0" y="0" width="79.2" height="3.0" fill="#8a9096" stroke="#5c6167" stroke-width="0.3" />
+      <rect x="75.2" y="30.0" width="3.0" height="89.0" rx="0.3" fill="#c9a227" />
+      <rect x="8.0" y="40.0" width="59.2" height="59.2" rx="1.0" fill="#2a2e33" stroke="#1a1d21" stroke-width="0.4" />
+    </g>
+  </g>
+  <g id="riser-2-slot-1-plan" data-class="expansion-card" data-wall="#1a1d21" data-power-absent="not-published" data-role="expansion-card" transform="translate(233.63,0.0)" data-projection="1" data-of="riser-2/module/slot-1/module" data-in="system-board" data-under="riser-2-plan system-cover">
+    <title>riser-2-slot-1-plan</title>
+    <g id="riser-2-slot-1-plan--body" data-class="bezel" data-of="riser-2/module/slot-1/module/body">
+      <rect x="0" y="0" width="79.2" height="173.8" rx="0.8" fill="#1f5138" stroke="#123a28" stroke-width="0.5" />
+      <rect x="0" y="0" width="79.2" height="3.0" fill="#8a9096" stroke="#5c6167" stroke-width="0.3" />
+      <rect x="75.2" y="30.0" width="3.0" height="89.0" rx="0.3" fill="#c9a227" />
+      <rect x="8.0" y="40.0" width="59.2" height="59.2" rx="1.0" fill="#2a2e33" stroke="#1a1d21" stroke-width="0.4" />
+    </g>
+  </g>
+  <g id="riser-2-plan" data-class="mechanical" transform="translate(163.4,0.0)" data-projection="1" data-of="riser-2/module" data-in="system-board" data-under="system-cover">
+    <title>riser-2-plan</title>
+    <rect x="0.90" y="0.00" width="148.80" height="253.20" rx="1" fill="#a9afb5" stroke="#6d747a" stroke-width="0.4" />
+    <rect x="138.70" y="0.00" width="34.00" height="26.00" rx="1" fill="#8d949c" stroke="#5f666d" stroke-width="0.4" />
+  </g>
+  <g id="drive-0-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(10.2,643.1)" data-projection="1" data-of="drive-0/module" data-under="backplane-cover">
+    <title>drive-0-plan</title>
+    <g id="drive-0-plan--body" data-class="bezel" data-of="drive-0/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-0-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-0/module/label" />
+    <g id="drive-0-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-2-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(93.7,643.1)" data-projection="1" data-of="drive-2/module" data-under="backplane-cover">
+    <title>drive-2-plan</title>
+    <g id="drive-2-plan--body" data-class="bezel" data-of="drive-2/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-2-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-2/module/label" />
+    <g id="drive-2-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-4-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(176.2,643.1)" data-projection="1" data-of="drive-4/module" data-under="backplane-cover">
+    <title>drive-4-plan</title>
+    <g id="drive-4-plan--body" data-class="bezel" data-of="drive-4/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-4-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-4/module/label" />
+    <g id="drive-4-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-6-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(259.5,643.1)" data-projection="1" data-of="drive-6/module" data-under="backplane-cover">
+    <title>drive-6-plan</title>
+    <g id="drive-6-plan--body" data-class="bezel" data-of="drive-6/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-6-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-6/module/label" />
+    <g id="drive-6-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-8-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(342.5,643.1)" data-projection="1" data-of="drive-8/module" data-under="backplane-cover">
+    <title>drive-8-plan</title>
+    <g id="drive-8-plan--body" data-class="bezel" data-of="drive-8/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-8-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-8/module/label" />
+    <g id="drive-8-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-0-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(10.2,643.1)" data-projection="1" data-of="drive-0/module" data-under="backplane-cover">
+    <title>drive-0-plan</title>
+    <g id="drive-0-plan--body" data-class="bezel" data-of="drive-0/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-0-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-0/module/label" />
+    <g id="drive-0-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-2-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(93.7,643.1)" data-projection="1" data-of="drive-2/module" data-under="backplane-cover">
+    <title>drive-2-plan</title>
+    <g id="drive-2-plan--body" data-class="bezel" data-of="drive-2/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-2-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-2/module/label" />
+    <g id="drive-2-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-4-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(259.5,643.1)" data-projection="1" data-of="drive-4/module" data-under="backplane-cover">
+    <title>drive-4-plan</title>
+    <g id="drive-4-plan--body" data-class="bezel" data-of="drive-4/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-4-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-4/module/label" />
+    <g id="drive-4-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="drive-6-plan" data-class="drive" data-capacity="1.2" data-capacity-unit="TB" transform="translate(342.5,643.1)" data-projection="1" data-of="drive-6/module" data-under="backplane-cover">
+    <title>drive-6-plan</title>
+    <g id="drive-6-plan--body" data-class="bezel" data-of="drive-6/module/body">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-6-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-class="label" data-of="drive-6/module/label" />
+    <g id="drive-6-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+  <g id="dimm-a12" data-path="dimm-a12" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="12" data-under="system-cover">
+    <title>dimm-a12</title>
+    <rect id="dimm-a12--opening" x="20.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a12--module" data-path="dimm-a12/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(22.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a12--module</title>
+      <g id="dimm-a12--module--body" data-path="dimm-a12/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a12--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a8" data-path="dimm-a8" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="8" data-under="system-cover">
+    <title>dimm-a8</title>
+    <rect id="dimm-a8--opening" x="35.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a8--module" data-path="dimm-a8/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(37.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a8--module</title>
+      <g id="dimm-a8--module--body" data-path="dimm-a8/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a8--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a10" data-path="dimm-a10" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="10" data-under="system-cover">
+    <title>dimm-a10</title>
+    <rect id="dimm-a10--opening" x="50.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a10--module" data-path="dimm-a10/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(52.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a10--module</title>
+      <g id="dimm-a10--module--body" data-path="dimm-a10/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a10--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a4" data-path="dimm-a4" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="4" data-under="system-cover">
+    <title>dimm-a4</title>
+    <rect id="dimm-a4--opening" x="65.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a4--module" data-path="dimm-a4/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(67.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a4--module</title>
+      <g id="dimm-a4--module--body" data-path="dimm-a4/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a4--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a6" data-path="dimm-a6" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="6" data-under="system-cover">
+    <title>dimm-a6</title>
+    <rect id="dimm-a6--opening" x="80.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a6--module" data-path="dimm-a6/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(82.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a6--module</title>
+      <g id="dimm-a6--module--body" data-path="dimm-a6/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a6--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a2" data-path="dimm-a2" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="2" data-under="system-cover">
+    <title>dimm-a2</title>
+    <rect id="dimm-a2--opening" x="95.45" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a2--module" data-path="dimm-a2/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(97.35,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a2--module</title>
+      <g id="dimm-a2--module--body" data-path="dimm-a2/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a2--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a1" data-path="dimm-a1" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="1" data-under="system-cover">
+    <title>dimm-a1</title>
+    <rect id="dimm-a1--opening" x="219.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a1--module" data-path="dimm-a1/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(221.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a1--module</title>
+      <g id="dimm-a1--module--body" data-path="dimm-a1/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a1--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a5" data-path="dimm-a5" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="5" data-under="system-cover">
+    <title>dimm-a5</title>
+    <rect id="dimm-a5--opening" x="234.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a5--module" data-path="dimm-a5/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(236.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a5--module</title>
+      <g id="dimm-a5--module--body" data-path="dimm-a5/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a5--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a3" data-path="dimm-a3" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="3" data-under="system-cover">
+    <title>dimm-a3</title>
+    <rect id="dimm-a3--opening" x="249.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a3--module" data-path="dimm-a3/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(251.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a3--module</title>
+      <g id="dimm-a3--module--body" data-path="dimm-a3/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a3--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a9" data-path="dimm-a9" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="9" data-under="system-cover">
+    <title>dimm-a9</title>
+    <rect id="dimm-a9--opening" x="264.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a9--module" data-path="dimm-a9/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(266.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a9--module</title>
+      <g id="dimm-a9--module--body" data-path="dimm-a9/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a9--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a7" data-path="dimm-a7" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="7" data-under="system-cover">
+    <title>dimm-a7</title>
+    <rect id="dimm-a7--opening" x="279.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a7--module" data-path="dimm-a7/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(281.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a7--module</title>
+      <g id="dimm-a7--module--body" data-path="dimm-a7/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a7--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="dimm-a11" data-path="dimm-a11" data-class="bay" data-z-lift="-7" data-in="system-board" data-group="memory" data-group-role="service" data-rel-pos="11" data-under="system-cover">
+    <title>dimm-a11</title>
+    <rect id="dimm-a11--opening" x="294.15" y="274.05" width="3.8" height="133.4" fill="#101214" />
+    <g id="dimm-a11--module" data-path="dimm-a11/module" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(296.05,340.75) translate(-1.9,-66.7)">
+      <title>dimm-a11--module</title>
+      <g id="dimm-a11--module--body" data-path="dimm-a11/module/body" data-class="bezel">
+        <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+        <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+      </g>
+      <g id="dimm-a11--module--silkscreen">
+        <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+        <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1" data-under="system-cover">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="28.5" y="477" width="82" height="56" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="dell/fan-1u-16g@1:1.0.0" data-body-depth="40.0" transform="translate(69.5,505) translate(-41,-28)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--body" x="0" y="0" width="82.0" height="56.0" rx="1" fill="#2b3035" stroke="#1a1d21" stroke-width="0.4" data-path="fan-1/module/body" data-class="bezel" />
+      <circle cx="20.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <circle cx="61.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <rect x="30" y="50.5" width="22" height="4.5" rx="1" fill="#e07a1f" />
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2" data-under="system-cover">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="115.4" y="477" width="82" height="56" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="dell/fan-1u-16g@1:1.0.0" data-body-depth="40.0" transform="translate(156.4,505) translate(-41,-28)">
+      <title>fan-2--module</title>
+      <rect id="fan-2--module--body" x="0" y="0" width="82.0" height="56.0" rx="1" fill="#2b3035" stroke="#1a1d21" stroke-width="0.4" data-path="fan-2/module/body" data-class="bezel" />
+      <circle cx="20.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <circle cx="61.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <rect x="30" y="50.5" width="22" height="4.5" rx="1" fill="#e07a1f" />
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3" data-under="system-cover">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="239.4" y="477" width="82" height="56" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="dell/fan-1u-16g@1:1.0.0" data-body-depth="40.0" transform="translate(280.4,505) translate(-41,-28)">
+      <title>fan-3--module</title>
+      <rect id="fan-3--module--body" x="0" y="0" width="82.0" height="56.0" rx="1" fill="#2b3035" stroke="#1a1d21" stroke-width="0.4" data-path="fan-3/module/body" data-class="bezel" />
+      <circle cx="20.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <circle cx="61.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <rect x="30" y="50.5" width="22" height="4.5" rx="1" fill="#e07a1f" />
+    </g>
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="4" data-under="system-cover">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="326" y="477" width="82" height="56" fill="#101214" />
+    <g id="fan-4--module" data-path="fan-4/module" data-class="fan" data-behaviour="fills" data-ref="dell/fan-1u-16g@1:1.0.0" data-body-depth="40.0" transform="translate(367,505) translate(-41,-28)">
+      <title>fan-4--module</title>
+      <rect id="fan-4--module--body" x="0" y="0" width="82.0" height="56.0" rx="1" fill="#2b3035" stroke="#1a1d21" stroke-width="0.4" data-path="fan-4/module/body" data-class="bezel" />
+      <circle cx="20.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <circle cx="61.5" cy="28" r="17" fill="#15181b" stroke="#454b51" stroke-width="0.8" />
+      <rect x="30" y="50.5" width="22" height="4.5" rx="1" fill="#e07a1f" />
+    </g>
+  </g>
+  <g id="heatsink-1" data-path="heatsink-1" data-class="mechanical" data-behaviour="mounts" data-ref="dell/r6615-heatsink@1:1.0.0" data-wall="#6d737a" data-rel-pos="1" transform="translate(112.8,278.4)" data-group="processors" data-group-role="service" data-description="the processor heatsink" data-z-lift="-38.3" data-in="system-board" data-under="system-cover">
+    <title>heatsink-1</title>
+    <rect id="heatsink-1--block" x="0" y="0" width="91.6" height="144.9" rx="1" fill="#9aa1a8" stroke="#6d737a" stroke-width="0.4" data-path="heatsink-1/block" data-class="bezel" data-z-out="-5.2" data-z-color="#8a9096" />
+    <rect x="0.4" y="0.4" width="90.8" height="54.9" fill="#b7bcc1" />
+    <rect x="3" y="67.0" width="85.6" height="5.5" fill="#7d848b" />
+    <rect x="3" y="89.3" width="85.6" height="5.5" fill="#7d848b" />
+    <rect x="3" y="110.7" width="85.6" height="4.6" fill="#7d848b" />
+    <rect x="3" y="118.9" width="85.6" height="5.5" fill="#7d848b" />
+    <rect x="3" y="139.4" width="85.6" height="5.0" fill="#7d848b" />
+    <circle cx="6" cy="6" r="2.4" fill="#2b3035" />
+    <circle cx="85.6" cy="6" r="2.4" fill="#2b3035" />
+    <circle cx="6" cy="138.9" r="2.4" fill="#2b3035" />
+    <circle cx="85.6" cy="138.9" r="2.4" fill="#2b3035" />
+  </g>
+  <g id="system-cover" data-path="system-cover" data-class="mechanical" data-behaviour="mounts" data-ref="dell/system-cover-1u-16g@1:1.0.0" data-wall="#1a1d21" data-rel-pos="1" transform="translate(0.3,0.0)" data-group="covers" data-group-role="furniture" data-description="the system cover and the backplane cover on top, and the optional security bezel on the front. The bezel is DRAWN FITTED: it is `mounts`, so the viewer takes it off to show the drives, and `for:` names what it covers." data-under="backplane-cover">
+    <title>system-cover</title>
+    <rect id="system-cover--cover" x="0" y="0" width="433.4" height="615.0" fill="#c3c8cd" stroke="#8b9299" stroke-width="0.6" data-path="system-cover/cover" data-class="bezel" data-z-out="1.0" data-z-color="#c3c8cd" />
+    <rect id="system-cover--latch" x="204.2" y="493.5" width="25.0" height="63.6" rx="3" fill="#2b6cb0" stroke="#1d4a7a" stroke-width="0.4" data-path="system-cover/latch" data-class="latch" data-z-out="2.0" data-z-color="#2b6cb0" />
+  </g>
+  <g id="backplane-cover" data-path="backplane-cover" data-class="mechanical" data-behaviour="mounts" data-ref="dell/backplane-cover-1u-16g@1:1.0.0" data-rel-pos="2" transform="translate(0.3,585.3)" data-group="covers" data-group-role="furniture" data-description="the system cover and the backplane cover on top, and the optional security bezel on the front. The bezel is DRAWN FITTED: it is `mounts`, so the viewer takes it off to show the drives, and `for:` names what it covers.">
+    <title>backplane-cover</title>
+    <rect id="backplane-cover--plate" x="0" y="0" width="433.4" height="164.0" fill="#b5bbc1" stroke="#8b9299" stroke-width="0.6" data-path="backplane-cover/plate" data-class="bezel" />
+  </g>
+</svg>

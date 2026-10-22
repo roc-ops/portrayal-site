@@ -1,0 +1,236 @@
+{
+ "aliases": [],
+ "attrs": {
+  "features": {
+   "pass-through-note": "Power cables may not fit through the holes on this panel (data sheet, Special Notes)",
+   "standards": "EIA/ECA-310-E"
+  },
+  "physical": {
+   "color": "Black",
+   "material": "Steel",
+   "mounting-hardware": "M5 cage nuts and M5 screws, four of each",
+   "weight-kg": 0.31
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [
+   "specified"
+  ],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 95.0,
+  "ears": {
+   "positions": [
+    {
+     "at": 88.79,
+     "default": true,
+     "name": "proud"
+    }
+   ]
+  },
+  "h": 43.69,
+  "mount": "rack",
+  "power": null,
+  "ru": 1,
+  "shell": "sheet",
+  "thickness": 1.2,
+  "w": 482.6
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The cable manager as StarTech.com ships CABLMANAGERH, five rings fitted.",
+   "files": {
+    "bottom": "cablmanagerh.base.bottom.svg",
+    "front": "cablmanagerh.base.front.svg",
+    "left": "cablmanagerh.base.left.svg",
+    "rear": "cablmanagerh.base.rear.svg",
+    "right": "cablmanagerh.base.right.svg",
+    "top": "cablmanagerh.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "cablmanagerh",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet and the drawing state no cable capacity, no fill and no cable count.",
+   "scope": [],
+   "wanted": "a cable capacity table, or a stated fill, for the D-ring panel",
+   "what": "cable-capacity"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the drawing's front view shows each ring on a bracket about 40 mm across the panel's whole height, held by a rivet or screw in the middle of it; no view dimensions it, and the brackets are not drawn, so each ring stands directly on the panel.",
+   "scope": [
+    "front",
+    "top",
+    "bottom",
+    "rear"
+   ],
+   "wanted": "a dimensioned view of a ring's bracket and of its fixing",
+   "what": "ring-bracket"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the side view draws each ring narrowing at about half its height, where two pieces seem to meet; no document says whether that is a seam or a slit a cable is laid in through, and the loop is drawn closed.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a close view or a section of a ring at its waist",
+   "what": "ring-waist"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet says the rings hold bundles \"running vertically and horizontally\"; a ring declares one run in the format, along the panel, so a bundle running up and down through the same loop is not declared.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a format key for a second run of a ring",
+   "what": "ring-other-run"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CABLMANAGERH",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "pdu-class": null,
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - the material (steel), colour, standard (EIA/ECA-310-E) and the box (four M5 cage nuts and four M5 screws) are the datasheet's; \"5-year warranty\" is its text."
+  },
+  "capacity": {
+   "confidence": "estimated",
+   "note": "no document states a cable capacity: the datasheet and the drawing are silent, so none is stated and a gap says so."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - 482.6 x 43.69 x 95.0. The panel is the whole width of the rack, its two ends the ears, so the face is drawn whole with its four slots (L43 stands down above 480 mm); its top and bottom edges fold back 6.21 between the ears, 31.0 in from each end (estimated)."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Color: Black\". The drawing is line work, so the shades are this library's render of black steel, the rings a little lighter than the panel."
+  },
+  "ears": {
+   "confidence": "drawing",
+   "note": "drawing - `positions` states where the ears bolt, for the Rack Builder. The ears are the flat ends of the panel, so the ear plane is the panel's back face, and the rings stand 88.79 mm in front of it: the side view dimensions 95.00 from the ring tips to the back of the panel's folded edges and 6.21 between the ear plane and the folds, so `at` is 88.79. Of the 95.0 depth, 6.21 stands behind the rail. This states a placement; no dimension changed. The datasheet's \"Mounting Options: Front and Rear Mount\" is a placement too: the rack kit places any part on either face of the rack."
+  },
+  "front": {
+   "confidence": "drawing",
+   "note": "drawing - the front view: the panel, five rings end-on 100.0 apart with the middle one on the centre line (41.3 from the left end, estimated), and the four holes midway between them. Each ring stands on a 40 mm bracket that the drawing shows and that is not drawn."
+  },
+  "full-depth": {
+   "confidence": "drawing",
+   "note": "`full-depth: false` - the rings stand 88.79 mm in front of the panel and its folded edges reach only 6.21 behind it, so the rear face of its rack unit stays free for another part."
+  },
+  "guides": {
+   "confidence": "estimated",
+   "note": "estimated - the five rings are the guides: each a component with a `ring` guide (see its contract), cables passing along the panel through each in turn. The datasheet says they hold bundles \"running vertically and horizontally\"; only the run along the panel is declared, because the format has one run to a ring."
+  },
+  "left": {
+   "confidence": "drawing",
+   "note": "drawing - the side view: the folded edges behind the panel and the ring's profile in front of it, a frame 30.6 high with a base, two bars and a closed end. The right is the same, turned round."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE MAKER'S OWN DRAWING. StarTech.com publishes CABLMANAGERH_Diagram.pdf (third angle projection, \"DO NOT SCALE\", millimetres, uploaded 11/23/2023): a side view and a front view and an isometric, with the dimensions 482.60, 95.00, 6.21, 43.69, 32.00, 465.00, \"phi 29.00\" and \"phi 6.50\". The datasheet (cablmanagerh_datasheet.pdf) lists the same body as \"Product Length 19.0 in\", \"Product Width 1.7 in [43.7 mm]\" and \"Product Height 3.7 in [95.0 mm]\", where \"width\" is the panel's height and \"height\" is its depth. The drawing is the one used where they differ: 43.69, not the datasheet's 43.7. What it does not dimension - the rings' place and size, the holes' place, the fold's length - is scaled off it at 2.45 to 3.85 px/mm against its own dimensions, and is estimated."
+  },
+  "passes": {
+   "confidence": "drawing",
+   "note": "drawing - the four holes, \"phi 29.00\": a cable crosses through each from one side of the panel to the other. Their places (100.0 apart, 91.3 from the left end) are scaled and estimated. The maker's note, \"Power cables may not fit through the holes on this panel\" (datasheet, Special Notes), is recorded in `attrs.features`; the format has no way to say which cable is too thick for a pass, so a pass is declared at its drawn size, open."
+  },
+  "rear": {
+   "confidence": "drawing",
+   "note": "drawing - the back of the panel: the ear slots 465.00 apart and 32.00 between a pair, 13.0 long, and the four holes. The drawing draws two circles at each hole: the outer is the dimensioned \"phi 29.00\" and the inner scales at about 21 mm. The datasheet's \"inner and outer diameters of 1.14/1.26in [29/32mm]\" is read as the hole (29) and a lip round it (32); the hole is 29, as the drawing dimensions it, and the lip is drawn on the rear. The 21 mm circle is not used (it would be a bore, but no document says so)."
+  },
+  "rings": {
+   "confidence": "estimated",
+   "note": "estimated - see the contract: the drawing dimensions only the 95.00. The loop is a D with a waist half way up; it is drawn as a closed frame, the corners square, and the waist is not a slit that any document states."
+  },
+  "thickness": {
+   "confidence": "estimated",
+   "note": "estimated - no CABLMANAGERH document states a gauge. 1.2 mm, the maker's own CMBRUSH1U section (t=1.2 mm, \"spcc/hc\"), is taken for the panel."
+  },
+  "top": {
+   "confidence": "drawing",
+   "note": "drawing - an elevation, rear at the top of the drawing: the folded edge behind the panel and the five rings from above, each 9.1 mm across (estimated) and standing 87.59 out of the panel's front face. The bottom is the same from underneath."
+  },
+  "weight": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"Weight of Product 10.9 oz [310.0 g]\" (cablmanagerh_datasheet.pdf)."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

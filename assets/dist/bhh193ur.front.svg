@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="133.35mm" viewBox="0 0 482.6 133.35" data-device="bhh193ur" data-view="front" data-shell="sheet" data-weight-kg="2.0" data-material="Steel and Plastic Molded Fingers" data-finish="Black powdercoat finish" data-color="Black" data-mounting-hardware="Mounting Hardware included" data-environment="Indoor">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Belden BHH193UR","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"belden/bhh-base-3u@1":"1.0.0","belden/bhh-cover-3u@1":"1.0.0","belden/bhh-finger-end@1":"1.0.0","belden/bhh-finger@1":"1.0.0"},"source-sha256":"63877426171ad6ca31b615e604c61af2871c7ce7d586a8f66a0bc56400e66605","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="BHH193UR" x="0" y="0" width="482.6" height="133.35" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="42.5" data-guide-finger-gap="34" x="16.3" y="10" width="450" height="113.35" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="belden/bhh-base-3u@1:1.0.0" data-depth="181.9" data-wall="#3c3f43" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel back plate with its ears">
+    <title>base</title>
+    <rect id="base--floor" x="0" y="0" width="482.6" height="133.35" fill="#2a2d31" data-path="base/floor" data-class="bezel" />
+    <rect id="base--floor-lit" x="0" y="0" width="482.6" height="133.35" fill="#fff" fill-opacity="0.1" />
+  </g>
+  <g id="finger-upper-1" data-path="finger-upper-1" data-class="mechanical" data-ref="belden/bhh-finger-end@1:1.0.0" data-material="Plastic" data-rel-pos="1" transform="translate(24.55,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-1</title>
+    <rect id="finger-upper-1--root" x="0" y="0" width="25.5" height="10" fill="#34383c" data-path="finger-upper-1/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-1--stem" x="0" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-1/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-1--tip" x="0" y="0" width="11.5" height="10" fill="#454a50" data-path="finger-upper-1/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-1--opening-shade" x="11.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-1--head-lit" x="0" y="0" width="11.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-1--head-rim" x="0.4" y="0.4" width="10.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-2" data-path="finger-upper-2" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="2" transform="translate(50.05,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-2</title>
+    <rect id="finger-upper-2--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-2/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-2--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-2/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-2--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-2/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-2--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-2--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-2--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-2--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-3" data-path="finger-upper-3" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="3" transform="translate(92.55,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-3</title>
+    <rect id="finger-upper-3--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-3/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-3--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-3/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-3--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-3/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-3--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-3--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-3--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-3--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-4" data-path="finger-upper-4" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="4" transform="translate(135.05,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-4</title>
+    <rect id="finger-upper-4--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-4/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-4--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-4/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-4--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-4/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-4--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-4--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-4--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-4--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-5" data-path="finger-upper-5" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="5" transform="translate(177.55,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-5</title>
+    <rect id="finger-upper-5--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-5/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-5--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-5/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-5--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-5/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-5--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-5--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-5--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-5--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-6" data-path="finger-upper-6" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="6" transform="translate(220.05,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-6</title>
+    <rect id="finger-upper-6--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-6/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-6--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-6/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-6--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-6/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-6--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-6--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-6--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-6--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-7" data-path="finger-upper-7" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="7" transform="translate(262.55,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-7</title>
+    <rect id="finger-upper-7--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-7/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-7--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-7/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-7--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-7/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-7--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-7--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-7--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-7--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-8" data-path="finger-upper-8" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="8" transform="translate(305.05,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-8</title>
+    <rect id="finger-upper-8--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-8/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-8--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-8/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-8--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-8/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-8--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-8--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-8--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-8--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-9" data-path="finger-upper-9" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="9" transform="translate(347.55,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-9</title>
+    <rect id="finger-upper-9--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-9/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-9--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-9/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-9--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-9/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-9--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-9--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-9--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-9--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-10" data-path="finger-upper-10" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="10" transform="translate(390.05,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-10</title>
+    <rect id="finger-upper-10--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-upper-10/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-10--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-10/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-10--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-upper-10/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-10--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-10--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-10--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-10--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-upper-11" data-path="finger-upper-11" data-class="mechanical" data-ref="belden/bhh-finger-end@1:1.0.0" data-material="Plastic" data-rel-pos="11" transform="translate(432.55,0.0) rotate(180 12.75 5.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-upper-11</title>
+    <rect id="finger-upper-11--root" x="0" y="0" width="25.5" height="10" fill="#34383c" data-path="finger-upper-11/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-upper-11--stem" x="0" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-upper-11/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-upper-11--tip" x="0" y="0" width="11.5" height="10" fill="#454a50" data-path="finger-upper-11/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-upper-11--opening-shade" x="11.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-upper-11--head-lit" x="0" y="0" width="11.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-11--head-rim" x="0.4" y="0.4" width="10.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-1" data-path="finger-lower-1" data-class="mechanical" data-ref="belden/bhh-finger-end@1:1.0.0" data-material="Plastic" data-rel-pos="12" transform="translate(24.55,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-1</title>
+    <rect id="finger-lower-1--root" x="0" y="0" width="25.5" height="10" fill="#34383c" data-path="finger-lower-1/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-1--stem" x="0" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-1/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-1--tip" x="0" y="0" width="11.5" height="10" fill="#454a50" data-path="finger-lower-1/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-1--opening-shade" x="11.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-1--head-lit" x="0" y="0" width="11.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-1--head-rim" x="0.4" y="0.4" width="10.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-2" data-path="finger-lower-2" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="13" transform="translate(50.05,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-2</title>
+    <rect id="finger-lower-2--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-2/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-2--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-2/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-2--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-2/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-2--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-2--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-2--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-2--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-3" data-path="finger-lower-3" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="14" transform="translate(92.55,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-3</title>
+    <rect id="finger-lower-3--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-3/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-3--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-3/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-3--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-3/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-3--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-3--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-3--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-3--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-4" data-path="finger-lower-4" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="15" transform="translate(135.05,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-4</title>
+    <rect id="finger-lower-4--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-4/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-4--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-4/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-4--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-4/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-4--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-4--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-4--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-4--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-5" data-path="finger-lower-5" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="16" transform="translate(177.55,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-5</title>
+    <rect id="finger-lower-5--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-5/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-5--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-5/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-5--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-5/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-5--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-5--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-5--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-5--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-6" data-path="finger-lower-6" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="17" transform="translate(220.05,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-6</title>
+    <rect id="finger-lower-6--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-6/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-6--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-6/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-6--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-6/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-6--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-6--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-6--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-6--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-7" data-path="finger-lower-7" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="18" transform="translate(262.55,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-7</title>
+    <rect id="finger-lower-7--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-7/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-7--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-7/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-7--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-7/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-7--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-7--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-7--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-7--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-8" data-path="finger-lower-8" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="19" transform="translate(305.05,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-8</title>
+    <rect id="finger-lower-8--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-8/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-8--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-8/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-8--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-8/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-8--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-8--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-8--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-8--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-9" data-path="finger-lower-9" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="20" transform="translate(347.55,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-9</title>
+    <rect id="finger-lower-9--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-9/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-9--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-9/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-9--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-9/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-9--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-9--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-9--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-9--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-10" data-path="finger-lower-10" data-class="mechanical" data-ref="belden/bhh-finger@1:1.0.0" data-material="Plastic" data-rel-pos="21" transform="translate(390.05,123.35)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-10</title>
+    <rect id="finger-lower-10--root" x="0" y="0" width="42.5" height="10" fill="#34383c" data-path="finger-lower-10/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-10--stem" x="17" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-10/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-10--tip" x="14" y="0" width="14.5" height="10" fill="#454a50" data-path="finger-lower-10/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-10--opening-shade-left" x="0" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-10--opening-shade-right" x="28.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-10--head-lit" x="14" y="0" width="14.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-10--head-rim" x="14.4" y="0.4" width="13.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="finger-lower-11" data-path="finger-lower-11" data-class="mechanical" data-ref="belden/bhh-finger-end@1:1.0.0" data-material="Plastic" data-rel-pos="22" transform="translate(432.55,123.35) rotate(180 12.75 5.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of molded fingers, eleven a row, upper row first" data-z-lift="-181.9" data-in="base" data-under="cover">
+    <title>finger-lower-11</title>
+    <rect id="finger-lower-11--root" x="0" y="0" width="25.5" height="10" fill="#34383c" data-path="finger-lower-11/root" data-class="bezel" data-z-out="-165.9" data-z-color="#34383c" />
+    <rect id="finger-lower-11--stem" x="0" y="0" width="8.5" height="10" fill="#383c41" data-path="finger-lower-11/stem" data-class="bezel" data-z-out="-21.9" data-z-color="#383c41" />
+    <rect id="finger-lower-11--tip" x="0" y="0" width="11.5" height="10" fill="#454a50" data-path="finger-lower-11/tip" data-class="bezel" data-z-out="-13.9" data-z-lift="160.0" data-z-color="#454a50" />
+    <rect id="finger-lower-11--opening-shade" x="11.5" y="0" width="14" height="10" fill="#000" fill-opacity="0.35" />
+    <rect id="finger-lower-11--head-lit" x="0" y="0" width="11.5" height="10" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-11--head-rim" x="0.4" y="0.4" width="10.7" height="9.2" rx="0.8" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+  </g>
+  <g id="cover" data-path="cover" data-class="mechanical" data-behaviour="mounts" data-ref="belden/bhh-cover-3u@1:1.0.0" data-material="Steel" data-rel-pos="1" transform="translate(16.3,0.0)" data-group="cover" data-group-role="furniture" data-description="the hinging cover over the finger heads, shipped fitted" data-z-lift="-181.9" data-in="base">
+    <title>cover</title>
+    <rect id="cover--plate" x="0" y="0" width="450" height="133.35" rx="0.8" fill="#4a4f55" data-path="cover/plate" data-class="bezel" data-z-out="0" data-z-lift="179.9" data-z-color="#4a4f55" />
+    <rect id="cover--ridge-lit" x="0" y="70.5" width="450" height="1" fill="#fff" fill-opacity="0.3" />
+    <rect id="cover--ridge-shade" x="0" y="71.5" width="450" height="1" fill="#000" fill-opacity="0.3" />
+    <rect id="cover--lip-top" x="0" y="0" width="450" height="1.5" fill="#565b61" data-path="cover/lip-top" data-class="bezel" data-z-out="0" data-z-lift="168.0" data-z-color="#565b61" />
+    <rect id="cover--lip-bottom" x="0" y="131.85" width="450" height="1.5" fill="#3a3e43" data-path="cover/lip-bottom" data-class="bezel" data-z-out="0" data-z-lift="168.0" data-z-color="#3a3e43" />
+  </g>
+</svg>

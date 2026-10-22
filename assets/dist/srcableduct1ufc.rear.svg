@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="494.79mm" height="55.12mm" viewBox="0 0 494.79 55.12" data-device="srcableduct1ufc" data-view="rear" data-shell="sheet" data-weight-kg="0.68" data-material="High-visibility yellow steel" data-color="Yellow" data-mounting-hardware="included" data-cable-media="fiber, copper and coax" data-product-compliance="RoHS">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton SRCABLEDUCT1UFC","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"1982759cf785cab2053a8a0a645cdda8e6965e77adbfe8b84332d9264afbbf20","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="SRCABLEDUCT1UFC" data-sku="SRCABLEDUCT1UFC" data-part-number="" x="0" y="0" width="494.79" height="55.12" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="back-top" data-kind="base" x="0" y="0" width="494.79" height="16.56" rx="0.6" fill="#f2c200" />
+    <rect id="back-bottom" data-kind="base" x="0" y="38.56" width="494.79" height="16.56" rx="0.6" fill="#f2c200" />
+    <rect id="back-left" data-kind="base" x="0" y="16.56" width="62.3" height="22" rx="0.6" fill="#f2c200" />
+    <rect id="back-middle" data-kind="base" x="185" y="16.56" width="124.8" height="22" rx="0.6" fill="#f2c200" />
+    <rect id="back-right" data-kind="base" x="432.5" y="16.56" width="62.29" height="22" rx="0.6" fill="#f2c200" />
+    <rect id="ear-slot-1" data-kind="ear-slot" x="8.9" y="8.56" width="12" height="6" rx="3" fill="#14161a" />
+    <rect id="ear-slot-2" data-kind="ear-slot" x="8.9" y="40.56" width="12" height="6" rx="3" fill="#14161a" />
+    <rect id="ear-slot-3" data-kind="ear-slot" x="473.89" y="8.56" width="12" height="6" rx="3" fill="#14161a" />
+    <rect id="ear-slot-4" data-kind="ear-slot" x="473.89" y="40.56" width="12" height="6" rx="3" fill="#14161a" />
+    <rect id="plate-outline" data-kind="outline" x="0" y="0" width="494.79" height="55.12" rx="3" fill="none" stroke="#947600" stroke-width="0.4" />
+    <rect id="window-1-outline" data-kind="outline" x="62.3" y="16.56" width="122.7" height="22" rx="3" fill="none" stroke="#947600" stroke-width="0.4" />
+    <rect id="window-2-outline" data-kind="outline" x="309.8" y="16.56" width="122.7" height="22" rx="3" fill="none" stroke="#947600" stroke-width="0.4" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <rect id="pass--rear-window-1" data-class="pass" data-pass="rear-window-1" data-pass-shape="rect" data-pass-cover="open" x="62.3" y="16.56" width="122.7" height="22" fill="none" stroke="none" />
+    <rect id="pass--rear-window-2" data-class="pass" data-pass="rear-window-2" data-pass-shape="rect" data-pass-cover="open" x="309.8" y="16.56" width="122.7" height="22" fill="none" stroke="none" />
+  </g>
+</svg>
