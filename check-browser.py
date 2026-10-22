@@ -14753,10 +14753,19 @@ def check_rack_import_keeps_library(page, base):
     # so the edit and the switch are fired from a single page.evaluate (no
     # round trip between them) to make the race deterministic rather than
     # dependent on how long Playwright's own IPC happens to take.
+    # THE BUTTON TO WAIT FOR IS THE ONE THE OPENING DRAWS. The page drew the list
+    # once at boot, so a button.rk-current is already there before the menu opens;
+    # opening the menu draws it again, which empties #libItems down to its actions
+    # until the racks are read and the list is appended. A wait for "a current
+    # button" that was satisfied by the boot's passed at once, and the click below
+    # then found the list mid-redraw: null, in about one run in ten, on main as on
+    # any head. So remember the boot's button, and wait for a different one.
+    page.evaluate("() => { window.__bootCurrent = document.querySelector('#libItems button.rk-current'); }")
     page.click("#libMenu summary")   # renders #libItems, including the current-rack button, ahead of time
     # A synchronous predicate: the library list redraws asynchronously, and the click below
     # is in the same page task as the edit, with no room to wait for the row there.
-    page.wait_for_function("() => !!document.querySelector('#libItems button.rk-current')", timeout=READY_MS)
+    page.wait_for_function("""() => { const b = document.querySelector('#libItems button.rk-current');
+      return !!b && b !== window.__bootCurrent; }""", timeout=READY_MS)
     page.evaluate("""() => {
       const h = document.getElementById('fHeight');
       h.value = '30';
