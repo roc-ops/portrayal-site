@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="74.0mm" height="23.5mm" viewBox="0 0 74.0 23.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex4400-em-4s" data-path="ex4400-em-4s" data-class="line-card" data-behaviour="fills" data-ref="juniper/ex4400-em-4s@1:1.0.0" data-first-junos-release="21.1R1" data-model="EX4400-EM-4S" data-ports-note="four SFP+ ports at 10 Gbps by default, or 1 Gbps with a CLI setting for all four" data-sfp-plus="4" data-weight-kg="0.09" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ex4400-em-4s</title>
+    <defs>
+      <pattern id="ex4400-em-4s--hex" width="3.9" height="2.25" patternUnits="userSpaceOnUse">
+        <polygon points="0.4,1.125 0.95,0.2 1.95,0.2 2.5,1.125 1.95,2.05 0.95,2.05" fill="none" stroke="#3a3c3f" stroke-width="0.25" />
+      </pattern>
+    </defs>
+    <rect id="ex4400-em-4s--face" x="0" y="0" width="74.0" height="23.5" rx="2.0" fill="#5d5f62" stroke="#3f4144" stroke-width="0.4" />
+    <rect x="1.0" y="1.0" width="72.0" height="21.5" rx="1.6" fill="none" stroke="#4a4c4f" stroke-width="0.3" />
+    <rect x="9.0" y="1.2" width="56.0" height="3.0" fill="url(#ex4400-em-4s--hex)" />
+    <g id="ex4400-em-4s--ring-holes" fill="#2a2c2e" stroke="#7a7e83" stroke-width="0.3">
+      <circle cx="3.0" cy="12.8" r="1.1" />
+      <circle cx="3.0" cy="18.6" r="1.1" />
+      <circle cx="71.0" cy="12.8" r="1.1" />
+      <circle cx="71.0" cy="18.6" r="1.1" />
+    </g>
+    <g id="ex4400-em-4s--silkscreen" font-family="Arial" font-size="1.8" fill="#e6e8ea" text-anchor="middle">
+      <text x="15.53" y="20.7">0</text>
+      <text x="29.78" y="20.7">1</text>
+      <text x="44.03" y="20.7">2</text>
+      <text x="58.28" y="20.7">3</text>
+    </g>
+    <g id="ex4400-em-4s--screw-left" data-path="ex4400-em-4s/screw-left" data-class="screw" data-z-cyl="1.5">
+      <circle cx="4.4" cy="6.0" r="2.9" fill="#d6d8db" stroke="#8d9196" stroke-width="0.35" />
+      <path d="M 2.9 6.0 H 5.9 M 4.4 4.5 V 7.5" stroke="#7a7e83" stroke-width="0.6" fill="none" />
+    </g>
+    <g id="ex4400-em-4s--screw-right" data-path="ex4400-em-4s/screw-right" data-class="screw" data-z-cyl="1.5">
+      <circle cx="69.6" cy="6.0" r="2.9" fill="#d6d8db" stroke="#8d9196" stroke-width="0.35" />
+      <path d="M 68.1 6.0 H 71.1 M 69.6 4.5 V 7.5" stroke="#7a7e83" stroke-width="0.6" fill="none" />
+    </g>
+    <g id="ex4400-em-4s--port-0" data-path="ex4400-em-4s/port-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(8.4,8.35)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4400-em-4s--port-0</title>
+      <rect id="ex4400-em-4s--port-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4400-em-4s/port-0/opening" data-class="cutout" />
+      <rect id="ex4400-em-4s--port-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4400-em-4s--port-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4400-em-4s--port-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4400-em-4s--port-1" data-path="ex4400-em-4s/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(22.65,8.35)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4400-em-4s--port-1</title>
+      <rect id="ex4400-em-4s--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4400-em-4s/port-1/opening" data-class="cutout" />
+      <rect id="ex4400-em-4s--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4400-em-4s--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4400-em-4s--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4400-em-4s--port-2" data-path="ex4400-em-4s/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(36.9,8.35)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4400-em-4s--port-2</title>
+      <rect id="ex4400-em-4s--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4400-em-4s/port-2/opening" data-class="cutout" />
+      <rect id="ex4400-em-4s--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4400-em-4s--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4400-em-4s--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4400-em-4s--port-3" data-path="ex4400-em-4s/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(51.15,8.35)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4400-em-4s--port-3</title>
+      <rect id="ex4400-em-4s--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4400-em-4s/port-3/opening" data-class="cutout" />
+      <rect id="ex4400-em-4s--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4400-em-4s--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4400-em-4s--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4400-em-4s--led-0-link" data-path="ex4400-em-4s/led-0-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(11.4,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-0-link</title>
+      <circle id="ex4400-em-4s--led-0-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-0-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-0-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-0-status" data-path="ex4400-em-4s/led-0-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(17.7,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-0-status</title>
+      <circle id="ex4400-em-4s--led-0-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-0-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-0-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-1-link" data-path="ex4400-em-4s/led-1-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(25.6,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-1-link</title>
+      <circle id="ex4400-em-4s--led-1-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-1-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-1-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-1-status" data-path="ex4400-em-4s/led-1-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(31.9,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-1-status</title>
+      <circle id="ex4400-em-4s--led-1-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-1-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-1-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-2-link" data-path="ex4400-em-4s/led-2-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(39.9,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-2-link</title>
+      <circle id="ex4400-em-4s--led-2-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-2-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-2-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-2-status" data-path="ex4400-em-4s/led-2-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(46.2,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-2-status</title>
+      <circle id="ex4400-em-4s--led-2-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-2-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-2-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-3-link" data-path="ex4400-em-4s/led-3-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(54.1,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-3-link</title>
+      <circle id="ex4400-em-4s--led-3-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-3-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-3-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4400-em-4s--led-3-status" data-path="ex4400-em-4s/led-3-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(60.4,5.6)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port - link activity at the left, status at the right. Numbered in printed order, left to right">
+      <title>ex4400-em-4s--led-3-status</title>
+      <circle id="ex4400-em-4s--led-3-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4400-em-4s--led-3-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4400-em-4s/led-3-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

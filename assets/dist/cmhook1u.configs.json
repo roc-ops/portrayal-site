@@ -1,0 +1,192 @@
+{
+ "aliases": [],
+ "attrs": {
+  "features": {
+   "racks": "2-post and 4-post racks, 10 in and 19 in (datasheet)",
+   "standards": "EIA/ECA-310-E"
+  },
+  "physical": {
+   "color": "Black",
+   "material": "Steel",
+   "weight-kg": 0.078
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [
+   "specified"
+  ],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 101.3,
+  "h": 44.6,
+  "mount": "rack-face",
+  "power": null,
+  "ru": 1,
+  "shell": "sheet",
+  "thickness": 2.3,
+  "w": 57.0
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The hook as StarTech.com ships CMHOOK1U.",
+   "files": {
+    "bottom": "cmhook1u.base.bottom.svg",
+    "front": "cmhook1u.base.front.svg",
+    "left": "cmhook1u.base.left.svg",
+    "rear": "cmhook1u.base.rear.svg",
+    "right": "cmhook1u.base.right.svg",
+    "top": "cmhook1u.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "cmhook1u",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet and the drawing state no cable capacity, no fill and no cable count.",
+   "scope": [],
+   "wanted": "a cable capacity table, or a stated fill, for the hook",
+   "what": "cable-capacity"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the 8.0 gap in the far end of the loop is the \"wide front opening for quick cable insertion\", drawn in the relief; the format's ring `slit` is a range of height along a leg and cannot state a gap across the far bar, so the ring is declared with its clear opening and no slit, and a route is not told the loop can be entered through its end.",
+   "scope": [
+    "front",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a format key for a gap in a ring's far end, or a route kit that reads the opening",
+   "what": "hook-opening"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CMHOOK1U",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "pdu-class": null,
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - the material (steel), colour, the standard (EIA/ECA-310-E) and the racks it fits (2-post and 4-post, 10 in and 19 in) are the datasheet's; the 2-year warranty is its text."
+  },
+  "capacity": {
+   "confidence": "estimated",
+   "note": "no document states a cable capacity: the datasheet and the drawing are silent, so none is stated and a gap says so."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - 57.0 x 44.6 x 101.3: the ring's width across the rail, the plate's height and the projection from the rail's face. The datasheet's \"Length\" is the 101.3 and its \"Width\" the 57.0."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Color: Black\". The drawing is line work, so the shades are this library's render of black steel, the ring a little lighter than the plate."
+  },
+  "front": {
+   "confidence": "drawing",
+   "note": "drawing - the front view: the loop's far end, 10.0 high, in two pieces with the 8.0 opening between them in the middle of its 57.0, and the plate behind it, 19.0 wide, with its two slots."
+  },
+  "hand": {
+   "confidence": "drawing",
+   "note": "drawing - the front view draws the plate 6.1 mm in from the ring's right end, so the loop stands mostly to the left of the plate, 38 mm past its inner edge. The drawing does not say which rail it is drawn for. The hook is drawn as that view draws it, with the plate on the right, which is how a part stands on the left rail (as `fs/cmv-5u3w` is drawn); on the right rail the kit turns it end over end (kit/rack/solids.js and route.js mirror a narrow rack-face part there). The drawing does not say whether the loop stands inboard or outboard of the rail."
+  },
+  "left": {
+   "confidence": "drawing",
+   "note": "drawing - the side view: the plate and the loop's 10.0 high band standing out of it. The right is the same, turned round."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE MAKER'S OWN DRAWING. StarTech.com publishes CMHOOK1U_Diagram.pdf (third angle projection, millimetres, 6/15/2022): a plan, a side view, a front view and an isometric, with the dimensions 101.3, 57.0, 8.0, 3.2, 2.3, 44.6, 10.0, 32.0, 19.0, 15.8 and \"2-phi6.0x12.0\". The datasheet (cmhook1u_datasheet.pdf) lists \"Product Length 4.0 in [10.1 cm]\", \"Product Width 2.2 in [57.0 mm]\", \"Product Height 1.8 in [44.6 mm]\", \"Internal Width 2.0 in [50.6 mm]\" and \"Internal Depth 3.6 in [92.6 mm]\"; the drawing's figures agree. Every figure here is a dimension of the drawing, bar the plate's place under the ring, which is the 15.8 from the ring's end to the slots' middle."
+  },
+  "mount": {
+   "confidence": "drawing",
+   "note": "drawing - `rack-face`. The datasheet says the hook \"mounts vertically to 2-post and 4-post racks and supports both 10-inch and 19-inch rack systems\", and the drawing's plate is a 44.6 mm strip (\"1.0 U\") with two slots 32.0 apart, the spacing of two rack holes in one unit. It bolts to the face of one rail at a rack unit, stands out of it, and is narrower than the opening, so a lab places it with a `side` (docs/vertical-cable-managers-design.md section 3.4); a hook on each rail of one unit do not conflict. `ru: 1` is the unit its 44.6 spans."
+  },
+  "rear": {
+   "confidence": "drawing",
+   "note": "drawing - the back of the plate, the face that lies on the rail, with the two slots, and the loop's closed end showing past it."
+  },
+  "rings": {
+   "confidence": "drawing",
+   "note": "drawing - the loop is the ring: a component with a `ring` guide whose opening is the datasheet's 50.6 by 92.6 (see its contract), cables passing up and down the rail through it."
+  },
+  "thickness": {
+   "confidence": "drawing",
+   "note": "drawing - 2.3, the plate on the side view; the ring's wall is 3.2 on the plan."
+  },
+  "top": {
+   "confidence": "drawing",
+   "note": "drawing - an elevation, rear at the top: the plate 2.3 thick and the loop's outline, a wall 3.2 thick all round, open by 8.0 in the middle of its far end. The bottom is the same."
+  },
+  "weight": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"Weight of Product 2.8 oz [78.0 g]\" (cmhook1u_datasheet.pdf)."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

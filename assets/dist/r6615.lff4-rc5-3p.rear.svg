@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="434.0mm" height="42.8mm" viewBox="0 0 434.0 42.8" data-device="r6615" data-view="rear" data-ru="1" data-weight-max-kg="20.2" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-dell-psu-1400w-ac-60mm-mismatch {
+      0%, 3.9% { opacity: 1; fill: #22c55e; }
+      4%, 7.9% { opacity: 0; }
+      8%, 11.9% { opacity: 1; fill: #22c55e; }
+      12%, 15.9% { opacity: 0; }
+      16%, 19.9% { opacity: 1; fill: #22c55e; }
+      20%, 23.9% { opacity: 0; }
+      24%, 27.9% { opacity: 1; fill: #22c55e; }
+      28%, 31.9% { opacity: 0; }
+      32%, 35.9% { opacity: 1; fill: #22c55e; }
+      36%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-mismatch { animation: portrayal-seq-dell-psu-1400w-ac-60mm-mismatch 3.125s steps(1, end) infinite; }
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-updating { --led-color: #22c55e; }
+    g[data-ref^='dell/psu-1400w-ac-60mm@'] .state-updating { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/system-id-button-14g@'] .state-identify { --led-color: #2563eb; }
+</style>
+  <metadata>{"device":"Dell PowerEdge R6615","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/rj45-ganged-eth@1":"1.2.0","common/vga-receptacle@1":"1.1.0","dell/boss-n1-blank-1u@1":"1.0.0","dell/lom-2x1g-16g@1":"1.0.0","dell/ocp3-blank-16g@1":"1.0.0","dell/pcie-filler-lp-16g@1":"1.0.1","dell/psu-1400w-ac-60mm@1":"1.1.0","dell/r6615-riser-2-blank@1":"1.0.0","dell/r6615-riser-3p@1":"1.0.0","dell/rear-io-board-16g@1":"1.0.0","dell/riser-3-lp-gen5-cage-16g@1":"1.0.0","dell/system-id-button-14g@1":"1.0.1","std/c14-inlet@1":"1.4.0","std/rj45-ganged@2":"2.1.0","std/usb-a@1":"1.3.0","std/vga@1":"1.1.0"},"source-sha256":"d0bffbe4ca9a61ce943f7502bf4b13602ff41da99dc8b2fed7e014c194adc45a","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PowerEdge R6615" x="0" y="0" width="434" height="42.8" rx="1.2" fill="#2f3439" stroke="#1d2125" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="434" height="42.8" rx="0.6" fill="#c3c8cd" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="346.59" y="26.42" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="346.59" y="31.91" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-2" data-kind="vent-field" data-aperture="air" x="346.59" y="37.4" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-3" data-kind="vent-field" data-aperture="air" x="352.12" y="31.91" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-4" data-kind="vent-field" data-aperture="air" x="352.12" y="37.4" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-5" data-kind="vent-field" data-aperture="air" x="357.65" y="31.91" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-6" data-kind="vent-field" data-aperture="air" x="99.01" y="26.42" width="1.62" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-7" data-kind="vent-field" data-aperture="air" x="99.01" y="31.91" width="1.62" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-8" data-kind="vent-field" data-aperture="air" x="102.38" y="26.42" width="1.62" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-9" data-kind="vent-field" data-aperture="air" x="102.38" y="31.91" width="1.62" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-10" data-kind="vent-field" data-aperture="air" x="157.78" y="26.42" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-11" data-kind="vent-field" data-aperture="air" x="157.78" y="31.91" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-12" data-kind="vent-field" data-aperture="air" x="242.09" y="26.42" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-13" data-kind="vent-field" data-aperture="air" x="242.09" y="31.91" width="3.78" height="3.75" rx="0.6" fill="#16191c" data-vent="1" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 0 H 2.63 V 2.63 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(96.98 36.62)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(96.98 36.62)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="100.94" y="39.2" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M 1.2 0 H 2.0 V 0.6 H 1.2 Z M 1.6 0.6 V 1.0 M 0.4 1.0 H 2.8 M 0.4 1.0 V 1.4 M 2.8 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.39 1.4 H 3.19 V 2.0 H 2.39 Z" fill="none" stroke="#2b2f33" stroke-width="0.18" stroke-linecap="round" stroke-linejoin="round" transform="translate(105.12 36.93)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom" />
+    <path d="M 0 0 L 1.17 0.67 L 0 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(108.4 34.21)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom" />
+    <text x="109.32" y="39.2" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom">1</text>
+    <path d="M 1.2 0 H 2.0 V 0.6 H 1.2 Z M 1.6 0.6 V 1.0 M 0.4 1.0 H 2.8 M 0.4 1.0 V 1.4 M 2.8 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.39 1.4 H 3.19 V 2.0 H 2.39 Z" fill="none" stroke="#2b2f33" stroke-width="0.18" stroke-linecap="round" stroke-linejoin="round" transform="translate(153.86 36.93)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom" />
+    <path d="M 1.21 0 L 0 0.69 L 1.21 1.38 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(154.17 34.21)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom" />
+    <text x="158.95" y="39.2" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lom">2</text>
+    <path d="M 0 0 H 2.63 V 2.63 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(358.03 36.6)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(358.03 36.6)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <text x="362.6" y="39.2" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+  </g>
+  <g id="boss" data-path="boss" data-class="bay" data-group="boss" data-group-role="service" data-rel-pos="1">
+    <title>boss</title>
+    <rect id="boss--opening" x="0.85" y="2.2" width="29.9" height="38.9" fill="#101214" />
+    <g id="boss--module" data-path="boss/module" data-class="blank" data-behaviour="fills" data-ref="dell/boss-n1-blank-1u@1:1.0.0" transform="translate(15.8,21.65) translate(-12.425,-19.22)">
+      <title>boss--module</title>
+      <rect id="boss--module--plate" x="0.15" y="0.15" width="24.55" height="38.14" rx="0.8" fill="#dfe2e5" stroke="#9aa1a8" stroke-width="0.3" />
+      <g id="boss--module--vents">
+        <rect x="2.25" y="3.55" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="2.25" y="9.06" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="2.25" y="14.59" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="2.25" y="20.12" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="2.25" y="25.63" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="2.25" y="31.16" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="3.55" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="9.06" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="14.59" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="20.12" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="25.63" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="7.75" y="31.16" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="3.55" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="9.06" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="14.59" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="20.12" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="25.63" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="13.28" y="31.16" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="3.55" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="9.06" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="14.59" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="20.12" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="25.63" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+        <rect x="18.79" y="31.16" width="3.82" height="3.82" rx="0.5" fill="#1b1e21" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="33.06" y="1.75" width="59.8" height="40.1" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="dell/psu-1400w-ac-60mm@1:1.1.0" data-body-depth="222.0" data-wall="#3a4045" data-form-factor="60mm" data-inlet="c14" data-input="mixed-mode" data-power-output-w="1400" transform="translate(62.96,21.8) translate(-29.9,-20.05)">
+      <title>psu-1--module</title>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(26.1,11.2) rotate(270 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <path id="psu-1--module--body" fill-rule="evenodd" d="M0.2 1.0 a0.8 0.8 0 0 1 0.8 -0.8 h57.80 a0.8 0.8 0 0 1 0.8 0.8 v38.10 a0.8 0.8 0 0 1 -0.8 0.8 h-57.80 a0.8 0.8 0 0 1 -0.8 -0.8 Z M33.10 7.20 h14.00 a3 3 0 0 1 3 3 v22.00 a3 3 0 0 1 -3 3 h-14.00 a3 3 0 0 1 -3 -3 v-22.00 a3 3 0 0 1 3 -3 Z" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <g id="psu-1--module--vents">
+        <rect x="1.07" y="3.96" width="1.47" height="2.75" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="8.29" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="13.76" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="19.29" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="35.77" width="1.47" height="2.47" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="35.77" width="1.47" height="2.14" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="35.77" width="1.47" height="2.14" rx="0.35" fill="#1b1e21" />
+        <rect x="18.47" y="4.85" width="3.69" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="8.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="13.76" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="19.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="24.78" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="30.28" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="35.77" width="3.69" height="1.81" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="4.85" width="3.69" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="8.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="13.76" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="19.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="24.78" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="30.28" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="35.77" width="3.69" height="1.81" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="4.85" width="3.74" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="8.29" width="3.74" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="30.28" width="3.74" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="35.77" width="3.74" height="1.81" rx="0.6" fill="#1b1e21" />
+      </g>
+      <rect x="54.97" y="14.95" width="4.05" height="0.60" fill="#1b1e21" />
+      <rect x="54.97" y="26.93" width="4.05" height="0.60" fill="#1b1e21" />
+      <path id="psu-1--module--inlet-bezel" fill-rule="evenodd" d="M28.6 7.3 a1.5 1.5 0 0 1 1.5 -1.5 h21.0 a1.5 1.5 0 0 1 1.5 1.5 v28.0 a1.5 1.5 0 0 1 -1.5 1.5 h-21.0 a1.5 1.5 0 0 1 -1.5 -1.5 Z M33.10 7.20 h14.00 a3 3 0 0 1 3 3 v22.00 a3 3 0 0 1 -3 3 h-14.00 a3 3 0 0 1 -3 -3 v-22.00 a3 3 0 0 1 3 -3 Z" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-1/module/inlet-bezel" data-class="inlet" data-description="the recess the C14 sits in. The connector is std/c14-inlet@1, composed." />
+      <path d="M2.9 4.5 h7.2 v17.9 l-1.0 0.9 h-6.2 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-1--module--label" x="3.69" y="5.26" width="5.80" height="16.20" rx="0.3" fill="#1d2023" data-path="psu-1/module/label" data-class="label" data-description="the wattage label on the handle's left, printed downwards" />
+      <rect x="11.9" y="7.0" width="3.6" height="27.8" rx="1.6" fill="#ffffff" fill-opacity="0.45" />
+      <g id="psu-1--module--silkscreen">
+        <text id="psu-1--module--watts" data-from="watts" x="5.39" y="13.36" transform="rotate(90 5.39 13.36)" font-family="sans-serif" font-size="3.4" font-weight="bold" fill="#f2f4f6" text-anchor="middle">1400W</text>
+      </g>
+      <path id="psu-1--module--grip" d="M11.0 3.9 h5.4 l1.0 1.0 v32.0 l-1.0 1.0 h-5.4 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" data-path="psu-1/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. ISM table 136: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power connected; blinking green - firmware is being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="35.7" data-z-color="#e9ecef" />
+      <rect id="psu-1--module--latch" x="49.0" y="13.2" width="5.1" height="14.8" rx="0.6" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-1/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="367.91" y="1.75" width="59.8" height="40.1" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="dell/psu-1400w-ac-60mm@1:1.1.0" data-body-depth="222.0" data-wall="#3a4045" data-form-factor="60mm" data-inlet="c14" data-input="mixed-mode" data-power-output-w="1400" transform="translate(397.81,21.8) translate(-29.9,-20.05)">
+      <title>psu-2--module</title>
+      <g id="psu-2--module--inlet" data-path="psu-2/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(26.1,11.2) rotate(270 14.0 10.0)">
+        <title>psu-2--module--inlet</title>
+        <rect id="psu-2--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-2/module/inlet/opening" data-class="cutout" />
+        <path id="psu-2--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-2--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <path id="psu-2--module--body" fill-rule="evenodd" d="M0.2 1.0 a0.8 0.8 0 0 1 0.8 -0.8 h57.80 a0.8 0.8 0 0 1 0.8 0.8 v38.10 a0.8 0.8 0 0 1 -0.8 0.8 h-57.80 a0.8 0.8 0 0 1 -0.8 -0.8 Z M33.10 7.20 h14.00 a3 3 0 0 1 3 3 v22.00 a3 3 0 0 1 -3 3 h-14.00 a3 3 0 0 1 -3 -3 v-22.00 a3 3 0 0 1 3 -3 Z" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <g id="psu-2--module--vents">
+        <rect x="1.07" y="3.96" width="1.47" height="2.75" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="8.29" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="13.76" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="19.29" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="1.07" y="35.77" width="1.47" height="2.47" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="3.74" y="35.77" width="1.47" height="2.14" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="24.78" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="30.28" width="1.47" height="3.92" rx="0.35" fill="#1b1e21" />
+        <rect x="6.41" y="35.77" width="1.47" height="2.14" rx="0.35" fill="#1b1e21" />
+        <rect x="18.47" y="4.85" width="3.69" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="8.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="13.76" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="19.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="24.78" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="30.28" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="18.47" y="35.77" width="3.69" height="1.81" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="4.85" width="3.69" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="8.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="13.76" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="19.29" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="24.78" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="30.28" width="3.69" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="23.73" y="35.77" width="3.69" height="1.81" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="4.85" width="3.74" height="1.86" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="8.29" width="3.74" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="30.28" width="3.74" height="3.92" rx="0.6" fill="#1b1e21" />
+        <rect x="52.48" y="35.77" width="3.74" height="1.81" rx="0.6" fill="#1b1e21" />
+      </g>
+      <rect x="54.97" y="14.95" width="4.05" height="0.60" fill="#1b1e21" />
+      <rect x="54.97" y="26.93" width="4.05" height="0.60" fill="#1b1e21" />
+      <path id="psu-2--module--inlet-bezel" fill-rule="evenodd" d="M28.6 7.3 a1.5 1.5 0 0 1 1.5 -1.5 h21.0 a1.5 1.5 0 0 1 1.5 1.5 v28.0 a1.5 1.5 0 0 1 -1.5 1.5 h-21.0 a1.5 1.5 0 0 1 -1.5 -1.5 Z M33.10 7.20 h14.00 a3 3 0 0 1 3 3 v22.00 a3 3 0 0 1 -3 3 h-14.00 a3 3 0 0 1 -3 -3 v-22.00 a3 3 0 0 1 3 -3 Z" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-2/module/inlet-bezel" data-class="inlet" data-description="the recess the C14 sits in. The connector is std/c14-inlet@1, composed." />
+      <path d="M2.9 4.5 h7.2 v17.9 l-1.0 0.9 h-6.2 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-2--module--label" x="3.69" y="5.26" width="5.80" height="16.20" rx="0.3" fill="#1d2023" data-path="psu-2/module/label" data-class="label" data-description="the wattage label on the handle's left, printed downwards" />
+      <rect x="11.9" y="7.0" width="3.6" height="27.8" rx="1.6" fill="#ffffff" fill-opacity="0.45" />
+      <g id="psu-2--module--silkscreen">
+        <text id="psu-2--module--watts" data-from="watts" x="5.39" y="13.36" transform="rotate(90 5.39 13.36)" font-family="sans-serif" font-size="3.4" font-weight="bold" fill="#f2f4f6" text-anchor="middle">1400W</text>
+      </g>
+      <path id="psu-2--module--grip" d="M11.0 3.9 h5.4 l1.0 1.0 v32.0 l-1.0 1.0 h-5.4 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" data-path="psu-2/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. ISM table 136: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power connected; blinking green - firmware is being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="35.7" data-z-color="#e9ecef" />
+      <rect id="psu-2--module--latch" x="49.0" y="13.2" width="5.1" height="14.8" rx="0.6" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-2/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+    </g>
+  </g>
+  <g id="lom" data-path="lom" data-class="bay" data-group="lom-card" data-group-role="service" data-rel-pos="1">
+    <title>lom</title>
+    <rect id="lom--opening" x="110.59" y="24.71" width="42.58" height="15.93" fill="#101214" />
+    <g id="lom--module" data-path="lom/module" data-class="nic" data-behaviour="fills" data-ref="dell/lom-2x1g-16g@1:1.0.0" data-body-depth="117.2" data-media="rj45" data-ports="2" data-power-absent="not-published" transform="translate(131.88,32.675) translate(-21.29,-7.965)">
+      <title>lom--module</title>
+      <rect x="0.15" y="0.15" width="42.28" height="15.63" rx="0.4" fill="#cdd1d5" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="lom--module--port-1" data-path="lom/module/port-1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(3.91,2.36) rotate(180 6.35 5.5)" data-group="ports" data-group-role="traffic" data-description="the two 1 GbE ports, numbered 1 and 2 on the chassis beside them">
+        <title>lom--module--port-1</title>
+        <g id="lom--module--port-1--jack" data-path="lom/module/port-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>lom--module--port-1--jack</title>
+          <path id="lom--module--port-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="lom--module--port-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="lom--module--port-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="lom/module/port-1/jack/opening" data-class="cutout" />
+          <g id="lom--module--port-1--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="lom--module--port-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="lom--module--port-1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lom/module/port-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="lom--module--port-1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lom/module/port-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="lom--module--port-2" data-path="lom/module/port-2" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(25.94,2.36) rotate(180 6.35 5.5)" data-group="ports" data-group-role="traffic" data-description="the two 1 GbE ports, numbered 1 and 2 on the chassis beside them">
+        <title>lom--module--port-2</title>
+        <g id="lom--module--port-2--jack" data-path="lom/module/port-2/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>lom--module--port-2--jack</title>
+          <path id="lom--module--port-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="lom--module--port-2--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="lom--module--port-2--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="lom/module/port-2/jack/opening" data-class="cutout" />
+          <g id="lom--module--port-2--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="lom--module--port-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="lom--module--port-2--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lom/module/port-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="lom--module--port-2--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lom/module/port-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="rio" data-path="rio" data-class="bay" data-group="rear-io" data-group-role="service" data-rel-pos="1">
+    <title>rio</title>
+    <rect id="rio--opening" x="250.5" y="24.71" width="85.37" height="15.93" fill="#101214" />
+    <g id="rio--module" data-path="rio/module" data-class="expansion-card" data-behaviour="fills" data-ref="dell/rear-io-board-16g@1:1.0.0" data-body-depth="121.5" data-power-absent="not-published" transform="translate(293.185,32.675) translate(-42.685,-7.965)">
+      <title>rio--module</title>
+      <rect x="0.15" y="0.15" width="85.07" height="15.63" rx="0.4" fill="#cdd1d5" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="rio--module--silkscreen">
+        <circle cx="11.45" cy="6.74" r="1.45" fill="#2b2f33" />
+        <text x="11.45" y="7.62" font-family="serif" font-size="2.3" font-style="italic" font-weight="bold" fill="#e6e8ea" text-anchor="middle">i</text>
+        <text x="7.62" y="13.97" font-family="sans-serif" font-size="2.5" fill="#2b2f33" text-anchor="middle">iDRAC</text>
+        <path d="M11.56 12.31 L12.82 13.00 L11.56 13.69 Z" fill="#2b2f33" />
+        <g fill="none" stroke="#2b2f33" stroke-width="0.2">
+          <path d="M51.3 3.13 H55.0 M52.4 3.13 L53.1 2.45 H54.0 M52.9 3.13 L53.5 3.8 H54.3" />
+          <path d="M54.05 2.09 H55.04 M54.55 1.60 V2.58" />
+          <path d="M53.6 13.12 H57.0 M54.4 13.12 L55.0 12.45 H55.8 M54.8 13.12 L55.3 13.78 H56.0" />
+          <path d="M79.41 11.90 H82.65 V14.11 H79.41 Z" />
+        </g>
+        <g fill="#2b2f33">
+          <circle cx="51.3" cy="3.13" r="0.5" />
+          <path d="M55.0 2.75 L55.36 3.13 L55.0 3.51 Z" />
+          <rect x="54.2" y="3.55" width="0.5" height="0.5" />
+          <text x="50.77" y="14.10" font-family="sans-serif" font-size="2.3" font-style="italic" font-weight="bold">SS</text>
+          <path d="M57.0 12.74 L57.29 13.12 L57.0 13.50 Z" />
+          <rect x="55.9" y="13.53" width="0.45" height="0.45" />
+          <rect x="78.47" y="11.78" width="0.27" height="2.45" />
+          <rect x="83.28" y="11.78" width="0.27" height="2.45" />
+        </g>
+      </g>
+      <g id="rio--module--system-id" data-path="rio/module/system-id" data-class="button" data-ref="dell/system-id-button-14g@1:1.0.1" transform="translate(2.1,3.19)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, two USB and the VGA">
+        <title>rio--module--system-id</title>
+        <circle id="rio--module--system-id--lamp" cx="3.5" cy="3.5" r="3.2" fill="var(--led-color, #c2c7cc)" stroke="#8d949b" stroke-width="0.45" data-path="rio/module/system-id/lamp" data-class="led" data-states="off identify" data-description="the button's own illumination, lit while system ID is active" />
+      </g>
+      <g id="rio--module--idrac" data-path="rio/module/idrac" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(17.55,2.36) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, two USB and the VGA">
+        <title>rio--module--idrac</title>
+        <g id="rio--module--idrac--jack" data-path="rio/module/idrac/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>rio--module--idrac--jack</title>
+          <path id="rio--module--idrac--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rio--module--idrac--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rio--module--idrac--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="rio/module/idrac/jack/opening" data-class="cutout" />
+          <g id="rio--module--idrac--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="rio--module--idrac--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="rio--module--idrac--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rio/module/idrac/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="rio--module--idrac--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rio/module/idrac/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--usb-1" data-path="rio/module/usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" transform="translate(37.19,2.29)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, two USB and the VGA">
+        <title>rio--module--usb-1</title>
+        <rect id="rio--module--usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="rio/module/usb-1/opening" data-class="cutout" />
+        <rect id="rio--module--usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--usb-2" data-path="rio/module/usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" transform="translate(37.19,10.69)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, two USB and the VGA">
+        <title>rio--module--usb-2</title>
+        <rect id="rio--module--usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="rio/module/usb-2/opening" data-class="cutout" />
+        <rect id="rio--module--usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--video" data-path="rio/module/video" data-class="port" data-ref="common/vga-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(53.5,0.64)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, two USB and the VGA">
+        <title>rio--module--video</title>
+        <g id="rio--module--video--bore-floor">
+          <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+          <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+        </g>
+        <path id="rio--module--video--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+        <g id="rio--module--video--shell" data-path="rio/module/video/shell" data-class="port" data-inner="1" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(5.165,0.55)">
+          <title>rio--module--video--shell</title>
+          <path id="rio--module--video--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="rio/module/video/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+          <g id="rio--module--video--shell--socket-floor">
+            <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+          </g>
+          <path id="rio--module--video--shell--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="6.73" data-z-color="#1f4f9e" data-z-shape="1" />
+          <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="ocp" data-path="ocp" data-class="bay" data-group="ocp" data-group-role="traffic" data-rel-pos="1">
+    <title>ocp</title>
+    <rect id="ocp--opening" x="164.95" y="24.7" width="71.8" height="15.1" fill="#101214" />
+    <g id="ocp--module" data-path="ocp/module" data-class="blank" data-behaviour="fills" data-ref="dell/ocp3-blank-16g@1:1.0.0" transform="translate(200.85,32.25) translate(-35.9,-7.55)">
+      <title>ocp--module</title>
+      <rect id="ocp--module--plate" x="0.15" y="0.15" width="71.5" height="14.8" rx="0.4" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="ocp--module--vents">
+        <rect x="4.66" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="4.66" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="10.14" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="10.14" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="15.62" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="15.62" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="21.10" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="21.10" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="26.58" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="26.58" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="32.06" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="32.06" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="37.54" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="37.54" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="43.02" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="43.02" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="48.50" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="48.50" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="53.98" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="53.98" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="59.46" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="59.46" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="64.94" y="3.46" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+        <rect x="64.94" y="8.91" width="4.0" height="3.97" rx="0.4" fill="#16191c" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-3" data-path="riser-3" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="3">
+    <title>riser-3</title>
+    <rect id="riser-3--opening" x="270.6" y="2.2" width="92" height="19.8" fill="#101214" />
+    <g id="riser-3--module" data-path="riser-3/module" data-class="riser" data-behaviour="fills" data-ref="dell/r6615-riser-3p@1:1.0.0" data-body-depth="219.8" data-appears-in="riser configurations 2 and 5" data-power-absent="not-published" data-riser="3P" data-slot-3="x16, low profile, half length, processor 1, PCIe Gen5" transform="translate(316.6,12.1) translate(-46,-9.9)">
+      <title>riser-3--module</title>
+      <g id="riser-3--module--slot-3" data-path="riser-3/module/slot-3" data-class="bay">
+        <rect id="riser-3--module--slot-3--opening" x="-2.10" y="1.92" width="79.20" height="18.42" fill="none" stroke="none" />
+        <g id="riser-3--module--slot-3--module" data-path="riser-3/module/slot-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(-2.1,1.92)">
+          <title>riser-3--module--slot-3--module</title>
+          <path id="riser-3--module--slot-3--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+          <g id="riser-3--module--slot-3--module--vents">
+            <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          </g>
+        </g>
+      </g>
+      <g id="riser-3--module--plate" data-path="riser-3/module/plate" data-class="riser" data-ref="dell/riser-3-lp-gen5-cage-16g@1:1.0.0" data-power-absent="not-applicable" transform="translate(0,0)">
+        <title>riser-3--module--plate</title>
+        <g id="riser-3--module--plate--plate" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+          <path fill-rule="evenodd" d="M0.30 0.30 H91.70 V19.50 H0.30 Z M9.75 1.92 H68.43 V19.50 H9.75 Z" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect x="79.00" y="0.60" width="9.40" height="19.60" rx="0.3" fill="#5a6066" />
+          <rect x="80.40" y="0.61" width="4.23" height="19.19" rx="0.3" fill="#2b3035" />
+          <g id="riser-3--module--plate--silkscreen">
+            <rect x="9.75" y="0.30" width="58.68" height="1.62" fill="#24282c" />
+            <polygon points="37.54,0.68 38.84,0.68 38.19,1.48" fill="#e6e8ea" />
+            <text x="39.39" y="1.66" font-family="sans-serif" font-size="1.7" fill="#e6e8ea">3</text>
+            <text x="67.83" y="1.65" font-family="sans-serif" font-size="1.4" fill="#e6e8ea" text-anchor="end">GEN 5</text>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="riser-2-blank" data-path="riser-2-blank" data-class="bay" data-group="riser-blanks" data-group-role="service" data-rel-pos="3">
+    <title>riser-2-blank</title>
+    <rect id="riser-2-blank--opening" x="107" y="2.2" width="163.6" height="19.8" fill="#101214" />
+    <g id="riser-2-blank--module" data-path="riser-2-blank/module" data-class="blank" data-behaviour="fills" data-ref="dell/r6615-riser-2-blank@1:1.0.0" data-power-absent="not-applicable" transform="translate(188.8,12.1) translate(-81.8,-9.9)">
+      <title>riser-2-blank--module</title>
+      <rect id="riser-2-blank--module--plate" x="0.15" y="0.15" width="163.30" height="19.50" rx="0.6" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="riser-2-blank--module--vents">
+        <rect x="4.60" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="10.09" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="15.58" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="21.07" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="26.56" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="32.05" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="37.54" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="43.03" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="48.52" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="54.01" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="59.50" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="64.99" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="70.48" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="75.97" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="81.46" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="86.95" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="92.44" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="97.93" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="103.42" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="108.91" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="114.40" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="119.89" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="125.38" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="130.87" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="136.36" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="141.85" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="147.34" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="152.83" y="12.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      </g>
+    </g>
+  </g>
+</svg>

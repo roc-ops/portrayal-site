@@ -109,13 +109,21 @@
    "note": "HIG section 8 says the designated grounding location 'is located on the side of the router' and shows both locations in Figure 22, but never says which side, and the figure is an unlabelled flank elevation. They are drawn on the RIGHT flank because the front faceplate prints its earth symbol at the right-hand end, which is a reason and not a source. Their positions along the depth ARE measured (Figure 22, anchored on the 302 mm chassis bar).",
    "reason": "vendor-silent",
    "scope": [
-    "ground-1",
-    "ground-2",
-    "ground-3",
-    "ground-4"
+    "ground-screws-1",
+    "ground-screws-2"
    ],
    "wanted": "a photograph of the real unit's flanks, or a figure captioned with the side",
    "what": "grounding-flank"
+  },
+  {
+   "note": "No held document dimensions the grounding holes. The hardware installation guide names the screws (two M4 each) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; Figure 22 reads them 15.8 and 15.7 apart, and each landing is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-screws-1",
+    "ground-screws-2"
+   ],
+   "wanted": "a drawing that dimensions the grounding holes, or the accessory lug's own datasheet",
+   "what": "ground-pair-pitch"
   },
   {
    "note": "The rear face carries two plain plates either side of the fan modules, measured at x 18.1-69.6 and 229.3-280.0 and drawn at 18.6 and 229.3 after the matched-scale comparison. Each is 51.5 mm wide - one fan module - and each lands on the 52.3 mm fan pitch continued outwards, so the rear reads as five fan positions of which three are populated. The vendor says 3 fans and 2+1 redundancy and names no blanking part, so these are drawn as decor rather than as bays with fillers: a bay with no orderable occupant would be a promise the parts list does not make. If they are in fact fan-bay blanks this should become two more bays and a filler component.",
@@ -288,9 +296,13 @@
    "confidence": "drawing",
    "note": "drawing-measured - the earth symbol in a circle printed at (433.1, 22.0), about 4 mm across, at the far right of the faceplate. No connector is there: the bonding points are on a flank (HIG section 8), and this mark is taken as pointing at them. Drawn with common/ground-symbol at its own 6.0 contract size."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "TWO TWO-HOLE LANDINGS, NOT FOUR SCREWS (#918). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws at either of two locations, so each is common/ground-stud-pair-5-8-m4@1, two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. Read from this chassis's own HIG Figure 22 (right flank, chassis bar 768 px for the 302 mm depth): Location-1's holes at 9.4 and 25.2 mm from the front (15.8 apart) and Location-2's at 193.3 and 209.0 (15.7 apart), against about 0.4 mm per pixel of the figure - the 5/8 in. pattern within the reading. Each host is centred on its two holes, at 17.3 and 201.15 mm. The height, 21.8 mm, is the one the four lug placements already had and is not re-measured. AXIS: x = 0 is the FRONT on a right view. Formerly four common/ground-lug@1 placements, ground-1 to ground-4, at x 5.9, 21.7, 189.8 and 205.5 (hole centres 9.4, 25.2, 193.3 and 209.0). The circled earth symbol each lug drew above its hole, 6.6 above the centre, is a silkscreen mark over each hole, the lug's own ring and bars, as the DCS500's plate mark is: a part would sit across the lug's seat."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-1 to ground-4, two holes at each of the two designated locations. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws-1 and ground-screws-2, one pair of holes at each of the two designated locations. The accessory lug is one two-hole lug held by both screws."
   },
   "lane-lamps": {
    "confidence": "drawing",
@@ -387,7 +399,7 @@
    "title": "UfiSpace S9501-18SMT Hardware Installation Guide"
   }
  ],
- "version": "3.0.6",
+ "version": "4.0.0",
  "views": {
   "bottom": {
    "components": {
@@ -2064,59 +2076,31 @@
     "placements": [
      {
       "at": [
-       5.9,
-       12.0
+       5.3625,
+       17.8
       ],
       "attrs": {
        "stud-size": "M4"
       },
-      "description": "HIG Figure 22 Location-1, the forward of the two designated grounding locations - a tapped M4 hole for the accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG, 2 x M4*L8.0 screws and 4 lock washers)",
+      "description": "HIG Figure 22 Location-1, the forward of the two designated grounding locations - two tapped M4 holes, measured 15.8 apart, for the accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG, 2 x M4*L8.0 screws and 4 lock washers): one two-hole landing",
       "group": "grounding",
-      "id": "ground-1",
-      "ref": "common/ground-lug@1",
+      "id": "ground-screws-1",
+      "ref": "common/ground-stud-pair-5-8-m4@1",
       "rel-pos": 2
      },
      {
       "at": [
-       21.7,
-       12.0
+       189.2125,
+       17.8
       ],
       "attrs": {
        "stud-size": "M4"
       },
-      "description": "HIG Figure 22 Location-1, the second of its two tapped holes - measured hole pitch 15.8 mm",
+      "description": "HIG Figure 22 Location-2, the rearward designated grounding location - two tapped M4 holes, measured 15.7 apart: one two-hole landing",
       "group": "grounding",
-      "id": "ground-2",
-      "ref": "common/ground-lug@1",
+      "id": "ground-screws-2",
+      "ref": "common/ground-stud-pair-5-8-m4@1",
       "rel-pos": 3
-     },
-     {
-      "at": [
-       189.8,
-       12.0
-      ],
-      "attrs": {
-       "stud-size": "M4"
-      },
-      "description": "HIG Figure 22 Location-2, the rearward designated grounding location, first tapped hole",
-      "group": "grounding",
-      "id": "ground-3",
-      "ref": "common/ground-lug@1",
-      "rel-pos": 4
-     },
-     {
-      "at": [
-       205.5,
-       12.0
-      ],
-      "attrs": {
-       "stud-size": "M4"
-      },
-      "description": "HIG Figure 22 Location-2, second tapped hole - measured hole pitch 15.7 mm",
-      "group": "grounding",
-      "id": "ground-4",
-      "ref": "common/ground-lug@1",
-      "rel-pos": 5
      }
     ]
    },
@@ -2252,7 +2236,7 @@
       9.5
      ],
      "font-size": 2.4,
-     "for": "ground-1",
+     "for": "ground-screws-1",
      "text": "GND"
     },
     {
@@ -2262,8 +2246,88 @@
       9.5
      ],
      "font-size": 2.4,
-     "for": "ground-3",
+     "for": "ground-screws-2",
      "text": "GND"
+    },
+    {
+     "at": [
+      9.4,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-1",
+     "path": "M -2.7 0 A 2.7 2.7 0 1 0 2.7 0 A 2.7 2.7 0 1 0 -2.7 0",
+     "stroke-width": 0.3
+    },
+    {
+     "at": [
+      9.4,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-1",
+     "path": "M 0 -1.7 L 0 -0.2 M -1.5 -0.2 L 1.5 -0.2 M -1 0.7 L 1 0.7 M -0.5 1.6 L 0.5 1.6",
+     "stroke-width": 0.32
+    },
+    {
+     "at": [
+      25.2,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-1",
+     "path": "M -2.7 0 A 2.7 2.7 0 1 0 2.7 0 A 2.7 2.7 0 1 0 -2.7 0",
+     "stroke-width": 0.3
+    },
+    {
+     "at": [
+      25.2,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-1",
+     "path": "M 0 -1.7 L 0 -0.2 M -1.5 -0.2 L 1.5 -0.2 M -1 0.7 L 1 0.7 M -0.5 1.6 L 0.5 1.6",
+     "stroke-width": 0.32
+    },
+    {
+     "at": [
+      193.3,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-2",
+     "path": "M -2.7 0 A 2.7 2.7 0 1 0 2.7 0 A 2.7 2.7 0 1 0 -2.7 0",
+     "stroke-width": 0.3
+    },
+    {
+     "at": [
+      193.3,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-2",
+     "path": "M 0 -1.7 L 0 -0.2 M -1.5 -0.2 L 1.5 -0.2 M -1 0.7 L 1 0.7 M -0.5 1.6 L 0.5 1.6",
+     "stroke-width": 0.32
+    },
+    {
+     "at": [
+      209.0,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-2",
+     "path": "M -2.7 0 A 2.7 2.7 0 1 0 2.7 0 A 2.7 2.7 0 1 0 -2.7 0",
+     "stroke-width": 0.3
+    },
+    {
+     "at": [
+      209.0,
+      15.2
+     ],
+     "fill": "#c7ccd1",
+     "for": "ground-screws-2",
+     "path": "M 0 -1.7 L 0 -0.2 M -1.5 -0.2 L 1.5 -0.2 M -1 0.7 L 1 0.7 M -0.5 1.6 L 0.5 1.6",
+     "stroke-width": 0.32
     }
    ],
    "size": {

@@ -72,8 +72,8 @@
  "configurations": {
   "ac": {
    "bays": {
-    "pm-0": "cisco/pwr-1p6kw-ac@1",
-    "pm-1": "cisco/pwr-1p6kw-ac@1"
+    "pm-0": "cisco/pwr-1p6kw-ac@2",
+    "pm-1": "cisco/pwr-1p6kw-ac@2"
    },
    "description": "The AC build: two PWR-1.6KW-AC modules, 1+1. Named explicitly even though the base already seats them, so that asking for the AC variant does not mean knowing which flavour the base happens to carry. The module handles both high line (200-240 V) and low line (90-130 V), but swapping between them means pulling the supply out and back in.",
    "kind": "orderable",
@@ -91,8 +91,8 @@
   },
   "dc": {
    "bays": {
-    "pm-0": "cisco/pwr-1p6kw-dc@1",
-    "pm-1": "cisco/pwr-1p6kw-dc@1"
+    "pm-0": "cisco/pwr-1p6kw-dc@2",
+    "pm-1": "cisco/pwr-1p6kw-dc@2"
    },
    "description": "The DC build: two PWR-1.6KW-DC modules at -48 VDC, 1+1. Mixing AC and DC modules in one chassis is not supported, which is why this is a configuration of the whole chassis rather than a choice per bay. The chassis PID is ASR-9902 either way; the supplies are separate line items.",
    "kind": "orderable",
@@ -106,6 +106,17 @@
  "description": "Cisco ASR 9000 Series ASR 9902 Router - a 2 RU fixed-port aggregation services router delivering up to 800 Gbps. Two route processors across the top and the integrated fixed board below them, carrying forty-eight ports in two mirrored slices: eight SFP28, three QSFP28 and one QSFP-DD and twelve SFP+ on each. The rear carries two 1.6 kW power modules at the ends and three fan trays between them, with the power switch on the left panel and the NEBS grounding lug on the right. Airflow is front to back. Nothing seats in the front: the board is part of the chassis and there is no Port Expansion Card bay, which is what separates this from its 3 RU ASR 9903 sibling.",
  "format": 1,
  "gaps": [
+  {
+   "blocks": [],
+   "note": "The PWR-1.6KW supply is 74.94 mm wide in this chassis' rear master and in its two bays, and that is an estimate: the ASR 9903's master reads the same part 74.02 once rescaled, and a search online and in the document set on 2026-10-18 found no source that gives the module's width. Both chassis seat cisco/pwr-1p6kw-ac@2 and cisco/pwr-1p6kw-dc@2 at 74.94. See provenance.supply-width.",
+   "reason": "needs-photo",
+   "scope": [
+    "rear",
+    "power-modules"
+   ],
+   "wanted": "A Cisco site-planning or spares document with a power-module table, or a straight-on rear photograph of an ASR 9902 or ASR 9903 with the supplies seated, resolving at least 2 px/mm across the body.",
+   "what": "supply-width-estimated"
+  },
   {
    "blocks": [],
    "note": "FT0, FT1 and FT2 are printed bottom-to-top on a narrow rail at the left of each tray, and the tray's own drawn plate starts on that rail rather than beside it - the captive screw sits on the same strip. This model draws each tray as a filled rectangle, so the three marks land under their bays and L21 reports them. The marks are kept where the master puts them rather than moved somewhere they would render, because moving them would put ink where the device has none. It is the same defect cisco/asr-9903's fan labels carry and the same fix closes both.",
@@ -307,9 +318,13 @@
    "confidence": "drawing",
    "note": "THE TWO MASTERS CALIBRATE SEPARATELY AND THEY HAD TO BE, because their shape boxes use different conventions: \"ASR-9902 Front\" reads 1.9 x 0.35 in at 1:10, which is 482.60 x 88.90 mm - the 19 in rack face by the 2 RU ALLOCATION - while \"ASR-9902 Rear\" reads 482.60 x 87.38, which is the rack face by the CHASSIS AS BUILT to within a quarter of a millimetre. One stencil, one chassis, two conventions; the metrology note's rule that a master's height must be checked against a document every time is what caught it. Both are uniform enough to measure: x against y comes out 0.24 percent apart on the front and 0.29 on the rear, against 0.66 on the ASR 9001 and 0.06 on the ASR 9904. THE MODEL IS ANCHORED ON THE DATA SHEET BODY on both faces, because the body is what the views are: the front's ink spans 1568.93 x 315.59 art units between the ear folds and the rear's 1562.93 x 309.49, and setting each to 439.74 x 87.63 gives kx/ky of 0.280280/0.277670 and 0.281356/0.283143. THE RULER THAT CONFIRMS IT IS INSIDE THE ARTWORK. The fixed board's twenty SFP-class cage columns sit on a measured 50.85 art-unit pitch, constant to 0.01 over five consecutive gaps; at this scale that is 14.253 mm against SFF-8433's 14.25 for a ganged SFP+ assembly - 0.02 percent, on a dimension that was never an input. The cage bores then come out 9.49 x 3.53 mm and the QSFP bores 18.86 x 8.83, against 9.58 x 3.56 and 19.02 x 8.92 measured the same way on the ASR 9903: the same parts, agreeing to a percent across two chassis."
   },
+  "supply-width": {
+   "confidence": "estimated",
+   "note": "THE POWER MODULE IS 74.94 MM WIDE HERE AND ON THE ASR 9903, AND THAT IS AN ESTIMATE. This chassis' rear master reads the PWR-1.6KW supply 74.94 mm wide in its pm-0 and pm-1 bays, and the bays carry that figure. The ASR 9903's master read the same part 74.69 at its old scale and reads 74.02 once that chassis is rescaled, so the two chassis' drawings differ by 0.92 mm on one part. A search online and in the document set on 2026-10-18 found no source that gives the supply's width, so cisco/pwr-1p6kw-ac@2 and cisco/pwr-1p6kw-dc@2 carry 74.94 marked estimated and both chassis seat them. The bay height here, 40.91, is also not the part's 40.2 (the ASR 9903's reading); that disagreement is open. What would settle the width is a Cisco power-module table or a straight-on rear photograph with the supplies seated."
+  },
   "the-stencil-draws-both-bodies-the-same-width": {
    "confidence": "drawing",
-   "note": "SETTLED BY CISCO'S OWN DIMENSIONED DRAWINGS (#374). The Cisco ASR 9000 Series Fixed-Port Routers Hardware Installation Guide, Site Layout and Equipment Dimensions, Figure 18 dimensions this chassis 17.3 in (439.5 mm) across and Figure 19 the ASR 9903 17.32 in (439.9 mm): the two bodies ARE one width, as the stencil draws them, and it is the ASR 9903 data sheet's 443.86 that is the outlier. This file's 439.74 stands. What follows is the reading that predicted it. WORTH KNOWING BEFORE ANYONE RE-MEASURES EITHER CHASSIS. The ASR 9902 and ASR 9903 front masters draw their chassis bodies 1568.93 and 1569.68 art units wide - the same outline to 0.2 mm - while Cisco publishes 439.74 mm for this chassis and 443.86 for the 9903, which is 4.12 mm apart. Both cannot be right about the drawing. THE SFP RULER SAYS THIS ONE IS THE HONEST FIT. Anchored on 439.74 the cage pitch lands on 14.253 mm against the standard's 14.25; anchored on 443.86 the ASR 9903's equivalent pitch lands on 14.36, which is 0.8 percent over a standard that does not vary. The likeliest reading is that one body outline was drawn for one of the two chassis and reused for the other, and that the ASR 9903's ports are drawn about 0.8 percent wide as a result. NOTHING IS CHANGED ON THE STRENGTH OF THAT HERE. It is a measurement of this master, recorded where it was made; re-reading the ASR 9903 against it is roc-ops/Portrayal#374."
+   "note": "SETTLED BY CISCO'S OWN DIMENSIONED DRAWINGS (#374). The Cisco ASR 9000 Series Fixed-Port Routers Hardware Installation Guide, Site Layout and Equipment Dimensions, Figure 18 dimensions this chassis 17.3 in (439.5 mm) across and Figure 19 the ASR 9903 17.32 in (439.9 mm): the two bodies ARE one width, as the stencil draws them, and it is the ASR 9903 data sheet's 443.86 that is the outlier. This file's 439.74 stands. What follows is the reading that predicted it. WORTH KNOWING BEFORE ANYONE RE-MEASURES EITHER CHASSIS. The ASR 9902 and ASR 9903 front masters draw their chassis bodies 1568.93 and 1569.68 art units wide - the same outline to 0.2 mm - while Cisco publishes 439.74 mm for this chassis and 443.86 for the 9903, which is 4.12 mm apart. Both cannot be right about the drawing. THE SFP RULER SAYS THIS ONE IS THE HONEST FIT. Anchored on 439.74 the cage pitch lands on 14.253 mm against the standard's 14.25; anchored on 443.86 the ASR 9903's equivalent pitch lands on 14.36, which is 0.8 percent over a standard that does not vary. The likeliest reading is that one body outline was drawn for one of the two chassis and reused for the other, and that the ASR 9903's ports are drawn about 0.8 percent wide as a result. THE ASR 9903 WAS THEN RE-READ AGAINST IT (#374): its width is the guide's 439.9 and every x on its two faces was rescaled by 0.99108, which puts the A99-RP-F slots there on a 209.55 mm pitch beside this chassis' 209.58."
   },
   "which-two-are-qsfp-dd": {
    "confidence": "datasheet",
@@ -330,7 +345,7 @@
    "title": "Interface and Hardware Component Configuration Guide for Cisco ASR 9000 Series Routers, IOS XR 24.1.x-24.4.x"
   }
  ],
- "version": "1.0.4",
+ "version": "2.0.0",
  "views": {
   "bottom": {
    "empty": "the bottom carries the feet and the bracket landings and is photographed in no figure. Figure 96, 'Stacking Multiple Cisco ASR 9902 Chassis', is the closest and dimensions nothing. Searched the guide's figure captions, the data sheet and the stencil; nothing elevates this face.",
@@ -3817,14 +3832,14 @@
     "bays": [
      {
       "accepts": [
-       "cisco/pwr-1p6kw-ac@1",
-       "cisco/pwr-1p6kw-dc@1"
+       "cisco/pwr-1p6kw-ac@2",
+       "cisco/pwr-1p6kw-dc@2"
       ],
       "at": [
        4.14,
        44.64
       ],
-      "default": "cisco/pwr-1p6kw-ac@1",
+      "default": "cisco/pwr-1p6kw-ac@2",
       "group": "power-modules",
       "id": "pm-0",
       "rel-pos": 0,
@@ -3835,14 +3850,14 @@
      },
      {
       "accepts": [
-       "cisco/pwr-1p6kw-ac@1",
-       "cisco/pwr-1p6kw-dc@1"
+       "cisco/pwr-1p6kw-ac@2",
+       "cisco/pwr-1p6kw-dc@2"
       ],
       "at": [
        359.53,
        44.64
       ],
-      "default": "cisco/pwr-1p6kw-ac@1",
+      "default": "cisco/pwr-1p6kw-ac@2",
       "group": "power-modules",
       "id": "pm-1",
       "rel-pos": 1,

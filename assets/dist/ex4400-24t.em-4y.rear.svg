@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.7mm" height="43.7mm" viewBox="0 0 441.7 43.7" data-device="ex4400-24t" data-view="rear" data-weight="6.5 kg with no power supply, fan module or extension module (EX4400-24T); 5.36 kg for the -S" data-depth-with-modules="430.0 mm with power supply and fan modules; 440.7 mm with an extension module as well" data-mounting="two-post kit EX-RMK in the box; four-post kit EX-4PST-RMK and wall kit EX-WMK separate" data-throughput="324 Gbps unidirectional, 648 Gbps bidirectional" data-power-redundancy="1+1 with two supplies of one type" data-heat-dissipation="300.08 BTU/hr idle and 313.72 at 100 percent traffic with a 550 W AC supply; 320.54 and 337.59 with a 550 W DC supply" data-operating-temp="0 C to 45 C (32 F to 113 F)" data-storage-temp="-40 C to 70 C (-40 F to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing" data-altitude="no performance degradation up to 1828.8 m (6000 ft) at 40 C" data-acoustic-noise="42.7 dB(A) typical with one 550 W AC supply and front-to-back airflow (ISO 7779, from the front at 23 C)" data-cpu="quad-core x86" data-memory="4 GB DDR4 with ECC" data-storage="20 GB eMMC" data-virtual-chassis="up to 10 switches over the QSFP28 ports, which are Virtual Chassis ports by default" data-macsec="AES-256 on all RJ-45, SFP and SFP+ network ports and the SFP28 and QSFP28 extension module ports" data-optics-qsfp28="The two rear ports take 100GbE QSFP28 or 40GbE QSFP+ transceivers (40G from Junos OS 22.1R1). Breakout cables give 4x25G and 4x10G. The exact list is in the Hardware Compatibility Tool" data-qsfp28-channelization="each QSFP28 port runs as 100G, as 40G from Junos OS 22.1R1, or channelized" data-extension-slot="one slot for the EX4400-EM-4S, EX4400-EM-4Y or EX4400-EM-1C module" data-console="USB-C on the front and RJ-45 (CON) on the rear" data-oob="MGMT RJ-45 on the rear, 10/100/1000, with link activity and status lamps" data-usb="USB-A on the rear" data-cloud="Juniper Mist Wired Assurance, and the Junos CLI and J-Web" data-seismic="Tested for Zone 4 earthquake according to NEBS GR-63-CORE, Issue 5" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4400-fan-afo@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/jpsu-550-c-ac-afo@'] .state-blinking-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/jpsu-550-c-ac-afo@'] .state-blinking-green { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/jpsu-550-c-ac-afo@'] .state-green { --led-color: #39b54a; }
+</style>
+  <metadata>{"device":"Juniper EX4400-24T","device-version":"0.1.5","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/ex4400-fan-afo@1":"1.0.0","juniper/ex4400-psu-cover@1":"1.0.0","juniper/jpsu-550-c-ac-afo@1":"1.0.0","std/c14-inlet@1":"1.4.0","std/qsfp28@1":"1.4.1","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"0344d624f5f37a7d0d81040aedbbd8b8dffd6249c9dbca53c89d616150915d4e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4400-24T" x="0" y="0" width="441.7" height="43.7" rx="1.2" fill="#777777" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_620767-1_05675" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.620767 1.05675)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="ground-plate" data-kind="plate" x="27.8" y="27.6" width="33.9" height="12.1" rx="0.6" fill="#666666" />
+    <rect id="ground-hole-1" data-kind="plate" x="36.7" y="30.9" width="5.6" height="5.6" rx="2.8" fill="#0e0f10" />
+    <rect id="ground-hole-2" data-kind="plate" x="51.7" y="30.9" width="5.6" height="5.6" rx="2.8" fill="#0e0f10" />
+    <rect id="vent-rear-top" data-kind="vent-field" data-aperture="air" x="62.5" y="1" width="26" height="7.5" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_620767-1_05675)" data-vent="1" />
+    <rect id="vent-rear-bottom" data-kind="vent-field" data-aperture="air" x="62.5" y="34" width="26" height="7" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_620767-1_05675)" data-vent="1" />
+  </g>
+  <rect id="region--label-serial" data-path="region:label-serial" data-class="region" x="4" y="3" width="5.1" height="20.7" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--label-claim" data-path="region:label-claim" data-class="region" x="4" y="24.4" width="15.1" height="15.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--label-clei" data-path="region:label-clei" data-class="region" x="98.7" y="2.5" width="5.1" height="28.8" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--label-rating" data-path="region:label-rating" data-class="region" x="431.3" y="1.7" width="7.7" height="41.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="10.45" y="7" width="15.8" height="13.2" fill="#101214" id="cutout--con" data-path="cutout:con" data-class="cutout" />
+    <rect x="31.7" y="7" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <rect x="52.75" y="6.5" width="4.5" height="12" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <ellipse cx="55.3" cy="24.9" rx="2" ry="2" fill="#101214" id="cutout--reset" data-path="cutout:reset" data-class="cutout" />
+    <rect x="65.5" y="9.43" width="20" height="10.15" fill="#101214" id="cutout--qsfp-0" data-path="cutout:qsfp-0" data-class="cutout" />
+    <rect x="65.5" y="23.1" width="20" height="10.15" fill="#101214" id="cutout--qsfp-1" data-path="cutout:qsfp-1" data-class="cutout" />
+    <ellipse cx="89.4" cy="11" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-0-0" data-path="cutout:led-qsfp-0-0" data-class="cutout" />
+    <ellipse cx="94.3" cy="11" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-0-1" data-path="cutout:led-qsfp-0-1" data-class="cutout" />
+    <ellipse cx="89.4" cy="16" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-0-2" data-path="cutout:led-qsfp-0-2" data-class="cutout" />
+    <ellipse cx="94.3" cy="16" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-0-3" data-path="cutout:led-qsfp-0-3" data-class="cutout" />
+    <ellipse cx="89.4" cy="24.9" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-0" data-path="cutout:led-qsfp-1-0" data-class="cutout" />
+    <ellipse cx="94.3" cy="24.9" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-1" data-path="cutout:led-qsfp-1-1" data-class="cutout" />
+    <ellipse cx="89.4" cy="29.9" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-2" data-path="cutout:led-qsfp-1-2" data-class="cutout" />
+    <ellipse cx="94.3" cy="29.9" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-3" data-path="cutout:led-qsfp-1-3" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="18.35" y="22.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e6e8ea" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="con">CON</text>
+    <text x="39.6" y="22.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e6e8ea" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <path d="M 0 1.5 L 0 -0.825 M -0.42 -0.825 L 0.42 -0.825 L 0 -1.5 Z M 0 0.15 L -0.825 -0.45 M 0 -0.15 L 0.825 0.3" fill="none" stroke="#e6e8ea" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(55 21)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <text x="52.6" y="25.45" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#e6e8ea" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <text x="63.3" y="15.1" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e6e8ea" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-0">0</text>
+    <text x="63.3" y="28.8" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e6e8ea" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-1">1</text>
+    <path d="M -1.3 0 A 1.3 1.3 0 1 0 1.3 0 A 1.3 1.3 0 1 0 -1.3 0 Z M -1.1 -0.4 L 1.1 0.4 M -0.4 -1.1 L 0.4 1.1" fill="none" stroke="#c7ccd1" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(153.1 5.6)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="153.1" y="9.9" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e6e8ea" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M -1.3 0 A 1.3 1.3 0 1 0 1.3 0 A 1.3 1.3 0 1 0 -1.3 0 Z M -1.1 -0.4 L 1.1 0.4 M -0.4 -1.1 L 0.4 1.1" fill="none" stroke="#c7ccd1" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(202 5.6)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="202" y="9.9" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e6e8ea" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M 0 -1.5 L 0 -0.2 M -0.95 -0.95 A 1.35 1.35 0 1 0 0.95 -0.95" fill="none" stroke="#c7ccd1" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(250.6 5.8)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <text x="250.6" y="9.9" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e6e8ea" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <path d="M 0 -1.5 L 0 -0.2 M -0.95 -0.95 A 1.35 1.35 0 1 0 0.95 -0.95" fill="none" stroke="#c7ccd1" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(342.1 5.9)" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="342.1" y="10" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e6e8ea" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+  </g>
+  <g id="con" data-path="con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(10.45,7.0)" data-group="mgmt" data-group-role="management">
+    <title>con</title>
+    <path id="con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="con/opening" data-class="cutout" />
+    <g id="con--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="management" data-speed="1g" data-rel-pos="3" transform="translate(31.7,7.0)" data-group="mgmt" data-group-role="management" data-description="Table 42 - link activity lamp: steady link with no traffic, blinking traffic, unlit no link. Status lamp: steady 1000 Mbps, blinking 100 Mbps, unlit 10 Mbps">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="4" transform="translate(49.0,10.25) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" data-rel-pos="5" transform="translate(53.3,22.9)" data-group="mgmt" data-group-role="management" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="qsfp-0" data-path="qsfp-0" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="0" transform="translate(65.5,9.43)" data-group="qsfp28" data-group-role="traffic" data-description="Two rear ports numbered 0 and 1. They are Virtual Chassis ports by default and can run as network ports. Each takes a 100G or a 40G transceiver">
+    <title>qsfp-0</title>
+    <rect id="qsfp-0--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-0/opening" data-class="cutout" />
+    <rect id="qsfp-0--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-0--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-1" data-path="qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="1" transform="translate(65.5,23.1) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="Two rear ports numbered 0 and 1. They are Virtual Chassis ports by default and can run as network ports. Each takes a 100G or a 40G transceiver">
+    <title>qsfp-1</title>
+    <rect id="qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-1/opening" data-class="cutout" />
+    <rect id="qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="led-qsfp-0-0" data-path="led-qsfp-0-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(88.4,10.0)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-0">
+    <title>led-qsfp-0-0</title>
+    <circle id="led-qsfp-0-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-0-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-0-0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-0-1" data-path="led-qsfp-0-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(93.3,10.0)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-0">
+    <title>led-qsfp-0-1</title>
+    <circle id="led-qsfp-0-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-0-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-0-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-0-2" data-path="led-qsfp-0-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(88.4,15.0)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-0">
+    <title>led-qsfp-0-2</title>
+    <circle id="led-qsfp-0-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-0-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-0-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-0-3" data-path="led-qsfp-0-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(93.3,15.0)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-0">
+    <title>led-qsfp-0-3</title>
+    <circle id="led-qsfp-0-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-0-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-0-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-0" data-path="led-qsfp-1-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(88.4,23.9)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-1">
+    <title>led-qsfp-1-0</title>
+    <circle id="led-qsfp-1-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-1" data-path="led-qsfp-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(93.3,23.9)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-1">
+    <title>led-qsfp-1-1</title>
+    <circle id="led-qsfp-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-2" data-path="led-qsfp-1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(88.4,28.9)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-1">
+    <title>led-qsfp-1-2</title>
+    <circle id="led-qsfp-1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-3" data-path="led-qsfp-1-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(93.3,28.9)" data-group="qsfp28-leds" data-group-role="indicator" data-description="Four lamps for each QSFP28 port, in two rows of two. Table 46 - green for 100G, amber for 40G, and all four lamps show the four channels of a channelized port" data-for="qsfp-1">
+    <title>led-qsfp-1-3</title>
+    <circle id="led-qsfp-1-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="ground-mark" data-path="ground-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="0" transform="translate(21.4,31.0)" data-group="grounding" data-group-role="furniture" data-description="the rear two-hole protective earthing terminal" data-for="chassis">
+    <title>ground-mark</title>
+    <g id="ground-mark--symbol" stroke="#c7ccd1" fill="none" data-path="ground-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="108.2" y="0.95" width="41.8" height="41.8" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/ex4400-fan-afo@1:1.0.0" data-body-depth="115.7" data-airflow="front-to-back" data-hot-swap="yes" data-model="EX4400 fan module, airflow out (AFO)" data-role="chassis-fan" data-states="ok fault absent" transform="translate(129.1,21.85) translate(-20.9,-20.9)">
+      <title>fan-0--module</title>
+      <defs>
+        <pattern id="fan-0--module--hex" width="7.8" height="4.5" patternUnits="userSpaceOnUse">
+          <polygon points="0.3,2.25 1.45,0.26 3.75,0.26 4.9,2.25 3.75,4.24 1.45,4.24" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="4.2,0 5.35,-1.99 7.65,-1.99 8.8,0 7.65,1.99 5.35,1.99" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="4.2,4.5 5.35,2.51 7.65,2.51 8.8,4.5 7.65,6.49 5.35,6.49" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="-3.6,0 -2.45,-1.99 -0.15,-1.99 1.0,0 -0.15,1.99 -2.45,1.99" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="-3.6,4.5 -2.45,2.51 -0.15,2.51 1.0,4.5 -0.15,6.49 -2.45,6.49" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+        </pattern>
+      </defs>
+      <rect id="fan-0--module--face" x="0" y="0" width="41.8" height="41.8" rx="3.0" fill="#e8a010" stroke="#b57c0a" stroke-width="0.4" />
+      <g id="fan-0--module--grille">
+        <polygon points="9.6,3.9 34.0,3.9 37.5,7.4 37.5,35.1 34.0,38.6 7.3,38.6 3.3,34.6 3.3,9.8" fill="#0d0e10" />
+        <polygon points="9.6,3.9 34.0,3.9 37.5,7.4 37.5,35.1 34.0,38.6 7.3,38.6 3.3,34.6 3.3,9.8" fill="url(#fan-0--module--hex)" />
+      </g>
+      <g id="fan-0--module--handle" data-path="fan-0/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8a010">
+        <polygon points="0.6,21.5 41.2,21.5 41.2,31.4 36.0,32.4 5.8,32.4 0.6,31.4" fill="#e8a010" stroke="#b57c0a" stroke-width="0.3" />
+        <polygon points="5.1,24.9 10.7,25.6 10.7,28.6 5.1,29.3" fill="#0d0e10" />
+        <polygon points="36.2,24.9 30.3,25.6 30.3,28.6 36.2,29.3" fill="#0d0e10" />
+        <rect id="fan-0--module--airout-chip" x="14.0" y="24.2" width="13.0" height="6.6" rx="0.8" fill="#3a3b3d" />
+        <g fill="#e8a010">
+          <circle cx="16.9" cy="27.5" r="0.7" />
+          <ellipse cx="16.0" cy="26.3" rx="1.0" ry="0.7" transform="rotate(-35 16.0 26.3)" />
+          <ellipse cx="17.9" cy="26.3" rx="1.0" ry="0.7" transform="rotate(35 17.9 26.3)" />
+          <ellipse cx="16.0" cy="28.7" rx="1.0" ry="0.7" transform="rotate(35 16.0 28.7)" />
+          <ellipse cx="17.9" cy="28.7" rx="1.0" ry="0.7" transform="rotate(-35 17.9 28.7)" />
+        </g>
+        <g id="fan-0--module--silkscreen">
+          <text x="23.2" y="27.0" font-family="Arial" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.2" y="29.9" font-family="Arial" font-size="2.4" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-0--module--screw" data-path="fan-0/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="4.3" cy="4.9" r="3.2" fill="#d6d8db" stroke="#8d9196" stroke-width="0.35" />
+        <path d="M 2.6 4.9 H 6.0 M 4.3 3.2 V 6.6" stroke="#7a7e83" stroke-width="0.7" fill="none" />
+      </g>
+      <circle id="fan-0--module--led" cx="36.4" cy="37.6" r="1.3" fill="var(--led-color, #b8bcc2)" stroke="#8d9196" stroke-width="0.3" data-path="fan-0/module/led" data-class="led" data-states="green off" />
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="206" y="0.95" width="41.8" height="41.8" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/ex4400-fan-afo@1:1.0.0" data-body-depth="115.7" data-airflow="front-to-back" data-hot-swap="yes" data-model="EX4400 fan module, airflow out (AFO)" data-role="chassis-fan" data-states="ok fault absent" transform="translate(226.9,21.85) translate(-20.9,-20.9)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--hex" width="7.8" height="4.5" patternUnits="userSpaceOnUse">
+          <polygon points="0.3,2.25 1.45,0.26 3.75,0.26 4.9,2.25 3.75,4.24 1.45,4.24" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="4.2,0 5.35,-1.99 7.65,-1.99 8.8,0 7.65,1.99 5.35,1.99" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="4.2,4.5 5.35,2.51 7.65,2.51 8.8,4.5 7.65,6.49 5.35,6.49" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="-3.6,0 -2.45,-1.99 -0.15,-1.99 1.0,0 -0.15,1.99 -2.45,1.99" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+          <polygon points="-3.6,4.5 -2.45,2.51 -0.15,2.51 1.0,4.5 -0.15,6.49 -2.45,6.49" fill="none" stroke="#9aa0a6" stroke-width="0.45" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--face" x="0" y="0" width="41.8" height="41.8" rx="3.0" fill="#e8a010" stroke="#b57c0a" stroke-width="0.4" />
+      <g id="fan-1--module--grille">
+        <polygon points="9.6,3.9 34.0,3.9 37.5,7.4 37.5,35.1 34.0,38.6 7.3,38.6 3.3,34.6 3.3,9.8" fill="#0d0e10" />
+        <polygon points="9.6,3.9 34.0,3.9 37.5,7.4 37.5,35.1 34.0,38.6 7.3,38.6 3.3,34.6 3.3,9.8" fill="url(#fan-1--module--hex)" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8a010">
+        <polygon points="0.6,21.5 41.2,21.5 41.2,31.4 36.0,32.4 5.8,32.4 0.6,31.4" fill="#e8a010" stroke="#b57c0a" stroke-width="0.3" />
+        <polygon points="5.1,24.9 10.7,25.6 10.7,28.6 5.1,29.3" fill="#0d0e10" />
+        <polygon points="36.2,24.9 30.3,25.6 30.3,28.6 36.2,29.3" fill="#0d0e10" />
+        <rect id="fan-1--module--airout-chip" x="14.0" y="24.2" width="13.0" height="6.6" rx="0.8" fill="#3a3b3d" />
+        <g fill="#e8a010">
+          <circle cx="16.9" cy="27.5" r="0.7" />
+          <ellipse cx="16.0" cy="26.3" rx="1.0" ry="0.7" transform="rotate(-35 16.0 26.3)" />
+          <ellipse cx="17.9" cy="26.3" rx="1.0" ry="0.7" transform="rotate(35 17.9 26.3)" />
+          <ellipse cx="16.0" cy="28.7" rx="1.0" ry="0.7" transform="rotate(35 16.0 28.7)" />
+          <ellipse cx="17.9" cy="28.7" rx="1.0" ry="0.7" transform="rotate(-35 17.9 28.7)" />
+        </g>
+        <g id="fan-1--module--silkscreen">
+          <text x="23.2" y="27.0" font-family="Arial" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.2" y="29.9" font-family="Arial" font-size="2.4" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="4.3" cy="4.9" r="3.2" fill="#d6d8db" stroke="#8d9196" stroke-width="0.35" />
+        <path d="M 2.6 4.9 H 6.0 M 4.3 3.2 V 6.6" stroke="#7a7e83" stroke-width="0.7" fill="none" />
+      </g>
+      <circle id="fan-1--module--led" cx="36.4" cy="37.6" r="1.3" fill="var(--led-color, #b8bcc2)" stroke="#8d9196" stroke-width="0.3" data-path="fan-1/module/led" data-class="led" data-states="green off" />
+    </g>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="255" y="1.65" width="83.06" height="40.39" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/jpsu-550-c-ac-afo@1:1.0.0" data-body-depth="225.55" data-airflow="front-to-back" data-efficiency="80 Plus Platinum" data-hot-swap="yes" data-input-current="7.1 A at low line, 3.4 A at high line" data-input-frequency="47-63 Hz" data-input-voltage="100-127 VAC low line, 200-240 VAC high line" data-power-output-w="550" data-role="ac-power-supply" data-weight-kg="0.8" data-states="ok fault absent" transform="translate(296.53,21.845) translate(-41.53,-20.195)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--face" x="0" y="0" width="83.06" height="40.39" rx="0.8" fill="#c6c7c9" stroke="#8f9093" stroke-width="0.4" />
+      <g id="psu-0--module--fan">
+        <rect x="2.0" y="2.0" width="41.0" height="36.4" rx="1.2" fill="#b3b4b6" />
+        <circle cx="22.5" cy="20.7" r="17.2" fill="#0f1011" />
+        <circle cx="22.5" cy="20.7" r="13.6" fill="none" stroke="#a6a7a9" stroke-width="1.2" />
+        <circle cx="22.5" cy="20.7" r="9.6" fill="#bdbebf" stroke="#9c9da0" stroke-width="0.5" />
+        <path d="M 22.5 3.8 L 22.5 11.0 M 22.5 30.4 L 22.5 37.6 M 5.6 20.7 L 12.8 20.7 M 32.2 20.7 L 39.4 20.7" stroke="#a6a7a9" stroke-width="1.0" fill="none" />
+      </g>
+      <g id="psu-0--module--screws" fill="#d2d3d5" stroke="#8d8e90" stroke-width="0.3">
+        <circle cx="5.4" cy="4.2" r="1.9" />
+        <circle cx="37.8" cy="4.2" r="1.9" />
+        <circle cx="5.4" cy="37.3" r="1.9" />
+        <circle cx="37.8" cy="37.3" r="1.9" />
+      </g>
+      <rect id="psu-0--module--inlet-housing" x="49.6" y="1.3" width="23.6" height="31.1" rx="0.8" fill="#808183" />
+      <g id="psu-0--module--silkscreen" font-family="Arial" font-size="1.3" fill="#3a3b3d">
+        <text x="45.6" y="5.6" text-anchor="middle">OUT.OK</text>
+      </g>
+      <circle id="psu-0--module--led" cx="45.6" cy="8.4" r="1.2" fill="var(--led-color, #34503a)" stroke="#5c5e60" stroke-width="0.3" data-path="psu-0/module/led" data-class="led" data-states="green blinking-green off" />
+      <circle cx="62.4" cy="36.7" r="2.0" fill="#0f1011" />
+      <g id="psu-0--module--handle" data-path="psu-0/module/handle" data-class="handle" data-z-out="6.0" data-z-color="#e8a010">
+        <rect x="0.3" y="17.9" width="43.3" height="5.4" rx="0.5" fill="#e8a010" stroke="#b57c0a" stroke-width="0.3" />
+        <polygon points="0.3,15.4 3.4,17.9 3.4,23.3 0.3,25.8" fill="#e8a010" stroke="#b57c0a" stroke-width="0.3" />
+        <polygon points="43.6,15.4 40.5,17.9 40.5,23.3 43.6,25.8" fill="#e8a010" stroke="#b57c0a" stroke-width="0.3" />
+      </g>
+      <g id="psu-0--module--latch" data-path="psu-0/module/latch" data-class="latch" data-z-out="1.4" data-z-color="#9a9b9d">
+        <rect x="73.1" y="10.4" width="3.6" height="18.1" rx="1.6" fill="#a9aaac" stroke="#808183" stroke-width="0.3" />
+        <rect x="76.4" y="11.6" width="6.2" height="15.7" fill="#dcdcde" />
+      </g>
+      <g id="psu-0--module--inlet" data-path="psu-0/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(47.8,7.1) rotate(90 14.0 10.0)">
+        <title>psu-0--module--inlet</title>
+        <rect id="psu-0--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-0/module/inlet/opening" data-class="cutout" />
+        <path id="psu-0--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-0--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="61.8 17.1" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="346.4" y="1.65" width="83.06" height="40.39" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4400-psu-cover@1:1.0.0" data-role="power-slot-cover" data-states="absent" transform="translate(387.93,21.845) translate(-41.53,-20.195)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="0" y="0" width="83.06" height="40.39" rx="0.8" fill="#a3a4a6" stroke="#7d7e80" stroke-width="0.4" />
+      <rect x="2.4" y="2.4" width="78.26" height="35.59" rx="0.8" fill="none" stroke="#8a8b8d" stroke-width="0.3" />
+      <path d="M 24.0 0.4 V 1.8 H 59.0 V 0.4 M 24.0 39.99 V 38.59 H 59.0 V 39.99" fill="none" stroke="#7d7e80" stroke-width="0.3" />
+      <circle cx="41.53" cy="20.2" r="3.8" fill="#bcbdbf" stroke="#7d7e80" stroke-width="0.4" />
+      <circle cx="41.53" cy="20.2" r="2.2" fill="#a3a4a6" stroke="#8a8b8d" stroke-width="0.3" />
+    </g>
+  </g>
+  <g id="esd-jack" data-path="esd-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(98.1,33.0)" data-group="esd" data-group-role="furniture" data-description="the rear wrist-strap socket (guide Figure 12 callout 11)" data-for="chassis">
+    <title>esd-jack</title>
+    <circle id="esd-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

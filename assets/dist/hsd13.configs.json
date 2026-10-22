@@ -1,0 +1,260 @@
+{
+ "aliases": [
+  "662620249902"
+ ],
+ "attrs": {
+  "features": {
+   "cover": "Press on",
+   "removable-fingers": "Plastic fingers can be removed where needed for cable entrance",
+   "vertical-manager": "VSD Series"
+  },
+  "physical": {
+   "material": "Plastic"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 81.28,
+  "ears": {
+   "positions": [
+    {
+     "at": 81.28,
+     "default": true,
+     "name": "proud"
+    }
+   ]
+  },
+  "h": 40.64,
+  "mount": "rack",
+  "power": null,
+  "ru": 1,
+  "shell": "sheet",
+  "thickness": 2.5,
+  "w": 482.6
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The finger duct as Hubbell ships HSD13, the cover fitted.",
+   "files": {
+    "bottom": "hsd13.base.bottom.svg",
+    "front": "hsd13.base.front.svg",
+    "left": "hsd13.base.left.svg",
+    "rear": "hsd13.base.rear.svg",
+    "right": "hsd13.base.right.svg",
+    "top": "hsd13.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {}
+  },
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The same duct with the cover taken off, the two rows of fingers in view.",
+   "files": {
+    "bottom": "hsd13.base.bottom.svg",
+    "front": "hsd13.cover-off.front.svg",
+    "left": "hsd13.base.left.svg",
+    "rear": "hsd13.base.rear.svg",
+    "right": "hsd13.base.right.svg",
+    "top": "hsd13.base.top.svg"
+   },
+   "kind": "example",
+   "mount-points": [],
+   "name": "cover-off",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {}
+  }
+ ],
+ "default": "base",
+ "device": "hsd13",
+ "gaps": [
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the sheet's figure draws 23 slots in the wall and its table gives A, B and C only. The slot pitch and width, the finger and end block widths and the wall's thickness are read off the figure against B.",
+   "scope": [
+    "front",
+    "top",
+    "left",
+    "right"
+   ],
+   "wanted": "the dimensioned customer drawing",
+   "what": "finger-geometry"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the sheet says \"Plastic fingers can be removed where needed for cable entrance\". Each finger is its own part, so the explorer can take one out; a rack file has no way to say which finger of a duct is gone, so the rack kit lets a cable enter through any finger gap whether the finger there is out or not.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a rack-file key for a finger taken out",
+   "what": "finger-removal"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the sheet states no colour; the photograph shows a dark grey plastic.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the part's colour",
+   "what": "cover-colour"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the sheet states no count of cables, nor a basis for one.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a maker's figure with its basis",
+   "what": "cable-capacity"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the sheet states no weight.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the part's weight",
+   "what": "weight"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "`attrs.physical.weight-kg` (profile `passive` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "HSD13",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "pdu-class": null,
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - material is the sheet's specification table; the cover and the corresponding vertical manager are its characteristics table; the UPC is its ordering table."
+  },
+  "cable-capacity": {
+   "confidence": "datasheet",
+   "note": "datasheet - the sheet states no cable capacity, so none is stated here and none is estimated."
+  },
+  "chassis": {
+   "confidence": "datasheet",
+   "note": "datasheet - 482.6 x 40.64 x 81.28. Width is B, 19 in; height is A, 1.6 in (41 mm, a little under the 1.75 in of 1 RU), the sheet's figure; ru is the sheet's 1 RU; depth is C, 3.2 in, base to cover. The sheet's own \"Depth 3 in\" ordering figure is the rounded value of C and is not used."
+  },
+  "ears": {
+   "confidence": "datasheet",
+   "note": "datasheet - `positions` states where the part bolts, for the Rack Builder. \"Mount directly to rail\" is the sheet's feature: the base is the part's own ears and stands at the back, so the rail plane is the back of the base and the whole depth, C, 81.28, stands in front of it: `at` is 81.28. The sheet's accessories list hook-and-loop ties only and no rail kit, so `kits` is not stated."
+  },
+  "front": {
+   "confidence": "estimated",
+   "note": "estimated - the front: the base, the two rows of fingers and the cover, which is drawn fitted; the `cover-off` configuration leaves it off and shows the fingers. The slots are read off the figure: 23 of them, 20.32 mm apart, centred on the 482.6, 9.0 mm wide, against B (see the finger's `size`). A row is two end blocks and 22 fingers, between the slots; the figure draws the far wall slotted as well, so the lower row is the upper's."
+  },
+  "full-depth": {
+   "confidence": "datasheet",
+   "note": "`full-depth: false` - nothing of the part stands behind the rail; it reaches 81.28 in front of it, so the rack unit's rear face is free."
+  },
+  "guides": {
+   "confidence": "estimated",
+   "note": "estimated - the `duct` guide is the channel between the two finger walls, the width of the part, its run along the rack: 35.64 mm high, the 40.64 less a wall at the top and one at the bottom. `finger-pitch` is the 20.32 mm between slots counted on the figure and `finger-gap` the 9.0 mm slot."
+  },
+  "left": {
+   "confidence": "estimated",
+   "note": "estimated - an elevation, rear on the left: the base's edge and the two finger walls running forward from it. The right is the same, turned round."
+  },
+  "method": {
+   "confidence": "datasheet",
+   "note": "FIGURES FROM THE MAKER'S OWN SPEC SHEET. Hubbell publishes one PDF per catalogue number, PREMISE_HSD13_spec.pdf on hubbellcdn.com (sha256 below): a features list, an ordering table, specifications, characteristics, accessories and a dimensions table, A 1 RU, 1.6 in (41), B 19 in (483), C 3.2 in (81), beside one isometric figure that marks A, B and C. The sheet's \"Customer Use Drawing\" link points at ecatalog.hubbell-premise.com, which does not resolve (checked 2026-10-18), so no dimensioned drawing was read: the figure is a line drawing without a scale, and everything read off it is `estimated`, with how. The sheet lists no pass-through holes, no replacement cover and no finish."
+  },
+  "rear": {
+   "confidence": "estimated",
+   "note": "estimated - the back of the base, a plain plate. The figure draws a round hole near each end of the long face, not drawn here (see the base's `mounting-holes`)."
+  },
+  "thickness": {
+   "confidence": "estimated",
+   "note": "estimated - 2.5 mm. The sheet says \"Material: Plastic\" and no wall thickness."
+  },
+  "top": {
+   "confidence": "estimated",
+   "note": "estimated - an elevation, rear at y=0: the base's edge, the finger wall and its 23 slots. The cover's edge is not drawn: the configuration with it off draws the same plan. The bottom is the same."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

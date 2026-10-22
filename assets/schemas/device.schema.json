@@ -39,6 +39,11 @@
    ],
    "description": "how far this device has been taken, and the standard lint holds it to. draft: no requirement. modelled: must carry a provenance block citing a datasheet or hardware guide. verified: additionally no dimension may be estimated. REQUIRED, with no default: a device states its level rather than inheriting one."
   },
+  "audience": {
+   "type": "string",
+   "pattern": "^(public|internal|nda|customer:[a-z0-9-]+)$",
+   "description": "who this device is for. One of `public`, `internal`, `nda`, or `customer:<name>` for one named customer, the name in lower case letters, digits and hyphens. OPTIONAL: absent means `public`. A project that keeps private entries beside the public library labels them with it. Portrayal's own library only uses `public`, and lint L192 holds it to that."
+  },
   "manufacturer": {
    "type": "string"
   },
@@ -1012,7 +1017,18 @@
       "description": "the job these ports do together, when they do NOT share a media or a speed and that is deliberate: a management cluster of SFP+, USB and RJ45, a timing block of RJ45 and coax. The default shape of a port group is one family - one media, one speed - because that is what lets the block declare its facts once in `attrs`; a group spanning families is normally a bucket nobody has sorted yet, and lint L23 says so. This field is the author's answer: the vendor's faceplate calls these one thing, and splitting them by media would be a worse drawing. State the function, e.g. 'management cluster' or 'timing inputs and outputs' - it is a reason, not a switch, and L23 also objects if it is set on a group that is in fact one family"
      },
      "attrs": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+       "speeds": {
+        "type": "array",
+        "minItems": 2,
+        "uniqueItems": true,
+        "items": {
+         "type": "string"
+        },
+        "description": "every native rate this group's ports run at, ascending, when there is more than one (a 1/10/25G SFP28 cage: [1g, 10g, 25g]), written from the vendor's own figure and never derived from the cage type. Published as `data-speeds`, space-separated. Native rates only, not breakout. It includes `speed`, which is its highest member; lint L110 holds both to the closed speed set"
+       }
+      }
      },
      "states": {
       "description": "what this indicator's states MEAN on this device. Overrides the component's own vocabulary, which can only be generic - the same led-dot is a speed lamp on one port and a link lamp on the next. A block of eighteen speed lamps shares one vocabulary and says it once; a placement inside it may still override",
@@ -1760,6 +1776,15 @@
             }
            ]
           },
+          "hides": {
+           "type": "array",
+           "minItems": 1,
+           "uniqueItems": true,
+           "items": {
+            "$ref": "#/$defs/segment"
+           },
+           "description": "THIS PART IS A COVER, and these are the ids it hides: placements and bays on the SAME face that the cover overlaps. A cover is a removable part that hides others - a bezel over drives, a filter cover over PSUs. Emitted as data-hides on the cover's group, space-separated; each token is the data-path of a placement or bay in the same drawing, the way data-covered-by holds one. Written beside `for`, which keeps its meaning (the kit reads it for a mounted cover). On a device placement only, because the ids are the device's own and one cover component serves devices with different bays. Lint L196 checks every id."
+          },
           "fed-by": {
            "$ref": "#/$defs/segment",
            "description": "THE POWER INPUT THIS OUTPUT HANDS ON, for a power outlet on a distribution panel: the id of a placement on this device, in any view, whose part exports a power port. The DCIM export writes it as the outlet's `power_port`, which both NetBox and Nautobot import by name within the same device type. Stated on each placement and never inferred from an `-a`/`-b` in a name. Lint L132 fails when it does not resolve. L134 reports an outlet that states none: a warning at `draft` and `modelled`, an error at `verified`. Stating one is a minor version; changing one re-files an imported outlet's feed and is a major."
@@ -1767,6 +1792,63 @@
           "through": {
            "$ref": "#/$defs/segment",
            "description": "THE POSITION THIS CIRCUIT RUNS THROUGH: the id of a bay on this device, in any view, whose occupant protects it - a breaker or fuse position - OR of a placement of a part of class `breaker`, a breaker fixed to the unit (a rack PDU's branch breaker). It crosses a face (the output is on the rear, the breaker on the front), which `for:` cannot say: `for:` is a UI binding emitted as data-for that waives L13's overlap check, and these two are not near each other. The DCIM export writes it as a sentence on the outlet's description, and on a bay's, because neither target relates an outlet to a module bay; an outlet through a fixed breaker takes that breaker's `lines`. Optional; a panel with fixed, unprotected outputs has none. Stating one is a minor version, changing one a major. Lint L133 fails when it does not resolve. L135 warns when one bay position protects more than one circuit; a fixed PDU breaker feeds many outlets by design, so L135 reads bays only."
+          },
+          "dc": {
+           "type": "object",
+           "description": "WHAT THIS PLACEMENT CHANGES ABOUT THE DC PORTS OF ITS PART, keyed by the port's `id` in the part's `dc` block. The same part is the A feed in one place and the B feed in another, and a panel output takes its rating from the breaker in its bay, so the placement can set what differs and leaves the rest as the part states it. A key that names no port of the part is refused by lint. A role a placement sets needs a `source` and, where it is `unstated`, a `dc-polarity` gap on this device (L187, L190).",
+           "propertyNames": {
+            "$ref": "#/$defs/segment"
+           },
+           "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+             "side": {
+              "enum": ["a", "b"],
+              "description": "which feed of an A/B pair this placement is on"
+             },
+             "voltage": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["nominal"],
+              "description": "the voltage of this placement's end, signed: a -48 V plant is -48 (L191)",
+              "properties": {
+               "nominal": {
+                "type": "number",
+                "not": {"const": 0}
+               },
+               "range": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "number"}
+               }
+              }
+             },
+             "rating-a": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "the amperes this placement's end is good for: the breaker or fuse rating of its bay, where the part states none"
+             },
+             "poles": {
+              "type": "object",
+              "minProperties": 1,
+              "description": "the role of a pole this placement sets, keyed by the pole's `slot` in the part's port: `{terminal-1: batt}`",
+              "propertyNames": {
+               "$ref": "#/$defs/segment"
+              },
+              "additionalProperties": {
+               "$ref": "#/$defs/segment"
+              }
+             },
+             "source": {
+              "type": "string",
+              "minLength": 1,
+              "description": "where the roles this placement sets came from, in the words the library uses: a datasheet, a guide, a drawing, a photo. Needed when `poles` is set (L187)."
+             }
+            }
+           }
           },
           "lines": {
            "type": "array",

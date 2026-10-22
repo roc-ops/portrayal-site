@@ -240,13 +240,19 @@ export const renamed = (rack, name) => ({...rack, name: String(name)});
 // it whatever is there: two trimmed strings.
 const plain = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
 const word = v => (typeof v === 'string' ? v.trim() : '');
-export const dcimOf = rack => ({site: word(plain(rack?.dcim).site), role: word(plain(rack?.dcim).role)});
+// `netbox` (#945) is the version of NetBox the files are for; "4.6" or later
+// writes NetBox's own cable bundles (dcim-rules.js netboxHasBundles). It is
+// read only where the rack has it, so a rack without it reads as it did.
+export const dcimOf = rack => {
+  const had = plain(rack?.dcim);
+  return {site: word(had.site), role: word(had.role), ...('netbox' in had ? {netbox: word(had.netbox)} : {})};
+};
 // Fields of `dcim` this page does not know are kept as they are.
 // A key the rack did not have stays missing unless it is given a value: a blank
 // site on a rack with no site adds nothing, so saving never invents a field.
 export const withDcim = (rack, patch) => {
   const had = plain(rack.dcim), next = {...had};
-  for (const key of ['site', 'role']) {
+  for (const key of ['site', 'role', 'netbox']) {
     if (!(key in patch)) continue;
     const v = word(patch[key]);
     if (v || key in had) next[key] = v;

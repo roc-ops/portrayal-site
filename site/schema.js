@@ -34,6 +34,8 @@ const SOURCES = {
   // The Rack Builder's file. Portrayal's since the rack core moved into the kit
   // (@portrayal/kit 0.3.0, spec/schemas/rack.schema.json), so vendored like the rest.
   rack:      {url: 'assets/schemas/rack.schema.json',      label: 'a rack built in the Rack Builder'},
+  // A RACK PRODUCT: a frame or cabinet as a maker sells it (Portrayal #1131, rack-product.schema.json).
+  rackProduct: {url: 'assets/schemas/rack-product.schema.json', label: 'a frame or cabinet as a maker sells it'},
   // A MARKED-UP DRAWING: what Annotate's marks normalise to (Portrayal #898, marks.schema.json).
   marks:     {url: 'assets/schemas/marks.schema.json',     label: 'a drawing marked up in Annotate'},
 };

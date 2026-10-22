@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="92.0mm" height="19.8mm" viewBox="0 0 92.0 19.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="r6615-riser-3s" data-path="r6615-riser-3s" data-class="riser" data-behaviour="fills" data-ref="dell/r6615-riser-3s@1:1.0.0" data-body-depth="219.8" data-appears-in="riser configuration 7" data-power-absent="not-published" data-riser="3S" data-slot-3="x16, low profile, half length, processor 1, PCIe Gen5" transform="translate(0,0)">
+    <title>r6615-riser-3s</title>
+    <g id="r6615-riser-3s--slot-3" data-path="r6615-riser-3s/slot-3" data-class="bay">
+      <rect id="r6615-riser-3s--slot-3--opening" x="-2.10" y="1.92" width="79.20" height="18.42" fill="none" stroke="none" />
+      <g id="r6615-riser-3s--slot-3--module" data-path="r6615-riser-3s/slot-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(-2.1,1.92)">
+        <title>r6615-riser-3s--slot-3--module</title>
+        <path id="r6615-riser-3s--slot-3--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="r6615-riser-3s--slot-3--module--vents">
+          <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+        </g>
+      </g>
+    </g>
+    <g id="r6615-riser-3s--plate" data-path="r6615-riser-3s/plate" data-class="riser" data-ref="dell/riser-3-lp-gen5-cage-16g@1:1.0.0" data-power-absent="not-applicable" transform="translate(0,0)">
+      <title>r6615-riser-3s--plate</title>
+      <g id="r6615-riser-3s--plate--plate" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <path fill-rule="evenodd" d="M0.30 0.30 H91.70 V19.50 H0.30 Z M9.75 1.92 H68.43 V19.50 H9.75 Z" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" />
+        <rect x="79.00" y="0.60" width="9.40" height="19.60" rx="0.3" fill="#5a6066" />
+        <rect x="80.40" y="0.61" width="4.23" height="19.19" rx="0.3" fill="#2b3035" />
+        <g id="r6615-riser-3s--plate--silkscreen">
+          <rect x="9.75" y="0.30" width="58.68" height="1.62" fill="#24282c" />
+          <polygon points="37.54,0.68 38.84,0.68 38.19,1.48" fill="#e6e8ea" />
+          <text x="39.39" y="1.66" font-family="sans-serif" font-size="1.7" fill="#e6e8ea">3</text>
+          <text x="67.83" y="1.65" font-family="sans-serif" font-size="1.4" fill="#e6e8ea" text-anchor="end">GEN 5</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

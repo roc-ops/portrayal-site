@@ -55,12 +55,28 @@ export function familyOf(cable, ctx) {
   return typeof cable?.media === 'string' && Object.hasOwn(FAMILY, cable.media) ? FAMILY[cable.media] : 'copper';
 }
 export const drapeOf = (cable, ctx) => DRAPE[familyOf(cable, ctx)];
-export function bendOf(cable, ctx) {
+// The installed bend radius the page states for a cable (`ctx.bendOf`), or
+// null: no type, a type with no radius, no reader, or a reader that throws.
+export function statedBend(cable, ctx) {
   let r = null;
   try { r = typeof ctx?.bendOf === 'function' ? ctx.bendOf(cable) : null; } catch { r = null; }
-  if (typeof r === 'number' && Number.isFinite(r) && r > 0) return r;
+  return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : null;
+}
+// The radius a cable is judged by: the page's, else its media's, else the
+// default of UNSET_BEND. The bundle bend check and a cable's own path both
+// read this one (#1132).
+export function bendOf(cable, ctx) {
+  const r = statedBend(cable, ctx);
+  if (r != null) return r;
   return typeof cable?.media === 'string' && Object.hasOwn(BEND, cable.media) ? BEND[cable.media] : UNSET_BEND;
 }
+// Whether bendOf gave the default for want of anything to go by: no radius
+// stated and no media of the table's. The messages say so (#1132).
+export const bendIsDefault = (cable, ctx) =>
+  statedBend(cable, ctx) == null && !(typeof cable?.media === 'string' && Object.hasOwn(BEND, cable.media));
+// Why, for a cable bendIsDefault is true of: it names no type, or the type it
+// names states no radius.
+export const defaultBecause = cable => (cable?.type ? 'its type states no bend radius' : 'it has no cable type');
 
 // THE SHAPE OF A SPAN: the catenary of cable-geometry.js, f(t) = (cosh(K(2t-1))
 // - cosh K) / (cosh K - 1), 0 at the ends and -1 mid-way.

@@ -28,8 +28,9 @@ import { configureRelief, createReliefScope, svgCanvas, canvasTex, rasterize, sv
          setNodeStates, nodeStates, clearLampBindings, lampBindings, setNodeFields, setNodeDisplays, restyleText,
          applyNodeAdjustments,
          setNodeLampColors, nodeLampColors, markHex,
-         setPulled as setReliefPulled, pulledPaths,
-         buildFaceRelief, bodyBoxes, pieceMesh, pieceArt, fruFor,
+         setPulled as setReliefPulled, pulledPaths, hidePulled,
+         buildFaceRelief, bodyBoxes, pieceMesh, pieceArt, pieceFitted, shownOptions,
+         applyNodeFields, fruFor,
          nodeTools, tiltOf, tiltTools, tiltGroupIn, unproject, openFrameFaces, sheetShell,
          faceFrame, ventWellWalls, genericEars, EAR } from './relief.js';
 import { seatViews, seatBack, refusalReason } from './swap.js';
@@ -38,6 +39,7 @@ import { bevelledArrays } from './bevel.js';
 import { expandStates } from './states.js';
 import { jdist, faceFile, distResolver, readIndex } from './dist.js';
 import { createLamps } from './lamps.js';
+import { openingView } from './camera-fit.js';
 
 const CLS_LABEL = {fan: 'Fan module', psu: 'Power supply', tab: 'Info tab'};
 // box-face shading, in +x -x +y -y +z -z order: sides darker, lid lifted,
@@ -116,7 +118,18 @@ export function createViewer(container, opts = {}) {
   // what the device HAS and have never known what a viewer has removed from it.
   // Held here so a rebuild - a config change, a swap, turning the chassis around -
   // does not quietly bolt every cover back on.
-  let PULLED = new Set();
+  // Each is {path, view}: `view` is null for a part taken off on every face that
+  // has it, and the face's name for one taken off on that face alone.
+  let PULLED = new Map();
+  const pulledKey = (view, path) => `${view ?? ''}\0${path}`;
+  const pushPulledToRelief = () => setReliefPulled([...PULLED.values()].map(x => x.path), SCOPE,
+                                                   [...PULLED.values()].map(x => x.view));
+  // is `path`, in the face `view`, off: by name for every face, or for this one?
+  const isOffOn = (path, view) => {
+    for (const {path: p, view: v} of PULLED.values())
+      if ((v == null || v === view) && (path === p || path.startsWith(p + '/'))) return true;
+    return false;
+  };
   // How to redraw each texture that came from a node's own art, collected during
   // the build. Emptied on every rebuild: the materials it points at are disposed.
   let RESTYLE = [];
@@ -548,7 +561,7 @@ export function createViewer(container, opts = {}) {
     setNodeStates(STATES, SCOPE);
     // and what is off stays off, for the same reason and at the same moment: the
     // faces and the relief are both cut from a document that already knows
-    setReliefPulled(PULLED, SCOPE);
+    pushPulledToRelief();
     // and what is written on parts (#850). setFields before the first scene has
     // nothing to repaint and returns before it reaches the registry, so a host
     // that hands its fields over as it creates the viewer - a link's latch
@@ -715,7 +728,17 @@ export function createViewer(container, opts = {}) {
                        H / 2 - (pl.at[1] + pl.size[1] / 2), D / 2 - 0.6);
       const bodyBox = new THREE.Group();
       const pieceTex = new Map();   // one texture per drawing, for this build
+      // A FITTED PIECE FOLLOWS THE DRAWING (relief.js pieceFitted): the part's
+      // own face, with what the host has written on it, says which of its
+      // options it shows. The part alone is keyed by its own path, its name.
+      let shown = {};
+      if (COMP_ENTRY.body.boxes.some(b => b.when)) {
+        const doc = new DOMParser().parseFromString(
+          await svgSource(distAt(COMP_ENTRY.files[cfg]), SCOPE), 'image/svg+xml');
+        shown = shownOptions(applyNodeFields(doc.documentElement, SCOPE));
+      }
       for (const b of bodyBoxes(COMP_ENTRY.body, W, H)) {
+        if (!pieceFitted(b, shown[COMP_ENTRY.name])) continue;
         const m = pieceMesh(b, b.w, b.h, b.z1 - b.z0,
                             await pieceArt(COMP_ENTRY.body, b, distAt, SCOPE, pieceTex));
         m.position.set(b.x + b.w / 2 - W / 2, H / 2 - (b.y + b.h / 2),
@@ -1255,6 +1278,18 @@ export function createViewer(container, opts = {}) {
 
   // --- loading ----------------------------------------------------------------
 
+  // THE OPENING VIEW, FITTED (camera-fit.js says why a multiple of the span is
+  // not enough). The limits that follow the camera move with it: a 7 ft manager
+  // sits 2500+ mm out, past the dolly limit and the far plane a 1U box needs.
+  function openOn(w, h, d, span) {
+    const v = openingView({W: w, H: h, D: d, fov: camera.fov, aspect: camera.aspect, span});
+    controls.maxDistance = v.maxDistance;
+    camera.far = v.far;
+    camera.updateProjectionMatrix();
+    camera.position.set(...v.position);
+    controls.target.set(0, 0, 0);
+  }
+
   // The component index does NOT depend on the device, so loading it does not
   // belong behind either mode's "did the subject change" guard - that is what
   // made every device switch pull 2 MB of device-independent data down again.
@@ -1290,9 +1325,7 @@ export function createViewer(container, opts = {}) {
       // The span is stable: every device now opens at about 22 degrees.
       // The same framing the component path below already uses, rather than a
       // third set of constants: one opening view, two callers.
-      const span = Math.max(W, H, D);
-      camera.position.set(span * 0.9, span * 0.8, span * 1.6);
-      controls.target.set(0, 0, 0);
+      openOn(W, H, D);
     }
     CFG = config || devIndex.default;
     await build(CFG);
@@ -1309,10 +1342,8 @@ export function createViewer(container, opts = {}) {
       if (!COMP_ENTRY) throw new Error(`unknown component ${COMP}`);
       W = COMP_ENTRY.size.w; H = COMP_ENTRY.size.h;
       D = COMP_ENTRY.body ? COMP_ENTRY.body.depth : Math.max(COMP_ENTRY.size.d || 2, 2);
-      const span = Math.max(W, H);
-      camera.position.set(span * 0.9, span * 0.8, span * 1.6);
-      camera.near = 5; camera.updateProjectionMatrix();
-      controls.target.set(0, 0, 0);
+      camera.near = 5;
+      openOn(W, H, D, Math.max(W, H));   // a component's span has never counted its depth
     }
     CFG = skin || COMP_ENTRY.skins[0];
     await build(CFG);
@@ -1475,26 +1506,35 @@ export function createViewer(container, opts = {}) {
   // 1.0-1.4 s rebuild. What it cannot do is un-extrude relief that was already
   // built, so anything with a body gets hidden in the scene as well - and on the
   // NEXT rebuild it is dropped at extraction and the geometry never exists.
-  async function applyPulledNow(paths) {
-    const next = new Set();
-    for (const p of paths || []) if (p) next.add(String(p));
+  //
+  // `views` is optional and sits beside `paths`: the view each path is off on, or
+  // one view for all of them. Two views can place one id, and a path with a view
+  // is hidden on that face alone; one with none is hidden on every face that has
+  // it, as it was before the argument existed.
+  async function applyPulledNow({paths, views}) {
+    const next = new Map();
+    (paths || []).forEach((p, i) => {
+      if (!p) return;
+      const v = Array.isArray(views) ? views[i] : views;
+      const view = v == null ? null : String(v);
+      next.set(pulledKey(view, String(p)), {path: String(p), view});
+    });
     const changed = new Set();
-    for (const p of new Set([...PULLED, ...next]))
-      if (PULLED.has(p) !== next.has(p)) changed.add(p);
+    for (const k of new Set([...PULLED.keys(), ...next.keys()]))
+      if (PULLED.has(k) !== next.has(k)) changed.add((PULLED.get(k) || next.get(k)).path);
     PULLED = next;
     if (!changed.size || !box) return 0;
-    setReliefPulled(PULLED, SCOPE);
-    const isOff = path => {
-      for (const p of PULLED) if (path === p || path.startsWith(p + "/")) return true;
-      return false;
-    };
+    pushPulledToRelief();
+    const isOff = isOffOn;
     // geometry first: a body that was extruded before the part came off is still
     // in the scene, and no amount of repainting a texture removes it
     // A FRU group is keyed by its BAY - 'mid-sff-0' - and the tree pulls the
     // MODULE in it - 'mid-sff-0/module'. The prefix test runs the other way, so
     // an unseated drive kept its body in the scene and the control did nothing.
-    for (const [path, g] of Object.entries(FRU_GROUPS))
-      g.visible = !isOff(path) && !isOff(path + '/module');
+    for (const [path, g] of Object.entries(FRU_GROUPS)) {
+      const view = FRU_META[path] && FRU_META[path].view;
+      g.visible = !isOff(path, view) && !isOff(path + '/module', view);
+    }
     // AND THE RELIEF OF EVERYTHING THAT IS NOT A FRU, which is where this used
     // to stop. Only modules get a subgroup of their own, because only a module
     // leaves a bay behind it; a bolted-on cover is merged into the shared relief
@@ -1508,21 +1548,20 @@ export function createViewer(container, opts = {}) {
     // a pulled cover only LOOKED gone because its top texture repainted
     // transparent, and its 1 mm of sides stayed. A pulled tray kept its dark
     // back plane and walls, which read as a slab over the board. Walk both.
-    for (const root of [box, reliefGroup]) if (root) root.traverse(o => {
-      const p = o.userData && o.userData.portrayalPath;
-      if (p) o.visible = !isOff(p);
-    });
+    // A mesh is on the face whose group it hangs under, and a part pulled on one
+    // face stays on the other (relief.js hidePulled).
+    for (const root of [box, reliefGroup]) if (root) hidePulled(root, SCOPE);
     // a texture is only touched if the change is actually in it
     const touches = text => [...changed].some(p => text.includes(`data-path="${p}"`));
     let n = 0;
     for (const e of RESTYLE) {
       if (!touches(e.svgText)) continue;
-      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      try { await e.run(restyleText(e.svgText, SCOPE, e.view)); n++; }
       catch (err) { console.warn('[portrayal] pull repaint failed', err); }
     }
     for (const rec of LOD) {
       if (!touches(rec.svgText)) continue;
-      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.svgText = restyleText(rec.svgText, SCOPE, rec.key);
       rec.rev++;
       await refineFace(rec, rec.level);
       n++;
@@ -1548,7 +1587,7 @@ export function createViewer(container, opts = {}) {
       catch (err) { console.warn(`[portrayal] 3D ${kind} sync failed`, err); return 0; }
     }));
   }
-  const setPulled = paths => coalesce('pulled', paths, applyPulledNow);
+  const setPulled = (paths, views) => coalesce('pulled', {paths, views}, applyPulledNow);
   const setStates = map => coalesce('states', map, applyStatesNow);
   const setFields = map => coalesce('fields', map, applyFieldsNow);   // same queue: latest wins
   const setLampColors = map => coalesce('lamps', map, applyLampColorsNow);
@@ -1573,12 +1612,12 @@ export function createViewer(container, opts = {}) {
     let n = 0;
     for (const e of RESTYLE) {
       if (!touches(e.svgText)) continue;
-      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      try { await e.run(restyleText(e.svgText, SCOPE, e.view)); n++; }
       catch (err) { console.warn('[portrayal] display repaint failed', err); }
     }
     for (const rec of LOD) {
       if (!touches(rec.svgText)) continue;
-      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.svgText = restyleText(rec.svgText, SCOPE, rec.key);
       rec.rev++;
       await refineFace(rec, rec.level);
       n++;
@@ -1606,12 +1645,12 @@ export function createViewer(container, opts = {}) {
     let n = 0;
     for (const e of RESTYLE) {
       if (!touches(e.svgText)) continue;
-      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      try { await e.run(restyleText(e.svgText, SCOPE, e.view)); n++; }
       catch (err) { console.warn('[portrayal] restyle failed', err); }
     }
     for (const rec of LOD) {
       if (!touches(rec.svgText)) continue;
-      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.svgText = restyleText(rec.svgText, SCOPE, rec.key);
       rec.rev++;
       await refineFace(rec, rec.level);
       n++;
@@ -1622,14 +1661,10 @@ export function createViewer(container, opts = {}) {
 
   async function syncLamps(changed) {
     if (!box) return;
-    const isOff = path => {
-      for (const p of PULLED) if (path === p || path.startsWith(p + '/')) return true;
-      return false;
-    };
     try {
       await LAMPS.sync({faces: LOD, entries: RESTYLE, faceGroups, fruGroups: FRU_GROUPS,
                         faceFlip: FACE_FLIP, pxmm: Math.max(PXMM, 16),
-                        restyle: t => restyleText(t, SCOPE), changed, isOff,
+                        restyle: (t, view) => restyleText(t, SCOPE, view), changed, isOff: isOffOn,
                         tint: rec => FACE_TINT[rec.matIndex] ?? 1});
     } catch (err) { console.warn('[portrayal] lamp animation sync failed', err); }
   }
@@ -1655,12 +1690,12 @@ export function createViewer(container, opts = {}) {
     let n = 0;
     for (const e of RESTYLE) {
       if (!touches(e.svgText)) continue;
-      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      try { await e.run(restyleText(e.svgText, SCOPE, e.view)); n++; }
       catch (err) { console.warn('[portrayal] restyle failed', err); }
     }
     for (const rec of LOD) {
       if (!touches(rec.svgText)) continue;
-      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.svgText = restyleText(rec.svgText, SCOPE, rec.key);
       rec.rev++;
       await refineFace(rec, rec.level);
       n++;
@@ -1720,12 +1755,12 @@ export function createViewer(container, opts = {}) {
     let n = 0;
     for (const e of RESTYLE) {
       if (!touches(e.svgText)) continue;
-      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      try { await e.run(restyleText(e.svgText, SCOPE, e.view)); n++; }
       catch (err) { console.warn('[portrayal] field repaint failed', err); }
     }
     for (const rec of LOD) {
       if (!touches(rec.svgText)) continue;
-      rec.svgText = restyleText(rec.svgText, SCOPE);
+      rec.svgText = restyleText(rec.svgText, SCOPE, rec.key);
       // the same revision bump the state and pull setters use: a refine already
       // in flight captured the old text, and must not land over this one
       rec.rev++;
@@ -1748,7 +1783,7 @@ export function createViewer(container, opts = {}) {
     setBackground: c => { scene.background = new THREE.Color(c); },
     states: () => ({...STATES}),
     setPulled,
-    pulled: () => new Set(PULLED),
+    pulled: () => new Set([...PULLED.values()].map(x => x.path)),
     // the generic rack ears (#909): on or off, and the plan drawn (null when
     // they are off or the device gets none - see relief.js genericEars)
     setEars, ears: () => (earPlan ? JSON.parse(JSON.stringify(earPlan)) : null),

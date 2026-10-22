@@ -801,9 +801,11 @@ export function yamlHead(text) {
 // A module type's file is named for the part number (attrs.model), a "/"
 // in it written "-" (exporter.html reads it the same way). A contract with no
 // attrs.model is filed under its name, which is why `name` is the second try.
+// `model` may be a list: a component with `part-numbers` has one file per key,
+// and they are tried in the order given, the name after them.
 export function moduleTypePath(paths, model, name) {
   const files = paths.filter(p => p.includes('/module-types/'));
-  for (const key of [model, name]) {
+  for (const key of [...(Array.isArray(model) ? model : [model]), name]) {
     if (!key) continue;
     const want = [key, key.replace(/\//g, '-')];
     const hit = files.find(p => want.includes(stemOf(p)));
@@ -811,8 +813,20 @@ export function moduleTypePath(paths, model, name) {
   }
   return null;
 }
-export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
-  ?? comp?.attrs?.['vendor-sku'] ?? '';
+// EVERY ORDER CODE A COMPONENT IS EXPORTED UNDER, sorted: the keys of its
+// `part-numbers` map (one module type each), else the one code its attrs state,
+// else none. A bay accepts the component and not a code, so nothing here can
+// say which of two was bought; partNumber takes the first. Sorted because the
+// index sorts every key it writes, so the order a contract lists them in never
+// reaches a reader, and the same component must open the same file everywhere.
+export const partNumbers = comp => {
+  const keys = Object.keys(comp?.['part-numbers'] ?? {}).sort();
+  if (keys.length) return keys;
+  const one = comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
+    ?? comp?.attrs?.['vendor-sku'] ?? '';
+  return one === '' ? [] : [one];
+};
+export const partNumber = comp => partNumbers(comp)[0] ?? '';
 
 // A DCIM wants unique device names, and NetBox's are unique IGNORING CASE
 // ("Leaf" and "leaf" are one name): two items may share a label, or differ
@@ -859,6 +873,10 @@ export const DCIM_LIMITS = {
   deviceName: 64,
   // NetBox Rack.name is a 100-character field (seen on NetBox 4.7.2).
   rackName: 100,
+  // NetBox CableBundle.name is a 100-character field, unique across the
+  // instance (facts: v4.7.2, 251458b8, dcim/models/cables.py, CableBundle:
+  // CharField(max_length=100, unique=True)). Nautobot has no bundle.
+  cableBundleName: 100,
   // Cable.label (100) and Cable.description (200, PrimaryModel), NetBox v4.7.2
   // (facts: 251458b8, dcim/models/cables.py and netbox/models/__init__.py).
   // Nautobot's label is held to the same 100 here; its cable has no

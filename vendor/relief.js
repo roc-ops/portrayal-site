@@ -942,7 +942,8 @@ export function bodyBoxes(body, faceW, faceH) {
       // only when stated, so a plain box resolves to exactly what it always did
       ...(b.shape && b.shape !== 'box' ? {shape: b.shape, axis: b.axis || 'y'} : {}),
       ...(b.shape === 'ring' ? {wall: b.wall} : {}),
-      ...(b.shows && b.shows.length ? {shows: [...b.shows]} : {})}));
+      ...(b.shows && b.shows.length ? {shows: [...b.shows]} : {}),
+      ...(b.when ? {when: {...b.when}} : {})}));
   }
   const fp = body.footprint || {at: [0, 0], size: [faceW, faceH]};
   return [{id: 'body', x: fp.at[0], y: fp.at[1], w: fp.size[0], h: fp.size[1],
@@ -966,20 +967,80 @@ export function bodyBoxes(body, faceW, faceH) {
 //   rear  down the drawing is down the face.
 // `b` is a resolved box (bodyBoxes) in the part's own frame; `faceW` the
 // part's face width; `dw`/`dh` the drawing's size in mm.
-export function pieceArtCrop(b, which, faceW, dw, dh) {
+//
+// THE FOUR SIDES (`left`, `right`, `top`, `bottom`) come from the part's
+// `skins/body-<side>.svg`, each that side of the whole body seen from outside,
+// in the frames the one-box body has always read them in (bodyBoxMesh):
+//   right   across: mm behind the face plane      down: the face's y
+//   left    across: depth less mm behind the face  down: the face's y
+//   top     across: the face's x                  down: depth less mm behind
+//   bottom  across: face width less the face's x  down: depth less mm behind
+// `depth` is body.depth. A side drawing covers the patch of the body its
+// viewBox names, and `at` is that viewBox's origin: a card whose top edge
+// stands past its bracket (face x 126 on a 120 face) has a bottom drawing
+// that starts at -6, so nothing has to be drawn from a zero it does not have.
+export function pieceArtCrop(b, which, faceW, dw, dh, {at = [0, 0], depth = 0} = {}) {
   if (which === 'plan')
     return {repeat: [-b.w / dw, -(b.z1 - b.z0) / dh],
             offset: [(faceW - b.x) / dw, 1 - b.z0 / dh]};
-  return {repeat: [b.w / dw, b.h / dh],
-          offset: [(faceW - b.x - b.w) / dw, 1 - (b.y + b.h) / dh]};
+  if (which === 'rear')
+    return {repeat: [b.w / dw, b.h / dh],
+            offset: [(faceW - b.x - b.w) / dw, 1 - (b.y + b.h) / dh]};
+  // drawing mm -> texture u, v (three's canvas v is up)
+  const U = x => (x - at[0]) / dw, V = y => 1 - (y - at[1]) / dh, d = b.z1 - b.z0;
+  // BoxGeometry's +x and -x faces run u toward the back and toward the front,
+  // with v up; its +y face has v up toward the back, its -y face toward the
+  // front - so only the bottom, which reads both ways round, needs a negative
+  if (which === 'right') return {repeat: [d / dw, b.h / dh], offset: [U(b.z0), V(b.y + b.h)]};
+  if (which === 'left') return {repeat: [d / dw, b.h / dh], offset: [U(depth - b.z1), V(b.y + b.h)]};
+  if (which === 'top') return {repeat: [b.w / dw, d / dh], offset: [U(b.x), V(depth - b.z0)]};
+  return {repeat: [-b.w / dw, -d / dh], offset: [U(faceW - b.x), V(depth - b.z1)]};
+}
+
+// IS THIS PIECE FITTED? A piece with `when` stands only while its part's
+// drawing shows a node for one of the options it lists - an extender bolted to
+// a card's far end is there when the card's `extender` field says so, and not
+// otherwise. The drawing is the one place a field's value is settled: render.py
+// hides a SHOW node a configuration did not choose, fields.js does the same at
+// runtime, and an unset field leaves the skin's own default showing, so the
+// piece follows whatever the face follows. `shown` is shownOptions' entry for
+// the part: {field: [options a node shows]}. Pure, so it is checked under node.
+export function pieceFitted(b, shown) {
+  if (!b.when) return true;
+  return Object.entries(b.when).every(([k, opts]) =>
+    [].concat(opts).some(o => ((shown || {})[k] || []).includes(String(o))));
+}
+
+// WHICH OPTIONS EACH PART'S DRAWING SHOWS, by the part's path: every
+// `data-show-from` node still drawn - not removed, not `display="none"` on it
+// or on anything round it - counted for the nearest part above it. A part
+// alone (a component preview) is keyed by its own path all the same, which is
+// its name. A projection is another face's picture of a part, not the part.
+export function shownOptions(root) {
+  const out = {};
+  for (const n of root.querySelectorAll('[data-show-from]')) {
+    if (n.closest('[data-projection]')) continue;
+    let hidden = false;
+    for (let a = n; a && a.getAttribute && !hidden; a = a.parentNode)
+      hidden = a.getAttribute('display') === 'none';
+    if (hidden) continue;
+    const part = n.closest('[data-path]');
+    const path = part ? part.getAttribute('data-path') : '';
+    const k = n.getAttribute('data-show-from');
+    const opts = ((out[path] ||= {})[k] ||= []);
+    for (const o of (n.getAttribute('data-show') || '').split(/\s+/).filter(Boolean))
+      if (!opts.includes(o)) opts.push(o);
+  }
+  return out;
 }
 
 // ONE PIECE OF A BODY, as something to add to a scene: a box, or - where the
 // piece says so - a cylinder or a ring standing on `axis`, fitted into the
 // same `w` x `h` x `d` envelope the box would fill. `w` and `h` are passed in
 // because the callers have already taken them through the module's frame.
-// `art` is {plan, rear}: a material for the top and for the back, from
-// pieceArt. The caller positions the result at the envelope's centre.
+// `art` is {plan, rear, left, right, top, bottom}: a material for each side
+// that carries a drawing, from pieceArt. The caller positions the result at
+// the envelope's centre.
 //
 // A ROUND PIECE IS A UNIT SOLID, SCALED. Its envelope need not be square, so
 // a ring in a 60 x 58 envelope comes out very slightly oval, with its wall
@@ -1009,8 +1070,9 @@ export function pieceMesh(b, w, h, d, art = {}) {
     return solid;
   }
   // BoxGeometry's faces: +x, -x, +y (top), -y, +z (toward the face), -z (back)
-  const mats = art.plan || art.rear
-    ? [plain(), plain(), art.plan || plain(), plain(), plain(), art.rear || plain()]
+  const mats = Object.keys(art).length
+    ? [art.right || plain(), art.left || plain(), art.top || art.plan || plain(),
+       art.bottom || plain(), plain(), art.rear || plain()]
     : plain();
   return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
 }
@@ -1028,11 +1090,16 @@ export function pieceIsStraight(m, tilt) {
   if (!m) return true;
   return Math.abs(m.b) < 1e-9 && Math.abs(m.c) < 1e-9 && m.a > 0 && m.d > 0;
 }
+// (`when` is kept: whether a piece is fitted does not turn with its host)
 export const plainPiece = b => { const {shape, axis, wall, shows, ...box} = b; return box; };
+// the sides a piece can carry from the part's body-<side>.svg (pieceArtCrop)
+export const SIDES = ['left', 'right', 'top', 'bottom'];
 
 // THE DRAWINGS A PIECE SHOWS, rasterised once per drawing and cropped per
 // piece. `body.drawings` is the index's: {plan|rear: {file, w, h}}, the
-// part's own `faces`, and `body.face` its face size. `dist` is the same
+// part's own `faces`, and {left|right|top|bottom: {file, w, h, at}}, its
+// `body-<side>.svg` with the viewBox's origin; `body.face` is its face size
+// and `body.depth` the depth the sides measure back from. `dist` is the same
 // path -> URL function (or bare base) the back pass uses. A piece that names
 // a drawing the part does not have, or that is not a box, gets none - L71
 // says so at lint time, so here it is simply plain.
@@ -1053,19 +1120,23 @@ export async function pieceArt(body, b, dist, scope, cache) {
     const dr = body.drawings[which];
     if (!dr) continue;
     const url = typeof dist === 'function' ? dist(dr.file) : dist + dr.file;
-    if (cache && !cache.has(url))
-      cache.set(url, svgCanvas(url, dr.w, dr.h, false, false, scope).then(canvasTex));
+    // A SIDE DRAWING IS READ CLOSE. Its printing is a couple of millimetres
+    // tall (a card's "A100" is 1.8) and its ribs a couple apart, which the
+    // face density of 4 px/mm smears; it is rasterised at twice that, at least 8.
+    const px = SIDES.includes(which) ? Math.max(2 * _px(scope), 8) : undefined;
+    const raster = () => svgCanvas(url, dr.w, dr.h, false, false, scope, px).then(canvasTex);
+    if (cache && !cache.has(url)) cache.set(url, raster());
     let base;
     try {
-      base = await (cache ? cache.get(url)
-                          : svgCanvas(url, dr.w, dr.h, false, false, scope).then(canvasTex));
+      base = await (cache ? cache.get(url) : raster());
     } catch (err) {
       if (cache) cache.delete(url);
       console.warn(`[portrayal] a body piece's ${which} drawing did not load (${dr.file}); built plain`, err);
       continue;
     }
     const tex = cache ? base.clone() : base;
-    const {repeat, offset} = pieceArtCrop(b, which, (body.face || [dr.w])[0], dr.w, dr.h);
+    const {repeat, offset} = pieceArtCrop(b, which, (body.face || [dr.w])[0], dr.w, dr.h,
+                                          {at: dr.at || [0, 0], depth: body.depth || 0});
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;   // a negative repeat reads backwards, inside 0..1
     tex.repeat.set(...repeat); tex.offset.set(...offset);
     tex.needsUpdate = true;
@@ -1462,7 +1533,7 @@ const SVG_CACHE = new Map();
 // Passing no scope uses the default one, which is what every existing caller
 // does and what this module did before - so nothing had to change to keep working.
 export function createReliefScope(deps = {}) {
-  return {overrides: new Map(), states: new Map(), pulled: new Set(), lampBinds: new Map(),
+  return {overrides: new Map(), states: new Map(), pulled: new Set(), pulledIn: new Map(), lampBinds: new Map(),
           pxmm: deps.PXMM, fruPaths: deps.FRU_PATHS};
 }
 const DEFAULT_SCOPE = createReliefScope();
@@ -1741,13 +1812,32 @@ export function applyNodeLampColors(root, scope) {
 // NESTED PARTS COME WITH IT. Pulling a supply takes its lamps and its ports,
 // because they are on it - a tree row pointing at geometry that is no longer
 // drawn is exactly the dangling selection this was reported for.
-export function setPulled(paths, scope) {
-  const s = _sc(scope).pulled;
+//
+// OF THE VIEW IT IS ON. Two views can place one id (the DIN rail's left and
+// right both place `screw-upper`), so `views` - optional, one view for every
+// path or a list beside `paths` - says which face a path is off on. A path with
+// no view is off on every face that has it, as it always was; one with a view
+// is off on that face only.
+export function setPulled(paths, scope, views) {
+  const sc = _sc(scope), s = sc.pulled, at = sc.pulledIn;
   s.clear();
-  for (const p of paths || []) if (p) s.add(String(p));
+  at.clear();
+  (paths || []).forEach((p, i) => {
+    if (!p) return;
+    const v = Array.isArray(views) ? views[i] : views;
+    if (v == null) { s.add(String(p)); return; }
+    if (!at.has(String(v))) at.set(String(v), new Set());
+    at.get(String(v)).add(String(p));
+  });
 }
-export function clearPulled(scope) { _sc(scope).pulled.clear(); }
-export function pulledPaths(scope) { return new Set(_sc(scope).pulled); }
+export function clearPulled(scope) { _sc(scope).pulled.clear(); _sc(scope).pulledIn.clear(); }
+/** Every path that is off, on whichever view. */
+export function pulledPaths(scope) {
+  const sc = _sc(scope);
+  return new Set([...sc.pulled, ...[...sc.pulledIn.values()].flatMap(s => [...s])]);
+}
+/** The paths off on one view alone: the ones named for it, no more. */
+export function pulledOn(view, scope) { return new Set(_sc(scope).pulledIn.get(String(view)) || []); }
 
 /** Is `path` the pulled part itself, or something sitting on it? */
 function _isPulled(path, pulled) {
@@ -1756,23 +1846,47 @@ function _isPulled(path, pulled) {
   return false;
 }
 
-/** Hide what this viewer has taken off, in a parsed document. */
-export function applyPulled(root, scope) {
+/** Is `path`, drawn on `view`, off: by name for every view, or for this one? */
+export function isPulledOn(path, view, scope) {
+  const sc = _sc(scope);
+  return _isPulled(path, sc.pulled)
+    || (view != null && sc.pulledIn.has(String(view)) && _isPulled(path, sc.pulledIn.get(String(view))));
+}
+
+/** Hide what this viewer has taken off, in the scene under `o`. A mesh is on the
+ *  face whose group it hangs under (`userData.portrayalView`, set where the face's
+ *  group is made), so a part pulled on one face stays on the other that places the
+ *  same id. `view` is the face `o` is already known to be on. */
+export function hidePulled(o, scope, view = null) {
+  const v = (o.userData && o.userData.portrayalView) || view;
+  const p = o.userData && o.userData.portrayalPath;
+  if (p) o.visible = !isPulledOn(p, v, scope);
+  for (const c of o.children || []) hidePulled(c, scope, v);
+}
+
+/** Hide what this viewer has taken off, in a parsed document. `view` is the face
+ *  the document is; without it only what was taken off for every view is hidden. */
+export function applyPulled(root, scope, view) {
   if (!root) return root;
   for (const el of root.querySelectorAll("[data-portrayal-pulled]")) {
     el.removeAttribute("data-portrayal-pulled");
     el.removeAttribute("display");
   }
-  const pulled = _sc(scope).pulled;
-  if (!pulled.size) return root;
-  for (const el of root.querySelectorAll("[data-path]"))
-    if (_isPulled(el.getAttribute("data-path"), pulled)) {
-      el.setAttribute("data-portrayal-pulled", "");
-      el.setAttribute("display", "none");
-    }
-  // a part's projections on other faces go with it
+  const sc = _sc(scope);
+  const pulled = view != null && sc.pulledIn.has(String(view))
+    ? new Set([...sc.pulled, ...sc.pulledIn.get(String(view))]) : sc.pulled;
+  // a part's projections on other faces go with it, whichever face it was taken
+  // off on: the projection is the same part seen through another face
+  const anywhere = pulledPaths(scope);
+  if (!anywhere.size) return root;
+  if (pulled.size)
+    for (const el of root.querySelectorAll("[data-path]"))
+      if (_isPulled(el.getAttribute("data-path"), pulled)) {
+        el.setAttribute("data-portrayal-pulled", "");
+        el.setAttribute("display", "none");
+      }
   for (const el of root.querySelectorAll("[data-projection][data-of]"))
-    if (_isPulled(el.getAttribute("data-of"), pulled)) {
+    if (_isPulled(el.getAttribute("data-of"), anywhere)) {
       el.setAttribute("data-portrayal-pulled", "");
       el.setAttribute("display", "none");
     }
@@ -1799,7 +1913,8 @@ export function applyNodeStates(root, scope) {
 // and never re-shapes, so a texture can be redrawn from the text it was built
 // from without re-extracting any geometry - which is the whole reason clicking a
 // state chip does not cost a rebuild.
-export function restyleText(text, scope) {
+// `view` is the face the text is, for what was taken off on that face alone.
+export function restyleText(text, scope, view) {
   if (!text) return text;
   const div = document.createElement('div');
   div.innerHTML = text;
@@ -1810,7 +1925,7 @@ export function restyleText(text, scope) {
   // a face keeps its members where the registry puts them through a repaint
   applyNodeAdjustments(div, scope);
   applyNodeLampColors(div, scope);
-  applyPulled(div, scope);
+  applyPulled(div, scope, view);
   return div.innerHTML;
 }
 
@@ -2086,13 +2201,15 @@ function _copyOf(src) {
   return cv;
 }
 
-export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope) {
+export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope, pxmm) {
   const text = await svgSource(url, scope);
-  const px = _px(scope);
+  // `pxmm` only where a caller needs more than the face density (pieceArt)
+  const px = pxmm || _px(scope);
   // The kept raster itself, not a copy: every caller makes a texture of it and
   // draws nothing on it. A caller that draws on its canvas takes `rasterize`.
   const cv = await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax);
   cv._svgText ??= text;    // kept for adaptive re-rasterisation (see LOD below); an equal text draws the same
+
   return cv;
 }
 // A face canvas is inevitably non-power-of-two (a 548x44mm side is 2192x176 at
@@ -2461,7 +2578,7 @@ export function markPositionFields(root) {
   return root;
 }
 
-export async function extractRelief(url, scope, {back = false} = {}) {
+export async function extractRelief(url, scope, {back = false, view = null} = {}) {
   const div = document.createElement('div');
   div.style.cssText = 'position:absolute;left:-10000px;top:0;width:1000px;visibility:hidden';
   div.innerHTML = await svgSource(url, scope);
@@ -2494,7 +2611,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // has to put it back. Left as display:none it would measure 0x0 and extrude a
   // degenerate feature instead of none at all - a cover that is off should leave
   // no geometry behind, not a flat one.
-  applyPulled(svg, scope);
+  applyPulled(svg, scope, view);
   for (const el of [...q("[data-portrayal-pulled]")]) el.remove();
   // AND A NODE A POSITION HIDES, for the same reason (docs/switch-positions-
   // design.md section 6): a breaker's off flag is not drawn while it is on, and
@@ -2505,6 +2622,9 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // never rebuild to show it (#874).
   markPositionFields(svg);
   for (const el of [...q('[data-show-from][display="none"]')]) el.remove();
+  // what is left is what each part shows, which says which of its fitted
+  // pieces stand (pieceFitted)
+  const shown = shownOptions(svg);
   const {ctmOf, mmRect, shared, liftOf, ownerOf, nodeSvg} = nodeTools(svg, {back});
   // TILTED FACETS (docs/tilted-facets-design.md).
   // A node under a `[data-tilt-on]` group is measured foreshortened; it is
@@ -2904,7 +3024,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
     el.style.display = 'none';
   const cleanText = svg.outerHTML;
   div.remove();
-  return {cavities, outs, domes, vents, apertures, frus, subBodies, flatLifted, cleanText};
+  return {cavities, outs, domes, vents, apertures, frus, subBodies, flatLifted, cleanText, shown};
 }
 
 // The commonest opaque colour in a raster, which is what a part is MADE of - as
@@ -3304,7 +3424,7 @@ export async function buildFaceRelief(F, ctx) {
     const restyle = ctx.restyle || [];
     // `anim` - the material and its mm size - is what lets the viewer redraw
     // the same texture at several instants of a CSS animation (see lamps.js)
-    const reg = (svgText, run, anim = null) => { if (svgText) restyle.push({svgText, run, anim}); };
+    const reg = (svgText, run, anim = null) => { if (svgText) restyle.push({svgText, run, anim, view: F.view}); };
     // what a restyle will change, kept whole by the batch pass; with no
     // `ctx.restyle` nothing ever runs a restyle, so nothing is live
     const live = new Set();
@@ -3327,7 +3447,7 @@ export async function buildFaceRelief(F, ctx) {
       return;
     }
     const {cavities, outs, domes, vents, apertures = [], frus, subBodies = [], flatLifted = [],
-           cleanText} = await extractRelief(src, ctx.scope, {back: !!ctx.back});
+           cleanText, shown} = await extractRelief(src, ctx.scope, {back: !!ctx.back, view: F.view});
     if (ctx.apertures) ctx.apertures[F.view] = apertures;
     // A MODULE PREVIEW IS THE PART'S SIZE BOX HERE. A part that declares
     // `head:` publishes a preview whose viewBox also holds the head and its
@@ -3397,6 +3517,9 @@ export async function buildFaceRelief(F, ctx) {
     faceSvg[F.view] = faceText;   // LOD re-rasterises from this; keep it squared
     facePunch[F.view] = [];
     const grp = new THREE.Group();
+    // the face this group is, so a pulled part is hidden on its own face and not
+    // on the other that places the same id (setPulled's `views`)
+    grp.userData.portrayalView = F.view;
     grp.position.set(...F.pos());
     grp.rotation.set(...F.rot);
     // A FACE MAY BE AUTHORED MIRRORED and the underside is - a bottom view is drawn
@@ -4186,6 +4309,7 @@ export async function buildFaceRelief(F, ctx) {
         // riser's PCB and connectors come out with its plate. Side art is
         // for the one-box form; a PCB is a colour.
         for (const b of bodyBoxes(meta.body, f.w, f.h)) {
+          if (!pieceFitted(b, shown[f.path])) continue;
           // toFace is the drawn (foreshortened) frame; a tilted box is unprojected
           const r = f.tilt ? unproject(localToFace(f.toFace, b), f.tilt) : localToFace(f.toFace, b);
           const pb = pieceIsStraight(f.toFace, f.tilt) ? b : plainPiece(b);
@@ -4295,6 +4419,7 @@ export async function buildFaceRelief(F, ctx) {
       if (!body || !body.boxes) continue;
       const into = s.tilt ? tiltGroupFor(s.tilt, fruGroups[s.owner] || grp) : fruGroups[s.owner] || grp;
       for (const b of bodyBoxes(body, 0, 0)) {
+        if (!pieceFitted(b, shown[s.path])) continue;
         const r = s.tilt ? unproject(localToFace(s.toFace, b), s.tilt) : localToFace(s.toFace, b);
         const pb = pieceIsStraight(s.toFace, s.tilt) ? b : plainPiece(b);
         const m = pieceMesh(pb, r.w, r.h, b.z1 - b.z0,

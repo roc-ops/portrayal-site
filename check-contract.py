@@ -874,8 +874,8 @@ keys = set(re.findall(r"^\s*(\w+):\s*\{url:", SJS, re.M))
 tabs = set(re.findall(r'data-schema="([^"]+)"', SHTML))
 check(keys == tabs, "schema.html has one tab per SOURCES entry",
       f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
-WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
-n_word = re.search(r"\b(Two|Three|Four|Five|Six) documents:", SHTML)
+WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven"}
+n_word = re.search(r"\b(Two|Three|Four|Five|Six|Seven) documents:", SHTML)
 check(bool(n_word) and n_word.group(1) == WORDS.get(len(alldocs)),
       f"schema.html's intro counts {len(alldocs)} documents",
       f"it says {n_word.group(1) if n_word else 'nothing'}")
@@ -1192,6 +1192,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
     "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
+    "camera-fit": "viewer3d fits the opening view with it (openingView); no recipe calls it on its own",
     "rack/frames": "rack products applied to a frame (Portrayal #1131): frame.apply and frame.customise run it; the Rack Builder uses it, and no recipe on this page calls it yet",
 }
 _kpkg_f = VENDOR / "kit-package.json"
