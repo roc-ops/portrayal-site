@@ -1289,10 +1289,14 @@ def check_stages(page, base):
                 f'#sidePanel select[data-bay="{b["id"]}"] option', "os => os.map(o => o.value)"))
             if got != want:
                 bad.append(f"stage populate: {b['id']} offers {got}, but accepts {want}")
-        # Headed by what the cards are, per the component index's roles.
+        # Headed by what the cards are, per the component index's roles. The
+        # line card slots of the ASR 9006 accept the line cards and, since
+        # Portrayal #1142, the modular line cards (role `modular-line-card`):
+        # two roles in one set, which the stage heads "Modules" rather than
+        # guess. The route processor slots still agree on one role.
         names = page.eval_on_selector_all('#sidePanel .bay-set-name', "ns => ns.map(n => n.textContent)")
         if not any(n.startswith("Route switch processors") for n in names) \
-                or not any(n.startswith("Line cards") for n in names):
+                or not any(n.startswith("Modules · slot-2") for n in names):
             bad.append(f"stage populate: the slot sets are not headed by their cards' roles ({names})")
         # Choosing seats: a route processor in slot-0, the slot a line card
         # could never be offered for, and a line card in slot-2. The readout
