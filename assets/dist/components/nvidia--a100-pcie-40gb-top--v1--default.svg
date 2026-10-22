@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="38.23mm" height="266.7mm" viewBox="0 0 38.23 266.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="a100-pcie-40gb-top" data-path="a100-pcie-40gb-top" data-class="mechanical" data-ref="nvidia/a100-pcie-40gb-top@1:1.0.0" data-media="gpu" transform="translate(0,0)">
+    <title>a100-pcie-40gb-top</title>
+    <rect id="a100-pcie-40gb-top--backplate-edge" x="0" y="0.9" width="2.67" height="265.8" fill="#202326" />
+    <rect id="a100-pcie-40gb-top--board-edge" x="2.67" y="0.9" width="1.57" height="265.8" fill="#1d2420" />
+    <rect id="a100-pcie-40gb-top--cover-edge" x="4.24" y="0.9" width="8.39" height="265.8" fill="#202326" />
+    <rect id="a100-pcie-40gb-top--shroud-edge" x="12.63" y="0.9" width="25.6" height="265.8" fill="#b8a68c" />
+    <g id="a100-pcie-40gb-top--nvlink-1" data-path="a100-pcie-40gb-top/nvlink-1" data-class="inlet" data-ref="nvidia/nvlink-a100-connector@1:1.0.0" data-depth="2.5" data-wall="#2c3036" data-cavity="inlet-face" data-input="none" data-lane-rate-gbps="50" data-lanes-per-card="96" data-media="nvlink" data-role="nvlink" transform="translate(0.43,13.5)">
+      <title>a100-pcie-40gb-top--nvlink-1</title>
+      <rect id="a100-pcie-40gb-top--nvlink-1--opening" x="0" y="0" width="6.6" height="49.5" rx="0.5" fill="#17191c" data-path="a100-pcie-40gb-top/nvlink-1/opening" data-class="cutout" />
+      <rect id="a100-pcie-40gb-top--nvlink-1--inlet-face" x="0.8" y="0.8" width="5.0" height="47.9" rx="0.3" fill="#0d0f11" />
+      <path id="a100-pcie-40gb-top--nvlink-1--rim" fill="#2c3036" fill-rule="evenodd" stroke="#4a4d52" stroke-width="0.1" d="M 0.5 0 H 6.1 Q 6.6 0 6.6 0.5 V 49 Q 6.6 49.5 6.1 49.5 H 0.5 Q 0 49.5 0 49 V 0.5 Q 0 0 0.5 0 Z            M 0.8 0.8 H 5.8 V 48.7 H 0.8 Z" data-z-out="1.0" data-z-color="#2c3036" data-z-shape="1" />
+      <g fill="#b9bfc6">
+        <rect id="a100-pcie-40gb-top--nvlink-1--contact-a" x="1.75" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+        <rect id="a100-pcie-40gb-top--nvlink-1--contact-b" x="3.95" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+      </g>
+      <g data-cp="mate" data-cp-at="3.3 24.75" data-cp-dir="front" />
+    </g>
+    <g id="a100-pcie-40gb-top--nvlink-2" data-path="a100-pcie-40gb-top/nvlink-2" data-class="inlet" data-ref="nvidia/nvlink-a100-connector@1:1.0.0" data-depth="2.5" data-wall="#2c3036" data-cavity="inlet-face" data-input="none" data-lane-rate-gbps="50" data-lanes-per-card="96" data-media="nvlink" data-role="nvlink" transform="translate(0.43,70.7)">
+      <title>a100-pcie-40gb-top--nvlink-2</title>
+      <rect id="a100-pcie-40gb-top--nvlink-2--opening" x="0" y="0" width="6.6" height="49.5" rx="0.5" fill="#17191c" data-path="a100-pcie-40gb-top/nvlink-2/opening" data-class="cutout" />
+      <rect id="a100-pcie-40gb-top--nvlink-2--inlet-face" x="0.8" y="0.8" width="5.0" height="47.9" rx="0.3" fill="#0d0f11" />
+      <path id="a100-pcie-40gb-top--nvlink-2--rim" fill="#2c3036" fill-rule="evenodd" stroke="#4a4d52" stroke-width="0.1" d="M 0.5 0 H 6.1 Q 6.6 0 6.6 0.5 V 49 Q 6.6 49.5 6.1 49.5 H 0.5 Q 0 49.5 0 49 V 0.5 Q 0 0 0.5 0 Z            M 0.8 0.8 H 5.8 V 48.7 H 0.8 Z" data-z-out="1.0" data-z-color="#2c3036" data-z-shape="1" />
+      <g fill="#b9bfc6">
+        <rect id="a100-pcie-40gb-top--nvlink-2--contact-a" x="1.75" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+        <rect id="a100-pcie-40gb-top--nvlink-2--contact-b" x="3.95" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+      </g>
+      <g data-cp="mate" data-cp-at="3.3 24.75" data-cp-dir="front" />
+    </g>
+    <g id="a100-pcie-40gb-top--nvlink-3" data-path="a100-pcie-40gb-top/nvlink-3" data-class="inlet" data-ref="nvidia/nvlink-a100-connector@1:1.0.0" data-depth="2.5" data-wall="#2c3036" data-cavity="inlet-face" data-input="none" data-lane-rate-gbps="50" data-lanes-per-card="96" data-media="nvlink" data-role="nvlink" transform="translate(0.43,126.1)">
+      <title>a100-pcie-40gb-top--nvlink-3</title>
+      <rect id="a100-pcie-40gb-top--nvlink-3--opening" x="0" y="0" width="6.6" height="49.5" rx="0.5" fill="#17191c" data-path="a100-pcie-40gb-top/nvlink-3/opening" data-class="cutout" />
+      <rect id="a100-pcie-40gb-top--nvlink-3--inlet-face" x="0.8" y="0.8" width="5.0" height="47.9" rx="0.3" fill="#0d0f11" />
+      <path id="a100-pcie-40gb-top--nvlink-3--rim" fill="#2c3036" fill-rule="evenodd" stroke="#4a4d52" stroke-width="0.1" d="M 0.5 0 H 6.1 Q 6.6 0 6.6 0.5 V 49 Q 6.6 49.5 6.1 49.5 H 0.5 Q 0 49.5 0 49 V 0.5 Q 0 0 0.5 0 Z            M 0.8 0.8 H 5.8 V 48.7 H 0.8 Z" data-z-out="1.0" data-z-color="#2c3036" data-z-shape="1" />
+      <g fill="#b9bfc6">
+        <rect id="a100-pcie-40gb-top--nvlink-3--contact-a" x="1.75" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+        <rect id="a100-pcie-40gb-top--nvlink-3--contact-b" x="3.95" y="2.2" width="0.9" height="45.1" rx="0.15" data-z-top="1.2" data-z-color="#b9bfc6" />
+      </g>
+      <g data-cp="mate" data-cp-at="3.3 24.75" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

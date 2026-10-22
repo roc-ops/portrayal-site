@@ -517,7 +517,7 @@ const plane = (p, k, v) => set(p, k, v);
 // that a plug set back from its rail is offered (#1026), a way through the
 // gap as well when it stands inside it. Not offered without `room` (no bend
 // radius).
-function gapWays(a, b, solid, gaps, gapD, room, rearPoint = null) {
+function gapWays(a, b, solid, gaps, gapD, room, rearPoint = null, plugs = []) {
   if (!(room > 0) || !gaps?.length) return [];
   const g = gaps.find(x => x.item === solid.item && solid.part === `${x.via}/floor`);
   if (!g || !(gapD > 0) || gapD > g.width + 1e-9) return [];
@@ -532,7 +532,19 @@ function gapWays(a, b, solid, gaps, gapD, room, rearPoint = null) {
   const out = [], seen = [];
   const slid = end => [0, -1, 1, -2, 2].map(k => Math.max(g.x0 + r, Math.min(g.x1 - r, end.x + k * room / 2)))
     .filter((x, i, all) => all.findIndex(y => Math.abs(y - x) < 1e-6) === i);
-  const offer = way => { way.gap = true; out.push(way); };
+  // A CORD IS TAKEN UP THROUGH THE GAP ONLY WHERE IT CAN BE DRAWN THROUGH IT
+  // (P-0218, owner's option A, 2026-10-22): an end that is a plug's reach point,
+  // or a point straight out of it, leaves the plug along its normal and turns
+  // onto the rise at the way's first (or last) point. The turn is a bend of the
+  // cable's radius, `plugs[].bend`, and the corner it is made at stands that
+  // far beyond the reach point, along the normal: the plug's reach is straight
+  // and is no part of the bend. A way whose corner stands nearer, or behind the
+  // reach point, is not offered (the front edge is). Ends that are no plug's,
+  // and so every route that uses no gap, are not asked.
+  const drawable = way => [[a, way[0]], [b, way.at(-1)]].every(([end, corner]) => plugs.every(g =>
+    !(Math.abs(end.x - g.x) < 1e-6 && Math.abs(end.y - g.y) < 1e-6 && g.out * (end.z - g.z) > -1e-6)
+    || g.out * (corner.z - g.z) >= g.bend - 1e-6));
+  const offer = way => { if (drawable(way)) { way.gap = true; out.push(way); } };
   for (const v of [s(a.z), s(b.z), hi, (lo + hi) / 2]) {
     const u = clamp(v);
     if (seen.some(w => Math.abs(w - u) < 1e-6)) continue;
@@ -544,7 +556,7 @@ function gapWays(a, b, solid, gaps, gapD, room, rearPoint = null) {
   if (rearPoint?.length === 1 && across(rearPoint[0].x) && s(rearPoint[0].z) >= lo - 1e-9 && s(rearPoint[0].z) <= hi + 1e-9) offer(rearPoint);
   return out;
 }
-function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false, gaps = [], gapDiameter}) {
+function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false, gaps = [], gapDiameter, plugs = []}) {
   const box = met(solid, diameter), m = diameter / 2 + CLEAR;
   const out = (k, v) => {
     if (!(room > 0)) return v;
@@ -582,7 +594,7 @@ function waysRound(a, b, solid, {diameter, lanes, room = 0, rear = false, gaps =
   if (round && gaps?.length) round.back = true;
   // (the one point behind the back edge is a way through the gap too, offered with the others)
   const rearPoint = edge === 'z' && across === 'y' && !round ? rearWay(true) : null;
-  const tiers = edge === 'z' && across === 'y' ? [...(round ? [[round]] : []), [flat('z', front), ...gapWays(a, b, solid, gaps, gapDiameter ?? diameter, room, rearPoint)], [flat('z', back)]]
+  const tiers = edge === 'z' && across === 'y' ? [...(round ? [[round]] : []), [flat('z', front), ...gapWays(a, b, solid, gaps, gapDiameter ?? diameter, room, rearPoint, plugs)], [flat('z', back)]]
     : zeroU ? [[flat('z', back), corner('z', back)]] : [both(edge)];
   tiers.push(both(end));
   // A CORD THAT LANDS ON A ZERO-U PART'S FACE (P-0037): an end of the leg
@@ -638,14 +650,17 @@ const lengthOf = pts => pts.reduce((s, p, i) => (i ? s + gap(pts[i - 1], p) : 0)
 // beside a floor's front edge, taken when they are the shorter and the cable
 // (`gapDiameter`, a bundle's where it is bundled) fits and its turns keep the
 // bend radius, which is half of `room` (a gap way is held to it, and is the
-// way pulled taut that is held, not the way as offered).
-export function detour(a, b, solids, {diameter = 0, lanes = [], room = 0, rear = false, loose = false, gaps = [], gapDiameter} = {}) {
+// way pulled taut that is held, not the way as offered). `plugs` are the
+// plugs' reach points, [{x, y, z, out, bend}] (`out` the sign of the plug's
+// normal along z): a rise from one is taken only where the cord can be drawn
+// through it (gapWays).
+export function detour(a, b, solids, {diameter = 0, lanes = [], room = 0, rear = false, loose = false, gaps = [], gapDiameter, plugs = []} = {}) {
   const lanesAt = typeof lanes === 'function' ? lanes : () => lanes;
   const clear = (u, w, only = null) => gap(u, w) < 1e-9 || !legCrossings(u, w, only ? [only] : solids, {diameter}).length;
   const go = (p, q, depth) => {
     const first = legCrossings(p, q, solids, {diameter})[0];
     if (!first) return [];
-    const opts = {diameter, lanes: lanesAt((p.y + q.y) / 2), rear, gaps, gapDiameter};
+    const opts = {diameter, lanes: lanesAt((p.y + q.y) / 2), rear, gaps, gapDiameter, plugs};
     const plain = waysRound(p, q, first.solid, opts);
     const roomy = room > 0 ? waysRound(p, q, first.solid, {...opts, room}) : null;
     for (let t = 0; t < plain.length; t++) for (const tier of roomy ? [roomy[t], plain[t]] : [plain[t]]) {

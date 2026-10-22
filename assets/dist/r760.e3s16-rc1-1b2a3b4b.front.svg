@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="86.8mm" viewBox="0 0 482.6 86.8" data-device="r760" data-view="front" data-ru="2" data-weight-max-kg="36.1" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    @keyframes portrayal-seq-dell-control-panel-left-2u-16g-disabled {
+      0%, 3.25196% { opacity: 1; fill: #f8fafc; }
+      3.35196%, 6.60391% { opacity: 0; }
+      6.70391%, 9.95587% { opacity: 1; fill: #f8fafc; }
+      10.0559%, 13.3078% { opacity: 0; }
+      13.4078%, 16.6598% { opacity: 1; fill: #f8fafc; }
+      16.7598%, 20.0117% { opacity: 0; }
+      20.1117%, 23.3637% { opacity: 1; fill: #f8fafc; }
+      23.4637%, 26.7156% { opacity: 0; }
+      26.8156%, 30.0676% { opacity: 1; fill: #f8fafc; }
+      30.1676%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-disabled { animation: portrayal-seq-dell-control-panel-left-2u-16g-disabled 3.58s steps(1, end) infinite; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-fail-safe { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-healthy { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-identify { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-ready { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-transfer { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-transfer { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-unresponsive { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-unresponsive { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-updating { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-2u-16g@'] .state-updating { animation: portrayal-blink 2s linear infinite; }
+    g[data-ref^='dell/power-button-14g@'] .state-on { --led-color: #22c55e; }
+    #idrac-direct-led.state-connected, #idrac-direct-led .state-connected { --led-color: #22c55e; }
+    #idrac-direct-led.state-recognised, #idrac-direct-led .state-recognised { --led-color: #22c55e; }
+    #idrac-direct-led.state-recognised [data-class='led'], #idrac-direct-led .state-recognised { animation: portrayal-blink 4s linear infinite; }
+</style>
+  <metadata>{"device":"Dell PowerEdge R760","device-version":"2.0.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/usb-symbol@1":"1.0.0","common/vga-symbol@1":"1.0.0","dell/bezel-2u-16g@1":"1.0.0","dell/control-panel-grid-14g@1":"1.0.0","dell/control-panel-left-2u-16g@1":"1.0.0","dell/e3s-carrier-blank@2":"2.0.0","dell/idrac-direct-symbol@1":"1.0.0","dell/information-tag-1u-16g@1":"1.0.0","dell/power-button-14g@1":"1.0.1","dell/rack-latch-14g@1":"1.0.0","std/micro-usb@1":"1.0.1","std/usb-a@1":"1.3.0","std/vga@1":"1.1.0"},"source-sha256":"dc09bb2cee2340973b922e607145516e1f026433ebcf88bcc169e68a2d13eeeb","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PowerEdge R760" x="0" y="0" width="482.6" height="86.8" rx="1.2" fill="#2f3439" stroke="#1d2125" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-grille" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+    <pattern id="portrayal-grille-o0-0-s0_35-0_35" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.35 0.35)">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="13.6" height="86.8" rx="0.6" fill="#3a4045" />
+    <rect id="plate-1" data-kind="plate" x="468.54" y="0" width="14.06" height="86.8" rx="0.6" fill="#3a4045" />
+    <rect id="plate-2" data-kind="plate" x="457.8" y="2.7" width="10.6" height="81.4" rx="0.6" fill="#23272b" />
+    <rect id="plate-3" data-kind="plate" x="23.7" y="0" width="434.1" height="2.1" rx="0.6" fill="#9aa0a6" />
+    <rect id="plate-4" data-kind="plate" x="23.7" y="84.7" width="434.1" height="2.1" rx="0.6" fill="#9aa0a6" />
+    <rect id="plate-5" data-kind="plate" x="23.7" y="2.1" width="434.1" height="82.6" rx="0.6" fill="#1a1d21" />
+    <rect id="plate-6" data-kind="plate" x="112.4" y="3.8" width="86" height="79.2" rx="0.6" fill="#3b4046" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="118.4" y="9.8" width="74" height="67.2" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_35-0_35)" data-vent="1" />
+    <rect id="plate-7" data-kind="plate" x="198.4" y="3.8" width="84.4" height="79.2" rx="0.6" fill="#3b4046" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="204.4" y="9.8" width="72.4" height="67.2" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_35-0_35)" data-vent="1" />
+    <rect id="plate-8" data-kind="plate" x="367.5" y="3.8" width="85.9" height="79.2" rx="0.6" fill="#3b4046" />
+    <rect id="vent-field-2" data-kind="vent-field" data-aperture="air" x="373.5" y="9.8" width="73.9" height="67.2" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_35-0_35)" data-vent="1" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="458.8" y="3.17" width="8.34" height="8.31" fill="#101214" id="cutout--power-btn" data-path="cutout:power-btn" data-class="cutout" />
+    <rect x="460.4" y="19.54" width="4.5" height="12" fill="#101214" id="cutout--usb-1" data-path="cutout:usb-1" data-class="cutout" />
+    <rect x="462.13" y="63.43" width="2.75" height="7.5" fill="#101214" id="cutout--idrac-direct" data-path="cutout:idrac-direct" data-class="cutout" />
+    <path d="M465.593 25.132 A3.350 3.350 0 0 1 468.892 21.200 L481.378 21.200 A3.350 3.350 0 0 1 484.677 25.132 L483.848 29.832 A3.350 3.350 0 0 1 480.549 32.600 L469.721 32.600 A3.350 3.350 0 0 1 466.422 29.832 Z" transform="rotate(270 475.135 26.9)" fill="#101214" id="cutout--vga" data-path="cutout:vga" data-class="cutout" />
+    <ellipse cx="463.5" cy="73.3" rx="1" ry="1" fill="#101214" id="cutout--idrac-direct-led" data-path="cutout:idrac-direct-led" data-class="cutout" />
+  </g>
+  <g id="power-btn" data-path="power-btn" data-class="button" data-ref="dell/power-button-14g@1:1.0.1" data-rel-pos="1" transform="translate(458.8,3.17)" data-group="mgmt" data-group-role="management" data-description="the power button" data-for="chassis">
+    <title>power-btn</title>
+    <rect x="0.12" y="0.12" width="8.10" height="8.07" rx="0.7" fill="#22262a" stroke="#4a5157" stroke-width="0.22" />
+    <g id="power-btn--lamp" fill="none" stroke="var(--led-color, #39b54a)" stroke-width="0.62" stroke-linecap="round" data-path="power-btn/lamp" data-class="led" data-states="off on" data-description="the power symbol itself, lit from behind. It is the glyph that lights, not a separate indicator beside it, which is why the element is the symbol's own box rather than a dot.">
+      <path d="M2.60 2.35 A2.55 2.55 0 1 0 5.74 2.35" />
+      <path d="M4.17 1.15 V4.05" />
+    </g>
+  </g>
+  <g id="usb-1" data-path="usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="1" transform="translate(456.65,23.29) rotate(90 6.0 2.25)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>usb-1</title>
+    <rect id="usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-1/opening" data-class="cutout" />
+    <rect id="usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="idrac-direct" data-path="idrac-direct" data-class="port" data-ref="std/micro-usb@1:1.0.1" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-rel-pos="2" transform="translate(459.75,65.81) rotate(90 3.75 1.375)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>idrac-direct</title>
+    <rect id="idrac-direct--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+    <path id="idrac-direct--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="idrac-direct/opening" data-class="cutout" />
+    <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    <g data-cp="mate" data-cp-at="3.755 1.38" data-cp-dir="front" />
+  </g>
+  <g id="vga" data-path="vga" data-class="port" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" data-rel-pos="3" transform="translate(464.9,21.2) rotate(270 10.235 5.7)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>vga</title>
+    <path id="vga--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="vga/opening" data-class="cutout" data-z-out="1.5" data-z-color="#5c6268" data-z-shape="1" />
+    <g id="vga--socket-floor">
+      <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+    </g>
+    <path id="vga--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="1.5" data-z-color="#1f4f9e" data-z-shape="1" />
+    <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+  </g>
+  <g id="mark-usb-1" data-path="mark-usb-1" data-class="silkscreen" data-ref="common/usb-symbol@1:1.0.0" data-rel-pos="1" transform="translate(459.45,14.4)" data-group="marks" data-group-role="furniture" data-description="printed marks seated as parts - the USB, iDRAC Direct and VGA symbols and the panel's vent grid" data-for="usb-1">
+    <title>mark-usb-1</title>
+    <g id="mark-usb-1--symbol" stroke="#c7ccd1" fill="#c7ccd1" stroke-linecap="round" data-path="mark-usb-1/symbol" data-class="silkscreen">
+      <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+      <circle cx="0.75" cy="2" r="0.55" />
+      <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+      <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+      <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+      <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+      <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+    </g>
+  </g>
+  <g id="mark-idrac" data-path="mark-idrac" data-class="silkscreen" data-ref="dell/idrac-direct-symbol@1:1.0.0" data-rel-pos="2" transform="translate(461.6,59.1)" data-group="marks" data-group-role="furniture" data-description="printed marks seated as parts - the USB, iDRAC Direct and VGA symbols and the panel's vent grid" data-for="idrac-direct">
+    <title>mark-idrac</title>
+    <g id="mark-idrac--symbol" fill="none" stroke="#c7ccd1" stroke-linecap="round">
+      <path d="M0.97 0.48 A0.82 0.82 0 1 1 0.54 0.84" stroke-width="0.52" />
+      <path d="M1.83 1.83 L3.24 3.24" stroke-width="0.58" />
+    </g>
+  </g>
+  <g id="mark-vga" data-path="mark-vga" data-class="silkscreen" data-ref="common/vga-symbol@1:1.0.0" data-rel-pos="3" transform="translate(472.13,12.0)" data-group="marks" data-group-role="furniture" data-description="printed marks seated as parts - the USB, iDRAC Direct and VGA symbols and the panel's vent grid" data-for="vga">
+    <title>mark-vga</title>
+    <g id="mark-vga--symbol" fill="none" stroke="#c7ccd1" stroke-width="0.34" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.55" y="0.55" width="2.90" height="2.30" rx="0.30" />
+      <path d="M0.55 1.20 V2.20" />
+      <path d="M5.45 1.20 V2.20" />
+    </g>
+  </g>
+  <g id="panel-grid" data-path="panel-grid" data-class="silkscreen" data-ref="dell/control-panel-grid-14g@1:1.0.0" data-rel-pos="4" transform="translate(458.65,36.5)" data-group="marks" data-group-role="furniture" data-description="printed marks seated as parts - the USB, iDRAC Direct and VGA symbols and the panel's vent grid" data-for="chassis">
+    <title>panel-grid</title>
+    <g fill="#282d31">
+      <rect x="0.23" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="1.43" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="2.62" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="3.82" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="5.02" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="6.22" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="7.42" y="0.00" width="0.74" height="1.27" rx="0.12" />
+      <rect x="0.23" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="1.43" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="2.62" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="3.82" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="5.02" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="6.22" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="7.42" y="1.82" width="0.74" height="1.27" rx="0.12" />
+      <rect x="0.23" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="1.43" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="2.62" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="3.82" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="5.02" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="6.22" y="3.64" width="0.74" height="1.27" rx="0.12" />
+      <rect x="7.42" y="3.64" width="0.74" height="1.27" rx="0.12" />
+    </g>
+  </g>
+  <g id="idrac-direct-led" data-path="idrac-direct-led" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(462.5,72.3)" data-group="leds" data-group-role="indicator" data-description="R760 ISM table 181: solid green for two seconds when a laptop or tablet is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word." data-states="off connected recognised" data-for="idrac-direct">
+    <title>idrac-direct-led</title>
+    <circle id="idrac-direct-led--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="idrac-direct-led--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="idrac-direct-led/lamp" data-class="led" data-states="off connected recognised" data-z-dome="0.3" />
+  </g>
+  <g id="latch-left" data-path="latch-left" data-class="latch" data-ref="dell/rack-latch-14g@1:1.0.0" data-rel-pos="1" transform="translate(0.63,46.91)" data-group="latches" data-group-role="furniture" data-description="the rack release levers, one built into each ear. Pressed to free the chassis from the rail, so they release the BOX rather than operating anything in it, which is why they are furniture" data-for="chassis">
+    <title>latch-left</title>
+    <rect x="0.15" y="0.15" width="11.86" height="37.69" rx="1.1" fill="#2b2f34" stroke="#4a5157" stroke-width="0.3" />
+    <rect id="latch-left--press" x="1.4" y="1.6" width="9.4" height="9.0" rx="0.9" fill="#202427" stroke="#565d64" stroke-width="0.26" data-path="latch-left/press" data-class="control" data-description="the pressed face at the top of the rocker, where the finger goes. Below it the moulding is a plain grip." />
+    <path d="M3.1 6.1 h5.96" stroke="#6d7379" stroke-width="0.42" stroke-linecap="round" />
+    <rect x="1.4" y="12.4" width="9.4" height="23.9" rx="0.8" fill="#262a2e" stroke="#3d4348" stroke-width="0.22" />
+  </g>
+  <g id="latch-right" data-path="latch-right" data-class="latch" data-ref="dell/rack-latch-14g@1:1.0.0" data-rel-pos="2" transform="translate(469.04,46.91)" data-group="latches" data-group-role="furniture" data-description="the rack release levers, one built into each ear. Pressed to free the chassis from the rail, so they release the BOX rather than operating anything in it, which is why they are furniture" data-for="chassis">
+    <title>latch-right</title>
+    <rect x="0.15" y="0.15" width="11.86" height="37.69" rx="1.1" fill="#2b2f34" stroke="#4a5157" stroke-width="0.3" />
+    <rect id="latch-right--press" x="1.4" y="1.6" width="9.4" height="9.0" rx="0.9" fill="#202427" stroke="#565d64" stroke-width="0.26" data-path="latch-right/press" data-class="control" data-description="the pressed face at the top of the rocker, where the finger goes. Below it the moulding is a plain grip." />
+    <path d="M3.1 6.1 h5.96" stroke="#6d7379" stroke-width="0.42" stroke-linecap="round" />
+    <rect x="1.4" y="12.4" width="9.4" height="23.9" rx="0.8" fill="#262a2e" stroke="#3d4348" stroke-width="0.22" />
+  </g>
+  <g id="info-tag" data-path="info-tag" data-class="tab" data-behaviour="fills" data-ref="dell/information-tag-1u-16g@1:1.0.0" data-role="info-tab" data-rel-pos="1" transform="translate(393.0,84.75)" data-group="tags" data-group-role="furniture" data-description="the slide-out Express Service Tag under the right-hand drives">
+    <title>info-tag</title>
+    <path id="info-tag--tab" d="M2.50 0 H63.55 V2.03 H0 V0.77 Z" fill="#404040" data-path="info-tag/tab" data-class="tab" />
+    <rect x="24.18" y="0.47" width="15.20" height="0.33" rx="0.15" fill="#83a7e2" />
+  </g>
+  <g id="panel-left" data-path="panel-left" data-class="bay" data-group="panels" data-group-role="indicator" data-rel-pos="1" data-for="chassis">
+    <title>panel-left</title>
+    <rect id="panel-left--opening" x="13.6" y="2.1" width="10.1" height="82" fill="#101214" />
+    <g id="panel-left--module" data-path="panel-left/module" data-class="control-panel" data-behaviour="fills" data-ref="dell/control-panel-left-2u-16g@1:1.0.0" data-body-depth="22.8" transform="translate(18.65,43.1) translate(-5.05,-41)">
+      <title>panel-left--module</title>
+      <rect x="0" y="0" width="10.1" height="82.0" rx="0.5" fill="#15181b" />
+      <g transform="translate(0.90 7.85)">
+        <g id="panel-left--module--lamp-drive" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.26" stroke-linejoin="round" data-path="panel-left/module/lamp-drive" data-class="led" data-states="off fault" data-description="the drive glyph, lit. ISM table 2 - solid amber if there is a drive error.">
+          <ellipse cx="2.45" cy="1.97" rx="1.02" ry="0.40" />
+          <path d="M1.43 1.97 v1.56 a1.02 0.40 0 0 0 2.04 0 v-1.56" />
+          <path d="M1.43 2.77 a1.02 0.40 0 0 0 2.04 0" stroke-width="0.20" />
+        </g>
+      </g>
+      <g transform="translate(0.90 7.70)">
+        <g id="panel-left--module--lamp-temperature" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linecap="round" stroke-linejoin="round" data-path="panel-left/module/lamp-temperature" data-class="led" data-states="off fault" data-description="the thermometer glyph. Solid amber on a thermal error - ambient out of range, or a fan failure.">
+          <path d="M2.03 7.65 V6.17 a0.42 0.42 0 0 1 0.84 0 V7.65" />
+          <circle cx="2.45" cy="8.21" r="0.66" />
+          <path d="M2.87 6.63 h0.44 M2.87 7.15 h0.44 M2.87 7.67 h0.44" stroke-width="0.18" />
+          <circle cx="2.45" cy="8.21" r="0.26" fill="var(--led-color, #8b9299)" stroke="none" />
+        </g>
+      </g>
+      <g transform="translate(0.90 7.45)">
+        <g id="panel-left--module--lamp-electrical" data-path="panel-left/module/lamp-electrical" data-class="led" data-states="off fault" data-description="the lightning glyph. Solid amber on voltage out of range, a failed PSU or a failed voltage regulator.">
+          <rect x="1.35" y="10.85" width="2.20" height="2.20" rx="0.38" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" />
+          <path d="M2.75 11.23 L1.93 12.07 h0.52 l-0.30 0.72 l0.86 -0.94 h-0.56 Z" fill="var(--led-color, #8b9299)" />
+        </g>
+      </g>
+      <g transform="translate(0.90 7.30)">
+        <g id="panel-left--module--lamp-memory" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="panel-left/module/lamp-memory" data-class="led" data-states="off fault" data-description="the memory glyph. Solid amber on a memory error.">
+          <path d="M1.21 15.63 h2.48 v1.30 h-2.48 Z" />
+          <path d="M1.21 16.93 h0.86 v0.34 h0.76 v-0.34 h0.86" stroke-width="0.22" />
+          <path d="M1.83 15.97 v0.62 M2.45 15.97 v0.62 M3.07 15.97 v0.62" stroke-width="0.18" />
+        </g>
+      </g>
+      <g transform="translate(0.90 7.15)">
+        <g id="panel-left--module--lamp-pcie" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="panel-left/module/lamp-pcie" data-class="led" data-states="off fault" data-description="the PCIe glyph. Solid amber when a PCIe card errors.">
+          <path d="M1.25 20.09 h1.92 v1.72 h-1.92 Z" />
+          <path d="M1.73 21.81 h0.62 v0.42 h-0.62 Z" fill="var(--led-color, #8b9299)" stroke="none" />
+          <path d="M3.17 19.85 v2.60" stroke-width="0.34" />
+        </g>
+      </g>
+      <rect x="6.55" y="9.6" width="2.95" height="27.4" rx="1.2" fill="#0c0e10" stroke="#4a5157" stroke-width="0.2" />
+      <rect id="panel-left--module--lamp-health" x="7.0" y="10.2" width="2.05" height="17.0" rx="0.9" fill="var(--led-color, #1e3a5f)" data-path="panel-left/module/lamp-health" data-class="led" data-states="off healthy identify fail-safe fault" data-description="the system health and system ID bar, and the button that switches between the two modes: solid blue - on, healthy, ID mode not active; blinking blue - ID mode active; solid amber - fail-safe mode; blinking amber - a fault, check the event log. The codes are the R660's table 129 (dell/control-panel-left-16g@1). NO RATE IS PUBLISHED for either blink, so 1 Hz is this library's reading and is not a figure Dell states." />
+      <rect id="panel-left--module--lamp-quicksync" x="7.0" y="27.4" width="2.05" height="9.0" rx="0.9" fill="var(--led-color, #3a3f44)" data-path="panel-left/module/lamp-quicksync" data-class="led" data-states="off ready transfer updating disabled fail-safe unresponsive" data-description="the iDRAC Quick Sync 2 bar, and the button that turns the feature on and off. Every code in the R660's table 130, at the shape that table gives (dell/control-panel-left-16g@1): off, solid and blinking white, five rapid blinks then off, solid and blinking amber. The 2.5 second tail of `disabled` is this library's reading of 'and then turns off'." />
+      <g fill="none" stroke="#8b9299" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.40 4.65 L7.95 6.15 C8.0 6.5 8.5 6.55 8.78 6.25" stroke-width="0.55" />
+      </g>
+      <ellipse cx="8.50" cy="4.05" rx="0.36" ry="0.28" fill="#8b9299" transform="rotate(-16 8.50 4.05)" />
+      <g fill="none" stroke="#8b9299" stroke-linecap="round">
+        <path d="M6.55 39.4 A1.95 1.95 0 0 1 9.45 39.4" stroke-width="0.3" />
+        <path d="M7.05 39.8 A1.3 1.3 0 0 1 8.95 39.8" stroke-width="0.28" />
+        <path d="M7.55 40.2 A0.65 0.65 0 0 1 8.45 40.2" stroke-width="0.26" />
+      </g>
+    </g>
+  </g>
+  <g id="e3s-0" data-path="e3s-0" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="0">
+    <title>e3s-0</title>
+    <rect id="e3s-0--opening" x="31.325" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-0--module" data-path="e3s-0/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(35.2,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-0--module</title>
+      <defs>
+        <radialGradient id="e3s-0--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-0--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-0--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-0/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-0--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-1" data-path="e3s-1" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="1">
+    <title>e3s-1</title>
+    <rect id="e3s-1--opening" x="41.525" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-1--module" data-path="e3s-1/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(45.4,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-1--module</title>
+      <defs>
+        <radialGradient id="e3s-1--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-1--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-1--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-1/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-1--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-2" data-path="e3s-2" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="2">
+    <title>e3s-2</title>
+    <rect id="e3s-2--opening" x="51.725" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-2--module" data-path="e3s-2/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(55.6,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-2--module</title>
+      <defs>
+        <radialGradient id="e3s-2--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-2--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-2--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-2/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-2--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-3" data-path="e3s-3" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="3">
+    <title>e3s-3</title>
+    <rect id="e3s-3--opening" x="61.925" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-3--module" data-path="e3s-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(65.8,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-3--module</title>
+      <defs>
+        <radialGradient id="e3s-3--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-3--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-3--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-3/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-3--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-4" data-path="e3s-4" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="4">
+    <title>e3s-4</title>
+    <rect id="e3s-4--opening" x="72.125" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-4--module" data-path="e3s-4/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(76,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-4--module</title>
+      <defs>
+        <radialGradient id="e3s-4--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-4--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-4--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-4/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-4--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-5" data-path="e3s-5" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="5">
+    <title>e3s-5</title>
+    <rect id="e3s-5--opening" x="82.325" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-5--module" data-path="e3s-5/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(86.2,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-5--module</title>
+      <defs>
+        <radialGradient id="e3s-5--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-5--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-5--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-5/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-5--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-6" data-path="e3s-6" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="6">
+    <title>e3s-6</title>
+    <rect id="e3s-6--opening" x="92.525" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-6--module" data-path="e3s-6/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(96.4,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-6--module</title>
+      <defs>
+        <radialGradient id="e3s-6--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-6--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-6--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-6/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-6--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-7" data-path="e3s-7" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="7">
+    <title>e3s-7</title>
+    <rect id="e3s-7--opening" x="102.725" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-7--module" data-path="e3s-7/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(106.6,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-7--module</title>
+      <defs>
+        <radialGradient id="e3s-7--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-7--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-7--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-7/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-7--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-8" data-path="e3s-8" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="8">
+    <title>e3s-8</title>
+    <rect id="e3s-8--opening" x="285.525" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-8--module" data-path="e3s-8/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(289.4,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-8--module</title>
+      <defs>
+        <radialGradient id="e3s-8--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-8--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-8--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-8/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-8--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-9" data-path="e3s-9" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="9">
+    <title>e3s-9</title>
+    <rect id="e3s-9--opening" x="295.725" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-9--module" data-path="e3s-9/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(299.6,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-9--module</title>
+      <defs>
+        <radialGradient id="e3s-9--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-9--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-9--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-9/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-9--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-10" data-path="e3s-10" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="10">
+    <title>e3s-10</title>
+    <rect id="e3s-10--opening" x="305.925" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-10--module" data-path="e3s-10/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(309.8,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-10--module</title>
+      <defs>
+        <radialGradient id="e3s-10--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-10--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-10--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-10/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-10--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-11" data-path="e3s-11" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="11">
+    <title>e3s-11</title>
+    <rect id="e3s-11--opening" x="316.125" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-11--module" data-path="e3s-11/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(320,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-11--module</title>
+      <defs>
+        <radialGradient id="e3s-11--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-11--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-11--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-11/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-11--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-12" data-path="e3s-12" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="12">
+    <title>e3s-12</title>
+    <rect id="e3s-12--opening" x="326.325" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-12--module" data-path="e3s-12/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(330.2,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-12--module</title>
+      <defs>
+        <radialGradient id="e3s-12--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-12--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-12--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-12/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-12--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-13" data-path="e3s-13" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="13">
+    <title>e3s-13</title>
+    <rect id="e3s-13--opening" x="336.525" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-13--module" data-path="e3s-13/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(340.4,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-13--module</title>
+      <defs>
+        <radialGradient id="e3s-13--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-13--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-13--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-13/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-13--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-14" data-path="e3s-14" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="14">
+    <title>e3s-14</title>
+    <rect id="e3s-14--opening" x="346.725" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-14--module" data-path="e3s-14/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(350.6,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-14--module</title>
+      <defs>
+        <radialGradient id="e3s-14--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-14--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-14--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-14/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-14--module--stud)" />
+    </g>
+  </g>
+  <g id="e3s-15" data-path="e3s-15" data-class="bay" data-group="drives-e3s" data-group-role="service" data-rel-pos="15">
+    <title>e3s-15</title>
+    <rect id="e3s-15--opening" x="356.925" y="4.58" width="7.75" height="77.65" fill="#101214" />
+    <g id="e3s-15--module" data-path="e3s-15/module" data-class="blank" data-behaviour="fills" data-ref="dell/e3s-carrier-blank@2:2.0.0" data-body-depth="25.0" data-media="e3s" data-power-absent="not-applicable" transform="translate(360.8,43.405) rotate(90) translate(-38.825,-3.875)">
+      <title>e3s-15--module</title>
+      <defs>
+        <radialGradient id="e3s-15--module--stud" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#f4f5f6" />
+          <stop offset="0.55" stop-color="#b9bdc1" />
+          <stop offset="1" stop-color="#6d7277" />
+        </radialGradient>
+      </defs>
+      <rect id="e3s-15--module--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.6" fill="#1d2023" stroke="#0f1113" stroke-width="0.2" />
+      <rect x="1.2" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect x="73.45" y="1.1" width="3.0" height="5.55" rx="0.4" fill="#141618" />
+      <rect id="e3s-15--module--release" x="16.6" y="1.0" width="38.6" height="5.75" rx="0.6" fill="#24282b" data-path="e3s-15/module/release" data-class="control" data-description="the studded grip along the front edge, by which the blank is pulled" />
+      <circle cx="19.40" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="24.72" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="30.04" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="35.36" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="40.68" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="46.00" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+      <circle cx="51.32" cy="3.88" r="1.95" fill="url(#e3s-15--module--stud)" />
+    </g>
+  </g>
+  <g id="bezel" data-path="bezel" data-class="bezel" data-behaviour="mounts" data-ref="dell/bezel-2u-16g@1:1.0.0" data-body-depth="19.7" data-power-absent="not-applicable" data-rel-pos="3" transform="translate(25.4,2.6)" data-group="covers" data-group-role="furniture" data-description="the system cover and the backplane cover on top, and the optional security bezel on the front. The bezel is DRAWN FITTED, as on the R740xd and R660: it is `mounts`, so the viewer takes it off to show the drives, and `for:` names what it covers." data-for="e3s-0 e3s-1 e3s-2 e3s-3 e3s-4 e3s-5 e3s-6 e3s-7 e3s-8 e3s-9 e3s-10 e3s-11 e3s-12 e3s-13 e3s-14 e3s-15" data-hides="e3s-0 e3s-1 e3s-2 e3s-3 e3s-4 e3s-5 e3s-6 e3s-7 e3s-8 e3s-9 e3s-10 e3s-11 e3s-12 e3s-13 e3s-14 e3s-15">
+    <title>bezel</title>
+    <path id="bezel--plate" fill-rule="evenodd" fill="#3a3e43" d="M0 0 H430.7 V81.0 H0 Z     M26.25 1.52 L34 1.52 L40.25 16.27 L42.5 24.27 L34.5 38.02 L26.25 38.02 Z     M26.25 43.02 L34.5 43.02 L43.25 58.02 L43.75 60.27 L36.5 77.02 L26.25 77.02 Z     M46.25 26.52 L56.5 20.52 L71 20.52 L83.75 41.02 L71.25 60.52 L51.75 60.52 L39 40.27 Z     M41.25 1.52 L81.25 1.52 L75.25 15.77 L56.25 15.77 L45 10.77 Z     M50 65.52 L72.75 65.52 L79.25 77.02 L43.5 77.02 Z     M88.75 1.52 L111 1.52 L119.5 21.52 L119.5 23.52 L109.75 38.27 L90.25 38.27 L87.5 36.77 L79.5 23.27 Z     M79.75 57.77 L90 42.77 L109.5 42.77 L113 45.52 L120 58.27 L112 77.02 L87.75 77.02 Z     M116.25 40.27 L128.5 21.02 L148 21.02 L160.25 40.02 L148 60.02 L128.5 60.02 Z     M118.5 1.52 L158.25 1.52 L152.25 15.77 L126.75 15.77 Z     M127 65.52 L149.75 65.52 L156.25 77.02 L120.5 77.02 Z     M165.75 1.52 L188 1.52 L196.75 22.27 L186.75 38.27 L167 38.27 L165.25 37.52 L156.5 23.27 Z     M156.75 58.02 L167 42.77 L186.5 42.77 L190 45.52 L197 58.27 L189 77.02 L164.5 77.02 Z     M193.25 40.27 L205.5 21.02 L225 21.02 L237.25 39.77 L237 41.27 L225 60.02 L205.5 60.02 L193.25 41.27 Z     M195.5 1.52 L235.25 1.52 L229.25 15.77 L203.75 15.77 Z     M204.5 65.52 L226 65.52 L233 77.02 L197.5 77.02 Z     M242.75 1.52 L266.75 1.52 L275 20.52 L263.75 38.27 L244.25 38.27 L233.5 23.27 Z     M233.75 57.77 L244 42.77 L263.5 42.77 L265.25 43.52 L274 58.27 L266 77.02 L241.5 77.02 Z     M270.25 40.27 L282.5 21.02 L302 21.02 L314 40.27 L302 60.02 L282.5 60.02 Z     M280.75 65.52 L303.75 65.52 L310.25 77.02 L274.25 77.02 Z     M307.75 18.02 L353.75 18.02 L340.75 38.27 L321 38.27 L319.25 37.52 Z     M321 42.77 L340.5 42.77 L343.5 44.77 L351 58.27 L343 77.02 L318.5 77.02 L310.75 58.77 Z     M347 40.27 L359.5 21.02 L379 21.02 L391 38.77 L379 60.02 L359.5 60.02 Z     M357.75 65.52 L380.75 65.52 L387.25 77.02 L351.25 77.02 Z     M386.5 20.52 L394.75 1.52 L404.25 1.52 L404.25 38.02 L396 38.02 Z     M386.75 59.02 L396 43.02 L404.25 43.02 L404.25 77.02 L394 77.02 Z" data-path="bezel/plate" data-class="bezel" data-description="the bezel - end plates and honeycomb - over an open ground" data-z-out="19.7" data-z-color="#3a3e43" data-z-shape="1" />
+    <circle id="bezel--lock" cx="48.5" cy="18.3" r="7.5" fill="#1b1e21" stroke="#6d747a" stroke-width="0.4" data-path="bezel/lock" data-class="control" data-description="the keylock - unlocked with the bezel key before the bezel comes off (ISM 'Removing the front bezel', step 1)." />
+    <path d="M45.5 18.3 H51.5 M48.5 15.3 V21.3" stroke="#8d949b" stroke-width="0.5" fill="none" />
+    <rect id="bezel--release" x="0" y="18.6" width="19.9" height="43.8" rx="1.2" fill="#2b2f33" stroke="#5a6066" stroke-width="0.3" data-path="bezel/release" data-class="control" data-description="the release button on the left end plate - step 2 of removal, pressed before the left end is pulled away." />
+  </g>
+</svg>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="137.3mm" height="44.0mm" viewBox="0 0 137.3 44.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="riser-4r-2u-16g" data-path="riser-4r-2u-16g" data-class="riser" data-behaviour="fills" data-ref="dell/riser-4r-2u-16g@1:1.0.0" data-body-depth="246.9" data-appears-in="riser configurations 4, 9 and 10" data-power-absent="not-published" data-riser="4R" data-slot-7="x16 (x8+x8 SNAPI), full height, half length, processor 1 and 2 (processor 1 in the single-processor configurations), PCIe Gen5" data-slot-8="x8, full height, half length, processor 2, PCIe Gen5" transform="translate(0,0)">
+    <title>riser-4r-2u-16g</title>
+    <g id="riser-4r-2u-16g--slot-7" data-path="riser-4r-2u-16g/slot-7" data-class="bay">
+      <rect id="riser-4r-2u-16g--slot-7--opening" x="17.20" y="19.80" width="120.02" height="21.59" fill="none" stroke="none" />
+      <g id="riser-4r-2u-16g--slot-7--module" data-path="riser-4r-2u-16g/slot-7/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-fh-16g@1:1.0.1" transform="translate(17.2,19.8) rotate(180 60.01 10.795)">
+        <title>riser-4r-2u-16g--slot-7--module</title>
+        <rect id="riser-4r-2u-16g--slot-7--module--plate" x="0.15" y="3.32" width="119.72" height="18.12" rx="0.6" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="riser-4r-2u-16g--slot-7--module--vents">
+          <rect x="27.08" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="27.08" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="32.58" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="32.58" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="38.07" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="38.07" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="43.57" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="43.57" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="49.07" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="49.07" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="54.56" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="54.56" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="60.06" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="60.06" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="65.56" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="65.56" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="71.06" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="71.06" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="76.55" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="76.55" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="82.05" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="82.05" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="87.55" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="87.55" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="93.04" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="93.04" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="98.54" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="98.54" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="108.97" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="108.97" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+        </g>
+      </g>
+    </g>
+    <g id="riser-4r-2u-16g--slot-8" data-path="riser-4r-2u-16g/slot-8" data-class="bay">
+      <rect id="riser-4r-2u-16g--slot-8--opening" x="17.20" y="-0.65" width="120.02" height="21.59" fill="none" stroke="none" />
+      <g id="riser-4r-2u-16g--slot-8--module" data-path="riser-4r-2u-16g/slot-8/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-fh-16g@1:1.0.1" transform="translate(17.2,-0.65) rotate(180 60.01 10.795)">
+        <title>riser-4r-2u-16g--slot-8--module</title>
+        <rect id="riser-4r-2u-16g--slot-8--module--plate" x="0.15" y="3.32" width="119.72" height="18.12" rx="0.6" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="riser-4r-2u-16g--slot-8--module--vents">
+          <rect x="27.08" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="27.08" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="32.58" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="32.58" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="38.07" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="38.07" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="43.57" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="43.57" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="49.07" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="49.07" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="54.56" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="54.56" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="60.06" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="60.06" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="65.56" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="65.56" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="71.06" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="71.06" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="76.55" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="76.55" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="82.05" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="82.05" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="87.55" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="87.55" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="93.04" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="93.04" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="98.54" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="98.54" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="108.97" y="7.63" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="108.97" y="13.12" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+        </g>
+      </g>
+    </g>
+    <g id="riser-4r-2u-16g--plate" data-path="riser-4r-2u-16g/plate" data-class="riser" data-ref="dell/riser-4-cage-2u-16g@1:1.0.0" data-power-absent="not-applicable" transform="translate(0,0)">
+      <title>riser-4r-2u-16g--plate</title>
+      <g id="riser-4r-2u-16g--plate--plate" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <path fill-rule="evenodd" d="M0 0 H137.3 V44 H0 Z M27.3 8.1 a2 2 0 0 1 2 -2 H109.8 a2 2 0 0 1 2 2 V15.4 a2 2 0 0 1 -2 2 H29.3 a2 2 0 0 1 -2 -2 Z M27.3 28.7 a2 2 0 0 1 2 -2 H109.8 a2 2 0 0 1 2 2 V35.7 a2 2 0 0 1 -2 2 H29.3 a2 2 0 0 1 -2 -2 Z" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" />
+        <rect x="0" y="0" width="25.3" height="44.0" fill="#dfe2e5" />
+        <circle cx="2.3" cy="15.7" r="4.0" fill="#2a9fd6" stroke="#1d6f95" stroke-width="0.3" />
+        <path d="M0.2 15.7 H4.4 M2.3 13.6 V17.8" stroke="#16313f" stroke-width="0.6" fill="none" />
+        <rect x="125.3" y="0" width="12.0" height="44.0" fill="#e3e6e9" />
+        <g id="riser-4r-2u-16g--plate--vents" fill="#16191c">
+          <rect x="128.9" y="7.4" width="3.4" height="3.4" rx="0.5" />
+          <rect x="128.9" y="13.0" width="3.4" height="3.4" rx="0.5" />
+          <rect x="35.3" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="40.9" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="46.5" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="52.1" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="57.7" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="63.3" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="68.9" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="74.5" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="80.1" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="85.7" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="91.3" y="21.3" width="4.2" height="1.2" rx="0.3" />
+          <rect x="96.9" y="21.3" width="4.2" height="1.2" rx="0.3" />
+        </g>
+        <g id="riser-4r-2u-16g--plate--silkscreen">
+          <text x="133.1" y="22.0" transform="rotate(-90 133.1 22.0)" text-anchor="middle" font-family="sans-serif" font-size="3.0" fill="#8d949b">MEST</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

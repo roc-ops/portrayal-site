@@ -1886,6 +1886,10 @@ function layOnce(inp, world, withGaps) {
   // up to ROOM_MAX: a stiffer cable is laid as one of that radius, and its
   // corners are reported against its own.
   const need = inp.need, bend = Math.min(need, ROOM_MAX), base = r + CLEAR;
+  // the plugs' reach points and the way each looks along z, for a rise through
+  // a tray's gap (solids.js gapWays: taken only where the cord can be drawn through it)
+  const plugs = stops.filter(s => s.at === 'reach').map(s => ({x: s.p.x, y: s.p.y, z: s.p.z,
+    out: s.p.z >= (s.end === 'a' ? a : b).z ? 1 : -1, bend}));
   // the corners of a run of points short of the cable's installed bend
   // radius, a shared leg shared by need (route-path.js cornersOf)
   // (kept for a list of points while this lay is made: the search below asks
@@ -1929,7 +1933,7 @@ function layOnce(inp, world, withGaps) {
     for (const e of list)
       if (Object.is(e.p.x, p.x) && Object.is(e.p.y, p.y) && Object.is(e.p.z, p.z) && Object.is(e.q.x, q.x) && Object.is(e.q.y, q.y)
         && Object.is(e.q.z, q.z) && Object.is(e.room, room) && e.how === how) return e.got;
-    const got = detour(p, q, solids, {diameter, lanes: lanesAt, room, rear: (how & 1) === 1, loose: (how & 2) === 2, gaps, gapDiameter: inp.gapD ?? diameter});
+    const got = detour(p, q, solids, {diameter, lanes: lanesAt, room, rear: (how & 1) === 1, loose: (how & 2) === 2, gaps, gapDiameter: inp.gapD ?? diameter, plugs});
     // the way round is round something other than a tray's floor where the
     // first body the leg meets is not one (what a run-out is tried for, below)
     if (got?.length && !world.floors.has(legCrossings(p, q, solids, {diameter})[0]?.solid)) roundOther.add(got);

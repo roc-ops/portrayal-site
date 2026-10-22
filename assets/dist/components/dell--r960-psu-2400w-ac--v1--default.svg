@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="86.0mm" height="40.1mm" viewBox="0 0 86.0 40.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-dell-r960-psu-2400w-ac-mismatch {
+      0%, 3.9% { opacity: 1; fill: #22c55e; }
+      4%, 7.9% { opacity: 0; }
+      8%, 11.9% { opacity: 1; fill: #22c55e; }
+      12%, 15.9% { opacity: 0; }
+      16%, 19.9% { opacity: 1; fill: #22c55e; }
+      20%, 23.9% { opacity: 0; }
+      24%, 27.9% { opacity: 1; fill: #22c55e; }
+      28%, 31.9% { opacity: 0; }
+      32%, 35.9% { opacity: 1; fill: #22c55e; }
+      36%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-mismatch { animation: portrayal-seq-dell-r960-psu-2400w-ac-mismatch 3.125s steps(1, end) infinite; }
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-updating { --led-color: #22c55e; }
+    g[data-ref^='dell/r960-psu-2400w-ac@'] .state-updating { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="r960-psu-2400w-ac" data-path="r960-psu-2400w-ac" data-class="psu" data-behaviour="fills" data-ref="dell/r960-psu-2400w-ac@1:1.0.0" data-body-depth="233.5" data-wall="#3a4045" data-efficiency="platinum" data-form-factor="86mm" data-inlet="c20" data-input="100-240 V AC or 240 V DC" data-power-output-w="2400" transform="translate(0,0)">
+    <title>r960-psu-2400w-ac</title>
+    <rect id="r960-psu-2400w-ac--body" x="0.2" y="0.2" width="85.6" height="39.7" rx="0.8" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+    <rect x="5.0" y="2.1" width="38.6" height="36.9" rx="2.2" fill="#1b1e21" />
+    <circle cx="7.6" cy="4.6" r="2.3" fill="#0f1113" />
+    <circle cx="41.0" cy="4.6" r="2.3" fill="#0f1113" />
+    <circle cx="7.6" cy="36.5" r="2.3" fill="#0f1113" />
+    <circle cx="41.0" cy="36.5" r="2.3" fill="#0f1113" />
+    <circle cx="23.7" cy="20.3" r="12.6" fill="#2a2e32" />
+    <path d="M10.2 7.2 L18.8 15.8 M37.2 7.2 L28.6 15.8 M10.2 33.4 L18.8 24.8 M37.2 33.4 L28.6 24.8" stroke="#c3c8cd" stroke-width="0.9" fill="none" />
+    <circle cx="23.7" cy="20.3" r="9.5" fill="#a9aeb4" />
+    <path d="M37.0 4.5 h9.0 v33.0 l-1.0 2.0 h-8.0 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+    <rect id="r960-psu-2400w-ac--label" x="37.6" y="6.0" width="4.4" height="15.7" rx="0.3" fill="#1d2023" data-path="r960-psu-2400w-ac/label" data-class="label" data-description="the wattage label on the handle's left edge, printed downwards" />
+    <rect id="r960-psu-2400w-ac--inlet-bezel" x="52.5" y="3.3" width="27.5" height="35.7" rx="1.5" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="r960-psu-2400w-ac/inlet-bezel" data-class="inlet" data-description="the recess the C19 inlet sits in" />
+    <path d="M59.0 6.7 h17.0 a1.5 1.5 0 0 1 1.5 1.5 v22.9 a1.5 1.5 0 0 1 -1.5 1.5 h-17.0 a1.5 1.5 0 0 1 -1.5 -1.5 v-22.9 a1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#16191c" />
+    <rect x="66.0" y="10.6" width="4.2" height="2.3" fill="#3a3f44" />
+    <rect x="66.0" y="16.2" width="4.2" height="2.3" fill="#3a3f44" />
+    <rect x="66.0" y="22.0" width="4.2" height="2.3" fill="#3a3f44" />
+    <path id="r960-psu-2400w-ac--grip" d="M44.0 4.5 h12.8 l1.0 1.0 v32.0 l-1.0 1.0 h-12.8 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" opacity="0.92" data-path="r960-psu-2400w-ac/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. R960 ISM table 108: green - operational; blinking amber - a problem; not illuminated - no power; blinking green - firmware being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="33.5" data-z-color="#e9ecef" />
+    <rect x="46.0" y="8.0" width="9.0" height="27.0" rx="2.2" fill="#2a2e32" opacity="0.55" />
+    <rect id="r960-psu-2400w-ac--latch" x="78.8" y="14.3" width="6.9" height="15.0" rx="0.7" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="r960-psu-2400w-ac/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+    <g id="r960-psu-2400w-ac--silkscreen">
+      <text id="r960-psu-2400w-ac--watts" data-from="watts" x="41.0" y="13.9" transform="rotate(90 41.0 13.9)" font-family="sans-serif" font-size="3.0" font-weight="bold" fill="#f2f4f6" text-anchor="middle">2400W</text>
+    </g>
+  </g>
+</svg>
