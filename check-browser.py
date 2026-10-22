@@ -17208,7 +17208,7 @@ def check_cable_colors(page, base):
     want = [["os2", "uplink", "#e8c547"], ["copper", "server", "#5aa7ff"], ["copper", "management", "#9aa3ad"],
             ["copper", "other", "#5aa7ff"],
             ["om3", "", "#2bb3c8"], ["om4", "", "#2bb3c8"], ["om5", "", "#9acd32"], ["cat6", "", "#5aa7ff"],
-            ["cat6a", "", "#5aa7ff"], ["dac", "", "#15171a"], ["aoc", "", "#3a3f45"], ["unset", "", "#9aa3ad"],
+            ["cat6a", "", "#5aa7ff"], ["dac", "", "#15171a"], ["aoc", "", "#08788a"], ["unset", "", "#9aa3ad"],
             ["something-else", "", "#e8c547"],
             ["toString", "", "#e8c547"], ["constructor", "", "#e8c547"], ["__proto__", "", "#e8c547"],
             ["hasOwnProperty", "", "#e8c547"], ["copper", "toString", "#5aa7ff"], ["copper", "constructor", "#5aa7ff"]]
