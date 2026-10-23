@@ -1,0 +1,1136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="87.9mm" viewBox="0 0 440.0 87.9" data-device="7280cr3-96" data-view="front" data-weight="23.6 kg (52.0 lbs) for the 7280CR3-96 and the 7280CR3K-96 (guide Table 1, data sheet)" data-size-over-ears="48.3 x 8.8 x 76.1 cm (19 x 3.50 x 30.0 in) with the mounting ears (guide Table 1)" data-throughput="9.6 (19.2) Tbps" data-packets-per-second="4 Bpps" data-latency="from 3.8 microseconds" data-packet-buffer="16 GB" data-ports-max-speed="96 ports of 100 Gbps; 192 of 50 Gbps; 96 of 40 Gbps; 192 of 25 or 10 Gbps" data-interfaces-max="192" data-power-typical-w="1003" data-power-max-w="1803" data-power-envelope="as-tested" data-power-measure="typical at 25 C ambient with 50 percent load on all ports (data sheet)" data-psu-redundancy="1+1" data-input-ac="200 - 240 VAC (PWR-2411-AC), IEC 60320 C20" data-input-dc="-48 to -60 VDC (PWR-2411-DC)" data-efficiency="93 percent (Platinum) AC, 94 percent DC (data sheet)" data-airflow="front-to-back" data-fan-redundancy="4 hot-swap fan modules, N+1" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-25 to 70 C (guide Table 2); the data sheet says -40 to 70 C" data-humidity="5 to 90 percent non-condensing (guide Table 2); the data sheet says 5 to 95 percent" data-altitude="0 to 3,000 m (10,000 ft) operating" data-cpu="Quad-Core x86" data-memory="64 GB" data-storage="8 GB flash; 120 GB SSD" data-optics-qsfp28="100G, 50G, 40G, 25G and 10G with breakout, in the 96 QSFP cages (data sheet)" data-eos-license="license group G4; minimum EOS 4.24.0" data-console="RJ-45 RS-232 serial on the front, 9600 baud 8N1, no flow control" data-oob="one 10/100/1000 management port on the front" data-usb="one USB port on the front, for software or configuration updates" data-emc="FCC Class A, ICES-003, EN 55032, EN IEC 61000-3-2:2019, EN 61000-3-3, EN 55035, EN 300 386" data-safety="EN 62368-1, IEC 62368-1, CSA/UL 62368-1" data-certifications="BSMI, CE, KCC, NRTL, RCM, UKCA, VCCI, TEC, ANATEL, ICASA (data sheet)" data-rohs="RoHS 2011/65/EU and 2015/863/EU (data sheet, Directives)" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-fan.state-degraded, #led-fan .state-degraded { --led-color: #f59e0b; }
+    #led-fan.state-fault, #led-fan .state-fault { --led-color: #ef4444; }
+    #led-system.state-fault, #led-system .state-fault { --led-color: #f59e0b; }
+    #led-system.state-locator, #led-system .state-locator { --led-color: #3b82f6; }
+    #led-system.state-ok, #led-system .state-ok, #led-fan.state-ok, #led-fan .state-ok, #led-ps1.state-ok, #led-ps1 .state-ok, #led-ps2.state-ok, #led-ps2 .state-ok { --led-color: #22c55e; }
+    #led-system.state-powering-up, #led-system .state-powering-up { --led-color: #22c55e; }
+    #led-system.state-powering-up [data-class='led'], #led-system .state-powering-up { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Arista 7280CR3-96","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/rj45-eth@1":"1.2.0","std/qsfp-ganged@1":"1.4.1","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"74d57abf208027dd9f898c44fed20448a1253e3d7aa7cf65bbc1825f73480d33","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="7280CR3-96" x="0" y="0" width="440" height="87.9" rx="1.2" fill="#aaabad" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="hole-left" data-kind="plate" x="3.7" y="42.3" width="3" height="3" rx="1.5" fill="#2b2f36" />
+    <rect id="strip-top-1" data-kind="label-plate" x="13.35" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-2" data-kind="label-plate" x="54.8" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-3" data-kind="label-plate" x="96.25" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-4" data-kind="label-plate" x="137.7" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-5" data-kind="label-plate" x="179.15" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-6" data-kind="label-plate" x="220.6" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-7" data-kind="label-plate" x="262.05" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-top-8" data-kind="label-plate" x="303.5" y="4.6" width="38" height="1.8" rx="0.3" fill="#9b9fd8" />
+    <rect id="strip-mid-1" data-kind="label-plate" x="13.35" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-2" data-kind="label-plate" x="54.8" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-3" data-kind="label-plate" x="96.25" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-4" data-kind="label-plate" x="137.7" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-5" data-kind="label-plate" x="179.15" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-6" data-kind="label-plate" x="220.6" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-7" data-kind="label-plate" x="262.05" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-8" data-kind="label-plate" x="303.5" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-9" data-kind="label-plate" x="344.95" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="strip-mid-10" data-kind="label-plate" x="386.4" y="53" width="38" height="1.4" rx="0.3" fill="#3f6fc4" />
+    <rect id="lamp-plate" data-kind="label-plate" x="353.9" y="13.3" width="20.6" height="8" rx="1" fill="#8d9196" />
+    <rect id="mgmt-plate" data-kind="label-plate" x="375" y="1.6" width="51" height="3.6" rx="0.3" fill="#9ea2a6" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="3.5" y="8" width="8" height="70" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="429" y="4" width="8" height="78" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-field-2" data-kind="vent-field" data-aperture="air" x="343.5" y="4" width="9.5" height="17" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-field-3" data-kind="vent-field" data-aperture="air" x="24" y="83.8" width="404" height="3.2" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="3.7" y="2.4" width="18.9" height="3.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="13.35" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <rect x="13.35" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <rect x="32.35" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <rect x="32.35" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <rect x="54.8" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <rect x="54.8" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <rect x="73.8" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <rect x="73.8" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <rect x="96.25" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <rect x="96.25" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <rect x="115.25" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <rect x="115.25" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <rect x="137.7" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <rect x="137.7" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <rect x="156.7" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <rect x="156.7" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <rect x="179.15" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <rect x="179.15" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <rect x="198.15" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <rect x="198.15" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <rect x="220.6" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" />
+    <rect x="220.6" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" />
+    <rect x="239.6" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" />
+    <rect x="239.6" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" />
+    <rect x="262.05" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" />
+    <rect x="262.05" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" />
+    <rect x="281.05" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" />
+    <rect x="281.05" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" />
+    <rect x="303.5" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" />
+    <rect x="303.5" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" />
+    <rect x="322.5" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" />
+    <rect x="322.5" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-32" data-path="cutout:port-32" data-class="cutout" />
+    <rect x="344.95" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-33" data-path="cutout:port-33" data-class="cutout" />
+    <rect x="344.95" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-34" data-path="cutout:port-34" data-class="cutout" />
+    <rect x="363.95" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-35" data-path="cutout:port-35" data-class="cutout" />
+    <rect x="363.95" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-36" data-path="cutout:port-36" data-class="cutout" />
+    <rect x="386.4" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-37" data-path="cutout:port-37" data-class="cutout" />
+    <rect x="386.4" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-38" data-path="cutout:port-38" data-class="cutout" />
+    <rect x="405.4" y="26" width="18.5" height="9.58" fill="#101214" id="cutout--port-39" data-path="cutout:port-39" data-class="cutout" />
+    <rect x="405.4" y="41.8" width="18.5" height="9.58" fill="#101214" id="cutout--port-40" data-path="cutout:port-40" data-class="cutout" />
+    <rect x="13.35" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-41" data-path="cutout:port-41" data-class="cutout" />
+    <rect x="13.35" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-42" data-path="cutout:port-42" data-class="cutout" />
+    <rect x="32.35" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-43" data-path="cutout:port-43" data-class="cutout" />
+    <rect x="32.35" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-44" data-path="cutout:port-44" data-class="cutout" />
+    <rect x="54.8" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-45" data-path="cutout:port-45" data-class="cutout" />
+    <rect x="54.8" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-46" data-path="cutout:port-46" data-class="cutout" />
+    <rect x="73.8" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-47" data-path="cutout:port-47" data-class="cutout" />
+    <rect x="73.8" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-48" data-path="cutout:port-48" data-class="cutout" />
+    <rect x="96.25" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-49" data-path="cutout:port-49" data-class="cutout" />
+    <rect x="96.25" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-50" data-path="cutout:port-50" data-class="cutout" />
+    <rect x="115.25" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-51" data-path="cutout:port-51" data-class="cutout" />
+    <rect x="115.25" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-52" data-path="cutout:port-52" data-class="cutout" />
+    <rect x="137.7" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-53" data-path="cutout:port-53" data-class="cutout" />
+    <rect x="137.7" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-54" data-path="cutout:port-54" data-class="cutout" />
+    <rect x="156.7" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-55" data-path="cutout:port-55" data-class="cutout" />
+    <rect x="156.7" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-56" data-path="cutout:port-56" data-class="cutout" />
+    <rect x="179.15" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-57" data-path="cutout:port-57" data-class="cutout" />
+    <rect x="179.15" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-58" data-path="cutout:port-58" data-class="cutout" />
+    <rect x="198.15" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-59" data-path="cutout:port-59" data-class="cutout" />
+    <rect x="198.15" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-60" data-path="cutout:port-60" data-class="cutout" />
+    <rect x="220.6" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-61" data-path="cutout:port-61" data-class="cutout" />
+    <rect x="220.6" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-62" data-path="cutout:port-62" data-class="cutout" />
+    <rect x="239.6" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-63" data-path="cutout:port-63" data-class="cutout" />
+    <rect x="239.6" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-64" data-path="cutout:port-64" data-class="cutout" />
+    <rect x="262.05" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-65" data-path="cutout:port-65" data-class="cutout" />
+    <rect x="262.05" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-66" data-path="cutout:port-66" data-class="cutout" />
+    <rect x="281.05" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-67" data-path="cutout:port-67" data-class="cutout" />
+    <rect x="281.05" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-68" data-path="cutout:port-68" data-class="cutout" />
+    <rect x="303.5" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-69" data-path="cutout:port-69" data-class="cutout" />
+    <rect x="303.5" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-70" data-path="cutout:port-70" data-class="cutout" />
+    <rect x="322.5" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-71" data-path="cutout:port-71" data-class="cutout" />
+    <rect x="322.5" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-72" data-path="cutout:port-72" data-class="cutout" />
+    <rect x="344.95" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-73" data-path="cutout:port-73" data-class="cutout" />
+    <rect x="344.95" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-74" data-path="cutout:port-74" data-class="cutout" />
+    <rect x="363.95" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-75" data-path="cutout:port-75" data-class="cutout" />
+    <rect x="363.95" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-76" data-path="cutout:port-76" data-class="cutout" />
+    <rect x="386.4" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-77" data-path="cutout:port-77" data-class="cutout" />
+    <rect x="386.4" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-78" data-path="cutout:port-78" data-class="cutout" />
+    <rect x="405.4" y="55.9" width="18.5" height="9.58" fill="#101214" id="cutout--port-79" data-path="cutout:port-79" data-class="cutout" />
+    <rect x="405.4" y="71.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-80" data-path="cutout:port-80" data-class="cutout" />
+    <rect x="13.35" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-81" data-path="cutout:port-81" data-class="cutout" />
+    <rect x="32.35" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-82" data-path="cutout:port-82" data-class="cutout" />
+    <rect x="54.8" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-83" data-path="cutout:port-83" data-class="cutout" />
+    <rect x="73.8" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-84" data-path="cutout:port-84" data-class="cutout" />
+    <rect x="96.25" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-85" data-path="cutout:port-85" data-class="cutout" />
+    <rect x="115.25" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-86" data-path="cutout:port-86" data-class="cutout" />
+    <rect x="137.7" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-87" data-path="cutout:port-87" data-class="cutout" />
+    <rect x="156.7" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-88" data-path="cutout:port-88" data-class="cutout" />
+    <rect x="179.15" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-89" data-path="cutout:port-89" data-class="cutout" />
+    <rect x="198.15" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-90" data-path="cutout:port-90" data-class="cutout" />
+    <rect x="220.6" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-91" data-path="cutout:port-91" data-class="cutout" />
+    <rect x="239.6" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-92" data-path="cutout:port-92" data-class="cutout" />
+    <rect x="262.05" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-93" data-path="cutout:port-93" data-class="cutout" />
+    <rect x="281.05" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-94" data-path="cutout:port-94" data-class="cutout" />
+    <rect x="303.5" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-95" data-path="cutout:port-95" data-class="cutout" />
+    <rect x="322.5" y="10.1" width="18.5" height="9.58" fill="#101214" id="cutout--port-96" data-path="cutout:port-96" data-class="cutout" />
+    <rect x="376.9" y="6" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="398.75" y="6.6" width="4.5" height="12" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="408.5" y="6" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <ellipse cx="356.6" cy="18.6" rx="1" ry="1" fill="#101214" id="cutout--led-system" data-path="cutout:led-system" data-class="cutout" />
+    <ellipse cx="361.4" cy="18.6" rx="1" ry="1" fill="#101214" id="cutout--led-fan" data-path="cutout:led-fan" data-class="cutout" />
+    <ellipse cx="366.3" cy="18.6" rx="1" ry="1" fill="#101214" id="cutout--led-ps1" data-path="cutout:led-ps1" data-class="cutout" />
+    <ellipse cx="371.3" cy="18.6" rx="1" ry="1" fill="#101214" id="cutout--led-ps2" data-path="cutout:led-ps2" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="18.6" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="26.6" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="37.6" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="45.6" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="60.05" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="68.05" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="79.05" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="87.05" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="101.5" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="109.5" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="120.5" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="128.5" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="142.95" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="150.95" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="161.95" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="169.95" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="184.4" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="192.4" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="203.4" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="211.4" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="225.85" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="233.85" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="244.85" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="252.85" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="267.3" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="275.3" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="286.3" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="294.3" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="308.75" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+    <text x="316.75" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30">30</text>
+    <text x="327.75" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31">31</text>
+    <text x="335.75" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-32">32</text>
+    <text x="350.2" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-33">33</text>
+    <text x="358.2" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-34">34</text>
+    <text x="369.2" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-35">35</text>
+    <text x="377.2" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-36">36</text>
+    <text x="391.65" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-37">37</text>
+    <text x="399.65" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-38">38</text>
+    <text x="410.65" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-39">39</text>
+    <text x="418.65" y="39.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-40">40</text>
+    <text x="18.6" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-41">41</text>
+    <text x="26.6" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-42">42</text>
+    <text x="37.6" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:42" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-43">43</text>
+    <text x="45.6" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:43" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-44">44</text>
+    <text x="60.05" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:44" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-45">45</text>
+    <text x="68.05" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-46">46</text>
+    <text x="79.05" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:46" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-47">47</text>
+    <text x="87.05" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:47" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-48">48</text>
+    <text x="101.5" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:48" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-49">49</text>
+    <text x="109.5" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:49" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-50">50</text>
+    <text x="120.5" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:50" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-51">51</text>
+    <text x="128.5" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:51" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-52">52</text>
+    <text x="142.95" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:52" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-53">53</text>
+    <text x="150.95" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:53" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-54">54</text>
+    <text x="161.95" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:54" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-55">55</text>
+    <text x="169.95" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:55" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-56">56</text>
+    <text x="184.4" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:56" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-57">57</text>
+    <text x="192.4" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:57" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-58">58</text>
+    <text x="203.4" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:58" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-59">59</text>
+    <text x="211.4" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:59" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-60">60</text>
+    <text x="225.85" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:60" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-61">61</text>
+    <text x="233.85" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:61" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-62">62</text>
+    <text x="244.85" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:62" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-63">63</text>
+    <text x="252.85" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:63" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-64">64</text>
+    <text x="267.3" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:64" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-65">65</text>
+    <text x="275.3" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:65" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-66">66</text>
+    <text x="286.3" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:66" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-67">67</text>
+    <text x="294.3" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:67" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-68">68</text>
+    <text x="308.75" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:68" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-69">69</text>
+    <text x="316.75" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:69" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-70">70</text>
+    <text x="327.75" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:70" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-71">71</text>
+    <text x="335.75" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:71" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-72">72</text>
+    <text x="350.2" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:72" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-73">73</text>
+    <text x="358.2" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:73" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-74">74</text>
+    <text x="369.2" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:74" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-75">75</text>
+    <text x="377.2" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:75" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-76">76</text>
+    <text x="391.65" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:76" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-77">77</text>
+    <text x="399.65" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:77" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-78">78</text>
+    <text x="410.65" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:78" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-79">79</text>
+    <text x="418.65" y="69.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:79" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-80">80</text>
+    <text x="22.6" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:80" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-81">81</text>
+    <text x="41.6" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:81" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-82">82</text>
+    <text x="64.05" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:82" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-83">83</text>
+    <text x="83.05" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:83" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-84">84</text>
+    <text x="105.5" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:84" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-85">85</text>
+    <text x="124.5" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:85" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-86">86</text>
+    <text x="146.95" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:86" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-87">87</text>
+    <text x="165.95" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:87" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-88">88</text>
+    <text x="188.4" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:88" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-89">89</text>
+    <text x="207.4" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:89" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-90">90</text>
+    <text x="229.85" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:90" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-91">91</text>
+    <text x="248.85" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:91" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-92">92</text>
+    <text x="271.3" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:92" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-93">93</text>
+    <text x="290.3" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:93" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-94">94</text>
+    <text x="312.75" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:94" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-95">95</text>
+    <text x="331.75" y="23.3" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#23262b" data-path="silk:95" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-96">96</text>
+    <text x="13" y="85.2" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#1f3a6e" data-path="silk:96" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">7280CR3-96</text>
+    <path d="M -2.6 -1.1 H 2.6 V 1.1 H -2.6 Z M -1.3 -0.5 V 0.5 M 0 -0.5 V 0.5 M 1.3 -0.5 V 0.5" fill="none" stroke="#1f3a6e" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(384.8 3.4)" data-path="silk:97" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console" />
+    <path d="M 0 1.2 L 0 -0.66 M -0.336 -0.66 L 0.336 -0.66 L 0 -1.2 Z M 0 0.12 L -0.66 -0.36 M 0 -0.12 L 0.66 0.24" fill="none" stroke="#1f3a6e" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(401 3.4)" data-path="silk:98" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <path d="M -2.2 0 H 2.2 M -2.2 0 L -1.0 -1.0 M -2.2 0 L -1.0 1.0 M 2.2 0 L 1.0 -1.0 M 2.2 0 L 1.0 1.0" fill="none" stroke="#1f3a6e" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(416.4 3.4)" data-path="silk:99" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt" />
+    <path d="M -1.1 0 a 1.1 1.1 0 1 0 2.2 0 a 1.1 1.1 0 1 0 -2.2 0 M -0.4 0 a 0.4 0.4 0 1 0 0.8 0 a 0.4 0.4 0 1 0 -0.8 0" fill="none" stroke="#1f3a6e" stroke-width="0.26" stroke-linecap="round" stroke-linejoin="round" transform="translate(356.6 15.2)" data-path="silk:100" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-system" />
+    <path d="M -1.1 -1.1 L 1.1 1.1 M 1.1 -1.1 L -1.1 1.1" fill="none" stroke="#1f3a6e" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(361.4 15.2)" data-path="silk:101" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fan" />
+    <text x="366.3" y="16.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#1f3a6e" data-path="silk:102" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ps1">PS1</text>
+    <text x="371.3" y="16.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#1f3a6e" data-path="silk:103" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ps2">PS2</text>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="1" transform="translate(13.35,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-1--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="2" transform="translate(13.35,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-2--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="3" transform="translate(32.35,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-3--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="4" transform="translate(32.35,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-4--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="5" transform="translate(54.8,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-5--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="6" transform="translate(54.8,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-6--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="7" transform="translate(73.8,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-7--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="8" transform="translate(73.8,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-8--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="9" transform="translate(96.25,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-9--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="10" transform="translate(96.25,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-10--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="11" transform="translate(115.25,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-11--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="12" transform="translate(115.25,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-12--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="13" transform="translate(137.7,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-13--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="14" transform="translate(137.7,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-14--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="15" transform="translate(156.7,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-15--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="16" transform="translate(156.7,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-16--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="17" transform="translate(179.15,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-17--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="18" transform="translate(179.15,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-18--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="19" transform="translate(198.15,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-19--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="20" transform="translate(198.15,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-20--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="21" transform="translate(220.6,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-21--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="22" transform="translate(220.6,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-22--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="23" transform="translate(239.6,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-23--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="24" transform="translate(239.6,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-24--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="25" transform="translate(262.05,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-25--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="26" transform="translate(262.05,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-26--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="27" transform="translate(281.05,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-27--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="28" transform="translate(281.05,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-28--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="29" transform="translate(303.5,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-29--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="30" transform="translate(303.5,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-30</title>
+    <rect id="port-30--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-30/opening" data-class="cutout" />
+    <rect id="port-30--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-30--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-30--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="31" transform="translate(322.5,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-31</title>
+    <rect id="port-31--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-31/opening" data-class="cutout" />
+    <rect id="port-31--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-31--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-31--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-32" data-path="port-32" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="32" transform="translate(322.5,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-32</title>
+    <rect id="port-32--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-32/opening" data-class="cutout" />
+    <rect id="port-32--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-32--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-32--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-33" data-path="port-33" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="33" transform="translate(344.95,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-33</title>
+    <rect id="port-33--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-33/opening" data-class="cutout" />
+    <rect id="port-33--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-33--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-33--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-34" data-path="port-34" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="34" transform="translate(344.95,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-34</title>
+    <rect id="port-34--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-34/opening" data-class="cutout" />
+    <rect id="port-34--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-34--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-34--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-35" data-path="port-35" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="35" transform="translate(363.95,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-35</title>
+    <rect id="port-35--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-35/opening" data-class="cutout" />
+    <rect id="port-35--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-35--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-35--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-36" data-path="port-36" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="36" transform="translate(363.95,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-36</title>
+    <rect id="port-36--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-36/opening" data-class="cutout" />
+    <rect id="port-36--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-36--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-36--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-37" data-path="port-37" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="37" transform="translate(386.4,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-37</title>
+    <rect id="port-37--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-37/opening" data-class="cutout" />
+    <rect id="port-37--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-37--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-37--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-38" data-path="port-38" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="38" transform="translate(386.4,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-38</title>
+    <rect id="port-38--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-38/opening" data-class="cutout" />
+    <rect id="port-38--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-38--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-38--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-39" data-path="port-39" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="39" transform="translate(405.4,26.0)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-39</title>
+    <rect id="port-39--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-39/opening" data-class="cutout" />
+    <rect id="port-39--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-39--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-39--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-40" data-path="port-40" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="40" transform="translate(405.4,41.8) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-40</title>
+    <rect id="port-40--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-40/opening" data-class="cutout" />
+    <rect id="port-40--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-40--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-40--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-41" data-path="port-41" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="41" transform="translate(13.35,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-41</title>
+    <rect id="port-41--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-41/opening" data-class="cutout" />
+    <rect id="port-41--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-41--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-41--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-42" data-path="port-42" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="42" transform="translate(13.35,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-42</title>
+    <rect id="port-42--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-42/opening" data-class="cutout" />
+    <rect id="port-42--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-42--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-42--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-43" data-path="port-43" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="43" transform="translate(32.35,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-43</title>
+    <rect id="port-43--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-43/opening" data-class="cutout" />
+    <rect id="port-43--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-43--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-43--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-44" data-path="port-44" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="44" transform="translate(32.35,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-44</title>
+    <rect id="port-44--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-44/opening" data-class="cutout" />
+    <rect id="port-44--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-44--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-44--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-45" data-path="port-45" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="45" transform="translate(54.8,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-45</title>
+    <rect id="port-45--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-45/opening" data-class="cutout" />
+    <rect id="port-45--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-45--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-45--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-46" data-path="port-46" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="46" transform="translate(54.8,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-46</title>
+    <rect id="port-46--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-46/opening" data-class="cutout" />
+    <rect id="port-46--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-46--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-46--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-47" data-path="port-47" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="47" transform="translate(73.8,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-47</title>
+    <rect id="port-47--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-47/opening" data-class="cutout" />
+    <rect id="port-47--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-47--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-47--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-48" data-path="port-48" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="48" transform="translate(73.8,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-48</title>
+    <rect id="port-48--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-48/opening" data-class="cutout" />
+    <rect id="port-48--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-48--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-48--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-49" data-path="port-49" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="49" transform="translate(96.25,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-49</title>
+    <rect id="port-49--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-49/opening" data-class="cutout" />
+    <rect id="port-49--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-49--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-49--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-50" data-path="port-50" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="50" transform="translate(96.25,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-50</title>
+    <rect id="port-50--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-50/opening" data-class="cutout" />
+    <rect id="port-50--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-50--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-50--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-51" data-path="port-51" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="51" transform="translate(115.25,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-51</title>
+    <rect id="port-51--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-51/opening" data-class="cutout" />
+    <rect id="port-51--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-51--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-51--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-52" data-path="port-52" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="52" transform="translate(115.25,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-52</title>
+    <rect id="port-52--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-52/opening" data-class="cutout" />
+    <rect id="port-52--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-52--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-52--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-53" data-path="port-53" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="53" transform="translate(137.7,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-53</title>
+    <rect id="port-53--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-53/opening" data-class="cutout" />
+    <rect id="port-53--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-53--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-53--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-54" data-path="port-54" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="54" transform="translate(137.7,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-54</title>
+    <rect id="port-54--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-54/opening" data-class="cutout" />
+    <rect id="port-54--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-54--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-54--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-55" data-path="port-55" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="55" transform="translate(156.7,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-55</title>
+    <rect id="port-55--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-55/opening" data-class="cutout" />
+    <rect id="port-55--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-55--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-55--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-56" data-path="port-56" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="56" transform="translate(156.7,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-56</title>
+    <rect id="port-56--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-56/opening" data-class="cutout" />
+    <rect id="port-56--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-56--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-56--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-57" data-path="port-57" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="57" transform="translate(179.15,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-57</title>
+    <rect id="port-57--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-57/opening" data-class="cutout" />
+    <rect id="port-57--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-57--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-57--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-58" data-path="port-58" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="58" transform="translate(179.15,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-58</title>
+    <rect id="port-58--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-58/opening" data-class="cutout" />
+    <rect id="port-58--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-58--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-58--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-59" data-path="port-59" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="59" transform="translate(198.15,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-59</title>
+    <rect id="port-59--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-59/opening" data-class="cutout" />
+    <rect id="port-59--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-59--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-59--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-60" data-path="port-60" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="60" transform="translate(198.15,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-60</title>
+    <rect id="port-60--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-60/opening" data-class="cutout" />
+    <rect id="port-60--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-60--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-60--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-61" data-path="port-61" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="61" transform="translate(220.6,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-61</title>
+    <rect id="port-61--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-61/opening" data-class="cutout" />
+    <rect id="port-61--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-61--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-61--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-62" data-path="port-62" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="62" transform="translate(220.6,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-62</title>
+    <rect id="port-62--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-62/opening" data-class="cutout" />
+    <rect id="port-62--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-62--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-62--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-63" data-path="port-63" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="63" transform="translate(239.6,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-63</title>
+    <rect id="port-63--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-63/opening" data-class="cutout" />
+    <rect id="port-63--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-63--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-63--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-64" data-path="port-64" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="64" transform="translate(239.6,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-64</title>
+    <rect id="port-64--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-64/opening" data-class="cutout" />
+    <rect id="port-64--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-64--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-64--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-65" data-path="port-65" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="65" transform="translate(262.05,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-65</title>
+    <rect id="port-65--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-65/opening" data-class="cutout" />
+    <rect id="port-65--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-65--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-65--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-66" data-path="port-66" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="66" transform="translate(262.05,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-66</title>
+    <rect id="port-66--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-66/opening" data-class="cutout" />
+    <rect id="port-66--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-66--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-66--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-67" data-path="port-67" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="67" transform="translate(281.05,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-67</title>
+    <rect id="port-67--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-67/opening" data-class="cutout" />
+    <rect id="port-67--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-67--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-67--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-68" data-path="port-68" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="68" transform="translate(281.05,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-68</title>
+    <rect id="port-68--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-68/opening" data-class="cutout" />
+    <rect id="port-68--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-68--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-68--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-69" data-path="port-69" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="69" transform="translate(303.5,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-69</title>
+    <rect id="port-69--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-69/opening" data-class="cutout" />
+    <rect id="port-69--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-69--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-69--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-70" data-path="port-70" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="70" transform="translate(303.5,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-70</title>
+    <rect id="port-70--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-70/opening" data-class="cutout" />
+    <rect id="port-70--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-70--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-70--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-71" data-path="port-71" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="71" transform="translate(322.5,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-71</title>
+    <rect id="port-71--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-71/opening" data-class="cutout" />
+    <rect id="port-71--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-71--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-71--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-72" data-path="port-72" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="72" transform="translate(322.5,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-72</title>
+    <rect id="port-72--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-72/opening" data-class="cutout" />
+    <rect id="port-72--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-72--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-72--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-73" data-path="port-73" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="73" transform="translate(344.95,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-73</title>
+    <rect id="port-73--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-73/opening" data-class="cutout" />
+    <rect id="port-73--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-73--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-73--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-74" data-path="port-74" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="74" transform="translate(344.95,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-74</title>
+    <rect id="port-74--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-74/opening" data-class="cutout" />
+    <rect id="port-74--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-74--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-74--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-75" data-path="port-75" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="75" transform="translate(363.95,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-75</title>
+    <rect id="port-75--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-75/opening" data-class="cutout" />
+    <rect id="port-75--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-75--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-75--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-76" data-path="port-76" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="76" transform="translate(363.95,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-76</title>
+    <rect id="port-76--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-76/opening" data-class="cutout" />
+    <rect id="port-76--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-76--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-76--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-77" data-path="port-77" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="77" transform="translate(386.4,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-77</title>
+    <rect id="port-77--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-77/opening" data-class="cutout" />
+    <rect id="port-77--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-77--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-77--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-78" data-path="port-78" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="78" transform="translate(386.4,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-78</title>
+    <rect id="port-78--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-78/opening" data-class="cutout" />
+    <rect id="port-78--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-78--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-78--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-79" data-path="port-79" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="79" transform="translate(405.4,55.9)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-79</title>
+    <rect id="port-79--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-79/opening" data-class="cutout" />
+    <rect id="port-79--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-79--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-79--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-80" data-path="port-80" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="80" transform="translate(405.4,71.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-80</title>
+    <rect id="port-80--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-80/opening" data-class="cutout" />
+    <rect id="port-80--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-80--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-80--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-81" data-path="port-81" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="81" transform="translate(13.35,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-81</title>
+    <rect id="port-81--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-81/opening" data-class="cutout" />
+    <rect id="port-81--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-81--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-81--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-82" data-path="port-82" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="82" transform="translate(32.35,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-82</title>
+    <rect id="port-82--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-82/opening" data-class="cutout" />
+    <rect id="port-82--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-82--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-82--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-83" data-path="port-83" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="83" transform="translate(54.8,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-83</title>
+    <rect id="port-83--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-83/opening" data-class="cutout" />
+    <rect id="port-83--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-83--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-83--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-84" data-path="port-84" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="84" transform="translate(73.8,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-84</title>
+    <rect id="port-84--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-84/opening" data-class="cutout" />
+    <rect id="port-84--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-84--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-84--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-85" data-path="port-85" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="85" transform="translate(96.25,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-85</title>
+    <rect id="port-85--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-85/opening" data-class="cutout" />
+    <rect id="port-85--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-85--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-85--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-86" data-path="port-86" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="86" transform="translate(115.25,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-86</title>
+    <rect id="port-86--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-86/opening" data-class="cutout" />
+    <rect id="port-86--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-86--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-86--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-87" data-path="port-87" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="87" transform="translate(137.7,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-87</title>
+    <rect id="port-87--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-87/opening" data-class="cutout" />
+    <rect id="port-87--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-87--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-87--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-88" data-path="port-88" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="88" transform="translate(156.7,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-88</title>
+    <rect id="port-88--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-88/opening" data-class="cutout" />
+    <rect id="port-88--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-88--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-88--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-89" data-path="port-89" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="89" transform="translate(179.15,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-89</title>
+    <rect id="port-89--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-89/opening" data-class="cutout" />
+    <rect id="port-89--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-89--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-89--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-90" data-path="port-90" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="90" transform="translate(198.15,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-90</title>
+    <rect id="port-90--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-90/opening" data-class="cutout" />
+    <rect id="port-90--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-90--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-90--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-91" data-path="port-91" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="91" transform="translate(220.6,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-91</title>
+    <rect id="port-91--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-91/opening" data-class="cutout" />
+    <rect id="port-91--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-91--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-91--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-92" data-path="port-92" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="92" transform="translate(239.6,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-92</title>
+    <rect id="port-92--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-92/opening" data-class="cutout" />
+    <rect id="port-92--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-92--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-92--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-93" data-path="port-93" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="93" transform="translate(262.05,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-93</title>
+    <rect id="port-93--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-93/opening" data-class="cutout" />
+    <rect id="port-93--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-93--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-93--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-94" data-path="port-94" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="94" transform="translate(281.05,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-94</title>
+    <rect id="port-94--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-94/opening" data-class="cutout" />
+    <rect id="port-94--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-94--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-94--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-95" data-path="port-95" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="95" transform="translate(303.5,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-95</title>
+    <rect id="port-95--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-95/opening" data-class="cutout" />
+    <rect id="port-95--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-95--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-95--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-96" data-path="port-96" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="96" transform="translate(322.5,10.1)" data-group="qsfp28" data-group-role="traffic" data-description="The 96 100G QSFP ports, numbered 1 to 96 as printed: 1 to 40 and 41 to 80 in two rows of stacked blocks (the odd numbers are the upper cages) and 81 to 96 along the top row">
+    <title>port-96</title>
+    <rect id="port-96--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-96/opening" data-class="cutout" />
+    <rect id="port-96--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-96--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-96--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(376.9,6.0)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-role="storage" data-rel-pos="2" transform="translate(395.0,10.35) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="out-of-band" data-speed="1g" data-rel-pos="3" transform="translate(408.5,6.0)" data-group="mgmt" data-group-role="management">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="led-system" data-path="led-system" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(355.6,17.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 9 - System Status: blinking green powering up; green normal operations; blue the locator function is active; amber two or more fans disconnected or malfunctioning" data-states="off powering-up ok locator fault" data-for="chassis">
+    <title>led-system</title>
+    <circle id="led-system--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-system--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-system/lamp" data-class="led" data-states="off powering-up ok locator fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan" data-path="led-fan" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(360.4,17.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 9 - Fan Status: green all fan and power modules operating normally; amber single fan module removed or malfunctioning; red two or more fans disconnected or malfunctioning" data-states="off ok degraded fault" data-for="chassis">
+    <title>led-fan</title>
+    <circle id="led-fan--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan/lamp" data-class="led" data-states="off ok degraded fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-ps1" data-path="led-ps1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(365.3,17.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 9 - PSU Status: green PSU functioning and fully operational; off PSU removed or not operating properly" data-states="off ok" data-for="chassis">
+    <title>led-ps1</title>
+    <circle id="led-ps1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ps1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ps1/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+  <g id="led-ps2" data-path="led-ps2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(370.3,17.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 9 - PSU Status: green PSU functioning and fully operational; off PSU removed or not operating properly" data-states="off ok" data-for="chassis">
+    <title>led-ps2</title>
+    <circle id="led-ps2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ps2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ps2/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+</svg>

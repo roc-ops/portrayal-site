@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.0mm" height="379.9mm" viewBox="0 0 439.0 379.9" data-device="ex4100-h-24f" data-view="top" data-weight="8.07 kg (17.79 lb) with no supply; 9.20 kg with one AC supply and 9.23 kg with one DC supply, Table 13" data-power-input-ac="100 through 240 VAC, 50/60 Hz (Table 28)" data-power-input-dc="20.4 through 72 VDC at the terminal block, nominal +24, -48 or -60 VDC (Table 36)" data-cooling="fanless, convection cooled (Table 12); one rack unit clear above and below" data-operating-temp="-40 to 60 C in a sealed enclosure, -40 to 70 C in a ventilated enclosure (40 LFM) and -40 to 75 C in a blower-equipped enclosure (200 LFM), up to 15000 ft; safety certified at 60 C" data-storage-temp="-40 to 85 C in the shipping container" data-humidity="5 to 95 percent, noncondensing" data-altitude="no performance degradation up to 15000 ft (4572 m)" data-first-junos-release="24.4R1 (Table 12)" data-virtual-chassis="up to 10 EX4100, EX4100-F and EX4100-H switches; the four VCP cages are the Virtual Chassis ports (HiGig or HGoE mode, or uplink ports) and the four uplink cages support HGoE only. A 10GBASE-T transceiver cannot form a Virtual Chassis in a VCP" data-macsec="the four uplink ports are MACsec capable" data-dry-contact-alarm="two alarm inputs (5 V threshold) and one alarm relay output (NO, COM, NC), Table 4" data-optics-sfp="the 24 front cages take 1 Gbps SFP transceivers; Tables 49 and 50 list the industrial-grade 1 G optics against the ambient they allow. The supported list is in Juniper's Hardware Compatibility Tool, which the guide names and which is not held here" data-optics-sfp-plus="the eight group cages take 1 Gbps SFP and 10 Gbps SFP+ transceivers; Tables 45 to 48 list the industrial-grade 10 G and 10GBASE-T optics against the ambient they allow. The supported list is in Juniper's Hardware Compatibility Tool, which the guide names and which is not held here" data-seismic="tested for Zone 4 earthquake safety" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4100-H-24F","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"7d17aa06b23c1f232d04551c73877792c1e0787469765bce4adb3d01c3e3a4da","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4100-H-24F" data-sku="EX4100-H-24F" data-part-number="" x="0" y="0" width="439" height="379.9" rx="1.2" fill="#6a727f" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

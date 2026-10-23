@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="133.4mm" height="40.6mm" viewBox="0 0 133.4 40.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-amber { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-beacon { --led-color: #39b54a; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx3500-mb-rj45-afo@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="qfx3500-mb-rj45-afo" data-path="qfx3500-mb-rj45-afo" data-class="control-panel" data-behaviour="fills" data-ref="juniper/qfx3500-mb-rj45-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX3500-MB-RJ45-AFO" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>qfx3500-mb-rj45-afo</title>
+    <defs>
+      <pattern id="qfx3500-mb-rj45-afo--hex" width="2.6" height="4.5" patternUnits="userSpaceOnUse">
+        <polygon points="1.3,0.1 2.34,0.7 2.34,1.55 1.3,2.15 0.26,1.55 0.26,0.7" fill="#2a2d31" />
+        <polygon points="0,2.35 1.04,2.95 1.04,3.8 0,4.4 -1.04,3.8 -1.04,2.95" fill="#2a2d31" />
+        <polygon points="2.6,2.35 3.64,2.95 3.64,3.8 2.6,4.4 1.56,3.8 1.56,2.95" fill="#2a2d31" />
+      </pattern>
+    </defs>
+    <rect id="qfx3500-mb-rj45-afo--face" x="0" y="0" width="133.4" height="40.6" rx="0.8" fill="#868b91" stroke="#5c6167" stroke-width="0.4" />
+    <g id="qfx3500-mb-rj45-afo--vents">
+      <rect x="1.4" y="14.0" width="11.8" height="24.8" fill="url(#qfx3500-mb-rj45-afo--hex)" />
+      <rect x="119.8" y="1.6" width="12.2" height="37.2" fill="url(#qfx3500-mb-rj45-afo--hex)" />
+      <rect x="1.4" y="1.6" width="11.8" height="11.0" fill="url(#qfx3500-mb-rj45-afo--hex)" />
+      <rect x="46.0" y="39.0" width="38.0" height="1.2" fill="url(#qfx3500-mb-rj45-afo--hex)" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--slots">
+      <rect x="15.7" y="33.0" width="28.5" height="3.2" rx="1.6" fill="#4a4f55" stroke="#2c3034" stroke-width="0.3" />
+      <rect x="88.5" y="33.0" width="22.0" height="3.2" rx="1.6" fill="#4a4f55" stroke="#2c3034" stroke-width="0.3" />
+    </g>
+    <rect id="qfx3500-mb-rj45-afo--lcd" x="40.8" y="7.4" width="38.7" height="11.9" rx="0.6" fill="#101214" stroke="#2c3034" stroke-width="0.4" />
+    <rect id="qfx3500-mb-rj45-afo--logo-zone" x="14.3" y="2.3" width="24.9" height="10.9" fill="none" data-path="qfx3500-mb-rj45-afo/logo-zone" data-class="label" />
+    <g id="qfx3500-mb-rj45-afo--silkscreen" font-family="sans-serif" fill="#15171a">
+      <text x="58.0" y="6.0" font-size="2.6" text-anchor="middle">QFX3500-48S4Q</text>
+      <text x="58.5" y="25.2" font-size="1.7" text-anchor="middle">C0</text>
+      <text x="75.0" y="25.2" font-size="1.7" text-anchor="middle">C1</text>
+      <text x="91.2" y="13.6" font-size="1.5" text-anchor="end">OK/!</text>
+      <text x="100.3" y="8.1" font-size="1.6" text-anchor="middle" transform="rotate(-90 100.3 8.1)">CON</text>
+      <path d="M 90.0 8.9 m -0.95 0.55 a 1.1 1.1 0 1 1 1.9 0 M 90.0 7.3 v 1.6" fill="none" stroke="#15171a" stroke-width="0.28" />
+      <path d="M 90.0 18.0 m -1.3 0 a 1.3 1.3 0 1 0 2.6 0 a 1.3 1.3 0 1 0 -2.6 0 M 88.9 17.6 l 2.2 0.8 M 89.6 16.9 l 0.8 2.2" fill="none" stroke="#15171a" stroke-width="0.28" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--lamps">
+      <circle id="qfx3500-mb-rj45-afo--led-power" cx="93.55" cy="8.56" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx3500-mb-rj45-afo/led-power" data-class="led" data-states="green amber off" />
+      <circle id="qfx3500-mb-rj45-afo--led-status" cx="93.55" cy="13.2" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx3500-mb-rj45-afo/led-status" data-class="led" data-states="green beacon error off" />
+      <circle id="qfx3500-mb-rj45-afo--led-fan" cx="93.55" cy="17.9" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx3500-mb-rj45-afo/led-fan" data-class="led" data-states="green amber off" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--usb" data-path="qfx3500-mb-rj45-afo/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB" data-media="usb-a" transform="translate(16.6,15.95)" data-group="mgmt" data-group-role="management">
+      <title>qfx3500-mb-rj45-afo--usb</title>
+      <rect id="qfx3500-mb-rj45-afo--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="qfx3500-mb-rj45-afo/usb/opening" data-class="cutout" />
+      <rect id="qfx3500-mb-rj45-afo--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--c0" data-path="qfx3500-mb-rj45-afo/c0" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management C0" data-media="rj45" data-speed="1g" transform="translate(52.15,27.1)" data-group="mgmt" data-group-role="management">
+      <title>qfx3500-mb-rj45-afo--c0</title>
+      <g id="qfx3500-mb-rj45-afo--c0--jack" data-path="qfx3500-mb-rj45-afo/c0/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>qfx3500-mb-rj45-afo--c0--jack</title>
+        <path id="qfx3500-mb-rj45-afo--c0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx3500-mb-rj45-afo--c0--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx3500-mb-rj45-afo--c0--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="qfx3500-mb-rj45-afo/c0/jack/opening" data-class="cutout" />
+        <g id="qfx3500-mb-rj45-afo--c0--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="qfx3500-mb-rj45-afo--c0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="qfx3500-mb-rj45-afo--c0--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx3500-mb-rj45-afo/c0/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="qfx3500-mb-rj45-afo--c0--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx3500-mb-rj45-afo/c0/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--c1" data-path="qfx3500-mb-rj45-afo/c1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management C1" data-media="rj45" data-speed="1g" transform="translate(68.6,27.1)" data-group="mgmt" data-group-role="management">
+      <title>qfx3500-mb-rj45-afo--c1</title>
+      <g id="qfx3500-mb-rj45-afo--c1--jack" data-path="qfx3500-mb-rj45-afo/c1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>qfx3500-mb-rj45-afo--c1--jack</title>
+        <path id="qfx3500-mb-rj45-afo--c1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx3500-mb-rj45-afo--c1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx3500-mb-rj45-afo--c1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="qfx3500-mb-rj45-afo/c1/jack/opening" data-class="cutout" />
+        <g id="qfx3500-mb-rj45-afo--c1--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="qfx3500-mb-rj45-afo--c1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="qfx3500-mb-rj45-afo--c1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx3500-mb-rj45-afo/c1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="qfx3500-mb-rj45-afo--c1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx3500-mb-rj45-afo/c1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="qfx3500-mb-rj45-afo--console" data-path="qfx3500-mb-rj45-afo/console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(104.65,11.6)" data-group="mgmt" data-group-role="management">
+      <title>qfx3500-mb-rj45-afo--console</title>
+      <path id="qfx3500-mb-rj45-afo--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx3500-mb-rj45-afo--console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx3500-mb-rj45-afo--console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="qfx3500-mb-rj45-afo/console/opening" data-class="cutout" />
+      <g id="qfx3500-mb-rj45-afo--console--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

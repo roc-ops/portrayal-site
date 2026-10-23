@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.0mm" height="762.0mm" viewBox="0 0 442.0 762.0" data-device="ex9253" data-view="top" data-weight-note="50 lb (22.68 kg) without a FRU; 157.4 lb (71.4 kg) AC and 163.4 lb (74.11 kg) DC fully loaded (guide Table 5)" data-depth-note="30 in (76.2 cm) without the cable management brackets, air filter unit and handles; 36.5 in (92.7 cm) AC or 38.5 in (97.79 cm) DC with them" data-width-note="19 in (48.26 cm) with the brackets in the guide and the datasheet, 17.4 in (44.2 cm) in the specifications page; the body is modelled" data-switching-capacity="up to 2.4 Tbps per slot, 4.8 Tbps maximum throughput (datasheet)" data-port-density="up to 144 x 10 GbE with breakout cables, 36 x 40 GbE or 24 x 100 GbE at wire speed (datasheet, Table 4)" data-line-cards="two slots; EX9253-6Q12C and EX9253-6Q12C-M, each 6 x QSFP+ and 12 x QSFP28 (not modelled)" data-power-max-w="2692" data-power-envelope="fully-configured" data-power-envelope-note="fully loaded switch, AC or DC; the datasheet's maximum power draw" data-power-system-input-w="2500 W AC and 2500 W DC system input power (guide Tables 9 and 11)" data-power-input-ac="low line 90 to 140 VAC, high line 180 to 264 VAC, 50 to 60 Hz; 25 A system" data-power-input-dc="operating -40 to -72 VDC, nominal -48 and -60 VDC; 54 A at -48 VDC system" data-redundancy-note="up to six supplies; a base order is not redundant, a redundant order has four; two high-line or three low-line AC supplies for non-redundant operation" data-thermal-output="1705 BTU/hour (500 W) in the guide's Table 23; 13,600 BTU/hour (3840 W) in the datasheet" data-fans="four fan trays, each with two counter-rotating fans, an air filter unit, and a fan in each supply" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing in operation; the datasheet gives 5 to 95 percent non-operating" data-altitude="up to 10,000 ft (3,048 m) with no performance degradation" data-cpu="1.6 GHz Intel Xeon, 8 cores (datasheet)" data-memory="up to 64 GB DRAM (datasheet)" data-storage="two front-pluggable SSDs of up to 100 GB each (datasheet)" data-software="Junos OS, first release 18.2R1" data-redundancy="two Routing Engines, graceful Routing Engine switchover, nonstop active routing and nonstop bridging (datasheet)" data-macsec="the EX9253-6Q12C-M line card, with the EX9253-SFL licence (datasheet)" data-junos-fusion="Junos Fusion Enterprise" data-oob="one RJ-45 management Ethernet port (MGMT) on each Routing Engine, 10/100/1000" data-console="RJ-45 serial console port (CON) on each Routing Engine" data-usb="one USB port on each Routing Engine" data-clock-and-time-io="BITS and ToD RJ-45, 10MHz and PPS SMB in and out, on each Routing Engine" data-safety="CAN/CSA-22.2 No. 60950-00/UL 1950, EN 60950, IEC 60950-1, EN 60825-1 (datasheet)" data-emc="FCC 47 CFR Part 15 Class A, EN 55022, VCCI, BSMI CNS 13438, AS/NZS CISPR22 (datasheet)" data-nebs="SR-3580 NEBS Criteria Level 3, GR-63-Core, GR-1089-Core (as the datasheet lists them)" data-materials="RoHS 5/6 (datasheet)" data-seismic="Telcordia Technologies Zone 4 earthquake requirements" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX9253","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"eee246ebb88f989bb3a449d43d5a16c4d378336dc1f92d6faca924d498d06407","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX9253" x="0" y="0" width="442" height="762" rx="1.2" fill="#8b8e94" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>
