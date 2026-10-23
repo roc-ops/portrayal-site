@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="117.1mm" height="63.0mm" viewBox="0 0 117.1 63.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="r960-riser-1a" data-path="r960-riser-1a" data-class="riser" data-behaviour="fills" data-ref="dell/r960-riser-1a@1:1.0.0" data-body-depth="357.0" data-appears-in="riser configuration 3" data-power-absent="not-published" data-riser="1A (FL)" data-slot-1="x16, full height, full length, processor 3, PCIe Gen5" data-slot-3="x16, full height, full length, double width, processor 1, PCIe Gen5" transform="translate(0,0)">
+    <title>r960-riser-1a</title>
+    <g id="r960-riser-1a--slot-1" data-path="r960-riser-1a/slot-1" data-class="bay">
+      <rect id="r960-riser-1a--slot-1--opening" x="22.0" y="1.29" width="90.0" height="18.42" fill="none" stroke="none" />
+      <g id="r960-riser-1a--slot-1--module" data-path="r960-riser-1a/slot-1/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh@1:1.0.0" transform="translate(22.0,1.29)">
+        <title>r960-riser-1a--slot-1--module</title>
+        <rect id="r960-riser-1a--slot-1--module--plate" x="0.1" y="0.1" width="89.8" height="18.22" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+        <rect x="5.9" y="3.0" width="82.4" height="12.4" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+        <path fill="#16191c" d="M9.80 4.60 h2.6 v2.7 h-2.6 Z M15.26 4.60 h2.6 v2.7 h-2.6 Z M20.72 4.60 h2.6 v2.7 h-2.6 Z M26.18 4.60 h2.6 v2.7 h-2.6 Z M31.64 4.60 h2.6 v2.7 h-2.6 Z M37.10 4.60 h2.6 v2.7 h-2.6 Z M42.56 4.60 h2.6 v2.7 h-2.6 Z M48.02 4.60 h2.6 v2.7 h-2.6 Z M53.48 4.60 h2.6 v2.7 h-2.6 Z M58.94 4.60 h2.6 v2.7 h-2.6 Z M64.40 4.60 h2.6 v2.7 h-2.6 Z M69.86 4.60 h2.6 v2.7 h-2.6 Z M75.32 4.60 h2.6 v2.7 h-2.6 Z M80.78 4.60 h2.6 v2.7 h-2.6 Z M9.80 10.90 h2.6 v2.7 h-2.6 Z M15.26 10.90 h2.6 v2.7 h-2.6 Z M20.72 10.90 h2.6 v2.7 h-2.6 Z M26.18 10.90 h2.6 v2.7 h-2.6 Z M31.64 10.90 h2.6 v2.7 h-2.6 Z M37.10 10.90 h2.6 v2.7 h-2.6 Z M42.56 10.90 h2.6 v2.7 h-2.6 Z M48.02 10.90 h2.6 v2.7 h-2.6 Z M53.48 10.90 h2.6 v2.7 h-2.6 Z M58.94 10.90 h2.6 v2.7 h-2.6 Z M64.40 10.90 h2.6 v2.7 h-2.6 Z M69.86 10.90 h2.6 v2.7 h-2.6 Z M75.32 10.90 h2.6 v2.7 h-2.6 Z M80.78 10.90 h2.6 v2.7 h-2.6 Z M0.6 4.60 h2.6 v2.7 h-2.6 Z M0.6 10.90 h2.6 v2.7 h-2.6 Z" />
+      </g>
+    </g>
+    <g id="r960-riser-1a--slot-3" data-path="r960-riser-1a/slot-3" data-class="bay">
+      <rect id="r960-riser-1a--slot-3--opening" x="22.0" y="21.19" width="90.0" height="38.7" fill="none" stroke="none" />
+      <g id="r960-riser-1a--slot-3--module" data-path="r960-riser-1a/slot-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh-2slot@1:1.0.0" transform="translate(22.0,21.19)">
+        <title>r960-riser-1a--slot-3--module</title>
+        <rect id="r960-riser-1a--slot-3--module--plate" x="0.1" y="0.1" width="89.8" height="38.5" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+        <rect id="r960-riser-1a--slot-3--module--window" x="5.9" y="3.0" width="82.4" height="32.7" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+        <path fill="#16191c" d="M9.80 6.80 h2.6 v2.7 h-2.6 Z M15.26 6.80 h2.6 v2.7 h-2.6 Z M20.72 6.80 h2.6 v2.7 h-2.6 Z M26.18 6.80 h2.6 v2.7 h-2.6 Z M31.64 6.80 h2.6 v2.7 h-2.6 Z M37.10 6.80 h2.6 v2.7 h-2.6 Z M42.56 6.80 h2.6 v2.7 h-2.6 Z M48.02 6.80 h2.6 v2.7 h-2.6 Z M53.48 6.80 h2.6 v2.7 h-2.6 Z M58.94 6.80 h2.6 v2.7 h-2.6 Z M64.40 6.80 h2.6 v2.7 h-2.6 Z M69.86 6.80 h2.6 v2.7 h-2.6 Z M75.32 6.80 h2.6 v2.7 h-2.6 Z M80.78 6.80 h2.6 v2.7 h-2.6 Z M9.80 13.10 h2.6 v2.7 h-2.6 Z M15.26 13.10 h2.6 v2.7 h-2.6 Z M20.72 13.10 h2.6 v2.7 h-2.6 Z M26.18 13.10 h2.6 v2.7 h-2.6 Z M31.64 13.10 h2.6 v2.7 h-2.6 Z M37.10 13.10 h2.6 v2.7 h-2.6 Z M42.56 13.10 h2.6 v2.7 h-2.6 Z M48.02 13.10 h2.6 v2.7 h-2.6 Z M53.48 13.10 h2.6 v2.7 h-2.6 Z M58.94 13.10 h2.6 v2.7 h-2.6 Z M64.40 13.10 h2.6 v2.7 h-2.6 Z M69.86 13.10 h2.6 v2.7 h-2.6 Z M75.32 13.10 h2.6 v2.7 h-2.6 Z M80.78 13.10 h2.6 v2.7 h-2.6 Z M9.80 19.40 h2.6 v2.7 h-2.6 Z M15.26 19.40 h2.6 v2.7 h-2.6 Z M20.72 19.40 h2.6 v2.7 h-2.6 Z M26.18 19.40 h2.6 v2.7 h-2.6 Z M31.64 19.40 h2.6 v2.7 h-2.6 Z M37.10 19.40 h2.6 v2.7 h-2.6 Z M42.56 19.40 h2.6 v2.7 h-2.6 Z M48.02 19.40 h2.6 v2.7 h-2.6 Z M53.48 19.40 h2.6 v2.7 h-2.6 Z M58.94 19.40 h2.6 v2.7 h-2.6 Z M64.40 19.40 h2.6 v2.7 h-2.6 Z M69.86 19.40 h2.6 v2.7 h-2.6 Z M75.32 19.40 h2.6 v2.7 h-2.6 Z M80.78 19.40 h2.6 v2.7 h-2.6 Z M9.80 25.70 h2.6 v2.7 h-2.6 Z M15.26 25.70 h2.6 v2.7 h-2.6 Z M20.72 25.70 h2.6 v2.7 h-2.6 Z M26.18 25.70 h2.6 v2.7 h-2.6 Z M31.64 25.70 h2.6 v2.7 h-2.6 Z M37.10 25.70 h2.6 v2.7 h-2.6 Z M42.56 25.70 h2.6 v2.7 h-2.6 Z M48.02 25.70 h2.6 v2.7 h-2.6 Z M53.48 25.70 h2.6 v2.7 h-2.6 Z M58.94 25.70 h2.6 v2.7 h-2.6 Z M64.40 25.70 h2.6 v2.7 h-2.6 Z M69.86 25.70 h2.6 v2.7 h-2.6 Z M75.32 25.70 h2.6 v2.7 h-2.6 Z M80.78 25.70 h2.6 v2.7 h-2.6 Z M9.80 32.00 h2.6 v2.7 h-2.6 Z M15.26 32.00 h2.6 v2.7 h-2.6 Z M20.72 32.00 h2.6 v2.7 h-2.6 Z M26.18 32.00 h2.6 v2.7 h-2.6 Z M31.64 32.00 h2.6 v2.7 h-2.6 Z M37.10 32.00 h2.6 v2.7 h-2.6 Z M42.56 32.00 h2.6 v2.7 h-2.6 Z M48.02 32.00 h2.6 v2.7 h-2.6 Z M53.48 32.00 h2.6 v2.7 h-2.6 Z M58.94 32.00 h2.6 v2.7 h-2.6 Z M64.40 32.00 h2.6 v2.7 h-2.6 Z M69.86 32.00 h2.6 v2.7 h-2.6 Z M75.32 32.00 h2.6 v2.7 h-2.6 Z M80.78 32.00 h2.6 v2.7 h-2.6 Z" />
+      </g>
+    </g>
+    <g id="r960-riser-1a--plate" data-path="r960-riser-1a/plate" data-class="bezel" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+      <g transform="translate(13.0 0)">
+        <path fill-rule="evenodd" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" d="M0.3 0.3 H103.8 V62.7 H0.3 Z M9.0 1.29 H99.0 V19.71 H9.0 Z M9.0 21.19 H99.0 V59.89 H9.0 Z" />
+        <rect x="1.0" y="1.0" width="3.2" height="61.0" fill="#bfc4c9" />
+      </g>
+      <circle cx="4.5" cy="15.1" r="2.8" fill="#2f7fc1" stroke="#1f5f99" stroke-width="0.3" />
+      <path d="M3.3 15.1 H5.7 M4.5 13.9 V16.3" stroke="#e8f1fa" stroke-width="0.5" />
+    </g>
+  </g>
+</svg>

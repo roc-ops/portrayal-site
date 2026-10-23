@@ -16,7 +16,8 @@
   "front": [
    {
     "accepts": [
-     "juniper/jnp10k-re1@2"
+     "juniper/jnp10k-re1@2",
+     "juniper/jnp10k-re-blnk@1"
     ],
     "at": [
      2.5,
@@ -34,7 +35,8 @@
    },
    {
     "accepts": [
-     "juniper/jnp10k-re1@2"
+     "juniper/jnp10k-re1@2",
+     "juniper/jnp10k-re-blnk@1"
     ],
     "at": [
      2.5,
@@ -135,7 +137,8 @@
   "rear": [
    {
     "accepts": [
-     "juniper/jnp10k-pwr-ac2@1"
+     "juniper/jnp10k-pwr-ac2@1",
+     "juniper/jnp10k-pwr-blnk@1"
     ],
     "at": [
      3.0,
@@ -153,7 +156,8 @@
    },
    {
     "accepts": [
-     "juniper/jnp10k-pwr-ac2@1"
+     "juniper/jnp10k-pwr-ac2@1",
+     "juniper/jnp10k-pwr-blnk@1"
     ],
     "at": [
      3.0,
@@ -171,7 +175,8 @@
    },
    {
     "accepts": [
-     "juniper/jnp10k-pwr-ac2@1"
+     "juniper/jnp10k-pwr-ac2@1",
+     "juniper/jnp10k-pwr-blnk@1"
     ],
     "at": [
      3.0,
@@ -258,9 +263,11 @@
     "fpc0": "juniper/jnp10k-lc-blank@1",
     "fpc1": "juniper/jnp10k-lc-blank@1",
     "fpc2": "juniper/jnp10k-lc-blank@1",
-    "fpc3": "juniper/jnp10k-lc-blank@1"
+    "fpc3": "juniper/jnp10k-lc-blank@1",
+    "psu2": "juniper/jnp10k-pwr-blnk@1",
+    "re1": "juniper/jnp10k-re-blnk@1"
    },
-   "description": "Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.",
+   "description": "The chassis as Juniper ships MX10004-BASE. One routing and control board with a cover over the second slot. Two power supplies with a cover over the third, fans, and a cover in each of the four line-card slots. Line cards are ordered separately.",
    "files": {
     "bottom": "mx10004.base.bottom.svg",
     "front": "mx10004.base.front.svg",
@@ -361,8 +368,6 @@
      "absent"
     ],
     "psu2/module": [
-     "ok",
-     "fault",
      "absent"
     ],
     "re0/module": [
@@ -422,60 +427,7 @@
      "activity"
     ],
     "re1/module": [
-     "ok",
-     "fail",
      "absent"
-    ],
-    "re1/module/led-bits-0": [
-     "off",
-     "fault"
-    ],
-    "re1/module/led-bits-1": [
-     "off",
-     "fault"
-    ],
-    "re1/module/led-disk1": [
-     "off",
-     "present"
-    ],
-    "re1/module/led-disk2": [
-     "off",
-     "present"
-    ],
-    "re1/module/led-link-mgmt": [
-     "off",
-     "link"
-    ],
-    "re1/module/led-link-xge-0": [
-     "off",
-     "link"
-    ],
-    "re1/module/led-link-xge-1": [
-     "off",
-     "link"
-    ],
-    "re1/module/led-master": [
-     "off",
-     "primary"
-    ],
-    "re1/module/led-pwr": [
-     "off",
-     "ok",
-     "fault"
-    ],
-    "re1/module/led-sts": [
-     "off",
-     "ok",
-     "booting",
-     "fault"
-    ],
-    "re1/module/mgmt/led-a": [
-     "off",
-     "link"
-    ],
-    "re1/module/mgmt/led-b": [
-     "off",
-     "activity"
     ]
    },
    "views": {}
@@ -533,6 +485,14 @@
    ],
    "wanted": "a vendor dimension for the RCB face - the FRU table covers chassis, cards and PSUs but not the RCB; 389 mm is photo-derived.",
    "what": "rcb-vendor-width"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [],
+   "wanted": "the switch fabric boards (JNP10004-SF2) and their cover (JNP10004-SF-BLNK) sit inside the chassis behind the fan trays, where no face shows them. Vendor count is five boards and one cover on the base; none is drawn.",
+   "what": "sfb-bays"
   },
   {
    "because": "CAP",

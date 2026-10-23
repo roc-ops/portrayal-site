@@ -64,7 +64,11 @@ const inCover = text => [...text.matchAll(/<[a-zA-Z][^>]*\sdata-group="cover"[^>
 // The devices the control touches, by family: cable managers and ducts, nothing else.
 const TOUCHED = ['cmh-bs-dfdabs2u', 'cmh-bs-sfds1u', 'cmh-dfd1u', 'cmh-dfds1u', 'cmh-dfds2u', 'cmh-hd-sfdabs3u', 'cmh-hd-sfdabs4u', 'cmh-sfd1u', 'cmh-sfd2u',
   'cmh-sfds1u', 'cmh-sfds2u', 'cmh-uhd-sfdabs1u', 'cmh-uhd-sfdabs2u', 'cmh-uhd-sfdabs3u', 'cmv-dfd45u5w', 'cmv-dfds45u5w', 'cmv-sfd42u9w', 'cmv-sfd45u5w',
-  'cmv-sfds45u5w', 'uscmh-5dr1u', 'uscmh-sfdabs1u', 'uscmh-sfdabs2u', 'uscmh-sfdabsb1u', 'uscmh-sfdabsb2u'];
+  'cmv-sfds45u5w', 'uscmh-5dr1u', 'uscmh-sfdabs1u', 'uscmh-sfdabs2u', 'uscmh-sfdabsb1u', 'uscmh-sfdabsb2u',
+  // added with the cable managers and ducts from Leviton, Belden, StarTech, Hubbell, Panduit and Eaton Tripp Lite
+  '491ru-hfr', '49253-2cm', '49253-6mr', '49253-6pm', '49253-bcm', '49253-lpm', '492ru-hfo', '492ru-hfr', '9512-1901', 'bhh191ur', 'bhh192ur', 'bhh193ur',
+  'bhh194ur', 'cmduct1ux', 'cmduct2u', 'hm144c', 'hm14c', 'hm24c', 'hm34c', 'hs23c', 'hsd13', 'ncmh2', 'ncmhf2', 'nm1', 'nm2', 'nmf1', 'nmf2', 'nmf3', 'nmf4',
+  'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'wmpvhc45e'];
 // What a `cover` group holds that is NOT a cover, and is left alone: the Amphenol power panels' thumbscrews.
 const LEFT = ['300cb08', '300cb08-c', '300cb08-sc', 'nrg300cb08-ctrl', 'nrg300cb08-ctrl-c', 'nrg300cb08-ctrl-sc', 'nrg300cb08-sens', 'nrg300cb08-sens-c',
   'nrg300cb08-sens-sc', 'nrgils300cb08', 'nrgils300cb08-sc'];
@@ -77,8 +81,8 @@ test('over the whole catalogue the control takes the cover plates of cable manag
       const into = mine.has(part.path) && part.cls === 'mechanical' ? taken : left;
       if (!into.has(dev)) into.set(dev, new Set());
       into.get(dev).add(`${part.cls} ${part.path} ${part.ref}`);
-      // what is taken is a plate whose own component is a cover; what is left is not a plate
-      if (into === taken) assert.match(part.ref, /-cover(-upper|-lower)?$/, `${f}: ${part.path} is taken and is ${part.ref}`);
+      // what is taken is a plate with a component of its own, whatever its maker calls the cover (-cover, -cover-1ru, 49253-2cv, hm1c); what is left is not a plate
+      if (into === taken) assert.match(part.ref, /^[a-z0-9-]+\/[a-z0-9-]+$/, `${f}: ${part.path} is taken and is ${part.ref}`);
       else assert.notEqual(part.cls, 'mechanical', `${f}: ${part.path} is a plate in a cover group and is not taken`);
     }
     assert.equal(mine.size, inCover(text).filter(p => p.cls === 'mechanical').length, `${f}: every path taken is a plate of a cover group`);

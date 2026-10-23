@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.9mm" height="43.7mm" viewBox="0 0 440.9 43.7" data-device="qfx5200-32c" data-view="rear" data-weight-note="23.5 lb (10.66 kg) fully loaded, QFX5200-32C and QFX5200-32C-L (Table 31)" data-port-speeds="QSFP28 ports 0 to 31, 100 GbE by default; 50, 40, 25 or 10 GbE by configuration or with a breakout cable (up to 128 logical ports)" data-power-typical-w="200" data-power-max-w="312" data-power-envelope="unstated" data-power-32c-l-typical-w="195" data-power-input-ac="100 to 240 VAC, 50 to 60 Hz, 4.5 A at 100 to 120 VAC or 2.0 A at 200 to 240 VAC" data-power-input-dc="rated -48 to -60 VDC, operating range -40 to -72 VDC, 10 A maximum" data-redundancy-note="two supplies, load-sharing; one may be removed at a time while the switch runs" data-fans="five fan modules; the switch runs 30 seconds without thermal shutdown while one is replaced" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing (up to 93 percent short term)" data-altitude="no performance degradation to 2000 m (6562 ft)" data-cpu="1.8 GHz quad-core Intel" data-memory="16 GB" data-storage="two 32 GB SSDs" data-software="Junos OS (32C); Junos OS Evolved (32C-L)" data-virtual-chassis="up to three QFX5200-32C members (not the 32C-L)" data-timing="RJ45 grand master clock jack (GM), 1 PPS output, 10 MHz output" data-optics="100 GbE QSFP28, 40 GbE QSFP+, AOC, DAC and breakout cables; a QSFP+ to SFP+ adapter (QSA) from Junos OS 19.3R1" data-oob="SFP management cages C0 and C1 and an RJ45 C0 (10/100/1000 BASE-T); the 32C-L has no second management interface" data-console="RJ-45 console port (CON)" data-usb="one USB port" data-seismic="Designed to comply with Zone 4 earthquake requirements per NEBS GR-63-CORE, Issue 3 (Table 30 wording)" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/jpsu-850w-ac-afo@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/jpsu-850w-ac-afo@'] .state-green { --led-color: #39b54a; }
+    #mgmt-c0--led-a.state-1000m { --led-color: #22c55e; }
+    #mgmt-c0--led-a.state-100m { --led-color: #f59e0b; }
+    #mgmt-c0--led-b.state-activity { --led-color: #22c55e; }
+    #mgmt-c0--led-b.state-activity { animation: portrayal-blink 1s linear infinite; }
+    #led-id.state-beacon, #led-id .state-beacon { --led-color: #3b82f6; }
+    #led-id.state-beacon [data-class='led'], #led-id .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-junos, #led-sys .state-junos { --led-color: #22c55e; }
+    #led-alm.state-major, #led-alm .state-major { --led-color: #ef4444; }
+    #led-alm.state-minor, #led-alm .state-minor { --led-color: #f59e0b; }
+    #led-mst.state-primary, #led-mst .state-primary { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper QFX5200-32C","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/jpsu-850w-ac-afo@1":"1.0.0","juniper/qfx5200-32c-fan-afo@1":"1.0.0","std/c14-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1","std/usb-a@1":"1.3.0"},"source-sha256":"7f89ca4020e3792839b6f3a62b438f600d07c1550e043780bf451e574f0045f4","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5200-32C" data-sku="QFX5200-32C-LAFO" data-part-number="" x="0" y="0" width="440.9" height="43.7" rx="1.2" fill="#949aa2" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="io-panel" data-kind="plate" x="0.2" y="0.4" width="63.2" height="42.9" rx="0.6" fill="#7a7c82" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="2.5" y="0.8" width="20" height="5.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="12.2" cy="17.5" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="12.2" cy="23" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="12.2" cy="28.5" rx="1" ry="1" fill="#101214" id="cutout--led-mst" data-path="cutout:led-mst" data-class="cutout" />
+    <ellipse cx="12.2" cy="34" rx="1" ry="1" fill="#101214" id="cutout--led-id" data-path="cutout:led-id" data-class="cutout" />
+    <rect x="16.5" y="9.5" width="14.5" height="10" fill="#101214" id="cutout--mgmt-sfp-c0" data-path="cutout:mgmt-sfp-c0" data-class="cutout" />
+    <rect x="16.5" y="26.5" width="14.5" height="10" fill="#101214" id="cutout--mgmt-sfp-c1" data-path="cutout:mgmt-sfp-c1" data-class="cutout" />
+    <rect x="35" y="8.2" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="35" y="23.3" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt-c0" data-path="cutout:mgmt-c0" data-class="cutout" />
+    <rect x="55.85" y="23" width="4.5" height="12" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <ellipse cx="44.5" cy="39" rx="2" ry="2" fill="#101214" id="cutout--reset-btn" data-path="cutout:reset-btn" data-class="cutout" />
+    <ellipse cx="67.7" cy="29.5" rx="1" ry="1" fill="#101214" id="cutout--led-fan-0" data-path="cutout:led-fan-0" data-class="cutout" />
+    <ellipse cx="116.7" cy="29.5" rx="1" ry="1" fill="#101214" id="cutout--led-fan-1" data-path="cutout:led-fan-1" data-class="cutout" />
+    <ellipse cx="165.7" cy="29.5" rx="1" ry="1" fill="#101214" id="cutout--led-fan-2" data-path="cutout:led-fan-2" data-class="cutout" />
+    <ellipse cx="214.7" cy="29.5" rx="1" ry="1" fill="#101214" id="cutout--led-fan-3" data-path="cutout:led-fan-3" data-class="cutout" />
+    <ellipse cx="263.7" cy="29.5" rx="1" ry="1" fill="#101214" id="cutout--led-fan-4" data-path="cutout:led-fan-4" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="10" y="18.06" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f4f5f7" id="silk-alm" data-path="silk:silk-alm" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="10" y="23.56" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f4f5f7" id="silk-sys" data-path="silk:silk-sys" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="10" y="29.06" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f4f5f7" id="silk-mst" data-path="silk:silk-mst" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-mst">MST</text>
+    <text x="10" y="34.56" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f4f5f7" id="silk-id" data-path="silk:silk-id" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-id">ID</text>
+    <text x="14.5" y="8.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f4f5f7" id="silk-c0-sfp" data-path="silk:silk-c0-sfp" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-sfp-c0">C0</text>
+    <text x="54.5" y="9.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f4f5f7" id="silk-con" data-path="silk:silk-con" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CON</text>
+    <text x="37" y="40" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f4f5f7" id="silk-c0-rj45" data-path="silk:silk-c0-rj45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-c0">C0</text>
+    <path d="M 0 1.5 L 0 -0.825 M -0.42 -0.825 L 0.42 -0.825 L 0 -1.5 Z M 0 0.15 L -0.825 -0.45 M 0 -0.15 L 0.825 0.3" fill="none" stroke="#f4f5f7" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(58.1 38.8)" id="silk-usb-mark" data-path="silk:silk-usb-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <text x="47" y="39.5" font-family="sans-serif" font-size="1.6" text-anchor="start" fill="#f4f5f7" id="silk-reset" data-path="silk:silk-reset" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset-btn">RESET</text>
+    <text x="51.7" y="3.8" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f4f5f7" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">QFX5200-32C</text>
+    <text x="51.7" y="6.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#f4f5f7" id="silk-os" data-path="silk:silk-os" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">RUNNING JUNOS</text>
+    <text x="67.7" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <text x="116.7" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <text x="165.7" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <text x="214.7" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-fan-3" data-path="silk:silk-fan-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3">3</text>
+    <text x="263.7" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-fan-4" data-path="silk:silk-fan-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-4">4</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(67.7 20.4)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(116.7 20.4)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(165.7 20.4)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(214.7 20.4)" id="silk-fan-3-mark" data-path="silk:silk-fan-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(263.7 20.4)" id="silk-fan-4-mark" data-path="silk:silk-fan-4-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-4" />
+    <text x="312" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <text x="373.2" y="24.9" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f4f5f7" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(312 20.4)" id="silk-psu-0-mark" data-path="silk:silk-psu-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(373.2 20.4)" id="silk-psu-1-mark" data-path="silk:silk-psu-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(11.2,16.5)" data-group="status-leds" data-group-role="indicator" data-description="Table 15 - red: major alarm, the switch halted; amber: minor alarm; unlit: no alarm or halted" data-states="off major minor" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off major minor" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(11.2,22.0)" data-group="status-leds" data-group-role="indicator" data-description="Table 15 - green steady: Junos OS for QFX Series is loaded; unlit: powered off or halted" data-states="off junos" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off junos" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(11.2,27.5)" data-group="status-leds" data-group-role="indicator" data-description="Table 15 - green steady: the primary RE in a QFX5200-32C Virtual Chassis; unlit: standalone" data-states="off primary" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off primary" data-z-dome="0.3" />
+  </g>
+  <g id="led-id" data-path="led-id" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(11.2,33.0)" data-group="status-leds" data-group-role="indicator" data-description="Table 15 - blue blinking: the beacon feature is enabled (request chassis beacon); unlit: not enabled" data-states="off beacon" data-for="chassis">
+    <title>led-id</title>
+    <circle id="led-id--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-id--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-id/lamp" data-class="led" data-states="off beacon" data-z-dome="0.3" />
+  </g>
+  <g id="mgmt-sfp-c0" data-path="mgmt-sfp-c0" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="mgmt" data-speed="1g" data-rel-pos="0" transform="translate(16.5,9.5)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-sfp-c0</title>
+    <rect id="mgmt-sfp-c0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="mgmt-sfp-c0/opening" data-class="cutout" />
+    <rect id="mgmt-sfp-c0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="mgmt-sfp-c0--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="mgmt-sfp-c0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="mgmt-sfp-c0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-sfp-c1" data-path="mgmt-sfp-c1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="mgmt" data-speed="1g" data-support="not supported on the QFX5200-32C-L (no second management interface)" data-rel-pos="1" transform="translate(16.5,26.5) rotate(180 7.25 5.0)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-sfp-c1</title>
+    <rect id="mgmt-sfp-c1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="mgmt-sfp-c1/opening" data-class="cutout" />
+    <rect id="mgmt-sfp-c1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="mgmt-sfp-c1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="mgmt-sfp-c1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="mgmt-sfp-c1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(35.0,8.2)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-c0" data-path="mgmt-c0" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="3" transform="translate(35.0,23.3)" data-group="mgmt" data-group-role="management" data-description="Table 11 - the status lamp is green at 1000 Mbps and amber at 100 Mbps, unlit at 10 Mbps or link down; the link activity lamp is green steady with a link and blinking with traffic">
+    <title>mgmt-c0</title>
+    <g id="mgmt-c0--jack" data-path="mgmt-c0/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt-c0--jack</title>
+      <path id="mgmt-c0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-c0--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-c0--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt-c0/jack/opening" data-class="cutout" />
+      <g id="mgmt-c0--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt-c0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt-c0--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-c0/led-a" data-class="led" data-states="off 1000m 100m" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt-c0--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-c0/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="4" transform="translate(52.1,26.75) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="reset-btn" data-path="reset-btn" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" data-rel-pos="5" transform="translate(42.5,37.0)" data-group="mgmt" data-group-role="management" data-for="chassis">
+    <title>reset-btn</title>
+    <circle id="reset-btn--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset-btn--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset-btn/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="led-fan-0" data-path="led-fan-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(66.7,28.5)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan slot - green when the module is operating normally, amber blinking on an error (guide Table 18)." data-for="fan-0">
+    <title>led-fan-0</title>
+    <circle id="led-fan-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-1" data-path="led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(115.7,28.5)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan slot - green when the module is operating normally, amber blinking on an error (guide Table 18)." data-for="fan-1">
+    <title>led-fan-1</title>
+    <circle id="led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-2" data-path="led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(164.7,28.5)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan slot - green when the module is operating normally, amber blinking on an error (guide Table 18)." data-for="fan-2">
+    <title>led-fan-2</title>
+    <circle id="led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-3" data-path="led-fan-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(213.7,28.5)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan slot - green when the module is operating normally, amber blinking on an error (guide Table 18)." data-for="fan-3">
+    <title>led-fan-3</title>
+    <circle id="led-fan-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-4" data-path="led-fan-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(262.7,28.5)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan slot - green when the module is operating normally, amber blinking on an error (guide Table 18)." data-for="fan-4">
+    <title>led-fan-4</title>
+    <circle id="led-fan-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="71.8" y="1" width="41" height="41.4" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5200-32c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5200-32C-FANAFO" data-power-absent="not-published" data-states="absent" transform="translate(92.3,21.7) translate(-20.5,-20.7)">
+      <title>fan-0--module</title>
+      <defs>
+        <pattern id="fan-0--module--hex" width="2.5" height="4.33" patternUnits="userSpaceOnUse">
+          <polygon points="1.25,0.003 2.185,0.543 2.185,1.623 1.25,2.163 0.315,1.623 0.315,0.543" fill="#0e1012" />
+          <polygon points="0,2.168 0.935,2.708 0.935,3.788 0,4.328 -0.935,3.788 -0.935,2.708" fill="#0e1012" />
+          <polygon points="2.5,2.168 3.435,2.708 3.435,3.788 2.5,4.328 1.565,3.788 1.565,2.708" fill="#0e1012" />
+        </pattern>
+      </defs>
+      <rect id="fan-0--module--face" x="0.2" y="0.2" width="40.6" height="41.0" rx="2.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <g id="fan-0--module--grille-top">
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="url(#fan-0--module--hex)" />
+      </g>
+      <g id="fan-0--module--grille-bottom">
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="url(#fan-0--module--hex)" />
+      </g>
+      <g id="fan-0--module--handle" data-path="fan-0/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="0.4" y="17.3" width="40.2" height="10.6" rx="2.2" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="0.9" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <rect x="34.7" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <g stroke="#b95812" stroke-width="0.3">
+          <path d="M 1.9 19.0 V 26.2 M 3.1 19.0 V 26.2 M 4.3 19.0 V 26.2 M 5.5 19.0 V 26.2" />
+          <path d="M 35.5 19.0 V 26.2 M 36.7 19.0 V 26.2 M 37.9 19.0 V 26.2 M 39.1 19.0 V 26.2" />
+        </g>
+        <rect id="fan-0--module--airout-chip" x="13.5" y="18.9" width="14.0" height="7.4" rx="0.8" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="16.7" cy="22.6" r="0.5" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(120 16.7 22.6)" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(240 16.7 22.6)" />
+        </g>
+        <g id="fan-0--module--silkscreen">
+          <text x="23.0" y="21.9" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.0" y="24.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-0--module--screw" data-path="fan-0/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="3.8" cy="4.9" r="3.0" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="3.8" cy="4.9" r="1.2" fill="#26292d" />
+        <path d="M 2.6 4.9 H 5.0 M 3.8 3.7 V 6.1" stroke="#5a5f66" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="120.8" y="1" width="41" height="41.4" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5200-32c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5200-32C-FANAFO" data-power-absent="not-published" data-states="absent" transform="translate(141.3,21.7) translate(-20.5,-20.7)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--hex" width="2.5" height="4.33" patternUnits="userSpaceOnUse">
+          <polygon points="1.25,0.003 2.185,0.543 2.185,1.623 1.25,2.163 0.315,1.623 0.315,0.543" fill="#0e1012" />
+          <polygon points="0,2.168 0.935,2.708 0.935,3.788 0,4.328 -0.935,3.788 -0.935,2.708" fill="#0e1012" />
+          <polygon points="2.5,2.168 3.435,2.708 3.435,3.788 2.5,4.328 1.565,3.788 1.565,2.708" fill="#0e1012" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--face" x="0.2" y="0.2" width="40.6" height="41.0" rx="2.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <g id="fan-1--module--grille-top">
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="url(#fan-1--module--hex)" />
+      </g>
+      <g id="fan-1--module--grille-bottom">
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="url(#fan-1--module--hex)" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="0.4" y="17.3" width="40.2" height="10.6" rx="2.2" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="0.9" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <rect x="34.7" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <g stroke="#b95812" stroke-width="0.3">
+          <path d="M 1.9 19.0 V 26.2 M 3.1 19.0 V 26.2 M 4.3 19.0 V 26.2 M 5.5 19.0 V 26.2" />
+          <path d="M 35.5 19.0 V 26.2 M 36.7 19.0 V 26.2 M 37.9 19.0 V 26.2 M 39.1 19.0 V 26.2" />
+        </g>
+        <rect id="fan-1--module--airout-chip" x="13.5" y="18.9" width="14.0" height="7.4" rx="0.8" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="16.7" cy="22.6" r="0.5" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(120 16.7 22.6)" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(240 16.7 22.6)" />
+        </g>
+        <g id="fan-1--module--silkscreen">
+          <text x="23.0" y="21.9" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.0" y="24.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="3.8" cy="4.9" r="3.0" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="3.8" cy="4.9" r="1.2" fill="#26292d" />
+        <path d="M 2.6 4.9 H 5.0 M 3.8 3.7 V 6.1" stroke="#5a5f66" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="169.8" y="1" width="41" height="41.4" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5200-32c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5200-32C-FANAFO" data-power-absent="not-published" data-states="absent" transform="translate(190.3,21.7) translate(-20.5,-20.7)">
+      <title>fan-2--module</title>
+      <defs>
+        <pattern id="fan-2--module--hex" width="2.5" height="4.33" patternUnits="userSpaceOnUse">
+          <polygon points="1.25,0.003 2.185,0.543 2.185,1.623 1.25,2.163 0.315,1.623 0.315,0.543" fill="#0e1012" />
+          <polygon points="0,2.168 0.935,2.708 0.935,3.788 0,4.328 -0.935,3.788 -0.935,2.708" fill="#0e1012" />
+          <polygon points="2.5,2.168 3.435,2.708 3.435,3.788 2.5,4.328 1.565,3.788 1.565,2.708" fill="#0e1012" />
+        </pattern>
+      </defs>
+      <rect id="fan-2--module--face" x="0.2" y="0.2" width="40.6" height="41.0" rx="2.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <g id="fan-2--module--grille-top">
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="url(#fan-2--module--hex)" />
+      </g>
+      <g id="fan-2--module--grille-bottom">
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="url(#fan-2--module--hex)" />
+      </g>
+      <g id="fan-2--module--handle" data-path="fan-2/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="0.4" y="17.3" width="40.2" height="10.6" rx="2.2" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="0.9" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <rect x="34.7" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <g stroke="#b95812" stroke-width="0.3">
+          <path d="M 1.9 19.0 V 26.2 M 3.1 19.0 V 26.2 M 4.3 19.0 V 26.2 M 5.5 19.0 V 26.2" />
+          <path d="M 35.5 19.0 V 26.2 M 36.7 19.0 V 26.2 M 37.9 19.0 V 26.2 M 39.1 19.0 V 26.2" />
+        </g>
+        <rect id="fan-2--module--airout-chip" x="13.5" y="18.9" width="14.0" height="7.4" rx="0.8" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="16.7" cy="22.6" r="0.5" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(120 16.7 22.6)" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(240 16.7 22.6)" />
+        </g>
+        <g id="fan-2--module--silkscreen">
+          <text x="23.0" y="21.9" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.0" y="24.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-2--module--screw" data-path="fan-2/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="3.8" cy="4.9" r="3.0" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="3.8" cy="4.9" r="1.2" fill="#26292d" />
+        <path d="M 2.6 4.9 H 5.0 M 3.8 3.7 V 6.1" stroke="#5a5f66" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="218.8" y="1" width="41" height="41.4" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5200-32c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5200-32C-FANAFO" data-power-absent="not-published" data-states="absent" transform="translate(239.3,21.7) translate(-20.5,-20.7)">
+      <title>fan-3--module</title>
+      <defs>
+        <pattern id="fan-3--module--hex" width="2.5" height="4.33" patternUnits="userSpaceOnUse">
+          <polygon points="1.25,0.003 2.185,0.543 2.185,1.623 1.25,2.163 0.315,1.623 0.315,0.543" fill="#0e1012" />
+          <polygon points="0,2.168 0.935,2.708 0.935,3.788 0,4.328 -0.935,3.788 -0.935,2.708" fill="#0e1012" />
+          <polygon points="2.5,2.168 3.435,2.708 3.435,3.788 2.5,4.328 1.565,3.788 1.565,2.708" fill="#0e1012" />
+        </pattern>
+      </defs>
+      <rect id="fan-3--module--face" x="0.2" y="0.2" width="40.6" height="41.0" rx="2.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <g id="fan-3--module--grille-top">
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="url(#fan-3--module--hex)" />
+      </g>
+      <g id="fan-3--module--grille-bottom">
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="url(#fan-3--module--hex)" />
+      </g>
+      <g id="fan-3--module--handle" data-path="fan-3/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="0.4" y="17.3" width="40.2" height="10.6" rx="2.2" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="0.9" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <rect x="34.7" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <g stroke="#b95812" stroke-width="0.3">
+          <path d="M 1.9 19.0 V 26.2 M 3.1 19.0 V 26.2 M 4.3 19.0 V 26.2 M 5.5 19.0 V 26.2" />
+          <path d="M 35.5 19.0 V 26.2 M 36.7 19.0 V 26.2 M 37.9 19.0 V 26.2 M 39.1 19.0 V 26.2" />
+        </g>
+        <rect id="fan-3--module--airout-chip" x="13.5" y="18.9" width="14.0" height="7.4" rx="0.8" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="16.7" cy="22.6" r="0.5" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(120 16.7 22.6)" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(240 16.7 22.6)" />
+        </g>
+        <g id="fan-3--module--silkscreen">
+          <text x="23.0" y="21.9" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.0" y="24.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-3--module--screw" data-path="fan-3/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="3.8" cy="4.9" r="3.0" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="3.8" cy="4.9" r="1.2" fill="#26292d" />
+        <path d="M 2.6 4.9 H 5.0 M 3.8 3.7 V 6.1" stroke="#5a5f66" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="4">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="267.8" y="1" width="41" height="41.4" fill="#101214" />
+    <g id="fan-4--module" data-path="fan-4/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5200-32c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5200-32C-FANAFO" data-power-absent="not-published" data-states="absent" transform="translate(288.3,21.7) translate(-20.5,-20.7)">
+      <title>fan-4--module</title>
+      <defs>
+        <pattern id="fan-4--module--hex" width="2.5" height="4.33" patternUnits="userSpaceOnUse">
+          <polygon points="1.25,0.003 2.185,0.543 2.185,1.623 1.25,2.163 0.315,1.623 0.315,0.543" fill="#0e1012" />
+          <polygon points="0,2.168 0.935,2.708 0.935,3.788 0,4.328 -0.935,3.788 -0.935,2.708" fill="#0e1012" />
+          <polygon points="2.5,2.168 3.435,2.708 3.435,3.788 2.5,4.328 1.565,3.788 1.565,2.708" fill="#0e1012" />
+        </pattern>
+      </defs>
+      <rect id="fan-4--module--face" x="0.2" y="0.2" width="40.6" height="41.0" rx="2.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <g id="fan-4--module--grille-top">
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="4.0" width="29.8" height="13.3" rx="1.2" fill="url(#fan-4--module--hex)" />
+      </g>
+      <g id="fan-4--module--grille-bottom">
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="#1c1f22" />
+        <rect x="5.8" y="27.8" width="29.8" height="13.0" rx="1.2" fill="url(#fan-4--module--hex)" />
+      </g>
+      <g id="fan-4--module--handle" data-path="fan-4/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="0.4" y="17.3" width="40.2" height="10.6" rx="2.2" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="0.9" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <rect x="34.7" y="18.3" width="5.4" height="8.6" rx="1.0" fill="#d3661a" />
+        <g stroke="#b95812" stroke-width="0.3">
+          <path d="M 1.9 19.0 V 26.2 M 3.1 19.0 V 26.2 M 4.3 19.0 V 26.2 M 5.5 19.0 V 26.2" />
+          <path d="M 35.5 19.0 V 26.2 M 36.7 19.0 V 26.2 M 37.9 19.0 V 26.2 M 39.1 19.0 V 26.2" />
+        </g>
+        <rect id="fan-4--module--airout-chip" x="13.5" y="18.9" width="14.0" height="7.4" rx="0.8" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="16.7" cy="22.6" r="0.5" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(120 16.7 22.6)" />
+          <ellipse cx="16.7" cy="21.3" rx="0.7" ry="1.1" transform="rotate(240 16.7 22.6)" />
+        </g>
+        <g id="fan-4--module--silkscreen">
+          <text x="23.0" y="21.9" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.0" y="24.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-4--module--screw" data-path="fan-4/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="3.8" cy="4.9" r="3.0" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="3.8" cy="4.9" r="1.2" fill="#26292d" />
+        <path d="M 2.6 4.9 H 5.0 M 3.8 3.7 V 6.1" stroke="#5a5f66" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="315" y="1.7" width="54.8" height="40.2" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/jpsu-850w-ac-afo@1:1.0.0" data-airflow="front-to-back" data-input="100 to 240 VAC, 50 to 60 Hz, 7.5 A at 100 VAC or 3 A at 240 VAC (QFX5120-48YM, guide Table 30)" data-model="JPSU-850W-AC-AFO" data-power-output-w="850" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(342.4,21.8) translate(-27.4,-20.1)">
+      <title>psu-0--module</title>
+      <defs>
+        <pattern id="psu-0--module--grid" width="3.6" height="3.6" patternUnits="userSpaceOnUse">
+          <rect x="0.4" y="0.4" width="2.8" height="2.8" fill="#07080a" />
+        </pattern>
+      </defs>
+      <rect id="psu-0--module--face" x="0" y="0" width="54.8" height="40.2" rx="0.8" fill="#1c1e21" stroke="#181b1f" stroke-width="0.4" />
+      <g id="psu-0--module--vents">
+        <rect x="2.4" y="2.6" width="15.8" height="28.0" rx="0.5" fill="#2b2e32" />
+        <rect x="2.4" y="2.6" width="15.8" height="28.0" rx="0.5" fill="url(#psu-0--module--grid)" />
+      </g>
+      <rect id="psu-0--module--inlet-bay" x="28.0" y="3.4" width="21.0" height="31.0" rx="1.2" fill="#121416" stroke="#2b2e32" stroke-width="0.3" />
+      <g id="psu-0--module--silkscreen" font-family="sans-serif" font-size="2.1" fill="#d9dde1">
+        <text x="8.2" y="21.9">AC</text>
+        <text x="8.2" y="28.3">DC</text>
+        <text x="8.2" y="34.5">!</text>
+      </g>
+      <g id="psu-0--module--lamps">
+        <circle id="psu-0--module--led-ac" cx="5.5" cy="21.2" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-0/module/led-ac" data-class="led" data-states="green off" />
+        <circle id="psu-0--module--led-dc" cx="5.5" cy="27.6" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-0/module/led-dc" data-class="led" data-states="green off" />
+        <circle id="psu-0--module--led-fault" cx="5.5" cy="33.8" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-0/module/led-fault" data-class="led" data-states="amber off" />
+      </g>
+      <path id="psu-0--module--retainer" d="M 29.5 3.0 V 13.5 H 36.8 V 12.2 A 2.2 2.2 0 1 1 41.2 12.2 V 13.5 H 48.0 V 3.0" fill="none" stroke="#a9afb5" stroke-width="0.7" stroke-linejoin="round" />
+      <g id="psu-0--module--lever" data-path="psu-0/module/lever" data-class="latch">
+        <rect x="49.0" y="19.9" width="5.8" height="20.3" rx="1.2" fill="#232528" stroke="#3a3e43" stroke-width="0.35" />
+        <rect x="51.0" y="24.4" width="1.6" height="9.0" rx="0.6" fill="#08090a" />
+      </g>
+      <g id="psu-0--module--latch" data-path="psu-0/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#e8731f">
+        <rect x="18.2" y="0.8" width="9.7" height="39.0" rx="1.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="20.6" y="4.6" width="4.9" height="31.0" rx="1.2" fill="#d3661a" />
+      </g>
+      <g id="psu-0--module--inlet" data-path="psu-0/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(24.5,8.7) rotate(270 14.0 10.0)">
+        <title>psu-0--module--inlet</title>
+        <rect id="psu-0--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-0/module/inlet/opening" data-class="cutout" />
+        <path id="psu-0--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-0--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="376.6" y="1.7" width="54.8" height="40.2" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/jpsu-850w-ac-afo@1:1.0.0" data-airflow="front-to-back" data-input="100 to 240 VAC, 50 to 60 Hz, 7.5 A at 100 VAC or 3 A at 240 VAC (QFX5120-48YM, guide Table 30)" data-model="JPSU-850W-AC-AFO" data-power-output-w="850" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(404,21.8) translate(-27.4,-20.1)">
+      <title>psu-1--module</title>
+      <defs>
+        <pattern id="psu-1--module--grid" width="3.6" height="3.6" patternUnits="userSpaceOnUse">
+          <rect x="0.4" y="0.4" width="2.8" height="2.8" fill="#07080a" />
+        </pattern>
+      </defs>
+      <rect id="psu-1--module--face" x="0" y="0" width="54.8" height="40.2" rx="0.8" fill="#1c1e21" stroke="#181b1f" stroke-width="0.4" />
+      <g id="psu-1--module--vents">
+        <rect x="2.4" y="2.6" width="15.8" height="28.0" rx="0.5" fill="#2b2e32" />
+        <rect x="2.4" y="2.6" width="15.8" height="28.0" rx="0.5" fill="url(#psu-1--module--grid)" />
+      </g>
+      <rect id="psu-1--module--inlet-bay" x="28.0" y="3.4" width="21.0" height="31.0" rx="1.2" fill="#121416" stroke="#2b2e32" stroke-width="0.3" />
+      <g id="psu-1--module--silkscreen" font-family="sans-serif" font-size="2.1" fill="#d9dde1">
+        <text x="8.2" y="21.9">AC</text>
+        <text x="8.2" y="28.3">DC</text>
+        <text x="8.2" y="34.5">!</text>
+      </g>
+      <g id="psu-1--module--lamps">
+        <circle id="psu-1--module--led-ac" cx="5.5" cy="21.2" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-1/module/led-ac" data-class="led" data-states="green off" />
+        <circle id="psu-1--module--led-dc" cx="5.5" cy="27.6" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-1/module/led-dc" data-class="led" data-states="green off" />
+        <circle id="psu-1--module--led-fault" cx="5.5" cy="33.8" r="1.1" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu-1/module/led-fault" data-class="led" data-states="amber off" />
+      </g>
+      <path id="psu-1--module--retainer" d="M 29.5 3.0 V 13.5 H 36.8 V 12.2 A 2.2 2.2 0 1 1 41.2 12.2 V 13.5 H 48.0 V 3.0" fill="none" stroke="#a9afb5" stroke-width="0.7" stroke-linejoin="round" />
+      <g id="psu-1--module--lever" data-path="psu-1/module/lever" data-class="latch">
+        <rect x="49.0" y="19.9" width="5.8" height="20.3" rx="1.2" fill="#232528" stroke="#3a3e43" stroke-width="0.35" />
+        <rect x="51.0" y="24.4" width="1.6" height="9.0" rx="0.6" fill="#08090a" />
+      </g>
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#e8731f">
+        <rect x="18.2" y="0.8" width="9.7" height="39.0" rx="1.4" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="20.6" y="4.6" width="4.9" height="31.0" rx="1.2" fill="#d3661a" />
+      </g>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(24.5,8.7) rotate(270 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+</svg>

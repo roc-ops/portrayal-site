@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="43.69mm" viewBox="0 0 482.6 43.69" data-device="cablmanagerh" data-view="rear" data-shell="sheet" data-weight-kg="0.31" data-material="Steel" data-color="Black" data-mounting-hardware="M5 cage nuts and M5 screws, four of each" data-standards="EIA/ECA-310-E" data-pass-through-note="Power cables may not fit through the holes on this panel (data sheet, Special Notes)">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"StarTech.com CABLMANAGERH","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"1f4131265a81c72376a1ee40f073cadb8a727d48c806dc3f0c850f7f6f51130e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CABLMANAGERH" x="0" y="0" width="482.6" height="43.69" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="panel-back" data-kind="panel" x="0" y="0" width="482.6" height="43.69" rx="0" fill="#1b1d20" />
+    <rect id="fold-top" data-kind="flange" x="31" y="0" width="420.6" height="1.2" rx="0" fill="#232528" />
+    <rect id="fold-bottom" data-kind="flange" x="31" y="42.49" width="420.6" height="1.2" rx="0" fill="#232528" />
+    <rect id="ear-slot-1" data-kind="hole" x="2.3" y="2.595" width="13" height="6.5" rx="3.25" fill="#0a0b0c" />
+    <rect id="ear-slot-2" data-kind="hole" x="2.3" y="34.595" width="13" height="6.5" rx="3.25" fill="#0a0b0c" />
+    <rect id="ear-slot-3" data-kind="hole" x="467.3" y="2.595" width="13" height="6.5" rx="3.25" fill="#0a0b0c" />
+    <rect id="ear-slot-4" data-kind="hole" x="467.3" y="34.595" width="13" height="6.5" rx="3.25" fill="#0a0b0c" />
+    <rect id="lip-1" data-kind="lip" x="75.3" y="5.845" width="32" height="32" rx="16" fill="#2c3035" />
+    <rect id="lip-2" data-kind="lip" x="175.3" y="5.845" width="32" height="32" rx="16" fill="#2c3035" />
+    <rect id="lip-3" data-kind="lip" x="275.3" y="5.845" width="32" height="32" rx="16" fill="#2c3035" />
+    <rect id="lip-4" data-kind="lip" x="375.3" y="5.845" width="32" height="32" rx="16" fill="#2c3035" />
+    <rect id="hole-1" data-kind="hole" x="76.8" y="7.345" width="29" height="29" rx="14.5" fill="#0a0b0c" />
+    <rect id="hole-2" data-kind="hole" x="176.8" y="7.345" width="29" height="29" rx="14.5" fill="#0a0b0c" />
+    <rect id="hole-3" data-kind="hole" x="276.8" y="7.345" width="29" height="29" rx="14.5" fill="#0a0b0c" />
+    <rect id="hole-4" data-kind="hole" x="376.8" y="7.345" width="29" height="29" rx="14.5" fill="#0a0b0c" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <path id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="obround" data-pass-cover="open" d="M91.300 7.345 H91.300 A14.500 14.500 0 0 1 91.300 36.345 H91.300 A14.500 14.500 0 0 1 91.300 7.345 Z" fill="none" stroke="none" />
+    <path id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="obround" data-pass-cover="open" d="M191.300 7.345 H191.300 A14.500 14.500 0 0 1 191.300 36.345 H191.300 A14.500 14.500 0 0 1 191.300 7.345 Z" fill="none" stroke="none" />
+    <path id="pass--pass-through-3" data-class="pass" data-pass="pass-through-3" data-pass-shape="obround" data-pass-cover="open" d="M291.300 7.345 H291.300 A14.500 14.500 0 0 1 291.300 36.345 H291.300 A14.500 14.500 0 0 1 291.300 7.345 Z" fill="none" stroke="none" />
+    <path id="pass--pass-through-4" data-class="pass" data-pass="pass-through-4" data-pass-shape="obround" data-pass-cover="open" d="M391.300 7.345 H391.300 A14.500 14.500 0 0 1 391.300 36.345 H391.300 A14.500 14.500 0 0 1 391.300 7.345 Z" fill="none" stroke="none" />
+  </g>
+</svg>

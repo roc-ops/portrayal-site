@@ -23,12 +23,14 @@
     "fpc0": "juniper/jnp10k-lc-blank@1",
     "fpc1": "juniper/jnp10k-lc-blank@1",
     "fpc2": "juniper/jnp10k-lc-blank@1",
-    "fpc3": "juniper/jnp10k-lc-blank@1"
+    "fpc3": "juniper/jnp10k-lc-blank@1",
+    "psu2": "juniper/jnp10k-pwr-blnk@1",
+    "re1": "juniper/jnp10k-re-blnk@1"
    },
    "default": true,
-   "description": "Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.",
+   "description": "The chassis as Juniper ships MX10004-BASE. One routing and control board with a cover over the second slot. Two power supplies with a cover over the third, fans, and a cover in each of the four line-card slots. Line cards are ordered separately.",
    "kind": "base",
-   "source": "vendor - Juniper publishes this as an orderable bundle. the hardware guide's 'MX10004 Configurations' section lists the components of each configuration, and the line-card covers in this base are its own: it ships sixteen of them on the MX10016 in EVERY configuration, over the note that \"Line cards and the cable management system are not part of the base or redundant configurations. You must order them separately.\" NOT YET FULLY FAITHFUL: the vendor bundle also ships ONE routing engine rather than two, and covers rather than modules in one SFB slot and one power slot. This library seats all of them, because JNP10K-PWR-BLNK and the SF blank are not modelled yet. The line-card half - the part that was drawing holes - is now right."
+   "source": "vendor - Juniper publishes this as an orderable bundle. The hardware guide's 'MX10004 Configurations' table (MX10004-BASE) lists one RCB with one RCB cover (JNP10K-RE-BLNK), two power supplies with one power supply blank cover panel (JNP10K-PWR-BLNK), and four line card covers (JNP10K-LC-BLNK), over the note that line cards and the cable management system are not part of the base configuration. This base draws exactly that: one board in RCB slot 0 and its cover in slot 1, two supplies and a cover in the third supply slot, and a cover in each of the four line-card slots. The five switch fabric boards and their cover sit inside the chassis, not visible from outside, and no bay for them is drawn."
   }
  },
  "datasheet": {
@@ -77,6 +79,11 @@
    ],
    "wanted": "a vendor dimension for the RCB face - the FRU table covers chassis, cards and PSUs but not the RCB; 389 mm is photo-derived.",
    "what": "rcb-vendor-width"
+  },
+  {
+   "reason": "needs-photo",
+   "wanted": "the switch fabric boards (JNP10004-SF2) and their cover (JNP10004-SF-BLNK) sit inside the chassis behind the fan trays, where no face shows them. Vendor count is five boards and one cover on the base; none is drawn.",
+   "what": "sfb-bays"
   }
  ],
  "groups": {
@@ -163,7 +170,7 @@
    "title": "Juniper MX10004 Universal Routing Platform Hardware Guide (2026-08-25)"
   }
  ],
- "version": "2.0.6",
+ "version": "2.1.0",
  "views": {
   "bottom": {
    "panel": {
@@ -206,7 +213,8 @@
     "bays": [
      {
       "accepts": [
-       "juniper/jnp10k-re1@2"
+       "juniper/jnp10k-re1@2",
+       "juniper/jnp10k-re-blnk@1"
       ],
       "at": [
        2.5,
@@ -223,7 +231,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-re1@2"
+       "juniper/jnp10k-re1@2",
+       "juniper/jnp10k-re-blnk@1"
       ],
       "at": [
        2.5,
@@ -661,7 +670,8 @@
     "bays": [
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -678,7 +688,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -695,7 +706,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,

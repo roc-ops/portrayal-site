@@ -1716,11 +1716,11 @@
    "states": {
     "bits/led-a": [
      "off",
-     "link"
+     "on"
     ],
     "bits/led-b": [
      "off",
-     "activity"
+     "on"
     ],
     "led-alarm-jack": [
      "off",
@@ -2179,11 +2179,11 @@
    "states": {
     "bits/led-a": [
      "off",
-     "link"
+     "on"
     ],
     "bits/led-b": [
      "off",
-     "activity"
+     "on"
     ],
     "led-alarm-jack": [
      "off",
@@ -2658,7 +2658,7 @@
    "scope": [
     "front"
    ],
-   "wanted": "What the small white square beside the `Alarm` legend is. It reads 1.4 x 1.7 at 408.2-409.6, y 17.5-19.2 - the size and place of a lamp, immediately left of the word and above the jack - and the quick start's LED table does not list an alarm-jack lamp among the seven groups it does list. It is drawn as a lamp with an `off`/`alarm` vocabulary borrowed from the ALARM system lamp the table DOES name, and both the borrow and the doubt are recorded here.",
+   "wanted": "What the small white square beside the `Alarm` legend is. It reads 1.4 x 1.7 at 408.2-409.6, y 17.5-19.2 - the size and place of a lamp, immediately left of the word and above the jack - and the quick start's LED table does not list an alarm-jack lamp among the seven groups it does list. It is drawn as a lamp with an `off`/`alarm` vocabulary borrowed from the ALARM system lamp the table DOES name, and both the borrow and the doubt are recorded here. The BITS jack's two corner lamps are not in doubt: the quick start names them (\"BITS/ToD LEDs\") and the jack draws them integrated.",
    "what": "alarm-jack-lamp"
   },
   {
@@ -2734,7 +2734,7 @@
   },
   "lamps": {
    "confidence": "datasheet",
-   "note": "THE QUICK START'S LED TABLE IS THE MOST COMPLETE IN THIS FAMILY. System: \"PSU1/2 - Green (OK), Amber (fault)\", \"DIAG - Green (OK), Orange (fault detected)\", \"FAN - Green (OK), Orange (fault)\", \"LOC - Blinking Blue (OK)\", \"ALARM - Green (OK), Red (alarm)\". Ports: \"QSFP-DD Port LEDs: Blue (400G), Cyan (200G), Green (100G), Yellow (50G)\", \"QSFP28 Port LEDs: Green (100G), Cyan (50G), Magenta (40G), Blue (25G), Yellow (10G)\", \"SFP28 Port LEDs: Blue (25G), Green (10G), Cyan (1G)\". Management: \"Left (link), Right (activity)\". And the timing pair: \"BITS/ToD LEDs: Green (valid BITS), Blinking Green (1PPS ToD)\". So every lamp on this device carries a stated vocabulary, including the two that the BITS and ToD jacks share. THOSE TWO ARE PLACED RATHER THAN INTEGRATED, and that is a deliberate choice about which truth to draw. The elevation shows them in the upper corners of the BITS jack, which is where common/rj45-ganged-eth@1 would draw integrated lamps - but that part says ETHERNET, and docs/rj45-family-design.md reserves it for Ethernet jacks while a timing jack takes the bare std/rj45-ganged@2. Fitting the Ethernet part here to get two lamps would misdeclare the port to get the picture right. So the jacks are bare and the lamps are two placements at 385.70 and 396.55, which is where the corners are. It also says more than the integrated pair could: the quick start's \"BITS/ToD LEDs\" are ONE PAIR SERVING TWO JACKS - green for valid BITS on the upper, blinking green for 1PPS ToD on the lower - and separate placements can carry a `for:` each. An integrated pair belongs to one jack and could not."
+   "note": "THE QUICK START'S LED TABLE IS THE MOST COMPLETE IN THIS FAMILY. System: \"PSU1/2 - Green (OK), Amber (fault)\", \"DIAG - Green (OK), Orange (fault detected)\", \"FAN - Green (OK), Orange (fault)\", \"LOC - Blinking Blue (OK)\", \"ALARM - Green (OK), Red (alarm)\". Ports: \"QSFP-DD Port LEDs: Blue (400G), Cyan (200G), Green (100G), Yellow (50G)\", \"QSFP28 Port LEDs: Green (100G), Cyan (50G), Magenta (40G), Blue (25G), Yellow (10G)\", \"SFP28 Port LEDs: Blue (25G), Green (10G), Cyan (1G)\". Management: \"Left (link), Right (activity)\". And the timing pair: \"BITS/ToD LEDs: Green (valid BITS), Blinking Green (1PPS ToD)\". THE BITS JACK'S TWO LAMPS ARE INTEGRATED, and the jack is common/rj45-ganged-lamped@1: the ganged cell with the two lamps in its keyway-side corners and no Ethernet claim (#370). The elevation shows them in the upper corners of the BITS jack, which is where that part draws them. Placing them as separate lamps beside a bare jack was tried and lint refuses it - an integrated lamp shares the jack's opening, so a second cutout claims a second hole in metal that has one - and the Ethernet part that draws them says Ethernet, which a timing jack is not. The placement says what the jack is for: `role: timing`, `media: rj48`. The quick start's \"BITS/ToD LEDs\" are ONE PAIR SERVING TWO JACKS - green for valid BITS, blinking green for 1PPS ToD. The drawing gives the pair to the BITS jack, where the elevation puts it, and the ToD jack below it is the bare cell; the part's own lamps carry `off` and `on` and no more than that, so the two meanings live in this note."
   },
   "optical-blocks": {
    "confidence": "measured",

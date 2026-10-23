@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="63.5mm" height="88.1mm" viewBox="0 0 63.5 88.1" data-device="49253-2cm" data-view="left" data-shell="sheet" data-material="16-gauge steel, black powder coated" data-color="Black" data-mounting-hardware="Four" data-cable-capacity="31" data-cable-capacity-basis="6AS10 patch cords (0.240 in OD) at the 30 percent recommended practical maximum fill of one ring's 4.8 sq in usable area (2.75 x 1.75 in); 53 at 50 percent and 26 at 25 percent - Leviton application note NS-AN-23-006-05-30-23, page 14. A ring's count" data-standards="c(UL)us, RoHS, EIA 310.E">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Leviton 49253-2CM","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"e56dea730b336d8ef3dd7c79873edb8070a1de06a611c745cf447a2a0baa5c51","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="49253-2CM" x="0" y="0" width="63.5" height="88.1" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="fold-top" data-kind="flange" x="0" y="0" width="11.2" height="1.5" rx="0" fill="#1b1d20" />
+    <rect id="fold-bottom" data-kind="flange" x="0" y="86.6" width="11.2" height="1.5" rx="0" fill="#1b1d20" />
+    <rect id="plate-edge" data-kind="panel" x="11.2" y="0" width="1.5" height="88.1" rx="0" fill="#1b1d20" />
+    <rect id="ring-back" data-kind="ring" x="12.7" y="5.95" width="3.175" height="76.2" rx="0" fill="#111315" />
+    <rect id="ring-bar-top" data-kind="ring" x="12.7" y="5.95" width="38.1" height="3.175" rx="0" fill="#111315" />
+    <rect id="ring-bar-bottom" data-kind="ring" x="12.7" y="78.975" width="50.8" height="3.175" rx="0" fill="#0d0f10" />
+    <rect id="ring-leg-inner" data-kind="ring" x="47.625" y="5.95" width="3.175" height="44.45" rx="0" fill="#0d0f10" />
+    <rect id="ring-leg-outer" data-kind="ring" x="60.325" y="37.7" width="3.175" height="44.45" rx="0" fill="#101214" />
+    <rect id="cover-fold" data-kind="cover" x="57.25" y="11.55" width="6.25" height="65" rx="0" fill="#25272a" />
+    <rect id="cover-plate" data-kind="cover" x="62.28" y="0" width="1.22" height="88.1" rx="0" fill="#2a2c2f" />
+  </g>
+</svg>

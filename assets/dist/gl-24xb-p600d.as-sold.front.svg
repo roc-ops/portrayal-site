@@ -1,0 +1,1049 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="45.0mm" viewBox="0 0 440.0 45.0" data-device="gl-24xb-p600d" data-view="front" data-weight-max-kg="4.5" data-weight-note="datasheet &quot;&lt;10lbs&quot;" data-enclosure="Metal" data-overall-dimensions="12 x 19 x 1.75 in with the ears (datasheet; its mm column reads 305 x 228.6 x 44.45, the 228.6 a slip for 482.6); body modelled from CAD 440 x 45.0 x 300.1" data-switching-capacity="128 Gbps" data-power-self-max-w="80" data-power-self-scope="excluding PoE output" data-poe-budget-w="520" data-poe-budget-scope="using dual power; 220 W using single power" data-poe-per-port="max per PSE: PoE 15.4 W, PoE+ 30 W, PoE++ 90 W; ports 11 and 12 of each line card are PoE++" data-power-input="100-240V AC, 50/60 Hz; 48-56VDC" data-power-supply="AC/DC, internal, (2) 300W" data-cooling="ten 40 x 20 mm fans behind the side-wall grilles, five per side" data-operating-temp-c="0 to 40" data-operating-humidity="10 to 90 percent noncondensing" data-optics-sfp-plus="vendor optics line per the ReadyLinks Optics datasheet: SFP-1/10G-MM, SFP-1/10G-SM, SFP-1/10G-SM-SF-23 and -SF-32 (BiDi) 1/10G transceivers; no third-party support statement published" data-layer-2="IGMP snooping; STP/RSTP with priorities and port-level disable; port isolation; storm control; voice VLAN; port mirroring; LACP; multicast/broadcast rate limiting; MAC blocking; flow control; 802.1X; jumbo frames; proprietary loop protection; DHCP snooping/guarding; egress rate limit; LLDP-MED; port restricted by MAC; device isolation with ACLs" data-layer-3="DHCP server; IP routing; static routing between local networks; network isolation with ACLs" data-interfaces="ReadyView, Ethernet/Fiber In-Band, Ethernet/Fiber Out-of-Band" data-button-functions="factory reset" data-eol="none-announced" data-airflow="side">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"ReadyLinks GL-24xB-P600D","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/bnc-jack@1":"1.0.0","common/led-arrow-sm@1":"1.1.0","common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-ganged-eth@1":"1.2.0","readylinks/gl-x-lc-12xb@1":"1.0.0","std/bnc@1":"1.0.0","std/rj45-ganged@2":"2.1.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1","std/usb-c@1":"1.2.0"},"source-sha256":"02e469eb16ef066cb8ffe876007897de180aca9cfb8dae904a5c11ab85c7e6dc","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="GL-24xB-P600D" data-sku="GL-24xB-P600D" data-part-number="" x="0" y="0" width="440" height="45" rx="1.2" fill="#141619" stroke="#0c0d0f" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="sfp-cage" data-kind="port-shell" x="88.55" y="10.1" width="14.9" height="25" rx="0.3" fill="#b0b5bb" />
+    <rect id="sfp-band" data-kind="plate" x="88.95" y="20.69" width="14.1" height="3.81" rx="0.6" fill="#8f959b" />
+    <rect id="ge-shell" data-kind="port-shell" x="104.95" y="7.32" width="18.55" height="28.28" rx="0.5" fill="#c3c8cd" />
+    <rect id="usb-shell" data-kind="port-shell" x="52.8" y="32.04" width="8.95" height="3.76" rx="1.88" fill="#b0b5bb" />
+    <rect id="slot-rail" data-kind="rail" x="132.7" y="21.9" width="281.5" height="1.15" rx="0.6" fill="#5d6268" />
+    <rect id="serial-label" data-kind="label-plate" x="415.6" y="12.6" width="19.7" height="19.8" rx="0.4" fill="#e4e6e8" />
+    <rect id="serial-label-code" data-kind="label-plate" x="418.9" y="14.1" width="13.1" height="13.1" rx="0.2" fill="#8d9298" />
+    <rect id="serial-label-text" data-kind="label-plate" x="417.4" y="28.9" width="16.1" height="1.9" rx="0.2" fill="#8d9298" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="34.5" y="1.8" width="6.5" height="3.4" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="30.6" cy="17.4" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="30.6" cy="22.5" rx="1" ry="1" fill="#101214" id="cutout--led-pwr" data-path="cutout:led-pwr" data-class="cutout" />
+    <ellipse cx="30.6" cy="27.6" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="30.6" cy="32.7" rx="1" ry="1" fill="#101214" id="cutout--led-sync" data-path="cutout:led-sync" data-class="cutout" />
+    <rect x="34.96" y="21.9" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="53.08" y="32.34" width="8.34" height="2.56" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <ellipse cx="67.19" cy="31.06" rx="2" ry="2" fill="#101214" id="cutout--reset" data-path="cutout:reset" data-class="cutout" />
+    <rect x="74.75" y="7.48" width="9.7" height="8.85" fill="#101214" id="cutout--sync-out" data-path="cutout:sync-out" data-class="cutout" />
+    <rect x="74.75" y="23.48" width="9.7" height="8.85" fill="#101214" id="cutout--sync-in" data-path="cutout:sync-in" data-class="cutout" />
+    <rect x="88.78" y="10.69" width="14.5" height="10" fill="#101214" id="cutout--sfp2" data-path="cutout:sfp2" data-class="cutout" />
+    <rect x="88.78" y="24.5" width="14.5" height="10" fill="#101214" id="cutout--sfp1" data-path="cutout:sfp1" data-class="cutout" />
+    <rect x="90.23" y="21.6" width="2.25" height="2" fill="#101214" id="cutout--led-sfp1" data-path="cutout:led-sfp1" data-class="cutout" />
+    <rect x="99.53" y="21.6" width="2.25" height="2" fill="#101214" id="cutout--led-sfp2" data-path="cutout:led-sfp2" data-class="cutout" />
+    <rect x="107.87" y="7.94" width="12.7" height="11" fill="#101214" id="cutout--ge2" data-path="cutout:ge2" data-class="cutout" />
+    <rect x="107.87" y="24.25" width="12.7" height="11" fill="#101214" id="cutout--ge1" data-path="cutout:ge1" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="31.55" y="9.7" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#e9ecef" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ReadyLinks</text>
+    <text x="18" y="18.61" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#e9ecef" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="18" y="23.71" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#e9ecef" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="18" y="28.81" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#e9ecef" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="18" y="33.91" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#e9ecef" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sync">SYNC</text>
+    <text x="41.2" y="41" font-family="sans-serif" font-size="3.9" text-anchor="middle" fill="#e9ecef" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CONSOLE</text>
+    <text x="58.6" y="41" font-family="sans-serif" font-size="3.9" text-anchor="middle" fill="#e9ecef" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb">USB</text>
+    <text x="79.6" y="5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-out">OUT</text>
+    <text x="79.6" y="37.9" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-in">IN</text>
+    <text x="66.25" y="21.54" font-family="sans-serif" font-size="3.9" text-anchor="middle" fill="#e9ecef" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-out sync-in">SYNC</text>
+    <path d="M 0 0 L 5.25 0" fill="none" stroke="#e9ecef" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(66 12.33)" id="sync-bracket-out-bar" data-path="silk:sync-bracket-out-bar" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-out" />
+    <path d="M 0 0 L 0 5.37" fill="none" stroke="#e9ecef" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(66 12.33)" id="sync-bracket-out-drop" data-path="silk:sync-bracket-out-drop" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-out" />
+    <path d="M 0 0 L 5.25 0" fill="none" stroke="#e9ecef" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(66 28.33)" id="sync-bracket-in-bar" data-path="silk:sync-bracket-in-bar" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-in" />
+    <path d="M 0 0 L 0 4.73" fill="none" stroke="#e9ecef" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(66 23.6)" id="sync-bracket-in-drop" data-path="silk:sync-bracket-in-drop" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sync-in" />
+    <text x="95.25" y="6.9" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sfp2">SFP+2</text>
+    <text x="95.25" y="39.8" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sfp1">SFP+1</text>
+    <text x="113.2" y="5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ge2">GE2</text>
+    <text x="113.2" y="39.8" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#e9ecef" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ge1">GE1</text>
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(29.6,16.4)" data-group="status-leds" data-group-role="indicator" data-description="SYS, PWR, ALM and SYNC, top to bottom at the left of the panel." data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(29.6,21.5)" data-group="status-leds" data-group-role="indicator" data-description="SYS, PWR, ALM and SYNC, top to bottom at the left of the panel." data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(29.6,26.6)" data-group="status-leds" data-group-role="indicator" data-description="SYS, PWR, ALM and SYNC, top to bottom at the left of the panel." data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sync" data-path="led-sync" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(29.6,31.7)" data-group="status-leds" data-group-role="indicator" data-description="SYS, PWR, ALM and SYNC, top to bottom at the left of the panel." data-for="chassis">
+    <title>led-sync</title>
+    <circle id="led-sync--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sync--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sync/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(34.96,21.9)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="2" transform="translate(53.08,32.34)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="1" transform="translate(65.19,29.06)" data-group="buttons" data-group-role="management" data-description="the recessed factory-reset button (data sheet &quot;Button - Factory reset&quot;)." data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="sync-out" data-path="sync-out" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-media="coax-bnc" data-role="timing" data-rel-pos="1" transform="translate(73.25,5.98)" data-group="sync" data-group-role="management" data-description="the two BNC sync jacks, OUT above IN, under one SYNC bracket - timing between units rather than traffic; what signal is not published (gap sync-signal).">
+    <title>sync-out</title>
+    <path id="sync-out--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+    <rect id="sync-out--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+    <rect id="sync-out--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+    <g id="sync-out--jack" data-path="sync-out/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+      <title>sync-out--jack</title>
+      <path id="sync-out--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="sync-out/jack/opening" data-class="cutout" />
+      <g id="sync-out--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+        <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+        <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+        <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+        <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+        <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+        <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+    </g>
+    <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+  </g>
+  <g id="sync-in" data-path="sync-in" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-media="coax-bnc" data-role="timing" data-rel-pos="2" transform="translate(73.25,21.98)" data-group="sync" data-group-role="management" data-description="the two BNC sync jacks, OUT above IN, under one SYNC bracket - timing between units rather than traffic; what signal is not published (gap sync-signal).">
+    <title>sync-in</title>
+    <path id="sync-in--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+    <rect id="sync-in--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+    <rect id="sync-in--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+    <g id="sync-in--jack" data-path="sync-in/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+      <title>sync-in--jack</title>
+      <path id="sync-in--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="sync-in/jack/opening" data-class="cutout" />
+      <g id="sync-in--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+        <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+        <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+        <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+        <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+        <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+        <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+    </g>
+    <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+  </g>
+  <g id="sfp2" data-path="sfp2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="2" transform="translate(88.78,10.69)" data-group="sfp-plus" data-group-role="traffic" data-description="the two 10G SFP+ uplinks, SFP+1 below SFP+2 in one stacked cage.">
+    <title>sfp2</title>
+    <rect id="sfp2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="sfp2/opening" data-class="cutout" />
+    <rect id="sfp2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="sfp2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="sfp2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="sfp2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="sfp1" data-path="sfp1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="1" transform="translate(88.78,24.5) rotate(180 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the two 10G SFP+ uplinks, SFP+1 below SFP+2 in one stacked cage.">
+    <title>sfp1</title>
+    <rect id="sfp1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="sfp1/opening" data-class="cutout" />
+    <rect id="sfp1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="sfp1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="sfp1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="sfp1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="led-sfp1" data-path="led-sfp1" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="1" transform="translate(90.23,21.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two triangle lamps in the band between the SFP+ openings." data-for="sfp1">
+    <title>led-sfp1</title>
+    <path id="led-sfp1--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-sfp1/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-sfp2" data-path="led-sfp2" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="2" transform="translate(99.53,21.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two triangle lamps in the band between the SFP+ openings." data-for="sfp2">
+    <title>led-sfp2</title>
+    <path id="led-sfp2--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-sfp2/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="ge2" data-path="ge2" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="2" transform="translate(107.87,7.94) rotate(180 6.35 5.5)" data-group="gbe" data-group-role="traffic" data-description="the two GbE RJ45 ports, GE1 below GE2 in one stacked shell.">
+    <title>ge2</title>
+    <g id="ge2--jack" data-path="ge2/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>ge2--jack</title>
+      <path id="ge2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ge2--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ge2--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ge2/jack/opening" data-class="cutout" />
+      <g id="ge2--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="ge2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="ge2--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ge2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="ge2--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ge2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="ge1" data-path="ge1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="1" transform="translate(107.87,24.25)" data-group="gbe" data-group-role="traffic" data-description="the two GbE RJ45 ports, GE1 below GE2 in one stacked shell.">
+    <title>ge1</title>
+    <g id="ge1--jack" data-path="ge1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>ge1--jack</title>
+      <path id="ge1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ge1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ge1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ge1/jack/opening" data-class="cutout" />
+      <g id="ge1--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="ge1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="ge1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ge1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="ge1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ge1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="slot-1" data-path="slot-1" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="1">
+    <title>slot-1</title>
+    <rect id="slot-1--opening" x="132.7" y="2.35" width="281.5" height="19.55" fill="#101214" />
+    <g id="slot-1--module" data-path="slot-1/module" data-class="line-card" data-behaviour="fills" data-ref="readylinks/gl-x-lc-12xb@1:1.0.0" data-model="GL-x 12-port BNC line card" data-power-absent="not-published" data-states="absent" transform="translate(273.45,12.125) translate(-140.75,-9.775)">
+      <title>slot-1--module</title>
+      <rect id="slot-1--module--plate" x="0.1" y="0.1" width="281.3" height="19.35" rx="0.3" fill="#141619" stroke="#3a3e43" stroke-width="0.2" />
+      <circle cx="11.8" cy="8.05" r="2.2" fill="#1f2226" stroke="#3a3e43" stroke-width="0.2" />
+      <circle cx="269.7" cy="8.05" r="2.2" fill="#1f2226" stroke="#3a3e43" stroke-width="0.2" />
+      <g id="slot-1--module--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#e9ecef">
+        <text x="24.27" y="16.95" font-size="3.2" text-anchor="middle">RL1</text>
+        <text x="44.97" y="16.95" font-size="3.2" text-anchor="middle">RL2</text>
+        <text x="65.67" y="16.95" font-size="3.2" text-anchor="middle">RL3</text>
+        <text x="86.37" y="16.95" font-size="3.2" text-anchor="middle">RL4</text>
+        <text x="107.07" y="16.95" font-size="3.2" text-anchor="middle">RL5</text>
+        <text x="127.77" y="16.95" font-size="3.2" text-anchor="middle">RL6</text>
+        <text x="148.47" y="16.95" font-size="3.2" text-anchor="middle">RL7</text>
+        <text x="169.17" y="16.95" font-size="3.2" text-anchor="middle">RL8</text>
+        <text x="189.87" y="16.95" font-size="3.2" text-anchor="middle">RL9</text>
+        <text x="210.57" y="16.95" font-size="3.2" text-anchor="middle">RL10</text>
+        <text x="231.27" y="16.95" font-size="3.2" text-anchor="middle">RL11</text>
+        <text x="251.97" y="16.95" font-size="3.2" text-anchor="middle">RL12</text>
+      </g>
+      <g id="slot-1--module--thumbscrew-left" data-path="slot-1/module/thumbscrew-left" data-class="fastener" data-z-cyl="13.7" data-z-color="#b9bec3">
+        <circle cx="3.99" cy="9.59" r="3.9" fill="#b9bec3" stroke="#7d8388" stroke-width="0.25" stroke-dasharray="0.35 0.25" />
+        <circle cx="3.99" cy="9.59" r="3.1" fill="#cfd3d7" />
+        <rect x="2.29" y="9.19" width="3.4" height="0.8" fill="#26292d" />
+        <rect x="3.59" y="7.89" width="0.8" height="3.4" fill="#26292d" />
+      </g>
+      <g id="slot-1--module--thumbscrew-right" data-path="slot-1/module/thumbscrew-right" data-class="fastener" data-z-cyl="13.7" data-z-color="#b9bec3">
+        <circle cx="277.49" cy="9.59" r="3.9" fill="#b9bec3" stroke="#7d8388" stroke-width="0.25" stroke-dasharray="0.35 0.25" />
+        <circle cx="277.49" cy="9.59" r="3.1" fill="#cfd3d7" />
+        <rect x="275.79" y="9.19" width="3.4" height="0.8" fill="#26292d" />
+        <rect x="277.09" y="7.89" width="0.8" height="3.4" fill="#26292d" />
+      </g>
+      <g id="slot-1--module--rl1" data-path="slot-1/module/rl1" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(17.92,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl1</title>
+        <path id="slot-1--module--rl1--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl1--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl1--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl1--jack" data-path="slot-1/module/rl1/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl1--jack</title>
+          <path id="slot-1--module--rl1--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl1/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl1--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl2" data-path="slot-1/module/rl2" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(38.62,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl2</title>
+        <path id="slot-1--module--rl2--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl2--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl2--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl2--jack" data-path="slot-1/module/rl2/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl2--jack</title>
+          <path id="slot-1--module--rl2--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl2/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl2--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl3" data-path="slot-1/module/rl3" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(59.32,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl3</title>
+        <path id="slot-1--module--rl3--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl3--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl3--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl3--jack" data-path="slot-1/module/rl3/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl3--jack</title>
+          <path id="slot-1--module--rl3--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl3/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl3--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl4" data-path="slot-1/module/rl4" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(80.02,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl4</title>
+        <path id="slot-1--module--rl4--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl4--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl4--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl4--jack" data-path="slot-1/module/rl4/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl4--jack</title>
+          <path id="slot-1--module--rl4--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl4/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl4--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl5" data-path="slot-1/module/rl5" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(100.72,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl5</title>
+        <path id="slot-1--module--rl5--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl5--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl5--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl5--jack" data-path="slot-1/module/rl5/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl5--jack</title>
+          <path id="slot-1--module--rl5--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl5/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl5--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl6" data-path="slot-1/module/rl6" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(121.42,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl6</title>
+        <path id="slot-1--module--rl6--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl6--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl6--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl6--jack" data-path="slot-1/module/rl6/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl6--jack</title>
+          <path id="slot-1--module--rl6--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl6/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl6--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl7" data-path="slot-1/module/rl7" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(142.12,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl7</title>
+        <path id="slot-1--module--rl7--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl7--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl7--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl7--jack" data-path="slot-1/module/rl7/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl7--jack</title>
+          <path id="slot-1--module--rl7--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl7/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl7--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl8" data-path="slot-1/module/rl8" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(162.82,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl8</title>
+        <path id="slot-1--module--rl8--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl8--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl8--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl8--jack" data-path="slot-1/module/rl8/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl8--jack</title>
+          <path id="slot-1--module--rl8--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl8/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl8--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl9" data-path="slot-1/module/rl9" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(183.52,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl9</title>
+        <path id="slot-1--module--rl9--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl9--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl9--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl9--jack" data-path="slot-1/module/rl9/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl9--jack</title>
+          <path id="slot-1--module--rl9--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl9/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl9--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl10" data-path="slot-1/module/rl10" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(204.22,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl10</title>
+        <path id="slot-1--module--rl10--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl10--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl10--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl10--jack" data-path="slot-1/module/rl10/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl10--jack</title>
+          <path id="slot-1--module--rl10--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl10/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl10--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl11" data-path="slot-1/module/rl11" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+/PoE++ (to 90 W per port by PSE)" data-speed="1g" transform="translate(224.92,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl11</title>
+        <path id="slot-1--module--rl11--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl11--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl11--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl11--jack" data-path="slot-1/module/rl11/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl11--jack</title>
+          <path id="slot-1--module--rl11--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl11/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl11--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--rl12" data-path="slot-1/module/rl12" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+/PoE++ (to 90 W per port by PSE)" data-speed="1g" transform="translate(245.62,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-1--module--rl12</title>
+        <path id="slot-1--module--rl12--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-1--module--rl12--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-1--module--rl12--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-1--module--rl12--jack" data-path="slot-1/module/rl12/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-1--module--rl12--jack</title>
+          <path id="slot-1--module--rl12--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-1/module/rl12/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--rl12--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-1--module--led-rl1-a" data-path="slot-1/module/led-rl1-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(33.65,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl1-a</title>
+        <circle id="slot-1--module--led-rl1-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl1-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl1-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl1-b" data-path="slot-1/module/led-rl1-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(33.65,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl1-b</title>
+        <circle id="slot-1--module--led-rl1-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl1-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl1-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl2-a" data-path="slot-1/module/led-rl2-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.35,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl2-a</title>
+        <circle id="slot-1--module--led-rl2-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl2-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl2-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl2-b" data-path="slot-1/module/led-rl2-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.35,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl2-b</title>
+        <circle id="slot-1--module--led-rl2-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl2-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl2-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl3-a" data-path="slot-1/module/led-rl3-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.05,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl3-a</title>
+        <circle id="slot-1--module--led-rl3-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl3-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl3-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl3-b" data-path="slot-1/module/led-rl3-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.05,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl3-b</title>
+        <circle id="slot-1--module--led-rl3-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl3-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl3-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl4-a" data-path="slot-1/module/led-rl4-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(95.75,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl4-a</title>
+        <circle id="slot-1--module--led-rl4-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl4-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl4-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl4-b" data-path="slot-1/module/led-rl4-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(95.75,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl4-b</title>
+        <circle id="slot-1--module--led-rl4-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl4-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl4-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl5-a" data-path="slot-1/module/led-rl5-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(116.45,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl5-a</title>
+        <circle id="slot-1--module--led-rl5-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl5-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl5-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl5-b" data-path="slot-1/module/led-rl5-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(116.45,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl5-b</title>
+        <circle id="slot-1--module--led-rl5-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl5-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl5-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl6-a" data-path="slot-1/module/led-rl6-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(137.15,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl6-a</title>
+        <circle id="slot-1--module--led-rl6-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl6-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl6-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl6-b" data-path="slot-1/module/led-rl6-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(137.15,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl6-b</title>
+        <circle id="slot-1--module--led-rl6-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl6-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl6-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl7-a" data-path="slot-1/module/led-rl7-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(157.85,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl7-a</title>
+        <circle id="slot-1--module--led-rl7-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl7-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl7-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl7-b" data-path="slot-1/module/led-rl7-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(157.85,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl7-b</title>
+        <circle id="slot-1--module--led-rl7-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl7-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl7-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl8-a" data-path="slot-1/module/led-rl8-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(178.55,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl8-a</title>
+        <circle id="slot-1--module--led-rl8-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl8-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl8-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl8-b" data-path="slot-1/module/led-rl8-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(178.55,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl8-b</title>
+        <circle id="slot-1--module--led-rl8-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl8-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl8-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl9-a" data-path="slot-1/module/led-rl9-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(199.25,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl9-a</title>
+        <circle id="slot-1--module--led-rl9-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl9-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl9-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl9-b" data-path="slot-1/module/led-rl9-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(199.25,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl9-b</title>
+        <circle id="slot-1--module--led-rl9-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl9-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl9-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl10-a" data-path="slot-1/module/led-rl10-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(219.95,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl10-a</title>
+        <circle id="slot-1--module--led-rl10-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl10-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl10-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl10-b" data-path="slot-1/module/led-rl10-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(219.95,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl10-b</title>
+        <circle id="slot-1--module--led-rl10-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl10-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl10-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl11-a" data-path="slot-1/module/led-rl11-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(240.65,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl11-a</title>
+        <circle id="slot-1--module--led-rl11-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl11-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl11-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl11-b" data-path="slot-1/module/led-rl11-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(240.65,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl11-b</title>
+        <circle id="slot-1--module--led-rl11-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl11-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl11-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl12-a" data-path="slot-1/module/led-rl12-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(261.35,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl12-a</title>
+        <circle id="slot-1--module--led-rl12-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl12-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl12-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-rl12-b" data-path="slot-1/module/led-rl12-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(261.35,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-1--module--led-rl12-b</title>
+        <circle id="slot-1--module--led-rl12-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-1--module--led-rl12-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/led-rl12-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="140.75 9.775" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="slot-2" data-path="slot-2" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="2">
+    <title>slot-2</title>
+    <rect id="slot-2--opening" x="132.7" y="23.05" width="281.5" height="19.55" fill="#101214" />
+    <g id="slot-2--module" data-path="slot-2/module" data-class="line-card" data-behaviour="fills" data-ref="readylinks/gl-x-lc-12xb@1:1.0.0" data-model="GL-x 12-port BNC line card" data-power-absent="not-published" data-states="absent" transform="translate(273.45,32.825) translate(-140.75,-9.775)">
+      <title>slot-2--module</title>
+      <rect id="slot-2--module--plate" x="0.1" y="0.1" width="281.3" height="19.35" rx="0.3" fill="#141619" stroke="#3a3e43" stroke-width="0.2" />
+      <circle cx="11.8" cy="8.05" r="2.2" fill="#1f2226" stroke="#3a3e43" stroke-width="0.2" />
+      <circle cx="269.7" cy="8.05" r="2.2" fill="#1f2226" stroke="#3a3e43" stroke-width="0.2" />
+      <g id="slot-2--module--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#e9ecef">
+        <text x="24.27" y="16.95" font-size="3.2" text-anchor="middle">RL1</text>
+        <text x="44.97" y="16.95" font-size="3.2" text-anchor="middle">RL2</text>
+        <text x="65.67" y="16.95" font-size="3.2" text-anchor="middle">RL3</text>
+        <text x="86.37" y="16.95" font-size="3.2" text-anchor="middle">RL4</text>
+        <text x="107.07" y="16.95" font-size="3.2" text-anchor="middle">RL5</text>
+        <text x="127.77" y="16.95" font-size="3.2" text-anchor="middle">RL6</text>
+        <text x="148.47" y="16.95" font-size="3.2" text-anchor="middle">RL7</text>
+        <text x="169.17" y="16.95" font-size="3.2" text-anchor="middle">RL8</text>
+        <text x="189.87" y="16.95" font-size="3.2" text-anchor="middle">RL9</text>
+        <text x="210.57" y="16.95" font-size="3.2" text-anchor="middle">RL10</text>
+        <text x="231.27" y="16.95" font-size="3.2" text-anchor="middle">RL11</text>
+        <text x="251.97" y="16.95" font-size="3.2" text-anchor="middle">RL12</text>
+      </g>
+      <g id="slot-2--module--thumbscrew-left" data-path="slot-2/module/thumbscrew-left" data-class="fastener" data-z-cyl="13.7" data-z-color="#b9bec3">
+        <circle cx="3.99" cy="9.59" r="3.9" fill="#b9bec3" stroke="#7d8388" stroke-width="0.25" stroke-dasharray="0.35 0.25" />
+        <circle cx="3.99" cy="9.59" r="3.1" fill="#cfd3d7" />
+        <rect x="2.29" y="9.19" width="3.4" height="0.8" fill="#26292d" />
+        <rect x="3.59" y="7.89" width="0.8" height="3.4" fill="#26292d" />
+      </g>
+      <g id="slot-2--module--thumbscrew-right" data-path="slot-2/module/thumbscrew-right" data-class="fastener" data-z-cyl="13.7" data-z-color="#b9bec3">
+        <circle cx="277.49" cy="9.59" r="3.9" fill="#b9bec3" stroke="#7d8388" stroke-width="0.25" stroke-dasharray="0.35 0.25" />
+        <circle cx="277.49" cy="9.59" r="3.1" fill="#cfd3d7" />
+        <rect x="275.79" y="9.19" width="3.4" height="0.8" fill="#26292d" />
+        <rect x="277.09" y="7.89" width="0.8" height="3.4" fill="#26292d" />
+      </g>
+      <g id="slot-2--module--rl1" data-path="slot-2/module/rl1" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(17.92,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl1</title>
+        <path id="slot-2--module--rl1--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl1--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl1--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl1--jack" data-path="slot-2/module/rl1/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl1--jack</title>
+          <path id="slot-2--module--rl1--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl1/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl1--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl2" data-path="slot-2/module/rl2" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(38.62,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl2</title>
+        <path id="slot-2--module--rl2--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl2--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl2--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl2--jack" data-path="slot-2/module/rl2/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl2--jack</title>
+          <path id="slot-2--module--rl2--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl2/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl2--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl3" data-path="slot-2/module/rl3" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(59.32,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl3</title>
+        <path id="slot-2--module--rl3--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl3--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl3--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl3--jack" data-path="slot-2/module/rl3/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl3--jack</title>
+          <path id="slot-2--module--rl3--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl3/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl3--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl4" data-path="slot-2/module/rl4" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(80.02,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl4</title>
+        <path id="slot-2--module--rl4--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl4--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl4--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl4--jack" data-path="slot-2/module/rl4/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl4--jack</title>
+          <path id="slot-2--module--rl4--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl4/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl4--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl5" data-path="slot-2/module/rl5" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(100.72,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl5</title>
+        <path id="slot-2--module--rl5--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl5--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl5--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl5--jack" data-path="slot-2/module/rl5/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl5--jack</title>
+          <path id="slot-2--module--rl5--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl5/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl5--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl6" data-path="slot-2/module/rl6" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(121.42,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl6</title>
+        <path id="slot-2--module--rl6--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl6--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl6--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl6--jack" data-path="slot-2/module/rl6/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl6--jack</title>
+          <path id="slot-2--module--rl6--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl6/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl6--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl7" data-path="slot-2/module/rl7" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(142.12,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl7</title>
+        <path id="slot-2--module--rl7--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl7--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl7--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl7--jack" data-path="slot-2/module/rl7/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl7--jack</title>
+          <path id="slot-2--module--rl7--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl7/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl7--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl8" data-path="slot-2/module/rl8" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(162.82,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl8</title>
+        <path id="slot-2--module--rl8--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl8--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl8--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl8--jack" data-path="slot-2/module/rl8/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl8--jack</title>
+          <path id="slot-2--module--rl8--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl8/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl8--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl9" data-path="slot-2/module/rl9" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(183.52,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl9</title>
+        <path id="slot-2--module--rl9--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl9--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl9--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl9--jack" data-path="slot-2/module/rl9/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl9--jack</title>
+          <path id="slot-2--module--rl9--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl9/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl9--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl10" data-path="slot-2/module/rl10" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+ (to 30 W per port by PSE)" data-speed="1g" transform="translate(204.22,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl10</title>
+        <path id="slot-2--module--rl10--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl10--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl10--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl10--jack" data-path="slot-2/module/rl10/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl10--jack</title>
+          <path id="slot-2--module--rl10--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl10/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl10--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl11" data-path="slot-2/module/rl11" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+/PoE++ (to 90 W per port by PSE)" data-speed="1g" transform="translate(224.92,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl11</title>
+        <path id="slot-2--module--rl11--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl11--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl11--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl11--jack" data-path="slot-2/module/rl11/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl11--jack</title>
+          <path id="slot-2--module--rl11--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl11/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl11--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--rl12" data-path="slot-2/module/rl12" data-class="port" data-ref="common/bnc-jack@1:1.0.0" data-impedance="75" data-media="coax-bnc" data-poe="PoE/PoE+/PoE++ (to 90 W per port by PSE)" data-speed="1g" transform="translate(245.62,1.4)" data-group="readylink" data-group-role="traffic" data-description="the twelve ReadyLink coax ports, RL1 to RL12 as the card prints them. Every port does PoE and PoE+; ports 11 and 12 also do PoE++ (the datasheet's note - &quot;Ports 11 and 12 of each line card are PoE++ ports&quot;).">
+        <title>slot-2--module--rl12</title>
+        <path id="slot-2--module--rl12--flange" fill="#c0c4c8" fill-rule="evenodd" d="M 0 6.35 A 6.35 6.35 0 1 0 12.7 6.35 A 6.35 6.35 0 1 0 0 6.35 Z        M 1.525 6.35 A 4.825 4.825 0 1 0 11.175 6.35 A 4.825 4.825 0 1 0 1.525 6.35 Z" data-z-cyl="1.4" data-z-color="#c0c4c8" />
+        <rect id="slot-2--module--rl12--lug-l" x="0.84" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <rect id="slot-2--module--rl12--lug-r" x="10.975" y="5.3575" width="0.885" height="1.985" fill="#d7dade" stroke="#7d8388" stroke-width="0.1" data-z-out="8.96" data-z-lift="6.97" data-z-color="#d7dade" />
+        <g id="slot-2--module--rl12--jack" data-path="slot-2/module/rl12/jack" data-class="port" data-inner="1" data-ref="std/bnc@1:1.0.0" data-media="coax-bnc" transform="translate(1.5,1.5)">
+          <title>slot-2--module--rl12--jack</title>
+          <path id="slot-2--module--rl12--jack--opening" d="M 2.107 8.85 A 4.85 4.85 0 1 1 7.593 8.85 Z" fill="#15181b" data-path="slot-2/module/rl12/jack/opening" data-class="cutout" />
+          <g id="slot-2--module--rl12--jack--collar" data-z-cyl="10.8" data-z-lift="1.4" data-z-color="#d7dade">
+            <circle cx="4.85" cy="4.85" r="4.825" fill="#d7dade" stroke="#7d8388" stroke-width="0.14" />
+            <circle cx="4.85" cy="4.85" r="4.19" fill="#2b2f33" />
+            <circle cx="4.85" cy="4.85" r="3.25" fill="#a8a392" />
+            <circle cx="4.85" cy="4.85" r="2.36" fill="#e8e4d6" />
+            <circle cx="4.85" cy="4.85" r="0.55" fill="#c9a227" />
+            <circle cx="4.85" cy="4.85" r="0.22" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.85 4.85" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="6.35 6.35" data-cp-dir="front" />
+      </g>
+      <g id="slot-2--module--led-rl1-a" data-path="slot-2/module/led-rl1-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(33.65,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl1-a</title>
+        <circle id="slot-2--module--led-rl1-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl1-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl1-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl1-b" data-path="slot-2/module/led-rl1-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(33.65,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl1-b</title>
+        <circle id="slot-2--module--led-rl1-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl1-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl1-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl2-a" data-path="slot-2/module/led-rl2-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.35,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl2-a</title>
+        <circle id="slot-2--module--led-rl2-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl2-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl2-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl2-b" data-path="slot-2/module/led-rl2-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.35,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl2-b</title>
+        <circle id="slot-2--module--led-rl2-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl2-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl2-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl3-a" data-path="slot-2/module/led-rl3-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.05,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl3-a</title>
+        <circle id="slot-2--module--led-rl3-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl3-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl3-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl3-b" data-path="slot-2/module/led-rl3-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.05,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl3-b</title>
+        <circle id="slot-2--module--led-rl3-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl3-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl3-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl4-a" data-path="slot-2/module/led-rl4-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(95.75,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl4-a</title>
+        <circle id="slot-2--module--led-rl4-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl4-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl4-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl4-b" data-path="slot-2/module/led-rl4-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(95.75,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl4-b</title>
+        <circle id="slot-2--module--led-rl4-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl4-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl4-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl5-a" data-path="slot-2/module/led-rl5-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(116.45,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl5-a</title>
+        <circle id="slot-2--module--led-rl5-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl5-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl5-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl5-b" data-path="slot-2/module/led-rl5-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(116.45,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl5-b</title>
+        <circle id="slot-2--module--led-rl5-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl5-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl5-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl6-a" data-path="slot-2/module/led-rl6-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(137.15,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl6-a</title>
+        <circle id="slot-2--module--led-rl6-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl6-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl6-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl6-b" data-path="slot-2/module/led-rl6-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(137.15,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl6-b</title>
+        <circle id="slot-2--module--led-rl6-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl6-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl6-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl7-a" data-path="slot-2/module/led-rl7-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(157.85,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl7-a</title>
+        <circle id="slot-2--module--led-rl7-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl7-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl7-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl7-b" data-path="slot-2/module/led-rl7-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(157.85,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl7-b</title>
+        <circle id="slot-2--module--led-rl7-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl7-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl7-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl8-a" data-path="slot-2/module/led-rl8-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(178.55,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl8-a</title>
+        <circle id="slot-2--module--led-rl8-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl8-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl8-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl8-b" data-path="slot-2/module/led-rl8-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(178.55,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl8-b</title>
+        <circle id="slot-2--module--led-rl8-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl8-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl8-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl9-a" data-path="slot-2/module/led-rl9-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(199.25,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl9-a</title>
+        <circle id="slot-2--module--led-rl9-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl9-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl9-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl9-b" data-path="slot-2/module/led-rl9-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(199.25,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl9-b</title>
+        <circle id="slot-2--module--led-rl9-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl9-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl9-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl10-a" data-path="slot-2/module/led-rl10-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(219.95,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl10-a</title>
+        <circle id="slot-2--module--led-rl10-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl10-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl10-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl10-b" data-path="slot-2/module/led-rl10-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(219.95,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl10-b</title>
+        <circle id="slot-2--module--led-rl10-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl10-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl10-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl11-a" data-path="slot-2/module/led-rl11-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(240.65,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl11-a</title>
+        <circle id="slot-2--module--led-rl11-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl11-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl11-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl11-b" data-path="slot-2/module/led-rl11-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(240.65,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl11-b</title>
+        <circle id="slot-2--module--led-rl11-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl11-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl11-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl12-a" data-path="slot-2/module/led-rl12-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(261.35,6.01)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl12-a</title>
+        <circle id="slot-2--module--led-rl12-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl12-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl12-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-2--module--led-rl12-b" data-path="slot-2/module/led-rl12-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(261.35,11.11)" data-group="readylink-leds" data-group-role="indicator" data-description="two lamps per port in the gap to the right of its jack, the upper amber and the lower green in the vendor model; the datasheet names neither.">
+        <title>slot-2--module--led-rl12-b</title>
+        <circle id="slot-2--module--led-rl12-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="slot-2--module--led-rl12-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="slot-2/module/led-rl12-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="140.75 9.775" data-cp-dir="rear" />
+    </g>
+  </g>
+</svg>

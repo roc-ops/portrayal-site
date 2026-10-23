@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.83mm" height="88.0mm" viewBox="0 0 444.83 88.0" data-device="nm2" data-view="rear" data-shell="sheet" data-weight-kg="1.134" data-material="ABS" data-cover-material="PVC" data-color="Black" data-mounting-hardware="#12-24 mounting screws, as shipped with the covers" data-cable-capacity="67" data-cable-capacity-basis="front channel: Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of its 9.8 sq in usable area; 112 at the 50% maximum fill - Panduit Space-Saving Cable Management Rack Systems bulletin RKCB46, Cable Capacity Charts" data-cable-capacity-media="cat6" data-cable-capacity-rear="76" data-cable-capacity-rear-basis="rear channel: Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of its 11.1 sq in usable area; 127 at the 50% maximum fill - the same bulletin, which notes the rear section may be partially blocked by rack posts" data-operating-temp="60 C maximum" data-storage-temp="65 C maximum" data-rohs="RoHS Compliant" data-ul="UL 2416" data-csa="CSA C22.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit NM2","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"panduit/nm-rear-base-2ru@1":"1.0.0","panduit/nm-rear-cover-2ru@1":"1.0.1","panduit/nm-ring-2ru@1":"1.0.0"},"source-sha256":"360255b15a4bbfa4336a232ddfb5b9314116241234489d176df76b26bdf7069b","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NM2" x="0" y="0" width="444.83" height="88" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="rear-base" data-path="rear-base" data-class="mechanical" data-ref="panduit/nm-rear-base-2ru@1:1.0.0" data-depth="175" data-wall="#232527" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the moulded plate between the two channels">
+    <title>rear-base</title>
+    <path id="rear-base--floor" fill="#232527" fill-rule="evenodd" d="     M0,0 H444.83 V88 H0 Z     M71.45,24 H153.95 A8,8 0 0 1 161.95,32 V56 A8,8 0 0 1 153.95,64 H71.45 A8,8 0 0 1 63.45,56 V32 A8,8 0 0 1 71.45,24 Z     M290.85,24 H373.35 A8,8 0 0 1 381.35,32 V56 A8,8 0 0 1 373.35,64 H290.85 A8,8 0 0 1 282.85,56 V32 A8,8 0 0 1 290.85,24 Z" data-path="rear-base/floor" data-class="bezel" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-ref="panduit/nm-ring-2ru@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="68 105" data-guide-depth="15" data-material="ABS" data-rel-pos="1" transform="translate(0.915,6.0)" data-group="rings" data-group-role="furniture" data-description="the five open D-rings of the rear channel, left to right as seen from behind" data-z-lift="-175" data-in="rear-base" data-under="rear-cover">
+    <title>guide-1</title>
+    <rect id="guide-1--back" x="0" y="0" width="15" height="76" rx="1.5" fill="#111315" data-path="guide-1/back" data-class="bezel" data-z-out="-172" data-z-color="#111315" />
+    <rect id="guide-1--bar-top" x="0" y="0" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-1/bar-top" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-1--bar-bottom" x="0" y="73" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-1/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-1--hook" x="0" y="50.7" width="15" height="25.3" rx="1.5" fill="#101214" data-path="guide-1/hook" data-class="bezel" data-z-out="0" data-z-lift="172" data-z-color="#101214" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-ref="panduit/nm-ring-2ru@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="68 105" data-guide-depth="15" data-material="ABS" data-rel-pos="2" transform="translate(107.915,6.0)" data-group="rings" data-group-role="furniture" data-description="the five open D-rings of the rear channel, left to right as seen from behind" data-z-lift="-175" data-in="rear-base" data-under="rear-cover">
+    <title>guide-2</title>
+    <rect id="guide-2--back" x="0" y="0" width="15" height="76" rx="1.5" fill="#111315" data-path="guide-2/back" data-class="bezel" data-z-out="-172" data-z-color="#111315" />
+    <rect id="guide-2--bar-top" x="0" y="0" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-2/bar-top" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-2--bar-bottom" x="0" y="73" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-2/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-2--hook" x="0" y="50.7" width="15" height="25.3" rx="1.5" fill="#101214" data-path="guide-2/hook" data-class="bezel" data-z-out="0" data-z-lift="172" data-z-color="#101214" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-ref="panduit/nm-ring-2ru@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="68 105" data-guide-depth="15" data-material="ABS" data-rel-pos="3" transform="translate(214.915,6.0)" data-group="rings" data-group-role="furniture" data-description="the five open D-rings of the rear channel, left to right as seen from behind" data-z-lift="-175" data-in="rear-base" data-under="rear-cover">
+    <title>guide-3</title>
+    <rect id="guide-3--back" x="0" y="0" width="15" height="76" rx="1.5" fill="#111315" data-path="guide-3/back" data-class="bezel" data-z-out="-172" data-z-color="#111315" />
+    <rect id="guide-3--bar-top" x="0" y="0" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-3/bar-top" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-3--bar-bottom" x="0" y="73" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-3/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-3--hook" x="0" y="50.7" width="15" height="25.3" rx="1.5" fill="#101214" data-path="guide-3/hook" data-class="bezel" data-z-out="0" data-z-lift="172" data-z-color="#101214" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-ref="panduit/nm-ring-2ru@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="68 105" data-guide-depth="15" data-material="ABS" data-rel-pos="4" transform="translate(321.915,6.0)" data-group="rings" data-group-role="furniture" data-description="the five open D-rings of the rear channel, left to right as seen from behind" data-z-lift="-175" data-in="rear-base" data-under="rear-cover">
+    <title>guide-4</title>
+    <rect id="guide-4--back" x="0" y="0" width="15" height="76" rx="1.5" fill="#111315" data-path="guide-4/back" data-class="bezel" data-z-out="-172" data-z-color="#111315" />
+    <rect id="guide-4--bar-top" x="0" y="0" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-4/bar-top" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-4--bar-bottom" x="0" y="73" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-4/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-4--hook" x="0" y="50.7" width="15" height="25.3" rx="1.5" fill="#101214" data-path="guide-4/hook" data-class="bezel" data-z-out="0" data-z-lift="172" data-z-color="#101214" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-ref="panduit/nm-ring-2ru@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="68 105" data-guide-depth="15" data-material="ABS" data-rel-pos="5" transform="translate(428.915,6.0)" data-group="rings" data-group-role="furniture" data-description="the five open D-rings of the rear channel, left to right as seen from behind" data-z-lift="-175" data-in="rear-base" data-under="rear-cover">
+    <title>guide-5</title>
+    <rect id="guide-5--back" x="0" y="0" width="15" height="76" rx="1.5" fill="#111315" data-path="guide-5/back" data-class="bezel" data-z-out="-172" data-z-color="#111315" />
+    <rect id="guide-5--bar-top" x="0" y="0" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-5/bar-top" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-5--bar-bottom" x="0" y="73" width="15" height="3" rx="1.5" fill="#0d0f10" data-path="guide-5/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-5--hook" x="0" y="50.7" width="15" height="25.3" rx="1.5" fill="#101214" data-path="guide-5/hook" data-class="bezel" data-z-out="0" data-z-lift="172" data-z-color="#101214" />
+  </g>
+  <g id="rear-cover" data-path="rear-cover" data-class="mechanical" data-behaviour="mounts" data-ref="panduit/nm-rear-cover-2ru@1:1.0.1" data-material="PVC" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="cover" data-group-role="furniture" data-description="the hinged covers across the finger tips and the ring tips, shipped fitted; front first" data-z-lift="-175" data-in="rear-base">
+    <title>rear-cover</title>
+    <rect id="rear-cover--plate" x="0" y="0" width="444.83" height="88" rx="2" fill="#2d3033" data-path="rear-cover/plate" data-class="bezel" data-z-out="-1.5" data-z-lift="171.5" data-z-color="#2d3033" />
+    <rect id="rear-cover--rim-left" x="0" y="1.5" width="4" height="85" fill="#3a3d40" data-path="rear-cover/rim-left" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--rim-right" x="440.83" y="1.5" width="4" height="85" fill="#3a3d40" data-path="rear-cover/rim-right" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--lip-top" x="0" y="0" width="444.83" height="1.5" fill="#333639" data-path="rear-cover/lip-top" data-class="bezel" data-z-out="0" data-z-lift="162.4" data-z-color="#333639" />
+    <rect id="rear-cover--lip-bottom" x="0" y="86.5" width="444.83" height="1.5" fill="#333639" data-path="rear-cover/lip-bottom" data-class="bezel" data-z-out="0" data-z-lift="162.4" data-z-color="#333639" />
+    <rect id="rear-cover--knuckle-top-1" x="22.48" y="1.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-top-1" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-top-2" x="111.45" y="1.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-top-2" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-top-3" x="200.41" y="1.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-top-3" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-top-4" x="289.38" y="1.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-top-4" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-top-5" x="378.35" y="1.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-top-5" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-bottom-1" x="22.48" y="81.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-bottom-1" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-bottom-2" x="111.45" y="81.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-bottom-2" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-bottom-3" x="200.41" y="81.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-bottom-3" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-bottom-4" x="289.38" y="81.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-bottom-4" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+    <rect id="rear-cover--knuckle-bottom-5" x="378.35" y="81.5" width="44" height="5" fill="#3a3d40" data-path="rear-cover/knuckle-bottom-5" data-class="bezel" data-z-out="0" data-z-lift="171.5" data-z-color="#3a3d40" />
+  </g>
+</svg>

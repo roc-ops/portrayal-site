@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="55.0mm" height="41.1mm" viewBox="0 0 55.0 41.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx5130-jpsu-1600-dc-afo@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/qfx5130-jpsu-1600-dc-afo@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="qfx5130-jpsu-1600-dc-afo" data-path="qfx5130-jpsu-1600-dc-afo" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx5130-jpsu-1600-dc-afo@1:1.0.0" data-airflow="front-to-back" data-inlet="dc-terminal" data-input="rated -48 to -60 VDC, operating -40 to -72 VDC; 35 A maximum (QFX5130-32CD) or 40 A (QFX5130-48C and -48CM), guide Tables 26, 27" data-model="JPSU-1600W-1UDCAFO" data-power-output-w="1600" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>qfx5130-jpsu-1600-dc-afo</title>
+    <defs>
+      <pattern id="qfx5130-jpsu-1600-dc-afo--grid" width="4.0" height="4.0" patternUnits="userSpaceOnUse">
+        <rect x="0.5" y="0.5" width="3.0" height="3.0" fill="#07080a" />
+      </pattern>
+    </defs>
+    <rect id="qfx5130-jpsu-1600-dc-afo--face" x="0" y="0" width="55.0" height="41.1" rx="0.8" fill="#1c1e21" stroke="#181b1f" stroke-width="0.4" />
+    <g id="qfx5130-jpsu-1600-dc-afo--vents">
+      <rect x="14.8" y="1.0" width="17.4" height="14.6" fill="#2b2e32" />
+      <rect x="14.8" y="1.0" width="17.4" height="14.6" fill="url(#qfx5130-jpsu-1600-dc-afo--grid)" />
+      <rect x="39.2" y="1.0" width="6.4" height="38.6" fill="#2b2e32" />
+      <rect x="39.2" y="1.0" width="6.4" height="38.6" fill="url(#qfx5130-jpsu-1600-dc-afo--grid)" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--not-used">
+      <rect x="3.9" y="3.2" width="10.9" height="10.4" fill="#2b2e32" stroke="#3a3e43" stroke-width="0.25" />
+      <circle cx="9.4" cy="8.4" r="2.7" fill="#101214" stroke="#3a3e43" stroke-width="0.3" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--terminal-pos" data-path="qfx5130-jpsu-1600-dc-afo/terminal-pos" data-class="screw">
+      <rect x="3.0" y="17.4" width="13.0" height="17.6" rx="0.6" fill="#26292d" stroke="#3a3e43" stroke-width="0.3" />
+      <rect x="4.2" y="21.0" width="10.8" height="10.8" fill="#1a1c1f" stroke="#3a3e43" stroke-width="0.25" />
+      <circle cx="9.6" cy="26.0" r="4.4" fill="#9a9ea6" stroke="#5a5f66" stroke-width="0.35" />
+      <circle cx="9.6" cy="26.0" r="3.4" fill="none" stroke="#6c7078" stroke-width="0.25" />
+      <path d="M 6.4 26.0 H 12.8 M 9.6 22.8 V 29.2" stroke="#2b2e32" stroke-width="1.1" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--terminal-neg" data-path="qfx5130-jpsu-1600-dc-afo/terminal-neg" data-class="screw">
+      <rect x="17.5" y="17.4" width="13.0" height="17.6" rx="0.6" fill="#26292d" stroke="#3a3e43" stroke-width="0.3" />
+      <rect x="18.7" y="21.0" width="10.8" height="10.8" fill="#1a1c1f" stroke="#3a3e43" stroke-width="0.25" />
+      <circle cx="24.1" cy="26.0" r="4.4" fill="#9a9ea6" stroke="#5a5f66" stroke-width="0.35" />
+      <circle cx="24.1" cy="26.0" r="3.4" fill="none" stroke="#6c7078" stroke-width="0.25" />
+      <path d="M 20.9 26.0 H 27.3 M 24.1 22.8 V 29.2" stroke="#2b2e32" stroke-width="1.1" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--silkscreen" font-family="sans-serif" fill="#e8eaec" text-anchor="middle">
+      <text x="9.6" y="39.4" font-size="3.0">+</text>
+      <text x="24.1" y="39.4" font-size="3.0">-</text>
+      <text x="51.4" y="4.4" font-size="1.9">IN</text>
+      <text x="52.0" y="10.5" font-size="1.9">OUT</text>
+      <text x="52.1" y="18.7" font-size="2.1">!</text>
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--lamps">
+      <circle cx="48.3" cy="5.9" r="2.5" fill="#101214" stroke="#3a3e43" stroke-width="0.3" />
+      <circle cx="48.3" cy="11.8" r="2.5" fill="#101214" stroke="#3a3e43" stroke-width="0.3" />
+      <circle cx="48.3" cy="17.8" r="2.5" fill="#101214" stroke="#3a3e43" stroke-width="0.3" />
+      <circle id="qfx5130-jpsu-1600-dc-afo--led-input" cx="48.3" cy="5.9" r="1.15" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx5130-jpsu-1600-dc-afo/led-input" data-class="led" data-states="green amber off" />
+      <circle id="qfx5130-jpsu-1600-dc-afo--led-output" cx="48.3" cy="11.8" r="1.15" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx5130-jpsu-1600-dc-afo/led-output" data-class="led" data-states="green off" />
+      <circle id="qfx5130-jpsu-1600-dc-afo--led-fault" cx="48.3" cy="17.8" r="1.15" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx5130-jpsu-1600-dc-afo/led-fault" data-class="led" data-states="amber off" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--latch" data-path="qfx5130-jpsu-1600-dc-afo/latch" data-class="latch" data-z-out="1.6" data-z-color="#e8731f">
+      <rect x="32.8" y="1.6" width="6.2" height="37.2" rx="3.1" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <rect x="34.8" y="5.0" width="2.2" height="30.4" rx="1.1" fill="#d3661a" />
+    </g>
+    <g id="qfx5130-jpsu-1600-dc-afo--release-latch" data-path="qfx5130-jpsu-1600-dc-afo/release-latch" data-class="latch">
+      <rect x="47.6" y="20.9" width="7.3" height="20.2" rx="1.6" fill="#232528" stroke="#3a3e43" stroke-width="0.35" />
+      <rect x="50.4" y="25.2" width="1.7" height="10.2" rx="0.6" fill="#08090a" />
+    </g>
+  </g>
+</svg>

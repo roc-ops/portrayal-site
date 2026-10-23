@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.0mm" height="174.3mm" viewBox="0 0 444.0 174.3" data-device="r960" data-view="rear" data-ru="4" data-weight-max-kg="60.2" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-failed { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-identify { --led-color: #22c55e; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-online { --led-color: #22c55e; }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-dell-r960-psu-2800w-ac-mismatch {
+      0%, 3.9% { opacity: 1; fill: #22c55e; }
+      4%, 7.9% { opacity: 0; }
+      8%, 11.9% { opacity: 1; fill: #22c55e; }
+      12%, 15.9% { opacity: 0; }
+      16%, 19.9% { opacity: 1; fill: #22c55e; }
+      20%, 23.9% { opacity: 0; }
+      24%, 27.9% { opacity: 1; fill: #22c55e; }
+      28%, 31.9% { opacity: 0; }
+      32%, 35.9% { opacity: 1; fill: #22c55e; }
+      36%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-mismatch { animation: portrayal-seq-dell-r960-psu-2800w-ac-mismatch 3.125s steps(1, end) infinite; }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-updating { --led-color: #22c55e; }
+    g[data-ref^='dell/r960-psu-2800w-ac@'] .state-updating { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/system-id-button-14g@'] .state-identify { --led-color: #2563eb; }
+</style>
+  <metadata>{"device":"Dell PowerEdge R960","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/rj45-ganged-eth@1":"1.2.0","common/vga-receptacle@1":"1.1.0","dell/boss-n1-m2-carrier@1":"1.0.0","dell/boss-n1-module-1u@1":"1.1.0","dell/lom-blank-16g@1":"1.0.0","dell/ocp3-2x10g-rj45@1":"1.1.0","dell/pcie-filler-lp-16g@1":"1.0.1","dell/r960-pcie-filler-fh-2slot@1":"1.0.0","dell/r960-pcie-filler-fh@1":"1.0.0","dell/r960-psu-2800w-ac@1":"1.0.0","dell/r960-rear-io-board@1":"1.0.0","dell/r960-riser-1a@1":"1.0.0","dell/r960-riser-2@1":"1.0.0","dell/r960-riser-3a@1":"1.0.0","dell/r960-riser-4a@1":"1.0.0","dell/r960-vga-bracket-blank@1":"1.0.0","dell/system-id-button-14g@1":"1.0.1","std/rj45-ganged@2":"2.1.0","std/usb-a@1":"1.3.0","std/vga@1":"1.1.0"},"source-sha256":"1e4587f4573f8a9f5b764002f9d206f5166c1458e034ce20cd22d67efbbc8621","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PowerEdge R960" x="0" y="0" width="444" height="174.3" rx="1.2" fill="#2f3439" stroke="#1d2125" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-grille" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+    <pattern id="portrayal-grille-o0-0-s0_441667-0_441667" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.441667 0.441667)">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="444" height="174.3" rx="0.6" fill="#c3c8cd" />
+    <rect id="plate-1" data-kind="plate" x="0" y="0" width="444" height="9" rx="0.6" fill="#d9dde1" />
+    <rect id="plate-2" data-kind="plate" x="16" y="9" width="412" height="84" rx="0.6" fill="#c9ced3" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="22" y="75.5" width="150" height="2.6" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="22" y="80.3" width="150" height="3.2" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-2" data-kind="vent-field" data-aperture="air" x="300" y="75.5" width="122" height="2.6" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="vent-field-3" data-kind="vent-field" data-aperture="air" x="300" y="80.3" width="122" height="3.2" rx="0.6" fill="#16191c" data-vent="1" />
+    <rect id="plate-3" data-kind="plate" x="125.2" y="20.6" width="5.6" height="5.6" rx="2.8" fill="#2f7fc1" />
+    <rect id="plate-4" data-kind="plate" x="163.8" y="48.2" width="5.6" height="5.6" rx="2.8" fill="#2f7fc1" />
+    <rect id="plate-5" data-kind="plate" x="305" y="21.8" width="5.6" height="5.6" rx="2.8" fill="#2f7fc1" />
+    <rect id="plate-6" data-kind="plate" x="283.7" y="47.6" width="5.6" height="5.6" rx="2.8" fill="#2f7fc1" />
+    <rect id="vent-field-4" data-kind="vent-field" data-aperture="air" x="106" y="98" width="10.6" height="53" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_441667-0_441667)" data-vent="1" />
+    <rect id="plate-7" data-kind="plate" x="284" y="98" width="57.4" height="50" rx="0.6" fill="#d4d8dc" />
+    <rect id="vent-field-5" data-kind="vent-field" data-aperture="air" x="290" y="102" width="47.7" height="42" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_441667-0_441667)" data-vent="1" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 0 H 2.6 V 2.6 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(8.2 91.8)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-3" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(8.2 91.8)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-3" />
+    <text x="11.6" y="94.4" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-3">3</text>
+    <path d="M 0 0 H 2.6 V 2.6 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(105.6 166)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(105.6 166)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="109" y="168.6" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M 0 0 H 2.6 V 2.6 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(431 91.8)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(431 91.8)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4" />
+    <text x="434.4" y="94.4" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4">4</text>
+    <path d="M 0 0 H 2.6 V 2.6 H 0 Z" fill="none" stroke="#2b2f33" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(336.6 143)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <path d="M 1.55 0.42 L 0.85 1.45 H 1.33 L 1.08 2.22 L 1.82 1.12 H 1.34 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(336.6 143)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <text x="340" y="145.6" font-family="sans-serif" font-size="3.5" text-anchor="middle" fill="#2b2f33" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+    <text x="128" y="60" font-family="sans-serif" font-size="3.6" text-anchor="middle" fill="#9aa1a8" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking">MEST</text>
+  </g>
+  <g id="boss" data-path="boss" data-class="bay" data-group="boss" data-group-role="service" data-rel-pos="1">
+    <title>boss</title>
+    <rect id="boss--opening" x="131.3" y="10.4" width="29.9" height="38.9" fill="#101214" />
+    <g id="boss--module" data-path="boss/module" data-class="expansion-card" data-behaviour="fills" data-ref="dell/boss-n1-module-1u@1:1.1.0" data-body-depth="185.1" data-form-factor="1u-rear" data-raid="hardware RAID 1 across two M.2 NVMe" transform="translate(146.25,29.85) translate(-14.95,-19.45)">
+      <title>boss--module</title>
+      <rect id="boss--module--plate" x="0.15" y="0.15" width="29.6" height="38.6" rx="0.6" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.3" />
+      <g id="boss--module--vents">
+        <rect x="6.2" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="6.2" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="10.5" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="10.5" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="17.9" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="17.9" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="22.4" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+        <rect x="22.4" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      </g>
+      <g id="boss--module--carrier-0" data-path="boss/module/carrier-0" data-class="bay">
+        <rect id="boss--module--carrier-0--opening" x="4.4" y="7.3" width="10.0" height="26.0" rx="0.4" fill="#1b1e21" />
+        <g id="boss--module--carrier-0--module" data-path="boss/module/carrier-0/module" data-class="drive" data-behaviour="fills" data-ref="dell/boss-n1-m2-carrier@1:1.0.0" data-body-depth="108.9" data-wall="#2a2d30" data-media="m2-nvme" transform="translate(-3.5999999999999996,15.3) rotate(270 13.0 5.0)">
+          <title>boss--module--carrier-0--module</title>
+          <rect id="boss--module--carrier-0--module--body" x="0.1" y="0.1" width="25.8" height="9.8" rx="0.4" fill="#5f6366" stroke="#3b3f42" stroke-width="0.2" />
+          <rect id="boss--module--carrier-0--module--plate" x="6.82" y="2.27" width="10.71" height="5.47" rx="0.3" fill="#6d7175" />
+          <path id="boss--module--carrier-0--module--grip" d="M17.58 2.71 H23.96 V7.70 L22.99 8.67 H17.58 Z" fill="#45494c" />
+          <rect id="boss--module--carrier-0--module--tab" x="0.0" y="1.97" width="4.33" height="6.07" rx="0.3" fill="#e8781e" stroke="#a9520f" stroke-width="0.2" data-path="boss/module/carrier-0/module/tab" data-class="latch" data-description="the orange release tab, pulled to swing the carrier out" data-z-out="1.0" data-z-color="#e8781e" />
+          <path d="M1.0 4.1 L2.2 5.0 L1.0 5.9 Z" fill="#b5560d" />
+          <rect id="boss--module--carrier-0--module--led-status" x="9.95" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss/module/carrier-0/module/led-status" data-class="led" data-states="off online failed identify" data-description="the drive's status lamp, beside the drive icon. BOSS-N1 User's Guide table 1 - see provenance/lamp-states." />
+          <rect id="boss--module--carrier-0--module--led-activity" x="14.80" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss/module/carrier-0/module/led-activity" data-class="led" data-states="off activity" data-description="the activity lamp, beside the activity icon; blinks green on I/O and rebuild" />
+          <g id="boss--module--carrier-0--module--silkscreen" fill="none" stroke="#f2f3f4" stroke-width="0.22">
+            <path d="M7.95 4.25 v1.6 a0.7 0.3 0 0 0 1.4 0 v-1.6 M7.95 4.25 a0.7 0.3 0 0 0 1.4 0 a0.7 0.3 0 0 0 -1.4 0" />
+            <path d="M11.95 5.0 h0.7 l0.35 -0.9 l0.45 1.8 l0.35 -0.9 h0.45" />
+          </g>
+        </g>
+      </g>
+      <g id="boss--module--carrier-1" data-path="boss/module/carrier-1" data-class="bay">
+        <rect id="boss--module--carrier-1--opening" x="17.5" y="7.3" width="10.0" height="26.0" rx="0.4" fill="#1b1e21" />
+        <g id="boss--module--carrier-1--module" data-path="boss/module/carrier-1/module" data-class="drive" data-behaviour="fills" data-ref="dell/boss-n1-m2-carrier@1:1.0.0" data-body-depth="108.9" data-wall="#2a2d30" data-media="m2-nvme" transform="translate(9.5,15.3) rotate(90 13.0 5.0)">
+          <title>boss--module--carrier-1--module</title>
+          <rect id="boss--module--carrier-1--module--body" x="0.1" y="0.1" width="25.8" height="9.8" rx="0.4" fill="#5f6366" stroke="#3b3f42" stroke-width="0.2" />
+          <rect id="boss--module--carrier-1--module--plate" x="6.82" y="2.27" width="10.71" height="5.47" rx="0.3" fill="#6d7175" />
+          <path id="boss--module--carrier-1--module--grip" d="M17.58 2.71 H23.96 V7.70 L22.99 8.67 H17.58 Z" fill="#45494c" />
+          <rect id="boss--module--carrier-1--module--tab" x="0.0" y="1.97" width="4.33" height="6.07" rx="0.3" fill="#e8781e" stroke="#a9520f" stroke-width="0.2" data-path="boss/module/carrier-1/module/tab" data-class="latch" data-description="the orange release tab, pulled to swing the carrier out" data-z-out="1.0" data-z-color="#e8781e" />
+          <path d="M1.0 4.1 L2.2 5.0 L1.0 5.9 Z" fill="#b5560d" />
+          <rect id="boss--module--carrier-1--module--led-status" x="9.95" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss/module/carrier-1/module/led-status" data-class="led" data-states="off online failed identify" data-description="the drive's status lamp, beside the drive icon. BOSS-N1 User's Guide table 1 - see provenance/lamp-states." />
+          <rect id="boss--module--carrier-1--module--led-activity" x="14.80" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss/module/carrier-1/module/led-activity" data-class="led" data-states="off activity" data-description="the activity lamp, beside the activity icon; blinks green on I/O and rebuild" />
+          <g id="boss--module--carrier-1--module--silkscreen" fill="none" stroke="#f2f3f4" stroke-width="0.22">
+            <path d="M7.95 4.25 v1.6 a0.7 0.3 0 0 0 1.4 0 v-1.6 M7.95 4.25 a0.7 0.3 0 0 0 1.4 0 a0.7 0.3 0 0 0 -1.4 0" />
+            <path d="M11.95 5.0 h0.7 l0.35 -0.9 l0.45 1.8 l0.35 -0.9 h0.45" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psu-3" data-path="psu-3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu-3</title>
+    <rect id="psu-3--opening" x="16.9" y="90.6" width="86" height="40.4" fill="#101214" />
+    <g id="psu-3--module" data-path="psu-3/module" data-class="psu" data-behaviour="fills" data-ref="dell/r960-psu-2800w-ac@1:1.0.0" data-body-depth="233.5" data-wall="#3a4045" data-efficiency="titanium" data-form-factor="86mm" data-inlet="other" data-input="200-240 V AC or 240 V DC" data-power-output-w="2800" transform="translate(59.9,110.8) translate(-43,-20.05)">
+      <title>psu-3--module</title>
+      <rect id="psu-3--module--body" x="0.2" y="0.2" width="85.6" height="39.7" rx="0.8" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <rect x="5.0" y="2.1" width="38.6" height="36.9" rx="2.2" fill="#1b1e21" />
+      <circle cx="7.6" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="7.6" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="23.7" cy="20.3" r="12.6" fill="#2a2e32" />
+      <path d="M10.2 7.2 L18.8 15.8 M37.2 7.2 L28.6 15.8 M10.2 33.4 L18.8 24.8 M37.2 33.4 L28.6 24.8" stroke="#c3c8cd" stroke-width="0.9" fill="none" />
+      <circle cx="23.7" cy="20.3" r="9.5" fill="#a9aeb4" />
+      <path d="M37.0 4.5 h9.0 v33.0 l-1.0 2.0 h-8.0 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-3--module--label" x="37.6" y="6.0" width="4.4" height="15.7" rx="0.3" fill="#1d2023" data-path="psu-3/module/label" data-class="label" data-description="the wattage label on the handle's left edge, printed downwards" />
+      <rect id="psu-3--module--inlet-bezel" x="52.5" y="3.3" width="27.5" height="35.7" rx="1.5" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-3/module/inlet-bezel" data-class="inlet" data-description="the recess the C21 inlet sits in" />
+      <path d="M59.0 6.7 h17.0 a1.5 1.5 0 0 1 1.5 1.5 v22.9 a1.5 1.5 0 0 1 -1.5 1.5 h-17.0 a1.5 1.5 0 0 1 -1.5 -1.5 v-22.9 a1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#16191c" />
+      <rect x="66.0" y="10.6" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="16.2" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="22.0" width="4.2" height="2.3" fill="#3a3f44" />
+      <path id="psu-3--module--grip" d="M44.0 4.5 h12.8 l1.0 1.0 v32.0 l-1.0 1.0 h-12.8 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" opacity="0.92" data-path="psu-3/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. R960 ISM table 108: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power; blinking green - firmware being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="33.5" data-z-color="#e9ecef" />
+      <rect x="46.0" y="8.0" width="9.0" height="27.0" rx="2.2" fill="#2a2e32" opacity="0.55" />
+      <rect id="psu-3--module--latch" x="78.8" y="14.3" width="6.9" height="15.0" rx="0.7" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-3/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+      <g id="psu-3--module--silkscreen">
+        <text id="psu-3--module--watts" data-from="watts" x="41.0" y="13.9" transform="rotate(90 41.0 13.9)" font-family="sans-serif" font-size="3.0" font-weight="bold" fill="#f2f4f6" text-anchor="middle">2800W</text>
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="16.9" y="131.8" width="86" height="40.4" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="dell/r960-psu-2800w-ac@1:1.0.0" data-body-depth="233.5" data-wall="#3a4045" data-efficiency="titanium" data-form-factor="86mm" data-inlet="other" data-input="200-240 V AC or 240 V DC" data-power-output-w="2800" transform="translate(59.9,152) translate(-43,-20.05)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--body" x="0.2" y="0.2" width="85.6" height="39.7" rx="0.8" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <rect x="5.0" y="2.1" width="38.6" height="36.9" rx="2.2" fill="#1b1e21" />
+      <circle cx="7.6" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="7.6" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="23.7" cy="20.3" r="12.6" fill="#2a2e32" />
+      <path d="M10.2 7.2 L18.8 15.8 M37.2 7.2 L28.6 15.8 M10.2 33.4 L18.8 24.8 M37.2 33.4 L28.6 24.8" stroke="#c3c8cd" stroke-width="0.9" fill="none" />
+      <circle cx="23.7" cy="20.3" r="9.5" fill="#a9aeb4" />
+      <path d="M37.0 4.5 h9.0 v33.0 l-1.0 2.0 h-8.0 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-1--module--label" x="37.6" y="6.0" width="4.4" height="15.7" rx="0.3" fill="#1d2023" data-path="psu-1/module/label" data-class="label" data-description="the wattage label on the handle's left edge, printed downwards" />
+      <rect id="psu-1--module--inlet-bezel" x="52.5" y="3.3" width="27.5" height="35.7" rx="1.5" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-1/module/inlet-bezel" data-class="inlet" data-description="the recess the C21 inlet sits in" />
+      <path d="M59.0 6.7 h17.0 a1.5 1.5 0 0 1 1.5 1.5 v22.9 a1.5 1.5 0 0 1 -1.5 1.5 h-17.0 a1.5 1.5 0 0 1 -1.5 -1.5 v-22.9 a1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#16191c" />
+      <rect x="66.0" y="10.6" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="16.2" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="22.0" width="4.2" height="2.3" fill="#3a3f44" />
+      <path id="psu-1--module--grip" d="M44.0 4.5 h12.8 l1.0 1.0 v32.0 l-1.0 1.0 h-12.8 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" opacity="0.92" data-path="psu-1/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. R960 ISM table 108: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power; blinking green - firmware being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="33.5" data-z-color="#e9ecef" />
+      <rect x="46.0" y="8.0" width="9.0" height="27.0" rx="2.2" fill="#2a2e32" opacity="0.55" />
+      <rect id="psu-1--module--latch" x="78.8" y="14.3" width="6.9" height="15.0" rx="0.7" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-1/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+      <g id="psu-1--module--silkscreen">
+        <text id="psu-1--module--watts" data-from="watts" x="41.0" y="13.9" transform="rotate(90 41.0 13.9)" font-family="sans-serif" font-size="3.0" font-weight="bold" fill="#f2f4f6" text-anchor="middle">2800W</text>
+      </g>
+    </g>
+  </g>
+  <g id="psu-4" data-path="psu-4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psu-4</title>
+    <rect id="psu-4--opening" x="341.4" y="90.6" width="86" height="40.4" fill="#101214" />
+    <g id="psu-4--module" data-path="psu-4/module" data-class="psu" data-behaviour="fills" data-ref="dell/r960-psu-2800w-ac@1:1.0.0" data-body-depth="233.5" data-wall="#3a4045" data-efficiency="titanium" data-form-factor="86mm" data-inlet="other" data-input="200-240 V AC or 240 V DC" data-power-output-w="2800" transform="translate(384.4,110.8) translate(-43,-20.05)">
+      <title>psu-4--module</title>
+      <rect id="psu-4--module--body" x="0.2" y="0.2" width="85.6" height="39.7" rx="0.8" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <rect x="5.0" y="2.1" width="38.6" height="36.9" rx="2.2" fill="#1b1e21" />
+      <circle cx="7.6" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="7.6" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="23.7" cy="20.3" r="12.6" fill="#2a2e32" />
+      <path d="M10.2 7.2 L18.8 15.8 M37.2 7.2 L28.6 15.8 M10.2 33.4 L18.8 24.8 M37.2 33.4 L28.6 24.8" stroke="#c3c8cd" stroke-width="0.9" fill="none" />
+      <circle cx="23.7" cy="20.3" r="9.5" fill="#a9aeb4" />
+      <path d="M37.0 4.5 h9.0 v33.0 l-1.0 2.0 h-8.0 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-4--module--label" x="37.6" y="6.0" width="4.4" height="15.7" rx="0.3" fill="#1d2023" data-path="psu-4/module/label" data-class="label" data-description="the wattage label on the handle's left edge, printed downwards" />
+      <rect id="psu-4--module--inlet-bezel" x="52.5" y="3.3" width="27.5" height="35.7" rx="1.5" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-4/module/inlet-bezel" data-class="inlet" data-description="the recess the C21 inlet sits in" />
+      <path d="M59.0 6.7 h17.0 a1.5 1.5 0 0 1 1.5 1.5 v22.9 a1.5 1.5 0 0 1 -1.5 1.5 h-17.0 a1.5 1.5 0 0 1 -1.5 -1.5 v-22.9 a1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#16191c" />
+      <rect x="66.0" y="10.6" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="16.2" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="22.0" width="4.2" height="2.3" fill="#3a3f44" />
+      <path id="psu-4--module--grip" d="M44.0 4.5 h12.8 l1.0 1.0 v32.0 l-1.0 1.0 h-12.8 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" opacity="0.92" data-path="psu-4/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. R960 ISM table 108: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power; blinking green - firmware being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="33.5" data-z-color="#e9ecef" />
+      <rect x="46.0" y="8.0" width="9.0" height="27.0" rx="2.2" fill="#2a2e32" opacity="0.55" />
+      <rect id="psu-4--module--latch" x="78.8" y="14.3" width="6.9" height="15.0" rx="0.7" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-4/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+      <g id="psu-4--module--silkscreen">
+        <text id="psu-4--module--watts" data-from="watts" x="41.0" y="13.9" transform="rotate(90 41.0 13.9)" font-family="sans-serif" font-size="3.0" font-weight="bold" fill="#f2f4f6" text-anchor="middle">2800W</text>
+      </g>
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="341.4" y="131.8" width="86" height="40.4" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="dell/r960-psu-2800w-ac@1:1.0.0" data-body-depth="233.5" data-wall="#3a4045" data-efficiency="titanium" data-form-factor="86mm" data-inlet="other" data-input="200-240 V AC or 240 V DC" data-power-output-w="2800" transform="translate(384.4,152) translate(-43,-20.05)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--body" x="0.2" y="0.2" width="85.6" height="39.7" rx="0.8" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <rect x="5.0" y="2.1" width="38.6" height="36.9" rx="2.2" fill="#1b1e21" />
+      <circle cx="7.6" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="4.6" r="2.3" fill="#0f1113" />
+      <circle cx="7.6" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="41.0" cy="36.5" r="2.3" fill="#0f1113" />
+      <circle cx="23.7" cy="20.3" r="12.6" fill="#2a2e32" />
+      <path d="M10.2 7.2 L18.8 15.8 M37.2 7.2 L28.6 15.8 M10.2 33.4 L18.8 24.8 M37.2 33.4 L28.6 24.8" stroke="#c3c8cd" stroke-width="0.9" fill="none" />
+      <circle cx="23.7" cy="20.3" r="9.5" fill="#a9aeb4" />
+      <path d="M37.0 4.5 h9.0 v33.0 l-1.0 2.0 h-8.0 Z" fill="#eef0f2" stroke="#b5bbc1" stroke-width="0.3" />
+      <rect id="psu-2--module--label" x="37.6" y="6.0" width="4.4" height="15.7" rx="0.3" fill="#1d2023" data-path="psu-2/module/label" data-class="label" data-description="the wattage label on the handle's left edge, printed downwards" />
+      <rect id="psu-2--module--inlet-bezel" x="52.5" y="3.3" width="27.5" height="35.7" rx="1.5" fill="#55595e" stroke="#3d4145" stroke-width="0.3" data-path="psu-2/module/inlet-bezel" data-class="inlet" data-description="the recess the C21 inlet sits in" />
+      <path d="M59.0 6.7 h17.0 a1.5 1.5 0 0 1 1.5 1.5 v22.9 a1.5 1.5 0 0 1 -1.5 1.5 h-17.0 a1.5 1.5 0 0 1 -1.5 -1.5 v-22.9 a1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#16191c" />
+      <rect x="66.0" y="10.6" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="16.2" width="4.2" height="2.3" fill="#3a3f44" />
+      <rect x="66.0" y="22.0" width="4.2" height="2.3" fill="#3a3f44" />
+      <path id="psu-2--module--grip" d="M44.0 4.5 h12.8 l1.0 1.0 v32.0 l-1.0 1.0 h-12.8 l-1.0 -1.0 v-32.0 Z" fill="var(--led-color, #e9ecef)" stroke="#b5bbc1" stroke-width="0.35" opacity="0.92" data-path="psu-2/module/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. R960 ISM table 108: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power; blinking green - firmware being updated; five green blinks at 4 Hz then off - a mismatch with the other supply." data-z-uhandle="33.5" data-z-color="#e9ecef" />
+      <rect x="46.0" y="8.0" width="9.0" height="27.0" rx="2.2" fill="#2a2e32" opacity="0.55" />
+      <rect id="psu-2--module--latch" x="78.8" y="14.3" width="6.9" height="15.0" rx="0.7" fill="#d9661a" stroke="#9c4610" stroke-width="0.3" data-path="psu-2/module/latch" data-class="latch" data-description="the orange release latch, pressed to withdraw the supply" data-z-out="14.7" data-z-color="#d9661a" />
+      <g id="psu-2--module--silkscreen">
+        <text id="psu-2--module--watts" data-from="watts" x="41.0" y="13.9" transform="rotate(90 41.0 13.9)" font-family="sans-serif" font-size="3.0" font-weight="bold" fill="#f2f4f6" text-anchor="middle">2800W</text>
+      </g>
+    </g>
+  </g>
+  <g id="vga-bracket" data-path="vga-bracket" data-class="bay" data-group="blanks" data-group-role="service" data-rel-pos="3">
+    <title>vga-bracket</title>
+    <rect id="vga-bracket--opening" x="119" y="102.6" width="164" height="29.4" fill="#101214" />
+    <g id="vga-bracket--module" data-path="vga-bracket/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-vga-bracket-blank@1:1.0.0" data-power-absent="not-applicable" transform="translate(201,117.3) translate(-82,-14.7)">
+      <title>vga-bracket--module</title>
+      <defs>
+        <pattern id="vga-bracket--module--v" x="5.0" y="4.0" width="5.0" height="5.8" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="3.2" height="3.4" fill="#16191c" />
+        </pattern>
+      </defs>
+      <rect id="vga-bracket--module--plate" x="0.2" y="0.2" width="163.6" height="29.0" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.3" data-path="vga-bracket/module/plate" data-class="bezel" data-description="the vented plate where the VGA / serial bracket would fit" />
+      <rect x="5.0" y="4.0" width="154.0" height="23.2" fill="url(#vga-bracket--module--v)" />
+    </g>
+  </g>
+  <g id="lom" data-path="lom" data-class="bay" data-group="lom-card" data-group-role="service" data-rel-pos="1">
+    <title>lom</title>
+    <rect id="lom--opening" x="118.8" y="153.8" width="42.58" height="15.93" fill="#101214" />
+    <g id="lom--module" data-path="lom/module" data-class="blank" data-behaviour="fills" data-ref="dell/lom-blank-16g@1:1.0.0" data-dell-part="YM3P9" data-power-absent="not-applicable" transform="translate(140.09,161.765) translate(-21.29,-7.965)">
+      <title>lom--module</title>
+      <rect id="lom--module--plate" x="0.15" y="0.15" width="42.28" height="15.63" rx="0.4" fill="#c4c8cc" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="lom--module--vents">
+        <rect x="5.54" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="11.03" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="16.52" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="22.01" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="27.50" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="32.99" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="5.54" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="11.03" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="16.52" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="22.01" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="27.50" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+        <rect x="32.99" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      </g>
+    </g>
+  </g>
+  <g id="rio" data-path="rio" data-class="bay" data-group="rear-io" data-group-role="service" data-rel-pos="1">
+    <title>rio</title>
+    <rect id="rio--opening" x="244" y="153.8" width="96.4" height="18.8" fill="#101214" />
+    <g id="rio--module" data-path="rio/module" data-class="expansion-card" data-behaviour="fills" data-ref="dell/r960-rear-io-board@1:1.0.0" data-body-depth="121.5" data-power-absent="not-published" transform="translate(292.2,163.2) translate(-48.2,-9.4)">
+      <title>rio--module</title>
+      <rect id="rio--module--plate" x="0.15" y="0.15" width="96.1" height="18.5" rx="0.6" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.3" />
+      <circle cx="17.2" cy="7.2" r="4.4" fill="#d9dde1" stroke="#b5bbc1" stroke-width="0.3" />
+      <g id="rio--module--silkscreen">
+        <text x="17.7" y="14.4" font-family="sans-serif" font-size="2.4" fill="#2b2f33" text-anchor="middle">iDRAC</text>
+        <polygon points="22.2,12.2 23.6,12.9 22.2,13.6" fill="#2b2f33" />
+        <text x="85.6" y="14.2" font-family="sans-serif" font-size="2.0" fill="#2b2f33" text-anchor="middle">SS</text>
+      </g>
+      <g id="rio--module--system-id" data-path="rio/module/system-id" data-class="button" data-ref="dell/system-id-button-14g@1:1.0.1" transform="translate(13.7,3.7)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+        <title>rio--module--system-id</title>
+        <circle id="rio--module--system-id--lamp" cx="3.5" cy="3.5" r="3.2" fill="var(--led-color, #c2c7cc)" stroke="#8d949b" stroke-width="0.45" data-path="rio/module/system-id/lamp" data-class="led" data-states="off identify" data-description="the button's own illumination, lit while system ID is active" />
+      </g>
+      <g id="rio--module--idrac" data-path="rio/module/idrac" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(26.55,3.2) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+        <title>rio--module--idrac</title>
+        <g id="rio--module--idrac--jack" data-path="rio/module/idrac/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>rio--module--idrac--jack</title>
+          <path id="rio--module--idrac--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rio--module--idrac--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rio--module--idrac--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="rio/module/idrac/jack/opening" data-class="cutout" />
+          <g id="rio--module--idrac--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="rio--module--idrac--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="rio--module--idrac--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rio/module/idrac/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="rio--module--idrac--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rio/module/idrac/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--usb-1" data-path="rio/module/usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" transform="translate(46.1,2.45)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+        <title>rio--module--usb-1</title>
+        <rect id="rio--module--usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="rio/module/usb-1/opening" data-class="cutout" />
+        <rect id="rio--module--usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--usb-2" data-path="rio/module/usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" transform="translate(46.1,10.65)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+        <title>rio--module--usb-2</title>
+        <rect id="rio--module--usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="rio/module/usb-2/opening" data-class="cutout" />
+        <rect id="rio--module--usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="rio--module--video" data-path="rio/module/video" data-class="port" data-ref="common/vga-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(61.2,1.55)" data-group="mgmt" data-group-role="management" data-description="the system ID button, the dedicated iDRAC port, USB 2.0 and 3.0 and the VGA">
+        <title>rio--module--video</title>
+        <g id="rio--module--video--bore-floor">
+          <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+          <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+        </g>
+        <path id="rio--module--video--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+        <g id="rio--module--video--shell" data-path="rio/module/video/shell" data-class="port" data-inner="1" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(5.165,0.55)">
+          <title>rio--module--video--shell</title>
+          <path id="rio--module--video--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="rio/module/video/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+          <g id="rio--module--video--shell--socket-floor">
+            <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+            <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+            <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+            <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+          </g>
+          <path id="rio--module--video--shell--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="6.73" data-z-color="#1f4f9e" data-z-shape="1" />
+          <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="ocp" data-path="ocp" data-class="bay" data-group="ocp" data-group-role="traffic" data-rel-pos="1">
+    <title>ocp</title>
+    <rect id="ocp--opening" x="171.4" y="154.5" width="71.8" height="15.1" fill="#101214" />
+    <g id="ocp--module" data-path="ocp/module" data-class="nic" data-behaviour="fills" data-ref="dell/ocp3-2x10g-rj45@1:1.1.0" data-body-depth="115.0" data-form-factor="ocp3-sff" data-media="rj45" data-ports="2" transform="translate(207.3,162.05) translate(-35.9,-7.55)">
+      <title>ocp--module</title>
+      <rect id="ocp--module--bracket" x="0.15" y="0.15" width="71.5" height="14.8" rx="0.4" fill="#b8bdc2" stroke="#80878e" stroke-width="0.3" />
+      <g id="ocp--module--vents">
+        <rect x="1.48" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="1.48" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="1.48" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="1.48" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="4.36" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="4.36" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="4.36" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="4.36" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="7.24" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="7.24" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="7.24" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="7.24" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="10.08" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="10.08" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="10.08" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="10.08" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="33.36" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="33.36" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="33.36" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="33.36" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="36.24" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="36.24" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="36.24" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="36.24" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="59.52" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="59.52" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="59.52" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="59.52" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="62.41" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="62.41" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="62.41" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="62.41" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="65.29" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="65.29" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="65.29" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="65.29" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="68.17" y="3.48" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="68.17" y="6.36" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="68.17" y="9.24" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+        <rect x="68.17" y="12.12" width="2.11" height="2.11" rx="0.25" fill="#16191c" />
+      </g>
+      <rect x="13.83" y="1.3" width="17.94" height="12.2" rx="0.3" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+      <rect x="39.97" y="1.3" width="17.94" height="12.2" rx="0.3" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="ocp--module--port-1" data-path="ocp/module/port-1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10g" transform="translate(16.45,1.9) rotate(180 6.35 5.5)">
+        <title>ocp--module--port-1</title>
+        <g id="ocp--module--port-1--jack" data-path="ocp/module/port-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>ocp--module--port-1--jack</title>
+          <path id="ocp--module--port-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="ocp--module--port-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="ocp--module--port-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ocp/module/port-1/jack/opening" data-class="cutout" />
+          <g id="ocp--module--port-1--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="ocp--module--port-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="ocp--module--port-1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ocp/module/port-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="ocp--module--port-1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ocp/module/port-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="ocp--module--port-2" data-path="ocp/module/port-2" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10g" transform="translate(42.59,1.9) rotate(180 6.35 5.5)">
+        <title>ocp--module--port-2</title>
+        <g id="ocp--module--port-2--jack" data-path="ocp/module/port-2/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>ocp--module--port-2--jack</title>
+          <path id="ocp--module--port-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="ocp--module--port-2--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="ocp--module--port-2--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ocp/module/port-2/jack/opening" data-class="cutout" />
+          <g id="ocp--module--port-2--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="ocp--module--port-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="ocp--module--port-2--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ocp/module/port-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="ocp--module--port-2--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ocp/module/port-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-2" data-path="riser-2" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="2">
+    <title>riser-2</title>
+    <rect id="riser-2--opening" x="124.2" y="132" width="149.7" height="18.5" fill="#101214" />
+    <g id="riser-2--module" data-path="riser-2/module" data-class="riser" data-behaviour="fills" data-ref="dell/r960-riser-2@1:1.0.0" data-body-depth="275.5" data-appears-in="riser configurations 2 and 3" data-power-absent="not-published" data-riser="2" data-slot-4="x16, low profile, half length, processor 2, PCIe Gen5" data-slot-9="x16, low profile, half length, processor 1, PCIe Gen5" transform="translate(199.05,141.25) translate(-74.85,-9.25)">
+      <title>riser-2--module</title>
+      <g id="riser-2--module--slot-4" data-path="riser-2/module/slot-4" data-class="bay">
+        <rect id="riser-2--module--slot-4--opening" x="4.6" y="0.04" width="79.2" height="18.42" fill="none" stroke="none" />
+        <g id="riser-2--module--slot-4--module" data-path="riser-2/module/slot-4/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(4.6,0.04) rotate(180 39.6 9.21)">
+          <title>riser-2--module--slot-4--module</title>
+          <path id="riser-2--module--slot-4--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+          <g id="riser-2--module--slot-4--module--vents">
+            <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          </g>
+        </g>
+      </g>
+      <g id="riser-2--module--slot-9" data-path="riser-2/module/slot-9" data-class="bay">
+        <rect id="riser-2--module--slot-9--opening" x="73.5" y="0.04" width="79.2" height="18.42" fill="none" stroke="none" />
+        <g id="riser-2--module--slot-9--module" data-path="riser-2/module/slot-9/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(73.5,0.04)">
+          <title>riser-2--module--slot-9--module</title>
+          <path id="riser-2--module--slot-9--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+          <g id="riser-2--module--slot-9--module--vents">
+            <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+            <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          </g>
+        </g>
+      </g>
+      <g id="riser-2--module--plate" data-path="riser-2/module/plate" data-class="bezel" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <path fill-rule="evenodd" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" d="M0.3 0.3 H149.4 V18.2 H0.3 Z M13.3 1.9 H68.2 V18.2 H13.3 Z M85.3 1.9 H137.2 V18.2 H85.3 Z" />
+        <rect x="1.2" y="2.5" width="9.0" height="3.0" rx="0.3" fill="#16191c" />
+        <rect x="1.2" y="8.0" width="3.0" height="3.0" rx="0.3" fill="#16191c" />
+        <rect x="6.0" y="8.0" width="3.0" height="3.0" rx="0.3" fill="#16191c" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-3" data-path="riser-3" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="3">
+    <title>riser-3</title>
+    <rect id="riser-3--opening" x="176.4" y="9" width="104.3" height="84" fill="#101214" />
+    <g id="riser-3--module" data-path="riser-3/module" data-class="riser" data-behaviour="fills" data-ref="dell/r960-riser-3a@1:1.0.0" data-body-depth="356.3" data-appears-in="riser configuration 3" data-power-absent="not-published" data-riser="3A (FL)" data-slot-6="x16, full height, full length, double width, processor 4, PCIe Gen5" data-slot-8="x16, full height, full length, double width, processor 3, PCIe Gen5" transform="translate(228.55,51) translate(-52.15,-42)">
+      <title>riser-3--module</title>
+      <g id="riser-3--module--slot-6" data-path="riser-3/module/slot-6" data-class="bay">
+        <rect id="riser-3--module--slot-6--opening" x="3.5" y="0.59" width="90.0" height="38.7" fill="none" stroke="none" />
+        <g id="riser-3--module--slot-6--module" data-path="riser-3/module/slot-6/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh-2slot@1:1.0.0" transform="translate(3.5,0.59)">
+          <title>riser-3--module--slot-6--module</title>
+          <rect id="riser-3--module--slot-6--module--plate" x="0.1" y="0.1" width="89.8" height="38.5" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect id="riser-3--module--slot-6--module--window" x="5.9" y="3.0" width="82.4" height="32.7" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 6.80 h2.6 v2.7 h-2.6 Z M15.26 6.80 h2.6 v2.7 h-2.6 Z M20.72 6.80 h2.6 v2.7 h-2.6 Z M26.18 6.80 h2.6 v2.7 h-2.6 Z M31.64 6.80 h2.6 v2.7 h-2.6 Z M37.10 6.80 h2.6 v2.7 h-2.6 Z M42.56 6.80 h2.6 v2.7 h-2.6 Z M48.02 6.80 h2.6 v2.7 h-2.6 Z M53.48 6.80 h2.6 v2.7 h-2.6 Z M58.94 6.80 h2.6 v2.7 h-2.6 Z M64.40 6.80 h2.6 v2.7 h-2.6 Z M69.86 6.80 h2.6 v2.7 h-2.6 Z M75.32 6.80 h2.6 v2.7 h-2.6 Z M80.78 6.80 h2.6 v2.7 h-2.6 Z M9.80 13.10 h2.6 v2.7 h-2.6 Z M15.26 13.10 h2.6 v2.7 h-2.6 Z M20.72 13.10 h2.6 v2.7 h-2.6 Z M26.18 13.10 h2.6 v2.7 h-2.6 Z M31.64 13.10 h2.6 v2.7 h-2.6 Z M37.10 13.10 h2.6 v2.7 h-2.6 Z M42.56 13.10 h2.6 v2.7 h-2.6 Z M48.02 13.10 h2.6 v2.7 h-2.6 Z M53.48 13.10 h2.6 v2.7 h-2.6 Z M58.94 13.10 h2.6 v2.7 h-2.6 Z M64.40 13.10 h2.6 v2.7 h-2.6 Z M69.86 13.10 h2.6 v2.7 h-2.6 Z M75.32 13.10 h2.6 v2.7 h-2.6 Z M80.78 13.10 h2.6 v2.7 h-2.6 Z M9.80 19.40 h2.6 v2.7 h-2.6 Z M15.26 19.40 h2.6 v2.7 h-2.6 Z M20.72 19.40 h2.6 v2.7 h-2.6 Z M26.18 19.40 h2.6 v2.7 h-2.6 Z M31.64 19.40 h2.6 v2.7 h-2.6 Z M37.10 19.40 h2.6 v2.7 h-2.6 Z M42.56 19.40 h2.6 v2.7 h-2.6 Z M48.02 19.40 h2.6 v2.7 h-2.6 Z M53.48 19.40 h2.6 v2.7 h-2.6 Z M58.94 19.40 h2.6 v2.7 h-2.6 Z M64.40 19.40 h2.6 v2.7 h-2.6 Z M69.86 19.40 h2.6 v2.7 h-2.6 Z M75.32 19.40 h2.6 v2.7 h-2.6 Z M80.78 19.40 h2.6 v2.7 h-2.6 Z M9.80 25.70 h2.6 v2.7 h-2.6 Z M15.26 25.70 h2.6 v2.7 h-2.6 Z M20.72 25.70 h2.6 v2.7 h-2.6 Z M26.18 25.70 h2.6 v2.7 h-2.6 Z M31.64 25.70 h2.6 v2.7 h-2.6 Z M37.10 25.70 h2.6 v2.7 h-2.6 Z M42.56 25.70 h2.6 v2.7 h-2.6 Z M48.02 25.70 h2.6 v2.7 h-2.6 Z M53.48 25.70 h2.6 v2.7 h-2.6 Z M58.94 25.70 h2.6 v2.7 h-2.6 Z M64.40 25.70 h2.6 v2.7 h-2.6 Z M69.86 25.70 h2.6 v2.7 h-2.6 Z M75.32 25.70 h2.6 v2.7 h-2.6 Z M80.78 25.70 h2.6 v2.7 h-2.6 Z M9.80 32.00 h2.6 v2.7 h-2.6 Z M15.26 32.00 h2.6 v2.7 h-2.6 Z M20.72 32.00 h2.6 v2.7 h-2.6 Z M26.18 32.00 h2.6 v2.7 h-2.6 Z M31.64 32.00 h2.6 v2.7 h-2.6 Z M37.10 32.00 h2.6 v2.7 h-2.6 Z M42.56 32.00 h2.6 v2.7 h-2.6 Z M48.02 32.00 h2.6 v2.7 h-2.6 Z M53.48 32.00 h2.6 v2.7 h-2.6 Z M58.94 32.00 h2.6 v2.7 h-2.6 Z M64.40 32.00 h2.6 v2.7 h-2.6 Z M69.86 32.00 h2.6 v2.7 h-2.6 Z M75.32 32.00 h2.6 v2.7 h-2.6 Z M80.78 32.00 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-3--module--slot-8" data-path="riser-3/module/slot-8" data-class="bay">
+        <rect id="riser-3--module--slot-8--opening" x="3.5" y="40.99" width="90.0" height="38.7" fill="none" stroke="none" />
+        <g id="riser-3--module--slot-8--module" data-path="riser-3/module/slot-8/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh-2slot@1:1.0.0" transform="translate(3.5,40.99)">
+          <title>riser-3--module--slot-8--module</title>
+          <rect id="riser-3--module--slot-8--module--plate" x="0.1" y="0.1" width="89.8" height="38.5" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect id="riser-3--module--slot-8--module--window" x="5.9" y="3.0" width="82.4" height="32.7" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 6.80 h2.6 v2.7 h-2.6 Z M15.26 6.80 h2.6 v2.7 h-2.6 Z M20.72 6.80 h2.6 v2.7 h-2.6 Z M26.18 6.80 h2.6 v2.7 h-2.6 Z M31.64 6.80 h2.6 v2.7 h-2.6 Z M37.10 6.80 h2.6 v2.7 h-2.6 Z M42.56 6.80 h2.6 v2.7 h-2.6 Z M48.02 6.80 h2.6 v2.7 h-2.6 Z M53.48 6.80 h2.6 v2.7 h-2.6 Z M58.94 6.80 h2.6 v2.7 h-2.6 Z M64.40 6.80 h2.6 v2.7 h-2.6 Z M69.86 6.80 h2.6 v2.7 h-2.6 Z M75.32 6.80 h2.6 v2.7 h-2.6 Z M80.78 6.80 h2.6 v2.7 h-2.6 Z M9.80 13.10 h2.6 v2.7 h-2.6 Z M15.26 13.10 h2.6 v2.7 h-2.6 Z M20.72 13.10 h2.6 v2.7 h-2.6 Z M26.18 13.10 h2.6 v2.7 h-2.6 Z M31.64 13.10 h2.6 v2.7 h-2.6 Z M37.10 13.10 h2.6 v2.7 h-2.6 Z M42.56 13.10 h2.6 v2.7 h-2.6 Z M48.02 13.10 h2.6 v2.7 h-2.6 Z M53.48 13.10 h2.6 v2.7 h-2.6 Z M58.94 13.10 h2.6 v2.7 h-2.6 Z M64.40 13.10 h2.6 v2.7 h-2.6 Z M69.86 13.10 h2.6 v2.7 h-2.6 Z M75.32 13.10 h2.6 v2.7 h-2.6 Z M80.78 13.10 h2.6 v2.7 h-2.6 Z M9.80 19.40 h2.6 v2.7 h-2.6 Z M15.26 19.40 h2.6 v2.7 h-2.6 Z M20.72 19.40 h2.6 v2.7 h-2.6 Z M26.18 19.40 h2.6 v2.7 h-2.6 Z M31.64 19.40 h2.6 v2.7 h-2.6 Z M37.10 19.40 h2.6 v2.7 h-2.6 Z M42.56 19.40 h2.6 v2.7 h-2.6 Z M48.02 19.40 h2.6 v2.7 h-2.6 Z M53.48 19.40 h2.6 v2.7 h-2.6 Z M58.94 19.40 h2.6 v2.7 h-2.6 Z M64.40 19.40 h2.6 v2.7 h-2.6 Z M69.86 19.40 h2.6 v2.7 h-2.6 Z M75.32 19.40 h2.6 v2.7 h-2.6 Z M80.78 19.40 h2.6 v2.7 h-2.6 Z M9.80 25.70 h2.6 v2.7 h-2.6 Z M15.26 25.70 h2.6 v2.7 h-2.6 Z M20.72 25.70 h2.6 v2.7 h-2.6 Z M26.18 25.70 h2.6 v2.7 h-2.6 Z M31.64 25.70 h2.6 v2.7 h-2.6 Z M37.10 25.70 h2.6 v2.7 h-2.6 Z M42.56 25.70 h2.6 v2.7 h-2.6 Z M48.02 25.70 h2.6 v2.7 h-2.6 Z M53.48 25.70 h2.6 v2.7 h-2.6 Z M58.94 25.70 h2.6 v2.7 h-2.6 Z M64.40 25.70 h2.6 v2.7 h-2.6 Z M69.86 25.70 h2.6 v2.7 h-2.6 Z M75.32 25.70 h2.6 v2.7 h-2.6 Z M80.78 25.70 h2.6 v2.7 h-2.6 Z M9.80 32.00 h2.6 v2.7 h-2.6 Z M15.26 32.00 h2.6 v2.7 h-2.6 Z M20.72 32.00 h2.6 v2.7 h-2.6 Z M26.18 32.00 h2.6 v2.7 h-2.6 Z M31.64 32.00 h2.6 v2.7 h-2.6 Z M37.10 32.00 h2.6 v2.7 h-2.6 Z M42.56 32.00 h2.6 v2.7 h-2.6 Z M48.02 32.00 h2.6 v2.7 h-2.6 Z M53.48 32.00 h2.6 v2.7 h-2.6 Z M58.94 32.00 h2.6 v2.7 h-2.6 Z M64.40 32.00 h2.6 v2.7 h-2.6 Z M69.86 32.00 h2.6 v2.7 h-2.6 Z M75.32 32.00 h2.6 v2.7 h-2.6 Z M80.78 32.00 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-3--module--plate" data-path="riser-3/module/plate" data-class="bezel" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <path fill-rule="evenodd" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" d="M0.3 0.3 H104.0 V83.7 H0.3 Z M3.5 0.59 H93.5 V39.29 H3.5 Z M3.5 40.99 H93.5 V79.69 H3.5 Z" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-1" data-path="riser-1" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="1">
+    <title>riser-1</title>
+    <rect id="riser-1--opening" x="5" y="9" width="117.1" height="63" fill="#101214" />
+    <g id="riser-1--module" data-path="riser-1/module" data-class="riser" data-behaviour="fills" data-ref="dell/r960-riser-1a@1:1.0.0" data-body-depth="357.0" data-appears-in="riser configuration 3" data-power-absent="not-published" data-riser="1A (FL)" data-slot-1="x16, full height, full length, processor 3, PCIe Gen5" data-slot-3="x16, full height, full length, double width, processor 1, PCIe Gen5" transform="translate(63.55,40.5) translate(-58.55,-31.5)">
+      <title>riser-1--module</title>
+      <g id="riser-1--module--slot-1" data-path="riser-1/module/slot-1" data-class="bay">
+        <rect id="riser-1--module--slot-1--opening" x="22.0" y="1.29" width="90.0" height="18.42" fill="none" stroke="none" />
+        <g id="riser-1--module--slot-1--module" data-path="riser-1/module/slot-1/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh@1:1.0.0" transform="translate(22.0,1.29)">
+          <title>riser-1--module--slot-1--module</title>
+          <rect id="riser-1--module--slot-1--module--plate" x="0.1" y="0.1" width="89.8" height="18.22" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect x="5.9" y="3.0" width="82.4" height="12.4" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 4.60 h2.6 v2.7 h-2.6 Z M15.26 4.60 h2.6 v2.7 h-2.6 Z M20.72 4.60 h2.6 v2.7 h-2.6 Z M26.18 4.60 h2.6 v2.7 h-2.6 Z M31.64 4.60 h2.6 v2.7 h-2.6 Z M37.10 4.60 h2.6 v2.7 h-2.6 Z M42.56 4.60 h2.6 v2.7 h-2.6 Z M48.02 4.60 h2.6 v2.7 h-2.6 Z M53.48 4.60 h2.6 v2.7 h-2.6 Z M58.94 4.60 h2.6 v2.7 h-2.6 Z M64.40 4.60 h2.6 v2.7 h-2.6 Z M69.86 4.60 h2.6 v2.7 h-2.6 Z M75.32 4.60 h2.6 v2.7 h-2.6 Z M80.78 4.60 h2.6 v2.7 h-2.6 Z M9.80 10.90 h2.6 v2.7 h-2.6 Z M15.26 10.90 h2.6 v2.7 h-2.6 Z M20.72 10.90 h2.6 v2.7 h-2.6 Z M26.18 10.90 h2.6 v2.7 h-2.6 Z M31.64 10.90 h2.6 v2.7 h-2.6 Z M37.10 10.90 h2.6 v2.7 h-2.6 Z M42.56 10.90 h2.6 v2.7 h-2.6 Z M48.02 10.90 h2.6 v2.7 h-2.6 Z M53.48 10.90 h2.6 v2.7 h-2.6 Z M58.94 10.90 h2.6 v2.7 h-2.6 Z M64.40 10.90 h2.6 v2.7 h-2.6 Z M69.86 10.90 h2.6 v2.7 h-2.6 Z M75.32 10.90 h2.6 v2.7 h-2.6 Z M80.78 10.90 h2.6 v2.7 h-2.6 Z M0.6 4.60 h2.6 v2.7 h-2.6 Z M0.6 10.90 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-1--module--slot-3" data-path="riser-1/module/slot-3" data-class="bay">
+        <rect id="riser-1--module--slot-3--opening" x="22.0" y="21.19" width="90.0" height="38.7" fill="none" stroke="none" />
+        <g id="riser-1--module--slot-3--module" data-path="riser-1/module/slot-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh-2slot@1:1.0.0" transform="translate(22.0,21.19)">
+          <title>riser-1--module--slot-3--module</title>
+          <rect id="riser-1--module--slot-3--module--plate" x="0.1" y="0.1" width="89.8" height="38.5" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect id="riser-1--module--slot-3--module--window" x="5.9" y="3.0" width="82.4" height="32.7" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 6.80 h2.6 v2.7 h-2.6 Z M15.26 6.80 h2.6 v2.7 h-2.6 Z M20.72 6.80 h2.6 v2.7 h-2.6 Z M26.18 6.80 h2.6 v2.7 h-2.6 Z M31.64 6.80 h2.6 v2.7 h-2.6 Z M37.10 6.80 h2.6 v2.7 h-2.6 Z M42.56 6.80 h2.6 v2.7 h-2.6 Z M48.02 6.80 h2.6 v2.7 h-2.6 Z M53.48 6.80 h2.6 v2.7 h-2.6 Z M58.94 6.80 h2.6 v2.7 h-2.6 Z M64.40 6.80 h2.6 v2.7 h-2.6 Z M69.86 6.80 h2.6 v2.7 h-2.6 Z M75.32 6.80 h2.6 v2.7 h-2.6 Z M80.78 6.80 h2.6 v2.7 h-2.6 Z M9.80 13.10 h2.6 v2.7 h-2.6 Z M15.26 13.10 h2.6 v2.7 h-2.6 Z M20.72 13.10 h2.6 v2.7 h-2.6 Z M26.18 13.10 h2.6 v2.7 h-2.6 Z M31.64 13.10 h2.6 v2.7 h-2.6 Z M37.10 13.10 h2.6 v2.7 h-2.6 Z M42.56 13.10 h2.6 v2.7 h-2.6 Z M48.02 13.10 h2.6 v2.7 h-2.6 Z M53.48 13.10 h2.6 v2.7 h-2.6 Z M58.94 13.10 h2.6 v2.7 h-2.6 Z M64.40 13.10 h2.6 v2.7 h-2.6 Z M69.86 13.10 h2.6 v2.7 h-2.6 Z M75.32 13.10 h2.6 v2.7 h-2.6 Z M80.78 13.10 h2.6 v2.7 h-2.6 Z M9.80 19.40 h2.6 v2.7 h-2.6 Z M15.26 19.40 h2.6 v2.7 h-2.6 Z M20.72 19.40 h2.6 v2.7 h-2.6 Z M26.18 19.40 h2.6 v2.7 h-2.6 Z M31.64 19.40 h2.6 v2.7 h-2.6 Z M37.10 19.40 h2.6 v2.7 h-2.6 Z M42.56 19.40 h2.6 v2.7 h-2.6 Z M48.02 19.40 h2.6 v2.7 h-2.6 Z M53.48 19.40 h2.6 v2.7 h-2.6 Z M58.94 19.40 h2.6 v2.7 h-2.6 Z M64.40 19.40 h2.6 v2.7 h-2.6 Z M69.86 19.40 h2.6 v2.7 h-2.6 Z M75.32 19.40 h2.6 v2.7 h-2.6 Z M80.78 19.40 h2.6 v2.7 h-2.6 Z M9.80 25.70 h2.6 v2.7 h-2.6 Z M15.26 25.70 h2.6 v2.7 h-2.6 Z M20.72 25.70 h2.6 v2.7 h-2.6 Z M26.18 25.70 h2.6 v2.7 h-2.6 Z M31.64 25.70 h2.6 v2.7 h-2.6 Z M37.10 25.70 h2.6 v2.7 h-2.6 Z M42.56 25.70 h2.6 v2.7 h-2.6 Z M48.02 25.70 h2.6 v2.7 h-2.6 Z M53.48 25.70 h2.6 v2.7 h-2.6 Z M58.94 25.70 h2.6 v2.7 h-2.6 Z M64.40 25.70 h2.6 v2.7 h-2.6 Z M69.86 25.70 h2.6 v2.7 h-2.6 Z M75.32 25.70 h2.6 v2.7 h-2.6 Z M80.78 25.70 h2.6 v2.7 h-2.6 Z M9.80 32.00 h2.6 v2.7 h-2.6 Z M15.26 32.00 h2.6 v2.7 h-2.6 Z M20.72 32.00 h2.6 v2.7 h-2.6 Z M26.18 32.00 h2.6 v2.7 h-2.6 Z M31.64 32.00 h2.6 v2.7 h-2.6 Z M37.10 32.00 h2.6 v2.7 h-2.6 Z M42.56 32.00 h2.6 v2.7 h-2.6 Z M48.02 32.00 h2.6 v2.7 h-2.6 Z M53.48 32.00 h2.6 v2.7 h-2.6 Z M58.94 32.00 h2.6 v2.7 h-2.6 Z M64.40 32.00 h2.6 v2.7 h-2.6 Z M69.86 32.00 h2.6 v2.7 h-2.6 Z M75.32 32.00 h2.6 v2.7 h-2.6 Z M80.78 32.00 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-1--module--plate" data-path="riser-1/module/plate" data-class="bezel" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <g transform="translate(13.0 0)">
+          <path fill-rule="evenodd" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" d="M0.3 0.3 H103.8 V62.7 H0.3 Z M9.0 1.29 H99.0 V19.71 H9.0 Z M9.0 21.19 H99.0 V59.89 H9.0 Z" />
+          <rect x="1.0" y="1.0" width="3.2" height="61.0" fill="#bfc4c9" />
+        </g>
+        <circle cx="4.5" cy="15.1" r="2.8" fill="#2f7fc1" stroke="#1f5f99" stroke-width="0.3" />
+        <path d="M3.3 15.1 H5.7 M4.5 13.9 V16.3" stroke="#e8f1fa" stroke-width="0.5" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-4" data-path="riser-4" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="4">
+    <title>riser-4</title>
+    <rect id="riser-4--opening" x="317.7" y="9" width="120" height="63" fill="#101214" />
+    <g id="riser-4--module" data-path="riser-4/module" data-class="riser" data-behaviour="fills" data-ref="dell/r960-riser-4a@1:1.0.0" data-body-depth="357.0" data-appears-in="riser configuration 3" data-power-absent="not-published" data-riser="4A (FL)" data-slot-10="x16, full height, full length, processor 4, PCIe Gen5" data-slot-11="x16, full height, full length, double width, processor 2, PCIe Gen5" transform="translate(377.7,40.5) translate(-60,-31.5)">
+      <title>riser-4--module</title>
+      <g id="riser-4--module--slot-10" data-path="riser-4/module/slot-10" data-class="bay">
+        <rect id="riser-4--module--slot-10--opening" x="5.7" y="1.29" width="90.0" height="18.42" fill="none" stroke="none" />
+        <g id="riser-4--module--slot-10--module" data-path="riser-4/module/slot-10/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh@1:1.0.0" transform="translate(5.7,1.29) rotate(180 45.0 9.21)">
+          <title>riser-4--module--slot-10--module</title>
+          <rect id="riser-4--module--slot-10--module--plate" x="0.1" y="0.1" width="89.8" height="18.22" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect x="5.9" y="3.0" width="82.4" height="12.4" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 4.60 h2.6 v2.7 h-2.6 Z M15.26 4.60 h2.6 v2.7 h-2.6 Z M20.72 4.60 h2.6 v2.7 h-2.6 Z M26.18 4.60 h2.6 v2.7 h-2.6 Z M31.64 4.60 h2.6 v2.7 h-2.6 Z M37.10 4.60 h2.6 v2.7 h-2.6 Z M42.56 4.60 h2.6 v2.7 h-2.6 Z M48.02 4.60 h2.6 v2.7 h-2.6 Z M53.48 4.60 h2.6 v2.7 h-2.6 Z M58.94 4.60 h2.6 v2.7 h-2.6 Z M64.40 4.60 h2.6 v2.7 h-2.6 Z M69.86 4.60 h2.6 v2.7 h-2.6 Z M75.32 4.60 h2.6 v2.7 h-2.6 Z M80.78 4.60 h2.6 v2.7 h-2.6 Z M9.80 10.90 h2.6 v2.7 h-2.6 Z M15.26 10.90 h2.6 v2.7 h-2.6 Z M20.72 10.90 h2.6 v2.7 h-2.6 Z M26.18 10.90 h2.6 v2.7 h-2.6 Z M31.64 10.90 h2.6 v2.7 h-2.6 Z M37.10 10.90 h2.6 v2.7 h-2.6 Z M42.56 10.90 h2.6 v2.7 h-2.6 Z M48.02 10.90 h2.6 v2.7 h-2.6 Z M53.48 10.90 h2.6 v2.7 h-2.6 Z M58.94 10.90 h2.6 v2.7 h-2.6 Z M64.40 10.90 h2.6 v2.7 h-2.6 Z M69.86 10.90 h2.6 v2.7 h-2.6 Z M75.32 10.90 h2.6 v2.7 h-2.6 Z M80.78 10.90 h2.6 v2.7 h-2.6 Z M0.6 4.60 h2.6 v2.7 h-2.6 Z M0.6 10.90 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-4--module--slot-11" data-path="riser-4/module/slot-11" data-class="bay">
+        <rect id="riser-4--module--slot-11--opening" x="5.7" y="21.19" width="90.0" height="38.7" fill="none" stroke="none" />
+        <g id="riser-4--module--slot-11--module" data-path="riser-4/module/slot-11/module" data-class="blank" data-behaviour="fills" data-ref="dell/r960-pcie-filler-fh-2slot@1:1.0.0" transform="translate(5.7,21.19)">
+          <title>riser-4--module--slot-11--module</title>
+          <rect id="riser-4--module--slot-11--module--plate" x="0.1" y="0.1" width="89.8" height="38.5" fill="#d2d6da" stroke="#9aa1a8" stroke-width="0.25" />
+          <rect id="riser-4--module--slot-11--module--window" x="5.9" y="3.0" width="82.4" height="32.7" rx="3.0" fill="#c3c8cd" stroke="#8f969d" stroke-width="0.4" />
+          <path fill="#16191c" d="M9.80 6.80 h2.6 v2.7 h-2.6 Z M15.26 6.80 h2.6 v2.7 h-2.6 Z M20.72 6.80 h2.6 v2.7 h-2.6 Z M26.18 6.80 h2.6 v2.7 h-2.6 Z M31.64 6.80 h2.6 v2.7 h-2.6 Z M37.10 6.80 h2.6 v2.7 h-2.6 Z M42.56 6.80 h2.6 v2.7 h-2.6 Z M48.02 6.80 h2.6 v2.7 h-2.6 Z M53.48 6.80 h2.6 v2.7 h-2.6 Z M58.94 6.80 h2.6 v2.7 h-2.6 Z M64.40 6.80 h2.6 v2.7 h-2.6 Z M69.86 6.80 h2.6 v2.7 h-2.6 Z M75.32 6.80 h2.6 v2.7 h-2.6 Z M80.78 6.80 h2.6 v2.7 h-2.6 Z M9.80 13.10 h2.6 v2.7 h-2.6 Z M15.26 13.10 h2.6 v2.7 h-2.6 Z M20.72 13.10 h2.6 v2.7 h-2.6 Z M26.18 13.10 h2.6 v2.7 h-2.6 Z M31.64 13.10 h2.6 v2.7 h-2.6 Z M37.10 13.10 h2.6 v2.7 h-2.6 Z M42.56 13.10 h2.6 v2.7 h-2.6 Z M48.02 13.10 h2.6 v2.7 h-2.6 Z M53.48 13.10 h2.6 v2.7 h-2.6 Z M58.94 13.10 h2.6 v2.7 h-2.6 Z M64.40 13.10 h2.6 v2.7 h-2.6 Z M69.86 13.10 h2.6 v2.7 h-2.6 Z M75.32 13.10 h2.6 v2.7 h-2.6 Z M80.78 13.10 h2.6 v2.7 h-2.6 Z M9.80 19.40 h2.6 v2.7 h-2.6 Z M15.26 19.40 h2.6 v2.7 h-2.6 Z M20.72 19.40 h2.6 v2.7 h-2.6 Z M26.18 19.40 h2.6 v2.7 h-2.6 Z M31.64 19.40 h2.6 v2.7 h-2.6 Z M37.10 19.40 h2.6 v2.7 h-2.6 Z M42.56 19.40 h2.6 v2.7 h-2.6 Z M48.02 19.40 h2.6 v2.7 h-2.6 Z M53.48 19.40 h2.6 v2.7 h-2.6 Z M58.94 19.40 h2.6 v2.7 h-2.6 Z M64.40 19.40 h2.6 v2.7 h-2.6 Z M69.86 19.40 h2.6 v2.7 h-2.6 Z M75.32 19.40 h2.6 v2.7 h-2.6 Z M80.78 19.40 h2.6 v2.7 h-2.6 Z M9.80 25.70 h2.6 v2.7 h-2.6 Z M15.26 25.70 h2.6 v2.7 h-2.6 Z M20.72 25.70 h2.6 v2.7 h-2.6 Z M26.18 25.70 h2.6 v2.7 h-2.6 Z M31.64 25.70 h2.6 v2.7 h-2.6 Z M37.10 25.70 h2.6 v2.7 h-2.6 Z M42.56 25.70 h2.6 v2.7 h-2.6 Z M48.02 25.70 h2.6 v2.7 h-2.6 Z M53.48 25.70 h2.6 v2.7 h-2.6 Z M58.94 25.70 h2.6 v2.7 h-2.6 Z M64.40 25.70 h2.6 v2.7 h-2.6 Z M69.86 25.70 h2.6 v2.7 h-2.6 Z M75.32 25.70 h2.6 v2.7 h-2.6 Z M80.78 25.70 h2.6 v2.7 h-2.6 Z M9.80 32.00 h2.6 v2.7 h-2.6 Z M15.26 32.00 h2.6 v2.7 h-2.6 Z M20.72 32.00 h2.6 v2.7 h-2.6 Z M26.18 32.00 h2.6 v2.7 h-2.6 Z M31.64 32.00 h2.6 v2.7 h-2.6 Z M37.10 32.00 h2.6 v2.7 h-2.6 Z M42.56 32.00 h2.6 v2.7 h-2.6 Z M48.02 32.00 h2.6 v2.7 h-2.6 Z M53.48 32.00 h2.6 v2.7 h-2.6 Z M58.94 32.00 h2.6 v2.7 h-2.6 Z M64.40 32.00 h2.6 v2.7 h-2.6 Z M69.86 32.00 h2.6 v2.7 h-2.6 Z M75.32 32.00 h2.6 v2.7 h-2.6 Z M80.78 32.00 h2.6 v2.7 h-2.6 Z" />
+        </g>
+      </g>
+      <g id="riser-4--module--plate" data-path="riser-4/module/plate" data-class="bezel" data-z-out="20.0" data-z-color="#cfd3d7" data-z-shape="1">
+        <path fill-rule="evenodd" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" d="M0.3 0.3 H119.7 V62.7 H0.3 Z M5.7 1.29 H95.7 V19.71 H5.7 Z M5.7 21.19 H95.7 V59.89 H5.7 Z" />
+        <circle cx="113.1" cy="17.1" r="3.0" fill="#2f7fc1" stroke="#1f5f99" stroke-width="0.3" />
+        <path d="M111.8 17.1 H114.4 M113.1 15.8 V18.4" stroke="#e8f1fa" stroke-width="0.5" />
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.0mm" height="444.7mm" viewBox="0 0 441.0 444.7" data-device="ex4300-48t" data-view="top" data-weight="13 lb (5.9 kg) with no power supply and no fan module; 16.1 lb (7.3 kg) with one power supply and two fan modules" data-depth-no-psu="416.1 mm (16.38 in) with no power supply or uplink module (Table 10)" data-depth-with-uplink="457.3 mm (18 in, 45.73 cm) with a power supply and an uplink module (Table 10)" data-uplink-module-weight="0.44 lb (0.2 kg) for the 4-port EX-UM-4X4SFP" data-switching-capacity="248 Gbps unidirectional, 496 Gbps bidirectional, 64-byte packets (datasheet)" data-throughput="369 Mpps wire speed for the 48-port models (datasheet)" data-mac-addresses-max="64000" data-airflow-cfm="fan 22 CFM, each power supply 7.5 CFM; 59 CFM total with two supplies (datasheet)" data-power-base-w="175" data-psu-redundancy="N+0 or N+N; up to two supplies, one is enough for the chassis" data-acoustic-noise="37.8 dBA AC AFO, 38.9 dBA AC AFI, 39.7 dBA DC AFO and DC AFI (datasheet Table 3, ISO 7779 at 23 C)" data-operating-temp="0 to 45 C (32 to 113 F) for AFO models; 0 to 35 C for AFI models" data-storage-temp="-40 to 70 C" data-humidity="10 to 85 percent noncondensing operating; 0 to 95 percent non-operating" data-altitude="up to 3049 m operating (10,000 ft); 4877 m non-operating" data-cpu="1.5 GHz dual-core PowerPC" data-memory="2 GB DRAM with ECC" data-storage="2 GB" data-virtual-chassis="up to 10 members; the four rear QSFP+ ports are Virtual Chassis ports by default" data-macsec="IEEE 802.1AE on all Gigabit Ethernet and 10 Gigabit Ethernet ports" data-uplink-module="one slot; 4-port 1/10 GbE SFP+ EX-UM-4X4SFP (not part of the shipping configuration)" data-optics-qsfp="40GbE QSFP+ SR (multimode) and DAC direct-attach copper (datasheet, Supported Optics)" data-console="mini-USB on the front, RJ-45 CON2 on the rear" data-oob="MGMT RJ-45 with link activity and status lamps (rear)" data-lcd="2 lines of 16 characters with Menu and Enter buttons" data-usb="one USB port on the rear" data-rohs="RoHS 6/6 (datasheet)" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4300-48T","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"f9ba43b66f90fe8818e759a29ba0ef849dbd87afee56ceddddefa93eefe85395","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4300-48T" data-sku="EX4300-48T-S" data-part-number="" x="0" y="0" width="441" height="444.7" rx="1.2" fill="#898d94" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

@@ -1,0 +1,272 @@
+{
+ "aliases": [],
+ "attrs": {
+  "compliance": {
+   "taa": "TAA compliant"
+  },
+  "physical": {
+   "color": "Black",
+   "material": "Steel",
+   "ring-material": "ABS",
+   "weight-kg": 0.3781
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "bottom-off": [],
+  "front": [],
+  "left": [],
+  "left-off": [],
+  "rear": [],
+  "right": [],
+  "right-off": [],
+  "top": [],
+  "top-off": []
+ },
+ "cages": {
+  "bottom": [],
+  "bottom-off": [],
+  "front": [],
+  "left": [],
+  "left-off": [],
+  "rear": [],
+  "right": [],
+  "right-off": [],
+  "top": [],
+  "top-off": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [
+   "specified"
+  ],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "airflow": null,
+  "d": 88.6,
+  "ears": {
+   "positions": [
+    {
+     "at": 76.6,
+     "default": true,
+     "name": "proud"
+    }
+   ]
+  },
+  "h": 43.5,
+  "mount": "rack",
+  "power": null,
+  "ru": 1,
+  "shell": "sheet",
+  "thickness": 1.2,
+  "w": 482.6
+ },
+ "configs": [
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The cable manager as StarTech.com ships CABLMANAGER2, five rings fitted.",
+   "files": {
+    "bottom": "cablmanager2.base.bottom.svg",
+    "front": "cablmanager2.base.front.svg",
+    "left": "cablmanager2.base.left.svg",
+    "rear": "cablmanager2.base.rear.svg",
+    "right": "cablmanager2.base.right.svg",
+    "top": "cablmanager2.base.top.svg"
+   },
+   "kind": "base",
+   "mount-points": [],
+   "name": "base",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {}
+  },
+  {
+   "airflow": null,
+   "bays": {},
+   "description": "The same manager with its five removable rings taken off their seats, the panel and its open seats showing. The rings come with the panel, so this is an illustration and not a device type.",
+   "files": {
+    "bottom": "cablmanager2.rings-off.bottom.svg",
+    "front": "cablmanager2.rings-off.front.svg",
+    "left": "cablmanager2.rings-off.left.svg",
+    "rear": "cablmanager2.base.rear.svg",
+    "right": "cablmanager2.rings-off.right.svg",
+    "top": "cablmanager2.rings-off.top.svg"
+   },
+   "kind": "example",
+   "mount-points": [],
+   "name": "rings-off",
+   "names": {},
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "slots": [],
+   "states": {},
+   "views": {
+    "bottom": "bottom-off",
+    "left": "left-off",
+    "right": "right-off",
+    "top": "top-off"
+   }
+  }
+ ],
+ "default": "base",
+ "device": "cablmanager2",
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet and the drawing state no cable capacity, no fill and no cable count.",
+   "scope": [],
+   "wanted": "a cable capacity table, or a stated fill, for the D-ring panel",
+   "what": "cable-capacity"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet says \"the hook on either end of the panel can be turned 90 to accommodate horizontal or vertical rack cabling\". The format has no key that turns a ring on its seat, so the end rings are drawn as the plan view draws them, a quarter turn from the middle three, and the other turn is not drawn or declared.",
+   "scope": [
+    "front",
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "a format key for a ring that can be seated in either of two turns, and a view that shows which turn the plan draws",
+   "what": "ring-turn"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the datasheet gives the rings as \"spaced 4in (105mm) apart\", and 4 in is 101.6; the drawing is not dimensioned, and scaled it puts the three middle rings 105.2 apart and the end rings 78.9 from their neighbours, 184.0 from the middle. The scaled places are drawn.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a dimensioned front view of the panel",
+   "what": "ring-pitch"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "the plan view draws each end ring's tip curled into a hook that stops short of the loop, which leaves a slit; the three middle rings are drawn edge-on, so none is seen. No view dimensions it, so the loops are drawn closed.",
+   "scope": [
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "a dimensioned view of a ring with its slit",
+   "what": "ring-slit"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "a port the DCIM export types as an interface - a placement in a group whose role is a port role, with media and speed it maps - unlocks interfaces on the NetBox / Nautobot device type",
+   "what": "templated"
+  }
+ ],
+ "model": "CABLMANAGER2",
+ "options": {
+  "airflow": [],
+  "power": []
+ },
+ "pdu-class": null,
+ "provenance": {
+  "attrs": {
+   "confidence": "datasheet",
+   "note": "datasheet - the steel panel, the ABS hooks, \"TAA compliant\", the colour and the standard are the datasheet's; the 2-year warranty is its text."
+  },
+  "capacity": {
+   "confidence": "estimated",
+   "note": "no document states a cable capacity: the datasheet and the drawing are silent, so none is stated and a gap says so."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - 482.6 x 43.5 x 88.6. The panel is the whole width of the rack, its two ends the ears, so the face is drawn whole with its four slots (L43 stands down above 480 mm); its top and bottom edges fold back 12 between the ears, 434 wide, 24.3 in from each end."
+  },
+  "color": {
+   "confidence": "estimated",
+   "note": "estimated - \"Color: Black\". The drawing is line work, so the shades are this library's render of black, the rings a little lighter than the panel."
+  },
+  "ears": {
+   "confidence": "drawing",
+   "note": "drawing - `positions` states where the ears bolt, for the Rack Builder. The ears are the flat ends of the panel, so the ear plane is the panel's back face, and the rings stand 76.6 mm in front of it (the end view, \"76.6 +/-0.2\"); `at` is 76.6. Of the 88.6 depth, 12.0 stands behind the rail (the plan view's \"12 +/-0.2\"). This states a placement; no dimension changed."
+  },
+  "front": {
+   "confidence": "estimated",
+   "note": "estimated - the front view: the panel and its five rings end-on, at the places scaled off the raster's front view (see the panel contract): the three in the middle 105.2 apart with the middle one on the centre line, the two at the ends 184.0 from it. The datasheet says the rings are \"spaced 4in (105mm) apart\"; the drawing puts the ends 78.9 from their neighbours, so that holds for the middle three (see the gap)."
+  },
+  "full-depth": {
+   "confidence": "drawing",
+   "note": "`full-depth: false` - the rings stand 76.6 mm in front of the panel and its folded edges reach only 12 behind it, so the rear face of its rack unit stays free for another part."
+  },
+  "guides": {
+   "confidence": "estimated",
+   "note": "estimated - the five rings are the guides: each a component with a `ring` guide (see its contract). The three in the middle run along the panel; the two at the ends run up and down it."
+  },
+  "left": {
+   "confidence": "estimated",
+   "note": "estimated - the end view: the folded edges behind the panel and the ring's profile in front of it, a frame 40 high with a base, two bars and a closed end; the end ring is the band across it. The right is the same, turned round."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE MAKER'S OWN DRAWING, A RASTER. StarTech.com publishes CABLMANAGER2_Diagram.pdf (uploaded 12/01/2021): one 967 x 681 px image with an isometric, a front view, a plan and an end view, and the dimensions 482.6 +/-0.3, 465.3 +/-0.3, 434 +/-0.3, 43.5 +/-0.2, 31.7, 76.6 +/-0.2, 12 +/-0.2, 10.3 and 5.8. It is a raster, so everything that is not one of those dimensions is scaled off it at 2.586 px/mm against its 482.6 and is good to about 1 mm: estimated. THE DEPTH: the datasheet's \"Product Length 3.5 in [88.6 mm]\" and the drawing's 76.6 are both right. The end view's 76.6 is the ring from the plate's back face, where the ears bolt, and the plan view puts the folded body 12 behind that face; 76.6 + 12 = 88.6. So the projection in front of the rail is 76.6, and the envelope the datasheet states is 88.6. The datasheet (cablmanager2_datasheet.pdf) also gives \"Product Width 19.0 in [48.3 cm]\" and \"Product Height 1.7 in [43.5 mm]\"."
+  },
+  "rear": {
+   "confidence": "estimated",
+   "note": "estimated - the back of the panel: the ear slots and the five ring seats, open, with the folded edges end-on. The drawing has no rear view; the seats are the front view's."
+  },
+  "removable": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"5 removable ABS plastic D-Ring hooks\". Each ring is a `mounts` part: the explorer pulls it off its seat. They ship fitted, and the `rings-off` configuration shows the panel without them, its five seats open."
+  },
+  "rings": {
+   "confidence": "estimated",
+   "note": "estimated - see the contracts. The datasheet says the end hooks \"can be turned 90\"; the drawing draws them a quarter turn from the middle three, so they are drawn so and the other turn is a gap. Their curled tips, which leave a slit, are not drawn."
+  },
+  "thickness": {
+   "confidence": "estimated",
+   "note": "estimated - no CABLMANAGER2 document states a gauge. 1.2 mm, the maker's own CMBRUSH1U section (t=1.2 mm, \"spcc/hc\"), is taken for the panel."
+  },
+  "top": {
+   "confidence": "estimated",
+   "note": "estimated - an elevation, rear at the top of the drawing: the folded edge behind the panel and the five rings from above. The three middle rings are narrow bars, edge-on, and the two at the ends are loops face-on, as the plan view draws them. The bottom is the same from underneath."
+  },
+  "weight": {
+   "confidence": "datasheet",
+   "note": "datasheet - \"Weight of Product 13.3 oz [378.1 g]\" (cablmanager2_datasheet.pdf)."
+  }
+ },
+ "seat-turns": {},
+ "views": [
+  "front",
+  "rear",
+  "top",
+  "bottom",
+  "left",
+  "right"
+ ]
+}

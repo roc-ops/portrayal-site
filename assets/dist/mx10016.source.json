@@ -20,6 +20,38 @@
  "configurations": {
   "base": {
    "bays": {
+    "cb1": "juniper/jnp10k-re-blnk@1",
+    "fpc0": "juniper/jnp10k-lc-blank@1",
+    "fpc1": "juniper/jnp10k-lc-blank@1",
+    "fpc10": "juniper/jnp10k-lc-blank@1",
+    "fpc11": "juniper/jnp10k-lc-blank@1",
+    "fpc12": "juniper/jnp10k-lc-blank@1",
+    "fpc13": "juniper/jnp10k-lc-blank@1",
+    "fpc14": "juniper/jnp10k-lc-blank@1",
+    "fpc15": "juniper/jnp10k-lc-blank@1",
+    "fpc2": "juniper/jnp10k-lc-blank@1",
+    "fpc3": "juniper/jnp10k-lc-blank@1",
+    "fpc4": "juniper/jnp10k-lc-blank@1",
+    "fpc5": "juniper/jnp10k-lc-blank@1",
+    "fpc6": "juniper/jnp10k-lc-blank@1",
+    "fpc7": "juniper/jnp10k-lc-blank@1",
+    "fpc8": "juniper/jnp10k-lc-blank@1",
+    "fpc9": "juniper/jnp10k-lc-blank@1",
+    "psu5": "juniper/jnp10k-pwr-blnk@1",
+    "psu6": "juniper/jnp10k-pwr-blnk@1",
+    "psu7": "juniper/jnp10k-pwr-blnk@1",
+    "psu8": "juniper/jnp10k-pwr-blnk@1",
+    "psu9": "juniper/jnp10k-pwr-blnk@1"
+   },
+   "default": true,
+   "description": "The chassis as Juniper ships MX10016-BASE. One routing and control board with a cover over the second slot. Five power supplies with a cover over each of the other five, fans, and a cover in each of the sixteen line-card slots. Line cards are ordered separately.",
+   "kind": "base",
+   "source": "vendor - Juniper publishes this as an orderable bundle. The hardware guide's 'MX10016 Components and Configurations' table (MX10016-BASE) lists one RCB, five power supplies with five power supply slot covers, and sixteen line-card covers, over the note that line cards and the cable management system are not part of the base configuration. This base draws exactly that: one board in RCB slot 0, five supplies and a cover in each of the other five supply slots, and a cover in each of the sixteen line-card slots. The table lists no cover for the second RCB slot and no part number for the supply covers; the slot is covered with JNP10K-RE-BLNK, named for the same cage in the MX10004 guide, and the supply covers are JNP10K-PWR-BLNK, named in the same guide. The five switch fabric boards and their cover (JNP10016-SF-BLNK) sit inside the chassis, not visible from outside, and no bay for them is drawn."
+  },
+  "premium": {
+   "bays": {
+    "fan0": "juniper/jnp10016-fan2@1",
+    "fan1": "juniper/jnp10016-fan2@1",
     "fpc0": "juniper/jnp10k-lc-blank@1",
     "fpc1": "juniper/jnp10k-lc-blank@1",
     "fpc10": "juniper/jnp10k-lc-blank@1",
@@ -37,10 +69,9 @@
     "fpc8": "juniper/jnp10k-lc-blank@1",
     "fpc9": "juniper/jnp10k-lc-blank@1"
    },
-   "default": true,
-   "description": "Chassis only - what you spec before deciding what goes in it. The 16 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.",
-   "kind": "base",
-   "source": "vendor - Juniper publishes this as an orderable bundle. the hardware guide's 'MX10016 Components and Configurations' section lists the components of each configuration, and the line-card covers in this base are its own: it ships sixteen of them on the MX10016 in EVERY configuration, over the note that \"Line cards and the cable management system are not part of the base or redundant configurations. You must order them separately.\" NOT YET FULLY FAITHFUL: the vendor bundle also ships ONE routing engine rather than two, and covers rather than modules in one SFB slot and one power slot. This library seats all of them, because JNP10K-PWR-BLNK and the SF blank are not modelled yet. The line-card half - the part that was drawing holes - is now right."
+   "description": "MX10016-PREMIUM, the redundant AC configuration with JNP10K-PWR-AC2 supplies. Both routing and control boards, all ten power supplies, both JNP10016-FAN2 fan trays, and a cover in each line-card slot. Line cards are ordered separately.",
+   "kind": "orderable",
+   "source": "vendor - the hardware guide's 'MX10016 Components and Configurations' table lists the redundant AC configuration with JNP10K-PWR-AC2 components (MX10016-PREMIUM) in full: two RCBs, two fan tray controllers (JNP10016-FTC2), two fan trays (JNP10016-FAN2), ten AC power supplies (JNP10K-PWR-AC2), six switch fabric boards (JNP10016-SF2) and sixteen line-card covers, with no power supply or switch fabric covers because every slot is filled. This configuration draws all of that except the fan tray controllers and the switch fabric boards, which sit behind the fan trays and inside the chassis and have no bay or part here. The other generations (JNP10K-PWR-AC, the DC supplies) are not drawn."
   }
  },
  "datasheet": {
@@ -86,6 +117,11 @@
    ],
    "wanted": "legible FPC slot labels - top-down 0-15 follows the family convention.",
    "what": "slot-label-print"
+  },
+  {
+   "reason": "needs-photo",
+   "wanted": "the switch fabric boards (JNP10016-SF, JNP10016-SF2) and their cover (JNP10016-SF-BLNK) sit mid-chassis behind the fan trays, where no face shows them. Vendor count is five boards and one cover on the base and six boards on the redundant configuration; none is drawn.",
+   "what": "sfb-bays"
   }
  ],
  "groups": {
@@ -173,7 +209,7 @@
    "title": "Juniper MX10016 Universal Routing Platform Hardware Guide (2024-05-09)"
   }
  ],
- "version": "2.0.6",
+ "version": "2.1.0",
  "views": {
   "bottom": {
    "panel": {
@@ -216,7 +252,8 @@
     "bays": [
      {
       "accepts": [
-       "juniper/jnp10k-re1@2"
+       "juniper/jnp10k-re1@2",
+       "juniper/jnp10k-re-blnk@1"
       ],
       "at": [
        2.5,
@@ -233,7 +270,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-re1@2"
+       "juniper/jnp10k-re1@2",
+       "juniper/jnp10k-re-blnk@1"
       ],
       "at": [
        2.5,
@@ -943,7 +981,8 @@
     "bays": [
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -960,7 +999,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -977,7 +1017,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -994,7 +1035,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1011,7 +1053,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1028,7 +1071,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1045,7 +1089,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1062,7 +1107,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1079,7 +1125,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,
@@ -1096,7 +1143,8 @@
      },
      {
       "accepts": [
-       "juniper/jnp10k-pwr-ac2@1"
+       "juniper/jnp10k-pwr-ac2@1",
+       "juniper/jnp10k-pwr-blnk@1"
       ],
       "at": [
        3.0,

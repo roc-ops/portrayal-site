@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="300.1mm" height="45.0mm" viewBox="0 0 300.1 45.0" data-device="gl-24xc-240d" data-view="right" data-weight-max-kg="4.5" data-weight-note="datasheet &quot;&lt;10lbs&quot;" data-enclosure="Metal" data-overall-dimensions="12 x 19 x 1.75 in with the ears (datasheet; its mm column reads 305 x 228.6 x 44.45, the 228.6 a slip for 482.6); body modelled from CAD 440 x 45.0 x 300.1" data-switching-capacity="128 Gbps" data-readylink-clients-per-port="16" data-power-self-max-w="80" data-power-self-scope="excluding PoE output" data-poe-budget-w="240" data-poe-budget-scope="using dual power; 90 W using single power" data-poe-per-port="max per PSE: PoE 15.4 W, PoE+ 30 W, PoE++ 90 W; ports 11 and 12 of each line card are PoE++" data-power-input="100-240V AC, 50/60 Hz; 48-56VDC" data-power-supply="AC/DC, internal, (2) 300W" data-cooling="ten 40 x 20 mm fans behind the side-wall grilles, five per side" data-operating-temp-c="0 to 40" data-operating-humidity="10 to 90 percent noncondensing" data-optics-sfp-plus="vendor optics line per the ReadyLinks Optics datasheet: SFP-1/10G-MM, SFP-1/10G-SM, SFP-1/10G-SM-SF-23 and -SF-32 (BiDi) 1/10G transceivers; no third-party support statement published" data-layer-2="IGMP snooping; STP/RSTP with priorities and port-level disable; port isolation; storm control; voice VLAN; port mirroring; LACP; multicast/broadcast rate limiting; MAC blocking; flow control; 802.1X; jumbo frames; proprietary loop protection; DHCP snooping/guarding; egress rate limit; LLDP-MED; port restricted by MAC; device isolation with ACLs" data-layer-3="DHCP server; IP routing; static routing between local networks; network isolation with ACLs" data-interfaces="ReadyView, Ethernet/Fiber In-Band, Ethernet/Fiber Out-of-Band" data-button-functions="factory reset" data-eol="none-announced" data-airflow="side">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"ReadyLinks GL-24xC-240D","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/screw-head@1":"1.1.0"},"source-sha256":"085c8e726a9c30e98a991b3f2d0e3b22906c87c2f2029cdfa5e257002cd3cf5c","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="GL-24xC-240D" data-sku="GL-24xC-240D" data-part-number="" x="0" y="0" width="300.1" height="45" rx="1.2" fill="#141619" stroke="#0c0d0f" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-holes" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o37_25-5_8-s1_04-1_04" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(37.25 5.8) scale(1.04 1.04)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o86_23-5_8-s1_04-1_04" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(86.23 5.8) scale(1.04 1.04)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o136_23-5_8-s1_04-1_04" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(136.23 5.8) scale(1.04 1.04)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o197_23-5_8-s1_04-1_04" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(197.23 5.8) scale(1.04 1.04)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o243_23-5_8-s1_04-1_04" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(243.23 5.8) scale(1.04 1.04)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="fan-grille-1" data-kind="holes-field" x="37.35" y="5.9" width="32.8" height="32.8" rx="16.4" fill="url(#portrayal-holes-o37_25-5_8-s1_04-1_04)" />
+    <rect id="fan-grille-2" data-kind="holes-field" x="86.33" y="5.9" width="32.8" height="32.8" rx="16.4" fill="url(#portrayal-holes-o86_23-5_8-s1_04-1_04)" />
+    <rect id="fan-grille-3" data-kind="holes-field" x="136.33" y="5.9" width="32.8" height="32.8" rx="16.4" fill="url(#portrayal-holes-o136_23-5_8-s1_04-1_04)" />
+    <rect id="fan-grille-4" data-kind="holes-field" x="197.33" y="5.9" width="32.8" height="32.8" rx="16.4" fill="url(#portrayal-holes-o197_23-5_8-s1_04-1_04)" />
+    <rect id="fan-grille-5" data-kind="holes-field" x="243.33" y="5.9" width="32.8" height="32.8" rx="16.4" fill="url(#portrayal-holes-o243_23-5_8-s1_04-1_04)" />
+  </g>
+  <g id="fan-screw-1" data-path="fan-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(67.95,4.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-1</title>
+    <circle id="fan-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-2" data-path="fan-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(35.95,36.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-2</title>
+    <circle id="fan-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-3" data-path="fan-screw-3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(116.93,4.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-3</title>
+    <circle id="fan-screw-3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-4" data-path="fan-screw-4" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(84.93,36.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-4</title>
+    <circle id="fan-screw-4--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-4--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-4--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-5" data-path="fan-screw-5" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="5" transform="translate(166.93,4.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-5</title>
+    <circle id="fan-screw-5--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-5--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-5--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-6" data-path="fan-screw-6" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="6" transform="translate(134.93,36.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-6</title>
+    <circle id="fan-screw-6--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-6--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-6--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-7" data-path="fan-screw-7" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="7" transform="translate(227.93,4.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-7</title>
+    <circle id="fan-screw-7--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-7--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-7--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-8" data-path="fan-screw-8" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="8" transform="translate(195.93,36.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-8</title>
+    <circle id="fan-screw-8--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-8--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-8--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-9" data-path="fan-screw-9" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="9" transform="translate(273.93,4.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-9</title>
+    <circle id="fan-screw-9--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-9--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-9--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-screw-10" data-path="fan-screw-10" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="10" transform="translate(241.93,36.5)" data-group="fan-screws" data-group-role="furniture" data-description="the fan-mounting screws at two corners of each side grille.">
+    <title>fan-screw-10</title>
+    <circle id="fan-screw-10--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-screw-10--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-screw-10--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

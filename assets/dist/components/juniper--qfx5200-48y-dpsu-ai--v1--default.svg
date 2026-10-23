@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.4mm" height="39.7mm" viewBox="0 0 54.4 39.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-fan-failed { --led-color: #e53935; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-fan-failed { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-fault { --led-color: #e53935; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-standby { --led-color: #39b54a; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-warning { --led-color: #f5a623; }
+    g[data-ref^='juniper/qfx5200-48y-dpsu-ai@'] .state-warning { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="qfx5200-48y-dpsu-ai" data-path="qfx5200-48y-dpsu-ai" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx5200-48y-dpsu-ai@1:1.0.0" data-airflow="back-to-front" data-inlet="dc-terminal" data-input="rated -48 to -60 VDC at 21 A; -36 to -72 VDC at 25 A to 11 A (QFX5200-48Y, guide Table 25)" data-model="QFX520048Y-DPSU-AI" data-power-output-w="650" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>qfx5200-48y-dpsu-ai</title>
+    <defs>
+      <pattern id="qfx5200-48y-dpsu-ai--grid" width="3.6" height="4.4" patternUnits="userSpaceOnUse">
+        <rect x="0.3" y="0.3" width="2.8" height="3.6" fill="#101214" />
+      </pattern>
+    </defs>
+    <rect id="qfx5200-48y-dpsu-ai--face" x="4.0" y="0" width="50.4" height="39.7" rx="0.6" fill="#a4a7ab" stroke="#6b6f74" stroke-width="0.4" />
+    <g id="qfx5200-48y-dpsu-ai--vents">
+      <rect x="6.0" y="9.0" width="8.6" height="29.4" fill="url(#qfx5200-48y-dpsu-ai--grid)" />
+      <rect x="26.8" y="11.0" width="7.4" height="25.4" fill="url(#qfx5200-48y-dpsu-ai--grid)" />
+      <rect x="22.6" y="1.6" width="3.2" height="2.6" fill="#101214" />
+      <rect x="38.4" y="1.6" width="3.2" height="2.6" fill="#101214" />
+      <rect x="42.6" y="1.6" width="3.2" height="2.6" fill="#101214" />
+      <circle cx="35.5" cy="3.9" r="2.3" fill="#101214" />
+    </g>
+    <g id="qfx5200-48y-dpsu-ai--connector" data-path="qfx5200-48y-dpsu-ai/connector" data-class="terminal">
+      <rect x="37.6" y="8.5" width="10.9" height="28.4" rx="0.8" fill="#16181a" stroke="#2b2d31" stroke-width="0.3" />
+      <circle cx="42.9" cy="18.0" r="1.25" fill="#7b8087" stroke="#3a3e43" stroke-width="0.25" />
+      <circle cx="42.9" cy="22.8" r="1.25" fill="#7b8087" stroke="#3a3e43" stroke-width="0.25" />
+      <circle cx="42.9" cy="27.6" r="1.25" fill="#7b8087" stroke="#3a3e43" stroke-width="0.25" />
+    </g>
+    <g id="qfx5200-48y-dpsu-ai--silkscreen" font-family="sans-serif" font-size="1.3" fill="#d5d8db" text-anchor="middle">
+      <text x="40.0" y="18.4">3</text>
+      <text x="40.0" y="23.2">2</text>
+      <text x="40.0" y="28.0">1</text>
+    </g>
+    <g id="qfx5200-48y-dpsu-ai--lamp">
+      <circle cx="13.0" cy="5.3" r="1.9" fill="#d5d8db" stroke="#6b6f74" stroke-width="0.3" />
+      <circle id="qfx5200-48y-dpsu-ai--led" cx="13.0" cy="5.3" r="1.2" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="qfx5200-48y-dpsu-ai/led" data-class="led" data-states="green standby warning fault fan-failed off" />
+    </g>
+    <g id="qfx5200-48y-dpsu-ai--bail" data-path="qfx5200-48y-dpsu-ai/bail" data-class="latch">
+      <rect x="15.2" y="3.0" width="5.6" height="36.0" rx="2.8" fill="none" stroke="#17181a" stroke-width="2.2" />
+    </g>
+    <g id="qfx5200-48y-dpsu-ai--latch" data-path="qfx5200-48y-dpsu-ai/latch" data-class="latch" data-z-out="1.6" data-z-color="#2a8bd8">
+      <rect x="0.0" y="2.5" width="9.4" height="21.0" rx="1.0" fill="#2a8bd8" stroke="#1d5f96" stroke-width="0.4" />
+      <rect x="3.6" y="9.0" width="2.0" height="7.4" rx="0.5" fill="#0e2a44" />
+    </g>
+  </g>
+</svg>

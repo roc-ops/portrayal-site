@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="494.79mm" height="104.9mm" viewBox="0 0 494.79 104.9" data-device="srcableduct1ufc" data-view="bottom" data-shell="sheet" data-weight-kg="0.68" data-material="High-visibility yellow steel" data-color="Yellow" data-mounting-hardware="included" data-cable-media="fiber, copper and coax" data-product-compliance="RoHS">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton SRCABLEDUCT1UFC","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"eaton/tripplite-duct-1ufc-cover-plan@1":"1.0.0"},"source-sha256":"1982759cf785cab2053a8a0a645cdda8e6965e77adbfe8b84332d9264afbbf20","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="SRCABLEDUCT1UFC" data-sku="SRCABLEDUCT1UFC" data-part-number="" x="0" y="0" width="494.79" height="104.9" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="back" data-kind="base" x="31.5" y="0" width="431.8" height="5" rx="0.6" fill="#c99e00" data-groove="0.05" />
+    <rect id="ear-plane" data-kind="fold" x="0" y="4.4" width="494.79" height="0.6" rx="0.6" fill="#947600" />
+    <rect id="wall" data-kind="finger-wall" x="31.5" y="5" width="431.8" height="87.9" rx="0.6" fill="#f2c200" />
+    <rect id="slot-1" data-kind="finger-gap" x="36.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-2" data-kind="finger-gap" x="54.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-3" data-kind="finger-gap" x="72.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-4" data-kind="finger-gap" x="90.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-5" data-kind="finger-gap" x="108.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-6" data-kind="finger-gap" x="126.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-7" data-kind="finger-gap" x="144.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-8" data-kind="finger-gap" x="162.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-9" data-kind="finger-gap" x="180.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-10" data-kind="finger-gap" x="198.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-11" data-kind="finger-gap" x="216.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-12" data-kind="finger-gap" x="234.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-13" data-kind="finger-gap" x="252.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-14" data-kind="finger-gap" x="270.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-15" data-kind="finger-gap" x="288.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-16" data-kind="finger-gap" x="306.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-17" data-kind="finger-gap" x="324.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-18" data-kind="finger-gap" x="342.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-19" data-kind="finger-gap" x="360.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-20" data-kind="finger-gap" x="378.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-21" data-kind="finger-gap" x="396.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-22" data-kind="finger-gap" x="414.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-23" data-kind="finger-gap" x="432.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="slot-24" data-kind="finger-gap" x="450.4" y="8" width="8" height="84.9" rx="4" fill="#14161a" />
+    <rect id="wall-outline" data-kind="outline" x="31.5" y="5" width="431.8" height="87.9" rx="0.6" fill="none" stroke="#947600" stroke-width="0.3" />
+  </g>
+  <g id="cover-bottom" data-path="cover-bottom" data-class="mechanical" data-ref="eaton/tripplite-duct-1ufc-cover-plan@1:1.0.0" data-finish="#f2c200" data-material="Steel" data-rel-pos="3" transform="translate(31.5,92.9)" data-group="cover" data-group-role="furniture" data-description="the snap-on cover across the front of the channel, shipped fitted">
+    <title>cover-bottom</title>
+    <rect id="cover-bottom--lip" x="0" y="0" width="431.8" height="12" fill="#f2c200" stroke="#947600" stroke-width="0.3" data-fill-from="finish" data-stroke-derive="finish" data-path="cover-bottom/lip" data-class="bezel" />
+    <rect x="0" y="11.2" width="431.8" height="0.8" fill="#ffd84a" />
+    <rect x="0" y="0" width="431.8" height="0.6" fill="#c99e00" />
+  </g>
+</svg>
