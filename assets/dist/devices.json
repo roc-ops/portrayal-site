@@ -5,7 +5,7 @@
   "estimated": 205,
   "measured": 1,
   "photo-measured": 1,
-  "unstated": 2772
+  "unstated": 2888
  },
  "devices": [
   {
@@ -24999,6 +24999,1215 @@
     "name": "addressable",
     "unknown": []
    },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 3
+   },
+   "description": "Juniper EX4100-24P, a 1U access switch with 24 10/100/1000BASE-T ports that all supply PoE+ (30 W by default). The front also has four SFP28 Virtual Chassis ports, four SFP+ uplink ports and an RS232 to USB Type-C console port. The rear has an RJ-45 management port, an RJ-45 console port, a USB 2.0 Type-A port, two fan modules and two power supply slots. It ships with one 920 W AC supply, and a cover panel closes the second slot. Airflow is front to back.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psus"
+     ],
+     "wanted": "The HPE PSNow datasheet for the EX4100 line (a00150781enw) did not answer when fetched. It would carry the maximum power consumption and the thermal output that the hardware guide does not state.",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "A straight-on photograph of the EX4100-24P. Juniper's image-library paths returned a 404. The faces are drawn from the guide's renders (Figures 1 and 2), which are the only straight-on views held.",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45-a",
+      "rj45-b",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "A per-port vocabulary for the Status lamp. Table 25 gives it meanings that depend on the mode the Factory Reset/Mode button chose (speed, duplex, administrative status, PoE), so the jack keeps the component's default off, link and activity states, and the mode lamps carry the meaning.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear",
+      "front"
+     ],
+     "wanted": "The size of the CLEI code label, the serial number label and the claim code label (Figure 3 callout 10 and Figure 4 callouts 4 and 7). They are drawn as regions and not as parts.",
+     "what": "label-plate"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45-a",
+      "rj45-b",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "The Junos interface names (ge-0/0/n, xe-0/1/n and xe-0/2/n). This guide names only the PIC numbers in Table 64, 0 for the RJ-45 ports, 1 for the SFP28 Virtual Chassis ports and 2 for the SFP+ uplink ports.",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front"
+     ],
+     "wanted": "The diameter and depth of the Reset pinhole (callout 9). The guide names the Reset button and gives no size, so the hole is drawn at 2.0 mm as an estimate.",
+     "what": "reset-pinhole-size"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 4 bays (rear 4); `physical-context` on port groups rj45-a, rj45-b - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-24P",
+   "name": "ex4100-24p",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 5.51 kg (12.15 lb) with the power supply and fan modules, 6315 g in table 8 (table 19) depth-with-modules 382.4 mm (15.05 in., 38.24 cm) modules installed (tables width-with-brackets 482 (19 in.) mounting brackets attached (rack requirements) poe-budget-w 740 w one supply, 1440 two 32) poe-standard poe+ on all 24 ports, 30 per port by default 8) power-input-ac 100 through 127 vac or 200 240 vac, 50 60 hz 30) airflow front to back, both marked air out 27) operating-temp 0 45 c (32 113 f), 40 10gbase-t transceivers (environmental altitude no performance degradation up 1524 m (5,000 ft) humidity 10 85 percent, noncondensing first-junos-release 22.2r1 7) virtual-chassis ex4100 switches. four sfp28 ports are dedicated virtual chassis uplink-ports sfp+ take 1 gbe transceivers, macsec uplink macsec-enabled optics-sfp28 10ge 25ge 8). vc formation is not supported a transceiver them optics-sfp-plus 1ge maximum ambient oob management ethernet rj-45 rear panel, link activity lamp status console panel rs232 usb type-c front, labelled con 2.0 type-a acoustic 39.4 db typical 49.4 40.0 50.1 4) seismic tested for zone 4 earthquake safety eol none-announced rj45-a rj45 1g rj45-b 25g sfp28-leds led sfp-plus 10g sfp-plus-leds mgmt status-leds mode-leds psus psu fans fan-leds esd point ex4100-24p reset usb-c factory mode rj45-serial esd-jack led-arrow-sm led-dot rj45-eth rj45-ganged-eth ex4100-fan-afo ex4100-jpsu-920-ac-afo ex4100-mode-button ex4100-psu-cover ex4100-reset-pinhole sfp-ganged usb-a",
+   "version": "1.0.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 3
+   },
+   "description": "Juniper EX4100-24T, a 1U access switch with 24 10/100/1000BASE-T ports and no PoE. The front also has four SFP28 Virtual Chassis ports, four SFP+ uplink ports and an RS232 to USB Type-C console port. The rear has an RJ-45 management port, an RJ-45 console port, a USB 2.0 Type-A port, two fan modules and two power supply slots. It ships with one 150 W AC supply, and a cover panel closes the second slot. Airflow is front to back. The EX4100-24T-DC is the same switch with a 150 W DC supply.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psus"
+     ],
+     "wanted": "The HPE PSNow datasheet for the EX4100 line (a00150781enw) did not answer when fetched. It would carry the maximum power consumption and the thermal output that the hardware guide does not state.",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "A straight-on photograph of the EX4100-24T. Juniper's image-library paths returned a 404. The faces are drawn from the guide's renders (Figures 1 and 2), which are the only straight-on views held.",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45-a",
+      "rj45-b",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "A per-port vocabulary for the Status lamp. Table 25 gives it meanings that depend on the mode the Factory Reset/Mode button chose (speed, duplex, administrative status), so the jack keeps the component's default off, link and activity states, and the mode lamps carry the meaning.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear",
+      "front"
+     ],
+     "wanted": "The size of the CLEI code label, the serial number label and the claim code label (Figure 7 callout 10 and Figure 8 callouts 4 and 7). They are drawn as regions and not as parts.",
+     "what": "label-plate"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45-a",
+      "rj45-b",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "The Junos interface names (ge-0/0/n, xe-0/1/n and xe-0/2/n). This guide names only the PIC numbers in Table 64, 0 for the RJ-45 ports, 1 for the SFP28 Virtual Chassis ports and 2 for the SFP+ uplink ports.",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front"
+     ],
+     "wanted": "The diameter and depth of the Reset pinhole (callout 9). The guide names the Reset button and gives no size, so the hole is drawn at 2.0 mm as an estimate.",
+     "what": "reset-pinhole-size"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 4 bays (rear 4); `physical-context` on port groups rj45-a, rj45-b - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-24T",
+   "name": "ex4100-24t",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac",
+     "dc"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 5.19 kg (11.44 lb) with the power supply and fan modules, 5875 g in table 10 (table 19) depth-with-modules 382.4 mm (15.05 in., 38.24 cm) modules installed (tables width-with-brackets 482 (19 in.) mounting brackets attached (rack requirements) power-input-ac 100 through 127 vac or 200 240 vac, 50 60 hz 31) airflow front to back, both marked air out 27) operating-temp 0 45 c (32 113 f), 40 10gbase-t transceivers (environmental altitude no performance degradation up 1524 m (5,000 ft) humidity 85 percent, noncondensing first-junos-release 22.2r1 7) poe none, switch has ports 10) virtual-chassis ex4100 switches. four sfp28 are dedicated virtual chassis uplink-ports sfp+ take 1 gbe transceivers, macsec uplink macsec-enabled optics-sfp28 10ge 25ge 8). vc formation is not supported a transceiver them optics-sfp-plus 1ge maximum ambient oob management ethernet rj-45 on rear panel, link activity lamp status console panel rs232 usb type-c front, labelled con one 2.0 type-a port acoustic 38.1 db 38.0 two, typical figure 4), 37.8 37.6 dc model seismic tested for zone 4 earthquake safety eol none-announced rj45-a rj45 1g rj45-b 25g sfp28-leds led sfp-plus 10g sfp-plus-leds mgmt status-leds mode-leds psus psu fans fan-leds esd point ex4100-24t ex4100-24t-dc reset usb-c factory mode rj45-serial esd-jack led-arrow-sm led-dot rj45-eth rj45-ganged-eth ex4100-fan-afo ex4100-jpsu-150-ac-afo ex4100-jpsu-150-dc-afo ex4100-mode-button ex4100-psu-cover ex4100-reset-pinhole sfp-ganged usb-a",
+   "version": "1.0.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 3
+   },
+   "description": "Juniper EX4100-48P, a 1U access switch with 48 10/100/1000BASE-T ports that all supply PoE+ (30 W by default). The front also has four SFP28 Virtual Chassis ports, four SFP+ uplink ports and an RS232 to USB Type-C console port. The rear has an RJ-45 management port, an RJ-45 console port, a USB 2.0 Type-A port, two fan modules and two power supply slots. It ships with one 920 W AC supply, and a cover panel closes the second slot. Airflow is front to back.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psus"
+     ],
+     "wanted": "The HPE PSNow datasheet for the EX4100 line (a00150781enw) did not answer when fetched. It would carry the maximum power consumption and the thermal output that the hardware guide does not state.",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "A straight-on photograph of the EX4100-48P. Juniper's image-library paths returned a 404. The faces are drawn from the guide's renders (Figures 1 and 2), which are the only straight-on views held.",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "A per-port vocabulary for the Status lamp. Table 25 gives it meanings that depend on the mode the Factory Reset/Mode button chose (speed, duplex, administrative status, PoE), so the jack keeps the component's default off, link and activity states, and the mode lamps carry the meaning.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear",
+      "front"
+     ],
+     "wanted": "The size of the CLEI code label, the serial number label and the claim code label (Figure 13 callouts 2, 5 and 8). They are drawn as regions and not as parts.",
+     "what": "label-plate"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "The Junos interface names (ge-0/0/n, xe-0/1/n and xe-0/2/n). This guide names only the PIC numbers in Table 64, 0 for the RJ-45 ports, 1 for the SFP28 Virtual Chassis ports and 2 for the SFP+ uplink ports.",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front"
+     ],
+     "wanted": "The diameter and depth of the Reset pinhole (callout 9). The guide names the Reset button and gives no size, so the hole is drawn at 2.0 mm as an estimate.",
+     "what": "reset-pinhole-size"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 4 bays (rear 4); `physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-48P",
+   "name": "ex4100-48p",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 5.51 kg (12.15 lb) with the power supply and fan modules, 6495 g in table 12 (table 19) depth-with-modules 382.4 mm (15.05 in., 38.24 cm) modules installed (tables width-with-brackets 482 (19 in.) mounting brackets attached (rack requirements) poe-budget-w 740 w one supply, 1440 two 32) poe-standard poe+ on all 48 ports, 30 per port by default 12) power-input-ac 100 through 127 vac or 200 240 vac, 50 60 hz 30) airflow front to back, both marked air out 27) operating-temp 0 45 c (32 113 f), 40 10gbase-t transceivers (environmental altitude no performance degradation up 1524 m (5,000 ft) humidity 10 85 percent, noncondensing first-junos-release 22.2r1 7) virtual-chassis ex4100 switches. four sfp28 ports are dedicated virtual chassis uplink-ports sfp+ take 1 gbe transceivers, macsec uplink macsec-enabled optics-sfp28 10ge 25ge 8). vc formation is not supported a transceiver them optics-sfp-plus 1ge maximum ambient oob management ethernet rj-45 rear panel, link activity lamp status console panel rs232 usb type-c front, labelled con 2.0 type-a acoustic 38.7 db typical 46.1 39.3 48.2 4) seismic tested for zone 4 earthquake safety eol none-announced rj45 1g 25g sfp28-leds led sfp-plus 10g sfp-plus-leds mgmt status-leds mode-leds psus psu fans fan-leds esd point ex4100-48p reset usb-c factory mode rj45-serial esd-jack led-arrow-sm led-dot rj45-eth rj45-ganged-eth ex4100-fan-afo ex4100-jpsu-920-ac-afo ex4100-mode-button ex4100-psu-cover ex4100-reset-pinhole sfp-ganged usb-a",
+   "version": "1.0.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 3
+   },
+   "description": "Juniper EX4100-48T, a 1U access switch with 48 10/100/1000BASE-T ports and no PoE. The front also has four SFP28 Virtual Chassis ports, four SFP+ uplink ports and an RS232 to USB Type-C console port. The rear has an RJ-45 management port, an RJ-45 console port, a USB 2.0 Type-A port, two fan modules and two power supply slots. It ships with one 150 W AC supply, and a cover panel closes the second slot. Airflow is front to back. The EX4100-48T-AFI is the same switch with back-to-front airflow, and the EX4100-48T-DC has a 150 W DC supply.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psus"
+     ],
+     "wanted": "The HPE PSNow datasheet for the EX4100 line (a00150781enw) did not answer when fetched. It would carry the maximum power consumption and the thermal output that the hardware guide does not state.",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "A straight-on photograph of the EX4100-48T. Juniper's image-library paths returned a 404. The faces are drawn from the guide's renders (Figures 1 and 2), which are the only straight-on views held.",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "A per-port vocabulary for the Status lamp. Table 25 gives it meanings that depend on the mode the Factory Reset/Mode button chose (speed, duplex, administrative status), so the jack keeps the component's default off, link and activity states, and the mode lamps carry the meaning.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear",
+      "front"
+     ],
+     "wanted": "The size of the CLEI code label, the serial number label and the claim code label (Figure 17 callouts 2, 5 and 8). They are drawn as regions and not as parts.",
+     "what": "label-plate"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rj45",
+      "sfp28",
+      "sfp-plus"
+     ],
+     "wanted": "The Junos interface names (ge-0/0/n, xe-0/1/n and xe-0/2/n). This guide names only the PIC numbers in Table 64, 0 for the RJ-45 ports, 1 for the SFP28 Virtual Chassis ports and 2 for the SFP+ uplink ports.",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front"
+     ],
+     "wanted": "The diameter and depth of the Reset pinhole (callout 9). The guide names the Reset button and gives no size, so the hole is drawn at 2.0 mm as an estimate.",
+     "what": "reset-pinhole-size"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 4 bays (rear 4); `physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-48T",
+   "name": "ex4100-48t",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "back-to-front",
+     "front-to-back"
+    ],
+    "power": [
+     "ac",
+     "dc"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 5.3 kg (11.7 lb) with the power supply and fan modules, 6010 g in table 14 (table 19) depth-with-modules 382.4 mm (15.05 in., 38.24 cm) modules installed (tables width-with-brackets 482 (19 in.) mounting brackets attached (rack requirements) power-input-ac 100 through 127 vac or 200 240 vac, 50 60 hz 31) airflow front to back, both marked air out; back front, in, on -afi model 27) operating-temp 0 45 c (32 113 f), 40 10gbase-t transceivers (environmental altitude no performance degradation up 1524 m (5,000 ft) humidity 10 85 percent, noncondensing first-junos-release 22.2r1 7) poe none, switch has ports 14) virtual-chassis ex4100 switches. four sfp28 are dedicated virtual chassis uplink-ports sfp+ take 1 gbe transceivers, macsec uplink macsec-enabled optics-sfp28 10ge 25ge 8). vc formation is not supported a transceiver them optics-sfp-plus 1ge maximum ambient oob management ethernet rj-45 rear panel, link activity lamp status console panel rs232 usb type-c labelled con one 2.0 type-a port acoustic 39.1 db 39.2 two, typical figure 4); 38.4 38.2 -afi, 37.5 37.7 -dc seismic tested for zone 4 earthquake safety eol none-announced rj45 1g 25g sfp28-leds led sfp-plus 10g sfp-plus-leds mgmt status-leds mode-leds psus psu fans fan-leds esd point ex4100-48t ex4100-48t-afi ex4100-48t-dc reset usb-c factory mode rj45-serial esd-jack led-arrow-sm led-dot rj45-eth rj45-ganged-eth ex4100-fan-afi ex4100-fan-afo ex4100-jpsu-150-ac-afi ex4100-jpsu-150-ac-afo ex4100-jpsu-150-dc-afo ex4100-mode-button ex4100-psu-cover ex4100-reset-pinhole sfp-ganged usb-a",
+   "version": "1.0.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 5
+   },
+   "description": "Juniper EX4100-F-24P is a fixed 1RU access switch with 24 10/100/1000BASE-T ports that all supply PoE+ (30 W by default), four 1/10GbE SFP+ Virtual Chassis ports and four 10GbE SFP+ uplink ports. The front carries the jacks in two stacked rows numbered 0 to 23, the two 2x2 cage groups, the chassis and port mode lamps, a Factory Reset/Mode button, a reset pinhole and a USB Type-C console port; the left of the face is blank apart from the claim code label. The rear carries the management port with a USB port under it, the RJ-45 console port, the earthing terminal, an ESD point, two fans and the AC inlet. The 450 W supply and both fans are built into the chassis, so there are no bays. The EX4100-F-24T is the same front without PoE and with a shallower chassis.",
+   "gaps": [
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 11 and the callouts give the four Virtual Chassis ports as 1GbE/10GbE SFP+, while Figure 32, Table 25 and the Junos listing name them SFP+/SFP28 and give a 25 Gbps speed indication. The tables are used (10g); the cages are the same SFP-family cage either way.",
+     "scope": [
+      "vcp"
+     ],
+     "wanted": "Juniper's statement of the Virtual Chassis port speeds.",
+     "what": "vcp-speed"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The Status lamp changes meaning with the mode button (Table 25), so the jack lamps keep the component's link and activity vocabulary and the mode lamps carry the meaning.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none beyond the component's own vocabulary.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide names the CLD lamp and sends the reader to the cloud-ready blink patterns, which it does not hold.",
+     "scope": [
+      "led-cld"
+     ],
+     "wanted": "the cloud-ready LED blink patterns",
+     "what": "cld-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The claim code, serial number and CLEI labels are stickers with no content in any figure; they are named regions and are not drawn.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "none; stickers",
+     "what": "label-plates"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The earthing terminal is two bare holes for M5 screws. The library has no pair part for M5 holes on a 5/8 in pitch, so they are drawn as holes and no lug seat is offered.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "a two-hole M5 earth terminal part",
+     "what": "ground-hole-seat"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The maker's image library holds no photograph of this model, so the front and rear are read from the guide's Figures 12 and 13 and cross-checked against the 48P.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "a straight-on studio photograph of the EX4100-F-24P",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The numbers are not printed on the metal and the guide's Junos listing is for a 48-port model, so no interfaces block is written.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-F-24P",
+   "name": "ex4100-f-24p",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100-F",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 4.745 kg (4745 g), table 11 power-max-w 80 power-envelope bare poe-budget-w 370 w (system budget 73 w, total 443 of the 450 supply), 30 poe-standard poe+ on all 24 ports, by default (table 11) power-input-ac 100 through 240 vac, 50/60 hz 28) power-current-max 7 a, as printed rear panel heat-dissipation 272.8 btu/hr at maximum input without poe 27) cooling two built-in fans, front-to-back airflow 26) acoustic-noise 40.1 db typical and 45.1 lpa with ac afo 21) operating-temp 0 to 45 c (32 113 f); 40 a 10gbase-t pluggable storage-temp -40 70 (-40 158 f) in shipping container humidity 10 85 percent, noncondensing altitude no performance degradation up 1524 m (5000 ft) first-junos-release 22.2r1 10) virtual-chassis ex4100 ex4100-f switches; four left cages are virtual chassis ports. uplink ports cannot be used transceiver form port uplink-ports front sfp+ taking 1g sfp 10g singly or mixed seismic tested for zone 4 earthquake safety eol none-announced rj45 vcp sfp-plus vcp-leds led uplink-leds mgmt status-leds mode-leds power-input inlet esd point furniture item ex4100-f-24p usb-c console factory reset/mode rj45-serial esd-jack esd-warning ground-symbol led-arrow-sm led-dot reset-button rj45-eth rj45-ganged-eth screw-head usb-symbol c14-inlet sfp-ganged usb-a",
+   "version": "0.1.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 4
+   },
+   "description": "Juniper EX4100-F-24T is a fixed 1RU access switch with 24 10/100/1000BASE-T ports without PoE, four 1/10GbE SFP+ Virtual Chassis ports and four 10GbE SFP+ uplink ports. The front carries the jacks in two stacked rows numbered 0 to 23, the two 2x2 cage groups, the chassis and port mode lamps, a Factory Reset/Mode button, a reset pinhole and a USB Type-C console port; the left of the face is blank apart from the claim code label. The rear carries the management port with a USB port under it, the RJ-45 console port, the earthing terminal, an ESD point, one fan and the AC inlet. The 65 W supply and the fan are built into the chassis, so there are no bays. The EX4100-F-24P is the same front with PoE+ and a deeper chassis.",
+   "gaps": [
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 13 and the callouts give the four Virtual Chassis ports as 1GbE/10GbE SFP+, while Figure 32, Table 25 and the Junos listing name them SFP+/SFP28 and give a 25 Gbps speed indication. The tables are used (10g); the cages are the same SFP-family cage either way.",
+     "scope": [
+      "vcp"
+     ],
+     "wanted": "Juniper's statement of the Virtual Chassis port speeds.",
+     "what": "vcp-speed"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The Status lamp changes meaning with the mode button (Table 25), so the jack lamps keep the component's link and activity vocabulary and the mode lamps carry the meaning.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none beyond the component's own vocabulary.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide names the CLD lamp and sends the reader to the cloud-ready blink patterns, which it does not hold.",
+     "scope": [
+      "led-cld"
+     ],
+     "wanted": "the cloud-ready LED blink patterns",
+     "what": "cld-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The claim code, serial number and CLEI labels are stickers with no content in any figure; they are named regions and are not drawn.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "none; stickers",
+     "what": "label-plates"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The earthing terminal is two bare holes for M5 screws. The library has no pair part for M5 holes on a 5/8 in pitch, so they are drawn as holes and no lug seat is offered.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "a two-hole M5 earth terminal part",
+     "what": "ground-hole-seat"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The maker's image library holds no photograph of this model, so the front and rear are read from the guide's Figures 16 and 17 and cross-checked against the 48T.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "a straight-on studio photograph of the EX4100-F-24T",
+     "what": "studio-photograph"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The numbers are not printed on the metal and the guide's Junos listing is for a 48-port model, so no interfaces block is written.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-F-24T",
+   "name": "ex4100-f-24t",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100-F",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 3.52 kg (3520 g), table 13 power-max-w 55 power-envelope bare power-input-ac 100 through 240 vac, 50/60 hz (table 28) power-current-max 2.5 a, as printed on the rear panel heat-dissipation 187.55 btu/hr at w maximum input 27) cooling one built-in fan, front-to-back airflow 26) acoustic-noise 35.4 db lpa with 65 ac afo 21) operating-temp 0 to 45 c (32 113 f); 40 a 10gbase-t pluggable storage-temp -40 70 (-40 158 f) in shipping container humidity 10 85 percent, noncondensing altitude no performance degradation up 1524 m (5000 ft) first-junos-release 22.2r1 12) virtual-chassis ex4100 and ex4100-f switches; four left cages are virtual chassis ports. uplink ports cannot be used ports, transceiver form port uplink-ports front sfp+ taking 1g sfp 10g singly or mixed seismic tested for zone 4 earthquake safety eol none-announced rj45 vcp sfp-plus vcp-leds led uplink-leds mgmt status-leds mode-leds power-input inlet esd point furniture item ex4100-f-24t usb-c console factory reset/mode rj45-serial esd-jack esd-warning ground-symbol led-arrow-sm led-dot reset-button rj45-eth rj45-ganged-eth screw-head usb-symbol c14-inlet sfp-ganged usb-a",
+   "version": "0.1.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 5
+   },
+   "description": "Juniper EX4100-F-48P is a fixed 1RU access switch with 48 10/100/1000BASE-T ports that all supply PoE+ (30 W by default), four 1/10GbE SFP+ Virtual Chassis ports and four 10GbE SFP+ uplink ports. The front carries the jacks in two stacked rows numbered 0 to 47, the two 2x2 cage groups, the chassis and port mode lamps, a Factory Reset/Mode button, a reset pinhole and a USB Type-C console port. The rear carries the management port with a USB port under it, the RJ-45 console port, the earthing terminal, an ESD point, two fans and the AC inlet. The 850 W supply and both fans are built into the chassis, so there are no bays.",
+   "gaps": [
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 15 and the callouts give the four Virtual Chassis ports as 1GbE/10GbE SFP+, while Figure 32, Table 25 and the Junos listing name them SFP+/SFP28 and give a 25 Gbps speed indication. The tables are used (10g); the cages are the same SFP-family cage either way.",
+     "scope": [
+      "vcp"
+     ],
+     "wanted": "Juniper's statement of the Virtual Chassis port speeds.",
+     "what": "vcp-speed"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The Status lamp changes meaning with the mode button (Table 25), so the jack lamps keep the component's link and activity vocabulary and the mode lamps carry the meaning.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none beyond the component's own vocabulary.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide names the CLD lamp and sends the reader to the cloud-ready blink patterns, which it does not hold.",
+     "scope": [
+      "led-cld"
+     ],
+     "wanted": "the cloud-ready LED blink patterns",
+     "what": "cld-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The claim code, serial number and CLEI labels are stickers with no content in any figure; they are named regions and are not drawn.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "none; stickers",
+     "what": "label-plates"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The earthing terminal is two bare holes for M5 screws. The library has no pair part for M5 holes on a 5/8 in pitch, so they are drawn as holes and no lug seat is offered.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "a two-hole M5 earth terminal part",
+     "what": "ground-hole-seat"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Only the 48-port CLI listing names the interfaces and the numbers are not printed on the metal, so no interfaces block is written.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-F-48P",
+   "name": "ex4100-f-48p",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100-F",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 5.2 kg (5200 g), table 15 power-max-w 100 power-envelope bare poe-budget-w 740 w (system budget 87 w, total 827 of the 850 supply), 30 poe-standard poe+ on all 48 ports, by default (table 15) power-input-ac through 240 vac, 50/60 hz 28) power-current-max 12 a, as printed rear panel heat-dissipation 341 btu/hr at maximum input without poe 27) cooling two built-in fans, front-to-back airflow 26) acoustic-noise 46.2 db typical and 46.5 lpa with ac afo 21) operating-temp 0 to 45 c (32 113 f); 40 a 10gbase-t pluggable storage-temp -40 70 (-40 158 f) in shipping container humidity 10 85 percent, noncondensing altitude no performance degradation up 1524 m (5000 ft) first-junos-release 22.2r1 14) virtual-chassis ex4100 ex4100-f switches; four left cages are virtual chassis ports. uplink ports cannot be used transceiver form port uplink-ports front sfp+ taking 1g sfp 10g singly or mixed seismic tested for zone 4 earthquake safety eol none-announced rj45 vcp sfp-plus vcp-leds led uplink-leds mgmt status-leds mode-leds power-input inlet esd point furniture item ex4100-f-48p usb-c console factory reset/mode rj45-serial esd-jack esd-warning ground-symbol led-arrow-sm led-dot reset-button rj45-eth rj45-ganged-eth screw-head usb-symbol c14-inlet sfp-ganged usb-a",
+   "version": "0.1.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 4
+   },
+   "description": "Juniper EX4100-F-48T is a fixed 1RU access switch with 48 10/100/1000BASE-T ports without PoE, four 1/10GbE SFP+ Virtual Chassis ports and four 10GbE SFP+ uplink ports. The front carries the jacks in two stacked rows numbered 0 to 47, the two 2x2 cage groups, the chassis and port mode lamps, a Factory Reset/Mode button, a reset pinhole and a USB Type-C console port. The rear carries the management port with a USB port under it, the RJ-45 console port, the earthing terminal, an ESD point, one fan and the AC inlet. The 90 W supply and the fan are built into the chassis, so there are no bays. The EX4100-F-48P is the same front with PoE+ and a deeper chassis.",
+   "gaps": [
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 17 and the callouts give the four Virtual Chassis ports as 1GbE/10GbE SFP+, while Figure 32, Table 25 and the Junos listing name them SFP+/SFP28 and give a 25 Gbps speed indication. The tables are used (10g); the cages are the same SFP-family cage either way.",
+     "scope": [
+      "vcp"
+     ],
+     "wanted": "Juniper's statement of the Virtual Chassis port speeds.",
+     "what": "vcp-speed"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The Status lamp changes meaning with the mode button (Table 25), so the jack lamps keep the component's link and activity vocabulary and the mode lamps carry the meaning.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none beyond the component's own vocabulary.",
+     "what": "port-status-lamp-states"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide names the CLD lamp and sends the reader to the cloud-ready blink patterns, which it does not hold.",
+     "scope": [
+      "led-cld"
+     ],
+     "wanted": "the cloud-ready LED blink patterns",
+     "what": "cld-lamp-states"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The claim code, serial number and CLEI labels are stickers with no content in any figure; they are named regions and are not drawn.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "none; stickers",
+     "what": "label-plates"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The earthing terminal is two bare holes for M5 screws. The library has no pair part for M5 holes on a 5/8 in pitch, so they are drawn as holes and no lug seat is offered.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "a two-hole M5 earth terminal part",
+     "what": "ground-hole-seat"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Only the 48-port CLI listing names the interfaces and the numbers are not printed on the metal, so no interfaces block is written.",
+     "scope": [
+      "rj45",
+      "vcp",
+      "uplink"
+     ],
+     "wanted": "none",
+     "what": "interface-names"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
+     "what": "four-faces"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4100-F-48T",
+   "name": "ex4100-f-48t",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4100-F",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight 3.885 kg (3885 g), table 17 power-max-w 70 power-envelope bare power-input-ac 100 through 240 vac, 50/60 hz (table 28) power-current-max 1.2 a, as printed on the rear panel heat-dissipation 238.7 btu/hr at w maximum input 27) cooling one built-in fan, front-to-back airflow 26) acoustic-noise 37.1 db lpa with 90 ac afo 21) operating-temp 0 to 45 c (32 113 f); 40 a 10gbase-t pluggable storage-temp -40 (-40 158 f) in shipping container humidity 10 85 percent, noncondensing altitude no performance degradation up 1524 m (5000 ft) first-junos-release 22.2r1 16) virtual-chassis ex4100 and ex4100-f switches; four left cages are virtual chassis ports. uplink ports cannot be used ports, transceiver form port uplink-ports front sfp+ taking 1g sfp 10g singly or mixed seismic tested for zone 4 earthquake safety eol none-announced rj45 vcp sfp-plus vcp-leds led uplink-leds mgmt status-leds mode-leds power-input inlet esd point furniture item ex4100-f-48t usb-c console factory reset/mode rj45-serial esd-jack esd-warning ground-symbol led-arrow-sm led-dot reset-button rj45-eth rj45-ganged-eth screw-head usb-symbol c14-inlet sfp-ganged usb-a",
+   "version": "0.1.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
    "datasheet": {
     "sha256": "fe874bd323cf1c03a38742f3187650e4bb4a94a177ddb195cc6ba1f4092ecb0b",
     "title": "EX4300 Line of Ethernet Switches Datasheet (Juniper Networks, PDF created 2022-07-25)",
@@ -26152,6 +27361,174 @@
    "profile": "networking",
    "search": "weight 6.71 kg with no power supply, fan module or extension (ex4400-48t); 5.58 for the -s depth-with-modules 430.0 mm supply and modules; 440.7 an as well mounting two-post kit ex-rmk in box; four-post ex-4pst-rmk wall ex-wmk separate throughput 348 gbps unidirectional, 696 bidirectional power-redundancy 1+1 two supplies of one type heat-dissipation 323.95 btu/hr idle 337.59 at 100 percent traffic a 550 w ac supply; 344.41 361.46 dc operating-temp 0 c to 45 (32 f 113 f) storage-temp -40 70 (-40 158 shipping container humidity 5 90 noncondensing altitude performance degradation up 1828.8 m (6000 ft) 40 cpu quad-core x86 memory 4 gb ddr4 ecc storage 20 emmc virtual-chassis 10 switches over qsfp28 ports, which are virtual chassis ports by default macsec aes-256 on all rj-45, sfp sfp+ network sfp28 optics-qsfp28 rear take 100gbe 40gbe qsfp+ transceivers (40g from junos os 22.1r1). breakout cables give 4x25g 4x10g. exact list is hardware compatibility tool qsfp28-channelization each port runs 100g, 40g 22.1r1, channelized extension-slot slot ex4400-em-4s, ex4400-em-4y ex4400-em-1c console usb-c front rj-45 (con) oob mgmt rear, 10/100/1000, link activity status lamps usb usb-a cloud juniper mist wired assurance, cli j-web seismic tested zone earthquake according nebs gr-63-core, issue eol none-announced rj45 1g 100g qsfp28-leds led status-leds fans psus psu grounding point esd ex4400-48t ex4400-48t-afi ex4400-48t-dc ex4400-48t-dc-afi ex4400-48t-s factory reset mode rj45-serial management esd-jack ground-symbol led-dot reset-button rj45-eth rj45-ganged-eth ex4400-em-4s ex4400-em-cover ex4400-fan-afi ex4400-fan-afo ex4400-mode-button ex4400-psu-cover jpsu-550-c-ac-afi jpsu-550-c-ac-afo jpsu-550-c-dc-afi jpsu-550-c-dc-afo",
    "version": "0.1.5"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "sha256": "ae4344eab1b45579e25dc995e03b765034f74571708dadd072e4b263a057da4d",
+    "title": "Juniper EX4600 Ethernet Switch Datasheet (1000511-016-EN, Sep 2021)",
+    "url": "https://www.juniper.net/content/dam/www/assets/datasheets/us/en/switches/ex4600-ethernet-switch-datasheet.pdf"
+   },
+   "decor-confidence": {
+    "unstated": 6
+   },
+   "description": "Juniper EX4600-40F, a 1RU 10 GbE campus aggregation and small data-centre switch that runs Junos OS. The port side has 24 SFP+ ports (10 or 1 GbE) and 4 QSFP+ ports (40 GbE). It also has two expansion module bays, which hold a QFX-EM-4Q or an EX4600-EM-8F or a cover panel. The other side carries the management panel, five fan modules and two power supplies. One panel serves five models. Four have AC or DC supplies, with air in or air out. The fifth is a spare chassis without supplies or fans.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "The part number of the four-post rack mount kit and the ear positions. The guide names front mounting rails, rear mounting blades and extension brackets (Table 32) and the datasheet lists a four-post kit with every model, and neither prints a part number.",
+     "what": "ears-and-kits"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "sfp-plus",
+      "qsfp-plus"
+     ],
+     "wanted": "The Junos names of the SFP+ and QSFP+ ports and of the module ports. The guide held names only em0 and em1 and refers the reader to the Hardware Compatibility Tool for transceivers.",
+     "what": "interface-names"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The datasheet (Sep 2021) says \"-36 to -72 V DC power\"; the guide (2025-08-12), Table 19, says the operating range is -40 VDC through -72 VDC. The guide is the newer and is carried.",
+     "scope": [
+      "dc-f2b",
+      "dc-b2f"
+     ],
+     "wanted": "which lower bound the hardware is rated to, from Juniper",
+     "what": "power-input-range-dc"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "The handle colour and airflow label of the DC supplies. The guide's Table 14 covers the AC pair; the DC supplies take the same orange and blue by relation, not by reading, and no photograph of one is held.",
+     "what": "dc-handle-colour"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "A photograph of a front-to-back build. The rear photograph is a back-to-front build; the AIR OUT fan modules and the AFO supply are drawn from it with the legend and colour of Tables 11 and 14. The photographed AFI supply has a dark handle, not the blue the table gives.",
+     "what": "front-airflow-photo"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "The USB revision. The guide names one USB port for image updates. It is drawn with the neutral usb2 skin, because the photograph shows a dark tongue with four contacts.",
+     "what": "usb-generation"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "What the two small lamps above the C1 SFP cage show. Figure 13 and the photograph draw them, and the guide's text and tables do not describe them.",
+     "what": "c1-lamps"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "The laser warning label and its hazard mark at the front, the serial number label and the vertical rating legend at the right of the rear are applied or printed small. The rating legend is drawn as read, and the two front labels are reserved as regions.",
+     "what": "labels-not-drawn"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear",
+      "front"
+     ],
+     "wanted": "The depth of the fan modules, the supplies and the expansion modules. The guide's figures are isometric with no scale and its tables give weights of the chassis only.",
+     "what": "module-depths"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 4,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "`attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 9 bays (front 2, rear 7); `physical-context` on port groups qsfp-plus, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "EX4600-40F",
+   "name": "ex4600-40f",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "back-to-front",
+     "front-to-back"
+    ],
+    "power": [
+     "ac",
+     "dc"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "EX4600",
+    "line": "EX Series"
+   },
+   "profile": "networking",
+   "search": "weight-note 21.7 lb (9.84 kg) with power supplies and fan modules installed (table 4) depth-note 20.48 in (52.02 cm); table 4 prints 4.37 cm the metric column, a slip switching-capacity 720 gbps unidirectional, 1.44 tbps bidirectional (datasheet) forwarding-rate 1,071 mpps at 64 byte packets, wire speed buffers 12 mb shared, 25 percent dedicated (guide, benefits of ex4600 switch) sfp-plus-speeds 10 or 1 gbe on each sfp+ port qsfp-plus-speeds 40 gbe, x breakout cable power-typical-w 230 power-max-w 365 power-envelope unstated power-dc-typical-w 300 power-dc-max-w 385 power-datasheet-load-w 279 w afo, 285 afi, 392 dc-afo, 320 dc-afi datasheet's stated load power-input-ac 100 to 240 vac, 50 60 hz; 4.5 120 2.0 200 vac power-input-dc rated -48 -60 vdc, operating range -40 -72 maximum redundancy-note two supplies, 1+1; switch runs one fans five supply; 30 seconds while module is replaced operating-temp 0 c (32 104 f) storage-temp 70 (-40 158 humidity 5 90 noncondensing operation, 95 out operation altitude up 2,000 (datasheet, unit not printed) mtbf 150,000 hours predicted, fit rate 4,987 cpu 1.5 ghz dual-core intel storage 32 gb ssd software junos os, first release 13.2x51-d25 virtual-chassis switches ring; mixed ex4300 optics-sfp-plus sfp any port; restriction copper stacked above below another panel) optics-qsfp qsfp+, expansion bays, qfx-em-4q (4 qsfp+) ex4600-em-8f (8 sfp+), 72 ports most oob rj-45 (c0, em0) (c1, em1) management console (con) usb safety ul 60950-1, can/csa-c22.2 no. en iec 60825-1 emc fcc 47 cfr part 15 class a, 55022 vcci bsmi cns 13438, as/nzs cispr22 nebs gr-63-core, gr-1089-core, sr-3580 criteria level 3 (as datasheet lists them) materials rohs 6/6, china rohs, reach, weee, 80 plus silver supply efficiency eol announced eol-announcement https://endoflife.ai/article-juniper-ex4300-48mp-ex4600-eol end-of-sale 2026-12-29 end-of-life 2031-12-29 sfp-plus 10g qsfp-plus qsfp 40g sfp-plus-activity-leds led sfp-plus-status-leds qsfp-plus-leds qsfp-plus-channel-leds bay mgmt mgmt-leds status-leds fan-leds psus psu esd point ex4600-40f-afo ex4600-40f-afi ex4600-40f-dc-afo ex4600-40f-dc-afi ex4600-40f-s 1g rj45-serial rj45 usb-a reset esd-jack led-dot reset-button rj45-ganged-eth ex4600-em-4q ex4600-em-blnk ex4600-fan-afi ex4600-fan-afo ex4600-jpsu-650-ac-afi ex4600-jpsu-650-ac-afo ex4600-jpsu-650-dc-afi ex4600-jpsu-650-dc-afo ex4600-psu-blank qsfp-ganged rj45-ganged sfp-ganged",
+   "version": "0.1.0"
   },
   {
    "aliases": [],
@@ -27782,6 +29159,355 @@
    "profile": "networking",
    "search": "weight-max-kg 169.64 power-typical-w 6520 power-envelope unstated power-typical-scope ac typical power draw from the mx series family datasheet, which names no configuration, ambient or side; dc 6670 w base-system-w 50 cooling-system-w 640 high-capacity at full speed (450 normal speed); normal-capacity 600 (400 typical) - table 95 max-thermal-output 27,007 btu/h (7920 w); 18,987 (5568 w) (table 84; provisioning ceiling) craft panel fpcs slot scbs psus pem inlets inlet 0 1 2 3 dpc-r-4xge-xfp dpce-20ge-2xge dpce-2xge-xfp dpce-40ge-tx dpce-q-20ge-sfp dpce-r-40ge-sfp mpc-3d-16xge-sfpp mpc10e-10c-mrate mpc10e-15c-mrate mpc1e-3d mpc2e-3d mpc3e-3d mpc4e-3d-2cge-8xge mpc4e-3d-32xge-sfpp mpc5e-100g10g mpc5e-40g10g mpc7e-10g mpc7e-mrate ms-dpc ms-mpc mx960-blank mx960-craft mx960-psu-ac scb-mx c20-inlet",
    "version": "5.0.1"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "specified",
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 28
+   },
+   "description": "Juniper QFX10002-36Q, a fixed 2RU deep-buffer spine and core switch with 36 QSFP+ ports in two rows of 18. Every port runs at 40 GbE by default, 12 of them (every second and sixth cage position of each six-port cage) take QSFP28 and run at 100 GbE, and any group of three can be channelized to twelve 10 GbE interfaces with breakout cables. The management panel at the right of the front has an RJ-45 management port, an RJ-45 console, an SFP management port, an SFP PTP Ethernet port, 1PPS and 10 MHz timing connectors, a USB port and four status lamps. The rear has four power supply bays, of which the 36Q fills two with 1600 W supplies and covers two, three fan modules and an ESD point. Cooling is port-to-FRU (front-to-back) only. The AC, the DC and the spare chassis builds are configurations.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The HPE PSNow datasheet a00150807enw was tried once and the transfer failed (HTTP/2 stream error), so no datasheet is cited and no figure comes from one.",
+     "scope": [
+      "front"
+     ],
+     "wanted": "the HPE PSNow QFX10002 datasheet, for the bundle part numbers",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The 72Q studio photographs (qfx10002-72q-front-high and -rear-high, tried once each) returned an HTML 404 page, so the 72Q has no studio photograph. This 36Q is checked against its own photographs.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "straight-on photographs of the QFX10002-72Q",
+     "what": "photograph-72q"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The text says the bays of the 36Q and 72Q are numbered horizontally from the top left to the bottom right (0 to 3), but Figure 5 prints the digits 0 and 1 beside the two lower bays of the 36Q, where the switch ships its supplies, and prints nothing beside the upper bays that carry blanks. The bays take the text's numbers, the printing follows the figure.",
+     "scope": [
+      "psu-0",
+      "psu-1",
+      "psu-2",
+      "psu-3"
+     ],
+     "wanted": "the supply numbers printed on a 36Q, or the CLI names of its supplies",
+     "what": "psu-bay-numbering"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide's four-post procedure names no ear distance in millimetres and draws the rails only in perspective (Figures 33 to 35), so no ears position is written, and the spare kit EX4500-4PST-RMK is left out of chassis.kits in this slice.",
+     "scope": [
+      "left",
+      "right"
+     ],
+     "wanted": "the rail drawing and ear distances, and the four-post kit as a kit contract",
+     "what": "rack-mounting"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The two-hole protective grounding terminal is shown in perspective on a side panel in Figure 36 and no flat view places it, so it is not placed. The guide states the screws (10-32 UNF x 0.25 in.) and the lug (Panduit LCD6-14BH-L) but not the hole spacing.",
+     "scope": [
+      "left",
+      "right"
+     ],
+     "wanted": "a flat side elevation with the terminal, and its hole spacing",
+     "what": "grounding-terminal"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The DC supply takes a D-sub 3W3 connector and the library has no 3W3 standard, so the DC supply draws the shell in its skin and offers no seat for the cable plug.",
+     "scope": [
+      "psu-0",
+      "psu-1",
+      "psu-2",
+      "psu-3"
+     ],
+     "wanted": "a D-sub 3W3 connector in the connector registry",
+     "what": "dc-connector-3w3"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The text under Figure 21 says \"the LED below the port indicates status and link\" for the console, but no figure draws such a lamp: below CON is the reset button (callout 3). No console lamp is placed.",
+     "scope": [
+      "con"
+     ],
+     "wanted": "a close-up of the management panel",
+     "what": "console-lamp"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 15 gives one link and activity lamp for the SFP management port and the guide does not say which of the two lamps above the cages belongs to which cage. Each is tied to the cage under it, left to left.",
+     "scope": [
+      "led-mgmt-sfp",
+      "led-ptp-sfp"
+     ],
+     "wanted": "the lamp assignment of the two SFP ports",
+     "what": "sfp-lamp-assignment"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide lists in prose what each port takes (QSFP+, QSFP28, DAC, AOC and breakout cables) but no transceiver table, so the port groups declare no interface.",
+     "scope": [
+      "qsfp",
+      "mgmt-sfp",
+      "ptp-sfp"
+     ],
+     "wanted": "the QFX10002 transceiver list from the Hardware Compatibility Tool",
+     "what": "supported-optics"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Figure 5 draws a narrow vertical plate near the right edge below the ESD point, x 432 to 440 and y 47 to 65, that the guide does not name. It is not drawn.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "the name of that plate (a serial number label?)",
+     "what": "rear-label"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port group qsfp - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "QFX10002-36Q",
+   "name": "qfx10002-36q",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac",
+     "dc"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "QFX10002",
+    "line": "QFX Series"
+   },
+   "profile": "networking",
+   "search": "weight 24.5 kg (54 lb) with two ac supplies, blanks and three fan modules fitted; 24.3 (53.6 for the dc build (table 30) mounting four-post rack kit in box; spare kits ex4500-4pst-rmk throughput 2.88 tbps 1 bpps of forwarding capacity (q5 asics); 144 x 10 gbe, 36 40 gbe or 12 100 ports 2) packet-buffer deep buffer from hybrid memory cubes (hmc) power-typical-w 560 power-max-w 800 power-envelope fully-configured psu-ac-input to 127 vac 200 240 at 50 60 hz, 9.5 a 100-120 21); each supply has one input psu-dc-input -48 -60 vdc rated, -40 -72 operating range, maximum; breaker is recommended psu-redundancy four bays, 2n recommended; runs 36q 110 220 heat-dissipation 1,911 btu/hr typical 2,730 maximum (tables 21 25) airflow port-to-fru (airflow out, front-to-back); 80 w 150 cfm each, fans supplies operating-temp 0 c (32 f 104 f) storage-temp 70 (-40 158 shipping container humidity 5 90 percent noncondensing; short term 93 altitude no performance degradation 1828.8 m (6000 ft) cpu 2.5-ghz quad-core intel 16 gb sdram storage 25 ssds (the hardware inventory text also names nand flash drive) asic q5 packet asics timing 1pps mhz smb connectors ptp ethernet sfp port oob mgmt rj-45 (em0), 10/100/1000base-t, (em1), 1000base-x console (con), rs-232 usb seismic designed comply zone 4 earthquake requirements per nebs gr-63-core, issue 3 eol announced eol-announcement https://support.juniper.net/support/eol/product/qfx_series/ end-of-sale 2026-01-15 end-of-support 2031-01-15 qsfp 40g qsfp-leds led mgmt-leds status-leds psus psu fan-leds esd point furniture item qfx10002-36q qfx10002-36q-dc qfx10002-36q-chas-s 1g management rj45-serial reset (press hold seconds; clock functions fpga status registers are not reset) hz pulse-per-second output esd-jack laser-warning led-arrow-sm led-dot led-indicator reset-button rj45-eth qfx10002-fan-afo qfx10002-jpsu-1600w-ac-afo qfx10002-jpsu-1600w-dc-afo qfx10002-pwr-blnk qsfp-ganged rj45 sfp-ganged usb-a",
+   "version": "0.1.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "specified",
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 52
+   },
+   "description": "Juniper QFX10002-72Q, a fixed 2RU deep-buffer spine and core switch with 72 QSFP+ ports in four rows of 18. Every port runs at 40 GbE by default, 24 of them (every second and sixth cage position of each six-port cage) take QSFP28 and run at 100 GbE, and any group of three can be channelized to twelve 10 GbE interfaces with breakout cables. The management panel at the right of the front has an RJ-45 management port, an RJ-45 console, an SFP management port, an SFP PTP Ethernet port, 1PPS and 10 MHz timing connectors, a USB port and four status lamps. The rear has four 1600 W power supply bays, all filled, three fan modules and an ESD point. Cooling is port-to-FRU (front-to-back) only. The AC, the DC and the spare chassis builds are configurations.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The HPE PSNow datasheet a00150807enw was tried once and the transfer failed (HTTP/2 stream error), so no datasheet is cited and no figure comes from one.",
+     "scope": [
+      "front"
+     ],
+     "wanted": "the HPE PSNow QFX10002 datasheet, for the bundle part numbers",
+     "what": "datasheet"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The 72Q studio photographs (qfx10002-72q-front-high and -rear-high, tried once each) returned an HTML 404 page, so the 72Q has no studio photograph. What it prints, its colour and its cage orientation are read from the guide's figures and from the 36Q photographs, which share the panel art.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "straight-on photographs of the QFX10002-72Q",
+     "what": "photograph-72q"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide's four-post procedure names no ear distance in millimetres and draws the rails only in perspective (Figures 33 to 35), so no ears position is written, and the spare kit EX4500-4PST-RMK is left out of chassis.kits in this slice.",
+     "scope": [
+      "left",
+      "right"
+     ],
+     "wanted": "the rail drawing and ear distances, and the four-post kit as a kit contract",
+     "what": "rack-mounting"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The two-hole protective grounding terminal is shown in perspective on a side panel in Figure 36 and no flat view places it, so it is not placed. The guide states the screws (10-32 UNF x 0.25 in.) and the lug (Panduit LCD6-14BH-L) but not the hole spacing.",
+     "scope": [
+      "left",
+      "right"
+     ],
+     "wanted": "a flat side elevation with the terminal, and its hole spacing",
+     "what": "grounding-terminal"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The DC supply takes a D-sub 3W3 connector and the library has no 3W3 standard, so the DC supply draws the shell in its skin and offers no seat for the cable plug.",
+     "scope": [
+      "psu-0",
+      "psu-1",
+      "psu-2",
+      "psu-3"
+     ],
+     "wanted": "a D-sub 3W3 connector in the connector registry",
+     "what": "dc-connector-3w3"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The text under Figure 21 says \"the LED below the port indicates status and link\" for the console, but no figure draws such a lamp: below CON is the reset button (callout 3). No console lamp is placed.",
+     "scope": [
+      "con"
+     ],
+     "wanted": "a close-up of the management panel",
+     "what": "console-lamp"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Table 15 gives one link and activity lamp for the SFP management port and the guide does not say which of the two lamps above the cages belongs to which cage. Each is tied to the cage under it, left to left.",
+     "scope": [
+      "led-mgmt-sfp",
+      "led-ptp-sfp"
+     ],
+     "wanted": "the lamp assignment of the two SFP ports",
+     "what": "sfp-lamp-assignment"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide lists in prose what each port takes (QSFP+, QSFP28, DAC, AOC and breakout cables) but no transceiver table, so the port groups declare no interface.",
+     "scope": [
+      "qsfp-0-35",
+      "qsfp-36-71",
+      "mgmt-sfp",
+      "ptp-sfp"
+     ],
+     "wanted": "the QFX10002 transceiver list from the Hardware Compatibility Tool",
+     "what": "supported-optics"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Figure 4 draws a narrow vertical plate near the right edge below the ESD point, x 432 to 440 and y 47 to 65, that the guide does not name. It is not drawn.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "the name of that plate (a serial number label?)",
+     "what": "rear-label"
+    },
+    {
+     "because": "L40",
+     "blocks": [],
+     "count": 2,
+     "kind": "derived",
+     "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+     "what": "port-optics-undeclared"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp-0-35, qsfp-36-71 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "listings": [],
+   "manufacturer": "Juniper",
+   "model": "QFX10002-72Q",
+   "name": "qfx10002-72q",
+   "ns": "juniper",
+   "options": {
+    "airflow": [
+     "front-to-back"
+    ],
+    "power": [
+     "ac",
+     "dc"
+    ]
+   },
+   "pdu-class": null,
+   "portfolio": {
+    "family": "QFX10002",
+    "line": "QFX Series"
+   },
+   "profile": "networking",
+   "search": "weight 31.1 kg (68.6 lb) with four ac supplies and three fan modules fitted; 30.8 (67.8 for the dc build (table 30) mounting four-post rack kit in box; spare kits ex4500-4pst-rmk throughput 5.76 tbps 2 bpps of forwarding capacity (q5 asics); 288 x 10 gbe, 72 40 gbe or 24 100 ports 2) packet-buffer deep buffer from hybrid memory cubes (hmc) power-typical-w 1050 power-max-w 1425 power-envelope fully-configured psu-ac-input to 127 vac 200 240 at 50 60 hz, 12.9 a 100-120 21); each supply has one input psu-dc-input -48 -60 vdc rated, -40 -72 operating range, maximum; breaker is recommended psu-redundancy bays, 2n recommended; 220 two 110 run 72q heat-dissipation 3,583 btu/hr typical 4,862 maximum (tables 21 25) airflow port-to-fru (airflow out, front-to-back); 80 w 150 cfm each, fans operating-temp 0 c (32 f 104 f) storage-temp 70 (-40 158 shipping container humidity 5 90 percent noncondensing; short term 93 altitude no performance degradation 1828.8 m (6000 ft) cpu 2.5-ghz quad-core intel 16 gb sdram storage 25 ssds (the hardware inventory text also names nand flash drive) asic q5 packet asics timing 1pps mhz smb connectors ptp ethernet sfp port oob mgmt rj-45 (em0), 10/100/1000base-t, (em1), 1000base-x console (con), rs-232 usb seismic designed comply zone 4 earthquake requirements per nebs gr-63-core, issue 3 eol announced eol-announcement https://support.juniper.net/support/eol/product/qfx_series/ end-of-sale 2026-01-15 end-of-support 2031-01-15 qsfp-0-35 qsfp 40g qsfp-36-71 qsfp-leds led mgmt-leds status-leds psus psu fan-leds esd point furniture item qfx10002-72q qfx10002-72q-dc qfx10002-72q-chas-s 1g management rj45-serial reset (press hold seconds; clock functions fpga status registers are not reset) hz pulse-per-second output esd-jack laser-warning led-arrow-sm led-dot led-indicator reset-button rj45-eth qfx10002-fan-afo qfx10002-jpsu-1600w-ac-afo qfx10002-jpsu-1600w-dc-afo qfx10002-pwr-blnk qsfp-ganged rj45 sfp-ganged usb-a",
+   "version": "0.1.0"
   },
   {
    "aliases": [],
