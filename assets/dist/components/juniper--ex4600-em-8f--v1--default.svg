@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="86.7mm" height="43.2mm" viewBox="0 0 86.7 43.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex4600-em-8f" data-path="ex4600-em-8f" data-class="line-card" data-behaviour="fills" data-ref="juniper/ex4600-em-8f@1:1.0.0" data-ports-note="eight SFP+ ports at 10 Gbps, or SFP ports at 1 Gbps" data-sfp-plus="8" data-weight-note="not published" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ex4600-em-8f</title>
+    <rect id="ex4600-em-8f--face" x="0" y="0" width="86.7" height="43.2" rx="0.6" fill="#6f7378" stroke="#3f4247" stroke-width="0.4" />
+    <rect id="ex4600-em-8f--pull-bar" x="11.0" y="0.7" width="64.7" height="2.0" rx="0.4" fill="#b8bcc0" stroke="#8a8e93" stroke-width="0.25" />
+    <g id="ex4600-em-8f--vents" fill="#0e1012">
+      <path d="M 9.5 26.0 l -1.35 2.2 h -2.7 l -1.35 -2.2 l 1.35 -2.2 h 2.7 z" />
+      <path d="M 83.3 11.5 l -1.35 2.2 h -2.7 l -1.35 -2.2 l 1.35 -2.2 h 2.7 z" />
+      <path d="M 83.3 16.4 l -1.35 2.2 h -2.7 l -1.35 -2.2 l 1.35 -2.2 h 2.7 z" />
+      <path d="M 83.3 21.3 l -1.35 2.2 h -2.7 l -1.35 -2.2 l 1.35 -2.2 h 2.7 z" />
+      <path d="M 83.3 26.2 l -1.35 2.2 h -2.7 l -1.35 -2.2 l 1.35 -2.2 h 2.7 z" />
+    </g>
+    <g id="ex4600-em-8f--latch-wire" fill="none" stroke="#b8bcc0" stroke-width="0.5">
+      <path d="M 3.0 11 V 33.0 H 6.4" />
+      <path d="M 83.7 11 V 33.0 H 80.3" />
+    </g>
+    <g id="ex4600-em-8f--screw-bottom-left" data-path="ex4600-em-8f/screw-bottom-left" data-class="screw">
+      <circle cx="6.4" cy="35.7" r="3.2" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 6.4 32.8 V 38.6" stroke="#6f7378" stroke-width="0.5" />
+    </g>
+    <g id="ex4600-em-8f--screw-bottom-right" data-path="ex4600-em-8f/screw-bottom-right" data-class="screw">
+      <circle cx="80.3" cy="35.7" r="3.2" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 80.3 32.8 V 38.6" stroke="#6f7378" stroke-width="0.5" />
+    </g>
+    <g id="ex4600-em-8f--silkscreen" font-family="sans-serif" fill="#d5d9dd" font-size="1.9" text-anchor="middle">
+      <text x="6.7" y="15.2" font-size="1.7">ST</text>
+      <text x="21.9" y="6.7">0</text>
+      <text x="21.9" y="39.0">1</text>
+      <text x="36.15" y="6.7">2</text>
+      <text x="36.15" y="39.0">3</text>
+      <text x="50.4" y="6.7">4</text>
+      <text x="50.4" y="39.0">5</text>
+      <text x="64.65" y="6.7">6</text>
+      <text x="64.65" y="39.0">7</text>
+      <text x="78.4" y="42.2" font-size="2.9" text-anchor="end">EX4600-EM-8F</text>
+    </g>
+    <g id="ex4600-em-8f--screw-top-left" data-path="ex4600-em-8f/screw-top-left" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+      <circle cx="6.4" cy="4.9" r="5.0" fill="#88bcda" stroke="#537385" stroke-width="0.3" />
+      <circle cx="6.4" cy="4.9" r="3.3" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 4.7 4.9 H 8.1 M 6.4 3.2 V 6.6" stroke="#6f7378" stroke-width="0.6" />
+    </g>
+    <g id="ex4600-em-8f--screw-top-right" data-path="ex4600-em-8f/screw-top-right" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+      <circle cx="80.3" cy="4.9" r="5.0" fill="#88bcda" stroke="#537385" stroke-width="0.3" />
+      <circle cx="80.3" cy="4.9" r="3.3" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 78.6 4.9 H 82.0 M 80.3 3.2 V 6.6" stroke="#6f7378" stroke-width="0.6" />
+    </g>
+    <g id="ex4600-em-8f--port-0" data-path="ex4600-em-8f/port-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(15.9,10.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-0</title>
+      <rect id="ex4600-em-8f--port-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-0/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-1" data-path="ex4600-em-8f/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(15.9,23.2) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-1</title>
+      <rect id="ex4600-em-8f--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-1/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-2" data-path="ex4600-em-8f/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(30.15,10.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-2</title>
+      <rect id="ex4600-em-8f--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-2/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-3" data-path="ex4600-em-8f/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(30.15,23.2) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-3</title>
+      <rect id="ex4600-em-8f--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-3/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-4" data-path="ex4600-em-8f/port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(44.4,10.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-4</title>
+      <rect id="ex4600-em-8f--port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-4/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-5" data-path="ex4600-em-8f/port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(44.4,23.2) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-5</title>
+      <rect id="ex4600-em-8f--port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-5/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-6" data-path="ex4600-em-8f/port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(58.65,10.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-6</title>
+      <rect id="ex4600-em-8f--port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-6/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--port-7" data-path="ex4600-em-8f/port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(58.65,23.2) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+      <title>ex4600-em-8f--port-7</title>
+      <rect id="ex4600-em-8f--port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex4600-em-8f/port-7/opening" data-class="cutout" />
+      <rect id="ex4600-em-8f--port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex4600-em-8f--port-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex4600-em-8f--port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex4600-em-8f--led-0-link" data-path="ex4600-em-8f/led-0-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(17.9,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-0-link</title>
+      <circle id="ex4600-em-8f--led-0-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-0-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-0-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-0-status" data-path="ex4600-em-8f/led-0-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(23.8,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-0-status</title>
+      <circle id="ex4600-em-8f--led-0-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-0-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-0-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-1-link" data-path="ex4600-em-8f/led-1-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(17.9,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-1-link</title>
+      <circle id="ex4600-em-8f--led-1-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-1-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-1-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-1-status" data-path="ex4600-em-8f/led-1-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(23.8,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-1-status</title>
+      <circle id="ex4600-em-8f--led-1-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-1-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-1-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-2-link" data-path="ex4600-em-8f/led-2-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(32.15,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-2-link</title>
+      <circle id="ex4600-em-8f--led-2-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-2-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-2-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-2-status" data-path="ex4600-em-8f/led-2-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(38.05,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-2-status</title>
+      <circle id="ex4600-em-8f--led-2-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-2-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-2-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-3-link" data-path="ex4600-em-8f/led-3-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(32.15,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-3-link</title>
+      <circle id="ex4600-em-8f--led-3-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-3-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-3-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-3-status" data-path="ex4600-em-8f/led-3-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(38.05,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-3-status</title>
+      <circle id="ex4600-em-8f--led-3-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-3-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-3-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-4-link" data-path="ex4600-em-8f/led-4-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(46.4,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-4-link</title>
+      <circle id="ex4600-em-8f--led-4-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-4-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-4-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-4-status" data-path="ex4600-em-8f/led-4-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(52.3,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-4-status</title>
+      <circle id="ex4600-em-8f--led-4-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-4-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-4-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-5-link" data-path="ex4600-em-8f/led-5-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(46.4,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-5-link</title>
+      <circle id="ex4600-em-8f--led-5-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-5-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-5-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-5-status" data-path="ex4600-em-8f/led-5-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(52.3,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-5-status</title>
+      <circle id="ex4600-em-8f--led-5-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-5-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-5-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-6-link" data-path="ex4600-em-8f/led-6-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(60.65,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-6-link</title>
+      <circle id="ex4600-em-8f--led-6-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-6-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-6-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-6-status" data-path="ex4600-em-8f/led-6-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(66.55,6.4)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-6-status</title>
+      <circle id="ex4600-em-8f--led-6-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-6-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-6-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-7-link" data-path="ex4600-em-8f/led-7-link" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="link activity" transform="translate(60.65,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-7-link</title>
+      <circle id="ex4600-em-8f--led-7-link--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-7-link--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-7-link/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-7-status" data-path="ex4600-em-8f/led-7-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(66.55,35.7)" data-group="port-leds" data-group-role="indicator" data-description="Two lamps for each port, link and activity at the left, status at the right. They sit above the upper cage and below the lower cage.">
+      <title>ex4600-em-8f--led-7-status</title>
+      <circle id="ex4600-em-8f--led-7-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-7-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-7-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ex4600-em-8f--led-st" data-path="ex4600-em-8f/led-st" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="module status" transform="translate(5.7,16.6)" data-group="status" data-group-role="indicator" data-description="the ST lamp of the module (guide Table 9)">
+      <title>ex4600-em-8f--led-st</title>
+      <circle id="ex4600-em-8f--led-st--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex4600-em-8f--led-st--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex4600-em-8f/led-st/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

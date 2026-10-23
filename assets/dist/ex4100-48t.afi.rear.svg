@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.9mm" height="43.7mm" viewBox="0 0 440.9 43.7" data-device="ex4100-48t" data-view="rear" data-weight="5.3 kg (11.7 lb) with the power supply and fan modules, 6010 g in Table 14 (Table 19)" data-depth-with-modules="382.4 mm (15.05 in., 38.24 cm) with the power supply and fan modules installed (Tables 14 and 19)" data-width-with-brackets="482 mm (19 in.) with the mounting brackets attached (rack requirements)" data-power-input-ac="100 through 127 VAC or 200 through 240 VAC, 50 or 60 Hz (Table 31)" data-airflow="back-to-front" data-operating-temp="0 to 45 C (32 to 113 F), 40 C with 10GBASE-T transceivers (environmental requirements)" data-altitude="no performance degradation up to 1524 m (5,000 ft)" data-humidity="10 to 85 percent, noncondensing" data-first-junos-release="22.2R1 (Table 7)" data-poe="none, the switch has no PoE ports (Table 14)" data-virtual-chassis="up to 10 EX4100 switches. The four SFP28 ports are dedicated Virtual Chassis ports" data-uplink-ports="four SFP+ ports take 1 GbE or 10 GbE transceivers, with MACsec" data-macsec="the SFP+ uplink ports are MACsec-enabled" data-optics-sfp28="the four Virtual Chassis ports are 10GE or 25GE SFP28 ports (Table 8). VC formation is not supported with a 10GBASE-T transceiver in them" data-optics-sfp-plus="the four uplink ports are 1GE or 10GE SFP+ ports (Table 8). With a 10GBASE-T transceiver the maximum ambient is 40 C" data-oob="management Ethernet RJ-45 on the rear panel, with a link activity lamp and a status lamp" data-console="RJ-45 console on the rear panel and RS232 to USB Type-C console on the front, both labelled CON" data-usb="one USB 2.0 Type-A port on the rear panel" data-acoustic="39.1 dB maximum with one supply and 39.2 with two, no typical figure (Table 4); 38.4 and 38.2 on the -AFI, 37.5 and 37.7 on the -DC" data-seismic="tested for Zone 4 earthquake safety" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4100-jpsu-150-ac-afi@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex4100-jpsu-150-ac-afi@'] .state-red { --led-color: #e03a2f; }
+    #led-fan-0.state-ok, #led-fan-0 .state-ok, #led-fan-1.state-ok, #led-fan-1 .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX4100-48T","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/led-dot@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/ex4100-fan-afi@1":"1.0.0","juniper/ex4100-jpsu-150-ac-afi@1":"1.0.0","juniper/ex4100-psu-cover@1":"1.0.0","std/c14-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"4f68a84d85aa7ad7b748c4c038a60b597e3426f4ea8f82d7f3ed4bf327286602","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4100-48T" data-sku="EX4100-48T-AFI" data-part-number="" x="0" y="0" width="440.9" height="43.7" rx="1.2" fill="#8e929b" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-left" data-kind="plate" x="2.2" y="1.8" width="73.3" height="39.4" rx="0.6" fill="#878b95" />
+    <rect id="plate-mid" data-kind="plate" x="173.5" y="1.8" width="87.2" height="39.4" rx="0.6" fill="#9a9da6" />
+    <rect id="ground-strip" data-kind="plate" x="200" y="3.2" width="32" height="10" rx="0.6" fill="#aeb3b6" />
+    <rect id="ground-hole-1" data-kind="plate" x="204.4" y="5" width="6" height="6" rx="3" fill="#0e0f10" />
+    <rect id="ground-hole-2" data-kind="plate" x="221.3" y="5" width="6" height="6" rx="3" fill="#0e0f10" />
+  </g>
+  <rect id="region--label-claim" data-path="region:label-claim" data-class="region" x="55.6" y="15" width="15.2" height="14.9" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--label-clei" data-path="region:label-clei" data-class="region" x="227.9" y="22.4" width="28.6" height="6.4" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--label-serial" data-path="region:label-serial" data-class="region" x="226.7" y="30.9" width="28.9" height="5.9" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="15.6" y="8.3" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <rect x="17.4" y="24.25" width="12" height="4.5" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="35.7" y="15.7" width="15.8" height="13.2" fill="#101214" id="cutout--con" data-path="cutout:con" data-class="cutout" />
+    <ellipse cx="79.9" cy="28.7" rx="1" ry="1" fill="#101214" id="cutout--led-fan-0" data-path="cutout:led-fan-0" data-class="cutout" />
+    <ellipse cx="128.4" cy="28.7" rx="1" ry="1" fill="#101214" id="cutout--led-fan-1" data-path="cutout:led-fan-1" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="23.5" y="5.7" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="43.6" y="12.9" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="con">CON</text>
+    <path d="M 0 1.5 L 0 -0.825 M -0.42 -0.825 L 0.42 -0.825 L 0 -1.5 Z M 0 0.15 L -0.825 -0.45 M 0 -0.15 L 0.825 0.3" fill="none" stroke="#e8eaec" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(23.4 33.3)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <path d="M 0 -2.75 L 0 -0.5 M -2.5 -0.5 L 2.5 -0.5 M -1.55 0.6 L 1.55 0.6 M -0.7 1.7 L 0.7 1.7" fill="none" stroke="#e8eaec" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(192.9 7.4)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -2.2 1.6 L 0 -2.2 L 2.2 1.6 Z" fill="none" stroke="#e8eaec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(197.6 21.8)" id="esd-symbol" data-path="silk:esd-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="esd-rear" />
+    <path d="M 0 -1.0 A 0.9 0.9 0 1 0 0.01 -1.0 Z M -1.8 0 A 0.9 0.9 0 1 0 -1.79 0 Z M 1.8 0 A 0.9 0.9 0 1 0 1.81 0 Z M 0 1.0 A 0.9 0.9 0 1 0 0.01 1.0 Z" fill="none" stroke="#e8eaec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(79.3 20.5)" id="fan-0-icon" data-path="silk:fan-0-icon" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="79.3" y="24.9" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M 0 -1.0 A 0.9 0.9 0 1 0 0.01 -1.0 Z M -1.8 0 A 0.9 0.9 0 1 0 -1.79 0 Z M 1.8 0 A 0.9 0.9 0 1 0 1.81 0 Z M 0 1.0 A 0.9 0.9 0 1 0 0.01 1.0 Z" fill="none" stroke="#e8eaec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(127.9 20.5)" id="fan-1-icon" data-path="silk:fan-1-icon" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="127.9" y="24.9" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M 0 -1.7 A 1.7 1.7 0 1 0 0.01 -1.7 Z M 0 -1.0 V 0.2" fill="none" stroke="#e8eaec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(265.9 19.9)" id="psu-0-icon" data-path="silk:psu-0-icon" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <text x="265.9" y="25.2" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <path d="M 0 -1.7 A 1.7 1.7 0 1 0 0.01 -1.7 Z M 0 -1.0 V 0.2" fill="none" stroke="#e8eaec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(349.2 19.9)" id="psu-1-icon" data-path="silk:psu-1-icon" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="349.2" y="25.2" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#e8eaec" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="management" data-speed="1g" data-rel-pos="0" transform="translate(15.6,8.3) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management" data-description="Table 23 - the Link activity lamp is steady with a link and blinking with traffic; the Status lamp shows speed: steady 1000 Mbps, blinking 100 Mbps, off 10 Mbps">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="1" transform="translate(17.4,24.25)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="con" data-path="con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(35.7,15.7)" data-group="mgmt" data-group-role="management">
+    <title>con</title>
+    <path id="con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="con/opening" data-class="cutout" />
+    <g id="con--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="led-fan-0" data-path="led-fan-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(78.9,27.7)" data-group="fan-leds" data-group-role="indicator" data-description="Table 28 - green: the fan module works; unlit: not installed, not working, or of another airflow direction than the other parts" data-states="off ok" data-for="fan-0">
+    <title>led-fan-0</title>
+    <circle id="led-fan-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-0/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-1" data-path="led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(127.4,27.7)" data-group="fan-leds" data-group-role="indicator" data-description="Table 28 - green: the fan module works; unlit: not installed, not working, or of another airflow direction than the other parts" data-states="off ok" data-for="fan-1">
+    <title>led-fan-1</title>
+    <circle id="led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-1/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="82.3" y="0.9" width="41.9" height="41.8" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/ex4100-fan-afi@1:1.0.0" data-body-depth="112.0" data-airflow="back-to-front" data-cli-name="Fan Module, Airflow In (AFI)" data-handle-colour="blue" data-weight-kg="0.073" data-states="absent" transform="translate(103.25,21.8) translate(-20.95,-20.9)">
+      <title>fan-0--module</title>
+      <rect id="fan-0--module--face" x="0" y="0" width="41.9" height="41.8" rx="1.4" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.4" />
+      <g id="fan-0--module--grille-top">
+        <rect x="5.0" y="3.2" width="32.0" height="11.2" rx="1.6" fill="#24272a" />
+        <polygon points="8.45,5.00 7.72,6.25 6.28,6.25 5.55,5.00 6.28,3.75 7.72,3.75" fill="#0e1012" />
+        <polygon points="8.45,7.86 7.72,9.11 6.28,9.11 5.55,7.86 6.28,6.61 7.72,6.61" fill="#0e1012" />
+        <polygon points="8.45,10.72 7.72,11.97 6.28,11.97 5.55,10.72 6.28,9.47 7.72,9.47" fill="#0e1012" />
+        <polygon points="10.97,6.43 10.24,7.68 8.79,7.68 8.07,6.43 8.79,5.18 10.24,5.18" fill="#0e1012" />
+        <polygon points="10.97,9.29 10.24,10.54 8.79,10.54 8.07,9.29 8.79,8.04 10.24,8.04" fill="#0e1012" />
+        <polygon points="13.49,5.00 12.76,6.25 11.31,6.25 10.59,5.00 11.31,3.75 12.76,3.75" fill="#0e1012" />
+        <polygon points="13.49,7.86 12.76,9.11 11.31,9.11 10.59,7.86 11.31,6.61 12.76,6.61" fill="#0e1012" />
+        <polygon points="13.49,10.72 12.76,11.97 11.31,11.97 10.59,10.72 11.31,9.47 12.76,9.47" fill="#0e1012" />
+        <polygon points="16.01,6.43 15.29,7.68 13.84,7.68 13.11,6.43 13.84,5.18 15.29,5.18" fill="#0e1012" />
+        <polygon points="16.01,9.29 15.29,10.54 13.84,10.54 13.11,9.29 13.84,8.04 15.29,8.04" fill="#0e1012" />
+        <polygon points="18.53,5.00 17.80,6.25 16.35,6.25 15.63,5.00 16.35,3.75 17.80,3.75" fill="#0e1012" />
+        <polygon points="18.53,7.86 17.80,9.11 16.35,9.11 15.63,7.86 16.35,6.61 17.80,6.61" fill="#0e1012" />
+        <polygon points="18.53,10.72 17.80,11.97 16.35,11.97 15.63,10.72 16.35,9.47 17.80,9.47" fill="#0e1012" />
+        <polygon points="21.05,6.43 20.33,7.68 18.88,7.68 18.15,6.43 18.88,5.18 20.33,5.18" fill="#0e1012" />
+        <polygon points="21.05,9.29 20.33,10.54 18.88,10.54 18.15,9.29 18.88,8.04 20.33,8.04" fill="#0e1012" />
+        <polygon points="23.57,5.00 22.85,6.25 21.39,6.25 20.67,5.00 21.39,3.75 22.85,3.75" fill="#0e1012" />
+        <polygon points="23.57,7.86 22.85,9.11 21.39,9.11 20.67,7.86 21.39,6.61 22.85,6.61" fill="#0e1012" />
+        <polygon points="23.57,10.72 22.85,11.97 21.39,11.97 20.67,10.72 21.39,9.47 22.85,9.47" fill="#0e1012" />
+        <polygon points="26.09,6.43 25.37,7.68 23.91,7.68 23.19,6.43 23.91,5.18 25.37,5.18" fill="#0e1012" />
+        <polygon points="26.09,9.29 25.37,10.54 23.91,10.54 23.19,9.29 23.91,8.04 25.37,8.04" fill="#0e1012" />
+        <polygon points="28.61,5.00 27.89,6.25 26.43,6.25 25.71,5.00 26.43,3.75 27.89,3.75" fill="#0e1012" />
+        <polygon points="28.61,7.86 27.89,9.11 26.43,9.11 25.71,7.86 26.43,6.61 27.89,6.61" fill="#0e1012" />
+        <polygon points="28.61,10.72 27.89,11.97 26.43,11.97 25.71,10.72 26.43,9.47 27.89,9.47" fill="#0e1012" />
+        <polygon points="31.13,6.43 30.41,7.68 28.95,7.68 28.23,6.43 28.95,5.18 30.41,5.18" fill="#0e1012" />
+        <polygon points="31.13,9.29 30.41,10.54 28.95,10.54 28.23,9.29 28.95,8.04 30.41,8.04" fill="#0e1012" />
+        <polygon points="33.65,5.00 32.93,6.25 31.48,6.25 30.75,5.00 31.48,3.75 32.93,3.75" fill="#0e1012" />
+        <polygon points="33.65,7.86 32.93,9.11 31.48,9.11 30.75,7.86 31.48,6.61 32.93,6.61" fill="#0e1012" />
+        <polygon points="33.65,10.72 32.93,11.97 31.48,11.97 30.75,10.72 31.48,9.47 32.93,9.47" fill="#0e1012" />
+        <polygon points="36.17,6.43 35.45,7.68 33.99,7.68 33.27,6.43 33.99,5.18 35.45,5.18" fill="#0e1012" />
+        <polygon points="36.17,9.29 35.45,10.54 33.99,10.54 33.27,9.29 33.99,8.04 35.45,8.04" fill="#0e1012" />
+      </g>
+      <g id="fan-0--module--grille-bottom">
+        <rect x="5.0" y="27.4" width="32.0" height="11.6" rx="1.8" fill="#24272a" />
+        <polygon points="8.45,29.40 7.72,30.65 6.28,30.65 5.55,29.40 6.28,28.15 7.72,28.15" fill="#0e1012" />
+        <polygon points="8.45,32.26 7.72,33.51 6.28,33.51 5.55,32.26 6.28,31.01 7.72,31.01" fill="#0e1012" />
+        <polygon points="8.45,35.12 7.72,36.37 6.28,36.37 5.55,35.12 6.28,33.87 7.72,33.87" fill="#0e1012" />
+        <polygon points="10.97,30.83 10.24,32.08 8.79,32.08 8.07,30.83 8.79,29.58 10.24,29.58" fill="#0e1012" />
+        <polygon points="10.97,33.69 10.24,34.94 8.79,34.94 8.07,33.69 8.79,32.44 10.24,32.44" fill="#0e1012" />
+        <polygon points="13.49,29.40 12.76,30.65 11.31,30.65 10.59,29.40 11.31,28.15 12.76,28.15" fill="#0e1012" />
+        <polygon points="13.49,32.26 12.76,33.51 11.31,33.51 10.59,32.26 11.31,31.01 12.76,31.01" fill="#0e1012" />
+        <polygon points="13.49,35.12 12.76,36.37 11.31,36.37 10.59,35.12 11.31,33.87 12.76,33.87" fill="#0e1012" />
+        <polygon points="16.01,30.83 15.29,32.08 13.84,32.08 13.11,30.83 13.84,29.58 15.29,29.58" fill="#0e1012" />
+        <polygon points="16.01,33.69 15.29,34.94 13.84,34.94 13.11,33.69 13.84,32.44 15.29,32.44" fill="#0e1012" />
+        <polygon points="18.53,29.40 17.80,30.65 16.35,30.65 15.63,29.40 16.35,28.15 17.80,28.15" fill="#0e1012" />
+        <polygon points="18.53,32.26 17.80,33.51 16.35,33.51 15.63,32.26 16.35,31.01 17.80,31.01" fill="#0e1012" />
+        <polygon points="18.53,35.12 17.80,36.37 16.35,36.37 15.63,35.12 16.35,33.87 17.80,33.87" fill="#0e1012" />
+        <polygon points="21.05,30.83 20.33,32.08 18.88,32.08 18.15,30.83 18.88,29.58 20.33,29.58" fill="#0e1012" />
+        <polygon points="21.05,33.69 20.33,34.94 18.88,34.94 18.15,33.69 18.88,32.44 20.33,32.44" fill="#0e1012" />
+        <polygon points="23.57,29.40 22.85,30.65 21.39,30.65 20.67,29.40 21.39,28.15 22.85,28.15" fill="#0e1012" />
+        <polygon points="23.57,32.26 22.85,33.51 21.39,33.51 20.67,32.26 21.39,31.01 22.85,31.01" fill="#0e1012" />
+        <polygon points="23.57,35.12 22.85,36.37 21.39,36.37 20.67,35.12 21.39,33.87 22.85,33.87" fill="#0e1012" />
+        <polygon points="26.09,30.83 25.37,32.08 23.91,32.08 23.19,30.83 23.91,29.58 25.37,29.58" fill="#0e1012" />
+        <polygon points="26.09,33.69 25.37,34.94 23.91,34.94 23.19,33.69 23.91,32.44 25.37,32.44" fill="#0e1012" />
+        <polygon points="28.61,29.40 27.89,30.65 26.43,30.65 25.71,29.40 26.43,28.15 27.89,28.15" fill="#0e1012" />
+        <polygon points="28.61,32.26 27.89,33.51 26.43,33.51 25.71,32.26 26.43,31.01 27.89,31.01" fill="#0e1012" />
+        <polygon points="28.61,35.12 27.89,36.37 26.43,36.37 25.71,35.12 26.43,33.87 27.89,33.87" fill="#0e1012" />
+        <polygon points="31.13,30.83 30.41,32.08 28.95,32.08 28.23,30.83 28.95,29.58 30.41,29.58" fill="#0e1012" />
+        <polygon points="31.13,33.69 30.41,34.94 28.95,34.94 28.23,33.69 28.95,32.44 30.41,32.44" fill="#0e1012" />
+        <polygon points="33.65,29.40 32.93,30.65 31.48,30.65 30.75,29.40 31.48,28.15 32.93,28.15" fill="#0e1012" />
+        <polygon points="33.65,32.26 32.93,33.51 31.48,33.51 30.75,32.26 31.48,31.01 32.93,31.01" fill="#0e1012" />
+        <polygon points="33.65,35.12 32.93,36.37 31.48,36.37 30.75,35.12 31.48,33.87 32.93,33.87" fill="#0e1012" />
+        <polygon points="36.17,30.83 35.45,32.08 33.99,32.08 33.27,30.83 33.99,29.58 35.45,29.58" fill="#0e1012" />
+        <polygon points="36.17,33.69 35.45,34.94 33.99,34.94 33.27,33.69 33.99,32.44 35.45,32.44" fill="#0e1012" />
+      </g>
+      <g id="fan-0--module--handle" data-path="fan-0/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#3d7bd6">
+        <rect x="1.0" y="14.4" width="39.9" height="12.4" rx="3.6" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.4" />
+        <rect x="3.2" y="16.2" width="35.5" height="8.8" rx="2.8" fill="#2f66b8" />
+        <rect id="fan-0--module--airin-chip" x="13.0" y="16.4" width="15.9" height="8.0" rx="0.9" fill="#5b6066" />
+        <g fill="#3d7bd6">
+          <circle cx="16.6" cy="20.4" r="0.9" />
+          <circle cx="15.4" cy="19.3" r="0.8" />
+          <circle cx="17.8" cy="19.3" r="0.8" />
+          <circle cx="15.4" cy="21.5" r="0.8" />
+          <circle cx="17.8" cy="21.5" r="0.8" />
+        </g>
+        <g id="fan-0--module--silkscreen">
+          <text x="23.6" y="19.7" font-family="Arial" font-size="2.3" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.6" y="22.8" font-family="Arial" font-size="2.3" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-0--module--screw" data-path="fan-0/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="4.4" cy="4.4" r="2.4" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="4.4" cy="4.4" r="1.0" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="131.7" y="0.9" width="41.9" height="41.8" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/ex4100-fan-afi@1:1.0.0" data-body-depth="112.0" data-airflow="back-to-front" data-cli-name="Fan Module, Airflow In (AFI)" data-handle-colour="blue" data-weight-kg="0.073" data-states="absent" transform="translate(152.65,21.8) translate(-20.95,-20.9)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--face" x="0" y="0" width="41.9" height="41.8" rx="1.4" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.4" />
+      <g id="fan-1--module--grille-top">
+        <rect x="5.0" y="3.2" width="32.0" height="11.2" rx="1.6" fill="#24272a" />
+        <polygon points="8.45,5.00 7.72,6.25 6.28,6.25 5.55,5.00 6.28,3.75 7.72,3.75" fill="#0e1012" />
+        <polygon points="8.45,7.86 7.72,9.11 6.28,9.11 5.55,7.86 6.28,6.61 7.72,6.61" fill="#0e1012" />
+        <polygon points="8.45,10.72 7.72,11.97 6.28,11.97 5.55,10.72 6.28,9.47 7.72,9.47" fill="#0e1012" />
+        <polygon points="10.97,6.43 10.24,7.68 8.79,7.68 8.07,6.43 8.79,5.18 10.24,5.18" fill="#0e1012" />
+        <polygon points="10.97,9.29 10.24,10.54 8.79,10.54 8.07,9.29 8.79,8.04 10.24,8.04" fill="#0e1012" />
+        <polygon points="13.49,5.00 12.76,6.25 11.31,6.25 10.59,5.00 11.31,3.75 12.76,3.75" fill="#0e1012" />
+        <polygon points="13.49,7.86 12.76,9.11 11.31,9.11 10.59,7.86 11.31,6.61 12.76,6.61" fill="#0e1012" />
+        <polygon points="13.49,10.72 12.76,11.97 11.31,11.97 10.59,10.72 11.31,9.47 12.76,9.47" fill="#0e1012" />
+        <polygon points="16.01,6.43 15.29,7.68 13.84,7.68 13.11,6.43 13.84,5.18 15.29,5.18" fill="#0e1012" />
+        <polygon points="16.01,9.29 15.29,10.54 13.84,10.54 13.11,9.29 13.84,8.04 15.29,8.04" fill="#0e1012" />
+        <polygon points="18.53,5.00 17.80,6.25 16.35,6.25 15.63,5.00 16.35,3.75 17.80,3.75" fill="#0e1012" />
+        <polygon points="18.53,7.86 17.80,9.11 16.35,9.11 15.63,7.86 16.35,6.61 17.80,6.61" fill="#0e1012" />
+        <polygon points="18.53,10.72 17.80,11.97 16.35,11.97 15.63,10.72 16.35,9.47 17.80,9.47" fill="#0e1012" />
+        <polygon points="21.05,6.43 20.33,7.68 18.88,7.68 18.15,6.43 18.88,5.18 20.33,5.18" fill="#0e1012" />
+        <polygon points="21.05,9.29 20.33,10.54 18.88,10.54 18.15,9.29 18.88,8.04 20.33,8.04" fill="#0e1012" />
+        <polygon points="23.57,5.00 22.85,6.25 21.39,6.25 20.67,5.00 21.39,3.75 22.85,3.75" fill="#0e1012" />
+        <polygon points="23.57,7.86 22.85,9.11 21.39,9.11 20.67,7.86 21.39,6.61 22.85,6.61" fill="#0e1012" />
+        <polygon points="23.57,10.72 22.85,11.97 21.39,11.97 20.67,10.72 21.39,9.47 22.85,9.47" fill="#0e1012" />
+        <polygon points="26.09,6.43 25.37,7.68 23.91,7.68 23.19,6.43 23.91,5.18 25.37,5.18" fill="#0e1012" />
+        <polygon points="26.09,9.29 25.37,10.54 23.91,10.54 23.19,9.29 23.91,8.04 25.37,8.04" fill="#0e1012" />
+        <polygon points="28.61,5.00 27.89,6.25 26.43,6.25 25.71,5.00 26.43,3.75 27.89,3.75" fill="#0e1012" />
+        <polygon points="28.61,7.86 27.89,9.11 26.43,9.11 25.71,7.86 26.43,6.61 27.89,6.61" fill="#0e1012" />
+        <polygon points="28.61,10.72 27.89,11.97 26.43,11.97 25.71,10.72 26.43,9.47 27.89,9.47" fill="#0e1012" />
+        <polygon points="31.13,6.43 30.41,7.68 28.95,7.68 28.23,6.43 28.95,5.18 30.41,5.18" fill="#0e1012" />
+        <polygon points="31.13,9.29 30.41,10.54 28.95,10.54 28.23,9.29 28.95,8.04 30.41,8.04" fill="#0e1012" />
+        <polygon points="33.65,5.00 32.93,6.25 31.48,6.25 30.75,5.00 31.48,3.75 32.93,3.75" fill="#0e1012" />
+        <polygon points="33.65,7.86 32.93,9.11 31.48,9.11 30.75,7.86 31.48,6.61 32.93,6.61" fill="#0e1012" />
+        <polygon points="33.65,10.72 32.93,11.97 31.48,11.97 30.75,10.72 31.48,9.47 32.93,9.47" fill="#0e1012" />
+        <polygon points="36.17,6.43 35.45,7.68 33.99,7.68 33.27,6.43 33.99,5.18 35.45,5.18" fill="#0e1012" />
+        <polygon points="36.17,9.29 35.45,10.54 33.99,10.54 33.27,9.29 33.99,8.04 35.45,8.04" fill="#0e1012" />
+      </g>
+      <g id="fan-1--module--grille-bottom">
+        <rect x="5.0" y="27.4" width="32.0" height="11.6" rx="1.8" fill="#24272a" />
+        <polygon points="8.45,29.40 7.72,30.65 6.28,30.65 5.55,29.40 6.28,28.15 7.72,28.15" fill="#0e1012" />
+        <polygon points="8.45,32.26 7.72,33.51 6.28,33.51 5.55,32.26 6.28,31.01 7.72,31.01" fill="#0e1012" />
+        <polygon points="8.45,35.12 7.72,36.37 6.28,36.37 5.55,35.12 6.28,33.87 7.72,33.87" fill="#0e1012" />
+        <polygon points="10.97,30.83 10.24,32.08 8.79,32.08 8.07,30.83 8.79,29.58 10.24,29.58" fill="#0e1012" />
+        <polygon points="10.97,33.69 10.24,34.94 8.79,34.94 8.07,33.69 8.79,32.44 10.24,32.44" fill="#0e1012" />
+        <polygon points="13.49,29.40 12.76,30.65 11.31,30.65 10.59,29.40 11.31,28.15 12.76,28.15" fill="#0e1012" />
+        <polygon points="13.49,32.26 12.76,33.51 11.31,33.51 10.59,32.26 11.31,31.01 12.76,31.01" fill="#0e1012" />
+        <polygon points="13.49,35.12 12.76,36.37 11.31,36.37 10.59,35.12 11.31,33.87 12.76,33.87" fill="#0e1012" />
+        <polygon points="16.01,30.83 15.29,32.08 13.84,32.08 13.11,30.83 13.84,29.58 15.29,29.58" fill="#0e1012" />
+        <polygon points="16.01,33.69 15.29,34.94 13.84,34.94 13.11,33.69 13.84,32.44 15.29,32.44" fill="#0e1012" />
+        <polygon points="18.53,29.40 17.80,30.65 16.35,30.65 15.63,29.40 16.35,28.15 17.80,28.15" fill="#0e1012" />
+        <polygon points="18.53,32.26 17.80,33.51 16.35,33.51 15.63,32.26 16.35,31.01 17.80,31.01" fill="#0e1012" />
+        <polygon points="18.53,35.12 17.80,36.37 16.35,36.37 15.63,35.12 16.35,33.87 17.80,33.87" fill="#0e1012" />
+        <polygon points="21.05,30.83 20.33,32.08 18.88,32.08 18.15,30.83 18.88,29.58 20.33,29.58" fill="#0e1012" />
+        <polygon points="21.05,33.69 20.33,34.94 18.88,34.94 18.15,33.69 18.88,32.44 20.33,32.44" fill="#0e1012" />
+        <polygon points="23.57,29.40 22.85,30.65 21.39,30.65 20.67,29.40 21.39,28.15 22.85,28.15" fill="#0e1012" />
+        <polygon points="23.57,32.26 22.85,33.51 21.39,33.51 20.67,32.26 21.39,31.01 22.85,31.01" fill="#0e1012" />
+        <polygon points="23.57,35.12 22.85,36.37 21.39,36.37 20.67,35.12 21.39,33.87 22.85,33.87" fill="#0e1012" />
+        <polygon points="26.09,30.83 25.37,32.08 23.91,32.08 23.19,30.83 23.91,29.58 25.37,29.58" fill="#0e1012" />
+        <polygon points="26.09,33.69 25.37,34.94 23.91,34.94 23.19,33.69 23.91,32.44 25.37,32.44" fill="#0e1012" />
+        <polygon points="28.61,29.40 27.89,30.65 26.43,30.65 25.71,29.40 26.43,28.15 27.89,28.15" fill="#0e1012" />
+        <polygon points="28.61,32.26 27.89,33.51 26.43,33.51 25.71,32.26 26.43,31.01 27.89,31.01" fill="#0e1012" />
+        <polygon points="28.61,35.12 27.89,36.37 26.43,36.37 25.71,35.12 26.43,33.87 27.89,33.87" fill="#0e1012" />
+        <polygon points="31.13,30.83 30.41,32.08 28.95,32.08 28.23,30.83 28.95,29.58 30.41,29.58" fill="#0e1012" />
+        <polygon points="31.13,33.69 30.41,34.94 28.95,34.94 28.23,33.69 28.95,32.44 30.41,32.44" fill="#0e1012" />
+        <polygon points="33.65,29.40 32.93,30.65 31.48,30.65 30.75,29.40 31.48,28.15 32.93,28.15" fill="#0e1012" />
+        <polygon points="33.65,32.26 32.93,33.51 31.48,33.51 30.75,32.26 31.48,31.01 32.93,31.01" fill="#0e1012" />
+        <polygon points="33.65,35.12 32.93,36.37 31.48,36.37 30.75,35.12 31.48,33.87 32.93,33.87" fill="#0e1012" />
+        <polygon points="36.17,30.83 35.45,32.08 33.99,32.08 33.27,30.83 33.99,29.58 35.45,29.58" fill="#0e1012" />
+        <polygon points="36.17,33.69 35.45,34.94 33.99,34.94 33.27,33.69 33.99,32.44 35.45,32.44" fill="#0e1012" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#3d7bd6">
+        <rect x="1.0" y="14.4" width="39.9" height="12.4" rx="3.6" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.4" />
+        <rect x="3.2" y="16.2" width="35.5" height="8.8" rx="2.8" fill="#2f66b8" />
+        <rect id="fan-1--module--airin-chip" x="13.0" y="16.4" width="15.9" height="8.0" rx="0.9" fill="#5b6066" />
+        <g fill="#3d7bd6">
+          <circle cx="16.6" cy="20.4" r="0.9" />
+          <circle cx="15.4" cy="19.3" r="0.8" />
+          <circle cx="17.8" cy="19.3" r="0.8" />
+          <circle cx="15.4" cy="21.5" r="0.8" />
+          <circle cx="17.8" cy="21.5" r="0.8" />
+        </g>
+        <g id="fan-1--module--silkscreen">
+          <text x="23.6" y="19.7" font-family="Arial" font-size="2.3" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="23.6" y="22.8" font-family="Arial" font-size="2.3" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="4.4" cy="4.4" r="2.4" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="4.4" cy="4.4" r="1.0" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="270.9" y="1.5" width="73" height="40" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex4100-jpsu-150-ac-afi@1:1.0.0" data-body-depth="225.0" data-airflow="back-to-front" data-input="100 through 127 VAC low line, 200 through 240 VAC high line, 50 or 60 Hz" data-input-current="3 A at low line, 1.5 A at high line" data-power-output-w="150" data-role="ac-power-supply" data-weight-kg="0.65" data-states="ok fault absent" transform="translate(307.4,21.5) translate(-36.5,-20)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--face" x="0" y="0" width="73.0" height="40.0" rx="0.8" fill="#c9cccf" stroke="#8d9195" stroke-width="0.4" />
+      <g id="psu-0--module--fan">
+        <circle cx="13.0" cy="19.7" r="11.6" fill="#1d1f22" />
+        <g transform="translate(13.0 19.7) scale(0.8)" fill="#c9cccf" stroke="#8d9195" stroke-width="0.25">
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(0)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(51.4)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(102.8)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(154.2)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(205.6)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(257)" />
+          <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(308.4)" />
+          <circle r="4.6" stroke="none" />
+        </g>
+        <rect id="psu-0--module--airin-chip" x="13.8" y="16.6" width="13.0" height="7.4" rx="0.9" fill="#5b6066" />
+        <circle cx="17.0" cy="20.3" r="1.5" fill="#3d7bd6" />
+      </g>
+      <g id="psu-0--module--screws">
+        <circle cx="5.6" cy="4.5" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+        <circle cx="5.6" cy="35.3" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      </g>
+      <rect id="psu-0--module--inlet-housing" x="42.3" y="7.1" width="24.0" height="32.1" rx="0.8" fill="#15171a" />
+      <g id="psu-0--module--lamps">
+        <circle cx="44.2" cy="3.2" r="2.1" fill="#3a3d41" />
+        <circle cx="53.9" cy="3.5" r="1.4" fill="#2a2d30" />
+        <circle cx="64.5" cy="3.2" r="2.1" fill="#3a3d41" />
+        <circle id="psu-0--module--led-dc" cx="44.2" cy="3.2" r="1.2" fill="var(--led-color, #3d4044)" stroke="#2a2d30" stroke-width="0.3" data-path="psu-0/module/led-dc" data-class="led" data-states="green red off" />
+        <circle id="psu-0--module--led-ac" cx="64.5" cy="3.2" r="1.2" fill="var(--led-color, #3d4044)" stroke="#2a2d30" stroke-width="0.3" data-path="psu-0/module/led-ac" data-class="led" data-states="green red off" />
+      </g>
+      <g id="psu-0--module--silkscreen" font-family="Arial" font-size="2.0" fill="#2a2d30" font-weight="bold">
+        <text x="47.2" y="3.4">DC</text>
+        <text x="47.2" y="6.1">OK</text>
+        <text x="61.6" y="3.4" text-anchor="end">AC</text>
+        <text x="61.6" y="6.1" text-anchor="end">OK</text>
+        <text x="20.8" y="19.9" text-anchor="start" font-size="2.2" fill="#e8eaec">AIR</text>
+        <text x="20.8" y="22.6" text-anchor="start" font-size="2.2" fill="#e8eaec">IN</text>
+        <text x="20.3" y="15.2" text-anchor="middle" font-size="1.4" font-weight="normal">50-60 Hz</text>
+      </g>
+      <g id="psu-0--module--latch" data-path="psu-0/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#3d7bd6">
+        <rect x="31.0" y="1.1" width="10.4" height="38.7" rx="1.2" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.35" />
+        <circle cx="36.2" cy="5.1" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+        <circle cx="36.2" cy="35.7" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      </g>
+      <g id="psu-0--module--inlet" data-path="psu-0/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.85,12.8) rotate(90 14.0 10.0)">
+        <title>psu-0--module--inlet</title>
+        <rect id="psu-0--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-0/module/inlet/opening" data-class="cutout" />
+        <path id="psu-0--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-0--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="54.85 22.8" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="354" y="1.5" width="73" height="40" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4100-psu-cover@1:1.0.0" data-covers="power supply slot" data-model="EX4100 power supply cover panel" data-states="absent" transform="translate(390.5,21.5) translate(-36.5,-20)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="0" y="0" width="73.0" height="40.0" rx="1.0" fill="#5d6065" stroke="#3f4246" stroke-width="0.4" />
+      <path id="psu-1--module--grip-left" d="M 2.0 6.0 H 8.5 A 14.0 14.0 0 0 1 8.5 34.0 H 2.0 Z" fill="#1b1d20" data-path="psu-1/module/grip-left" data-class="latch" />
+      <path id="psu-1--module--grip-left-lip" d="M 3.4 7.8 H 9.0 A 12.2 12.2 0 0 1 9.0 32.2 H 3.4 Z" fill="#26292d" stroke="#6f747a" stroke-width="0.5" />
+      <path id="psu-1--module--grip-left-well" d="M 4.0 8.6 H 9.0 A 11.4 11.4 0 0 1 9.0 31.4 H 4.0 Z" fill="#14161a" />
+      <rect id="psu-1--module--grip-left-notch" x="20.2" y="17.8" width="2.4" height="4.4" fill="#0e0f11" />
+      <path id="psu-1--module--grip-right" d="M 71.0 6.0 H 64.5 A 14.0 14.0 0 0 0 64.5 34.0 H 71.0 Z" fill="#1b1d20" data-path="psu-1/module/grip-right" data-class="latch" />
+      <path id="psu-1--module--grip-right-lip" d="M 69.6 7.8 H 64.0 A 12.2 12.2 0 0 0 64.0 32.2 H 69.6 Z" fill="#26292d" stroke="#6f747a" stroke-width="0.5" />
+      <path id="psu-1--module--grip-right-well" d="M 69.0 8.6 H 64.0 A 11.4 11.4 0 0 0 64.0 31.4 H 69.0 Z" fill="#14161a" />
+      <rect id="psu-1--module--grip-right-notch" x="50.4" y="17.8" width="2.4" height="4.4" fill="#0e0f11" />
+    </g>
+  </g>
+  <g id="esd-rear" data-path="esd-rear" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(205.1,18.5)" data-group="esd" data-group-role="furniture" data-description="the rear wrist-strap ESD point (Figure 17 callout 9)" data-for="chassis">
+    <title>esd-rear</title>
+    <circle id="esd-rear--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

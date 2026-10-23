@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="350.0mm" height="43.7mm" viewBox="0 0 350.0 43.7" data-device="ex4100-24p" data-view="left" data-weight="5.51 kg (12.15 lb) with the power supply and fan modules, 6315 g in Table 8 (Table 19)" data-depth-with-modules="382.4 mm (15.05 in., 38.24 cm) with the power supply and fan modules installed (Tables 8 and 19)" data-width-with-brackets="482 mm (19 in.) with the mounting brackets attached (rack requirements)" data-poe-budget-w="740 W with one supply, 1440 W with two (Table 32)" data-poe-standard="PoE+ on all 24 ports, 30 W per port by default (Table 8)" data-power-input-ac="100 through 127 VAC or 200 through 240 VAC, 50 or 60 Hz (Table 30)" data-airflow="front-to-back" data-operating-temp="0 to 45 C (32 to 113 F), 40 C with 10GBASE-T transceivers (environmental requirements)" data-altitude="no performance degradation up to 1524 m (5,000 ft)" data-humidity="10 to 85 percent, noncondensing" data-first-junos-release="22.2R1 (Table 7)" data-virtual-chassis="up to 10 EX4100 switches. The four SFP28 ports are dedicated Virtual Chassis ports" data-uplink-ports="four SFP+ ports take 1 GbE or 10 GbE transceivers, with MACsec" data-macsec="the SFP+ uplink ports are MACsec-enabled" data-optics-sfp28="the four Virtual Chassis ports are 10GE or 25GE SFP28 ports (Table 8). VC formation is not supported with a 10GBASE-T transceiver in them" data-optics-sfp-plus="the four uplink ports are 1GE or 10GE SFP+ ports (Table 8). With a 10GBASE-T transceiver the maximum ambient is 40 C" data-oob="management Ethernet RJ-45 on the rear panel, with a link activity lamp and a status lamp" data-console="RJ-45 console on the rear panel and RS232 to USB Type-C console on the front, both labelled CON" data-usb="one USB 2.0 Type-A port on the rear panel" data-acoustic="39.4 dB typical and 49.4 dB maximum with one supply, 40.0 and 50.1 with two (Table 4)" data-seismic="tested for Zone 4 earthquake safety" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4100-24P","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"bbb1ab0cdce42870e983627321ec535b84ad53fd4d86a38751f85410983314fe","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4100-24P" data-sku="EX4100-24P" data-part-number="" x="0" y="0" width="350" height="43.7" rx="1.2" fill="#8e929b" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

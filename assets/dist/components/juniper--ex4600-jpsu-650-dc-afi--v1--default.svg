@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.7mm" height="40.5mm" viewBox="0 0 54.7 40.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4600-jpsu-650-dc-afi@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/ex4600-jpsu-650-dc-afi@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="ex4600-jpsu-650-dc-afi" data-path="ex4600-jpsu-650-dc-afi" data-class="psu" data-behaviour="fills" data-ref="juniper/ex4600-jpsu-650-dc-afi@1:1.0.0" data-airflow="back-to-front" data-inlet="dc-terminal" data-input="rated -48 to -60 VDC, operating range -40 to -72 VDC, 10 A maximum (guide Table 19)" data-power-output-w="650" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex4600-jpsu-650-dc-afi</title>
+    <rect id="ex4600-jpsu-650-dc-afi--face" x="0" y="0" width="54.7" height="40.5" rx="0.8" fill="#1c1e21" stroke="#131518" stroke-width="0.4" />
+    <g id="ex4600-jpsu-650-dc-afi--vents" fill="#08090a" stroke="#2b2e32" stroke-width="0.25">
+      <rect x="13.7" y="25.4" width="6.6" height="5.2" />
+      <rect x="23.8" y="25.4" width="6.6" height="5.2" />
+      <rect x="33.9" y="25.4" width="6.6" height="5.2" />
+      <rect x="41.5" y="25.4" width="5.5" height="5.2" />
+      <rect x="13.7" y="33.5" width="6.6" height="5.1" />
+      <rect x="23.8" y="33.5" width="6.6" height="5.1" />
+      <rect x="33.9" y="33.5" width="6.6" height="5.1" />
+      <rect x="41.5" y="19.4" width="5.5" height="4.1" />
+    </g>
+    <rect id="ex4600-jpsu-650-dc-afi--terminal-block" x="10.4" y="5.7" width="34.6" height="12.4" rx="0.6" fill="#5a5e64" stroke="#2b2e32" stroke-width="0.3" />
+    <g id="ex4600-jpsu-650-dc-afi--terminal-wells" fill="#2f3237">
+      <rect x="11.0" y="6.6" width="7.6" height="10.6" />
+      <rect x="19.3" y="6.6" width="7.6" height="10.6" />
+      <rect x="27.6" y="6.6" width="7.6" height="10.6" />
+      <rect x="35.9" y="6.6" width="7.6" height="10.6" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--term-neg-a" data-path="ex4600-jpsu-650-dc-afi/term-neg-a" data-class="screw" data-z-cyl="1.2">
+      <circle cx="14.8" cy="12.1" r="3.5" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 12.4 12.1 H 17.2 M 14.8 9.7 V 14.5" stroke="#4a4d52" stroke-width="0.7" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--term-neg-b" data-path="ex4600-jpsu-650-dc-afi/term-neg-b" data-class="screw" data-z-cyl="1.2">
+      <circle cx="23.1" cy="12.1" r="3.5" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 20.7 12.1 H 25.5 M 23.1 9.7 V 14.5" stroke="#4a4d52" stroke-width="0.7" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--term-pos-a" data-path="ex4600-jpsu-650-dc-afi/term-pos-a" data-class="screw" data-z-cyl="1.2">
+      <circle cx="31.6" cy="12.1" r="3.5" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 29.2 12.1 H 34.0 M 31.6 9.7 V 14.5" stroke="#4a4d52" stroke-width="0.7" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--term-pos-b" data-path="ex4600-jpsu-650-dc-afi/term-pos-b" data-class="screw" data-z-cyl="1.2">
+      <circle cx="39.8" cy="12.1" r="3.5" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 37.4 12.1 H 42.2 M 39.8 9.7 V 14.5" stroke="#4a4d52" stroke-width="0.7" />
+    </g>
+    <circle id="ex4600-jpsu-650-dc-afi--block-screw" cx="47.2" cy="10.5" r="1.8" fill="#8c9096" stroke="#4a4d52" stroke-width="0.3" />
+    <g id="ex4600-jpsu-650-dc-afi--lamps">
+      <circle cx="14.9" cy="22.0" r="2.4" fill="#111315" stroke="#2b2e32" stroke-width="0.3" />
+      <circle cx="24.0" cy="22.0" r="2.4" fill="#111315" stroke="#2b2e32" stroke-width="0.3" />
+      <circle cx="35.2" cy="22.0" r="2.4" fill="#111315" stroke="#2b2e32" stroke-width="0.3" />
+      <circle id="ex4600-jpsu-650-dc-afi--led-in" cx="14.9" cy="22.0" r="1.5" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex4600-jpsu-650-dc-afi/led-in" data-class="led" data-states="green off" />
+      <circle id="ex4600-jpsu-650-dc-afi--led-out" cx="24.0" cy="22.0" r="1.5" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex4600-jpsu-650-dc-afi/led-out" data-class="led" data-states="green off" />
+      <circle id="ex4600-jpsu-650-dc-afi--led-fault" cx="35.2" cy="22.0" r="1.5" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex4600-jpsu-650-dc-afi/led-fault" data-class="led" data-states="amber off" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--esd-point" data-path="ex4600-jpsu-650-dc-afi/esd-point" data-class="screw">
+      <circle cx="45.2" cy="35.6" r="3.5" fill="#121416" stroke="#3a3e43" stroke-width="0.35" />
+      <circle cx="45.2" cy="35.6" r="2.4" fill="#1c1e21" stroke="#2b2e32" stroke-width="0.25" />
+    </g>
+    <rect id="ex4600-jpsu-650-dc-afi--latch" x="2.3" y="0.8" width="7.9" height="39.4" rx="1.0" fill="#88bcda" stroke="#537385" stroke-width="0.35" data-fill-from="handle-finish" data-stroke-derive="handle-finish" data-path="ex4600-jpsu-650-dc-afi/latch" data-class="latch" data-z-out="1.6" />
+    <g id="ex4600-jpsu-650-dc-afi--lever" data-path="ex4600-jpsu-650-dc-afi/lever" data-class="latch">
+      <rect x="48.2" y="11.2" width="6.5" height="20.6" rx="1.0" fill="#232528" stroke="#3a3e43" stroke-width="0.35" />
+      <rect x="49.6" y="13.5" width="1.6" height="16.0" rx="0.4" fill="#08090a" />
+    </g>
+    <g id="ex4600-jpsu-650-dc-afi--silkscreen" font-family="sans-serif" fill="#d9dde1">
+      <text x="14.8" y="5.2" font-size="3.6" text-anchor="middle">V-</text>
+      <text x="23.1" y="5.2" font-size="3.6" text-anchor="middle">V-</text>
+      <text x="31.6" y="5.2" font-size="3.6" text-anchor="middle">V+</text>
+      <text x="39.8" y="5.2" font-size="3.6" text-anchor="middle">V+</text>
+      <text x="17.6" y="23.0" font-size="2.6">IN</text>
+      <text x="26.6" y="23.0" font-size="2.6">OUT</text>
+      <text x="37.9" y="23.0" font-size="2.6">!</text>
+      <path d="M 51.4 34.6 V 36.4 M 49.7 36.4 H 53.1 M 50.3 37.5 H 52.5 M 50.9 38.5 H 51.9 M 53.3 36.5 A 1.9 1.9 0 1 0 49.5 36.5 A 1.9 1.9 0 1 0 53.3 36.5" fill="none" stroke="#d9dde1" stroke-width="0.3" />
+    </g>
+  </g>
+</svg>

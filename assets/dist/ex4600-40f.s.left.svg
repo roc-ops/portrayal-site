@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="520.2mm" height="43.7mm" viewBox="0 0 520.2 43.7" data-device="ex4600-40f" data-view="left" data-weight-note="21.7 lb (9.84 kg) with power supplies and fan modules installed (Table 4)" data-depth-note="20.48 in (52.02 cm); Table 4 prints 4.37 cm in the metric column, a slip" data-switching-capacity="720 Gbps unidirectional, 1.44 Tbps bidirectional (datasheet)" data-forwarding-rate="1,071 Mpps at 64 byte packets, wire speed (datasheet)" data-buffers="12 MB shared, 25 percent dedicated (guide, Benefits of the EX4600 Switch)" data-sfp-plus-speeds="10 or 1 GbE on each SFP+ port" data-qsfp-plus-speeds="40 GbE, or 4 x 10 GbE with a breakout cable" data-power-typical-w="230" data-power-max-w="365" data-power-envelope="unstated" data-power-dc-typical-w="300" data-power-dc-max-w="385" data-power-datasheet-load-w="279 W AFO, 285 W AFI, 392 W DC-AFO, 320 W DC-AFI at the datasheet's stated load" data-power-input-ac="100 to 240 VAC, 50 to 60 Hz; 4.5 A at 100 to 120 VAC, 2.0 A at 200 to 240 VAC" data-power-input-dc="rated -48 to -60 VDC, operating range -40 to -72 VDC, 10 A maximum" data-redundancy-note="two supplies, 1+1; the switch runs on one" data-fans="five fan modules and a fan in each supply; the switch runs 30 seconds while one fan module is replaced" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F)" data-humidity="5 to 90 percent noncondensing in operation, 0 to 95 percent out of operation" data-altitude="up to 2,000 (datasheet, unit not printed)" data-mtbf="150,000 hours predicted, FIT rate 4,987 (datasheet)" data-cpu="1.5 GHz dual-core Intel" data-storage="32 GB SSD" data-software="Junos OS, first release 13.2X51-D25" data-virtual-chassis="up to 10 switches in a ring; mixed with EX4300 switches" data-optics-sfp-plus="10 GbE SFP+ and 1 GbE SFP in any port; a restriction on 1 GbE copper SFP stacked above or below another (guide, Port Panel)" data-optics-qsfp="40 GbE QSFP+, or 4 x 10 GbE with a breakout cable" data-expansion="two bays, QFX-EM-4Q (4 x 40 GbE QSFP+) and EX4600-EM-8F (8 x 10 GbE SFP+), 72 ports at most" data-oob="one RJ-45 (C0, em0) and one SFP (C1, em1) management port" data-console="RJ-45 console port (CON)" data-usb="one USB port" data-safety="UL 60950-1, CAN/CSA-C22.2 No. 60950-1, EN 60950-1, IEC 60950-1, EN 60825-1" data-emc="FCC 47 CFR Part 15 Class A, EN 55022 Class A, VCCI Class A, BSMI CNS 13438, AS/NZS CISPR22" data-nebs="GR-63-Core, GR-1089-Core, SR-3580 NEBS Criteria Level 3 (as the datasheet lists them)" data-materials="RoHS 6/6, China RoHS, REACH, WEEE, 80 Plus Silver supply efficiency" data-eol="announced" data-eol-announcement="https://endoflife.ai/article-juniper-ex4300-48mp-ex4600-eol" data-end-of-sale="2026-12-29" data-end-of-life="2031-12-29" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4600-40F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"5fd4fd24162ba2e704325d4f36efd542f3f4cd9ce064c2a893c23920c10794e4","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4600-40F" data-sku="EX4600-40F-S" data-part-number="" x="0" y="0" width="520.2" height="43.7" rx="1.2" fill="#74777c" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

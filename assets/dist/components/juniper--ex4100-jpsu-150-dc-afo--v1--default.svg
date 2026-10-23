@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.0mm" height="40.0mm" viewBox="0 0 73.0 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4100-jpsu-150-dc-afo@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex4100-jpsu-150-dc-afo@'] .state-red { --led-color: #e03a2f; }</style>
+  <g id="ex4100-jpsu-150-dc-afo" data-path="ex4100-jpsu-150-dc-afo" data-class="psu" data-behaviour="fills" data-ref="juniper/ex4100-jpsu-150-dc-afo@1:1.0.0" data-body-depth="225.0" data-airflow="front-to-back" data-inlet="dc-terminal" data-input="-48 through -60 VDC rated operating voltage" data-input-current="4.7 A to 2.8 A" data-power-output-w="150" data-role="dc-power-supply" data-weight-kg="0.65" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex4100-jpsu-150-dc-afo</title>
+    <rect id="ex4100-jpsu-150-dc-afo--face" x="0" y="0" width="73.0" height="40.0" rx="0.8" fill="#c9cccf" stroke="#8d9195" stroke-width="0.4" />
+    <g id="ex4100-jpsu-150-dc-afo--fan">
+      <circle cx="13.0" cy="19.7" r="11.6" fill="#1d1f22" />
+      <g transform="translate(13.0 19.7) scale(0.8)" fill="#c9cccf" stroke="#8d9195" stroke-width="0.25">
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(0)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(51.4)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(102.8)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(154.2)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(205.6)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(257)" />
+        <path d="M 2.4 -2.6 C 8 -13.6 14 -9.4 12.2 -2.4 C 9.4 -4.6 5.6 -4.4 2.4 -2.6 Z" transform="rotate(308.4)" />
+        <circle r="4.6" stroke="none" />
+      </g>
+      <rect id="ex4100-jpsu-150-dc-afo--airout-chip" x="13.8" y="16.6" width="13.0" height="7.4" rx="0.9" fill="#5b6066" />
+      <circle cx="17.0" cy="20.3" r="1.5" fill="#ee6a1f" />
+    </g>
+    <g id="ex4100-jpsu-150-dc-afo--screws">
+      <circle cx="5.6" cy="4.5" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <circle cx="5.6" cy="35.3" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+    </g>
+    <g id="ex4100-jpsu-150-dc-afo--latch" data-path="ex4100-jpsu-150-dc-afo/latch" data-class="latch" data-z-out="1.6" data-z-color="#ee6a1f">
+      <rect x="31.0" y="1.1" width="10.4" height="38.7" rx="1.2" fill="#ee6a1f" stroke="#b9500f" stroke-width="0.35" />
+      <circle cx="36.2" cy="5.1" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+      <circle cx="36.2" cy="35.7" r="1.9" fill="#aeb2b6" stroke="#6f7378" stroke-width="0.3" />
+    </g>
+    <rect id="ex4100-jpsu-150-dc-afo--terminal-housing" x="45.6" y="7.1" width="20.7" height="32.1" rx="0.8" fill="#15171a" />
+    <rect id="ex4100-jpsu-150-dc-afo--terminal-block" x="48.2" y="9.4" width="12.6" height="27.5" rx="0.6" fill="#a9adb1" stroke="#5e656c" stroke-width="0.3" />
+    <g id="ex4100-jpsu-150-dc-afo--terminal-screws" fill="#d9dbdd" stroke="#5e656c" stroke-width="0.3">
+      <circle cx="54.5" cy="15.8" r="1.9" />
+      <circle cx="54.5" cy="23.1" r="1.9" />
+      <circle cx="54.5" cy="30.4" r="1.9" />
+    </g>
+    <rect id="ex4100-jpsu-150-dc-afo--grip" x="62.2" y="13.0" width="2.8" height="19.0" rx="1.2" fill="#8d9195" stroke="#5e656c" stroke-width="0.3" />
+    <g id="ex4100-jpsu-150-dc-afo--lamps">
+      <circle cx="44.2" cy="3.2" r="2.1" fill="#3a3d41" />
+      <circle cx="53.9" cy="3.5" r="1.4" fill="#2a2d30" />
+      <circle cx="64.5" cy="3.2" r="2.1" fill="#3a3d41" />
+      <circle id="ex4100-jpsu-150-dc-afo--led-out" cx="44.2" cy="3.2" r="1.2" fill="var(--led-color, #3d4044)" stroke="#2a2d30" stroke-width="0.3" data-path="ex4100-jpsu-150-dc-afo/led-out" data-class="led" data-states="green red off" />
+      <circle id="ex4100-jpsu-150-dc-afo--led-in" cx="64.5" cy="3.2" r="1.2" fill="var(--led-color, #3d4044)" stroke="#2a2d30" stroke-width="0.3" data-path="ex4100-jpsu-150-dc-afo/led-in" data-class="led" data-states="green off" />
+    </g>
+    <g id="ex4100-jpsu-150-dc-afo--silkscreen" font-family="Arial" font-size="2.0" fill="#2a2d30" font-weight="bold">
+      <text x="47.2" y="3.4">OUT</text>
+      <text x="47.2" y="6.1">OK</text>
+      <text x="61.6" y="3.4" text-anchor="end">IN</text>
+      <text x="61.6" y="6.1" text-anchor="end">OK</text>
+      <text x="20.8" y="19.9" text-anchor="start" font-size="2.2" fill="#e8eaec">AIR</text>
+      <text x="20.8" y="22.6" text-anchor="start" font-size="2.2" fill="#e8eaec">OUT</text>
+      <text x="20.3" y="15.2" text-anchor="middle" font-size="1.4" font-weight="normal">50-60 Hz</text>
+      <text x="43.9" y="30.0" font-size="1.6" transform="rotate(-90 43.9 30.0)" font-weight="normal">-48 - -60V  4.7 - 2.8A</text>
+    </g>
+  </g>
+</svg>

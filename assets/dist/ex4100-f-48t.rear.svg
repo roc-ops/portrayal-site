@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.9mm" height="43.7mm" viewBox="0 0 440.9 43.7" data-device="ex4100-f-48t" data-view="rear" data-weight="3.885 kg (3885 g), Table 17" data-power-max-w="70" data-power-envelope="bare" data-power-input-ac="100 through 240 VAC, 50/60 Hz (Table 28)" data-power-current-max="1.2 A, as printed on the rear panel" data-heat-dissipation="238.7 BTU/hr at the 70 W maximum input (Table 27)" data-cooling="one built-in fan, front-to-back airflow (Table 26)" data-acoustic-noise="37.1 dB maximum LpA with 90 W AC AFO (Table 21)" data-operating-temp="0 to 45 C (32 to 113 F); 40 C with a 10GBASE-T pluggable" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="10 to 85 percent, noncondensing" data-altitude="no performance degradation up to 1524 m (5000 ft)" data-first-junos-release="22.2R1 (Table 16)" data-virtual-chassis="up to 10 EX4100 and EX4100-F switches; the four left cages are the Virtual Chassis ports. The uplink ports cannot be used as Virtual Chassis ports, and a 10GBASE-T transceiver cannot form a Virtual Chassis in a Virtual Chassis port" data-uplink-ports="four front SFP+ ports taking 1G SFP and 10G SFP+ singly or mixed" data-seismic="tested for Zone 4 earthquake safety" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #mgmt--led-a.state-link-activity { --led-color: #22c55e; }
+    #mgmt--led-a.state-link-activity { animation: portrayal-blink 1s linear infinite; }
+    #mgmt--led-b.state-speed { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX4100-F-48T","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/rj45-eth@1":"1.2.0","common/screw-head@1":"1.1.0","common/usb-symbol@1":"1.0.0","std/c14-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"a1c1f894430be04e8ebad9c8459833473c30c5c14c998ef9a38911832758999d","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4100-F-48T" data-sku="EX4100-F-48T" data-part-number="" x="0" y="0" width="440.9" height="43.7" rx="1.2" fill="#a3a8af" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_699774-1_09589" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.699774 1.09589)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="earth-terminal" data-kind="earth-plate" x="54" y="2.4" width="31.5" height="11" rx="0.3" fill="#c9cbcd" />
+    <rect id="earth-hole-1" data-kind="earth-hole" x="59.1" y="5.3" width="5.8" height="5.8" rx="2.9" fill="#2a2d31" />
+    <rect id="earth-hole-2" data-kind="earth-hole" x="74.8" y="5.3" width="5.8" height="5.8" rx="2.9" fill="#2a2d31" />
+    <rect id="fan-0" data-kind="vent-field" data-aperture="air" x="96.8" y="2.9" width="37" height="37" rx="18.5" fill="url(#portrayal-vent-o0-0-s0_699774-1_09589)" data-vent="1" />
+    <rect id="inlet-housing" data-kind="inlet-housing" x="386.2" y="10.2" width="31.4" height="23.3" rx="3" fill="#2a2c30" />
+  </g>
+  <rect id="region--label-serial-clei" data-path="region:label-serial-clei" data-class="region" x="282.5" y="7.4" width="76.9" height="30.3" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="17.75" y="8" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <rect x="19.85" y="24.8" width="12" height="4.5" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="37.7" y="16.5" width="15.8" height="13.2" fill="#101214" id="cutout--console-rj45" data-path="cutout:console-rj45" data-class="cutout" />
+    <ellipse cx="77.6" cy="20.7" rx="2" ry="2" fill="#101214" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" />
+    <rect x="387.9" y="11.8" width="28" height="20" fill="#101214" id="cutout--ac-inlet" data-path="cutout:ac-inlet" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="25.5" y="6.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f2f4f6" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="45.5" y="14.1" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f2f4f6" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console-rj45">CON</text>
+    <text x="434" y="6.4" font-family="sans-serif" font-size="3.4" text-anchor="end" fill="#f2f4f6" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet">AC INPUT : 100-240V~ 50-60Hz 1.2A Max</text>
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="2" transform="translate(17.75,8.0) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management" data-description="Tables 23 and 24 - Link Activity green, steady with a link and blinking with traffic; Status green, steady at 1000 or 100 Mbps and off at 10 Mbps">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link-activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off speed" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="3" transform="translate(19.85,24.8)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-mark" data-path="usb-mark" data-class="silkscreen" data-ref="common/usb-symbol@1:1.0.0" data-rel-pos="0" transform="translate(22.8,32.2)" data-group="furniture" data-group-role="furniture" data-for="usb">
+    <title>usb-mark</title>
+    <g id="usb-mark--symbol" stroke="#c7ccd1" fill="#c7ccd1" stroke-linecap="round" data-path="usb-mark/symbol" data-class="silkscreen">
+      <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+      <circle cx="0.75" cy="2" r="0.55" />
+      <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+      <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+      <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+      <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+      <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+    </g>
+  </g>
+  <g id="console-rj45" data-path="console-rj45" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="4" transform="translate(37.7,16.5) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+    <title>console-rj45</title>
+    <path id="console-rj45--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console-rj45--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console-rj45--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console-rj45/opening" data-class="cutout" />
+    <g id="console-rj45--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="earth-mark" data-path="earth-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="1" transform="translate(87.6,5.3)" data-group="furniture" data-group-role="furniture" data-for="chassis">
+    <title>earth-mark</title>
+    <g id="earth-mark--symbol" stroke="#c7ccd1" fill="none" data-path="earth-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="ac-inlet" data-path="ac-inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="0" transform="translate(387.9,11.8)" data-group="power-input" data-group-role="service">
+    <title>ac-inlet</title>
+    <rect id="ac-inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet/opening" data-class="cutout" />
+    <path id="ac-inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="esd-mark" data-path="esd-mark" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="2" transform="translate(83.25,17.55)" data-group="furniture" data-group-role="furniture" data-for="esd-rear-jack">
+    <title>esd-mark</title>
+    <path id="esd-mark--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-mark--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-mark--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+  <g id="esd-rear-jack" data-path="esd-rear-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(75.6,18.7)" data-group="esd" data-group-role="furniture" data-for="chassis">
+    <title>esd-rear-jack</title>
+    <circle id="esd-rear-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="rear-screw-0" data-path="rear-screw-0" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(49.8,35.9)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-0</title>
+    <circle id="rear-screw-0--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-0--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-0--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-1" data-path="rear-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(155.7,35.9)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-1</title>
+    <circle id="rear-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-2" data-path="rear-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="5" transform="translate(231.8,35.9)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-2</title>
+    <circle id="rear-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-3" data-path="rear-screw-3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="6" transform="translate(307.9,35.9)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-3</title>
+    <circle id="rear-screw-3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-4" data-path="rear-screw-4" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="7" transform="translate(384.0,35.9)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-4</title>
+    <circle id="rear-screw-4--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-4--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-4--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

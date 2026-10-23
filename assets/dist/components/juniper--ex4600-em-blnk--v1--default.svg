@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ns1="http://www.w3.org/1999/xlink" width="86.7mm" height="43.2mm" viewBox="0 0 86.7 43.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex4600-em-blnk" data-path="ex4600-em-blnk" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4600-em-blnk@1:1.0.0" data-weight-note="not published" data-states="absent" transform="translate(0,0)">
+    <title>ex4600-em-blnk</title>
+    <defs>
+      <polygon id="ex4600-em-blnk--hex" points="4.6,2.0 3.45,4.0 1.15,4.0 0,2.0 1.15,0 3.45,0" fill="#0e1012" />
+    </defs>
+    <rect id="ex4600-em-blnk--face" x="0" y="0" width="86.7" height="43.2" rx="0.6" fill="#6f7378" stroke="#3f4247" stroke-width="0.4" />
+    <g id="ex4600-em-blnk--vents-top" transform="translate(15.0 1.0)">
+      <use ns1:href="#hex" x="0" />
+      <use ns1:href="#hex" x="5.8" />
+      <use ns1:href="#hex" x="11.6" />
+      <use ns1:href="#hex" x="17.4" />
+      <use ns1:href="#hex" x="23.2" />
+      <use ns1:href="#hex" x="29.0" />
+      <use ns1:href="#hex" x="34.8" />
+      <use ns1:href="#hex" x="40.6" />
+      <use ns1:href="#hex" x="46.4" />
+      <use ns1:href="#hex" x="52.2" />
+    </g>
+    <g id="ex4600-em-blnk--vents-bottom" transform="translate(6.5 38.6)">
+      <use ns1:href="#hex" x="0" />
+      <use ns1:href="#hex" x="5.8" />
+      <use ns1:href="#hex" x="11.6" />
+      <use ns1:href="#hex" x="17.4" />
+      <use ns1:href="#hex" x="23.2" />
+      <use ns1:href="#hex" x="29.0" />
+      <use ns1:href="#hex" x="34.8" />
+      <use ns1:href="#hex" x="40.6" />
+      <use ns1:href="#hex" x="46.4" />
+      <use ns1:href="#hex" x="52.2" />
+      <use ns1:href="#hex" x="58.0" />
+      <use ns1:href="#hex" x="63.8" />
+      <use ns1:href="#hex" x="69.6" />
+    </g>
+    <g id="ex4600-em-blnk--screw-left" data-path="ex4600-em-blnk/screw-left" data-class="screw" data-z-cyl="1.2">
+      <circle cx="4.2" cy="3.2" r="2.2" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 3.0 3.2 H 5.4 M 4.2 2.0 V 4.4" stroke="#6f7378" stroke-width="0.4" />
+    </g>
+    <g id="ex4600-em-blnk--screw-right" data-path="ex4600-em-blnk/screw-right" data-class="screw" data-z-cyl="1.2">
+      <circle cx="82.5" cy="3.2" r="2.2" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 81.3 3.2 H 83.7 M 82.5 2.0 V 4.4" stroke="#6f7378" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>
