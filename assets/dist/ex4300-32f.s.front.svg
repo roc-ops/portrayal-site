@@ -1,0 +1,893 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.0mm" height="43.7mm" viewBox="0 0 441.0 43.7" data-device="ex4300-32f" data-view="front" data-weight="13 lb (5.9 kg) with no power supply and no fan module (guide Table 10, stated for every model but the 48MP); 16.1 lb (7.3 kg) with one power supply and two fan modules (datasheet)" data-depth-no-psu="454.0 mm (17.87 in, 45.4 cm) with no power supply or uplink module (Table 10)" data-depth-with-uplink="490.7 mm (19.31 in, 49.07 cm) with a power supply and an uplink module (Table 10)" data-uplink-module-weight="0.61 lb (0.28 kg) for the 2-port EX-UM-2QSFP; 0.74 lb (0.34 kg) for the 8-port EX-UM-8X8SFP" data-switching-capacity="232 Gbps unidirectional, 464 Gbps bidirectional, 64-byte packets (datasheet)" data-throughput="345 Mpps wire speed (datasheet)" data-mac-addresses-max="64000" data-airflow-cfm="fan 22 CFM, each power supply 7.5 CFM; 59 CFM total with two supplies (datasheet)" data-power-base-w="164" data-psu-redundancy="N+0 or N+N; up to two supplies, one is enough for the chassis" data-acoustic-noise="39 dBA with a 350 W AC AFO supply; 41.2 dBA with a 550 W DC AFO supply (datasheet Table 3, ISO 7779 at 23 C)" data-operating-temp="0 to 45 C (32 to 113 F) for AFO models; 0 to 35 C for AFI models" data-storage-temp="-40 to 70 C" data-humidity="10 to 85 percent noncondensing operating; 0 to 95 percent non-operating" data-altitude="up to 3049 m operating (10,000 ft); 4877 m non-operating" data-cpu="1.5 GHz dual-core PowerPC" data-memory="3 GB DRAM with ECC" data-storage="4 GB" data-virtual-chassis="up to 10 members; the two rear QSFP+ ports are Virtual Chassis ports by default, and the four built-in SFP+ ports cannot be Virtual Chassis ports" data-poe="none - the 32-port switches have no Power over Ethernet" data-macsec="IEEE 802.1AE on all Gigabit Ethernet and 10 Gigabit Ethernet ports" data-uplink-module="one slot; 2-port 40-Gigabit EX-UM-2QSFP or 8-port 1/10-Gigabit SFP+ EX-UM-8X8SFP (neither is part of the shipping configuration)" data-optics-sfp="LC SFP SX (multimode) and LX (single-mode), and 100BASE-FX and 1000BASE-T copper SFPs on the fixed 100/1000BASE-X ports (datasheet, Supported Optics and Ordering Information)" data-optics-sfp-plus="LC SFP+ SR, USR, LRM (multimode), LR, ER (single-mode) and DAC direct-attach copper (datasheet, Supported Optics)" data-optics-qsfp="40GbE QSFP+ SR4 (multimode) and DAC direct-attach copper (datasheet, Supported Optics)" data-console="mini-USB on the front, RJ-45 console on the rear" data-oob="MGMT RJ-45 with link activity and status lamps (rear)" data-lcd="2 lines of 16 characters with Menu and Enter buttons" data-usb="one USB port on the rear" data-rohs="RoHS 6/6 (datasheet)" data-nebs="GR-1089-CORE EMC and electrical safety for network telecommunications equipment (listed by the datasheet; no level stated)" data-safety="UL 60950-1, UL 62368-1, CAN/CSA C22.2 No. 60950-1 and 62368-1, EN 60950-1, IEC 60950-1 and IEC 62368-1" data-emc="FCC 47 CFR Part 15 Class A, EN 55022 Class A, ICES-003 Class A, VCCI Class A, AS/NZS CISPR 22 Class A, CISPR 22 Class A, EN 55024, EN 300386, CE" data-eol="announced" data-eol-announcement="https://eoltracking.com/eol/juniper-ex4300" data-end-of-life="2029-03-31" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-uplink-0-status.state-10g, #led-uplink-0-status .state-10g, #led-uplink-1-status.state-10g, #led-uplink-1-status .state-10g, #led-uplink-2-status.state-10g, #led-uplink-2-status .state-10g, #led-uplink-3-status.state-10g, #led-uplink-3-status .state-10g { --led-color: #22c55e; }
+    #led-uplink-0-status.state-1g, #led-uplink-0-status .state-1g, #led-uplink-1-status.state-1g, #led-uplink-1-status .state-1g, #led-uplink-2-status.state-1g, #led-uplink-2-status .state-1g, #led-uplink-3-status.state-1g, #led-uplink-3-status .state-1g { --led-color: #22c55e; }
+    #led-uplink-0-status.state-1g [data-class='led'], #led-uplink-0-status .state-1g, #led-uplink-1-status.state-1g [data-class='led'], #led-uplink-1-status .state-1g, #led-uplink-2-status.state-1g [data-class='led'], #led-uplink-2-status .state-1g, #led-uplink-3-status.state-1g [data-class='led'], #led-uplink-3-status .state-1g { animation: portrayal-blink 1s linear infinite; }
+    #led-port-0-link.state-activity, #led-port-0-link .state-activity, #led-port-1-link.state-activity, #led-port-1-link .state-activity, #led-port-2-link.state-activity, #led-port-2-link .state-activity, #led-port-3-link.state-activity, #led-port-3-link .state-activity, #led-port-4-link.state-activity, #led-port-4-link .state-activity, #led-port-5-link.state-activity, #led-port-5-link .state-activity, #led-port-6-link.state-activity, #led-port-6-link .state-activity, #led-port-7-link.state-activity, #led-port-7-link .state-activity, #led-port-8-link.state-activity, #led-port-8-link .state-activity, #led-port-9-link.state-activity, #led-port-9-link .state-activity, #led-port-10-link.state-activity, #led-port-10-link .state-activity, #led-port-11-link.state-activity, #led-port-11-link .state-activity, #led-port-12-link.state-activity, #led-port-12-link .state-activity, #led-port-13-link.state-activity, #led-port-13-link .state-activity, #led-port-14-link.state-activity, #led-port-14-link .state-activity, #led-port-15-link.state-activity, #led-port-15-link .state-activity, #led-port-16-link.state-activity, #led-port-16-link .state-activity, #led-port-17-link.state-activity, #led-port-17-link .state-activity, #led-port-18-link.state-activity, #led-port-18-link .state-activity, #led-port-19-link.state-activity, #led-port-19-link .state-activity, #led-port-20-link.state-activity, #led-port-20-link .state-activity, #led-port-21-link.state-activity, #led-port-21-link .state-activity, #led-port-22-link.state-activity, #led-port-22-link .state-activity, #led-port-23-link.state-activity, #led-port-23-link .state-activity, #led-port-24-link.state-activity, #led-port-24-link .state-activity, #led-port-25-link.state-activity, #led-port-25-link .state-activity, #led-port-26-link.state-activity, #led-port-26-link .state-activity, #led-port-27-link.state-activity, #led-port-27-link .state-activity, #led-port-28-link.state-activity, #led-port-28-link .state-activity, #led-port-29-link.state-activity, #led-port-29-link .state-activity, #led-port-30-link.state-activity, #led-port-30-link .state-activity, #led-port-31-link.state-activity, #led-port-31-link .state-activity, #led-uplink-0-link.state-activity, #led-uplink-0-link .state-activity, #led-uplink-1-link.state-activity, #led-uplink-1-link .state-activity, #led-uplink-2-link.state-activity, #led-uplink-2-link .state-activity, #led-uplink-3-link.state-activity, #led-uplink-3-link .state-activity { --led-color: #22c55e; }
+    #led-port-0-link.state-activity [data-class='led'], #led-port-0-link .state-activity, #led-port-1-link.state-activity [data-class='led'], #led-port-1-link .state-activity, #led-port-2-link.state-activity [data-class='led'], #led-port-2-link .state-activity, #led-port-3-link.state-activity [data-class='led'], #led-port-3-link .state-activity, #led-port-4-link.state-activity [data-class='led'], #led-port-4-link .state-activity, #led-port-5-link.state-activity [data-class='led'], #led-port-5-link .state-activity, #led-port-6-link.state-activity [data-class='led'], #led-port-6-link .state-activity, #led-port-7-link.state-activity [data-class='led'], #led-port-7-link .state-activity, #led-port-8-link.state-activity [data-class='led'], #led-port-8-link .state-activity, #led-port-9-link.state-activity [data-class='led'], #led-port-9-link .state-activity, #led-port-10-link.state-activity [data-class='led'], #led-port-10-link .state-activity, #led-port-11-link.state-activity [data-class='led'], #led-port-11-link .state-activity, #led-port-12-link.state-activity [data-class='led'], #led-port-12-link .state-activity, #led-port-13-link.state-activity [data-class='led'], #led-port-13-link .state-activity, #led-port-14-link.state-activity [data-class='led'], #led-port-14-link .state-activity, #led-port-15-link.state-activity [data-class='led'], #led-port-15-link .state-activity, #led-port-16-link.state-activity [data-class='led'], #led-port-16-link .state-activity, #led-port-17-link.state-activity [data-class='led'], #led-port-17-link .state-activity, #led-port-18-link.state-activity [data-class='led'], #led-port-18-link .state-activity, #led-port-19-link.state-activity [data-class='led'], #led-port-19-link .state-activity, #led-port-20-link.state-activity [data-class='led'], #led-port-20-link .state-activity, #led-port-21-link.state-activity [data-class='led'], #led-port-21-link .state-activity, #led-port-22-link.state-activity [data-class='led'], #led-port-22-link .state-activity, #led-port-23-link.state-activity [data-class='led'], #led-port-23-link .state-activity, #led-port-24-link.state-activity [data-class='led'], #led-port-24-link .state-activity, #led-port-25-link.state-activity [data-class='led'], #led-port-25-link .state-activity, #led-port-26-link.state-activity [data-class='led'], #led-port-26-link .state-activity, #led-port-27-link.state-activity [data-class='led'], #led-port-27-link .state-activity, #led-port-28-link.state-activity [data-class='led'], #led-port-28-link .state-activity, #led-port-29-link.state-activity [data-class='led'], #led-port-29-link .state-activity, #led-port-30-link.state-activity [data-class='led'], #led-port-30-link .state-activity, #led-port-31-link.state-activity [data-class='led'], #led-port-31-link .state-activity, #led-uplink-0-link.state-activity [data-class='led'], #led-uplink-0-link .state-activity, #led-uplink-1-link.state-activity [data-class='led'], #led-uplink-1-link .state-activity, #led-uplink-2-link.state-activity [data-class='led'], #led-uplink-2-link .state-activity, #led-uplink-3-link.state-activity [data-class='led'], #led-uplink-3-link .state-activity { animation: portrayal-blink 1s linear infinite; }
+    #led-mst.state-backup, #led-mst .state-backup { --led-color: #22c55e; }
+    #led-mst.state-backup [data-class='led'], #led-mst .state-backup { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-booting, #led-sys .state-booting { --led-color: #22c55e; }
+    #led-sys.state-booting [data-class='led'], #led-sys .state-booting { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-junos, #led-sys .state-junos { --led-color: #22c55e; }
+    #led-port-0-link.state-link, #led-port-0-link .state-link, #led-port-1-link.state-link, #led-port-1-link .state-link, #led-port-2-link.state-link, #led-port-2-link .state-link, #led-port-3-link.state-link, #led-port-3-link .state-link, #led-port-4-link.state-link, #led-port-4-link .state-link, #led-port-5-link.state-link, #led-port-5-link .state-link, #led-port-6-link.state-link, #led-port-6-link .state-link, #led-port-7-link.state-link, #led-port-7-link .state-link, #led-port-8-link.state-link, #led-port-8-link .state-link, #led-port-9-link.state-link, #led-port-9-link .state-link, #led-port-10-link.state-link, #led-port-10-link .state-link, #led-port-11-link.state-link, #led-port-11-link .state-link, #led-port-12-link.state-link, #led-port-12-link .state-link, #led-port-13-link.state-link, #led-port-13-link .state-link, #led-port-14-link.state-link, #led-port-14-link .state-link, #led-port-15-link.state-link, #led-port-15-link .state-link, #led-port-16-link.state-link, #led-port-16-link .state-link, #led-port-17-link.state-link, #led-port-17-link .state-link, #led-port-18-link.state-link, #led-port-18-link .state-link, #led-port-19-link.state-link, #led-port-19-link .state-link, #led-port-20-link.state-link, #led-port-20-link .state-link, #led-port-21-link.state-link, #led-port-21-link .state-link, #led-port-22-link.state-link, #led-port-22-link .state-link, #led-port-23-link.state-link, #led-port-23-link .state-link, #led-port-24-link.state-link, #led-port-24-link .state-link, #led-port-25-link.state-link, #led-port-25-link .state-link, #led-port-26-link.state-link, #led-port-26-link .state-link, #led-port-27-link.state-link, #led-port-27-link .state-link, #led-port-28-link.state-link, #led-port-28-link .state-link, #led-port-29-link.state-link, #led-port-29-link .state-link, #led-port-30-link.state-link, #led-port-30-link .state-link, #led-port-31-link.state-link, #led-port-31-link .state-link, #led-uplink-0-link.state-link, #led-uplink-0-link .state-link, #led-uplink-1-link.state-link, #led-uplink-1-link .state-link, #led-uplink-2-link.state-link, #led-uplink-2-link .state-link, #led-uplink-3-link.state-link, #led-uplink-3-link .state-link { --led-color: #22c55e; }
+    #led-alm.state-major, #led-alm .state-major { --led-color: #ef4444; }
+    #led-alm.state-minor, #led-alm .state-minor { --led-color: #eab308; }
+    #led-mst.state-primary, #led-mst .state-primary { --led-color: #22c55e; }
+    #led-port-0-status.state-selected, #led-port-0-status .state-selected, #led-port-1-status.state-selected, #led-port-1-status .state-selected, #led-port-2-status.state-selected, #led-port-2-status .state-selected, #led-port-3-status.state-selected, #led-port-3-status .state-selected, #led-port-4-status.state-selected, #led-port-4-status .state-selected, #led-port-5-status.state-selected, #led-port-5-status .state-selected, #led-port-6-status.state-selected, #led-port-6-status .state-selected, #led-port-7-status.state-selected, #led-port-7-status .state-selected, #led-port-8-status.state-selected, #led-port-8-status .state-selected, #led-port-9-status.state-selected, #led-port-9-status .state-selected, #led-port-10-status.state-selected, #led-port-10-status .state-selected, #led-port-11-status.state-selected, #led-port-11-status .state-selected, #led-port-12-status.state-selected, #led-port-12-status .state-selected, #led-port-13-status.state-selected, #led-port-13-status .state-selected, #led-port-14-status.state-selected, #led-port-14-status .state-selected, #led-port-15-status.state-selected, #led-port-15-status .state-selected, #led-port-16-status.state-selected, #led-port-16-status .state-selected, #led-port-17-status.state-selected, #led-port-17-status .state-selected, #led-port-18-status.state-selected, #led-port-18-status .state-selected, #led-port-19-status.state-selected, #led-port-19-status .state-selected, #led-port-20-status.state-selected, #led-port-20-status .state-selected, #led-port-21-status.state-selected, #led-port-21-status .state-selected, #led-port-22-status.state-selected, #led-port-22-status .state-selected, #led-port-23-status.state-selected, #led-port-23-status .state-selected, #led-port-24-status.state-selected, #led-port-24-status .state-selected, #led-port-25-status.state-selected, #led-port-25-status .state-selected, #led-port-26-status.state-selected, #led-port-26-status .state-selected, #led-port-27-status.state-selected, #led-port-27-status .state-selected, #led-port-28-status.state-selected, #led-port-28-status .state-selected, #led-port-29-status.state-selected, #led-port-29-status .state-selected, #led-port-30-status.state-selected, #led-port-30-status .state-selected, #led-port-31-status.state-selected, #led-port-31-status .state-selected { --led-color: #22c55e; }
+    #led-port-0-status.state-speed-100m, #led-port-0-status .state-speed-100m, #led-port-1-status.state-speed-100m, #led-port-1-status .state-speed-100m, #led-port-2-status.state-speed-100m, #led-port-2-status .state-speed-100m, #led-port-3-status.state-speed-100m, #led-port-3-status .state-speed-100m, #led-port-4-status.state-speed-100m, #led-port-4-status .state-speed-100m, #led-port-5-status.state-speed-100m, #led-port-5-status .state-speed-100m, #led-port-6-status.state-speed-100m, #led-port-6-status .state-speed-100m, #led-port-7-status.state-speed-100m, #led-port-7-status .state-speed-100m, #led-port-8-status.state-speed-100m, #led-port-8-status .state-speed-100m, #led-port-9-status.state-speed-100m, #led-port-9-status .state-speed-100m, #led-port-10-status.state-speed-100m, #led-port-10-status .state-speed-100m, #led-port-11-status.state-speed-100m, #led-port-11-status .state-speed-100m, #led-port-12-status.state-speed-100m, #led-port-12-status .state-speed-100m, #led-port-13-status.state-speed-100m, #led-port-13-status .state-speed-100m, #led-port-14-status.state-speed-100m, #led-port-14-status .state-speed-100m, #led-port-15-status.state-speed-100m, #led-port-15-status .state-speed-100m, #led-port-16-status.state-speed-100m, #led-port-16-status .state-speed-100m, #led-port-17-status.state-speed-100m, #led-port-17-status .state-speed-100m, #led-port-18-status.state-speed-100m, #led-port-18-status .state-speed-100m, #led-port-19-status.state-speed-100m, #led-port-19-status .state-speed-100m, #led-port-20-status.state-speed-100m, #led-port-20-status .state-speed-100m, #led-port-21-status.state-speed-100m, #led-port-21-status .state-speed-100m, #led-port-22-status.state-speed-100m, #led-port-22-status .state-speed-100m, #led-port-23-status.state-speed-100m, #led-port-23-status .state-speed-100m, #led-port-24-status.state-speed-100m, #led-port-24-status .state-speed-100m, #led-port-25-status.state-speed-100m, #led-port-25-status .state-speed-100m, #led-port-26-status.state-speed-100m, #led-port-26-status .state-speed-100m, #led-port-27-status.state-speed-100m, #led-port-27-status .state-speed-100m, #led-port-28-status.state-speed-100m, #led-port-28-status .state-speed-100m, #led-port-29-status.state-speed-100m, #led-port-29-status .state-speed-100m, #led-port-30-status.state-speed-100m, #led-port-30-status .state-speed-100m, #led-port-31-status.state-speed-100m, #led-port-31-status .state-speed-100m { --led-color: #22c55e; }
+    #led-port-0-status.state-speed-100m [data-class='led'], #led-port-0-status .state-speed-100m, #led-port-1-status.state-speed-100m [data-class='led'], #led-port-1-status .state-speed-100m, #led-port-2-status.state-speed-100m [data-class='led'], #led-port-2-status .state-speed-100m, #led-port-3-status.state-speed-100m [data-class='led'], #led-port-3-status .state-speed-100m, #led-port-4-status.state-speed-100m [data-class='led'], #led-port-4-status .state-speed-100m, #led-port-5-status.state-speed-100m [data-class='led'], #led-port-5-status .state-speed-100m, #led-port-6-status.state-speed-100m [data-class='led'], #led-port-6-status .state-speed-100m, #led-port-7-status.state-speed-100m [data-class='led'], #led-port-7-status .state-speed-100m, #led-port-8-status.state-speed-100m [data-class='led'], #led-port-8-status .state-speed-100m, #led-port-9-status.state-speed-100m [data-class='led'], #led-port-9-status .state-speed-100m, #led-port-10-status.state-speed-100m [data-class='led'], #led-port-10-status .state-speed-100m, #led-port-11-status.state-speed-100m [data-class='led'], #led-port-11-status .state-speed-100m, #led-port-12-status.state-speed-100m [data-class='led'], #led-port-12-status .state-speed-100m, #led-port-13-status.state-speed-100m [data-class='led'], #led-port-13-status .state-speed-100m, #led-port-14-status.state-speed-100m [data-class='led'], #led-port-14-status .state-speed-100m, #led-port-15-status.state-speed-100m [data-class='led'], #led-port-15-status .state-speed-100m, #led-port-16-status.state-speed-100m [data-class='led'], #led-port-16-status .state-speed-100m, #led-port-17-status.state-speed-100m [data-class='led'], #led-port-17-status .state-speed-100m, #led-port-18-status.state-speed-100m [data-class='led'], #led-port-18-status .state-speed-100m, #led-port-19-status.state-speed-100m [data-class='led'], #led-port-19-status .state-speed-100m, #led-port-20-status.state-speed-100m [data-class='led'], #led-port-20-status .state-speed-100m, #led-port-21-status.state-speed-100m [data-class='led'], #led-port-21-status .state-speed-100m, #led-port-22-status.state-speed-100m [data-class='led'], #led-port-22-status .state-speed-100m, #led-port-23-status.state-speed-100m [data-class='led'], #led-port-23-status .state-speed-100m, #led-port-24-status.state-speed-100m [data-class='led'], #led-port-24-status .state-speed-100m, #led-port-25-status.state-speed-100m [data-class='led'], #led-port-25-status .state-speed-100m, #led-port-26-status.state-speed-100m [data-class='led'], #led-port-26-status .state-speed-100m, #led-port-27-status.state-speed-100m [data-class='led'], #led-port-27-status .state-speed-100m, #led-port-28-status.state-speed-100m [data-class='led'], #led-port-28-status .state-speed-100m, #led-port-29-status.state-speed-100m [data-class='led'], #led-port-29-status .state-speed-100m, #led-port-30-status.state-speed-100m [data-class='led'], #led-port-30-status .state-speed-100m, #led-port-31-status.state-speed-100m [data-class='led'], #led-port-31-status .state-speed-100m { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Juniper EX4300-32F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-arrow-sm@1":"1.1.0","common/led-dot@1":"1.1.0","common/led-rect-sm@1":"1.0.0","common/screw-head@1":"1.1.0","juniper/ex4300-32f-uplink-blank@1":"1.0.0","juniper/ex4300-console-usb-mini@1":"1.0.0","juniper/ex4300-lcd-button@1":"1.0.0","std/sfp-ganged@1":"1.1.1"},"source-sha256":"7baed3787cf5517b7c8b59ac4ab16672412dcaffbc38479a0d048d1066230793","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4300-32F" data-sku="EX4300-32F-S" data-part-number="" x="0" y="0" width="441" height="43.7" rx="1.2" fill="#898d94" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="shell-sfp-1" data-kind="jack-shell" x="102.9" y="9.3" width="60.4" height="26.2" rx="0.6" fill="#b1b2b5" />
+    <rect id="shell-sfp-2" data-kind="jack-shell" x="167.1" y="9.3" width="60.4" height="26.2" rx="0.6" fill="#b1b2b5" />
+    <rect id="shell-sfp-3" data-kind="jack-shell" x="231.3" y="9.3" width="60.4" height="26.2" rx="0.6" fill="#b1b2b5" />
+    <rect id="shell-sfp-4" data-kind="jack-shell" x="295.5" y="9.3" width="60.4" height="26.2" rx="0.6" fill="#b1b2b5" />
+    <rect id="shell-sfp-plus" data-kind="jack-shell" x="358.9" y="24.4" width="60.4" height="11" rx="0.6" fill="#b1b2b5" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="123" y="0.9" width="227.5" height="6.4" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-field-1" data-kind="vent-field" data-aperture="air" x="100" y="39.9" width="255.5" height="2.6" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="lcd" data-kind="display" x="377.2" y="6.8" width="35.6" height="9.6" rx="0.6" fill="#404c40" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="96.5" y="1" width="23" height="6.4" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="103.5" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-0" data-path="cutout:port-0" data-class="cutout" />
+    <ellipse cx="108.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-0-link" data-path="cutout:led-port-0-link" data-class="cutout" />
+    <ellipse cx="114.745" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-0-status" data-path="cutout:led-port-0-status" data-class="cutout" />
+    <rect x="103.5" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <ellipse cx="106.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-1-link" data-path="cutout:led-port-1-link" data-class="cutout" />
+    <ellipse cx="112.355" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-1-status" data-path="cutout:led-port-1-status" data-class="cutout" />
+    <rect x="118.3" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <ellipse cx="123.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-2-link" data-path="cutout:led-port-2-link" data-class="cutout" />
+    <ellipse cx="129.545" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-2-status" data-path="cutout:led-port-2-status" data-class="cutout" />
+    <rect x="118.3" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <ellipse cx="121.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-3-link" data-path="cutout:led-port-3-link" data-class="cutout" />
+    <ellipse cx="127.155" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-3-status" data-path="cutout:led-port-3-status" data-class="cutout" />
+    <rect x="133.1" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <ellipse cx="138.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-4-link" data-path="cutout:led-port-4-link" data-class="cutout" />
+    <ellipse cx="144.345" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-4-status" data-path="cutout:led-port-4-status" data-class="cutout" />
+    <rect x="133.1" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <ellipse cx="136.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-5-link" data-path="cutout:led-port-5-link" data-class="cutout" />
+    <ellipse cx="141.955" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-5-status" data-path="cutout:led-port-5-status" data-class="cutout" />
+    <rect x="147.9" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <ellipse cx="153.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-6-link" data-path="cutout:led-port-6-link" data-class="cutout" />
+    <ellipse cx="159.145" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-6-status" data-path="cutout:led-port-6-status" data-class="cutout" />
+    <rect x="147.9" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <ellipse cx="150.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-7-link" data-path="cutout:led-port-7-link" data-class="cutout" />
+    <ellipse cx="156.755" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-7-status" data-path="cutout:led-port-7-status" data-class="cutout" />
+    <rect x="167.7" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <ellipse cx="173.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-8-link" data-path="cutout:led-port-8-link" data-class="cutout" />
+    <ellipse cx="178.945" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-8-status" data-path="cutout:led-port-8-status" data-class="cutout" />
+    <rect x="167.7" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <ellipse cx="170.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-9-link" data-path="cutout:led-port-9-link" data-class="cutout" />
+    <ellipse cx="176.555" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-9-status" data-path="cutout:led-port-9-status" data-class="cutout" />
+    <rect x="182.5" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <ellipse cx="187.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-10-link" data-path="cutout:led-port-10-link" data-class="cutout" />
+    <ellipse cx="193.745" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-10-status" data-path="cutout:led-port-10-status" data-class="cutout" />
+    <rect x="182.5" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <ellipse cx="185.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-11-link" data-path="cutout:led-port-11-link" data-class="cutout" />
+    <ellipse cx="191.355" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-11-status" data-path="cutout:led-port-11-status" data-class="cutout" />
+    <rect x="197.3" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <ellipse cx="202.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-12-link" data-path="cutout:led-port-12-link" data-class="cutout" />
+    <ellipse cx="208.545" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-12-status" data-path="cutout:led-port-12-status" data-class="cutout" />
+    <rect x="197.3" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <ellipse cx="200.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-13-link" data-path="cutout:led-port-13-link" data-class="cutout" />
+    <ellipse cx="206.155" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-13-status" data-path="cutout:led-port-13-status" data-class="cutout" />
+    <rect x="212.1" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <ellipse cx="217.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-14-link" data-path="cutout:led-port-14-link" data-class="cutout" />
+    <ellipse cx="223.345" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-14-status" data-path="cutout:led-port-14-status" data-class="cutout" />
+    <rect x="212.1" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <ellipse cx="215.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-15-link" data-path="cutout:led-port-15-link" data-class="cutout" />
+    <ellipse cx="220.955" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-15-status" data-path="cutout:led-port-15-status" data-class="cutout" />
+    <rect x="231.9" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <ellipse cx="237.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-16-link" data-path="cutout:led-port-16-link" data-class="cutout" />
+    <ellipse cx="243.145" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-16-status" data-path="cutout:led-port-16-status" data-class="cutout" />
+    <rect x="231.9" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <ellipse cx="234.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-17-link" data-path="cutout:led-port-17-link" data-class="cutout" />
+    <ellipse cx="240.755" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-17-status" data-path="cutout:led-port-17-status" data-class="cutout" />
+    <rect x="246.7" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <ellipse cx="252.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-18-link" data-path="cutout:led-port-18-link" data-class="cutout" />
+    <ellipse cx="257.945" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-18-status" data-path="cutout:led-port-18-status" data-class="cutout" />
+    <rect x="246.7" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <ellipse cx="249.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-19-link" data-path="cutout:led-port-19-link" data-class="cutout" />
+    <ellipse cx="255.555" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-19-status" data-path="cutout:led-port-19-status" data-class="cutout" />
+    <rect x="261.5" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <ellipse cx="266.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-20-link" data-path="cutout:led-port-20-link" data-class="cutout" />
+    <ellipse cx="272.745" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-20-status" data-path="cutout:led-port-20-status" data-class="cutout" />
+    <rect x="261.5" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" />
+    <ellipse cx="264.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-21-link" data-path="cutout:led-port-21-link" data-class="cutout" />
+    <ellipse cx="270.355" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-21-status" data-path="cutout:led-port-21-status" data-class="cutout" />
+    <rect x="276.3" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" />
+    <ellipse cx="281.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-22-link" data-path="cutout:led-port-22-link" data-class="cutout" />
+    <ellipse cx="287.545" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-22-status" data-path="cutout:led-port-22-status" data-class="cutout" />
+    <rect x="276.3" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" />
+    <ellipse cx="279.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-23-link" data-path="cutout:led-port-23-link" data-class="cutout" />
+    <ellipse cx="285.155" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-23-status" data-path="cutout:led-port-23-status" data-class="cutout" />
+    <rect x="296.1" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" />
+    <ellipse cx="301.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-24-link" data-path="cutout:led-port-24-link" data-class="cutout" />
+    <ellipse cx="307.345" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-24-status" data-path="cutout:led-port-24-status" data-class="cutout" />
+    <rect x="296.1" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" />
+    <ellipse cx="299.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-25-link" data-path="cutout:led-port-25-link" data-class="cutout" />
+    <ellipse cx="304.955" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-25-status" data-path="cutout:led-port-25-status" data-class="cutout" />
+    <rect x="310.9" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" />
+    <ellipse cx="316.295" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-26-link" data-path="cutout:led-port-26-link" data-class="cutout" />
+    <ellipse cx="322.145" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-26-status" data-path="cutout:led-port-26-status" data-class="cutout" />
+    <rect x="310.9" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" />
+    <ellipse cx="313.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-27-link" data-path="cutout:led-port-27-link" data-class="cutout" />
+    <ellipse cx="319.755" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-27-status" data-path="cutout:led-port-27-status" data-class="cutout" />
+    <rect x="325.7" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" />
+    <ellipse cx="331.095" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-28-link" data-path="cutout:led-port-28-link" data-class="cutout" />
+    <ellipse cx="336.945" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-28-status" data-path="cutout:led-port-28-status" data-class="cutout" />
+    <rect x="325.7" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" />
+    <ellipse cx="328.695" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-29-link" data-path="cutout:led-port-29-link" data-class="cutout" />
+    <ellipse cx="334.555" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-29-status" data-path="cutout:led-port-29-status" data-class="cutout" />
+    <rect x="340.5" y="9.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" />
+    <ellipse cx="345.895" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-30-link" data-path="cutout:led-port-30-link" data-class="cutout" />
+    <ellipse cx="351.745" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-30-status" data-path="cutout:led-port-30-status" data-class="cutout" />
+    <rect x="340.5" y="24.7" width="14.25" height="10.4" fill="#101214" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" />
+    <ellipse cx="343.495" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-31-link" data-path="cutout:led-port-31-link" data-class="cutout" />
+    <ellipse cx="349.355" cy="22.45" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-31-status" data-path="cutout:led-port-31-status" data-class="cutout" />
+    <rect x="359.5" y="24.8" width="14.25" height="10.4" fill="#101214" id="cutout--uplink-0" data-path="cutout:uplink-0" data-class="cutout" />
+    <ellipse cx="362" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-0-link" data-path="cutout:led-uplink-0-link" data-class="cutout" />
+    <ellipse cx="371.2" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-0-status" data-path="cutout:led-uplink-0-status" data-class="cutout" />
+    <rect x="374.3" y="24.8" width="14.25" height="10.4" fill="#101214" id="cutout--uplink-1" data-path="cutout:uplink-1" data-class="cutout" />
+    <ellipse cx="376.8" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-1-link" data-path="cutout:led-uplink-1-link" data-class="cutout" />
+    <ellipse cx="386" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-1-status" data-path="cutout:led-uplink-1-status" data-class="cutout" />
+    <rect x="389.1" y="24.8" width="14.25" height="10.4" fill="#101214" id="cutout--uplink-2" data-path="cutout:uplink-2" data-class="cutout" />
+    <ellipse cx="391.6" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-2-link" data-path="cutout:led-uplink-2-link" data-class="cutout" />
+    <ellipse cx="400.8" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-2-status" data-path="cutout:led-uplink-2-status" data-class="cutout" />
+    <rect x="403.9" y="24.8" width="14.25" height="10.4" fill="#101214" id="cutout--uplink-3" data-path="cutout:uplink-3" data-class="cutout" />
+    <ellipse cx="406.4" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-3-link" data-path="cutout:led-uplink-3-link" data-class="cutout" />
+    <ellipse cx="415.6" cy="38.8" rx="1.4" ry="0.8" fill="#101214" id="cutout--led-uplink-3-status" data-path="cutout:led-uplink-3-status" data-class="cutout" />
+    <rect x="427.35" y="30.1" width="7.9" height="4.6" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <ellipse cx="422.2" cy="9" rx="3.05" ry="3.05" fill="#101214" id="cutout--btn-menu" data-path="cutout:btn-menu" data-class="cutout" />
+    <ellipse cx="422.2" cy="17.2" rx="3.05" ry="3.05" fill="#101214" id="cutout--btn-enter" data-path="cutout:btn-enter" data-class="cutout" />
+    <ellipse cx="428.9" cy="6.2" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="428.9" cy="9.9" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="428.9" cy="13.6" rx="1" ry="1" fill="#101214" id="cutout--led-mst" data-path="cutout:led-mst" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="108.6" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-0">0</text>
+    <text x="113.1" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="123.4" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="127.9" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="138.2" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="142.7" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="153" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="157.5" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="172.8" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="177.3" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="187.6" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="192.1" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="202.4" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="206.9" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="217.2" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="221.7" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="237" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="241.5" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="251.8" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="256.3" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="266.6" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="271.1" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="281.4" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="285.9" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="301.2" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="305.7" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="316" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="320.5" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="330.8" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="335.3" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+    <text x="345.6" y="38.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30">30</text>
+    <text x="350.1" y="39.4" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31">31</text>
+    <text x="366.62" y="39.6" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="uplink-0">0</text>
+    <text x="381.43" y="39.6" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="uplink-1">1</text>
+    <text x="396.23" y="39.6" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="uplink-2">2</text>
+    <text x="411.02" y="39.6" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="uplink-3">3</text>
+    <text x="395.4" y="4.9" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#e4e6e9" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EX4300-32F</text>
+    <text x="431.3" y="37.5" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e4e6e9" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CON1</text>
+  </g>
+  <g id="port-0" data-path="port-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="0" transform="translate(103.5,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-0</title>
+    <rect id="port-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-0/opening" data-class="cutout" />
+    <rect id="port-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="1" transform="translate(103.5,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="2" transform="translate(118.3,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="3" transform="translate(118.3,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="4" transform="translate(133.1,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="5" transform="translate(133.1,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="6" transform="translate(147.9,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="7" transform="translate(147.9,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="8" transform="translate(167.7,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="9" transform="translate(167.7,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="10" transform="translate(182.5,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="11" transform="translate(182.5,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="12" transform="translate(197.3,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="13" transform="translate(197.3,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-13--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="14" transform="translate(212.1,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="15" transform="translate(212.1,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-15--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="16" transform="translate(231.9,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="17" transform="translate(231.9,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-17--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="18" transform="translate(246.7,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-18--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="19" transform="translate(246.7,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-19--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="20" transform="translate(261.5,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-20--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="21" transform="translate(261.5,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-21--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="22" transform="translate(276.3,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-22--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="23" transform="translate(276.3,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-23--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="24" transform="translate(296.1,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-24--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="25" transform="translate(296.1,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-25--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="26" transform="translate(310.9,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-26--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="27" transform="translate(310.9,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-27--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="28" transform="translate(325.7,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-28--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="29" transform="translate(325.7,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-29--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="30" transform="translate(340.5,9.7)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-30</title>
+    <rect id="port-30--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-30/opening" data-class="cutout" />
+    <rect id="port-30--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-30--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-30--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="31" transform="translate(340.5,24.7) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="The 32 built-in 100/1000BASE-X SFP ports. rel-pos carries the number printed on the faceplate; the upper cage of a column takes the even number">
+    <title>port-31</title>
+    <rect id="port-31--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-31/opening" data-class="cutout" />
+    <rect id="port-31--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-31--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-31--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-0-link" data-path="led-port-0-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="0" transform="translate(107.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-0">
+    <title>led-port-0-link</title>
+    <path id="led-port-0-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-0-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-0-status" data-path="led-port-0-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="1" transform="translate(113.62,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-0">
+    <title>led-port-0-status</title>
+    <path id="led-port-0-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-0-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-1-link" data-path="led-port-1-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="2" transform="translate(105.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-1">
+    <title>led-port-1-link</title>
+    <path id="led-port-1-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-1-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-1-status" data-path="led-port-1-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="3" transform="translate(111.23,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-1">
+    <title>led-port-1-status</title>
+    <path id="led-port-1-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-1-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-2-link" data-path="led-port-2-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="4" transform="translate(122.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-2">
+    <title>led-port-2-link</title>
+    <path id="led-port-2-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-2-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-2-status" data-path="led-port-2-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="5" transform="translate(128.42,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-2">
+    <title>led-port-2-status</title>
+    <path id="led-port-2-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-2-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-3-link" data-path="led-port-3-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="6" transform="translate(120.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-3">
+    <title>led-port-3-link</title>
+    <path id="led-port-3-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-3-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-3-status" data-path="led-port-3-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="7" transform="translate(126.03,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-3">
+    <title>led-port-3-status</title>
+    <path id="led-port-3-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-3-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-4-link" data-path="led-port-4-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="8" transform="translate(137.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-4">
+    <title>led-port-4-link</title>
+    <path id="led-port-4-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-4-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-4-status" data-path="led-port-4-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="9" transform="translate(143.22,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-4">
+    <title>led-port-4-status</title>
+    <path id="led-port-4-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-4-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-5-link" data-path="led-port-5-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="10" transform="translate(134.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-5">
+    <title>led-port-5-link</title>
+    <path id="led-port-5-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-5-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-5-status" data-path="led-port-5-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="11" transform="translate(140.83,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-5">
+    <title>led-port-5-status</title>
+    <path id="led-port-5-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-5-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-6-link" data-path="led-port-6-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="12" transform="translate(152.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-6">
+    <title>led-port-6-link</title>
+    <path id="led-port-6-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-6-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-6-status" data-path="led-port-6-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="13" transform="translate(158.02,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-6">
+    <title>led-port-6-status</title>
+    <path id="led-port-6-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-6-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-7-link" data-path="led-port-7-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="14" transform="translate(149.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-7">
+    <title>led-port-7-link</title>
+    <path id="led-port-7-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-7-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-7-status" data-path="led-port-7-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="15" transform="translate(155.63,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-7">
+    <title>led-port-7-status</title>
+    <path id="led-port-7-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-7-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-8-link" data-path="led-port-8-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="16" transform="translate(171.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-8">
+    <title>led-port-8-link</title>
+    <path id="led-port-8-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-8-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-8-status" data-path="led-port-8-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="17" transform="translate(177.82,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-8">
+    <title>led-port-8-status</title>
+    <path id="led-port-8-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-8-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-9-link" data-path="led-port-9-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="18" transform="translate(169.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-9">
+    <title>led-port-9-link</title>
+    <path id="led-port-9-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-9-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-9-status" data-path="led-port-9-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="19" transform="translate(175.43,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-9">
+    <title>led-port-9-status</title>
+    <path id="led-port-9-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-9-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-10-link" data-path="led-port-10-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="20" transform="translate(186.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-10">
+    <title>led-port-10-link</title>
+    <path id="led-port-10-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-10-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-10-status" data-path="led-port-10-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="21" transform="translate(192.62,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-10">
+    <title>led-port-10-status</title>
+    <path id="led-port-10-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-10-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-11-link" data-path="led-port-11-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="22" transform="translate(184.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-11">
+    <title>led-port-11-link</title>
+    <path id="led-port-11-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-11-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-11-status" data-path="led-port-11-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="23" transform="translate(190.23,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-11">
+    <title>led-port-11-status</title>
+    <path id="led-port-11-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-11-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-12-link" data-path="led-port-12-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="24" transform="translate(201.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-12">
+    <title>led-port-12-link</title>
+    <path id="led-port-12-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-12-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-12-status" data-path="led-port-12-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="25" transform="translate(207.42,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-12">
+    <title>led-port-12-status</title>
+    <path id="led-port-12-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-12-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-13-link" data-path="led-port-13-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="26" transform="translate(199.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-13">
+    <title>led-port-13-link</title>
+    <path id="led-port-13-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-13-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-13-status" data-path="led-port-13-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="27" transform="translate(205.03,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-13">
+    <title>led-port-13-status</title>
+    <path id="led-port-13-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-13-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-14-link" data-path="led-port-14-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="28" transform="translate(216.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-14">
+    <title>led-port-14-link</title>
+    <path id="led-port-14-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-14-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-14-status" data-path="led-port-14-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="29" transform="translate(222.22,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-14">
+    <title>led-port-14-status</title>
+    <path id="led-port-14-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-14-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-15-link" data-path="led-port-15-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="30" transform="translate(213.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-15">
+    <title>led-port-15-link</title>
+    <path id="led-port-15-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-15-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-15-status" data-path="led-port-15-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="31" transform="translate(219.83,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-15">
+    <title>led-port-15-status</title>
+    <path id="led-port-15-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-15-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-16-link" data-path="led-port-16-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="32" transform="translate(236.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-16">
+    <title>led-port-16-link</title>
+    <path id="led-port-16-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-16-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-16-status" data-path="led-port-16-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="33" transform="translate(242.02,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-16">
+    <title>led-port-16-status</title>
+    <path id="led-port-16-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-16-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-17-link" data-path="led-port-17-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="34" transform="translate(233.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-17">
+    <title>led-port-17-link</title>
+    <path id="led-port-17-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-17-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-17-status" data-path="led-port-17-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="35" transform="translate(239.63,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-17">
+    <title>led-port-17-status</title>
+    <path id="led-port-17-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-17-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-18-link" data-path="led-port-18-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="36" transform="translate(250.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-18">
+    <title>led-port-18-link</title>
+    <path id="led-port-18-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-18-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-18-status" data-path="led-port-18-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="37" transform="translate(256.82,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-18">
+    <title>led-port-18-status</title>
+    <path id="led-port-18-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-18-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-19-link" data-path="led-port-19-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="38" transform="translate(248.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-19">
+    <title>led-port-19-link</title>
+    <path id="led-port-19-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-19-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-19-status" data-path="led-port-19-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="39" transform="translate(254.43,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-19">
+    <title>led-port-19-status</title>
+    <path id="led-port-19-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-19-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-20-link" data-path="led-port-20-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="40" transform="translate(265.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-20">
+    <title>led-port-20-link</title>
+    <path id="led-port-20-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-20-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-20-status" data-path="led-port-20-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="41" transform="translate(271.62,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-20">
+    <title>led-port-20-status</title>
+    <path id="led-port-20-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-20-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-21-link" data-path="led-port-21-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="42" transform="translate(263.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-21">
+    <title>led-port-21-link</title>
+    <path id="led-port-21-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-21-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-21-status" data-path="led-port-21-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="43" transform="translate(269.23,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-21">
+    <title>led-port-21-status</title>
+    <path id="led-port-21-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-21-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-22-link" data-path="led-port-22-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="44" transform="translate(280.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-22">
+    <title>led-port-22-link</title>
+    <path id="led-port-22-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-22-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-22-status" data-path="led-port-22-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="45" transform="translate(286.42,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-22">
+    <title>led-port-22-status</title>
+    <path id="led-port-22-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-22-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-23-link" data-path="led-port-23-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="46" transform="translate(278.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-23">
+    <title>led-port-23-link</title>
+    <path id="led-port-23-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-23-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-23-status" data-path="led-port-23-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="47" transform="translate(284.03,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-23">
+    <title>led-port-23-status</title>
+    <path id="led-port-23-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-23-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-24-link" data-path="led-port-24-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="48" transform="translate(300.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-24">
+    <title>led-port-24-link</title>
+    <path id="led-port-24-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-24-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-24-status" data-path="led-port-24-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="49" transform="translate(306.22,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-24">
+    <title>led-port-24-status</title>
+    <path id="led-port-24-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-24-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-25-link" data-path="led-port-25-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="50" transform="translate(297.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-25">
+    <title>led-port-25-link</title>
+    <path id="led-port-25-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-25-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-25-status" data-path="led-port-25-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="51" transform="translate(303.83,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-25">
+    <title>led-port-25-status</title>
+    <path id="led-port-25-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-25-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-26-link" data-path="led-port-26-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="52" transform="translate(315.17,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-26">
+    <title>led-port-26-link</title>
+    <path id="led-port-26-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-26-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-26-status" data-path="led-port-26-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="53" transform="translate(321.02,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-26">
+    <title>led-port-26-status</title>
+    <path id="led-port-26-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-26-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-27-link" data-path="led-port-27-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="54" transform="translate(312.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-27">
+    <title>led-port-27-link</title>
+    <path id="led-port-27-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-27-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-27-status" data-path="led-port-27-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="55" transform="translate(318.63,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-27">
+    <title>led-port-27-status</title>
+    <path id="led-port-27-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-27-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-28-link" data-path="led-port-28-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="56" transform="translate(329.97,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-28">
+    <title>led-port-28-link</title>
+    <path id="led-port-28-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-28-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-28-status" data-path="led-port-28-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="57" transform="translate(335.82,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-28">
+    <title>led-port-28-status</title>
+    <path id="led-port-28-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-28-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-29-link" data-path="led-port-29-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="58" transform="translate(327.57,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-29">
+    <title>led-port-29-link</title>
+    <path id="led-port-29-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-29-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-29-status" data-path="led-port-29-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="59" transform="translate(333.43,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-29">
+    <title>led-port-29-status</title>
+    <path id="led-port-29-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-29-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-30-link" data-path="led-port-30-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="60" transform="translate(344.77,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-30">
+    <title>led-port-30-link</title>
+    <path id="led-port-30-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-30-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-30-status" data-path="led-port-30-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="61" transform="translate(350.62,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-30">
+    <title>led-port-30-status</title>
+    <path id="led-port-30-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-30-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-31-link" data-path="led-port-31-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="62" transform="translate(342.37,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off link activity" data-for="port-31">
+    <title>led-port-31-link</title>
+    <path id="led-port-31-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-31-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-31-status" data-path="led-port-31-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="63" transform="translate(348.23,21.45)" data-group="sfp-leds" data-group-role="indicator" data-description="two arrow lamps per SFP port, link activity and status, set between the two cage rows" data-states="off selected speed-100m" data-for="port-31">
+    <title>led-port-31-status</title>
+    <path id="led-port-31-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-31-status/lamp" data-class="led" data-states="off selected speed-100m" data-z-dome="0.16" />
+  </g>
+  <g id="uplink-0" data-path="uplink-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="0" transform="translate(359.5,24.8)" data-group="sfp-plus" data-group-role="traffic" data-description="the four built-in 1/10-Gigabit SFP+ uplink ports under the LCD panel; not Virtual Chassis capable">
+    <title>uplink-0</title>
+    <rect id="uplink-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="uplink-0/opening" data-class="cutout" />
+    <rect id="uplink-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="uplink-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="uplink-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="uplink-1" data-path="uplink-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="1" transform="translate(374.3,24.8)" data-group="sfp-plus" data-group-role="traffic" data-description="the four built-in 1/10-Gigabit SFP+ uplink ports under the LCD panel; not Virtual Chassis capable">
+    <title>uplink-1</title>
+    <rect id="uplink-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="uplink-1/opening" data-class="cutout" />
+    <rect id="uplink-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="uplink-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="uplink-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="uplink-2" data-path="uplink-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="2" transform="translate(389.1,24.8)" data-group="sfp-plus" data-group-role="traffic" data-description="the four built-in 1/10-Gigabit SFP+ uplink ports under the LCD panel; not Virtual Chassis capable">
+    <title>uplink-2</title>
+    <rect id="uplink-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="uplink-2/opening" data-class="cutout" />
+    <rect id="uplink-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="uplink-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="uplink-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="uplink-3" data-path="uplink-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="3" transform="translate(403.9,24.8)" data-group="sfp-plus" data-group-role="traffic" data-description="the four built-in 1/10-Gigabit SFP+ uplink ports under the LCD panel; not Virtual Chassis capable">
+    <title>uplink-3</title>
+    <rect id="uplink-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="uplink-3/opening" data-class="cutout" />
+    <rect id="uplink-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="uplink-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="uplink-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-uplink-0-link" data-path="led-uplink-0-link" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="0" transform="translate(360.6,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off link activity" data-for="uplink-0">
+    <title>led-uplink-0-link</title>
+    <rect id="led-uplink-0-link--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-0-link--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-0-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-0-status" data-path="led-uplink-0-status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="1" transform="translate(369.8,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off 10g 1g" data-for="uplink-0">
+    <title>led-uplink-0-status</title>
+    <rect id="led-uplink-0-status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-0-status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-0-status/lamp" data-class="led" data-states="off 10g 1g" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-1-link" data-path="led-uplink-1-link" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="2" transform="translate(375.4,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off link activity" data-for="uplink-1">
+    <title>led-uplink-1-link</title>
+    <rect id="led-uplink-1-link--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-1-link--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-1-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-1-status" data-path="led-uplink-1-status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="3" transform="translate(384.6,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off 10g 1g" data-for="uplink-1">
+    <title>led-uplink-1-status</title>
+    <rect id="led-uplink-1-status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-1-status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-1-status/lamp" data-class="led" data-states="off 10g 1g" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-2-link" data-path="led-uplink-2-link" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="4" transform="translate(390.2,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off link activity" data-for="uplink-2">
+    <title>led-uplink-2-link</title>
+    <rect id="led-uplink-2-link--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-2-link--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-2-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-2-status" data-path="led-uplink-2-status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="5" transform="translate(399.4,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off 10g 1g" data-for="uplink-2">
+    <title>led-uplink-2-status</title>
+    <rect id="led-uplink-2-status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-2-status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-2-status/lamp" data-class="led" data-states="off 10g 1g" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-3-link" data-path="led-uplink-3-link" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="6" transform="translate(405.0,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off link activity" data-for="uplink-3">
+    <title>led-uplink-3-link</title>
+    <rect id="led-uplink-3-link--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-3-link--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-3-link/lamp" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="led-uplink-3-status" data-path="led-uplink-3-status" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="7" transform="translate(414.2,38.0)" data-group="sfp-plus-leds" data-group-role="indicator" data-description="two square lamps per SFP+ uplink port, link activity and status" data-states="off 10g 1g" data-for="uplink-3">
+    <title>led-uplink-3-status</title>
+    <rect id="led-uplink-3-status--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-uplink-3-status--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-uplink-3-status/lamp" data-class="led" data-states="off 10g 1g" data-z-dome="0.2" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="juniper/ex4300-console-usb-mini@1:1.0.0" data-wall="#8d949c" data-media="mini-usb-b" data-role="console" data-rel-pos="0" transform="translate(427.35,30.1)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <rect id="console--shell" x="0" y="0" width="7.9" height="4.6" rx="0.6" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.15" />
+    <path id="console--opening" d="M 0.7 1.4 L 1.5 0.7 H 6.4 L 7.2 1.4 V 3.2 L 6.4 3.9 H 1.5 L 0.7 3.2 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="console/opening" data-class="port" data-inner="1" />
+    <rect x="1.7" y="2.2" width="4.5" height="0.7" fill="#3a4046" />
+    <g data-cp="mate" data-cp-at="3.95 2.3" data-cp-dir="front" />
+  </g>
+  <g id="btn-menu" data-path="btn-menu" data-class="button" data-ref="juniper/ex4300-lcd-button@1:1.0.0" data-function="LCD menu" data-role="lcd-navigation" data-rel-pos="0" transform="translate(419.15,5.95)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-menu</title>
+    <circle cx="3.05" cy="3.05" r="3.0" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-menu--cap" cx="3.05" cy="3.05" r="2.45" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-menu/cap" data-class="button" data-z-out="0.6" data-z-color="#c9ccd0" />
+    <g stroke="#2b2e35" stroke-width="0.3" fill="#2b2e35">
+      <circle cx="1.9" cy="2.2" r="0.25" />
+      <circle cx="1.9" cy="3.05" r="0.25" />
+      <circle cx="1.9" cy="3.9" r="0.25" />
+      <path d="M 2.5 2.2 H 4.3 M 2.5 3.05 H 4.3 M 2.5 3.9 H 4.3" fill="none" />
+    </g>
+  </g>
+  <g id="btn-enter" data-path="btn-enter" data-class="button" data-ref="juniper/ex4300-lcd-button@1:1.0.0" data-function="LCD enter" data-role="lcd-navigation" data-rel-pos="1" transform="translate(419.15,14.15)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-enter</title>
+    <circle cx="3.05" cy="3.05" r="3.0" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-enter--cap" cx="3.05" cy="3.05" r="2.45" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-enter/cap" data-class="button" data-z-out="0.6" data-z-color="#c9ccd0" />
+    <g stroke="#2b2e35" stroke-width="0.32" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 4.3 2.0 V 3.3 H 1.9" />
+      <path d="M 2.7 2.5 L 1.9 3.3 L 2.7 4.1" />
+    </g>
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(427.9,5.2)" data-group="status-leds" data-group-role="indicator" data-description="Table 18 - ALM: red major alarm, yellow minor alarm, unlit no alarm (red at power-up until a network link is made)" data-states="off major minor" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off major minor" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(427.9,8.9)" data-group="status-leds" data-group-role="indicator" data-description="Table 18 - SYS: green steady, Junos OS loaded; green blinking, booting; unlit, powered off or halted" data-states="off junos booting" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off junos booting" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(427.9,12.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 18 - MST: standalone, green steady when functioning; Virtual Chassis, green steady primary, blinking backup, unlit line card" data-states="off primary backup" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off primary backup" data-z-dome="0.3" />
+  </g>
+  <g id="uplink" data-path="uplink" data-class="bay" data-group="uplink" data-group-role="traffic" data-rel-pos="0">
+    <title>uplink</title>
+    <rect id="uplink--opening" x="6" y="1.9" width="87" height="40.7" fill="#101214" />
+    <g id="uplink--module" data-path="uplink/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4300-32f-uplink-blank@1:1.0.0" data-model="EX4300-32F uplink module slot cover panel" data-states="absent" transform="translate(49.5,22.25) translate(-43.5,-20.35)">
+      <title>uplink--module</title>
+      <rect id="uplink--module--face" x="0" y="0" width="87.0" height="40.7" rx="0.6" fill="#7c8089" stroke="#4b5057" stroke-width="0.4" />
+      <g id="uplink--module--screw-left" data-path="uplink/module/screw-left" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="5.1" cy="19.4" r="2.4" fill="#111214" stroke="#5a5f66" stroke-width="0.35" />
+        <circle cx="5.1" cy="19.4" r="0.9" fill="#26292d" />
+      </g>
+      <g id="uplink--module--screw-right" data-path="uplink/module/screw-right" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="81.9" cy="19.4" r="2.4" fill="#111214" stroke="#5a5f66" stroke-width="0.35" />
+        <circle cx="81.9" cy="19.4" r="0.9" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="face-screw-l" data-path="face-screw-l" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="0" transform="translate(365.6,11.0)" data-group="furniture" data-group-role="furniture">
+    <title>face-screw-l</title>
+    <circle id="face-screw-l--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="face-screw-l--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="face-screw-l--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="face-screw-r" data-path="face-screw-r" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(434.2,11.3)" data-group="furniture" data-group-role="furniture">
+    <title>face-screw-r</title>
+    <circle id="face-screw-r--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="face-screw-r--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="face-screw-r--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

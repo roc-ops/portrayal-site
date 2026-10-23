@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.0mm" height="87.1mm" viewBox="0 0 442.0 87.1" data-device="qfx5230-64cd" data-view="rear" data-weight-note="55 lb (25 kg) with power supplies and fans installed (guide Table 8)" data-throughput="25.6 Tbps (guide, QFX5230-64CD Switch Description)" data-breakout-ports="up to 64 x 400 GbE, 128 x 200 GbE, 256 x 100 GbE, 256 x 40 GbE, 256 x 25 GbE or 256 x 10 GbE (guide, QFX5230-64CD Switch Description)" data-qsfpdd-speeds="400, 200, 100, 50, 40 GbE, 4 x 25 GbE or 4 x 10 GbE per port (guide, Port Panel overview)" data-power-typical-w="498" data-power-max-w="1396" data-power-envelope="as-tested" data-power-measurement-note="Maximum at 40 C ambient with SR optics at 100 percent load with IMIX traffic; typical at 25 C with DACs at 50 percent load with IMIX traffic, excluding transceivers (guide Table 13)" data-power-dc-typical-w="487" data-power-dc-max-w="1446" data-power-input-ac="180 to 305 VAC, 50 to 60 Hz (guide Table 4)" data-power-input-dc="rated -48 to -60 VDC, operating -40 to -72 VDC (guide Table 18)" data-redundancy-note="two supplies, 1+1, hot-removable and hot-insertable while the second supply is installed" data-fans="four fan modules of two rotors, 7+1 at rotor level; the switch runs 120 seconds without thermal shutdown while one module is replaced" data-airflow-note="AFO is front-to-back (port-to-FRU); AFI is back-to-front (FRU-to-port); no mixing of fans and supplies of different direction" data-operating-temp="0 to 40 C (32 to 104 F) for AFO and AFI (guide Table 24)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing, operating" data-altitude="no performance degradation to 1828.8 m (6000 ft) at 0 to 40 C for AFO; for AFI the figure is 0 ft (guide Table 24)" data-cpu="Intel Hewitt Lake D-1637, 6 cores" data-storage="two internal 100 GB SSDs" data-switch-chip="Broadcom Tomahawk 4 (BCM56990)" data-software="Junos OS Evolved" data-optics-qsfp-dd="400 GbE QSFP-DD optics; 400G-ZR and 400G-ZRM only in ports 33 to 63 (the odd ones of the lower band)" data-optics-sfp-plus="two SFP+ ports at 10 GbE" data-ptp="10 MHz and 1 PPS clock connectors" data-oob="one RJ-45 management port, 10/100/1000 Mbps" data-console="one RJ-45 console port" data-usb="one USB 2.0 port" data-timing-outputs="10 MHz and 1 PPS SMB connectors" data-safety="UL 60950-1:2007 R10.14; CAN/CSA-C22.2 No. 60950-1-07 Amd 1:2011 Amd 2:2014; IEC 62368-1:2014 and 2018; EN 62368-1:2014+A11:2017; UL/CSA 62368-1:2019; IEC/EN 60825-1 (guide, Compliance Statements)" data-emc="FCC 47 CFR Part 15; ICES-003; BS EN 55032; BS EN 55035; EN 300 386; CISPR 32; CISPR 35; IEC/EN 61000 series (guide, Compliance Statements for EMC Requirements)" data-nebs="designed to comply with Zone 4 earthquake requirements of NEBS GR-63-CORE, Issue 3 (guide Table 24)" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx5230-jnp-2700w-ac-afi@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/qfx5230-jnp-2700w-ac-afi@'] .state-green { --led-color: #39b54a; }
+</style>
+  <metadata>{"device":"Juniper QFX5230-64CD","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"juniper/qfx5230-64cd-fan-afi@1":"1.0.0","juniper/qfx5230-jnp-2700w-ac-afi@1":"1.0.0","std/c20-inlet@1":"1.4.0"},"source-sha256":"d454e4dbdb872a7ad2545131ed6c738d5f39e2de1826218633034aec754ed83e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5230-64CD" data-sku="QFX5230-64CD-AFI" data-part-number="" x="0" y="0" width="442" height="87.1" rx="1.2" fill="#dbdcde" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.4 73)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="6.4" y="77.6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(93.1 73)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="93.1" y="77.6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(179.8 73)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <text x="179.8" y="77.6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(266.5 73)" id="silk-fan-3-mark" data-path="silk:silk-fan-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+    <text x="266.5" y="77.6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-fan-3" data-path="silk:silk-fan-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3">3</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(354.2 35.4)" id="silk-psu-0-mark" data-path="silk:silk-psu-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <text x="354.2" y="40" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(354.2 76.4)" id="silk-psu-1-mark" data-path="silk:silk-psu-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="354.2" y="81" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="358.9" y="2.3" width="74.8" height="40.2" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx5230-jnp-2700w-ac-afi@1:1.0.0" data-airflow="back-to-front" data-input="180 to 305 VAC, 50 to 60 Hz (guide Table 4); output 12 V at 225 A and 12 V standby at 1 A" data-model="JNP-2700W-AC-AFI" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(396.3,22.4) translate(-37.4,-20.1)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--face" x="0" y="0" width="74.8" height="40.2" rx="0.8" fill="#b7bac0" stroke="#7b7f86" stroke-width="0.4" />
+      <circle id="psu-0--module--guard" cx="21.8" cy="20.1" r="18.9" fill="#15161a" stroke="#3b3d42" stroke-width="0.4" />
+      <g fill="none" stroke="#c9ccd1" stroke-width="0.35">
+        <circle cx="21.8" cy="20.1" r="15.6" />
+        <circle cx="21.8" cy="20.1" r="12.0" />
+        <circle cx="21.8" cy="20.1" r="8.2" />
+        <path d="M 6.5 3.7 L 37.1 36.5 M 37.1 3.7 L 6.5 36.5" stroke-width="0.5" />
+      </g>
+      <g fill="#c9ccd1" stroke="#6b6f75" stroke-width="0.3">
+        <circle cx="6.5" cy="3.7" r="2.6" />
+        <circle cx="37.1" cy="3.7" r="2.6" />
+        <circle cx="6.5" cy="36.5" r="2.6" />
+        <circle cx="37.1" cy="36.5" r="2.6" />
+      </g>
+      <rect id="psu-0--module--inlet-bay" x="42.2" y="3.7" width="24.4" height="32.4" rx="1.4" fill="#0e0f11" stroke="#2b2e32" stroke-width="0.3" />
+      <g id="psu-0--module--silkscreen" font-family="sans-serif" font-size="2.0" fill="#2a2d31">
+        <text x="64.6" y="37.4" text-anchor="middle">PWR</text>
+      </g>
+      <circle id="psu-0--module--led-pwr" cx="69.4" cy="32.6" r="1.4" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="psu-0/module/led-pwr" data-class="led" data-states="green amber off" />
+      <g id="psu-0--module--release-latch" data-path="psu-0/module/release-latch" data-class="latch">
+        <rect x="68.5" y="13.6" width="6.3" height="13.6" rx="1.2" fill="#202225" stroke="#0e0f11" stroke-width="0.35" />
+        <rect x="66.6" y="15.4" width="2.2" height="10.0" fill="#0b0c0d" />
+      </g>
+      <g id="psu-0--module--latch" data-path="psu-0/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#6ea301">
+        <rect x="1.9" y="15.6" width="41.3" height="8.5" rx="0.8" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+      </g>
+      <g id="psu-0--module--inlet" data-path="psu-0/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(38.2,7.7) rotate(90 16.2 12.2)">
+        <title>psu-0--module--inlet</title>
+        <rect id="psu-0--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu-0/module/inlet/opening" data-class="cutout" />
+        <rect id="psu-0--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu-0--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="358.9" y="44" width="74.8" height="40.2" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx5230-jnp-2700w-ac-afi@1:1.0.0" data-airflow="back-to-front" data-input="180 to 305 VAC, 50 to 60 Hz (guide Table 4); output 12 V at 225 A and 12 V standby at 1 A" data-model="JNP-2700W-AC-AFI" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(396.3,64.1) translate(-37.4,-20.1)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="0" y="0" width="74.8" height="40.2" rx="0.8" fill="#b7bac0" stroke="#7b7f86" stroke-width="0.4" />
+      <circle id="psu-1--module--guard" cx="21.8" cy="20.1" r="18.9" fill="#15161a" stroke="#3b3d42" stroke-width="0.4" />
+      <g fill="none" stroke="#c9ccd1" stroke-width="0.35">
+        <circle cx="21.8" cy="20.1" r="15.6" />
+        <circle cx="21.8" cy="20.1" r="12.0" />
+        <circle cx="21.8" cy="20.1" r="8.2" />
+        <path d="M 6.5 3.7 L 37.1 36.5 M 37.1 3.7 L 6.5 36.5" stroke-width="0.5" />
+      </g>
+      <g fill="#c9ccd1" stroke="#6b6f75" stroke-width="0.3">
+        <circle cx="6.5" cy="3.7" r="2.6" />
+        <circle cx="37.1" cy="3.7" r="2.6" />
+        <circle cx="6.5" cy="36.5" r="2.6" />
+        <circle cx="37.1" cy="36.5" r="2.6" />
+      </g>
+      <rect id="psu-1--module--inlet-bay" x="42.2" y="3.7" width="24.4" height="32.4" rx="1.4" fill="#0e0f11" stroke="#2b2e32" stroke-width="0.3" />
+      <g id="psu-1--module--silkscreen" font-family="sans-serif" font-size="2.0" fill="#2a2d31">
+        <text x="64.6" y="37.4" text-anchor="middle">PWR</text>
+      </g>
+      <circle id="psu-1--module--led-pwr" cx="69.4" cy="32.6" r="1.4" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="psu-1/module/led-pwr" data-class="led" data-states="green amber off" />
+      <g id="psu-1--module--release-latch" data-path="psu-1/module/release-latch" data-class="latch">
+        <rect x="68.5" y="13.6" width="6.3" height="13.6" rx="1.2" fill="#202225" stroke="#0e0f11" stroke-width="0.35" />
+        <rect x="66.6" y="15.4" width="2.2" height="10.0" fill="#0b0c0d" />
+      </g>
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#6ea301">
+        <rect x="1.9" y="15.6" width="41.3" height="8.5" rx="0.8" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+      </g>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(38.2,7.7) rotate(90 16.2 12.2)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <rect id="psu-1--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="9.3" y="5.6" width="80.9" height="80" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5230-64cd-fan-afi@1:1.0.0" data-airflow="back-to-front" data-model="QFX5230-64CD-FANAI" data-power-absent="not-published" data-states="absent" transform="translate(49.75,45.6) translate(-40.45,-40)">
+      <title>fan-0--module</title>
+      <defs>
+        <pattern id="fan-0--module--hex" width="3.0" height="5.2" patternUnits="userSpaceOnUse">
+          <polygon points="1.5,0.1 2.55,0.7 2.55,1.9 1.5,2.5 0.45,1.9 0.45,0.7" fill="#0b0c0e" />
+          <polygon points="0,2.7 1.05,3.3 1.05,4.5 0,5.1 -1.05,4.5 -1.05,3.3" fill="#0b0c0e" />
+          <polygon points="3.0,2.7 4.05,3.3 4.05,4.5 3.0,5.1 1.95,4.5 1.95,3.3" fill="#0b0c0e" />
+        </pattern>
+      </defs>
+      <rect id="fan-0--module--face" x="0" y="0" width="80.9" height="80.0" rx="0.8" fill="#3a3c42" stroke="#2a2b30" stroke-width="0.4" />
+      <rect id="fan-0--module--grille" x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="#16171a" />
+      <rect x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="url(#fan-0--module--hex)" />
+      <g id="fan-0--module--handle" data-path="fan-0/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#6ea301">
+        <path d="M 0 28.7 C 20 28.7, 52 36.0, 79.6 36.6 V 52.3 C 55 46.0, 25 44.5, 0 43.9 Z" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+        <g fill="#5d8c00">
+          <rect x="7.0" y="30.9" width="19.0" height="4.2" rx="1.2" />
+          <rect x="7.0" y="36.6" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="37.3" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="43.0" width="19.0" height="4.2" rx="1.2" />
+        </g>
+        <rect id="fan-0--module--airin-chip" x="31.4" y="37.2" width="13.4" height="6.9" rx="0.8" fill="#5b6066" />
+        <g fill="#6ea301">
+          <circle cx="35.0" cy="40.65" r="0.5" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(90 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(180 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(270 35.0 40.65)" />
+        </g>
+        <g id="fan-0--module--silkscreen">
+          <text x="40.6" y="40.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="40.6" y="43.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-0--module--screw" data-path="fan-0/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="6.1" cy="6.1" r="2.5" fill="#b9bcc2" stroke="#6b6f75" stroke-width="0.3" />
+        <path d="M 4.9 6.1 H 7.3 M 6.1 4.9 V 7.3" stroke="#555a60" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="96" y="5.6" width="80.9" height="80" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5230-64cd-fan-afi@1:1.0.0" data-airflow="back-to-front" data-model="QFX5230-64CD-FANAI" data-power-absent="not-published" data-states="absent" transform="translate(136.45,45.6) translate(-40.45,-40)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--hex" width="3.0" height="5.2" patternUnits="userSpaceOnUse">
+          <polygon points="1.5,0.1 2.55,0.7 2.55,1.9 1.5,2.5 0.45,1.9 0.45,0.7" fill="#0b0c0e" />
+          <polygon points="0,2.7 1.05,3.3 1.05,4.5 0,5.1 -1.05,4.5 -1.05,3.3" fill="#0b0c0e" />
+          <polygon points="3.0,2.7 4.05,3.3 4.05,4.5 3.0,5.1 1.95,4.5 1.95,3.3" fill="#0b0c0e" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--face" x="0" y="0" width="80.9" height="80.0" rx="0.8" fill="#3a3c42" stroke="#2a2b30" stroke-width="0.4" />
+      <rect id="fan-1--module--grille" x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="#16171a" />
+      <rect x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="url(#fan-1--module--hex)" />
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#6ea301">
+        <path d="M 0 28.7 C 20 28.7, 52 36.0, 79.6 36.6 V 52.3 C 55 46.0, 25 44.5, 0 43.9 Z" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+        <g fill="#5d8c00">
+          <rect x="7.0" y="30.9" width="19.0" height="4.2" rx="1.2" />
+          <rect x="7.0" y="36.6" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="37.3" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="43.0" width="19.0" height="4.2" rx="1.2" />
+        </g>
+        <rect id="fan-1--module--airin-chip" x="31.4" y="37.2" width="13.4" height="6.9" rx="0.8" fill="#5b6066" />
+        <g fill="#6ea301">
+          <circle cx="35.0" cy="40.65" r="0.5" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(90 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(180 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(270 35.0 40.65)" />
+        </g>
+        <g id="fan-1--module--silkscreen">
+          <text x="40.6" y="40.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="40.6" y="43.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="6.1" cy="6.1" r="2.5" fill="#b9bcc2" stroke="#6b6f75" stroke-width="0.3" />
+        <path d="M 4.9 6.1 H 7.3 M 6.1 4.9 V 7.3" stroke="#555a60" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="182.7" y="5.6" width="80.9" height="80" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5230-64cd-fan-afi@1:1.0.0" data-airflow="back-to-front" data-model="QFX5230-64CD-FANAI" data-power-absent="not-published" data-states="absent" transform="translate(223.15,45.6) translate(-40.45,-40)">
+      <title>fan-2--module</title>
+      <defs>
+        <pattern id="fan-2--module--hex" width="3.0" height="5.2" patternUnits="userSpaceOnUse">
+          <polygon points="1.5,0.1 2.55,0.7 2.55,1.9 1.5,2.5 0.45,1.9 0.45,0.7" fill="#0b0c0e" />
+          <polygon points="0,2.7 1.05,3.3 1.05,4.5 0,5.1 -1.05,4.5 -1.05,3.3" fill="#0b0c0e" />
+          <polygon points="3.0,2.7 4.05,3.3 4.05,4.5 3.0,5.1 1.95,4.5 1.95,3.3" fill="#0b0c0e" />
+        </pattern>
+      </defs>
+      <rect id="fan-2--module--face" x="0" y="0" width="80.9" height="80.0" rx="0.8" fill="#3a3c42" stroke="#2a2b30" stroke-width="0.4" />
+      <rect id="fan-2--module--grille" x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="#16171a" />
+      <rect x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="url(#fan-2--module--hex)" />
+      <g id="fan-2--module--handle" data-path="fan-2/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#6ea301">
+        <path d="M 0 28.7 C 20 28.7, 52 36.0, 79.6 36.6 V 52.3 C 55 46.0, 25 44.5, 0 43.9 Z" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+        <g fill="#5d8c00">
+          <rect x="7.0" y="30.9" width="19.0" height="4.2" rx="1.2" />
+          <rect x="7.0" y="36.6" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="37.3" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="43.0" width="19.0" height="4.2" rx="1.2" />
+        </g>
+        <rect id="fan-2--module--airin-chip" x="31.4" y="37.2" width="13.4" height="6.9" rx="0.8" fill="#5b6066" />
+        <g fill="#6ea301">
+          <circle cx="35.0" cy="40.65" r="0.5" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(90 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(180 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(270 35.0 40.65)" />
+        </g>
+        <g id="fan-2--module--silkscreen">
+          <text x="40.6" y="40.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="40.6" y="43.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-2--module--screw" data-path="fan-2/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="6.1" cy="6.1" r="2.5" fill="#b9bcc2" stroke="#6b6f75" stroke-width="0.3" />
+        <path d="M 4.9 6.1 H 7.3 M 6.1 4.9 V 7.3" stroke="#555a60" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="269.4" y="5.6" width="80.9" height="80" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5230-64cd-fan-afi@1:1.0.0" data-airflow="back-to-front" data-model="QFX5230-64CD-FANAI" data-power-absent="not-published" data-states="absent" transform="translate(309.85,45.6) translate(-40.45,-40)">
+      <title>fan-3--module</title>
+      <defs>
+        <pattern id="fan-3--module--hex" width="3.0" height="5.2" patternUnits="userSpaceOnUse">
+          <polygon points="1.5,0.1 2.55,0.7 2.55,1.9 1.5,2.5 0.45,1.9 0.45,0.7" fill="#0b0c0e" />
+          <polygon points="0,2.7 1.05,3.3 1.05,4.5 0,5.1 -1.05,4.5 -1.05,3.3" fill="#0b0c0e" />
+          <polygon points="3.0,2.7 4.05,3.3 4.05,4.5 3.0,5.1 1.95,4.5 1.95,3.3" fill="#0b0c0e" />
+        </pattern>
+      </defs>
+      <rect id="fan-3--module--face" x="0" y="0" width="80.9" height="80.0" rx="0.8" fill="#3a3c42" stroke="#2a2b30" stroke-width="0.4" />
+      <rect id="fan-3--module--grille" x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="#16171a" />
+      <rect x="5.0" y="3.0" width="71.0" height="74.0" rx="5.0" fill="url(#fan-3--module--hex)" />
+      <g id="fan-3--module--handle" data-path="fan-3/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#6ea301">
+        <path d="M 0 28.7 C 20 28.7, 52 36.0, 79.6 36.6 V 52.3 C 55 46.0, 25 44.5, 0 43.9 Z" fill="#6ea301" stroke="#4d7500" stroke-width="0.4" />
+        <g fill="#5d8c00">
+          <rect x="7.0" y="30.9" width="19.0" height="4.2" rx="1.2" />
+          <rect x="7.0" y="36.6" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="37.3" width="19.0" height="4.2" rx="1.2" />
+          <rect x="55.0" y="43.0" width="19.0" height="4.2" rx="1.2" />
+        </g>
+        <rect id="fan-3--module--airin-chip" x="31.4" y="37.2" width="13.4" height="6.9" rx="0.8" fill="#5b6066" />
+        <g fill="#6ea301">
+          <circle cx="35.0" cy="40.65" r="0.5" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(90 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(180 35.0 40.65)" />
+          <ellipse cx="35.0" cy="39.3" rx="0.8" ry="1.3" transform="rotate(270 35.0 40.65)" />
+        </g>
+        <g id="fan-3--module--silkscreen">
+          <text x="40.6" y="40.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="40.6" y="43.0" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">IN</text>
+        </g>
+      </g>
+      <g id="fan-3--module--screw" data-path="fan-3/module/screw" data-class="screw" data-z-cyl="2.0" data-z-knurl="1">
+        <circle cx="6.1" cy="6.1" r="2.5" fill="#b9bcc2" stroke="#6b6f75" stroke-width="0.3" />
+        <path d="M 4.9 6.1 H 7.3 M 6.1 4.9 V 7.3" stroke="#555a60" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+</svg>

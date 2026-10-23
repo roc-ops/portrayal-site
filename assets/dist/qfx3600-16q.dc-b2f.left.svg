@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="490.2mm" height="44.2mm" viewBox="0 0 490.2 44.2" data-device="qfx3600-16q" data-view="left" data-weight-note="20.5 lb (9.3 kg) with FRUs installed; 14.6 lb (6.6 kg) without (Table 5)" data-depth-note="19.3 in (49 cm) excluding FRU handles and locking levers; 19.4 in (49.3 cm) including them (Table 5)" data-qsfp-plus-speeds="40 GbE; or four 10 GbE with a breakout cable" data-power-typical-w="255" data-power-max-w="345" data-power-envelope="unstated" data-power-dc-typical-w="252" data-power-dc-max-w="341" data-power-input-ac="100 to 240 VAC, 4 A at 100 VAC or 2 A at 240 VAC, 50 to 60 Hz (Table 23)" data-power-input-dc="nominal -48 VDC, operating range -40 to -72 VDC, 8 A maximum (Table 25)" data-redundancy-note="two supplies, load-sharing and fully redundant; both should be installed" data-fans="three fan trays of two fan modules, hot-swappable; the supplies carry their own fans" data-operating-temp="0 to 40 C (32 to 104 F) normal operation; -5 to 55 C short term" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 85 percent noncondensing" data-altitude="no performance degradation to 3048 m (10000 ft)" data-storage="8 GB internal flash" data-software="Junos OS" data-virtual-chassis="up to 10 switches with QFX3500, QFX3600, QFX5100 and EX4300 members; a Virtual Chassis Fabric leaf" data-qfabric="a Node device, or an Interconnect device in a QFX3000-M system, connected by the first QSFP+ ports" data-optics-qsfp="QSFP+ transceivers, QSFP+ DAC and DAC breakout cables, fibre breakout to four 10GBASE-SR SFP+" data-oob="management ports C0 and C1 (1000BASE-T RJ-45) and C0S and C1S (1 Gbps SFP), with link-speed and activity lamps; an SFP in C0S or C1S disables the RJ-45 port beside it" data-console="RJ-45 console port (CON)" data-usb="one USB port" data-lcd="an LCD showing the host name and the number of active alarms" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/?p=qfx3500" data-airflow="back-to-front" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX3600-16Q","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"64948b919ec4c4d45bb0c20a3e36e644f436e4f519d5d094e8d53a5fc5a5d461","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX3600-16Q" x="0" y="0" width="490.2" height="44.2" rx="1.2" fill="#7b8087" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

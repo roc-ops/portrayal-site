@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.0mm" height="650.2mm" viewBox="0 0 442.0 650.2" data-device="qfx5230-64cd" data-view="bottom" data-weight-note="55 lb (25 kg) with power supplies and fans installed (guide Table 8)" data-throughput="25.6 Tbps (guide, QFX5230-64CD Switch Description)" data-breakout-ports="up to 64 x 400 GbE, 128 x 200 GbE, 256 x 100 GbE, 256 x 40 GbE, 256 x 25 GbE or 256 x 10 GbE (guide, QFX5230-64CD Switch Description)" data-qsfpdd-speeds="400, 200, 100, 50, 40 GbE, 4 x 25 GbE or 4 x 10 GbE per port (guide, Port Panel overview)" data-power-typical-w="498" data-power-max-w="1396" data-power-envelope="as-tested" data-power-measurement-note="Maximum at 40 C ambient with SR optics at 100 percent load with IMIX traffic; typical at 25 C with DACs at 50 percent load with IMIX traffic, excluding transceivers (guide Table 13)" data-power-dc-typical-w="487" data-power-dc-max-w="1446" data-power-input-ac="180 to 305 VAC, 50 to 60 Hz (guide Table 4)" data-power-input-dc="rated -48 to -60 VDC, operating -40 to -72 VDC (guide Table 18)" data-redundancy-note="two supplies, 1+1, hot-removable and hot-insertable while the second supply is installed" data-fans="four fan modules of two rotors, 7+1 at rotor level; the switch runs 120 seconds without thermal shutdown while one module is replaced" data-airflow-note="AFO is front-to-back (port-to-FRU); AFI is back-to-front (FRU-to-port); no mixing of fans and supplies of different direction" data-operating-temp="0 to 40 C (32 to 104 F) for AFO and AFI (guide Table 24)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing, operating" data-altitude="no performance degradation to 1828.8 m (6000 ft) at 0 to 40 C for AFO; for AFI the figure is 0 ft (guide Table 24)" data-cpu="Intel Hewitt Lake D-1637, 6 cores" data-storage="two internal 100 GB SSDs" data-switch-chip="Broadcom Tomahawk 4 (BCM56990)" data-software="Junos OS Evolved" data-optics-qsfp-dd="400 GbE QSFP-DD optics; 400G-ZR and 400G-ZRM only in ports 33 to 63 (the odd ones of the lower band)" data-optics-sfp-plus="two SFP+ ports at 10 GbE" data-ptp="10 MHz and 1 PPS clock connectors" data-oob="one RJ-45 management port, 10/100/1000 Mbps" data-console="one RJ-45 console port" data-usb="one USB 2.0 port" data-timing-outputs="10 MHz and 1 PPS SMB connectors" data-safety="UL 60950-1:2007 R10.14; CAN/CSA-C22.2 No. 60950-1-07 Amd 1:2011 Amd 2:2014; IEC 62368-1:2014 and 2018; EN 62368-1:2014+A11:2017; UL/CSA 62368-1:2019; IEC/EN 60825-1 (guide, Compliance Statements)" data-emc="FCC 47 CFR Part 15; ICES-003; BS EN 55032; BS EN 55035; EN 300 386; CISPR 32; CISPR 35; IEC/EN 61000 series (guide, Compliance Statements for EMC Requirements)" data-nebs="designed to comply with Zone 4 earthquake requirements of NEBS GR-63-CORE, Issue 3 (guide Table 24)" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5230-64CD","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"d454e4dbdb872a7ad2545131ed6c738d5f39e2de1826218633034aec754ed83e","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5230-64CD" data-sku="QFX5230-64CD-AFI" data-part-number="" x="0" y="0" width="442" height="650.2" rx="1.2" fill="#dbdcde" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

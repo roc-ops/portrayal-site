@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="447.0mm" height="43.7mm" viewBox="0 0 447.0 43.7" data-device="ex9251" data-view="rear" data-weight-note="22.7 lb (10.3 kg) chassis, with the power supplies and fan trays installed (guide Table 4); the datasheet says 23.15 lb (10.5 kg) fully loaded" data-depth-note="18.5 in (47 cm), or 20.43 in (51.89 cm) with the fan tray and power supply handles (guide Table 4)" data-width-note="19 in (48.26 cm) with the brackets in the guide, 17.6 in (44.7 cm) in the datasheet; the body is modelled" data-switching-capacity="up to 400 Gbps throughput (guide, EX9251 Switch Hardware Overview); the datasheet says up to 800 Gbps" data-sfp-plus-speeds="10 GbE on each of the eight SFP+ ports" data-rate-selectable-speeds="100, 40 or 10 GbE on each QSFP28 port; 4 x 10 GbE with a breakout cable" data-wire-speed-density="24 x 10 GbE, 4 x 40 GbE or 4 x 100 GbE at wire speed (datasheet, Table 4)" data-power-typical-w="240" data-power-max-w="280" data-power-envelope="fully-configured" data-power-envelope-note="fully loaded switch; 240 W typical at 25 C, 280 W maximum at 55 C (guide Table 12)" data-power-input-ac="100 to 240 VAC, 50 to 60 Hz; 3.2 A at 100 VAC, 1.37 A at 240 VAC; system input power 312 W" data-power-input-dc="operating -44 to -72 VDC, nominal -48 and -60 VDC; 20 A at -44 VDC maximum; system input power 331 W" data-power-datasheet-max-w="300 W on AC and 312 W on DC (datasheet Table 3)" data-redundancy-note="two supplies, 1+1 feed redundancy; one supply carries the maximum configuration" data-thermal-output="1705 BTU/hour (500 W) maximum in the guide's Table 20; 1,275 BTU/hour (360 W) in the datasheet" data-fans="three fan trays, each with one counter-rotating fan, and a fan in each supply" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing in operation; the datasheet gives 5 to 95 percent non-operating" data-altitude="up to 10,000 ft (3,048 m) with no performance degradation" data-cpu="1.6 GHz Intel 8-core x86 (guide, Routing Engine)" data-memory="32 GB DDR4" data-storage="2 x 100 GB SATA SSD" data-software="Junos OS, first release 18.1R1" data-optics-sfp-plus="10 GbE SFP+ transceivers and direct attach copper cables" data-optics-qsfp28="QSFP28 and QSFP+ transceivers; a QSFP28 port runs as 100 GbE, 40 GbE or 4 x 10 GbE" data-junos-fusion="Junos Fusion Enterprise" data-ptp="the GM/PTP grandmaster clock port; support is not available in the release the guide covers" data-oob="one RJ-45 management Ethernet port (MGMT), 10/100/1000" data-console="RJ-45 serial console port (CON), RS-232" data-usb="one USB port for installing Junos OS" data-clock-and-time-io="BITS RJ-45, ToD RJ-45, 1PPS and 10MHz SMB in and out, GM/PTP SFP" data-safety="CAN/CSA-22.2 No. 60950-00/UL 1950, EN 60950, IEC 60950-1, EN 60825-1 (datasheet)" data-emc="FCC 47 CFR Part 15 Class A, EN 55022, VCCI, BSMI CNS 13438, AS/NZS CISPR22 (datasheet)" data-nebs="SR-3580 NEBS Criteria Level 3, GR-63-Core, GR-1089-Core (as the datasheet lists them)" data-materials="RoHS 5/6 (datasheet)" data-seismic="Telcordia Technologies Zone 4 earthquake requirements" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-fan-0.state-fault, #led-fan-0 .state-fault, #led-fan-1.state-fault, #led-fan-1 .state-fault, #led-fan-2.state-fault, #led-fan-2 .state-fault { --led-color: #ef4444; }
+    #led-fan-0.state-initialising, #led-fan-0 .state-initialising, #led-fan-1.state-initialising, #led-fan-1 .state-initialising, #led-fan-2.state-initialising, #led-fan-2 .state-initialising { --led-color: #22c55e; }
+    #led-fan-0.state-initialising [data-class='led'], #led-fan-0 .state-initialising, #led-fan-1.state-initialising [data-class='led'], #led-fan-1 .state-initialising, #led-fan-2.state-initialising [data-class='led'], #led-fan-2 .state-initialising { animation: portrayal-blink 1s linear infinite; }
+    #led-fan-0.state-ok, #led-fan-0 .state-ok, #led-fan-1.state-ok, #led-fan-1 .state-ok, #led-fan-2.state-ok, #led-fan-2 .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX9251","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/ground-screw-10-32@1":"1.0.0","common/led-dot@1":"1.1.0"},"source-sha256":"c5bedb5f080a7e1e413bf92a3db35fb3586fc28cafe57cbcd3fc9b740e0faefd","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX9251" data-sku="EX9251-CHAS" data-part-number="" x="0" y="0" width="447" height="43.7" rx="1.2" fill="#8b8e94" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-plate" data-kind="plate" x="238.7" y="2.2" width="73.5" height="39.8" rx="0.6" fill="#868a90" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="20.585" cy="17.585" rx="4.735" ry="4.735" fill="#101214" id="cutout--ground-screw-0" data-path="cutout:ground-screw-0" data-class="cutout" />
+    <ellipse cx="36.585" cy="17.585" rx="4.735" ry="4.735" fill="#101214" id="cutout--ground-screw-1" data-path="cutout:ground-screw-1" data-class="cutout" />
+    <ellipse cx="61.1" cy="17.3" rx="3" ry="3" fill="#101214" id="cutout--esd-rear-jack" data-path="cutout:esd-rear-jack" data-class="cutout" />
+    <ellipse cx="85.4" cy="29.3" rx="1" ry="1" fill="#101214" id="cutout--led-fan-0" data-path="cutout:led-fan-0" data-class="cutout" />
+    <ellipse cx="133.8" cy="29.3" rx="1" ry="1" fill="#101214" id="cutout--led-fan-1" data-path="cutout:led-fan-1" data-class="cutout" />
+    <ellipse cx="182.3" cy="29.3" rx="1" ry="1" fill="#101214" id="cutout--led-fan-2" data-path="cutout:led-fan-2" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 3.4 0 A 3.4 3.4 0 1 0 -3.4 0 A 3.4 3.4 0 1 0 3.4 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(28.6 32)" id="silk-earth-ring" data-path="silk:silk-earth-ring" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-screw-0 ground-screw-1" />
+    <path d="M 0 -2.53 L 0 -0.46 M -2.3 -0.46 L 2.3 -0.46 M -1.426 0.552 L 1.426 0.552 M -0.644 1.564 L 0.644 1.564" fill="none" stroke="#1a1d1f" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(28.6 32)" id="silk-earth" data-path="silk:silk-earth" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-screw-0 ground-screw-1" />
+    <path d="M -1.6 1.4 L 0 -1.4 L 1.6 1.4 Z M -2.4 2.6 H -1.0 M 1.0 2.6 H 2.4" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(61.1 8)" id="silk-esd-rear" data-path="silk:silk-esd-rear" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="esd-rear-jack" />
+    <text x="85.8" y="23.4" font-family="sans-serif" font-size="3.6" text-anchor="middle" fill="#1a1d1f" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <text x="134.2" y="23.4" font-family="sans-serif" font-size="3.6" text-anchor="middle" fill="#1a1d1f" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <text x="182.6" y="23.4" font-family="sans-serif" font-size="3.6" text-anchor="middle" fill="#1a1d1f" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(85.8 15.6)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(134.2 15.6)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(182.6 15.6)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <text x="315.7" y="22.4" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#1a1d1f" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <text x="379.3" y="22.4" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#1a1d1f" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(315.7 17)" id="silk-psu-0-mark" data-path="silk:silk-psu-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(379.3 17)" id="silk-psu-1-mark" data-path="silk:silk-psu-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+  </g>
+  <g id="ground-screw-0" data-path="ground-screw-0" data-class="ground" data-ref="common/ground-screw-10-32@1:1.0.0" data-connector="terminal-stud" data-rel-pos="0" transform="translate(15.85,12.85)" data-group="grounding" data-group-role="furniture" data-description="the protective earthing terminal at the left of the rear, two tapped holes for 10-32 screws 16 mm apart (guide, Grounding Points Specifications)" data-for="chassis">
+    <title>ground-screw-0</title>
+    <g id="ground-screw-0--head" data-z-cyl="2.79" data-z-color="#b9bec4">
+      <circle cx="4.735" cy="4.735" r="4.635" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+      <path d="M 2.6516 4.735 H 6.8184 M 4.735 2.6516 V 6.8184" fill="none" stroke="#4e5359" stroke-width="0.5682" stroke-linecap="round" />
+    </g>
+    <g data-cp="mate" data-cp-at="4.735 4.735" data-cp-dir="front" data-cp-on="ground-screw-0--head" />
+  </g>
+  <g id="ground-screw-1" data-path="ground-screw-1" data-class="ground" data-ref="common/ground-screw-10-32@1:1.0.0" data-connector="terminal-stud" data-rel-pos="1" transform="translate(31.85,12.85)" data-group="grounding" data-group-role="furniture" data-description="the protective earthing terminal at the left of the rear, two tapped holes for 10-32 screws 16 mm apart (guide, Grounding Points Specifications)" data-for="chassis">
+    <title>ground-screw-1</title>
+    <g id="ground-screw-1--head" data-z-cyl="2.79" data-z-color="#b9bec4">
+      <circle cx="4.735" cy="4.735" r="4.635" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+      <path d="M 2.6516 4.735 H 6.8184 M 4.735 2.6516 V 6.8184" fill="none" stroke="#4e5359" stroke-width="0.5682" stroke-linecap="round" />
+    </g>
+    <g data-cp="mate" data-cp-at="4.735 4.735" data-cp-dir="front" data-cp-on="ground-screw-1--head" />
+  </g>
+  <g id="led-fan-0" data-path="led-fan-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(84.4,28.3)" data-group="fan-leds" data-group-role="indicator" data-description="Table 8 - green blinking: hardware initialised, software pending; green steady: functioning normally; red: faulty; unlit: not present" data-states="off initialising ok fault" data-for="fan-0">
+    <title>led-fan-0</title>
+    <circle id="led-fan-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-0/lamp" data-class="led" data-states="off initialising ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-1" data-path="led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(132.8,28.3)" data-group="fan-leds" data-group-role="indicator" data-description="The status lamp in the strip at the left of each fan slot, bicolour: green when the tray is running, red when it is faulty (guide Figure 12, Table 8)" data-states="off initialising ok fault" data-for="fan-1">
+    <title>led-fan-1</title>
+    <circle id="led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-1/lamp" data-class="led" data-states="off initialising ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-2" data-path="led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(181.3,28.3)" data-group="fan-leds" data-group-role="indicator" data-description="The status lamp in the strip at the left of each fan slot, bicolour: green when the tray is running, red when it is faulty (guide Figure 12, Table 8)" data-states="off initialising ok fault" data-for="fan-2">
+    <title>led-fan-2</title>
+    <circle id="led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-2/lamp" data-class="led" data-states="off initialising ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="90" y="1" width="41.7" height="41.7" fill="#101214" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="138.4" y="1" width="41.7" height="41.7" fill="#101214" />
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="186.8" y="1" width="41.7" height="41.7" fill="#101214" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="318.9" y="1.6" width="54.7" height="40.5" fill="#101214" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="381.6" y="1.6" width="54.7" height="40.5" fill="#101214" />
+  </g>
+  <g id="esd-rear-jack" data-path="esd-rear-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="1" transform="translate(58.1,14.3)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD point at the lower left of the front, and the one at the rear" data-for="chassis">
+    <title>esd-rear-jack</title>
+    <circle id="esd-rear-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

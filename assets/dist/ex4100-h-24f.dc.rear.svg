@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.0mm" height="43.3mm" viewBox="0 0 439.0 43.3" data-device="ex4100-h-24f" data-view="rear" data-weight="8.07 kg (17.79 lb) with no supply; 9.20 kg with one AC supply and 9.23 kg with one DC supply, Table 13" data-power-input-ac="100 through 240 VAC, 50/60 Hz (Table 28)" data-power-input-dc="20.4 through 72 VDC at the terminal block, nominal +24, -48 or -60 VDC (Table 36)" data-cooling="fanless, convection cooled (Table 12); one rack unit clear above and below" data-operating-temp="-40 to 60 C in a sealed enclosure, -40 to 70 C in a ventilated enclosure (40 LFM) and -40 to 75 C in a blower-equipped enclosure (200 LFM), up to 15000 ft; safety certified at 60 C" data-storage-temp="-40 to 85 C in the shipping container" data-humidity="5 to 95 percent, noncondensing" data-altitude="no performance degradation up to 15000 ft (4572 m)" data-first-junos-release="24.4R1 (Table 12)" data-virtual-chassis="up to 10 EX4100, EX4100-F and EX4100-H switches; the four VCP cages are the Virtual Chassis ports (HiGig or HGoE mode, or uplink ports) and the four uplink cages support HGoE only. A 10GBASE-T transceiver cannot form a Virtual Chassis in a VCP" data-macsec="the four uplink ports are MACsec capable" data-dry-contact-alarm="two alarm inputs (5 V threshold) and one alarm relay output (NO, COM, NC), Table 4" data-optics-sfp="the 24 front cages take 1 Gbps SFP transceivers; Tables 49 and 50 list the industrial-grade 1 G optics against the ambient they allow. The supported list is in Juniper's Hardware Compatibility Tool, which the guide names and which is not held here" data-optics-sfp-plus="the eight group cages take 1 Gbps SFP and 10 Gbps SFP+ transceivers; Tables 45 to 48 list the industrial-grade 10 G and 10GBASE-T optics against the ambient they allow. The supported list is in Juniper's Hardware Compatibility Tool, which the guide names and which is not held here" data-seismic="tested for Zone 4 earthquake safety" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4100-h-24f-dc-psu@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='juniper/ex4100-h-24f-dc-psu@'] .state-green { --led-color: #39b54a; }
+</style>
+  <metadata>{"device":"Juniper EX4100-H-24F","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","juniper/ex4100-h-24f-dc-psu@1":"1.0.0","juniper/ex4100-h-psu-blank@1":"1.0.0"},"source-sha256":"7d17aa06b23c1f232d04551c73877792c1e0787469765bce4adb3d01c3e3a4da","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4100-H-24F" x="0" y="0" width="439" height="43.3" rx="1.2" fill="#6a727f" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="earth-plate" data-kind="earth-plate" x="422.5" y="2.9" width="13.8" height="35" rx="0.5" fill="#c9cbcd" />
+    <rect id="earth-hole-1" data-kind="earth-hole" x="427.15" y="4.85" width="5.1" height="5.1" rx="2.55" fill="#2a2d31" />
+    <rect id="earth-hole-2" data-kind="earth-hole" x="427.15" y="20.75" width="5.1" height="5.1" rx="2.55" fill="#2a2d31" />
+    <rect id="lock-slot" data-kind="lock-slot" x="404.9" y="28.4" width="8.3" height="3.2" rx="1" fill="#101214" />
+    <rect id="bracket-plate" data-kind="bracket" x="195.1" y="0" width="15.3" height="17.4" rx="0.6" fill="#5d6471" />
+    <rect id="bracket-screw-ring" data-kind="screw" x="197.7" y="4.6" width="9.2" height="9.2" rx="4.6" fill="#2b2f36" />
+    <rect id="bracket-screw-head" data-kind="screw" x="199.2" y="6.1" width="6.2" height="6.2" rx="3.1" fill="#8d949c" />
+  </g>
+  <rect id="region--label-serial" data-path="region:label-serial" data-class="region" x="3.1" y="20.1" width="5" height="20.4" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="412.5" cy="10" rx="3" ry="3" fill="#101214" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -2.2 1.6 L 0 -2.2 L 2.2 1.6 Z" fill="none" stroke="#dfe2e6" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(412.5 3.4)" id="esd-symbol" data-path="silk:esd-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="esd-rear" />
+    <path d="M 0 -2.2 L 0 -0.4 M -2 -0.4 L 2 -0.4 M -1.24 0.48 L 1.24 0.48 M -0.56 1.36 L 0.56 1.36" fill="none" stroke="#dfe2e6" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(418 23.3)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.1 0 H 1.1 V 2.0 H -1.1 Z M -0.7 0 V -0.7 A 0.7 0.7 0 0 1 0.7 -0.7 V 0" fill="none" stroke="#dfe2e6" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(409.1 33.7)" id="lock-symbol" data-path="silk:lock-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="16.5" y="14.7" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#dfe2e6" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">PSU 0</text>
+    <text x="395" y="21.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#dfe2e6" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">PSU 1</text>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="9.8" y="0.9" width="184.9" height="39.5" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex4100-h-24f-dc-psu@1:1.0.0" data-cooling="fanless, convection cooled" data-inlet="none" data-input="20.4 through 72 VDC at the terminal block, nominal +24, -48 or -60 VDC" data-input-current="5.5 A at +24 V, 2.75 A at -48 V and 2.2 A at -60 V, as printed on the label" data-power-output-w="90" data-role="dc-power-supply" data-weight-kg="1.16" data-states="ok fault absent" transform="translate(102.25,20.65) translate(-92.45,-19.75)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--flank" x="0" y="0" width="12.9" height="39.5" fill="#6a727f" />
+      <rect id="psu-0--module--body" x="12.5" y="0" width="172.4" height="39.5" rx="0.8" fill="#5b626e" stroke="#2f343b" stroke-width="0.4" />
+      <rect x="13.5" y="32.8" width="170.4" height="5.6" fill="#4a505a" />
+      <rect id="psu-0--module--tab" x="0" y="18.3" width="15.4" height="15.0" rx="0.8" fill="#5d6471" stroke="#2f343b" stroke-width="0.35" />
+      <g id="psu-0--module--thumbscrew">
+        <circle cx="7.1" cy="26.0" r="4.9" fill="#2b2f36" stroke="#8d949c" stroke-width="0.35" />
+        <circle cx="7.1" cy="26.0" r="3.5" fill="#4a505a" stroke="#8d949c" stroke-width="0.3" />
+        <path d="M 4.7 26.0 H 9.5 M 7.1 23.6 V 28.4" fill="none" stroke="#c9cdd2" stroke-width="0.6" stroke-linecap="round" />
+      </g>
+      <rect id="psu-0--module--label" x="15.8" y="2.2" width="24.1" height="30.8" fill="#6b7280" stroke="#2f343b" stroke-width="0.3" />
+      <g id="psu-0--module--fins" fill="#363b44" stroke="#232730" stroke-width="0.2">
+        <rect x="43.95" y="1.6" width="1.7" height="31.5" />
+        <rect x="51.15" y="1.6" width="1.7" height="31.5" />
+        <rect x="58.15" y="1.6" width="1.7" height="31.5" />
+        <rect x="64.95" y="1.6" width="1.7" height="31.5" />
+        <rect x="71.75" y="1.6" width="1.7" height="31.5" />
+        <rect x="78.75" y="1.6" width="1.7" height="31.5" />
+        <rect x="85.35" y="1.6" width="1.7" height="31.5" />
+        <rect x="92.35" y="1.6" width="1.7" height="31.5" />
+        <rect x="99.15" y="1.6" width="1.7" height="31.5" />
+        <rect x="106.25" y="1.6" width="1.7" height="31.5" />
+        <rect x="113.15" y="1.6" width="1.7" height="31.5" />
+      </g>
+      <g id="psu-0--module--handle" data-path="psu-0/module/handle" data-class="latch" data-z-out="1.6" data-z-color="#a2dd35">
+        <rect x="120.5" y="0.0" width="37.5" height="28.0" rx="0.6" fill="#454b56" stroke="#232730" stroke-width="0.3" />
+        <path d="M 125.2 1.3 V 28.0 M 129.8 1.3 V 28.0 M 134.4 1.3 V 28.0 M 139.0 1.3 V 28.0 M 143.6 1.3 V 28.0 M 148.2 1.3 V 28.0 M 152.8 1.3 V 28.0" fill="none" stroke="#2b2f36" stroke-width="0.8" />
+        <path d="M 118.5 28.0 V 35.7 Q 118.5 38.0 120.8 38.0 H 157.6 Q 159.9 38.0 159.9 35.7 V 28.0" fill="none" stroke="#a2dd35" stroke-width="2.2" stroke-linejoin="round" />
+        <path d="M 120.6 28.0 V 35.2 H 157.8 V 28.0" fill="none" stroke="#7fb82a" stroke-width="0.4" />
+      </g>
+      <rect id="psu-0--module--lamp-plate" x="163.6" y="1.8" width="15.3" height="30.7" fill="#6b7280" stroke="#2f343b" stroke-width="0.3" />
+      <circle cx="174.6" cy="16.8" r="3.0" fill="#2b2f36" />
+      <circle id="psu-0--module--led-out-ok" cx="174.6" cy="16.8" r="2.5" fill="var(--led-color, #8a9099)" stroke="#2a2d30" stroke-width="0.3" data-path="psu-0/module/led-out-ok" data-class="led" data-states="green amber off" />
+      <path id="psu-0--module--hot" d="M 170.7 23.8 L 174.7 30.5 H 166.7 Z" fill="none" stroke="#2b2f36" stroke-width="0.4" stroke-linejoin="round" />
+      <path d="M 169.4 28.8 Q 170.2 27.6 169.4 26.7 M 170.7 28.8 Q 171.5 27.6 170.7 26.7 M 172.0 28.8 Q 172.8 27.6 172.0 26.7" fill="none" stroke="#2b2f36" stroke-width="0.3" />
+      <g id="psu-0--module--silkscreen" font-family="Arial" fill="#dfe2e6">
+        <g font-size="2.5">
+          <text x="18.2" y="8.4" font-weight="bold">DC INPUT</text>
+          <text x="18.2" y="11.7">+24V = 5.5A</text>
+          <text x="18.2" y="15.3">-48V = 2.75A</text>
+          <text x="18.2" y="18.5">-60V = 2.2A</text>
+        </g>
+        <text x="171.2" y="10.9" text-anchor="middle" font-size="2.3" fill="#dfe2e6">OUT_OK</text>
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="213.35" y="2.1" width="173.3" height="37.1" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4100-h-psu-blank@1:1.0.0" data-covers="power supply slot" data-model="EX4100-H PSU blank" data-states="absent" transform="translate(300,20.65) translate(-97.2,-19.75)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="10.3" y="1.5" width="173.3" height="37.1" rx="0.8" fill="#6f7685" stroke="#3b4048" stroke-width="0.4" />
+      <rect x="11.4" y="2.6" width="171.1" height="34.9" rx="0.5" fill="none" stroke="#575d69" stroke-width="0.3" />
+      <circle id="psu-1--module--dimple" cx="97.3" cy="20.0" r="4.15" fill="#656c79" stroke="#4b515c" stroke-width="0.35" />
+      <circle cx="97.3" cy="20.0" r="2.9" fill="#707786" stroke="#575d69" stroke-width="0.25" />
+      <rect x="0" y="23.4" width="10.7" height="7.1" rx="0.8" fill="#666d7a" stroke="#3b4048" stroke-width="0.35" />
+      <g id="psu-1--module--screw-left" data-path="psu-1/module/screw-left" data-class="screw">
+        <circle cx="3.7" cy="26.5" r="3.1" fill="#c9cdd2" stroke="#6b7076" stroke-width="0.3" />
+        <path d="M 2.2 26.5 H 5.2 M 3.7 25.0 V 28.0" fill="none" stroke="#6b7076" stroke-width="0.4" stroke-linecap="round" />
+      </g>
+      <rect x="183.2" y="5.0" width="11.2" height="6.9" rx="0.8" fill="#666d7a" stroke="#3b4048" stroke-width="0.35" />
+      <g id="psu-1--module--screw-right" data-path="psu-1/module/screw-right" data-class="screw">
+        <circle cx="191.1" cy="8.6" r="3.0" fill="#c9cdd2" stroke="#6b7076" stroke-width="0.3" />
+        <path d="M 189.6 8.6 H 192.6 M 191.1 7.1 V 10.1" fill="none" stroke="#6b7076" stroke-width="0.4" stroke-linecap="round" />
+      </g>
+    </g>
+  </g>
+  <g id="esd-rear" data-path="esd-rear" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(409.5,7.0)" data-group="esd" data-group-role="furniture" data-for="chassis">
+    <title>esd-rear</title>
+    <circle id="esd-rear--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.4mm" height="87.9mm" viewBox="0 0 438.4 87.9" data-device="qfx5240-64od" data-view="rear" data-weight-note="22 kg (48.50 lb) fully loaded without optics (guide Table 7, datasheet Table 2)" data-throughput="51.2 Tbps unidirectional and 102.4 Tbps bidirectional (datasheet Table 2)" data-forwarding-capacity="21.2 billion packets per second (datasheet Table 2)" data-packet-buffer="165 MB (datasheet Table 2)" data-breakout-ports="64 x 800 GbE, 128 x 400 GbE, 256 x 200 GbE or 256 x 100 GbE; up to 320 ports at mixed speeds (datasheet Table 2)" data-osfp-speeds="800 GbE; 400 GbE and lower with breakout (datasheet Table 2)" data-power-typical-w="613" data-power-max-w="2198" data-power-envelope="as-tested" data-power-measurement-note="Maximum at 40 C ambient with SR optics (datasheet: DR optics) at 100 percent load with IMIX traffic; typical at 25 C with DACs at 50 percent load with IMIX traffic, excluding transceivers (guide Table 13, datasheet)" data-power-input-ac="200 to 240 VAC, 50 to 60 Hz, 16 A maximum (guide Table 4); 200 to 277 VAC (guide Table 13); 180 to 264 VAC (datasheet)" data-redundancy-note="two supplies, 1+1, hot-removable and hot-insertable (guide, Component Redundancy)" data-fans="four fan modules of two rotors, N+1 at rotor level; front-to-back only" data-airflow-note="AO is front-to-back (port-to-FRU, airflow out); the guide describes no back-to-front module" data-operating-temp="0 to 40 C (32 to 104 F) (guide Table 17)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing, operating" data-altitude="no performance degradation to 1828.8 m (6000 ft) at 0 to 40 C with DAC cables; sea level with optics (guide Table 17)" data-cpu="Intel Ice Lake, 4 cores, 2.2 GHz" data-memory="32 GB (16 GB x 2) DDR4" data-storage="two internal 480 GB NVMe SSDs" data-switch-chip="Broadcom Tomahawk 5 (BCM78900)" data-software="Junos OS Evolved" data-optics-osfp="800 GbE OSFP; ports 1, 2, 5, 6, 9, 10 and so on in the two middle rows take high power optics such as 800G-ZR and ZR+ (guide, Port Panel note)" data-optics-sfp-plus="two 10 GbE ports" data-oob="one RJ-45 management port" data-console="one RJ-45 console port" data-tod="one RJ-45 time-of-day port" data-usb="one USB port" data-timing-outputs="1 PPS and 10 MHz clock connectors" data-safety="UL 60950-1:2007 R10.14; CAN/CSA-C22.2 No. 60950-1-07 Amd 1:2011 Amd 2:2014; IEC 62368-1:2014 and 2018; EN 62368-1:2014+A11:2017; UL/CSA 62368-1:2019; IEC/EN 60825-1 (datasheet)" data-emc="FCC 47 CFR Part 15; ICES-003; BS EN 55032; BS EN 55035; EN 300 386; CISPR 32; CISPR 35; IEC/EN 61000 series; VCCI-CISPR 32; BSMI CNS 15936 (datasheet)" data-nebs="designed to comply with Zone 4 earthquake requirements of NEBS GR-63-CORE, Issue 3 (guide Table 17)" data-substances="RoHS; TSCA; POPs; WEEE; REACH; SCIP (datasheet)" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5240-64OD","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/ground-screw-m6@1":"1.0.1","common/ground-stud-pair-5-8-m6@1":"1.0.0"},"source-sha256":"3b20371ba86b47b581cd49509621d731da096eced5352de0265f1051628b7429","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5240-64OD" data-sku="QFX5240-64OD-CHAS" data-part-number="" x="0" y="0" width="438.4" height="87.9" rx="1.2" fill="#6e7784" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -1 0.889 L 1 0.889 L 0 -0.889 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(4.1 6.2)" id="silk-psu-mark-0" data-path="silk:silk-psu-mark-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(7.6 6.2)" id="silk-psu-0-power" data-path="silk:silk-psu-0-power" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <text x="10.8" y="7.2" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <path d="M -1 -0.889 L 1 -0.889 L 0 0.889 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(4.1 10.6)" id="silk-psu-mark-1" data-path="silk:silk-psu-mark-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(7.6 10.6)" id="silk-psu-1-power" data-path="silk:silk-psu-1-power" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="10.8" y="11.6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M 0 -2.2 L 0 -0.4 M -2 -0.4 L 2 -0.4 M -1.24 0.48 L 1.24 0.48 M -0.56 1.36 L 0.56 1.36" fill="none" stroke="#e6e8ec" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.4 24.5)" id="silk-ground" data-path="silk:silk-ground" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-pad" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(91.9 36.6)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="91.9" y="41.4" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M -0.8001 -0.9 L -0.8001 0.9 L 0.8001 0 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(91.9 44.8)" id="silk-fan-0-arrow" data-path="silk:silk-fan-0-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(177.6 36.6)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="177.6" y="41.4" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M -0.8001 -0.9 L -0.8001 0.9 L 0.8001 0 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(177.6 44.8)" id="silk-fan-1-arrow" data-path="silk:silk-fan-1-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(263.3 36.6)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <text x="263.3" y="41.4" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <path d="M -0.8001 -0.9 L -0.8001 0.9 L 0.8001 0 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(263.3 44.8)" id="silk-fan-2-arrow" data-path="silk:silk-fan-2-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#e6e8ec" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(349 36.6)" id="silk-fan-3-mark" data-path="silk:silk-fan-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+    <text x="349" y="41.4" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e6e8ec" id="silk-fan-3" data-path="silk:silk-fan-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3">3</text>
+    <path d="M -0.8001 -0.9 L -0.8001 0.9 L 0.8001 0 Z" fill="#e6e8ec" stroke="none" stroke-linejoin="round" transform="translate(349 44.8)" id="silk-fan-3-arrow" data-path="silk:silk-fan-3-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="15" y="2.9" width="73.7" height="39.5" fill="#101214" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="15" y="45.7" width="73.7" height="39.5" fill="#101214" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="94.9" y="5.3" width="80.3" height="80" fill="#101214" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="180.6" y="5.3" width="80.3" height="80" fill="#101214" />
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="266.3" y="5.3" width="80.3" height="80" fill="#101214" />
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="352" y="5.3" width="80.3" height="80" fill="#101214" />
+  </g>
+  <g id="ground-pad" data-path="ground-pad" data-class="ground" data-behaviour="mounts" data-ref="common/ground-stud-pair-5-8-m6@1:1.0.0" data-connector="stud-pair-5-8" data-rel-pos="0" transform="translate(-7.5,41.25) rotate(90 13.9375 6.0)" data-group="grounding" data-group-role="furniture" data-description="the protective earthing terminal, a pad with two M6 studs at the left of the rear (guide, Ground the QFX5240 Switch)" data-for="chassis">
+    <title>ground-pad</title>
+    <g id="ground-pad--pair" />
+    <g id="ground-pad--1" data-path="ground-pad/1" data-class="ground" data-ref="common/ground-screw-m6@1:1.0.1" data-connector="terminal-stud" transform="translate(0,0)">
+      <title>ground-pad--1</title>
+      <g id="ground-pad--1--head" data-z-cyl="4.6" data-z-color="#b9bec4">
+        <circle cx="6" cy="6" r="5.9" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 3.36 6 H 8.64 M 6 3.36 V 8.64" fill="none" stroke="#4e5359" stroke-width="0.72" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="6 6" data-cp-dir="front" data-cp-on="ground-pad--1--head" />
+    </g>
+    <g id="ground-pad--2" data-path="ground-pad/2" data-class="ground" data-ref="common/ground-screw-m6@1:1.0.1" data-connector="terminal-stud" transform="translate(15.875,0)">
+      <title>ground-pad--2</title>
+      <g id="ground-pad--2--head" data-z-cyl="4.6" data-z-color="#b9bec4">
+        <circle cx="6" cy="6" r="5.9" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 3.36 6 H 8.64 M 6 3.36 V 8.64" fill="none" stroke="#4e5359" stroke-width="0.72" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="6 6" data-cp-dir="front" data-cp-on="ground-pad--2--head" />
+    </g>
+    <g data-cp="mate" data-cp-at="13.9375 6" data-cp-dir="front" />
+  </g>
+</svg>
