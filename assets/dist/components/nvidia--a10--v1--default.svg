@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="21.59mm" viewBox="0 0 120.02 21.59">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="a10" data-path="a10" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/a10@1:1.0.0" data-body-depth="268.6" data-airflow="bidirectional; the heat sink takes system airflow either way along the card" data-board-sku="PG133 SKU 215, NVPN 699-2G133-0215-C01 or later" data-cooling="passive" data-eol="none-announced" data-form-factor="Full-height, full-length (FHFL) 10.5 in, single slot" data-memory="24 GB GDDR6, 384-bit, up to 600 GB/s" data-model="A10" data-nvlink="none" data-part-numbers="PNY NVA10TCGPUNC-KIT" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="150" data-power-input="host PCIe slot and one PCIe 8-pin auxiliary connector" data-role="gpu" data-weight-kg="0.55" transform="translate(0,0)">
+    <title>a10</title>
+    <g id="a10--bracket" data-path="a10/bracket" data-class="bracket" data-ref="std/pcie-bracket-fh@2:2.0.0" data-wall="#8a9199" data-card-height-max="111.28" data-chassis-opening="100.71" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="85.4" transform="translate(0,0)">
+      <title>a10--bracket</title>
+      <path d="M1.91 17.48 L7.27 17.48 L11.38 21.59 L114.28 21.59 L117.18 19.05 L118.75 19.05 A1.27 1.27 0 0 0 120.02 17.78 L120.02 1.27 A1.27 1.27 0 0 0 118.75 0 L117.18 0 L115.29 3.17 L11.38 3.17 L7.27 7.28 L1.91 7.28 A1.91 1.91 0 0 0 0 9.19 L0 15.57 A1.91 1.91 0 0 0 1.91 17.48 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="a10--bracket--opening" x="19.96" y="6.35" width="89.9" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="a10/bracket/opening" data-class="cutout" data-description="the connector opening, 89.9 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="a10--bracket--flange-fold" d="M119.16 3.57 V18.65" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 7.58 V17.18" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="a10--plate" x="19.66" y="6.05" width="90.50" height="12.66" fill="#a7aeb5" />
+    <rect id="a10--window" x="24.0" y="7.6" width="81.0" height="9.6" rx="0.8" fill="#0d0e10" stroke="#8d9399" stroke-width="0.3" data-path="a10/window" data-class="vent" />
+    <g id="a10--fins" fill="#a7aeb5">
+      <rect x="26.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="29.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="33.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="36.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="40.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="43.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="47.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="50.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="54.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="57.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="61.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="64.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="68.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="71.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="75.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="78.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="82.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="85.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="89.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="92.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="96.2" y="7.6" width="1.3" height="9.6" />
+      <rect x="99.7" y="7.6" width="1.3" height="9.6" />
+      <rect x="103.2" y="7.6" width="1.3" height="9.6" />
+    </g>
+    <g id="a10--screw-1" data-path="a10/screw-1" data-class="screw">
+      <circle cx="21.4" cy="12.38" r="1.5" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.25" />
+      <circle cx="21.4" cy="12.38" r="0.55" fill="#4a4f55" />
+    </g>
+  </g>
+</svg>

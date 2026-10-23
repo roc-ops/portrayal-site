@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="80.0mm" height="81.5mm" viewBox="0 0 80.0 81.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="qfx5220-128c-fan-afo" data-path="qfx5220-128c-fan-afo" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx5220-128c-fan-afo@1:1.0.0" data-airflow="front-to-back" data-model="QFX5220-128C-FANAO" data-power-draw-max-w="80" data-states="absent" transform="translate(0,0)">
+    <title>qfx5220-128c-fan-afo</title>
+    <defs>
+      <pattern id="qfx5220-128c-fan-afo--hex" width="2.6" height="4.5" patternUnits="userSpaceOnUse">
+        <polygon points="1.3,0.003 2.27,0.563 2.27,1.687 1.3,2.247 0.33,1.687 0.33,0.563" fill="#0e1012" />
+        <polygon points="0,2.253 0.97,2.813 0.97,3.937 0,4.497 -0.97,3.937 -0.97,2.813" fill="#0e1012" />
+        <polygon points="2.6,2.253 3.57,2.813 3.57,3.937 2.6,4.497 1.63,3.937 1.63,2.813" fill="#0e1012" />
+      </pattern>
+    </defs>
+    <rect id="qfx5220-128c-fan-afo--face" x="0.2" y="0.2" width="79.6" height="81.1" rx="2.6" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+    <g id="qfx5220-128c-fan-afo--grille-top">
+      <path d="M 8.0 4.4 H 72.0 L 70.0 20.0 L 64.5 33.0 H 15.5 L 10.0 20.0 Z" fill="#1c1f22" />
+      <path d="M 8.0 4.4 H 72.0 L 70.0 20.0 L 64.5 33.0 H 15.5 L 10.0 20.0 Z" fill="url(#qfx5220-128c-fan-afo--hex)" />
+    </g>
+    <g id="qfx5220-128c-fan-afo--grille-bottom">
+      <path d="M 15.5 48.6 H 64.5 L 70.0 61.6 L 72.0 77.1 H 8.0 L 10.0 61.6 Z" fill="#1c1f22" />
+      <path d="M 15.5 48.6 H 64.5 L 70.0 61.6 L 72.0 77.1 H 8.0 L 10.0 61.6 Z" fill="url(#qfx5220-128c-fan-afo--hex)" />
+    </g>
+    <g id="qfx5220-128c-fan-afo--handle" data-path="qfx5220-128c-fan-afo/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+      <path d="M 0.6 36.2 H 9.0 L 7.0 37.6 V 43.8 L 9.0 45.2 H 0.6 Z M 79.4 36.2 H 71.0 L 73.0 37.6 V 43.8 L 71.0 45.2 H 79.4 Z" fill="#d3661a" stroke="#b95812" stroke-width="0.3" />
+      <path d="M 8.0 34.4 H 72.0 L 65.5 40.8 L 72.0 47.2 H 8.0 L 14.5 40.8 Z" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+      <rect id="qfx5220-128c-fan-afo--airout-chip" x="33.3" y="37.2" width="13.4" height="7.2" rx="0.8" fill="#5b6066" />
+      <g fill="#e8731f">
+        <circle cx="36.6" cy="40.8" r="0.5" />
+        <ellipse cx="36.6" cy="39.4" rx="0.8" ry="1.3" />
+        <ellipse cx="36.6" cy="39.4" rx="0.8" ry="1.3" transform="rotate(90 36.6 40.8)" />
+        <ellipse cx="36.6" cy="39.4" rx="0.8" ry="1.3" transform="rotate(180 36.6 40.8)" />
+        <ellipse cx="36.6" cy="39.4" rx="0.8" ry="1.3" transform="rotate(270 36.6 40.8)" />
+      </g>
+      <g id="qfx5220-128c-fan-afo--silkscreen">
+        <text x="43.3" y="40.2" font-family="sans-serif" font-size="2.5" fill="#e8eaec" text-anchor="middle">AIR</text>
+        <text x="43.3" y="43.1" font-family="sans-serif" font-size="2.5" fill="#e8eaec" text-anchor="middle">OUT</text>
+      </g>
+    </g>
+    <g id="qfx5220-128c-fan-afo--screw" data-path="qfx5220-128c-fan-afo/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+      <circle cx="4.3" cy="5.0" r="3.5" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+      <circle cx="4.3" cy="5.0" r="1.4" fill="#26292d" />
+      <path d="M 3.0 5.0 H 5.6 M 4.3 3.7 V 6.3" stroke="#5a5f66" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>

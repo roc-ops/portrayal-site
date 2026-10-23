@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="41.91mm" viewBox="0 0 120.02 41.91">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="l40" data-path="l40" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/l40@1:1.0.0" data-body-depth="268.6" data-wall="#8a9199" data-airflow="bidirectional; the heat sink takes system airflow either way along the card" data-board-sku="PG133 SKU 250, NVPN 699-2G133-0250-xxx (as the brief prints it)" data-cooling="passive" data-display-ports="4 x DisplayPort 1.4a on the bracket" data-eol="none-announced" data-form-factor="Full-height, full-length (FHFL) 10.5 in, dual-slot" data-memory="48 GB GDDR6, 384-bit, 864 GB/s" data-model="L40" data-nvlink="none" data-part-numbers="PNY NVL40TCGPU-KIT" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="300" data-power-input="host PCIe slot and one PCIe 16-pin (12VHPWR) auxiliary connector" data-role="gpu" data-weight-kg="1.051" transform="translate(0,0)">
+    <title>l40</title>
+    <path id="l40--plate" d="M1.9 7.4 L7.27 7.4 L9.57 5.1 L20.0 5.1 L21.0 4.1 L119.2 4.1 L119.2 0.3 L120.02 0.3 L120.02 39.7 L119.2 39.7 L119.2 40.0 L9.67 40.0 L7.27 37.6 L1.9 37.6 A1.9 1.9 0 0 1 0 35.7 L0 29.8 A1.9 1.9 0 0 1 1.9 27.9 L7.27 27.9 L10.95 24.22 A2.4 2.4 0 0 0 10.95 20.88 L7.27 17.2 L1.9 17.2 A1.9 1.9 0 0 1 0 15.3 L0 9.3 A1.9 1.9 0 0 1 1.9 7.4 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="l40--flange-fold" d="M119.6 0.6 V39.4" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+    <g id="l40--display-port-1" data-path="l40/display-port-1" data-class="connector">
+      <path d="M32.35 6.0 L46.55 6.0 L49.85 9.2 L49.85 12.3 A1.0 1.0 0 0 1 48.85 13.3 L32.35 13.3 A0.8 0.8 0 0 1 31.55 12.5 L31.55 6.8 A0.8 0.8 0 0 1 32.35 6.0 Z" fill="#d8d9d6" stroke="#5f666d" stroke-width="0.3" />
+      <path d="M33.15 7.1 L46.0 7.1 L48.55 9.5 L48.55 11.9 L33.15 12.2 Z" fill="#1b1d20" />
+      <path d="M34.6 8.5 H46.2 M34.6 10.5 H46.2" stroke="#8a8f95" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="l40--display-port-2" data-path="l40/display-port-2" data-class="connector">
+      <path d="M53.55 6.0 L67.75 6.0 L71.05 9.2 L71.05 12.3 A1.0 1.0 0 0 1 70.05 13.3 L53.55 13.3 A0.8 0.8 0 0 1 52.75 12.5 L52.75 6.8 A0.8 0.8 0 0 1 53.55 6.0 Z" fill="#d8d9d6" stroke="#5f666d" stroke-width="0.3" />
+      <path d="M54.35 7.1 L67.2 7.1 L69.75 9.5 L69.75 11.9 L54.35 12.2 Z" fill="#1b1d20" />
+      <path d="M55.8 8.5 H67.4 M55.8 10.5 H67.4" stroke="#8a8f95" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="l40--display-port-3" data-path="l40/display-port-3" data-class="connector">
+      <path d="M74.75 6.0 L88.95 6.0 L92.25 9.2 L92.25 12.3 A1.0 1.0 0 0 1 91.25 13.3 L74.75 13.3 A0.8 0.8 0 0 1 73.95 12.5 L73.95 6.8 A0.8 0.8 0 0 1 74.75 6.0 Z" fill="#d8d9d6" stroke="#5f666d" stroke-width="0.3" />
+      <path d="M75.55 7.1 L88.4 7.1 L90.95 9.5 L90.95 11.9 L75.55 12.2 Z" fill="#1b1d20" />
+      <path d="M77.0 8.5 H88.6 M77.0 10.5 H88.6" stroke="#8a8f95" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="l40--display-port-4" data-path="l40/display-port-4" data-class="connector">
+      <path d="M95.95 6.0 L110.15 6.0 L113.45 9.2 L113.45 12.3 A1.0 1.0 0 0 1 112.45 13.3 L95.95 13.3 A0.8 0.8 0 0 1 95.15 12.5 L95.15 6.8 A0.8 0.8 0 0 1 95.95 6.0 Z" fill="#d8d9d6" stroke="#5f666d" stroke-width="0.3" />
+      <path d="M96.75 7.1 L109.6 7.1 L112.15 9.5 L112.15 11.9 L96.75 12.2 Z" fill="#1b1d20" />
+      <path d="M98.2 8.5 H109.8 M98.2 10.5 H109.8" stroke="#8a8f95" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="l40--grille" data-path="l40/grille" data-class="bezel" data-z-out="0.8" data-z-color="#9aa1a8">
+      <rect x="29.4" y="15.0" width="79.71" height="24.3" rx="2.0" fill="#a7aeb5" stroke="#5f666d" stroke-width="0.35" />
+      <path id="l40--vent" d="M35.52 15.9 L103.39 15.9 A3.5 3.5 0 0 0 107.31 21.39 L107.31 32.31 A3.5 3.5 0 0 0 103.88 38.3 L35.03 38.3 A3.5 3.5 0 0 0 31.4 32.39 L31.4 21.31 A3.5 3.5 0 0 0 35.52 15.9 Z" fill="#141618" stroke="#41474d" stroke-width="0.3" data-path="l40/vent" data-class="vent" />
+      <g id="l40--fins" fill="#565c62">
+        <rect x="38.01" y="16.2" width="0.5" height="21.8" />
+        <rect x="42.19" y="16.2" width="0.5" height="21.8" />
+        <rect x="46.37" y="16.2" width="0.5" height="21.8" />
+        <rect x="50.55" y="16.2" width="0.5" height="21.8" />
+        <rect x="54.73" y="16.2" width="0.5" height="21.8" />
+        <rect x="58.91" y="16.2" width="0.5" height="21.8" />
+        <rect x="63.09" y="16.2" width="0.5" height="21.8" />
+        <rect x="67.27" y="16.2" width="0.5" height="21.8" />
+        <rect x="71.45" y="16.2" width="0.5" height="21.8" />
+        <rect x="75.63" y="16.2" width="0.5" height="21.8" />
+        <rect x="79.81" y="16.2" width="0.5" height="21.8" />
+        <rect x="83.99" y="16.2" width="0.5" height="21.8" />
+        <rect x="88.17" y="16.2" width="0.5" height="21.8" />
+        <rect x="92.35" y="16.2" width="0.5" height="21.8" />
+        <rect x="96.53" y="16.2" width="0.5" height="21.8" />
+        <rect x="100.71" y="16.2" width="0.5" height="21.8" />
+      </g>
+      <g id="l40--screw-1" data-path="l40/screw-1" data-class="screw">
+        <circle cx="32.8" cy="18.1" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="32.8" cy="18.1" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="l40--screw-2" data-path="l40/screw-2" data-class="screw">
+        <circle cx="106.11" cy="18.1" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="106.11" cy="18.1" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="l40--screw-3" data-path="l40/screw-3" data-class="screw">
+        <circle cx="32.8" cy="35.6" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="32.8" cy="35.6" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="l40--screw-4" data-path="l40/screw-4" data-class="screw">
+        <circle cx="106.11" cy="35.6" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="106.11" cy="35.6" r="0.8" fill="#4a4f55" />
+      </g>
+    </g>
+  </g>
+</svg>
